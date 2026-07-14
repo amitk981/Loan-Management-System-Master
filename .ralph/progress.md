@@ -6480,3 +6480,31 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_130857_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008B4-renderer-provenance-and-replay-contract-closure
+- Summary: Added immutable renderer contract/file/checksum provenance for new legal outputs, made
+  retained legacy rows explicit and replay-conflicting without overwrites, restricted checklist
+  linkage to exact current provenance, and aligned authorised absent-parent generation/list reads
+  with 404 while preserving nondisclosing 403 ordering.
+- Tests run: staged TDD RED/GREEN; genuine DOCX/PDF stored-byte, exact replay, and selector proof;
+  retained migration and legacy downstream-history matrix; Django check/migration sync; all 752
+  backend tests with 23 expected skips at 93% coverage; frontend build/typecheck/lint and 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_130857_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; one additive non-destructive migration and legal-history/authority boundary
+  changes, mitigated by fail-closed conflicts, immutable ORM paths, full gates, and independent
+  Standards/Spec review with no remaining findings.
+- Next action: Run 008C2, then 008D.
+
+## 2026-07-14 13:45:59 - 2026-07-14_130857_normal_run
+- Agent tool used: codex
+- Slice attempted: 008B4-renderer-provenance-and-replay-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/.ralph/runs/2026-07-14_130857_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/.ralph/runs/2026-07-14_130857_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

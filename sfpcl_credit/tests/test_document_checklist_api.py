@@ -207,7 +207,7 @@ class DocumentChecklistApiTests(TestCase):
             2,
         )
 
-    def test_generated_document_selector_links_metadata_without_completing_item(self):
+    def test_legacy_unverified_document_cannot_link_to_checklist_item(self):
         template_file = DocumentFile.objects.create(
             file_name="term-sheet.docx",
             storage_provider="local",
@@ -250,7 +250,7 @@ class DocumentChecklistApiTests(TestCase):
             source_reason="sanction_approved",
         )
         item = checklist.items.get(item_code="term_sheet")
-        self.assertEqual(item.loan_document, generated)
+        self.assertIsNone(item.loan_document)
         self.assertEqual(item.completion_status, "pending")
         self.assertIsNone(item.verified_by_user_id)
         self.assertIsNone(item.verified_at)
@@ -263,7 +263,7 @@ class DocumentChecklistApiTests(TestCase):
         assert_success_envelope(self, response.json())
         data = response.json()["data"]
         term_sheet = next(row for row in data["items"] if row["item_code"] == "term_sheet")
-        self.assertEqual(term_sheet["loan_document_id"], str(generated.pk))
+        self.assertIsNone(term_sheet["loan_document_id"])
         self.assertEqual(term_sheet["completion_status"], "pending")
         flattened = str(response.json())
         for secret in (
@@ -274,6 +274,60 @@ class DocumentChecklistApiTests(TestCase):
             "available_actions",
         ):
             self.assertNotIn(secret, flattened)
+
+    def test_current_provenance_document_links_without_completing_item(self):
+        template_file = DocumentFile.objects.create(
+            file_name="current-template.docx",
+            storage_provider="local",
+            storage_key="templates/current-template.docx",
+            checksum_sha256="a" * 64,
+            sensitivity_level="internal",
+        )
+        output_file = DocumentFile.objects.create(
+            file_name="current-term-sheet.pdf",
+            storage_provider="local",
+            storage_key="generated/current-term-sheet.pdf",
+            checksum_sha256="b" * 64,
+            sensitivity_level="confidential",
+        )
+        template = DocumentTemplate.objects.create(
+            template_code="checklist-current-term-sheet-v1",
+            template_name="Current Checklist Term Sheet",
+            document_type="term_sheet",
+            borrower_type="individual_farmer",
+            template_version="1.0",
+            template_file=template_file,
+            merge_fields_json=[],
+            approval_status="approved",
+            effective_from=timezone.localdate(),
+        )
+        current = LoanDocument.objects.create(
+            loan_application=self.application,
+            document_type="term_sheet",
+            document_category="legal",
+            party_required="borrower",
+            document_template=template,
+            document=output_file,
+            output_format="pdf",
+            generation_status="generated",
+            execution_status="pending",
+            verification_status="pending",
+            renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+            renderer_validated_document_id=output_file.pk,
+            renderer_validated_checksum_sha256=output_file.checksum_sha256,
+        )
+
+        checklist = document_checklist.refresh_for_approved_sanction(
+            actor=self.actor,
+            application_id=self.application.pk,
+            source_reason="sanction_approved",
+        )
+
+        item = checklist.items.get(item_code="term_sheet")
+        self.assertEqual(item.loan_document, current)
+        self.assertEqual(item.completion_status, "pending")
+        self.assertIsNone(item.verified_by_user_id)
+        self.assertIsNone(item.verified_at)
 
     def test_get_enforces_permission_and_source_authorised_object_scope(self):
         document_checklist.refresh_for_approved_sanction(

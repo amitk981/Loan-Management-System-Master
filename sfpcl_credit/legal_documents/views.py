@@ -34,6 +34,8 @@ def loan_document_collection(request, loan_application_id):
             exc.error_code,
             "You do not have access to this loan application.",
         )
+    except document_generation.LegalDocumentNotFound:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
     except ValidationError as exc:
         return error_response(
             request,
@@ -68,8 +70,18 @@ def generate_loan_document(request, loan_application_id):
             exc.error_code,
             "You do not have access to this loan application.",
         )
+    except document_generation.LegalDocumentNotFound:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
     except document_generation.InvalidGenerationState as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    except document_generation.RendererProvenanceConflict as exc:
+        return error_response(
+            request,
+            409,
+            "CONFLICT",
+            str(exc),
+            details=exc.details,
+        )
     except ValidationError as exc:
         return error_response(
             request,

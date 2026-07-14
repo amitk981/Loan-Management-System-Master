@@ -1,6 +1,7 @@
 from math import ceil
 
 from django.core.exceptions import ValidationError
+from django.db.models import F
 
 from sfpcl_credit.legal_documents.models import LoanDocument
 
@@ -50,6 +51,9 @@ def latest_generated_metadata_by_type(*, application_id, document_types):
             generation_status=LoanDocument.GENERATION_GENERATED,
             document_template__isnull=False,
             document__isnull=False,
+            renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+            renderer_validated_document_id=F("document_id"),
+            renderer_validated_checksum_sha256=F("document__checksum_sha256"),
         )
         .order_by("document_type", "-created_at", "-loan_document_id")
         .values_list("document_type", "loan_document_id")

@@ -95,6 +95,103 @@ from sfpcl_credit.documents.modules import document_templates
 class LegalDocumentOwnershipMigrationTests(TransactionTestCase):
     reset_sequences = True
 
+    def test_renderer_provenance_migration_preserves_retained_row_as_legacy(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate([("legal_documents", "0002_document_checklists")])
+        old_apps = executor.loader.project_state(
+            [("legal_documents", "0002_document_checklists")]
+        ).apps
+        Role = old_apps.get_model("identity", "Role")
+        User = old_apps.get_model("identity", "User")
+        Member = old_apps.get_model("members", "Member")
+        LoanApplication = old_apps.get_model("applications", "LoanApplication")
+        DocumentFile = old_apps.get_model("documents", "DocumentFile")
+        DocumentTemplate = old_apps.get_model("documents", "DocumentTemplate")
+        OldLoanDocument = old_apps.get_model("legal_documents", "LoanDocument")
+        role = Role.objects.create(
+            role_code="migration_renderer", role_name="Migration renderer", status="active"
+        )
+        user = User.objects.create(
+            full_name="Migration Renderer",
+            email="migration-renderer@sfpcl.example",
+            password_hash="not-a-real-password",
+            primary_role=role,
+        )
+        member = Member.objects.create(
+            member_number="MEM-MIGRATION-RENDERER",
+            member_type="individual_farmer",
+            legal_name="Migration Renderer Borrower",
+            display_name="Migration Renderer Borrower",
+            folio_number="FOL-MIGRATION-RENDERER",
+            membership_status="active",
+            pan_encrypted="synthetic",
+            pan_hash="synthetic-renderer-pan",
+            kyc_status="verified",
+            default_status="no_default",
+        )
+        application = LoanApplication.objects.create(
+            application_reference_number="LO-MIGRATION-RENDERER",
+            borrower_type="individual_farmer",
+            member=member,
+            received_by_user=user,
+        )
+        source = DocumentFile.objects.create(
+            file_name="renderer-template.docx",
+            storage_provider="local",
+            storage_key="renderer-template.docx",
+            sensitivity_level="internal",
+        )
+        output = DocumentFile.objects.create(
+            file_name="legacy-renderer-output.pdf",
+            storage_provider="local",
+            storage_key="legacy-renderer-output.pdf",
+            checksum_sha256="c" * 64,
+            sensitivity_level="confidential",
+        )
+        template = DocumentTemplate.objects.create(
+            template_code="migration_renderer_template_v1",
+            template_name="Migration renderer template",
+            document_type="term_sheet",
+            borrower_type="individual_farmer",
+            template_version="1.0",
+            template_file=source,
+            merge_fields_json=[],
+            approval_status="approved",
+            effective_from=date(2026, 7, 1),
+        )
+        retained = OldLoanDocument.objects.create(
+            loan_application=application,
+            document_type="term_sheet",
+            document_category="legal",
+            party_required="borrower",
+            document_template=template,
+            document=output,
+            output_format="pdf",
+            generation_status="generated",
+            execution_status="executed",
+            verification_status="verified",
+            stamp_status="adequate",
+            notarisation_status="completed",
+        )
+
+        executor = MigrationExecutor(connection)
+        executor.migrate([("legal_documents", "0003_loan_document_renderer_provenance")])
+        new_apps = executor.loader.project_state(
+            [("legal_documents", "0003_loan_document_renderer_provenance")]
+        ).apps
+        migrated = new_apps.get_model("legal_documents", "LoanDocument").objects.get(
+            pk=retained.pk
+        )
+
+        self.assertEqual(migrated.loan_application_id, application.pk)
+        self.assertEqual(migrated.document_template_id, template.pk)
+        self.assertEqual(migrated.document_id, output.pk)
+        self.assertEqual(migrated.execution_status, "executed")
+        self.assertEqual(migrated.verification_status, "verified")
+        self.assertIsNone(migrated.renderer_contract_version)
+        self.assertIsNone(migrated.renderer_validated_document_id)
+        self.assertIsNone(migrated.renderer_validated_checksum_sha256)
+
     def test_retained_row_survives_state_only_owner_transfer(self):
         executor = MigrationExecutor(connection)
         executor.migrate([("legal_documents", None)])

@@ -1,3 +1,4 @@
+import hashlib
 import tempfile
 import uuid
 import zipfile
@@ -22,7 +23,11 @@ from sfpcl_credit.approvals.models import ApprovalCase, SanctionDecision
 from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
 from sfpcl_credit.legal_documents.modules import document_generation, document_renderer
-from sfpcl_credit.legal_documents.models import LoanDocument
+from sfpcl_credit.legal_documents.models import (
+    ChecklistItem,
+    DocumentChecklist,
+    LoanDocument,
+)
 from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member, Nominee, Shareholding
@@ -428,6 +433,191 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.assertNotIn("merge_fields", item)
         self.assertNotIn("borrower_name", item)
         self.assertEqual(item["template_version"], "1.0")
+        self.assertEqual(
+            item["renderer_validation_status"],
+            LoanDocument.RENDERER_CURRENT_VALIDATED,
+        )
+
+    def test_legacy_unverified_row_conflicts_on_replay_and_is_labelled_in_list(self):
+        legacy_rows = {}
+        for output_format, content in (
+            ("pdf", b"%PDF-1.4\nlegacy minimal output\n%%EOF"),
+            ("docx", b"legacy plain text falsely named as a Word package"),
+        ):
+            stored = LocalDocumentStorage().store(
+                ContentFile(content, name=f"legacy-term-sheet.{output_format}")
+            )
+            legacy_file = DocumentFile.objects.create(
+                file_name=f"term-sheet-LO00000801.{output_format}",
+                file_extension=f".{output_format}",
+                mime_type=(
+                    "application/pdf"
+                    if output_format == "pdf"
+                    else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                ),
+                file_size_bytes=stored.file_size_bytes,
+                storage_provider=stored.storage_provider,
+                storage_key=stored.storage_key,
+                checksum_sha256=stored.checksum_sha256,
+                uploaded_by_user=self.actor,
+                sensitivity_level="confidential",
+            )
+            legacy_rows[output_format] = LoanDocument.objects.create(
+                loan_application=self.application,
+                document_type="term_sheet",
+                document_category="legal",
+                party_required="borrower",
+                document_template=self.template,
+                document=legacy_file,
+                output_format=output_format,
+                generation_status="generated",
+                execution_status="executed",
+                verification_status="verified",
+                stamp_status="adequate",
+                notarisation_status="completed",
+                verified_by_user=self.actor,
+                verified_at=timezone.now(),
+            )
+        checklist = DocumentChecklist.objects.create(loan_application=self.application)
+        ChecklistItem.objects.create(
+            document_checklist=checklist,
+            loan_document=legacy_rows["pdf"],
+            item_code="term_sheet",
+            item_label="Term Sheet",
+            display_order=1,
+            required_flag=True,
+            applicable_flag=True,
+            completion_status="complete",
+            applicability_source="retained_legacy_history",
+            verified_by_user=self.actor,
+            verified_at=timezone.now(),
+        )
+        evidence_before = (
+            DocumentFile.objects.count(),
+            AuditLog.objects.filter(action="documents.loan_document.generated").count(),
+            WorkflowEvent.objects.filter(workflow_name="loan_document_generation").count(),
+        )
+
+        for output_format in ("pdf", "docx"):
+            replay = self._generate(output_format=output_format)
+            self.assertEqual(replay.status_code, 409, replay.content)
+            self.assertEqual(replay.json()["error"]["code"], "CONFLICT")
+            self.assertEqual(
+                replay.json()["error"]["details"]["renderer_validation_status"],
+                LoanDocument.RENDERER_LEGACY_UNVERIFIED,
+            )
+        listed = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/loan-documents/",
+            **self._auth(),
+        )
+        self.assertEqual(listed.status_code, 200, listed.content)
+        self.assertEqual(listed.json()["pagination"]["total_count"], 2)
+        self.assertEqual(
+            {row["renderer_validation_status"] for row in listed.json()["data"]},
+            {LoanDocument.RENDERER_LEGACY_UNVERIFIED},
+        )
+        self.assertEqual(
+            (
+                DocumentFile.objects.count(),
+                AuditLog.objects.filter(action="documents.loan_document.generated").count(),
+                WorkflowEvent.objects.filter(workflow_name="loan_document_generation").count(),
+            ),
+            evidence_before,
+        )
+
+    def test_new_outputs_bind_current_provenance_to_reopened_stored_checksum(self):
+        for output_format in ("docx", "pdf"):
+            with self.subTest(output_format=output_format):
+                generated = self._generate(output_format=output_format)
+                self.assertEqual(generated.status_code, 200, generated.content)
+                row = LoanDocument.objects.select_related("document").get(
+                    pk=generated.json()["data"]["loan_document_id"]
+                )
+                stored_bytes = (
+                    Path(settings.DOCUMENT_STORAGE_ROOT) / row.document.storage_key
+                ).read_bytes()
+                checksum = hashlib.sha256(stored_bytes).hexdigest()
+                self.assertEqual(
+                    row.renderer_contract_version, LoanDocument.RENDERER_CONTRACT_V1
+                )
+                self.assertEqual(row.renderer_validated_document_id, row.document_id)
+                self.assertEqual(row.renderer_validated_checksum_sha256, checksum)
+                self.assertEqual(row.document.checksum_sha256, checksum)
+                self.assertEqual(
+                    row.renderer_validation_status,
+                    LoanDocument.RENDERER_CURRENT_VALIDATED,
+                )
+                if output_format == "docx":
+                    extracted = self._extract_docx_text(stored_bytes)
+                else:
+                    from pypdf import PdfReader
+
+                    extracted = "\n".join(
+                        page.extract_text(extraction_mode="layout") or ""
+                        for page in PdfReader(BytesIO(stored_bytes), strict=True).pages
+                    )
+                self.assertIn("Document Borrower", extracted)
+                self.assertIn("400000.00", extracted)
+                evidence_before_replay = (
+                    DocumentFile.objects.count(),
+                    LoanDocument.objects.count(),
+                    AuditLog.objects.filter(
+                        action="documents.loan_document.generated"
+                    ).count(),
+                    WorkflowEvent.objects.filter(
+                        workflow_name="loan_document_generation"
+                    ).count(),
+                )
+                replay = self._generate(output_format=output_format)
+                self.assertEqual(replay.status_code, 200, replay.content)
+                self.assertEqual(replay.json()["data"], generated.json()["data"])
+                self.assertEqual(
+                    (
+                        DocumentFile.objects.count(),
+                        LoanDocument.objects.count(),
+                        AuditLog.objects.filter(
+                            action="documents.loan_document.generated"
+                        ).count(),
+                        WorkflowEvent.objects.filter(
+                            workflow_name="loan_document_generation"
+                        ).count(),
+                    ),
+                    evidence_before_replay,
+                )
+                checklist_candidates = (
+                    document_generation.legal_document_selector.latest_generated_metadata_by_type(
+                        application_id=self.application.pk,
+                        document_types=("term_sheet",),
+                    )
+                )
+                self.assertEqual(checklist_candidates, {"term_sheet": row.pk})
+
+    def test_renderer_provenance_is_immutable_while_lifecycle_fields_remain_updateable(self):
+        generated = self._generate(output_format="docx")
+        self.assertEqual(generated.status_code, 200, generated.content)
+        row = LoanDocument.objects.get(pk=generated.json()["data"]["loan_document_id"])
+
+        row.renderer_validated_checksum_sha256 = "f" * 64
+        with self.assertRaises(ValidationError) as blocked:
+            row.save(update_fields=["renderer_validated_checksum_sha256"])
+        self.assertIn("renderer_provenance", blocked.exception.message_dict)
+
+        with self.assertRaises(ValidationError):
+            LoanDocument.objects.filter(pk=row.pk).update(
+                renderer_validated_checksum_sha256="e" * 64
+            )
+        row.renderer_contract_version = "rewritten-contract"
+        with self.assertRaises(ValidationError):
+            LoanDocument.objects.bulk_update([row], ["renderer_contract_version"])
+
+        row.refresh_from_db()
+        row.execution_status = "executed"
+        row.save(update_fields=["execution_status"])
+        row.refresh_from_db()
+        self.assertEqual(row.execution_status, "executed")
+        self.assertEqual(
+            row.renderer_validation_status, LoanDocument.RENDERER_CURRENT_VALIDATED
+        )
 
     def test_unknown_or_missing_merge_fact_creates_no_file_metadata_or_evidence(self):
         for merge_field in ("unknown_legal_fact", "nominee_name"):
@@ -668,6 +858,60 @@ class LoanDocumentGenerationApiTests(TestCase):
             object_denied_read.json()["error"]["code"],
             "OBJECT_ACCESS_DENIED",
         )
+
+    def test_unknown_application_is_404_only_after_role_and_permission_authority(self):
+        unknown_id = uuid.uuid4()
+        authorised = self._user(
+            "compliance_team_member",
+            "documents.loan_document.generate",
+            "documents.loan_document.read",
+            "documents.template.file_reference",
+        )
+        authorised_generate = self.client.post(
+            f"/api/v1/loan-applications/{unknown_id}/loan-documents/generate/",
+            {},
+            content_type="application/json",
+            **self._auth(authorised),
+        )
+        authorised_list = self.client.get(
+            f"/api/v1/loan-applications/{unknown_id}/loan-documents/",
+            **self._auth(authorised),
+        )
+        for response in (authorised_generate, authorised_list):
+            self.assertEqual(response.status_code, 404, response.content)
+            self.assertEqual(response.json()["error"]["code"], "NOT_FOUND")
+
+        no_permission = self._user("unknown_plain")
+        unrelated_generator = self._user(
+            "unknown_unrelated_generator",
+            "documents.loan_document.generate",
+            "documents.template.file_reference",
+        )
+        unrelated_reader = self._user(
+            "unknown_unrelated_reader", "documents.loan_document.read"
+        )
+        denied_generate = (
+            self.client.post(
+                f"/api/v1/loan-applications/{unknown_id}/loan-documents/generate/",
+                {},
+                content_type="application/json",
+                **self._auth(no_permission),
+            ),
+            self.client.post(
+                f"/api/v1/loan-applications/{unknown_id}/loan-documents/generate/",
+                {},
+                content_type="application/json",
+                **self._auth(unrelated_generator),
+            ),
+        )
+        for response in denied_generate:
+            self.assertEqual(response.status_code, 403, response.content)
+        denied_list = self.client.get(
+            f"/api/v1/loan-applications/{unknown_id}/loan-documents/",
+            **self._auth(unrelated_reader),
+        )
+        self.assertEqual(denied_list.status_code, 403, denied_list.content)
+        self.assertEqual(LoanDocument.objects.count(), 0)
 
     def test_direct_generation_enforces_application_object_scope_before_template_reads(self):
         outsider = self._user(

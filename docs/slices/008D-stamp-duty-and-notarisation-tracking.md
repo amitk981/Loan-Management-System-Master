@@ -149,6 +149,16 @@ with a failed mutation.
   unverified output requires explicit renderer remediation and cannot acquire legal-execution facts
   merely because its retained metadata says `generated`.
 
+## Run-Ahead Sharpening (008B4 completion, 2026-07-14)
+
+- Resolve stamp/notary targets through one legal-documents-owned selector using the exact 008B4
+  current predicate: `legal-renderer-v1`, matching generated-file UUID, and matching SHA-256.
+  Return `409 CONFLICT` for retained `legacy_unverified` or mismatched provenance before creating a
+  stamp/notary row, audit, workflow event, or checklist projection.
+- Treat renderer provenance fields as immutable input. Stamp/notary actions may update only their
+  source-owned records and existing lifecycle projections; they must never backfill, replace, or
+  reinterpret renderer contract/document/checksum snapshots.
+
 ## Visual Acceptance Criteria
 None.
 

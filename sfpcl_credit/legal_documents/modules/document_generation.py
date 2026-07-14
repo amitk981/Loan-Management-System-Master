@@ -58,6 +58,19 @@ class LegalDocumentAccessDenied(Exception):
         super().__init__(error_code)
 
 
+class RendererProvenanceConflict(Exception):
+    def __init__(self):
+        self.details = {
+            "renderer_validation_status": LoanDocument.RENDERER_LEGACY_UNVERIFIED,
+            "remediation": "Generate a governed successor before using this retained output.",
+        }
+        super().__init__("Retained output is not bound to the current renderer contract.")
+
+
+class LegalDocumentNotFound(Exception):
+    pass
+
+
 def generate(*, actor, application_id, payload, metadata, storage=None):
     permissions = auth_service.effective_permission_codes(actor)
     if (
@@ -66,16 +79,18 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
         or document_services.TEMPLATE_FILE_REFERENCE_PERMISSION not in permissions
     ):
         raise LegalDocumentAccessDenied()
-    scoped_application, access = application_authority.resolve_application_access(
-        application_id=application_id,
-        actor=actor,
-        required_permission=GENERATE_PERMISSION,
-        actor_permissions=permissions,
+    scoped_application, access = (
+        application_authority.resolve_documentation_application_access(
+            application_id=application_id,
+            actor=actor,
+            required_permission=GENERATE_PERMISSION,
+            actor_permissions=permissions,
+        )
     )
     if not access.allowed:
         raise LegalDocumentAccessDenied(access.error_code or "OBJECT_ACCESS_DENIED")
     if scoped_application is None:
-        raise ValidationError({"loan_application_id": "Loan application was not found."})
+        raise LegalDocumentNotFound
     cleaned = _validate_request(payload)
     storage = storage or LocalDocumentStorage()
     stored = None
@@ -108,6 +123,11 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
                 output_format=cleaned["output_format"],
             ).first()
             if replay is not None:
+                if (
+                    replay.renderer_validation_status
+                    != LoanDocument.RENDERER_CURRENT_VALIDATED
+                ):
+                    raise RendererProvenanceConflict()
                 return serialize_generation(replay)
 
             try:
@@ -160,6 +180,9 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
                 generation_status=LoanDocument.GENERATION_GENERATED,
                 execution_status=LoanDocument.EXECUTION_PENDING,
                 verification_status=LoanDocument.VERIFICATION_PENDING,
+                renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+                renderer_validated_document_id=generated_file.pk,
+                renderer_validated_checksum_sha256=generated_file.checksum_sha256,
             )
             _record_evidence(
                 actor=actor,
@@ -178,7 +201,7 @@ def list_for_application(*, actor, application_id, query_params):
     permissions = auth_service.effective_permission_codes(actor)
     if not actor.can_authenticate() or READ_PERMISSION not in permissions:
         raise LegalDocumentAccessDenied()
-    application, access = application_authority.resolve_application_access(
+    application, access = application_authority.resolve_documentation_application_access(
         application_id=application_id,
         actor=actor,
         required_permission=READ_PERMISSION,
@@ -187,7 +210,7 @@ def list_for_application(*, actor, application_id, query_params):
     if not access.allowed:
         raise LegalDocumentAccessDenied(access.error_code or "OBJECT_ACCESS_DENIED")
     if application is None:
-        raise ValidationError({"loan_application_id": "Loan application was not found."})
+        raise LegalDocumentNotFound
     rows, pagination = legal_document_selector.list_for_application(
         application_id=application.pk,
         query_params=query_params,
@@ -215,6 +238,7 @@ def serialize_metadata(row):
         "output_format": row.output_format,
         "execution_status": row.execution_status,
         "verification_status": row.verification_status,
+        "renderer_validation_status": row.renderer_validation_status,
         "stamp_status": row.stamp_status,
         "notarisation_status": row.notarisation_status,
         "created_at": row.created_at.isoformat().replace("+00:00", "Z"),
@@ -336,6 +360,10 @@ def _record_evidence(*, actor, metadata, loan_document, template):
         "document_type": loan_document.document_type,
         "output_format": loan_document.output_format,
         "document_id": str(loan_document.document_id),
+        "renderer_contract_version": loan_document.renderer_contract_version,
+        "renderer_validated_checksum_sha256": (
+            loan_document.renderer_validated_checksum_sha256
+        ),
         "request_id": metadata.request_id,
     }
     AuditLog.objects.create(

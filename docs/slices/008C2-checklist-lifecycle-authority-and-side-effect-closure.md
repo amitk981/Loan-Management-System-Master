@@ -96,3 +96,15 @@ High
 - Applicability refresh cannot destroy completion/verification or mislabel metadata changes.
 - Conditional facts, object scope, dependencies, and audit evidence follow their canonical owners.
 - All configured gates pass.
+
+## Run-Ahead Sharpening (008B4 completion, 2026-07-14)
+
+- Consume `legal_documents.selectors.latest_generated_metadata_by_type`; do not reproduce renderer
+  checks in checklist code. That selector accepts only contract `legal-renderer-v1` whose frozen
+  `renderer_validated_document_id` and `renderer_validated_checksum_sha256` match the related
+  `DocumentFile`. `generation_status`, MIME type, extension, prefix, or file presence alone remain
+  insufficient.
+- Add the linkage lifecycle matrix with both `current_validated` and `legacy_unverified` retained
+  rows. A current link may update only `loan_document_id`; it keeps completion/verifier/remarks and
+  emits linkage-specific evidence if evidence is required. Legacy or mismatched provenance remains
+  unlinked and cannot produce an applicability-change event.

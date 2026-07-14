@@ -1,13 +1,43 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+
+
+_RENDERER_PROVENANCE_FIELDS = frozenset(
+    {
+        "renderer_contract_version",
+        "renderer_validated_document_id",
+        "renderer_validated_checksum_sha256",
+    }
+)
+
+
+class LoanDocumentQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        if _RENDERER_PROVENANCE_FIELDS.intersection(kwargs):
+            raise ValidationError(
+                {"renderer_provenance": "Renderer provenance is immutable."}
+            )
+        return super().update(**kwargs)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        if _RENDERER_PROVENANCE_FIELDS.intersection(fields):
+            raise ValidationError(
+                {"renderer_provenance": "Renderer provenance is immutable."}
+            )
+        return super().bulk_update(objs, fields, batch_size=batch_size)
 
 
 class LoanDocument(models.Model):
     GENERATION_GENERATED = "generated"
     EXECUTION_PENDING = "pending"
     VERIFICATION_PENDING = "pending"
+    RENDERER_CONTRACT_V1 = "legal-renderer-v1"
+    RENDERER_CURRENT_VALIDATED = "current_validated"
+    RENDERER_LEGACY_UNVERIFIED = "legacy_unverified"
+    objects = LoanDocumentQuerySet.as_manager()
 
     loan_document_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -39,6 +69,11 @@ class LoanDocument(models.Model):
     generation_status = models.CharField(max_length=60, db_index=True)
     execution_status = models.CharField(max_length=60, db_index=True)
     verification_status = models.CharField(max_length=60, db_index=True)
+    renderer_contract_version = models.CharField(max_length=64, blank=True, null=True)
+    renderer_validated_document_id = models.UUIDField(blank=True, null=True)
+    renderer_validated_checksum_sha256 = models.CharField(
+        max_length=128, blank=True, null=True
+    )
     stamp_status = models.CharField(max_length=60, blank=True, null=True, db_index=True)
     notarisation_status = models.CharField(
         max_length=60, blank=True, null=True, db_index=True
@@ -81,7 +116,56 @@ class LoanDocument(models.Model):
                 check=models.Q(loan_account_id__isnull=True),
                 name="loan_document_account_requires_epic_009",
             ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        renderer_contract_version__isnull=True,
+                        renderer_validated_document_id__isnull=True,
+                        renderer_validated_checksum_sha256__isnull=True,
+                    )
+                    | models.Q(
+                        renderer_contract_version__isnull=False,
+                        renderer_validated_document_id__isnull=False,
+                        renderer_validated_checksum_sha256__isnull=False,
+                    )
+                ),
+                name="loan_document_renderer_provenance_complete",
+            ),
         ]
+
+    @property
+    def renderer_validation_status(self):
+        if (
+            self.renderer_contract_version == self.RENDERER_CONTRACT_V1
+            and self.renderer_validated_document_id == self.document_id
+            and self.renderer_validated_checksum_sha256
+            and self.document_id
+            and self.document.checksum_sha256
+            == self.renderer_validated_checksum_sha256
+        ):
+            return self.RENDERER_CURRENT_VALIDATED
+        return self.RENDERER_LEGACY_UNVERIFIED
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            update_fields = kwargs.get("update_fields")
+            if update_fields is None or set(update_fields).intersection(
+                _RENDERER_PROVENANCE_FIELDS
+            ):
+                retained = (
+                    type(self)
+                    .objects.filter(pk=self.pk)
+                    .values(*_RENDERER_PROVENANCE_FIELDS)
+                    .first()
+                )
+                if retained is not None and any(
+                    retained[field] != getattr(self, field)
+                    for field in _RENDERER_PROVENANCE_FIELDS
+                ):
+                    raise ValidationError(
+                        {"renderer_provenance": "Renderer provenance is immutable."}
+                    )
+        return super().save(*args, **kwargs)
 
 
 class DocumentChecklist(models.Model):

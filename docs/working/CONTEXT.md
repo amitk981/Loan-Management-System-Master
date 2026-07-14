@@ -33,7 +33,9 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   DOCX/PDF rendering for new rows, and 008C creates the initial post-sanction legal checklist
   atomically through the HTTP completion path. Architecture review found that legacy generated rows
   still lack renderer provenance and that lower-level terminal/refresh seams can bypass creation or
-  overwrite later completion; corrective 008B4/008C2 are queued before stamp/notary work. The full real
+  overwrite later completion. Corrective 008B4 now immutably binds current output to its renderer
+  contract/file/checksum, labels legacy rows honestly, excludes them from replay/checklist truth,
+  and closes absent-parent errors; 008C2 remains queued before stamp/notary work. The full real
   M05-to-Term-Sheet path remains configuration-blocked until governed owners exist for the missing
   sanction terms; renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task

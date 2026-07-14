@@ -31,6 +31,19 @@ Sources:
   legacy-provenance partial until 008B4. The initial applicability index is not later execution,
   verification, stamping, notarisation, security, approval, or disbursement readiness.
 
+## 008B4 Renderer Provenance Closure (2026-07-14)
+
+Every new renderer success now freezes the versioned legal renderer contract, exact generated-file
+identity, and post-validation stored SHA-256 as one all-or-none immutable provenance group. Current
+truth requires that group to match the retained `DocumentFile`; flags, names, MIME types, prefixes,
+and extensions never suffice. Pre-008B4 and mismatched rows remain honest `legacy_unverified`
+history: list metadata labels them, replay conflicts without writes, and checklist selectors exclude
+them. No automatic remediation/overwrite authority was invented under A-106. Compliance Team
+callers with the route permission receive §7.5 404 for an absent parent, while missing-permission and
+unrelated roles remain nondisclosing 403. Auth §15.4 is the source for Compliance Team access to
+approved documentation applications. A-101 remains unchanged because provenance proves renderer
+output only, not governed completeness of the real Term Sheet path.
+
 ## 008C Checklist Applicability Closure (2026-07-14)
 
 Approved sanction finalisation now calls the legal checklist owner through a top-level transaction

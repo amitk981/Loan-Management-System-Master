@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_legacy_unverified_document_cannot_link_to_checklist_item (sfpcl_credit.tests.test_document_checklist_api.DocumentChecklistApiTests.test_legacy_unverified_document_cannot_link_to_checklist_item)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/sfpcl_credit/tests/test_document_checklist_api.py", line 253, in test_legacy_unverified_document_cannot_link_to_checklist_item
+    self.assertIsNone(item.loan_document)
+AssertionError: <LoanDocument: LoanDocument object (102d9813-a917-4ba9-9bb9-7afbb28b4044)> is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
