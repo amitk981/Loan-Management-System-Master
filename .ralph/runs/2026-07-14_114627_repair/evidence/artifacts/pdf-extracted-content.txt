@@ -1,0 +1,18 @@
+Renderer capability proof only; not the blocked real M05-to-M06 Term Sheet path.
+PDF pages: 1
+PDF SHA-256: dc89a9aa4db8a515b8dfbfb3b8b994caa6f226f27d16c2b988651cbed8fcef8c
+Exact Unicode borrower present: True
+Exact Indian-currency label present: True
+Exact amount present: True
+
+Approved Term Sheet
+
+Borrower
+
+Document Borrower – कृषक & Sons \ Cooperative
+Amount (₹)
+
+400000.00
+
+SFPCL Approved Legal Template
+Retained legal footer

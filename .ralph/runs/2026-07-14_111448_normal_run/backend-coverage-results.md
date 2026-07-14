@@ -1,0 +1,62 @@
+# backend-coverage Results
+
+Command: "/Users/amitkallapa/LMS/.ralph/venv/bin/python" -m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests && "/Users/amitkallapa/LMS/.ralph/venv/bin/python" -m coverage report --fail-under=85
+
+Creating test database for alias 'default'...
+Found 736 test(s).
+System check identified no issues (0 silenced).
+......................................................................................................................................................................................................................................................................................Catalogue seeded: 182 permissions, 20 roles, 8 teams, 182 role-permission links.
+Catalogue seeded: 182 permissions, 20 roles, 8 teams, 182 role-permission links.
+.....................................................................................................................................................................................F.F.............................................................................................................................................................Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+...Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 182 permissions, 20 roles, 8 teams, 182 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+..Catalogue seeded: 182 permissions, 20 roles, 8 teams, 182 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 182 permissions, 20 roles, 8 teams, 182 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+......................................sssssss.....ssssss..........ssss......sss........ss..........
+======================================================================
+FAIL: test_pdf_wraps_long_legal_text_across_bounded_pages (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_pdf_wraps_long_legal_text_across_bounded_pages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 265, in test_pdf_wraps_long_legal_text_across_bounded_pages
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"borrower_name": "Merged authoritative text is not readable in the rendered PDF."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T06:13:59.733359Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_sanctioned_application_generates_retained_pdf_from_exact_template (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_sanctioned_application_generates_retained_pdf_from_exact_template)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 175, in test_sanctioned_application_generates_retained_pdf_from_exact_template
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"borrower_name": "Merged authoritative text is not readable in the rendered PDF."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T06:13:59.802786Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 736 tests in 182.520s
+
+FAILED (failures=2, skipped=22)
+Destroying test database for alias 'default'...

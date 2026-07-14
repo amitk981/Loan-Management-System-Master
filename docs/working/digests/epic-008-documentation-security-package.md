@@ -23,6 +23,21 @@ actor/generate-or-read/template-reference/application-scope checks. Until 009C s
 loan aggregate, A-102 database-constrains `loan_account_id` to `NULL` rather than accepting an
 unconstrained UUID or the synthetic tracer model.
 
+## 008B3 Renderer Closure (2026-07-14)
+
+Legal generation now accepts only bounded genuine OPC/DOCX packages, resolves declared
+placeholders across ordinary Word runs and legal content parts, preserves retained package parts,
+and rejects missing, duplicate, undeclared, malformed, oversized, compressed-pathological, or
+unreadable content before storage. PDF rendering is an in-process local adapter using pinned
+ReportLab with a Unicode TrueType font and pinned pypdf structural/content reopening; no network
+conversion service is permitted. Repair validation confirmed that shaped Unicode requires pypdf's
+layout extraction and token-level host-font fallback for complete glyph coverage (including `₹`);
+missing coverage fails before storage. A-103 records the conservative byte/entry/text/placeholder/page
+limits and deployment font requirement. Rendering proves generated content only and never implies
+execution, stamping, notarisation, checklist completion, or approval. A-101 remains open: the real
+M05 writer's nullable governed terms explicitly block a full Term Sheet with zero writes, while the
+fully populated frozen sanction fixture proves renderer capability only.
+
 ## Architecture Review 2026-07-14 09:31 - Generation Boundary and Output Proof
 
 - 008A2's database identity lock, template-source provenance decision, strict selector, and borrower-

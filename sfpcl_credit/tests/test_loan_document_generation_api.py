@@ -1,14 +1,17 @@
 import tempfile
 import uuid
 import zipfile
+from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from pathlib import Path
 from threading import Barrier
 from unittest import skipUnless
 from unittest.mock import patch
+from xml.etree import ElementTree
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, close_old_connections, connection, transaction
 from django.test import Client, TestCase, TransactionTestCase, override_settings
@@ -18,7 +21,7 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCase, SanctionDecision
 from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
-from sfpcl_credit.legal_documents.modules import document_generation
+from sfpcl_credit.legal_documents.modules import document_generation, document_renderer
 from sfpcl_credit.legal_documents.models import LoanDocument
 from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
@@ -148,6 +151,15 @@ class LoanDocumentGenerationApiTests(TestCase):
         )
 
     def test_sanctioned_application_generates_retained_pdf_from_exact_template(self):
+        frozen_name = "Document Borrower – कृषक & Sons \\ Cooperative"
+        self.case.appraisal_facts_json = {
+            **self.case.appraisal_facts_json,
+            "borrower": {
+                **self.case.appraisal_facts_json["borrower"],
+                "name": frozen_name,
+            },
+        }
+        self.case.save(update_fields=["appraisal_facts_json"])
         response = self.client.post(
             f"/api/v1/loan-applications/{self.application.pk}/loan-documents/generate/",
             {
@@ -188,6 +200,22 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.assertEqual(retained.verification_status, "pending")
         self.assertEqual(retained.document_category, "legal")
         self.assertEqual(retained.party_required, "borrower")
+        output_bytes = (
+            Path(settings.DOCUMENT_STORAGE_ROOT) / retained.document.storage_key
+        ).read_bytes()
+        from pypdf import PdfReader
+
+        reader = PdfReader(BytesIO(output_bytes), strict=True)
+        self.assertGreaterEqual(len(reader.pages), 1)
+        extracted = "\n".join(
+            page.extract_text(extraction_mode="layout") or "" for page in reader.pages
+        )
+        self.assertIn("Approved Term Sheet", extracted)
+        self.assertIn("SFPCL Approved Legal Template", extracted)
+        self.assertIn("Retained legal footer", extracted)
+        self.assertIn(frozen_name, extracted)
+        self.assertIn("Amount (₹)", extracted)
+        self.assertIn("400000.00", extracted)
 
     def test_loan_agreement_requires_executed_term_sheet_for_same_application(self):
         agreement = DocumentTemplate.objects.create(
@@ -223,7 +251,40 @@ class LoanDocumentGenerationApiTests(TestCase):
             0,
         )
 
+    def test_pdf_wraps_long_legal_text_across_bounded_pages(self):
+        long_name = "कृषक ₹ " + ("seasonal-crop-borrower " * 500)
+        self.case.appraisal_facts_json = {
+            **self.case.appraisal_facts_json,
+            "borrower": {
+                **self.case.appraisal_facts_json["borrower"],
+                "name": long_name,
+            },
+        }
+        self.case.save(update_fields=["appraisal_facts_json"])
+
+        response = self._generate(output_format="pdf")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        retained = LoanDocument.objects.get(pk=response.json()["data"]["loan_document_id"])
+        output_bytes = (
+            Path(settings.DOCUMENT_STORAGE_ROOT) / retained.document.storage_key
+        ).read_bytes()
+        from pypdf import PdfReader
+
+        reader = PdfReader(BytesIO(output_bytes), strict=True)
+        self.assertGreaterEqual(len(reader.pages), 2)
+        self.assertLessEqual(len(reader.pages), document_renderer.MAX_PDF_PAGES)
+        extracted = " ".join(
+            "\n".join(
+                page.extract_text(extraction_mode="layout") or ""
+                for page in reader.pages
+            ).split()
+        )
+        self.assertIn("कृषक ₹", extracted)
+        self.assertGreaterEqual(extracted.count("seasonal-crop-borrower"), 500)
+
     def test_term_sheet_word_output_contains_all_thirteen_authoritative_facts(self):
+        frozen_borrower = "शेतकरी ₹ & Sons \\1"
         nominee = Nominee.objects.create(
             member=self.member,
             nominee_name="Nominated Member",
@@ -260,6 +321,10 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.application.save(update_fields=["nominee"])
         self.case.appraisal_facts_json = {
             **self.case.appraisal_facts_json,
+            "borrower": {
+                **self.case.appraisal_facts_json["borrower"],
+                "name": frozen_borrower,
+            },
             "nominee": {"nominee_id": str(nominee.pk), "name": nominee.nominee_name},
             "witness": {
                 "witness_id": str(self.application.witnesses.get().pk),
@@ -272,6 +337,7 @@ class LoanDocumentGenerationApiTests(TestCase):
             },
         }
         self.case.save(update_fields=["appraisal_facts_json"])
+        self.template.template_file = self._template_source_file(all_fields=True)
         nominee.nominee_name = "Mutable Nominee Name"
         nominee.save(update_fields=["nominee_name"])
         Witness.objects.filter(loan_application=self.application).update(
@@ -296,17 +362,22 @@ class LoanDocumentGenerationApiTests(TestCase):
             "security",
             "dispute_resolution",
         ]
-        self.template.save(update_fields=["merge_fields_json"])
+        self.template.save(update_fields=["merge_fields_json", "template_file"])
 
         response = self._generate(output_format="docx")
 
         self.assertEqual(response.status_code, 200, response.content)
         document = DocumentFile.objects.get(pk=response.json()["data"]["document_id"])
-        with zipfile.ZipFile(Path(settings.DOCUMENT_STORAGE_ROOT) / document.storage_key) as archive:
-            rendered = archive.read("word/document.xml").decode()
+        output_path = Path(settings.DOCUMENT_STORAGE_ROOT) / document.storage_key
+        with zipfile.ZipFile(output_path) as archive:
+            self.assertIn("word/styles.xml", archive.namelist())
+            self.assertIn("word/header1.xml", archive.namelist())
+            self.assertIn("word/footer1.xml", archive.namelist())
+            rendered = self._extract_docx_text(output_path.read_bytes())
         for expected in (
             "Approved Term Sheet",
-            "Document Borrower",
+            "Retained legal footer",
+            frozen_borrower,
             "Nominated Member",
             "Verified Witness",
             "250",
@@ -373,6 +444,106 @@ class LoanDocumentGenerationApiTests(TestCase):
                 self.assertEqual(
                     AuditLog.objects.filter(action="documents.loan_document.generated").count(), 0
                 )
+
+    def test_word_placeholder_contract_rejects_duplicate_undeclared_and_missing_fields(self):
+        cases = (
+            (["borrower_name", "borrower_name"], ["borrower_name"], "borrower_name"),
+            (["borrower_name", "loan_amount"], ["borrower_name"], "template_file_id"),
+            (["borrower_name"], ["borrower_name", "loan_amount"], "loan_amount"),
+        )
+        for fields, declared, expected_error in cases:
+            with self.subTest(fields=fields, declared=declared):
+                self.template.template_file = self._template_source_file(fields=fields)
+                self.template.merge_fields_json = declared
+                self.template.save(update_fields=["template_file", "merge_fields_json"])
+                response = self._generate(output_format="docx")
+                self.assertEqual(response.status_code, 400, response.content)
+                self.assertIn(
+                    expected_error,
+                    response.json()["error"]["field_errors"],
+                )
+        self.assertEqual(LoanDocument.objects.count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(action="documents.loan_document.generated").count(), 0
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_document_generation").count(), 0
+        )
+
+    def test_renderer_rejects_every_bounded_input_class(self):
+        content = self._genuine_docx_fixture(["borrower_name", "loan_amount"])
+        merge_values = {"borrower_name": "Borrower", "loan_amount": "400000.00"}
+        cases = (
+            ("MAX_SOURCE_BYTES", 1),
+            ("MAX_ARCHIVE_ENTRIES", 1),
+            ("MAX_EXPANDED_BYTES", 1),
+            ("MAX_ARCHIVE_ENTRY_BYTES", 1),
+            ("MAX_COMPRESSION_RATIO", 1),
+            ("MAX_XML_BYTES", 1),
+            ("MAX_TEXT_CHARS", 1),
+            ("MAX_PLACEHOLDERS", 1),
+            ("MAX_REPLACEMENT_BYTES", 1),
+            ("MAX_OUTPUT_BYTES", 1),
+        )
+        for limit_name, limit in cases:
+            with self.subTest(limit=limit_name), patch.object(
+                document_renderer, limit_name, limit
+            ), self.assertRaises(ValidationError):
+                document_renderer.render(
+                    template_bytes=content,
+                    merge_values=merge_values,
+                    output_format="docx",
+                )
+        with patch.object(document_renderer, "MAX_EXPANDED_BYTES", 1):
+            response = self._generate(output_format="docx")
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn("template_file_id", response.json()["error"]["field_errors"])
+        self.assertEqual(LoanDocument.objects.count(), 0)
+        self.assertEqual(DocumentFile.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="documents.loan_document.generated").count(), 0
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_document_generation").count(), 0
+        )
+
+    def test_m05_writer_nullable_terms_block_full_term_sheet_with_zero_writes(self):
+        decision = self.application.sanction_decision
+        decision.interest_rate_value = None
+        decision.repayment_date = None
+        decision.penal_interest_rate = None
+        decision.charges_json = {}
+        decision.conditions_precedent = ""
+        decision.save(
+            update_fields=[
+                "interest_rate_value", "repayment_date", "penal_interest_rate",
+                "charges_json", "conditions_precedent",
+            ]
+        )
+        self.template.template_file = self._template_source_file(all_fields=True)
+        self.template.merge_fields_json = [
+            "borrower_name", "loan_amount", "interest_rate", "repayment_date",
+            "penal_interest_rate", "charges_and_fees", "dispute_resolution",
+        ]
+        self.template.save(update_fields=["template_file", "merge_fields_json"])
+
+        response = self._generate(output_format="docx")
+
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(
+            set(response.json()["error"]["field_errors"]),
+            {
+                "interest_rate", "repayment_date", "penal_interest_rate",
+                "charges_and_fees", "dispute_resolution",
+            },
+        )
+        self.assertEqual(LoanDocument.objects.count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(action="documents.loan_document.generated").count(), 0
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_document_generation").count(), 0
+        )
 
     def test_generation_requires_008a2_file_provenance_and_reference_permission(self):
         upload = AuditLog.objects.get(
@@ -806,19 +977,20 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         return {"HTTP_AUTHORIZATION": f"Bearer {response.json()['data']['access_token']}"}
 
-    def _template_source_file(self):
+    def _template_source_file(self, *, all_fields=False, fields=None):
+        body_fields = (
+            [
+                "borrower_name", "nominee_name", "witness_name", "shares_held",
+                "facility", "loan_amount", "loan_purpose", "interest_rate",
+                "interest_tenure", "repayment_date", "penal_interest_rate",
+                "charges_and_fees", "security", "dispute_resolution",
+            ]
+            if all_fields
+            else (fields or ["borrower_name", "loan_amount"])
+        )
         stored = LocalDocumentStorage().store(
             ContentFile(
-                (
-                    "Approved Term Sheet\n"
-                    "Borrower: {{borrower_name}}\nNominee: {{nominee_name}}\n"
-                    "Witness: {{witness_name}}\nShares: {{shares_held}}\n"
-                    "Facility: {{facility}}\nAmount: {{loan_amount}}\n"
-                    "Purpose: {{loan_purpose}}\nInterest: {{interest_rate}}\n"
-                    "Interest tenure: {{interest_tenure}}\nRepayment: {{repayment_date}}\n"
-                    "Penalty: {{penal_interest_rate}}\nCharges: {{charges_and_fees}}\n"
-                    "Security: {{security}}\nDisputes: {{dispute_resolution}}"
-                ).encode(),
+                self._genuine_docx_fixture(body_fields),
                 name="term-sheet.docx",
             )
         )
@@ -855,6 +1027,89 @@ class LoanDocumentGenerationApiTests(TestCase):
             },
         )
         return document
+
+    @staticmethod
+    def _genuine_docx_fixture(fields):
+        namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+        labels = {
+            "borrower_name": "Borrower", "nominee_name": "Nominee",
+            "witness_name": "Witness", "shares_held": "Shares",
+            "facility": "Facility", "loan_amount": "Amount (₹)",
+            "loan_purpose": "Purpose", "interest_rate": "Interest",
+            "interest_tenure": "Interest tenure", "repayment_date": "Repayment",
+            "penal_interest_rate": "Penalty", "charges_and_fees": "Charges",
+            "security": "Security", "dispute_resolution": "Disputes",
+        }
+        rows = []
+        for field in fields:
+            placeholder = f"{{{{{field}}}}}"
+            midpoint = len(placeholder) // 2
+            rows.append(
+                f'<w:tr><w:tc><w:p><w:r><w:t>{labels[field]}</w:t></w:r></w:p></w:tc>'
+                f'<w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>{placeholder[:midpoint]}</w:t></w:r>'
+                f'<w:r><w:t>{placeholder[midpoint:]}</w:t></w:r></w:p></w:tc></w:tr>'
+            )
+        document_xml = (
+            f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f'<w:document xmlns:w="{namespace}" xmlns:r="{relationships}"><w:body>'
+            '<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Approved Term Sheet</w:t></w:r></w:p>'
+            f'<w:tbl>{"".join(rows)}</w:tbl><w:sectPr>'
+            '<w:headerReference w:type="default" r:id="rId2"/>'
+            '<w:footerReference w:type="default" r:id="rId3"/>'
+            '</w:sectPr></w:body></w:document>'
+        )
+        output = BytesIO()
+        with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(
+                "[Content_Types].xml",
+                '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                '<Default Extension="xml" ContentType="application/xml"/>'
+                '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+                '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>'
+                '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>'
+                '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+                '</Types>',
+            )
+            archive.writestr(
+                "_rels/.rels",
+                '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+                '</Relationships>',
+            )
+            archive.writestr("word/document.xml", document_xml)
+            archive.writestr(
+                "word/_rels/document.xml.rels",
+                '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+                '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>'
+                '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'
+                '</Relationships>',
+            )
+            archive.writestr(
+                "word/header1.xml",
+                f'<?xml version="1.0"?><w:hdr xmlns:w="{namespace}"><w:p><w:r><w:t>SFPCL Approved Legal Template</w:t></w:r></w:p></w:hdr>',
+            )
+            archive.writestr(
+                "word/footer1.xml",
+                f'<?xml version="1.0"?><w:ftr xmlns:w="{namespace}"><w:p><w:r><w:t>Retained legal footer</w:t></w:r></w:p></w:ftr>',
+            )
+            archive.writestr(
+                "word/styles.xml",
+                f'<?xml version="1.0"?><w:styles xmlns:w="{namespace}"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>',
+            )
+        return output.getvalue()
+
+    @staticmethod
+    def _extract_docx_text(content):
+        texts = []
+        with zipfile.ZipFile(BytesIO(content)) as archive:
+            for name in archive.namelist():
+                if name == "word/document.xml" or name.startswith(("word/header", "word/footer")):
+                    root = ElementTree.fromstring(archive.read(name))
+                    texts.extend(node.text or "" for node in root.iter() if node.tag.endswith("}t"))
+        return " ".join(texts)
 
 
 @skipUnless(

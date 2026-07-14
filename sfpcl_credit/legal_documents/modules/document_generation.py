@@ -1,8 +1,5 @@
-import io
-import html
 import json
 import re
-import zipfile
 from dataclasses import dataclass
 
 from django.core.exceptions import ValidationError
@@ -21,6 +18,7 @@ from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.legal_documents.models import LoanDocument
 from sfpcl_credit.legal_documents import selectors as legal_document_selector
+from sfpcl_credit.legal_documents.modules import document_renderer
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -134,16 +132,16 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
                 application.application_reference_number,
                 cleaned["output_format"],
             )
-            rendered = _render(
+            rendered = document_renderer.render(
                 output_format=cleaned["output_format"],
-                template_source=template_source,
-                fields={field: merge_values[field] for field in declared},
+                template_bytes=template_source,
+                merge_values={field: merge_values[field] for field in declared},
             )
-            stored = storage.store(ContentFile(rendered, name=file_name))
+            stored = storage.store(ContentFile(rendered.content, name=file_name))
             generated_file = DocumentFile.objects.create(
                 file_name=file_name,
                 file_extension=f".{cleaned['output_format']}",
-                mime_type=_mime_type(cleaned["output_format"]),
+                mime_type=rendered.mime_type,
                 file_size_bytes=stored.file_size_bytes,
                 storage_provider=stored.storage_provider,
                 storage_key=stored.storage_key,
@@ -287,7 +285,9 @@ def _project_merge_values(application, sanction):
         "interest_tenure": tenure,
         "repayment_date": sanction.repayment_date.isoformat() if sanction.repayment_date else None,
         "penal_interest_rate": sanction.penal_interest_rate,
-        "charges_and_fees": json.dumps(sanction.charges, sort_keys=True),
+        "charges_and_fees": (
+            json.dumps(sanction.charges, sort_keys=True) if sanction.charges else None
+        ),
         "security": sanction.security,
         "dispute_resolution": sanction.dispute_resolution,
     }
@@ -326,115 +326,6 @@ def _safe_output_name(document_type, application_reference, output_format):
             {"loan_application_id": "A safe application reference is required."}
         )
     return f"{type_slug}-{reference}.{output_format}"
-
-
-def _render(*, output_format, template_source, fields):
-    if zipfile.is_zipfile(io.BytesIO(template_source)):
-        merged_docx, text = _merge_docx_template(template_source, fields)
-    else:
-        try:
-            source_text = template_source.decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise ValidationError(
-                {"template_file_id": "Template source format is not supported."}
-            ) from exc
-        text = _replace_placeholders(source_text, fields)
-        merged_docx = _minimal_docx(text)
-    if output_format == "pdf":
-        return _minimal_pdf(text)
-    return merged_docx
-
-
-def _merge_docx_template(template_source, fields):
-    source = io.BytesIO(template_source)
-    output = io.BytesIO()
-    with zipfile.ZipFile(source) as input_archive, zipfile.ZipFile(
-        output, "w", zipfile.ZIP_DEFLATED
-    ) as output_archive:
-        names = input_archive.namelist()
-        if "word/document.xml" not in names:
-            raise ValidationError(
-                {"template_file_id": "Word template has no document body."}
-            )
-        document_xml = input_archive.read("word/document.xml").decode("utf-8")
-        merged_xml = _replace_placeholders(
-            document_xml,
-            {key: _xml_escape(str(value)) for key, value in fields.items()},
-        )
-        for name in names:
-            output_archive.writestr(
-                name,
-                merged_xml.encode("utf-8")
-                if name == "word/document.xml"
-                else input_archive.read(name),
-            )
-    text = html.unescape(re.sub(r"<[^>]+>", " ", merged_xml))
-    return output.getvalue(), re.sub(r"\s+", " ", text).strip()
-
-
-def _replace_placeholders(source_text, fields):
-    merged = source_text
-    missing = {}
-    for field, value in fields.items():
-        pattern = re.compile(r"{{\s*" + re.escape(field) + r"\s*}}")
-        merged, replacements = pattern.subn(str(value), merged)
-        if replacements == 0:
-            missing[field] = "Declared merge field is absent from the retained template body."
-    if missing:
-        raise ValidationError(missing)
-    return merged
-
-
-def _xml_escape(value):
-    return (
-        value.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
-
-
-def _minimal_pdf(text):
-    escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-    escaped = escaped.replace("\n", ") Tj 0 -16 Td (")
-    stream = f"BT /F1 11 Tf 72 760 Td ({escaped}) Tj ET".encode("utf-8")
-    objects = [
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-        b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream",
-        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    ]
-    output = io.BytesIO(b"%PDF-1.4\n")
-    offsets = [0]
-    for index, obj in enumerate(objects, 1):
-        offsets.append(output.tell())
-        output.write(f"{index} 0 obj\n".encode() + obj + b"\nendobj\n")
-    xref = output.tell()
-    output.write(f"xref\n0 {len(objects) + 1}\n".encode())
-    output.write(b"0000000000 65535 f \n")
-    for offset in offsets[1:]:
-        output.write(f"{offset:010d} 00000 n \n".encode())
-    output.write(f"trailer << /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF".encode())
-    return output.getvalue()
-
-
-def _minimal_docx(text):
-    escaped = (
-        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    )
-    body = "".join(f"<w:p><w:r><w:t>{line}</w:t></w:r></w:p>" for line in escaped.split("\n"))
-    output = io.BytesIO()
-    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("[Content_Types].xml", '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>')
-        archive.writestr("_rels/.rels", '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>')
-        archive.writestr("word/document.xml", f'<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>{body}</w:body></w:document>')
-    return output.getvalue()
-
-
-def _mime_type(output_format):
-    if output_format == "pdf":
-        return "application/pdf"
-    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
 def _record_evidence(*, actor, metadata, loan_document, template):

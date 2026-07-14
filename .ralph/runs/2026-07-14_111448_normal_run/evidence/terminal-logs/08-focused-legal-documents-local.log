@@ -1,0 +1,80 @@
+Creating test database for alias 'default'...
+Found 26 test(s).
+System check identified no issues (0 silenced).
+F.F.FF....E.F.F.........s.
+======================================================================
+ERROR: test_metadata_failure_removes_stored_bytes_and_all_success_evidence (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_metadata_failure_removes_stored_bytes_and_all_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/legal_documents/modules/document_renderer.py", line 225, in _convert_to_pdf
+    from pypdf import PdfReader
+ModuleNotFoundError: No module named 'pypdf'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 871, in test_metadata_failure_removes_stored_bytes_and_all_success_evidence
+    document_generation.generate(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/legal_documents/modules/document_generation.py", line 135, in generate
+    rendered = document_renderer.render(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/legal_documents/modules/document_renderer.py", line 63, in render
+    pdf_content, pdf_text, page_count = _convert_to_pdf(merged_docx, merge_values)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/legal_documents/modules/document_renderer.py", line 235, in _convert_to_pdf
+    raise ValidationError(
+django.core.exceptions.ValidationError: {'output_format': ['Pinned PDF renderer dependencies are unavailable.']}
+
+======================================================================
+FAIL: test_database_rejects_non_null_loan_account_until_epic_009_fk_exists (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_database_rejects_non_null_loan_account_until_epic_009_fk_exists)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 910, in test_database_rejects_non_null_loan_account_until_epic_009_fk_exists
+    self.assertEqual(generated.status_code, 200, generated.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"output_format": "Pinned PDF renderer dependencies are unavailable."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T05:58:10.210867Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_direct_list_enforces_read_scope_before_selector_count_or_serialization (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_direct_list_enforces_read_scope_before_selector_count_or_serialization)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 722, in test_direct_list_enforces_read_scope_before_selector_count_or_serialization
+    self.assertEqual(generated.status_code, 200, generated.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"output_format": "Pinned PDF renderer dependencies are unavailable."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T05:58:10.235800Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_exact_replay_returns_one_result_and_list_is_metadata_only (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_exact_replay_returns_one_result_and_list_is_metadata_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 400, in test_exact_replay_returns_one_result_and_list_is_metadata_only
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"output_format": "Pinned PDF renderer dependencies are unavailable."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T05:58:10.267605Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_generate_read_and_object_scope_permissions_do_not_leak_authority (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_generate_read_and_object_scope_permissions_do_not_leak_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 595, in test_generate_read_and_object_scope_permissions_do_not_leak_authority
+    self.assertEqual(generated.status_code, 200, generated.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"output_format": "Pinned PDF renderer dependencies are unavailable."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T05:58:10.289845Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_pdf_wraps_long_legal_text_across_bounded_pages (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_pdf_wraps_long_legal_text_across_bounded_pages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 265, in test_pdf_wraps_long_legal_text_across_bounded_pages
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"output_format": "Pinned PDF renderer dependencies are unavailable."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T05:58:10.420810Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_sanctioned_application_generates_retained_pdf_from_exact_template (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_sanctioned_application_generates_retained_pdf_from_exact_template)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 175, in test_sanctioned_application_generates_retained_pdf_from_exact_template
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"output_format": "Pinned PDF renderer dependencies are unavailable."}}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T05:58:10.451756Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 26 tests in 6.765s
+
+FAILED (failures=6, errors=1, skipped=1)
+Destroying test database for alias 'default'...

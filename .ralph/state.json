@@ -193,14 +193,15 @@
     "008A2-template-effective-integrity-and-file-reference-boundary",
     "008B-document-generation-shell",
     "007T-register-null-contract-and-action-order-closure",
-    "008B2-legal-document-generation-boundary-closure"
+    "008B2-legal-document-generation-boundary-closure",
+    "008B3-document-renderer-and-output-proof-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "7d6f873",
-  "last_run_id": "2026-07-14_102642_normal_run",
+  "last_run_id": "2026-07-14_114627_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

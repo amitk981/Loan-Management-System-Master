@@ -6378,3 +6378,53 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_111448_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008B3-document-renderer-and-output-proof-closure
+- Summary: Replaced metadata-only/fake-DOCX rendering with a legal-documents-owned bounded OPC
+  renderer, genuine split-run Word merging, pinned Unicode/shaped multi-page PDF rendering, pypdf
+  structural/content reopening, and explicit pathological-input zero-write enforcement. Preserved
+  exact replay, cleanup, safe names, metadata-only reads, A-101's real M05 blocker, and A-102.
+- Tests run: TDD RED/GREEN DOCX, placeholder/bounds, and M05 blocker cycles; 26 focused legal tests
+  (18 pass, 1 expected PostgreSQL skip, 7 dependency-only PDF failures locally); Django check and
+  migration sync; full 736 backend tests (same 7 dependency-only failures, 22 expected skips) at
+  92% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_111448_normal_run/evidence/`
+- Result: Implementation complete pending orchestrator dependency installation and independent
+  validation. No local PDF artifact was fabricated while the pinned packages were unavailable.
+- Risk level: High under standing approval; local legal-record rendering and three pinned packages,
+  with no migration, destructive data change, network conversion, deployment, communication,
+  commit, merge, or push.
+- Next action: Independent validation must install pins and prove parsed DOCX/PDF outputs, then run
+  sharpened 008C.
+
+## 2026-07-14 - 2026-07-14_114627_repair
+
+- Agent tool used: codex
+- Slice repaired: 008B3-document-renderer-and-output-proof-closure
+- Summary: Reproduced the independent PDF readability failure and corrected the renderer to use
+  pypdf layout extraction for shaped text plus token-level host-font fallback when the primary
+  font lacks a glyph such as the Indian rupee. Preserved shaping, bounded rendering, zero-write
+  failure behavior, generation authority, replay, A-101, and A-102.
+- Tests run: exact two-test PDF RED/GREEN loop; all 20 document-generation tests with one expected
+  PostgreSQL skip; Django check/migration sync; all 736 backend tests with 22 expected PostgreSQL
+  skips at 93% coverage; frontend build/typecheck/lint and all 293 tests; strict retained-PDF
+  reopen and exact Unicode/rupee extraction proof.
+- Evidence saved: `.ralph/runs/2026-07-14_114627_repair/evidence/`
+- Result: Repair complete pending full independent orchestrator revalidation/commit/merge/push.
+- Risk level: High under standing approval; local legal-record rendering only, with no migration,
+  new dependency, destructive data change, network conversion, deployment, communication, commit,
+  merge, or push.
+- Next action: Independent validation, then run sharpened 008C.
+
+## 2026-07-14 12:09:37 - 2026-07-14_114627_repair
+- Agent tool used: codex
+- Slice attempted: 008B3-document-renderer-and-output-proof-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/.ralph/runs/2026-07-14_114627_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/.ralph/runs/2026-07-14_114627_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

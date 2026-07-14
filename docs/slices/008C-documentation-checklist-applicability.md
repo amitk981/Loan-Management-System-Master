@@ -133,6 +133,17 @@ refresh write nothing. A real applicability change records old/new item facts an
 - Leave A-102's `loan_account_id IS NULL` database transition intact. 009C alone installs the real
   protected loan FK; checklist creation/linkage remains application-owned until then.
 
+## Run-Ahead Sharpening (008B3 completion, 2026-07-14)
+
+- Consume only `legal_documents` selector metadata for a retained generated row. 008B3 guarantees
+  new successful rows were persisted only after genuine DOCX/PDF structural and extracted-content
+  validation; checklist code must not reopen bytes, rerun rendering, inspect storage metadata, or
+  duplicate archive/PDF validation.
+- Rendering proves content generation only. A generated row may supply an optional checklist item
+  link, but it never sets completion, execution, verification, stamp, notary, signature, or final
+  approval state. Renderer failure remains zero-write and therefore cannot create/refresh a
+  checklist item through a failed generation attempt.
+
 ## Visual Acceptance Criteria
 None.
 
