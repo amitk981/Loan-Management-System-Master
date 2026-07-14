@@ -30,6 +30,17 @@ never grants download. §26.9-§26.10 shape parsing uses a legal HTTP serializer
 module callers cross the same strict parser and business rules. The five-checker changed-outcome
 PostgreSQL race passed twice with one current row and six attributable ledger entries.
 
+## 008E2 Signature Identity and Lifecycle Closure (2026-07-14)
+
+New captures resolve borrower, selected nominee, application witness, and active user ids/names from
+their canonical owners, then freeze the canonical snapshot and immutable Compliance maker. Exact
+replay uses retained facts after mutable display-name changes. Unresolved mismatches are capture-
+immutable; only a distinct Company Secretary may resolve them, with one durable §6.3 workflow action
+identity. Authorized unknown, wrong-stage, unrelated, and non-current signature ids share 404 while
+missing action authority remains 403 before owner queries. Capture/checklist consumers use one
+legal-owned application signature selector. A-109 keeps pre-attribution rows honestly nullable and
+ineligible for changed capture or new resolution. Both five-worker PostgreSQL races passed twice.
+
 ## Architecture Review 2026-07-14 16:10 - Verification and Signature Authority
 
 - 008B4's immutable renderer contract/file/checksum provenance and legacy exclusion are substantive.

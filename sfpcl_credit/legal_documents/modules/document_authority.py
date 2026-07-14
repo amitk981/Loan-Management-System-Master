@@ -1,5 +1,7 @@
 """Legal-document-owned target authority for Stage 4 mutations."""
 
+from django.db.models import F
+
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.legal_documents.models import LoanDocument
@@ -75,3 +77,39 @@ def resolve_current_stage4_target(
     ):
         raise ProvenanceConflict
     return loan_document
+
+
+def resolve_current_stage4_signature(
+    *, actor, permission, signature_record_id, for_update=False
+):
+    """Resolve an accessible Stage-4 parent and signature as one nondisclosing lookup."""
+    from sfpcl_credit.legal_documents.models import SignatureRecord
+
+    require_mutation_actor(actor=actor, permission=permission)
+    queryset = SignatureRecord.objects
+    if for_update:
+        queryset = queryset.select_for_update(of=("self", "loan_document"))
+    signature = (
+        queryset.select_related(
+            "loan_document__loan_application",
+            "mismatch_resolution_document",
+        )
+        .filter(
+            pk=signature_record_id,
+            loan_document__loan_application__application_status=(
+                LoanApplication.STATUS_APPROVED_BY_SANCTION
+            ),
+            loan_document__renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+            loan_document__document__isnull=False,
+            loan_document__renderer_validated_document_id=F(
+                "loan_document__document_id"
+            ),
+            loan_document__renderer_validated_checksum_sha256=F(
+                "loan_document__document__checksum_sha256"
+            ),
+        )
+        .first()
+    )
+    if signature is None:
+        raise NotFound
+    return signature

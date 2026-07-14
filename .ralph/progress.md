@@ -6641,3 +6641,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_170201_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008E2-signature-identity-mismatch-lifecycle-closure
+- Summary: Closed signature canonical identity, frozen maker/checker, unresolved-mismatch lifecycle,
+  nondisclosing Stage-4 lookup, §6.3 action identity, typed serializer, shared-selector, and
+  five-worker concurrency gaps. Sharpened 008F/008G from the completed seams.
+- Tests run: six staged RED/GREEN tracers; 16 focused tests; two PostgreSQL passes of both five-worker
+  races; Django check/migration sync; all 789 backend tests with 26 expected skips and 93% coverage;
+  frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_170201_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; additive nullable legacy-safe attribution migration, fail-closed legal authority,
+  no frontend/external effect.
+- Next action: Run 008F, then 008G.
+
+## 2026-07-14 17:36:37 - 2026-07-14_170201_normal_run
+- Agent tool used: codex
+- Slice attempted: 008E2-signature-identity-mismatch-lifecycle-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/.ralph/runs/2026-07-14_170201_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/.ralph/runs/2026-07-14_170201_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

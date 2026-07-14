@@ -150,6 +150,17 @@ roll back atomically with a failed mutation.
   the same canonical Company Secretary user legitimately fills both roles; Compliance preparation
   must still be a different user and every downstream audit must retain all identities.
 
+## Run-Ahead Sharpening (008E2 completion, 2026-07-14)
+
+- Consume `legal_documents.selectors.signature_facts_for_application` and add any exact-document/
+  party projection behind that selector; do not restore a direct application-wide
+  `SignatureRecord` query in PoA code.
+- Activation accepts only borrower and selected-nominee ids/names already frozen by 008E2 on the
+  exact PoA document. Require non-null capture-maker attribution; A-109 legacy/null-maker rows and
+  resolved mismatches are retained history, not execution evidence.
+- Preserve 008E2 action authority and nondisclosure ordering. PoA permission or package scope must
+  never confer signature mutation, resolution, evidence-file download, or signature-row existence.
+
 ## Visual Acceptance Criteria
 None.
 

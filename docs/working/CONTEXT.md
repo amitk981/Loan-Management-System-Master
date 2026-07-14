@@ -44,8 +44,8 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   found that Compliance can still record checker-owned adverse stamp/notary outcomes and can erase
   an unresolved same-signer mismatch through ordinary capture; signature resolution also leaks
   absent-versus-inaccessible ids and lacks its promised race. Corrective 008D2 restores legal
-  evidence ownership and maker-checker verification; 008E2 closes signature identity, lifecycle,
-  nondisclosure, action-contract, and concurrency gaps before PoA. The full real M05-to-Term-Sheet
+  evidence ownership and maker-checker verification; corrective 008E2 now closes signature identity,
+  lifecycle, nondisclosure, action-contract, and concurrency gaps before PoA. The full real M05-to-Term-Sheet
   path remains configuration-blocked until governed owners exist for the missing sanction terms;
   renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task

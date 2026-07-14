@@ -316,9 +316,27 @@ class SignatureRecord(models.Model):
         related_name="signature_mismatch_resolutions",
     )
     mismatch_resolution_remarks = models.TextField(blank=True, null=True)
+    mismatch_resolution_workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="signature_mismatch_resolution",
+    )
     signed_at = models.DateTimeField(blank=True, null=True)
+    captured_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="captured_signature_records",
+    )
     verified_by_user = models.ForeignKey(
-        "identity.User", blank=True, null=True, on_delete=models.PROTECT
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_signature_records",
     )
     verified_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)

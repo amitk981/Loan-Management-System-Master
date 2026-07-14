@@ -3,7 +3,7 @@ from math import ceil
 from django.core.exceptions import ValidationError
 from django.db.models import F
 
-from sfpcl_credit.legal_documents.models import LoanDocument
+from sfpcl_credit.legal_documents.models import LoanDocument, SignatureRecord
 
 
 _DEFAULT_PAGE_SIZE = 20
@@ -62,6 +62,18 @@ def latest_generated_metadata_by_type(*, application_id, document_types):
     for document_type, loan_document_id in rows:
         latest.setdefault(document_type, loan_document_id)
     return latest
+
+
+def signature_facts_for_application(*, application_id):
+    """Return the single legal-owner projection consumed by downstream application facts."""
+    return SignatureRecord.objects.filter(
+        loan_document__loan_application_id=application_id
+    ).values(
+        "signature_status",
+        "verified_by_user_id",
+        "verified_at",
+        "mismatch_resolution_type",
+    )
 
 
 def _positive_int(field, value, default):

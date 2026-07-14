@@ -387,15 +387,8 @@ def _applicability_specs(application, facts):
 
 
 def _signature_mismatch(application):
-    from sfpcl_credit.legal_documents.models import SignatureRecord
-
-    rows = SignatureRecord.objects.filter(
-        loan_document__loan_application=application
-    ).values(
-        "signature_status",
-        "verified_by_user_id",
-        "verified_at",
-        "mismatch_resolution_type",
+    rows = selectors.signature_facts_for_application(
+        application_id=application.pk
     )
     fact = application_facts.resolve_signature_mismatch_fact(
         legal_signature_rows=rows,

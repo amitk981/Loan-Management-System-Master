@@ -1,18 +1,22 @@
 """Legal-document signature capture and mismatch resolution owner."""
 
-import uuid
 from dataclasses import dataclass
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 
+from sfpcl_credit.applications.modules import signature_identity_facts
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.legal_documents import selectors
 from sfpcl_credit.legal_documents.models import SignatureRecord
 from sfpcl_credit.legal_documents.modules import document_authority, document_checklist
+from sfpcl_credit.legal_documents.serializers import (
+    SignatureMismatchResolutionRequest,
+    SignatureRecordRequest,
+)
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -26,11 +30,6 @@ CAPTURE_FIELDS = {
     "signature_status",
     "signed_at",
     "signature_mismatch_flag",
-}
-RESOLUTION_FIELDS = {
-    "mismatch_resolution_type",
-    "mismatch_resolution_document_id",
-    "remarks",
 }
 
 
@@ -60,7 +59,9 @@ class ProjectionConflict(Exception):
 
 def record(*, actor, loan_document_id, payload, metadata):
     document_authority.require_mutation_actor(actor=actor, permission=RECORD_PERMISSION)
-    if "compliance_team_member" not in actor.role_codes():
+    try:
+        document_authority.require_compliance_preparer(actor)
+    except document_authority.RoleAuthorityDenied:
         raise AccessDenied
     cleaned = _validate_capture(payload)
     with transaction.atomic():
@@ -85,9 +86,55 @@ def record(*, actor, loan_document_id, payload, metadata):
         new_capture = {field: new.get(field) for field in CAPTURE_FIELDS}
         if record is not None and old_capture == new_capture:
             return _serialize(record)
+        if record is not None:
+            if cleaned["signer_name_snapshot"] != record.signer_name_snapshot:
+                raise ValidationError(
+                    {"signer_name_snapshot": "Must match the frozen signer name."}
+                )
+            cleaned = {
+                **cleaned,
+                "signer_party_id": record.signer_party_id,
+                "signer_name_snapshot": record.signer_name_snapshot,
+            }
+        else:
+            identity = signature_identity_facts.resolve_signer_identity(
+                application=loan_document.loan_application,
+                party_type=cleaned["signer_party_type"],
+                party_id=cleaned["signer_party_id"],
+            )
+            if identity is None:
+                raise ValidationError(
+                    {"signer_party_id": "Signer was not found for this application."}
+                )
+            if cleaned["signer_name_snapshot"] != identity.name:
+                raise ValidationError(
+                    {"signer_name_snapshot": "Must match the canonical signer name."}
+                )
+            cleaned = {
+                **cleaned,
+                "signer_party_id": identity.party_id,
+                "signer_name_snapshot": identity.name,
+            }
+        if (
+            record is not None
+            and record.signature_status == "mismatch"
+            and record.signature_mismatch_flag
+            and not record.mismatch_resolution_type
+        ):
+            raise InvalidState(
+                "An unresolved signature mismatch can only be cleared through mismatch resolution."
+            )
         if record is not None and record.mismatch_resolution_type:
             raise InvalidState(
                 "A resolved signature cannot be changed through the capture action."
+            )
+        if record is not None and record.captured_by_user_id is None:
+            raise ValidationError(
+                {
+                    "signature_status": (
+                        "Legacy signature evidence without a retained capture maker cannot be changed."
+                    )
+                }
             )
 
         verification_values = (
@@ -105,7 +152,9 @@ def record(*, actor, loan_document_id, payload, metadata):
         }
         if record is None:
             record = SignatureRecord.objects.create(
-                loan_document=loan_document, **values
+                loan_document=loan_document,
+                captured_by_user=actor,
+                **values,
             )
             action = "documents.signature.created"
         else:
@@ -121,24 +170,41 @@ def record(*, actor, loan_document_id, payload, metadata):
 
 def resolve_mismatch(*, actor, signature_record_id, payload, metadata):
     document_authority.require_mutation_actor(actor=actor, permission=RESOLVE_PERMISSION)
-    if "company_secretary" not in actor.role_codes():
+    try:
+        document_authority.require_company_secretary(actor)
+    except document_authority.RoleAuthorityDenied:
         raise AccessDenied
     cleaned = _validate_resolution(payload)
     with transaction.atomic():
-        signature_record = (
-            SignatureRecord.objects.select_for_update()
-            .select_related("loan_document__loan_application", "mismatch_resolution_document")
-            .filter(pk=signature_record_id)
-            .first()
-        )
-        if signature_record is None:
-            raise NotFound
-        loan_document = document_authority.resolve_current_stage4_target(
+        signature_record = document_authority.resolve_current_stage4_signature(
             actor=actor,
             permission=RESOLVE_PERMISSION,
-            loan_document_id=signature_record.loan_document_id,
+            signature_record_id=signature_record_id,
             for_update=True,
         )
+        loan_document = signature_record.loan_document
+        if not signature_record.mismatch_resolution_type:
+            if (
+                signature_record.signature_status != "mismatch"
+                or not signature_record.signature_mismatch_flag
+            ):
+                raise InvalidState("Only an unresolved mismatch signature can be resolved.")
+            if signature_record.captured_by_user_id is None:
+                raise ValidationError(
+                    {
+                        "mismatch_resolution_type": (
+                            "A retained capture maker is required before mismatch resolution."
+                        )
+                    }
+                )
+            if signature_record.captured_by_user_id == actor.pk:
+                raise ValidationError(
+                    {
+                        "mismatch_resolution_type": (
+                            "The capture maker and resolver must be different users."
+                        )
+                    }
+                )
         evidence = _resolve_evidence(
             application_id=loan_document.loan_application_id,
             resolution_type=cleaned["mismatch_resolution_type"],
@@ -160,13 +226,8 @@ def resolve_mismatch(*, actor, signature_record_id, payload, metadata):
         }
         if signature_record.mismatch_resolution_type:
             if current == requested:
-                return _serialize(signature_record)
+                return _resolution_action(signature_record)
             raise InvalidState("A resolved mismatch cannot be replaced through this action.")
-        if (
-            signature_record.signature_status != "mismatch"
-            or not signature_record.signature_mismatch_flag
-        ):
-            raise InvalidState("Only an unresolved mismatch signature can be resolved.")
 
         old = _snapshot(signature_record)
         signature_record.mismatch_resolution_type = cleaned["mismatch_resolution_type"]
@@ -187,7 +248,7 @@ def resolve_mismatch(*, actor, signature_record_id, payload, metadata):
         )
         _project_signature_fact(actor, loan_document, metadata)
         new = _snapshot(signature_record)
-        _record_evidence(
+        workflow_event = _record_evidence(
             actor,
             loan_document,
             signature_record,
@@ -197,71 +258,21 @@ def resolve_mismatch(*, actor, signature_record_id, payload, metadata):
             metadata,
             workflow_state="resolved",
         )
-        return _serialize(signature_record)
+        signature_record.mismatch_resolution_workflow_event = workflow_event
+        signature_record.save(update_fields=["mismatch_resolution_workflow_event"])
+        return _resolution_action(signature_record)
 
 
 def _validate_capture(payload):
-    _exact_fields(payload, CAPTURE_FIELDS)
-    errors = {}
-    party_type = payload.get("signer_party_type")
-    method = payload.get("signature_method")
-    status = payload.get("signature_status")
-    mismatch = payload.get("signature_mismatch_flag")
-    if party_type not in SignatureRecord.PARTY_TYPES:
-        errors["signer_party_type"] = "Must be one of borrower, nominee, witness, user."
-    if method not in SignatureRecord.METHODS:
-        errors["signature_method"] = "Must be one of wet_ink, digital, scanned."
-    if status not in SignatureRecord.STATUSES:
-        errors["signature_status"] = "Must be one of pending, signed, mismatch."
-    if not isinstance(mismatch, bool):
-        errors["signature_mismatch_flag"] = "Must be a boolean."
-    signer_name = _required_text(
-        "signer_name_snapshot", payload.get("signer_name_snapshot"), 255, errors
-    )
-    signer_id = _uuid_or_none("signer_party_id", payload.get("signer_party_id"), errors)
-    signed_at = _datetime_or_none("signed_at", payload.get("signed_at"), errors)
-    if status == "pending" and (signed_at is not None or mismatch is not False):
-        errors["signature_status"] = "Pending signature cannot carry signed or mismatch facts."
-    if status == "signed" and (signed_at is None or mismatch is not False):
-        errors["signature_status"] = "Signed signature requires signed_at and no mismatch."
-    if status == "mismatch" and mismatch is not True:
-        errors["signature_mismatch_flag"] = "Mismatch status requires a true mismatch flag."
-    if errors:
-        raise ValidationError(errors)
-    return {
-        "signer_party_type": party_type,
-        "signer_party_id": signer_id,
-        "signer_name_snapshot": signer_name,
-        "signature_method": method,
-        "signature_status": status,
-        "signed_at": signed_at,
-        "signature_mismatch_flag": mismatch,
-    }
+    if isinstance(payload, SignatureRecordRequest):
+        return payload.as_values()
+    return SignatureRecordRequest.parse(payload).as_values()
 
 
 def _validate_resolution(payload):
-    _exact_fields(payload, RESOLUTION_FIELDS)
-    errors = {}
-    resolution_type = payload.get("mismatch_resolution_type")
-    if resolution_type not in SignatureRecord.RESOLUTION_TYPES:
-        errors["mismatch_resolution_type"] = (
-            "Must be one of bank_verification_letter, borrower_declaration."
-        )
-    document_id = _uuid_or_none(
-        "mismatch_resolution_document_id",
-        payload.get("mismatch_resolution_document_id"),
-        errors,
-    )
-    if document_id is None and "mismatch_resolution_document_id" not in errors:
-        errors["mismatch_resolution_document_id"] = "A document id is required."
-    remarks = _nullable_text("remarks", payload.get("remarks"), 4000, errors)
-    if errors:
-        raise ValidationError(errors)
-    return {
-        "mismatch_resolution_type": resolution_type,
-        "mismatch_resolution_document_id": document_id,
-        "remarks": remarks,
-    }
+    if isinstance(payload, SignatureMismatchResolutionRequest):
+        return payload.as_values()
+    return SignatureMismatchResolutionRequest.parse(payload).as_values()
 
 
 def _resolve_evidence(*, application_id, resolution_type, document_id):
@@ -312,13 +323,8 @@ def _project_signature_fact(actor, loan_document, metadata):
     try:
         document_checklist.project_signature_mismatch(
             application=loan_document.loan_application,
-            legal_signature_rows=SignatureRecord.objects.filter(
-                loan_document__loan_application=loan_document.loan_application
-            ).values(
-                "signature_status",
-                "verified_by_user_id",
-                "verified_at",
-                "mismatch_resolution_type",
+            legal_signature_rows=selectors.signature_facts_for_application(
+                application_id=loan_document.loan_application_id
             ),
             actor=actor,
             request_meta={
@@ -370,7 +376,7 @@ def _record_evidence(
         new_value_json=context,
         effective_from=timezone.localdate(),
     )
-    record_workflow_event(
+    return record_workflow_event(
         actor=actor,
         workflow_name="loan_document_signature",
         entity_type="loan_document",
@@ -404,6 +410,12 @@ def _snapshot(record):
             else None
         ),
         "remarks": record.mismatch_resolution_remarks,
+        "captured_by_user_id": (
+            str(record.captured_by_user_id) if record.captured_by_user_id else None
+        ),
+        "verified_by_user_id": (
+            str(record.verified_by_user_id) if record.verified_by_user_id else None
+        ),
     }
 
 
@@ -420,6 +432,8 @@ def _snapshot_values(values):
         "mismatch_resolution_document_id": None,
         "mismatch_resolution_document_name": None,
         "remarks": None,
+        "captured_by_user_id": None,
+        "verified_by_user_id": None,
     }
 
 
@@ -431,63 +445,19 @@ def _serialize(record):
     }
 
 
-def _exact_fields(payload, allowed):
-    if not isinstance(payload, dict):
-        raise ValidationError({"body": "A JSON object is required."})
-    unknown = set(payload) - allowed
-    missing = allowed - set(payload)
-    if unknown or missing:
-        raise ValidationError(
-            {
-                **{field: "Unknown field." for field in sorted(unknown)},
-                **{field: "This field is required." for field in sorted(missing)},
-            }
-        )
-
-
-def _required_text(field, value, maximum, errors):
-    if not isinstance(value, str) or not value.strip():
-        errors[field] = "A non-empty string is required."
-        return ""
-    value = value.strip()
-    if len(value) > maximum:
-        errors[field] = f"Must be at most {maximum} characters."
-    return value
-
-
-def _nullable_text(field, value, maximum, errors):
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        errors[field] = "Must be a string or null."
-        return None
-    value = value.strip()
-    if len(value) > maximum:
-        errors[field] = f"Must be at most {maximum} characters."
-    return value or None
-
-
-def _uuid_or_none(field, value, errors):
-    if value is None:
-        return None
-    try:
-        return uuid.UUID(str(value))
-    except (ValueError, TypeError, AttributeError):
-        errors[field] = "Must be a valid UUID or null."
-        return None
-
-
-def _datetime_or_none(field, value, errors):
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        errors[field] = "Must be an ISO-8601 datetime or null."
-        return None
-    parsed = parse_datetime(value)
-    if parsed is None or not timezone.is_aware(parsed):
-        errors[field] = "Must be an ISO-8601 datetime with timezone or null."
-        return None
-    return parsed
+def _resolution_action(record):
+    return {
+        "entity_type": "signature_record",
+        "entity_id": str(record.pk),
+        "previous_status": "mismatch",
+        "new_status": "resolved",
+        "workflow_event_id": (
+            str(record.mismatch_resolution_workflow_event_id)
+            if record.mismatch_resolution_workflow_event_id
+            else None
+        ),
+        "available_actions": [],
+    }
 
 
 def _iso(value):

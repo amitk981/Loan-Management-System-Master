@@ -105,6 +105,17 @@ projection and evidence roll back with the owner mutation.
   borrower/nominee signatures to verification, while keeping the subsidiary route boolean-only and
   every repayment/checklist/readiness side effect absent.
 
+## Run-Ahead Sharpening (008E2 completion, 2026-07-14)
+
+- Reuse `legal_documents.selectors.signature_facts_for_application`, extending its projection for
+  exact loan-document and frozen party facts instead of adding a second signature query.
+- Verification requires current `signed` borrower and selected-nominee rows with `signed_at`,
+  non-null immutable capture makers, no mismatch, and exact 008E2 frozen ids/names. A-109 legacy
+  rows, resolved mismatches, and user/witness signatures cannot satisfy either required party.
+- Keep §26.6 verification response/action history independent from §26.8 mismatch resolution:
+  neither permission implies the other, and unknown/wrong-stage/unrelated ids retain the same
+  authority-first nondisclosure contract.
+
 ## Visual Acceptance Criteria
 None.
 

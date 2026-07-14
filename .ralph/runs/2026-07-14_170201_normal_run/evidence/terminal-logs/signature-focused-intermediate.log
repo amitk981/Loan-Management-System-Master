@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 11 test(s).
+System check identified no issues (0 silenced).
+..........F
+======================================================================
+FAIL: test_verified_mismatch_atomically_changes_only_bank_letter_applicability (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_verified_mismatch_atomically_changes_only_bank_letter_applicability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 189, in test_verified_mismatch_atomically_changes_only_bank_letter_applicability
+    self.assertEqual(ordinary_signed.status_code, 200, ordinary_signed.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Signature record failed validation.", "details": {}, "field_errors": {"signer_party_id": "Signer was not found for this application."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:45:49.898851Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.226s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

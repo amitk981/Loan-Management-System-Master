@@ -17,6 +17,8 @@ from sfpcl_credit.legal_documents.modules import stamp_notary
 from sfpcl_credit.legal_documents.modules import signatures
 from sfpcl_credit.legal_documents.serializers import (
     NotarisationRecordRequest,
+    SignatureMismatchResolutionRequest,
+    SignatureRecordRequest,
     StampDutyRecordRequest,
 )
 
@@ -206,7 +208,7 @@ def signature_record(request, loan_document_id):
         data = signatures.record(
             actor=user,
             loan_document_id=loan_document_id,
-            payload=parse_json_body(request),
+            payload=SignatureRecordRequest.parse(parse_json_body(request)),
             metadata=signatures.RequestMetadata(
                 request_id=request.headers.get("X-Request-ID"),
                 ip_address=request_ip(request),
@@ -251,7 +253,7 @@ def resolve_signature_mismatch(request, signature_record_id):
         data = signatures.resolve_mismatch(
             actor=user,
             signature_record_id=signature_record_id,
-            payload=parse_json_body(request),
+            payload=SignatureMismatchResolutionRequest.parse(parse_json_body(request)),
             metadata=signatures.RequestMetadata(
                 request_id=request.headers.get("X-Request-ID"),
                 ip_address=request_ip(request),
