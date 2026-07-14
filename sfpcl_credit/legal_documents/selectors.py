@@ -94,6 +94,7 @@ def execution_signature_facts_for_document(
             loan_document__loan_application_id=application_id,
             signer_party_type__in=["borrower", "nominee"],
         ).values(
+            "signature_record_id",
             "signer_party_type", "signer_party_id", "signer_name_snapshot",
             "signature_status", "signature_mismatch_flag", "mismatch_resolution_type",
             "signed_at", "captured_by_user_id",

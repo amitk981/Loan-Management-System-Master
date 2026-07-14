@@ -6694,3 +6694,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_183058_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008G-tri-party-agreement-workflow
+- Summary: Added strict §26.6 tri-party verification with Company Secretary authority, frozen true
+  subsidiary applicability, exact canonical borrower/nominee execution signatures, retained
+  remarks/history, and metadata-only document/checklist projections. Sharpened 008I.
+- Tests run: staged route RED/GREEN tracer; seven focused tests including one expected PostgreSQL
+  skip; 83 legal regressions; Django check/migration sync; all 803 backend tests with 29 expected
+  skips and 93% coverage; frontend build/typecheck/lint and all 293 tests after one isolated retry.
+- Evidence saved: `.ralph/runs/2026-07-14_183058_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium; additive nullable remarks migration, fail-closed legal verification, no
+  frontend/external effects, and no checklist/security/repayment/readiness mutation.
+- Next action: Architecture review, then 008H.
+
+## 2026-07-14 18:58:47 - 2026-07-14_183058_normal_run
+- Agent tool used: codex
+- Slice attempted: 008G-tri-party-agreement-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_183058_normal_run/.ralph/runs/2026-07-14_183058_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_183058_normal_run/.ralph/runs/2026-07-14_183058_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

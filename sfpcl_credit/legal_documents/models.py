@@ -88,6 +88,7 @@ class LoanDocument(models.Model):
         related_name="verified_loan_documents",
     )
     verified_at = models.DateTimeField(blank=True, null=True)
+    verification_remarks = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

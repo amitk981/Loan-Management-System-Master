@@ -14,6 +14,15 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008G Tri-party Verification Closure (2026-07-14)
+
+The §26.6 action now verifies only a current-renderer `tri_party_agreement` when the approval-owned
+frozen subsidiary route is complete/true and the exact document retains canonical maker-attributed
+`signed` borrower and selected-nominee rows with no mismatch. Only a distinct Company Secretary may
+verify. Exact replay is zero-write; corrected remarks retain complete old/new evidence. Existing
+loan-document/checklist reads project metadata only and preserve every checklist, package, security,
+file, repayment, and readiness fact. A-111 records why the API remark is retained on the document.
+
 ## 008F Power of Attorney Closure (2026-07-14)
 
 The §28 security package is now one locked, protected parent per sanctioned application with PoA

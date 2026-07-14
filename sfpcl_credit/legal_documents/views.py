@@ -16,13 +16,52 @@ from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.legal_documents.modules import stamp_notary
 from sfpcl_credit.legal_documents.modules import signatures
 from sfpcl_credit.legal_documents.modules import power_of_attorney
+from sfpcl_credit.legal_documents.modules import loan_document_verification
 from sfpcl_credit.legal_documents.serializers import (
+    LoanDocumentVerificationRequest,
     NotarisationRecordRequest,
     PowerOfAttorneyRequest,
     SignatureMismatchResolutionRequest,
     SignatureRecordRequest,
     StampDutyRecordRequest,
 )
+
+
+@require_POST
+def verify_loan_document(request, loan_document_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        loan_document_verification.require_verify_actor(user)
+        parsed = LoanDocumentVerificationRequest.parse(parse_json_body(request))
+        data = loan_document_verification.verify(
+            actor=user,
+            loan_document_id=loan_document_id,
+            payload=parsed,
+            metadata=loan_document_verification.RequestMetadata(
+                request_id=request.headers.get("X-Request-ID"),
+                ip_address=request_ip(request),
+                user_agent=request_user_agent(request),
+            ),
+        )
+    except loan_document_verification.AccessDenied as exc:
+        return error_response(
+            request, 403, exc.error_code, "You do not have access to this loan document."
+        )
+    except loan_document_verification.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Loan document was not found.")
+    except loan_document_verification.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Loan document verification failed validation.",
+            loan_document_verification.validation_field_errors(exc),
+        )
+    return success_response(data, request)
 
 
 @require_http_methods(["GET", "POST"])

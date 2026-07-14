@@ -1,5 +1,55 @@
 # API Contracts
 
+## Tri-party agreement verification (008G)
+
+`POST /api/v1/loan-documents/{loan_document_id}/verify/` implements source §26.6 only for a
+`tri_party_agreement` retained by the current renderer contract. The request contains exactly:
+
+```json
+{
+  "verification_status": "verified",
+  "remarks": "Borrower and nominee execution verified."
+}
+```
+
+Both fields are required; `verification_status` has only the success value `verified`, while
+`remarks` is a nullable, trimmed string of at most 4,000 characters. The action requires
+`documents.loan_document.verify`, active Company Secretary authority, and a sanction-approved
+Stage-4 parent. Permission and role are checked before payload and object lookup. A Compliance
+preparer, read-only actor, permission-only actor, wrong-stage parent, or unrelated scope receives
+403; an otherwise authorised absent or wrong-type id receives the established nondisclosing 404.
+Legacy/mismatched renderer provenance returns zero-write `409 CONFLICT`.
+
+Verification consumes only the approval owner's canonical frozen subsidiary-route fact. The fact
+must be complete and unanimously true; false is not applicable, while missing, malformed, or
+conflicting truth remains a zero-write conflict. It also consumes exactly one borrower and one
+selected-nominee row from the legal owner's exact-document signature selector. Both must retain the
+canonical captured party id/name, `signed` state, signed time, non-null Compliance capture maker,
+and no mismatch/resolution; the Company Secretary checker must differ from each capture maker.
+Cross-document, wrong-party, duplicate, pending, mismatch, resolved, or legacy null-maker rows do
+not satisfy execution.
+
+Success returns metadata only:
+
+```json
+{
+  "loan_document_id": "uuid",
+  "loan_application_id": "uuid",
+  "document_type": "tri_party_agreement",
+  "verification_status": "verified",
+  "verified_by_user_id": "uuid",
+  "verified_at": "2026-07-14T13:00:00Z",
+  "remarks": "Borrower and nominee execution verified."
+}
+```
+
+An exact replay is zero-write. A changed retained remark is a new attributable checker correction
+with complete old/new audit, version, and workflow evidence. Loan-document list and legal checklist
+reads project the current verification status/verifier/time/remarks, but the action does not change
+execution, generation, stamp/notary, file/download, checklist completion/verifier/remarks/signature,
+package, security, repayment, or disbursement-readiness truth. A missing, inapplicable, or differently
+linked tri-party checklist projection rolls the document mutation and all success ledgers back.
+
 ## Post-sanction documentation checklist (008C/008C2)
 
 `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/` returns the persisted

@@ -272,7 +272,7 @@ def read_for_application(*, actor, application_id):
         raise ChecklistAccessDenied(resolution.error_code)
     application = resolution.application
     checklist = (
-        DocumentChecklist.objects.prefetch_related("items")
+        DocumentChecklist.objects.prefetch_related("items__loan_document")
         .filter(loan_application=application)
         .first()
     )
@@ -302,6 +302,26 @@ def serialize(checklist):
                 "applicability_blocker": item.applicability_blocker,
                 "loan_document_id": (
                     str(item.loan_document_id) if item.loan_document_id else None
+                ),
+                "loan_document_verification_status": (
+                    item.loan_document.verification_status
+                    if item.loan_document_id
+                    else None
+                ),
+                "loan_document_verified_by_user_id": (
+                    str(item.loan_document.verified_by_user_id)
+                    if item.loan_document_id and item.loan_document.verified_by_user_id
+                    else None
+                ),
+                "loan_document_verified_at": (
+                    item.loan_document.verified_at.isoformat().replace("+00:00", "Z")
+                    if item.loan_document_id and item.loan_document.verified_at
+                    else None
+                ),
+                "loan_document_verification_remarks": (
+                    item.loan_document.verification_remarks
+                    if item.loan_document_id
+                    else None
                 ),
             }
             for item in checklist.items.all()

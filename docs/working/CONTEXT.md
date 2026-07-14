@@ -45,7 +45,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   an unresolved same-signer mismatch through ordinary capture; signature resolution also leaks
   absent-versus-inaccessible ids and lacks its promised race. Corrective 008D2 restores legal
   evidence ownership and maker-checker verification; corrective 008E2 now closes signature identity,
-  lifecycle, nondisclosure, action-contract, and concurrency gaps before PoA. The full real M05-to-Term-Sheet
+  lifecycle, nondisclosure, action-contract, and concurrency gaps. 008F adds the locked security
+  package and PoA workflow; 008G verifies conditional tri-party agreements only from frozen true
+  subsidiary applicability and exact canonical borrower/nominee signatures, while preserving
+  checklist, package, repayment, and readiness truth. The full real M05-to-Term-Sheet
   path remains configuration-blocked until governed owners exist for the missing sanction terms;
   renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task

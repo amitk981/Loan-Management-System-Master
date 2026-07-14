@@ -28,6 +28,11 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/loan-documents/<uuid:loan_document_id>/verify/",
+        legal_document_views.verify_loan_document,
+        name="loan-document-verify",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/security-package/",
         legal_document_views.security_package,
         name="loan-application-security-package",

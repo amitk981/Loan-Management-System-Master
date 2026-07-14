@@ -238,6 +238,15 @@ def serialize_metadata(row):
         "output_format": row.output_format,
         "execution_status": row.execution_status,
         "verification_status": row.verification_status,
+        "verified_by_user_id": (
+            str(row.verified_by_user_id) if row.verified_by_user_id else None
+        ),
+        "verified_at": (
+            row.verified_at.isoformat().replace("+00:00", "Z")
+            if row.verified_at
+            else None
+        ),
+        "verification_remarks": row.verification_remarks,
         "renderer_validation_status": row.renderer_validation_status,
         "stamp_status": row.stamp_status,
         "notarisation_status": row.notarisation_status,

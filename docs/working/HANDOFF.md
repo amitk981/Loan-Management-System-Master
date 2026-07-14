@@ -2,31 +2,31 @@
 
 ## Last Run
 
-2026-07-14_173654_normal_run
+2026-07-14_183058_normal_run
 
 ## Current Status
 
-008F is complete. One sanctioned application now has one locked security package and one current
-Power of Attorney. Compliance prepares replay-safe drafts; only the retained, distinct Company
-Secretary attorney activates after a genuine current-renderer document, exact 008D2 maker/checker
-stamp/notary rows, and exact 008E2 borrower/nominee signed facts pass legal-owner selectors.
+008G is complete. §26.6 verifies only current-renderer tri-party agreements whose approval-owned
+frozen subsidiary route is complete/true and whose exact document retains canonical, maker-
+attributed signed borrower and selected-nominee rows. A distinct Company Secretary is the only
+checker. Exact replay is zero-write; corrected remarks keep complete old/new evidence.
 
-Package and checklist reads expose only PoA existence/execution metadata. They preserve checklist
-completion/verifier/remarks/approval facts, keep package/readiness pending, expose no file authority,
-and reject invocation/release. A-108/A-109 legacy evidence and mutable post-capture party names do
-not create or erase execution truth. A-110 keeps later SH-4/CDSL/cheque flags honest until owners run.
+Loan-document and checklist reads project verification metadata only. Checklist completion,
+verifier/remarks/signatures/status, the 008F package/PoA, file authority, subsidiary deductions,
+security, and disbursement readiness remain unchanged. A-111 owns current verification-remark
+retention. 008I is now sharpened from §28.5/§17.4 and the CDSL SOP milestones.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_173654_normal_run/evidence/`: package/draft/activation RED-
-GREEN tracers, strict purpose/frozen-identity/legacy/permission/rollback regressions, API examples,
-and repeated PostgreSQL five-worker create/change races. Frontend build/typecheck/lint and all 293
-tests pass. Django check/migration sync pass; all 796 backend tests pass with 28 expected PostgreSQL-
-only skips and 93% coverage against the 85% floor.
+Evidence is in `.ralph/runs/2026-07-14_183058_normal_run/evidence/`: the route RED/GREEN tracer,
+strict request/role/applicability/signature/type/renderer/rollback/replay/read regressions, an API
+example, and the PostgreSQL-only five-worker duplicate test. Frontend build/typecheck/lint and all
+293 tests pass after one isolated retry of an unrelated load-sensitive test. Django check/migration
+sync pass; all 803 backend tests pass with 29 expected PostgreSQL-only skips and 93% coverage.
 
 ## Next Run
 
-Run 008G, then 008H. 008G is sharpened to reuse the exact-document signature selector and preserve
-008F package/PoA projections. 008H is now concrete for physical-only SH-4, verified shareholder
-witness, exact signed/stamped form, Company Secretary custody, no invocation/return, and PostgreSQL
-races. A-101 still blocks the real M05-to-full-Term-Sheet path.
+Run the scheduled architecture review now that four slices have completed since the last review,
+then 008H. 008H remains concrete for physical-only SH-4, verified shareholder witness, exact
+signed/stamped form, Company Secretary custody, no invocation/return, and PostgreSQL races. 008I is
+concrete for masked demat CDSL milestones. A-101 still blocks the real M05-to-full-Term-Sheet path.

@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 53 test(s).
+System check identified no issues (0 silenced).
+E...............................................sssss
+======================================================================
+ERROR: test_signature_workflow_api (unittest.loader._FailedTest.test_signature_workflow_api)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_signature_workflow_api
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'sfpcl_credit.tests.test_signature_workflow_api'
+
+
+----------------------------------------------------------------------
+Ran 53 tests in 2.255s
+
+FAILED (errors=1, skipped=5)
+Destroying test database for alias 'default'...

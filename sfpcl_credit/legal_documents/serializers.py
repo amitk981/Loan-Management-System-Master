@@ -299,6 +299,29 @@ class SignatureMismatchResolutionRequest:
 
 
 @dataclass(frozen=True)
+class LoanDocumentVerificationRequest:
+    verification_status: str
+    remarks: str | None
+
+    FIELDS = {"verification_status", "remarks"}
+
+    @classmethod
+    def parse(cls, payload):
+        _exact_fields(payload, cls.FIELDS)
+        if payload.get("verification_status") != "verified":
+            raise ValidationError(
+                {"verification_status": "Must be verified for this document type."}
+            )
+        return cls(
+            verification_status="verified",
+            remarks=_nullable_text("remarks", payload.get("remarks"), 4000),
+        )
+
+    def as_values(self):
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class PowerOfAttorneyRequest:
     borrower_member_id: uuid.UUID
     nominee_id: uuid.UUID
