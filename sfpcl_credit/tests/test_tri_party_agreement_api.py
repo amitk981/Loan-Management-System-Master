@@ -14,12 +14,12 @@ from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.legal_documents.models import (
     LoanDocument,
-    SecurityPackage,
     SignatureRecord,
 )
 from sfpcl_credit.legal_documents.modules import document_checklist, document_generation, signatures
 from sfpcl_credit.legal_documents.modules import loan_document_verification
 from sfpcl_credit.members.models import Nominee
+from sfpcl_credit.security_instruments.models import SecurityPackage
 from sfpcl_credit.tests import test_document_checklist_api
 from sfpcl_credit.tests import test_loan_document_generation_api as generation_tests
 from sfpcl_credit.workflows.models import WorkflowEvent

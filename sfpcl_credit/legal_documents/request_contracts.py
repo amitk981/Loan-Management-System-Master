@@ -125,7 +125,6 @@ class StampDutyRecordRequest:
     def as_values(self):
         return asdict(self)
 
-
 @dataclass(frozen=True)
 class NotarisationRecordRequest:
     notary_name: str | None
@@ -316,67 +315,6 @@ class LoanDocumentVerificationRequest:
             verification_status="verified",
             remarks=_nullable_text("remarks", payload.get("remarks"), 4000),
         )
-
-    def as_values(self):
-        return asdict(self)
-
-
-@dataclass(frozen=True)
-class PowerOfAttorneyRequest:
-    borrower_member_id: uuid.UUID
-    nominee_id: uuid.UUID
-    attorney_user_id: uuid.UUID
-    purpose_summary: str
-    loan_document_id: uuid.UUID
-    stamp_duty_record_id: uuid.UUID
-    notarisation_record_id: uuid.UUID
-    execution_status: str
-    effective_from: date | None
-    status: str
-
-    FIELDS = {
-        "borrower_member_id", "nominee_id", "attorney_user_id", "purpose_summary",
-        "loan_document_id", "stamp_duty_record_id", "notarisation_record_id",
-        "execution_status", "effective_from", "status",
-    }
-
-    @classmethod
-    def parse(cls, payload):
-        _exact_fields(payload, cls.FIELDS)
-        errors, ids = {}, {}
-        for field in (
-            "borrower_member_id", "nominee_id", "attorney_user_id", "loan_document_id",
-            "stamp_duty_record_id", "notarisation_record_id",
-        ):
-            try:
-                ids[field] = _uuid(field, payload.get(field))
-            except ValidationError:
-                ids[field] = None
-            if ids[field] is None:
-                errors[field] = "A valid accessible UUID is required."
-        purpose = payload.get("purpose_summary")
-        if not isinstance(purpose, str) or not purpose.strip():
-            errors["purpose_summary"] = "A non-empty purpose is required."
-            purpose = ""
-        else:
-            purpose = purpose.strip()
-            if len(purpose) > 4000:
-                errors["purpose_summary"] = "Must be at most 4000 characters."
-        execution = payload.get("execution_status")
-        if execution not in {"pending", "executed"}:
-            errors["execution_status"] = "Must be one of pending, executed."
-        status = payload.get("status")
-        if status not in {"draft", "active"}:
-            errors["status"] = "Must be one of draft, active."
-        try:
-            effective = _date("effective_from", payload.get("effective_from"))
-        except ValidationError:
-            errors["effective_from"] = "Must be a valid ISO date or null."
-            effective = None
-        if errors:
-            raise ValidationError(errors)
-        return cls(**ids, purpose_summary=purpose, execution_status=execution,
-                   effective_from=effective, status=status)
 
     def as_values(self):
         return asdict(self)

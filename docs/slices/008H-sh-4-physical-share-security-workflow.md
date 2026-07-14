@@ -142,6 +142,15 @@ and package projections roll back atomically with a failed mutation.
 - Use the lower request-contract module behind thin HTTP serializers and return retained §6.3
   workflow identity for custody actions; do not import transport serializers into security modules.
 
+## 008F2 Completion Sharpening (2026-07-14)
+
+- Extend the retained `security_instruments.SecurityPackage`; reuse canonical latest-cycle sanction,
+  Stage-4 scope, authority-first §28 routes, and existing tables. Compliance owns preparation/current
+  maker; a distinct Company Secretary owns terminal custody and its durable §6.3 action.
+- Consume exact generated-document/stamp/signature facts through the legal selector/terminal guard;
+  never rewrite active PoA, checklist, or readiness truth. Twice-run PostgreSQL changed-custody and
+  downgrade races require one winner, loser conflicts, and unchanged PoA/readiness projections.
+
 ## Visual Acceptance Criteria
 None.
 

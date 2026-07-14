@@ -1,0 +1,7 @@
+artifact_templates=filled
+protected_paths=clean
+state_json=valid
+git_diff_check=clean
+changed_files=22 limit=30
+changed_lines=1994 limit=2000
+exit_code=0

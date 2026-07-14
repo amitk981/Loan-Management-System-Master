@@ -125,6 +125,15 @@ replay/denial writes no success evidence. Every permitted BO-account reveal is s
 - The declared PostgreSQL gate must exercise different PSN/acceptance payloads twice and prove one
   current pledge, unique PSN integrity, masked evidence, and a complete attributable loser ledger.
 
+## 008F2 Completion Sharpening (2026-07-14)
+
+- Add CDSL state beneath the retained `security_instruments` package and canonical sanction/checklist
+  scope without recreating tables or changing active PoA/SH-4 facts. Keep request parsing in the
+  security contract and authority-first HTTP adapter.
+- Company Secretary acceptance returns one durable §6.3 action; replay is zero-write and downgrade,
+  rejection, unpledged, or invoked changes conflict. Freeze consumed legal evidence through the
+  shared terminal guard while preserving every existing package projection.
+
 ## Visual Acceptance Criteria
 None.
 

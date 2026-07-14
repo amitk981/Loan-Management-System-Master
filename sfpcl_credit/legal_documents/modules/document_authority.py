@@ -3,6 +3,7 @@
 from django.db.models import F
 
 from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.legal_documents.models import LoanDocument
 
@@ -25,6 +26,15 @@ class ProvenanceConflict(Exception):
 
 class RoleAuthorityDenied(Exception):
     pass
+
+
+def has_terminal_execution_consumption(loan_document):
+    """Return immutable legal-owner truth that an execution consumer froze this document."""
+    return AuditLog.objects.filter(
+        action="documents.execution.consumed",
+        entity_type="loan_document",
+        entity_id=loan_document.pk,
+    ).exists()
 
 
 def require_mutation_actor(*, actor, permission):

@@ -3392,13 +3392,15 @@ wrong-stage, unrelated, and non-current-renderer signature ids share the same no
 contract. Malformed fields return `400 VALIDATION_ERROR`; HTTP and direct module callers cross the
 same typed legal serializer and business boundary.
 
-## Security package and Power of Attorney (008F)
+## Security package and Power of Attorney (008F/008F2)
 
 `GET /api/v1/loan-applications/{loan_application_id}/security-package/` requires
 `security.package.read`; `POST .../security-package/refresh/` requires
 `security.package.create` and accepts only an empty JSON object. Both require an active Compliance
-Team or Company Secretary actor and a sanction-approved application. Refresh locks the application,
-creates at most one protected package, and exact replay is zero-write. The narrow 008F package is
+Team or Company Secretary actor, canonical latest-cycle frozen terminal sanction, and matching
+Stage-4 checklist scope; mutable approved status is insufficient. Refresh locks the application,
+creates at most one package, and replays zero-write; unknown resources return 404 after authority,
+while wrong-stage/stale-cycle resources remain nondisclosing. The narrow package is
 always `pending`, returns `poa_required_flag=true` and `security_ready_flag=false`, and leaves the
 SH-4/CDSL/cheque flags false under A-110 until their owners run. It includes metadata-only current
 PoA projection and never grants document download, invocation, release, checklist completion, or
@@ -3406,16 +3408,17 @@ disbursement readiness.
 
 `POST/GET /api/v1/security-packages/{security_package_id}/power-of-attorney/` and
 `PATCH /api/v1/power-of-attorneys/{power_of_attorney_id}/` implement §28.3. GET requires package-read
-authority. POST/PATCH require `security.poa.manage`; Compliance may prepare/change a draft, while a
-Company Secretary may activate only when that same active user is the retained attorney and differs
-from the retained preparer. Requests contain exactly borrower member, selected nominee, attorney
+authority. POST/PATCH require `security.poa.manage`; only Compliance prepares/changes drafts and
+material edits transfer current-maker identity. An active-role Company Secretary may activate only
+as the retained attorney distinct from the current preparer. Requests contain borrower, nominee, attorney
 user, retained purpose, PoA loan-document, stamp record, notary record, execution status,
 effective-from date, and status fields. Status is only `draft`/`active`; execution is only
 `pending`/`executed`. `invoked` and `released` are rejected with zero writes.
 
 The borrower and nominee must be the sanctioned application's current retained parties. The
 attorney must be an active Company Secretary. The retained purpose must explicitly authorise the
-Company Secretary to initiate share sale on default. Creation accepts only a pending draft tied to
+Company Secretary to initiate share sale on default; only a bounded negation of that authority is
+rejected, so unrelated lawful negative clauses remain valid. Creation accepts only a pending draft tied to
 the same application's current-renderer `power_of_attorney` document and that exact document's stamp
 and notary rows. Activation additionally requires executed/effective facts, adequate stamp and
 completed notarisation rows with non-null distinct preparer/verifier identities, plus exactly one
@@ -3424,9 +3427,14 @@ selector. Signature ids/names must match canonical frozen parties, mismatch/reso
 absent, signed time and capture maker must be retained, and A-108/A-109 legacy rows are ineligible.
 
 Package/PoA/checklist rows are locked in one transaction. One current PoA is database-enforced per
-package; exact POST/PATCH replay writes nothing; real changes append attributable audit,
-version-history, and workflow evidence containing every party/document/stamp/notary id plus
-actor/request metadata. Checklist projection changes only PoA document/execution/status metadata and
+package. Terminal activation replays the durable §6.3 action (`entity_type`, `entity_id`, prior/new
+status, workflow id, no actions); changed activation, downgrade, `invoked`, and `released` write
+nothing. It freezes renderer/file/checksum, stamp/notary/signature/PoA maker-checkers, and request
+facts. The consumed legal document blocks later signature/stamp/notary changes atomically. Real
+draft changes append audit/version/workflow evidence. Checklist projection changes only PoA metadata and
 preserves item/package completion, verifier, remarks, approval signatures, status, file access, and
-readiness. Projection conflict rolls back the PoA write and success evidence. Five-worker PostgreSQL
-exact-create and changed-draft races retain one current PoA and a complete ordered evidence ledger.
+readiness. Projection conflict rolls back the PoA write and success evidence. Twice-run five-worker
+PostgreSQL changed-activation and downgrade races retain one terminal activation ledger.
+
+Pre-008F2 active PoAs retain `legacy_activation_evidence=true`, null workflow id, and no fabricated
+snapshot under A-112. They are readable/terminal; PATCH replay conflicts because no action id exists.

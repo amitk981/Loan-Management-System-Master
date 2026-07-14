@@ -34,6 +34,16 @@ Sources:
   resolution behavior but remain current-maker partial until G2. No later checklist/readiness or
   full Term Sheet claim changes.
 
+## 008F2 Security Boundary and Terminal PoA Closure (2026-07-14)
+
+`security_instruments` owns the retained package/PoA tables and §28 routes through a state-only
+transfer. Canonical latest-cycle sanction plus Stage-4 scope gates package truth. Compliance owns
+draft/current-maker facts; a distinct active Company Secretary terminally activates the exact draft
+and freezes renderer/file/checksum, stamp/notary/signature maker-checkers, PoA maker/checker, and
+request context behind one durable §6.3 action. Consumed legal evidence cannot change. Public
+generation and both PostgreSQL races passed twice. Pre-008F2 active rows remain honest legacy,
+readable terminal evidence without invented action/snapshot; SH-4/CDSL/readiness stays A-110 pending.
+
 ## 008G2 Stage-4 Maker and Verification Contract Closure (2026-07-14)
 
 Every pending stamp/notary/signature material edit now transfers current maker identity and retains

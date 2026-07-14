@@ -1,0 +1,4 @@
+Exact validator-equivalent feedback loop after repair:
+
+diff_lines=1994 limit=2000 tracked=1262 untracked=732
+exit_code=0

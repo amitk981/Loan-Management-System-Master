@@ -1,0 +1,34 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+EF.F.
+======================================================================
+ERROR: test_company_secretary_activates_only_with_current_maker_checker_and_signatures (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_company_secretary_activates_only_with_current_maker_checker_and_signatures)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 322, in test_company_secretary_activates_only_with_current_maker_checker_and_signatures
+    self.assertEqual(data["status"], "active")
+                     ~~~~^^^^^^^^^^
+KeyError: 'status'
+
+======================================================================
+FAIL: test_compliance_prepares_one_replay_safe_draft_from_canonical_facts (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_compliance_prepares_one_replay_safe_draft_from_canonical_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 214, in test_compliance_prepares_one_replay_safe_draft_from_canonical_facts
+    self.assertEqual(replay.status_code, 200, replay.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "CONFLICT", "message": "A Power of Attorney already exists for this security package; use PATCH.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-14T15:00:34.647845Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_missing_projection_target_rolls_back_poa_and_success_evidence (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_missing_projection_target_rolls_back_poa_and_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 162, in test_missing_projection_target_rolls_back_poa_and_success_evidence
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 403 != 409 : b'{"success": false, "error": {"code": "OBJECT_ACCESS_DENIED", "message": "You do not have access to this Power of Attorney.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-14T15:00:34.758330Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.380s
+
+FAILED (failures=2, errors=1)
+Destroying test database for alias 'default'...

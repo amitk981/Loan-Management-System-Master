@@ -7,7 +7,6 @@ contract without any business module depending on this transport adapter.
 from sfpcl_credit.legal_documents.request_contracts import (
     LoanDocumentVerificationRequest,
     NotarisationRecordRequest,
-    PowerOfAttorneyRequest,
     SignatureMismatchResolutionRequest,
     SignatureRecordRequest,
     StampDutyRecordRequest,
@@ -16,7 +15,6 @@ from sfpcl_credit.legal_documents.request_contracts import (
 __all__ = [
     "LoanDocumentVerificationRequest",
     "NotarisationRecordRequest",
-    "PowerOfAttorneyRequest",
     "SignatureMismatchResolutionRequest",
     "SignatureRecordRequest",
     "StampDutyRecordRequest",

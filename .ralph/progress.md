@@ -6775,3 +6775,47 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_201756_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008F2-security-instrument-boundary-and-poa-lifecycle-closure
+- Summary: Moved retained security-package and PoA ownership into `security_instruments` without
+  table/id/API breakage; canonicalized sanctioned-cycle package scope; enforced Compliance maker
+  handoff, secondary-role Company Secretary attorney authority, exact-draft terminal activation,
+  frozen activation evidence, and exact consumed-document mutation guards.
+- Tests run: retained TDD RED/GREEN matrices; migration preservation for package and active legacy
+  PoA; focused lifecycle/boundary regressions; twice-run PostgreSQL five-worker activation and
+  downgrade races; Django check/migration sync; all 815 backend tests with 32 expected skips and
+  93% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_201756_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; state-only model-owner transfer plus legal lifecycle authority and terminal
+  evidence constraints, with explicit retained-row compatibility and fail-closed mutations.
+- Next action: Run 008H, then 008I.
+
+## 2026-07-14 - 2026-07-14_212222_repair
+
+- Agent tool used: codex
+- Slice repaired: 008F2-security-instrument-boundary-and-poa-lifecycle-closure
+- Summary: Repaired the sole independent failure by reducing the ownership-transfer diff from
+  2,965 to 1,994 lines. Preserved the security boundary and terminal PoA behavior; compacted the
+  state-only migration and bound the legal evidence engine from the security-owned public module.
+- Tests run: 11 focused boundary/PoA tests; both PostgreSQL race tests twice; Django check and
+  migration sync; all 814 backend tests with 32 expected skips at 93% coverage; frontend build,
+  typecheck, lint, and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_212222_repair/evidence/`
+- Result: Repair successful pending independent orchestrator revalidation/commit/merge/push.
+- Risk level: High; state/model ownership and terminal legal evidence remain fail-closed. Repair
+  changed no API, database operation, frontend, external integration, or protected file.
+- Next action: Run 008H, then 008I.
+
+## 2026-07-14 21:48:47 - 2026-07-14_212222_repair
+- Agent tool used: codex
+- Slice attempted: 008F2-security-instrument-boundary-and-poa-lifecycle-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/.ralph/runs/2026-07-14_212222_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/.ralph/runs/2026-07-14_212222_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

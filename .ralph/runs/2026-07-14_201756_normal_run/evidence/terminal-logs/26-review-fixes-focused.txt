@@ -1,0 +1,1 @@
+/Library/Frameworks/Python.framework/Versions/3.11/Resources/Python.app/Contents/MacOS/Python: can't open file '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/manage.py': [Errno 2] No such file or directory

@@ -87,6 +87,12 @@ def record(*, actor, loan_document_id, payload, metadata):
         new_capture = {field: new.get(field) for field in CAPTURE_FIELDS}
         if record is not None and old_capture == new_capture:
             return _serialize(record)
+        if record is not None and document_authority.has_terminal_execution_consumption(
+            loan_document
+        ):
+            raise InvalidState(
+                "Signature evidence consumed by terminal legal execution cannot be changed."
+            )
         if record is not None and record.legacy_maker_attribution:
             raise ValidationError(
                 {

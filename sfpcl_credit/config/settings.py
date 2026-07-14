@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.credit",
     "sfpcl_credit.documents",
     "sfpcl_credit.legal_documents",
+    "sfpcl_credit.security_instruments",
     "sfpcl_credit.identity",
     "sfpcl_credit.members",
     "sfpcl_credit.scheduler",

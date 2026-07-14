@@ -1,0 +1,110 @@
+from django.core.exceptions import ValidationError
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+
+from sfpcl_credit.api import error_response, parse_json_body, request_ip, request_user_agent, success_response
+from sfpcl_credit.identity.modules import http_auth
+from sfpcl_credit.security_instruments.modules import power_of_attorney
+from sfpcl_credit.security_instruments.modules import security_package as package_service
+from sfpcl_credit.security_instruments.request_contracts import PowerOfAttorneyRequest
+
+
+def _metadata(request):
+    return power_of_attorney.RequestMetadata(
+        request_id=request.headers.get("X-Request-ID"),
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )
+
+
+def _validation_response(request, message, exc):
+    return error_response(
+        request, 400, "VALIDATION_ERROR", message,
+        power_of_attorney.validation_field_errors(exc),
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def package_power_of_attorney(request, security_package_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "GET":
+            data = power_of_attorney.read_poa(actor=user, security_package_id=security_package_id)
+        else:
+            power_of_attorney.require_manage_actor(user)
+            parsed = PowerOfAttorneyRequest.parse(parse_json_body(request))
+            data = power_of_attorney.create_poa(
+                actor=user, security_package_id=security_package_id,
+                values=parsed.as_values(), metadata=_metadata(request),
+            )
+    except power_of_attorney.AccessDenied as exc:
+        return error_response(request, 403, exc.error_code, "You do not have access to this Power of Attorney.")
+    except power_of_attorney.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Power of Attorney was not found.")
+    except power_of_attorney.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return _validation_response(request, "Power of Attorney failed validation.", exc)
+    return success_response(data, request)
+
+
+@require_http_methods(["PATCH"])
+def power_of_attorney_detail(request, power_of_attorney_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        power_of_attorney.require_manage_actor(user)
+        parsed = PowerOfAttorneyRequest.parse(parse_json_body(request))
+        data = power_of_attorney.update_poa(
+            actor=user, power_of_attorney_id=power_of_attorney_id,
+            values=parsed.as_values(), metadata=_metadata(request),
+        )
+    except power_of_attorney.AccessDenied as exc:
+        return error_response(request, 403, exc.error_code, "You do not have access to this Power of Attorney.")
+    except power_of_attorney.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Power of Attorney was not found.")
+    except power_of_attorney.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return _validation_response(request, "Power of Attorney failed validation.", exc)
+    return success_response(data, request)
+
+
+@require_GET
+def security_package(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = package_service.read_package(actor=user, application_id=loan_application_id)
+    except package_service.AccessDenied as exc:
+        return error_response(request, 403, exc.error_code, "You do not have access to this security package.")
+    except package_service.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Security package was not found.")
+    return success_response(data, request)
+
+
+@require_POST
+def security_package_refresh(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        package_service.require_create_actor(user)
+        payload = parse_json_body(request)
+        if payload != {}:
+            raise ValidationError({field: "Unknown field." for field in sorted(payload)})
+        data = package_service.refresh_package(
+            actor=user, application_id=loan_application_id, metadata=_metadata(request),
+        )
+    except package_service.AccessDenied as exc:
+        return error_response(request, 403, exc.error_code, "You do not have access to this security package.")
+    except package_service.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    except package_service.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return _validation_response(request, "Security package refresh failed validation.", exc)
+    return success_response(data, request)

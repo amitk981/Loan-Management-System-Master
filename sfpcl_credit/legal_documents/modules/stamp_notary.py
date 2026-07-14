@@ -96,6 +96,12 @@ def _record(*, actor, loan_document_id, cleaned, metadata, kind):
         new = _snapshot_values(cleaned, kind)
         if _business_facts(old) == new:
             return _serialize(record, kind)
+        if record is not None and document_authority.has_terminal_execution_consumption(
+            loan_document
+        ):
+            raise ValidationError(
+                {"status": "Evidence consumed by terminal legal execution cannot be changed."}
+            )
         if record is not None and record.legacy_maker_attribution:
             raise ValidationError(
                 {

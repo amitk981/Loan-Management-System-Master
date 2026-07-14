@@ -1,0 +1,42 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+FF.F..
+======================================================================
+FAIL: test_company_secretary_activates_only_with_current_maker_checker_and_signatures (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_company_secretary_activates_only_with_current_maker_checker_and_signatures)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 318, in test_company_secretary_activates_only_with_current_maker_checker_and_signatures
+    document, stamp, notary = self._poa_evidence()
+                              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 531, in _poa_evidence
+    self.assertEqual(generated.status_code, 200, generated.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"template_file_id": "Document file was not found or is inaccessible."}}, "meta": {"request_id": "req-public-poa-generation", "timestamp": "2026-07-14T15:04:20.850235Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_compliance_prepares_one_replay_safe_draft_from_canonical_facts (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_compliance_prepares_one_replay_safe_draft_from_canonical_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 229, in test_compliance_prepares_one_replay_safe_draft_from_canonical_facts
+    loan_document, stamp, notary = self._poa_evidence()
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 531, in _poa_evidence
+    self.assertEqual(generated.status_code, 200, generated.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"template_file_id": "Document file was not found or is inaccessible."}}, "meta": {"request_id": "req-public-poa-generation", "timestamp": "2026-07-14T15:04:20.905186Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_missing_projection_target_rolls_back_poa_and_success_evidence (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_missing_projection_target_rolls_back_poa_and_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 202, in test_missing_projection_target_rolls_back_poa_and_success_evidence
+    document, stamp, notary = self._poa_evidence()
+                              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 531, in _poa_evidence
+    self.assertEqual(generated.status_code, 200, generated.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan document generation failed validation.", "details": {}, "field_errors": {"template_file_id": "Document file was not found or is inaccessible."}}, "meta": {"request_id": "req-public-poa-generation", "timestamp": "2026-07-14T15:04:21.006488Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.346s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

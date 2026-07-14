@@ -1,0 +1,95 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+EE
+======================================================================
+ERROR: test_five_changed_activations_retain_one_terminal_activation (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyConcurrencyTests.test_five_changed_activations_retain_one_terminal_activation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.CheckViolation: new row for relation "notarisation_records" violates check constraint "completed_notary_has_evidence_verifier"
+DETAIL:  Failing row contains (c13860af-69e6-41a1-ac2c-5ca56484643c, null, null, 2026-07-14, completed, Prepared through 008D2., 2026-07-14 15:07:51.552122+00, 2026-07-14 15:07:51.552056+00, null, 869022ca-28ac-46c4-8806-179d41d42589, 660d510f-afca-4af3-969b-11097781d3ff, 69a53da3-d138-4d8e-86fb-b49d70c7cf7b, f).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 665, in setUp
+    NotarisationRecord.objects.filter(pk=notary.pk).update(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1990, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: new row for relation "notarisation_records" violates check constraint "completed_notary_has_evidence_verifier"
+DETAIL:  Failing row contains (c13860af-69e6-41a1-ac2c-5ca56484643c, null, null, 2026-07-14, completed, Prepared through 008D2., 2026-07-14 15:07:51.552122+00, 2026-07-14 15:07:51.552056+00, null, 869022ca-28ac-46c4-8806-179d41d42589, 660d510f-afca-4af3-969b-11097781d3ff, 69a53da3-d138-4d8e-86fb-b49d70c7cf7b, f).
+
+======================================================================
+ERROR: test_five_downgrades_cannot_change_terminal_activation (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyConcurrencyTests.test_five_downgrades_cannot_change_terminal_activation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.CheckViolation: new row for relation "notarisation_records" violates check constraint "completed_notary_has_evidence_verifier"
+DETAIL:  Failing row contains (1a0005ce-e991-4274-9e1f-d72ade72a27e, null, null, 2026-07-14, completed, Prepared through 008D2., 2026-07-14 15:07:52.161942+00, 2026-07-14 15:07:52.161866+00, null, b3332b53-28f5-4591-8e24-597a95852128, fe7e8829-831b-4fd9-98b9-a3944f34a3ca, 7d20c3f1-ae9b-4f62-bc61-ae8ef77e1e09, f).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 665, in setUp
+    NotarisationRecord.objects.filter(pk=notary.pk).update(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1990, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: new row for relation "notarisation_records" violates check constraint "completed_notary_has_evidence_verifier"
+DETAIL:  Failing row contains (1a0005ce-e991-4274-9e1f-d72ade72a27e, null, null, 2026-07-14, completed, Prepared through 008D2., 2026-07-14 15:07:52.161942+00, 2026-07-14 15:07:52.161866+00, null, b3332b53-28f5-4591-8e24-597a95852128, fe7e8829-831b-4fd9-98b9-a3944f34a3ca, 7d20c3f1-ae9b-4f62-bc61-ae8ef77e1e09, f).
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.198s
+
+FAILED (errors=2)
+Destroying test database for alias 'default'...

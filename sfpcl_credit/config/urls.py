@@ -20,6 +20,7 @@ from sfpcl_credit.identity.views import (
     refresh,
 )
 from sfpcl_credit.legal_documents import views as legal_document_views
+from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
@@ -34,22 +35,22 @@ urlpatterns = [
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/security-package/",
-        legal_document_views.security_package,
+        security_instrument_views.security_package,
         name="loan-application-security-package",
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/security-package/refresh/",
-        legal_document_views.security_package_refresh,
+        security_instrument_views.security_package_refresh,
         name="loan-application-security-package-refresh",
     ),
     path(
         "api/v1/security-packages/<uuid:security_package_id>/power-of-attorney/",
-        legal_document_views.package_power_of_attorney,
+        security_instrument_views.package_power_of_attorney,
         name="security-package-power-of-attorney",
     ),
     path(
         "api/v1/power-of-attorneys/<uuid:power_of_attorney_id>/",
-        legal_document_views.power_of_attorney_detail,
+        security_instrument_views.power_of_attorney_detail,
         name="power-of-attorney-detail",
     ),
     path(

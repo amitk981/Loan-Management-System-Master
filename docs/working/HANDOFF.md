@@ -2,36 +2,30 @@
 
 ## Last Run
 
-2026-07-14_193053_normal_run
+2026-07-14_212222_repair
 
 ## Current Status
 
-008G2 is complete. A material pending stamp/notary/signature editor becomes the current maker and
-the previous maker remains in immutable evidence; exact replay remains zero-write. New positive or
-adverse stamp/notary outcomes and mismatch resolutions have database-enforced non-null distinct
-maker/checker ids. Only migrated null-maker history receives the explicit legacy marker and cannot
-be changed or supply new downstream truth.
+008F2 is complete. `security_instruments` owns the retained package/PoA tables and unchanged §28
+routes through a state-only migration. Package scope requires canonical latest-cycle frozen terminal
+sanction plus matching checklist scope; mutable approved status cannot create or expose truth.
 
-HTTP adapters now check action authority before strict parsing and call lower request contracts;
-business modules no longer import the HTTP serializer adapter. §26.6 returns the exact §6.3 action
-shape with durable workflow identity, unresolved mismatch overwrite returns
-`SIGNATURE_MISMATCH_UNRESOLVED`, and verified tri-party execution freezes/guards consumed signature
-ids, names, makers, and signing times. The positive path crosses genuine public DOCX/PDF generation.
+Compliance owns draft/current-maker facts; a distinct active Company Secretary activates only the
+exact draft. Terminal activation returns one durable §6.3 action, freezes renderer/file/checksum,
+maker-checker/signature/request facts, and blocks consumed-evidence changes. Legacy active rows stay
+readable and terminal under A-112 without invented workflow evidence.
 
-The security-package/PoA owner remains in `legal_documents`; 008F2 is still required to move it to
-`security_instruments`, consume canonical terminal sanction truth, and close terminal activation.
-008H remains correctly dependent on 008F2.
+008H and 008I are sharpened to extend the single package module/lock and legal evidence selectors.
+SH-4/CDSL/cheque/package-readiness behavior remains deliberately unimplemented under A-110.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_193053_normal_run/evidence/`: five retained RED/GREEN cycles,
-public generation tracer, dependency/action/error proof, all 45 Stage-4 tests on SQLite and
-PostgreSQL, four twice-run tri-party races, 810 backend tests at 93% coverage, and all configured
-frontend gates (293 tests).
+Repair evidence is in `.ralph/runs/2026-07-14_212222_repair/evidence/`: exact diff-limit proof,
+focused boundary/PoA tests, both PostgreSQL races twice, 814 backend tests at 93% coverage,
+migration sync, and all frontend gates (293 tests). Original TDD evidence remains in the prior run.
 
 ## Next Run
 
-Run 008F2, then 008H. Do not extend SH-4/CDSL on the current legal-documents-owned security seam.
-Reuse 008G2 current-maker, legacy-marker, consumed-evidence, lower request-contract, and §6.3 action
-semantics. A-101 still blocks the real M05-to-full-Term-Sheet path; no checklist, package,
-repayment, file, or disbursement-readiness claim changed.
+Run 008H, then 008I. Extend the existing security package; consume legal facts through selectors and
+an exact ledger. A-101 still blocks the full Term-Sheet path; no checklist/package completion,
+repayment, or disbursement-readiness claim changed.
