@@ -230,6 +230,47 @@ def resolve_template_source_reference(*, actor_permissions, document_id):
     return document
 
 
+def resolve_legal_application_evidence_reference(
+    *, actor_role_codes, application_id, document_id
+):
+    """Resolve metadata reference authority without granting file download."""
+    roles = set(actor_role_codes)
+    document = DocumentFile.objects.filter(document_id=document_id).first()
+    audits = list(
+        AuditLog.objects.filter(
+            action=DOCUMENT_UPLOAD_AUDIT_ACTION,
+            entity_type="document_file",
+            entity_id=document_id,
+        ).order_by("-created_at", "-audit_log_id")[:2]
+    )
+    audit = audits[0] if len(audits) == 1 else None
+    metadata = audit.new_value_json if audit and audit.new_value_json else {}
+    valid = bool(
+        roles & {"compliance_team_member", "company_secretary"}
+        and document
+        and audit
+        and audit.actor_user_id == document.uploaded_by_user_id
+        and metadata.get("document_id") == str(document.pk)
+        and metadata.get("file_name") == document.file_name
+        and metadata.get("file_extension") == document.file_extension
+        and metadata.get("mime_type") == document.mime_type
+        and metadata.get("file_size_bytes") == document.file_size_bytes
+        and metadata.get("storage_provider") == document.storage_provider
+        and metadata.get("storage_key") == document.storage_key
+        and metadata.get("checksum_sha256") == document.checksum_sha256
+        and metadata.get("sensitivity_level") == document.sensitivity_level
+        and metadata.get("document_category") == "legal"
+        and metadata.get("related_entity_type") == "application"
+        and metadata.get("related_entity_id") == str(application_id)
+        and document.sensitivity_level in ALLOWED_SENSITIVITY_LEVELS
+    )
+    if not valid:
+        raise ValidationError(
+            {"evidence_document_id": _INACCESSIBLE_REFERENCE_MESSAGE}
+        )
+    return document
+
+
 def validate_upload_request(request):
     field_errors = {}
     uploaded_file = request.FILES.get("file")
@@ -299,6 +340,7 @@ __all__ = [
     "GENERAL_MEETING_REFERENCE_PURPOSE",
     "GENERAL_MEETING_WORKFLOW_SCOPE",
     "resolve_referenceable_documents",
+    "resolve_legal_application_evidence_reference",
     "resolve_template_source_reference",
     "TEMPLATE_FILE_REFERENCE_PERMISSION",
     "TEMPLATE_SOURCE_CATEGORY",

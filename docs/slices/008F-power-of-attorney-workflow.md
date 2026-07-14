@@ -8,13 +8,19 @@ Epic 008: Documentation, Legal Documents, and Security Package
 Epic file: `docs/epics/008-documentation-security-package.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create and maintain the one source-defined Power of Attorney for a sanctioned application's
+security package, binding borrower/nominee/Company Secretary authority to current generated,
+adequately stamped, completed-notarisation evidence without invoking or releasing the instrument.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
 - 008E
+
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
 
 ## Source References
 - docs/source/implementation-roadmap.md section 13
@@ -32,28 +38,80 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 None directly.
 
 ## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+None. DocumentationHub/security-package wiring remains owned by 008M; do not add mock or hidden UI
+actions.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Add §28.1-§28.2 security-package GET/refresh only as the narrow owner/parent needed by PoA, with
+   `poa_required_flag=true`; do not implement SH-4, CDSL, cheque, custody, or readiness outcomes.
+2. Add §28.3 `POST/GET /api/v1/security-packages/{security_package_id}/power-of-attorney/` and
+   `PATCH /api/v1/power-of-attorneys/{power_of_attorney_id}/` using exactly borrower member,
+   nominee, attorney user, purpose, loan-document, stamp-record, notary-record, execution,
+   effective-from, and status facts.
+3. Keep one current PoA per package under a locked package row. Exact POST/PATCH replay is zero-write;
+   real changes retain immutable prior facts. PATCH must not invoke or release the instrument.
+4. Project PoA existence/execution metadata into the linked checklist/security reads without marking
+   the PoA checklist item complete or making the security package/disbursement ready.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Add §17.1 `security_packages` with one protected application link and nullable-only loan-account
+transition until 009C. Add §17.2 `power_of_attorneys` with one-to-one protected package, borrower,
+nominee, attorney, current-renderer loan-document, 008D stamp/notary links, bounded indexed
+execution/status fields, date integrity, and protected release facts. Do not populate invocation or
+release state in this slice.
 
 ## API Contracts
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Require `security.package.read` for GET, `security.package.create` for first refresh, and
+`security.poa.manage` for PoA mutation, plus canonical application/document scope. Compliance Team
+may prepare a draft; Company Secretary verifies/activates and must be the retained attorney.
+Credit/read/document-download permissions imply no mutation or evidence download. Unrelated scope
+is nondisclosing.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Every real package/PoA create or change writes attributable old/new audit, workflow, and version
+evidence with application/package/borrower/nominee/attorney/document/stamp/notary ids and request
+metadata. Exact replay and every denial write no success evidence. Checklist/security projections
+roll back atomically with a failed mutation.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- PoA is always required; borrower and nominee must be the application's retained current parties,
+  and attorney must be an active Company Secretary user. Do not infer identity from display names.
+- Purpose must explicitly authorise the Company Secretary to initiate share sale on default; use
+  retained text, not generated legal wording or a client-side constant.
+- `active`/executed PoA requires the current 008B4 `power_of_attorney` loan document, its exact 008D
+  `adequate` stamp record, its exact `completed` notarisation record, and effective-from. All three
+  evidence owners must belong to the same loan document/application.
+- Draft preparation may retain incomplete execution facts but cannot project execution/verification.
+  PoA stamping/notarisation do not prove borrower and nominee signatures; 008E signature facts must
+  exist before activation.
+- Status is only draft/active in this slice. `invoked` requires later Sanction Committee/Board
+  approval and `released` belongs to closure; reject both without writes.
+- Never hard-code the unresolved stamp-rate amount, invoke share sale, expose evidence downloads,
+  complete the checklist, or claim security/disbursement readiness.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Package create/read exact replay and one-PoA uniqueness.
+- Draft preparation versus Company Secretary activation with borrower/nominee/attorney/signature,
+  current renderer, adequate stamp, completed notary, effective-date, and same-application checks.
+- POST/PATCH exact replay, retained change history, stale/wrong-id/cross-package/cross-application
+  evidence, and forbidden invoked/released transitions.
+- Compliance prepare, Company Secretary activate, read-only/unauthorised/unrelated role matrices.
+- Checklist/security projections preserve completion, verifier, remarks, signatures, package status,
+  file access, and disbursement readiness; projection conflict rolls back all writes.
+- Concurrent create/change attempts retain one current PoA and complete attributable history on
+  PostgreSQL.
+
+## Run-Ahead Sharpening (008D completion, 2026-07-14)
+
+- Consume 008D records only through protected same-loan-document relations and current status;
+  do not recompute stamp adequacy, notarisation evidence provenance, or renderer provenance in PoA.
+- Activation must require both borrower and nominee execution facts from 008E. Stamp/notary success
+  alone cannot stand in for signatures or complete the checklist item.
+- Preserve 008D's exact replay/current-row/history semantics. PoA changes must never rewrite stamp,
+  notary, generated-file, template, renderer, or checklist completion evidence.
 
 ## Visual Acceptance Criteria
 None.

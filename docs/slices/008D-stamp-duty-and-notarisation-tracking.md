@@ -1,7 +1,7 @@
 # Slice 008D: Stamp Duty and Notarisation Tracking
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package

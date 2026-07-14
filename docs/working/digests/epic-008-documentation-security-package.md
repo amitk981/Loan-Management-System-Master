@@ -31,6 +31,18 @@ Sources:
   legacy-provenance partial until 008B4. The initial applicability index is not later execution,
   verification, stamping, notarisation, security, approval, or disbursement readiness.
 
+## 008D Stamp Duty and Notarisation Closure (2026-07-14)
+
+The §26.9-§26.10 POST routes now retain one current stamp/notary row per current-renderer legal
+document under a loan-document row lock. Exact replay is zero-write; every real create/change keeps
+attributable audit, version, and workflow facts. Compliance may prepare pending records while only
+Company Secretary authority may claim adequate/completed verification. Completed notarisation
+evidence must have singular exact legal-upload provenance for the same application; metadata never
+grants download. Loan-document and checklist reads project status only and preserve all checklist
+completion/signature/approval facts. No ₹500/ad-valorem rule was encoded. The genuine five-worker
+PostgreSQL changed-submission race passed twice with one current row and a complete six-entry ledger
+(seed plus five changes).
+
 ## 008B4 Renderer Provenance Closure (2026-07-14)
 
 Every new renderer success now freezes the versioned legal renderer contract, exact generated-file

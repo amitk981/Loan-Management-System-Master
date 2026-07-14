@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced (sfpcl_credit.tests.test_stamp_notary_api.StampDutyAndNotarisationApiTests.test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_143550_normal_run/sfpcl_credit/tests/test_stamp_notary_api.py", line 222, in test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced
+    self.assertEqual(rejected.status_code, 400, rejected.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"notary_record_id": "12b09470-7d44-4d25-97da-0ed364a0f9ac", "loan_document_id": "812a6177-f6c0-4850-afa2-b37df6d6ef66", "notary_name": "Test Notary", "notary_registration_number": "NOT-999", "notarised_date": "2026-06-22", "status": "completed", "evidence_document_id": "dd1a71cc-2a87-4fe2-9d20-ba7316f43905", "remarks": "Original inspected."}, "meta": {"request_id": null, "timestamp": "2026-07-14T09:15:50.852060Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.044s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

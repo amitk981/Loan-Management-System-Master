@@ -42,6 +42,39 @@ class ChecklistApplicabilityConflict(Exception):
     pass
 
 
+class ChecklistLifecycleProjectionConflict(Exception):
+    pass
+
+
+_UNSET = object()
+
+
+def project_lifecycle_status(
+    *, loan_document, stamp_status=_UNSET, notarisation_status=_UNSET
+):
+    """Project only stamp/notary status while preserving checklist-owned evidence."""
+    updates = {
+        field: value
+        for field, value in (
+            ("stamp_status", stamp_status),
+            ("notarisation_status", notarisation_status),
+        )
+        if value is not _UNSET
+    }
+    for item in ChecklistItem.objects.select_for_update().filter(
+        loan_document=loan_document
+    ):
+        changed = [field for field, value in updates.items() if getattr(item, field) != value]
+        if item.completion_status == ChecklistItem.STATUS_COMPLETE and changed:
+            raise ChecklistLifecycleProjectionConflict(
+                "Completed checklist evidence conflicts with the requested status projection."
+            )
+        if changed:
+            for field in changed:
+                setattr(item, field, updates[field])
+            item.save(update_fields=changed)
+
+
 @dataclass(frozen=True)
 class ItemSpec:
     code: str
@@ -177,6 +210,8 @@ def serialize(checklist):
                 "required_flag": item.required_flag,
                 "applicable_flag": item.applicable_flag,
                 "completion_status": item.completion_status,
+                "stamp_status": item.stamp_status,
+                "notarisation_status": item.notarisation_status,
                 "applicability_source": item.applicability_source,
                 "applicability_blocker": item.applicability_blocker,
                 "loan_document_id": (

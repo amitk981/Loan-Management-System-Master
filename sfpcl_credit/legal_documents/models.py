@@ -168,6 +168,84 @@ class LoanDocument(models.Model):
         return super().save(*args, **kwargs)
 
 
+class StampDutyRecord(models.Model):
+    STATUSES = {"pending", "adequate", "insufficient"}
+    TYPES = {"physical", "electronic"}
+
+    stamp_duty_record_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_document = models.OneToOneField(
+        LoanDocument, on_delete=models.PROTECT, related_name="stamp_duty_record"
+    )
+    stamp_paper_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    stamp_type = models.CharField(max_length=60)
+    stamp_number = models.CharField(max_length=120, blank=True, null=True, db_index=True)
+    stamp_purchase_date = models.DateField(blank=True, null=True)
+    executed_date = models.DateField(blank=True, null=True)
+    verified_by_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT
+    )
+    status = models.CharField(max_length=60, db_index=True)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "stamp_duty_records"
+        constraints = [
+            models.CheckConstraint(check=models.Q(stamp_paper_amount__gte=0), name="stamp_amount_non_negative"),
+            models.CheckConstraint(check=models.Q(stamp_type__in=["physical", "electronic"]), name="stamp_type_bounded"),
+            models.CheckConstraint(check=models.Q(status__in=["pending", "adequate", "insufficient"]), name="stamp_status_bounded"),
+            models.CheckConstraint(
+                check=models.Q(stamp_purchase_date__isnull=True)
+                | models.Q(executed_date__isnull=True)
+                | models.Q(stamp_purchase_date__lte=models.F("executed_date")),
+                name="stamp_purchase_not_after_execution",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(status="adequate") | models.Q(executed_date__isnull=False, verified_by_user__isnull=False),
+                name="adequate_stamp_has_execution_verifier",
+            ),
+        ]
+
+
+class NotarisationRecord(models.Model):
+    STATUSES = {"pending", "completed", "rejected"}
+
+    notarisation_record_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_document = models.OneToOneField(
+        LoanDocument, on_delete=models.PROTECT, related_name="notarisation_record"
+    )
+    notary_name = models.CharField(max_length=255, blank=True, null=True)
+    notary_registration_number = models.CharField(max_length=120, blank=True, null=True, db_index=True)
+    notarised_date = models.DateField(blank=True, null=True)
+    status = models.CharField(max_length=60, db_index=True)
+    evidence_document = models.ForeignKey(
+        "documents.DocumentFile", blank=True, null=True, on_delete=models.PROTECT
+    )
+    verified_by_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT
+    )
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "notarisation_records"
+        constraints = [
+            models.CheckConstraint(check=models.Q(status__in=["pending", "completed", "rejected"]), name="notary_status_bounded"),
+            models.CheckConstraint(
+                check=~models.Q(status="completed") | models.Q(
+                    notary_name__isnull=False,
+                    notary_registration_number__isnull=False,
+                    notarised_date__isnull=False,
+                    evidence_document__isnull=False,
+                    verified_by_user__isnull=False,
+                ),
+                name="completed_notary_has_evidence_verifier",
+            ),
+        ]
+
+
 class DocumentChecklist(models.Model):
     STATUS_IN_PROGRESS = "in_progress"
     STATUS_CS_APPROVED = "cs_approved"
@@ -288,6 +366,8 @@ class ChecklistItem(models.Model):
     )
     verified_at = models.DateTimeField(blank=True, null=True)
     remarks = models.TextField(blank=True)
+    stamp_status = models.CharField(max_length=60, blank=True, null=True, db_index=True)
+    notarisation_status = models.CharField(max_length=60, blank=True, null=True, db_index=True)
 
     class Meta:
         db_table = "checklist_items"

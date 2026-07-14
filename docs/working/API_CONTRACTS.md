@@ -3205,3 +3205,49 @@ bounded page normalization, and slicing into the legal-document selector after m
 and application scope. The retained `loan_documents` table and rows have one Django owner in
 `legal_documents`. Its nullable `loan_account_id` is database-constrained to `NULL` under A-102 until
 009C can replace that transition with the source-required protected nullable FK.
+
+## Stamp duty and notarisation records (008D)
+
+`POST /api/v1/loan-documents/{loan_document_id}/stamp-duty-record/` requires
+`documents.stamp.record`, an active Compliance Team or Company Secretary role, an approved Stage 4
+application, and an 008B4 current-renderer-provenance loan document. It accepts exactly:
+
+```json
+{
+  "stamp_paper_amount": "500.00",
+  "stamp_type": "physical",
+  "stamp_number": "MH-STAMP-123",
+  "stamp_purchase_date": "2026-06-22",
+  "executed_date": "2026-06-22",
+  "status": "adequate",
+  "remarks": "Verified by Company Secretary."
+}
+```
+
+Amount is a required non-negative two-decimal string; type is `physical` or `electronic`; status is
+`pending`, `adequate`, or `insufficient`; nullable dates use ISO `YYYY-MM-DD`, and purchase cannot
+follow execution. Only Company Secretary authority may submit `adequate`, which also requires an
+execution date. The platform persists the supplied amount and verification outcome but performs no
+hard-coded ₹500 or ad-valorem adequacy calculation.
+
+`POST /api/v1/loan-documents/{loan_document_id}/notarisation-record/` similarly requires
+`documents.notary.record` and accepts exactly nullable notary name/registration/date, bounded
+`pending`/`completed`/`rejected` status, nullable `evidence_document_id`, and nullable remarks.
+Only Company Secretary authority may submit `completed`; completed requires every notary identity,
+date, and evidence field. Non-null evidence must have one exact retained `documents.file.uploaded`
+provenance ledger matching the current file metadata, `legal` category, and the same application.
+The response returns evidence id/name metadata only and never grants download. The documents-owned
+reference interface verifies the exact retained upload ledger, metadata, sensitivity, legal
+category, documentation role, and same-application relationship.
+
+Both routes cross one legal-documents-owned authority interface for action permission, sanctioned
+Stage 4 queue scope, and current renderer provenance, then lock only the owning `LoanDocument`.
+Exact replay returns the current response with zero
+writes; a changed POST updates the one-to-one current record and appends attributable audit,
+version-history, and workflow evidence. The existing loan-document/checklist reads project only
+current stamp/notary statuses. Execution/verification states, renderer/template/file provenance,
+checklist applicability/linkage/completion/verifier/remarks/signatures/status, and disbursement
+readiness remain untouched. A changed status conflicting with completed checklist evidence returns
+atomic `409 CONFLICT`; legacy/mismatched renderer provenance also returns zero-write `409 CONFLICT`.
+Unknown/malformed fields return `400 VALIDATION_ERROR`; missing role/permission or non-Stage-4 scope
+returns nondisclosing 403; an authorised missing loan-document id returns 404.
