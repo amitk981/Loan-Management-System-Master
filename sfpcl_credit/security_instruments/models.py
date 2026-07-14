@@ -148,3 +148,96 @@ class PowerOfAttorney(models.Model):
                 name="active_poa_has_execution_verifier",
             ),
         ]
+
+
+class SH4ShareTransferForm(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_SIGNED = "signed"
+    STATUS_HELD_IN_CUSTODY = "held_in_custody"
+    STATUSES = {STATUS_PENDING, STATUS_SIGNED, STATUS_HELD_IN_CUSTODY}
+
+    sh4_share_transfer_form_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    security_package = models.OneToOneField(
+        SecurityPackage, on_delete=models.PROTECT, related_name="sh4_share_transfer_form"
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="sh4_share_transfer_forms"
+    )
+    witness = models.ForeignKey(
+        "applications.Witness", on_delete=models.PROTECT,
+        related_name="sh4_share_transfer_forms",
+    )
+    shareholding = models.ForeignKey(
+        "members.Shareholding", on_delete=models.PROTECT,
+        related_name="sh4_share_transfer_forms",
+    )
+    share_count = models.PositiveIntegerField(blank=True, null=True)
+    loan_document = models.ForeignKey(
+        "legal_documents.LoanDocument", on_delete=models.PROTECT,
+        related_name="sh4_share_transfer_forms",
+    )
+    form_status = models.CharField(max_length=60, db_index=True)
+    custody_location = models.CharField(max_length=255, blank=True, null=True)
+    signed_at = models.DateField(blank=True, null=True)
+    returned_at = models.DateField(blank=True, null=True)
+    invocation_approval_case_id = models.UUIDField(blank=True, null=True)
+    prepared_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="prepared_sh4_forms"
+    )
+    custodian_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="custodied_sh4_forms",
+    )
+    custody_evidence_json = models.JSONField(default=dict, blank=True)
+    custody_workflow_event_id = models.UUIDField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "sh4_share_transfer_forms"
+        indexes = [
+            models.Index(fields=["form_status", "signed_at"], name="idx_sh4_status_signed"),
+            models.Index(fields=["member", "witness"], name="idx_sh4_parties"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    form_status__in=["held_in_custody", "pending", "signed"]
+                ),
+                name="sh4_form_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(share_count__isnull=True) | models.Q(share_count__gt=0),
+                name="sh4_share_count_positive",
+            ),
+            models.CheckConstraint(
+                check=models.Q(returned_at__isnull=True),
+                name="sh4_return_requires_later_slice",
+            ),
+            models.CheckConstraint(
+                check=models.Q(invocation_approval_case_id__isnull=True),
+                name="sh4_invocation_requires_later_slice",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        form_status="pending", signed_at__isnull=True,
+                        custody_location__isnull=True, custodian_user__isnull=True,
+                        custody_workflow_event_id__isnull=True,
+                    )
+                    | models.Q(
+                        form_status="signed", signed_at__isnull=False,
+                        custody_location__isnull=True, custodian_user__isnull=True,
+                        custody_workflow_event_id__isnull=True,
+                    )
+                    | models.Q(
+                        form_status="held_in_custody", signed_at__isnull=False,
+                        custody_location__isnull=False, custodian_user__isnull=False,
+                        custody_workflow_event_id__isnull=False,
+                    )
+                ),
+                name="sh4_status_evidence_consistent",
+            ),
+        ]

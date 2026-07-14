@@ -2,30 +2,35 @@
 
 ## Last Run
 
-2026-07-14_212222_repair
+2026-07-14_220039_normal_run
 
 ## Current Status
 
-008F2 is complete. `security_instruments` owns the retained package/PoA tables and unchanged §28
-routes through a state-only migration. Package scope requires canonical latest-cycle frozen terminal
-sanction plus matching checklist scope; mutable approved status cannot create or expose truth.
+008H is complete. `security_instruments` owns one protected SH-4 per retained package and the exact
+§28.4 POST/GET/PATCH routes. Package refresh now derives only the physical/demat applicability pair
+from canonical frozen sanction facts; missing/`mixed` remains the checklist blocker and creates no
+SH-4 authority.
 
-Compliance owns draft/current-maker facts; a distinct active Company Secretary activates only the
-exact draft. Terminal activation returns one durable §6.3 action, freezes renderer/file/checksum,
-maker-checker/signature/request facts, and blocks consumed-evidence changes. Legacy active rows stay
-readable and terminal under A-112 without invented workflow evidence.
+Compliance owns pending/signed preparation and current-maker identity. A distinct active Company
+Secretary records terminal held custody only from the sanctioned borrower, current verified
+shareholder witness, active physical shareholding, genuine current-renderer SH-4, exact non-legacy
+borrower/witness signatures, and adequate non-legacy stamp maker/checker facts. Custody returns one
+durable §6.3 action, freezes renderer/file/checksum/signature/stamp/maker/request facts, and blocks
+later consumed-evidence mutation. Invocation and return remain null/blocked.
 
-008H and 008I are sharpened to extend the single package module/lock and legal evidence selectors.
-SH-4/CDSL/cheque/package-readiness behavior remains deliberately unimplemented under A-110.
+Checklist/package reads project metadata only. Checklist completion/verifier/remarks/signatures,
+PoA, package status, file authority, share balances, and readiness remain unchanged. 008I was already
+sharpened; 008J is now concrete for later blank-cheque custody without implementing it here.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-14_212222_repair/evidence/`: exact diff-limit proof,
-focused boundary/PoA tests, both PostgreSQL races twice, 814 backend tests at 93% coverage,
-migration sync, and all frontend gates (293 tests). Original TDD evidence remains in the prior run.
+Evidence is in `.ralph/runs/2026-07-14_220039_normal_run/evidence/`: three retained TDD red/green
+cycles, 61 impacted tests, genuine public SH-4 generation, migration regression repair, Django
+check/migration sync, both five-worker PostgreSQL create/custody races twice, 819 backend tests with
+34 expected SQLite skips at 93% coverage, and frontend build/typecheck/lint plus 293 tests.
 
 ## Next Run
 
-Run 008H, then 008I. Extend the existing security package; consume legal facts through selectors and
-an exact ledger. A-101 still blocks the full Term-Sheet path; no checklist/package completion,
-repayment, or disbursement-readiness claim changed.
+Run 008I. Extend the same package lock with masked CDSL BO-account/PRF/PSN/acceptance facts and the
+existing frozen demat applicability. Preserve PoA/SH-4/checklist/readiness truth and use legal-owned
+evidence selectors only. A-101 still blocks a complete real Term-Sheet path.

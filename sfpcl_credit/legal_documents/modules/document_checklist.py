@@ -282,6 +282,11 @@ def read_for_application(*, actor, application_id):
 
 
 def serialize(checklist):
+    from sfpcl_credit.legal_documents import selectors
+
+    sh4_projection = selectors.sh4_projection_for_application(
+        application_id=checklist.loan_application_id
+    )
     return {
         "document_checklist_id": str(checklist.pk),
         "loan_application_id": str(checklist.loan_application_id),
@@ -298,6 +303,23 @@ def serialize(checklist):
                 "notarisation_status": item.notarisation_status,
                 "poa_execution_status": item.poa_execution_status,
                 "poa_status": item.poa_status,
+                "sh4_form_status": (
+                    sh4_projection.get("form_status")
+                    if item.item_code == "sh4" and sh4_projection
+                    else None
+                ),
+                "sh4_signature_status": (
+                    "signed"
+                    if item.item_code == "sh4"
+                    and sh4_projection
+                    and sh4_projection.get("signed_at")
+                    else "pending" if item.item_code == "sh4" else None
+                ),
+                "sh4_custodian_user_id": (
+                    sh4_projection.get("custodian_user_id")
+                    if item.item_code == "sh4" and sh4_projection
+                    else None
+                ),
                 "applicability_source": item.applicability_source,
                 "applicability_blocker": item.applicability_blocker,
                 "loan_document_id": (

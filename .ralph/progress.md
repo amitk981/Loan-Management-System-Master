@@ -6819,3 +6819,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_220039_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008H-sh-4-physical-share-security-workflow
+- Summary: Added one package-owned SH-4 with exact §28.4 routes, frozen physical applicability,
+  Compliance preparation, distinct Company Secretary terminal custody, current renderer/signature/
+  stamp validation, immutable ledgers, checklist/package metadata projections, and consumed-evidence
+  protection. Sharpened 008J without implementing it.
+- Tests run: three TDD red/green cycles; 61 impacted tests; migration regression; both PostgreSQL
+  five-worker create/custody races twice; Django check/migration sync; all 819 backend tests at 93%
+  coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_220039_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; critical custody, permission, evidence, schema, and concurrency behavior changed
+  fail-closed with invocation/return/file/readiness explicitly excluded.
+- Next action: Run 008I.
+
+## 2026-07-14 22:49:40 - 2026-07-14_220039_normal_run
+- Agent tool used: codex
+- Slice attempted: 008H-sh-4-physical-share-security-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_220039_normal_run/.ralph/runs/2026-07-14_220039_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_220039_normal_run/.ralph/runs/2026-07-14_220039_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

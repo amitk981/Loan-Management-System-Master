@@ -56,9 +56,30 @@ def refresh_package(*, actor, application_id, metadata):
             .filter(loan_application=application)
             .first()
         )
+        facts = resolve_approved_facts(application_id=application.pk)
+        physical_required = facts is not None and facts.holding_mode == "physical"
+        demat_required = facts is not None and facts.holding_mode == "demat"
         if package is not None:
+            if (
+                package.physical_share_security_required_flag != physical_required
+                or package.demat_pledge_required_flag != demat_required
+            ):
+                old = serialize_package(package)
+                package.physical_share_security_required_flag = physical_required
+                package.demat_pledge_required_flag = demat_required
+                package.updated_at = timezone.now()
+                package.save(update_fields=[
+                    "physical_share_security_required_flag",
+                    "demat_pledge_required_flag",
+                    "updated_at",
+                ])
+                _record_change(actor, package, old, metadata)
             return serialize_package(package)
-        package = SecurityPackage.objects.create(loan_application=application)
+        package = SecurityPackage.objects.create(
+            loan_application=application,
+            physical_share_security_required_flag=physical_required,
+            demat_pledge_required_flag=demat_required,
+        )
         _record_creation(actor, package, metadata)
         return serialize_package(package)
 
@@ -119,8 +140,10 @@ def has_canonical_stage4_scope(application_id):
 
 def serialize_package(package):
     from sfpcl_credit.security_instruments.modules.power_of_attorney import serialize_poa
+    from sfpcl_credit.security_instruments.modules.sh4 import serialize_sh4
 
     poa = getattr(package, "power_of_attorney", None)
+    sh4 = getattr(package, "sh4_share_transfer_form", None)
     return {
         "security_package_id": str(package.pk),
         "loan_application_id": str(package.loan_application_id),
@@ -133,6 +156,7 @@ def serialize_package(package):
         "cancelled_cheque_required_flag": package.cancelled_cheque_required_flag,
         "security_ready_flag": False,
         "power_of_attorney": serialize_poa(poa) if poa else None,
+        "sh4_share_transfer_form": serialize_sh4(sh4) if sh4 else None,
     }
 
 
@@ -176,4 +200,36 @@ def _record_creation(actor, package, metadata):
         trigger_reason="Security package created for sanctioned application.",
         action_code="security.package.created",
         metadata=context,
+    )
+
+
+def _record_change(actor, package, old, metadata):
+    context = {
+        **serialize_package(package),
+        "actor_role_codes": auth_service.effective_role_codes(actor),
+        "actor_team_codes": actor.team_codes(),
+        "request_id": metadata.request_id,
+        "ip_address": metadata.ip_address,
+        "user_agent": metadata.user_agent,
+    }
+    AuditLog.objects.create(
+        actor_user=actor, actor_type="user", action="security.package.requirements_changed",
+        entity_type="security_package", entity_id=package.pk, old_value_json=old,
+        new_value_json=context, ip_address=metadata.ip_address,
+        user_agent=metadata.user_agent,
+    )
+    VersionHistory.objects.create(
+        versioned_entity_type="security_package", versioned_entity_id=package.pk,
+        version_number=str(VersionHistory.objects.filter(
+            versioned_entity_type="security_package", versioned_entity_id=package.pk,
+        ).count() + 1),
+        change_summary="security.package.requirements_changed", author_user=actor,
+        old_value_json=old, new_value_json=context, effective_from=timezone.localdate(),
+    )
+    record_workflow_event(
+        actor=actor, workflow_name="security_package", entity_type="security_package",
+        entity_id=package.pk, from_state=package.security_status,
+        to_state=package.security_status,
+        trigger_reason="security.package.requirements_changed",
+        action_code="security.package.requirements_changed", metadata=context,
     )

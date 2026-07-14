@@ -54,6 +54,16 @@ urlpatterns = [
         name="power-of-attorney-detail",
     ),
     path(
+        "api/v1/security-packages/<uuid:security_package_id>/sh4-share-transfer-form/",
+        security_instrument_views.package_sh4,
+        name="security-package-sh4-share-transfer-form",
+    ),
+    path(
+        "api/v1/sh4-share-transfer-forms/<uuid:sh4_share_transfer_form_id>/",
+        security_instrument_views.sh4_detail,
+        name="sh4-share-transfer-form-detail",
+    ),
+    path(
         "api/v1/loan-documents/<uuid:loan_document_id>/signatures/",
         legal_document_views.signature_record,
         name="loan-document-signature-record",

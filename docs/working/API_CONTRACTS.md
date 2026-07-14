@@ -3402,9 +3402,11 @@ Stage-4 checklist scope; mutable approved status is insufficient. Refresh locks 
 creates at most one package, and replays zero-write; unknown resources return 404 after authority,
 while wrong-stage/stale-cycle resources remain nondisclosing. The narrow package is
 always `pending`, returns `poa_required_flag=true` and `security_ready_flag=false`, and leaves the
-SH-4/CDSL/cheque flags false under A-110 until their owners run. It includes metadata-only current
-PoA projection and never grants document download, invocation, release, checklist completion, or
-disbursement readiness.
+cheque flags false under A-110. Since 008H, refresh sets only the SH-4/CDSL applicability pair from
+the canonical frozen sanction share mode: `physical` is `(true,false)`, `demat` is `(false,true)`,
+and missing/`mixed` is `(false,false)` with the existing checklist blocker retained. It includes
+metadata-only current PoA/SH-4 projections and never grants document download, invocation, release,
+checklist completion, or disbursement readiness.
 
 `POST/GET /api/v1/security-packages/{security_package_id}/power-of-attorney/` and
 `PATCH /api/v1/power-of-attorneys/{power_of_attorney_id}/` implement §28.3. GET requires package-read
@@ -3438,3 +3440,34 @@ PostgreSQL changed-activation and downgrade races retain one terminal activation
 
 Pre-008F2 active PoAs retain `legacy_activation_evidence=true`, null workflow id, and no fabricated
 snapshot under A-112. They are readable/terminal; PATCH replay conflicts because no action id exists.
+
+## SH-4 physical-share security (008H)
+
+`POST/GET /api/v1/security-packages/{security_package_id}/sh4-share-transfer-form/` and
+`PATCH /api/v1/sh4-share-transfer-forms/{sh4_share_transfer_form_id}/` implement §28.4. The request
+contains exactly `member_id`, `witness_id`, `shareholding_id`, nullable positive `share_count`,
+`loan_document_id`, `form_status`, nullable bounded `custody_location`, and nullable ISO
+`signed_at`. GET requires `security.package.read`; POST/PATCH require `security.sh4.manage` and the
+same canonical latest-cycle Stage-4 package scope. Compliance creates/changes preparation facts;
+only a distinct active Company Secretary records terminal custody. Other document, signature,
+download, PoA, or security permissions imply no SH-4 mutation or file access.
+
+Only frozen `physical` share mode is applicable. The member must be the sanctioned borrower; the
+witness must be that application's verified existing-shareholder witness backed by active
+shareholding; the selected shareholding must be the borrower's active physical row. `share_count`
+cannot exceed its retained available shares and does not reserve/decrement them. The document must
+be the same application's current-renderer `sh4` output. `signed`/`held_in_custody` require its exact
+non-legacy borrower and witness signatures (canonical ids/names, signed time, capture makers, no
+mismatch) and current adequate non-legacy maker/checker stamp evidence. No nominal amount is
+hard-coded. The custody checker must differ from the retained SH-4 preparer and every current
+material stamp/signature maker.
+
+Statuses are only `pending`, `signed`, and `held_in_custody`; invocation/return fields remain
+database-null and `invoked`/`returned` requests fail zero-write. One row per package is database
+enforced under the package lock. Exact replay is zero-write; real preparation changes retain full
+old/new audit/version/workflow facts. Terminal custody returns the retained §6.3 action identity and
+freezes exact renderer/file/checksum, stamp, signature, maker, custodian, and request context.
+Consumed signature/stamp evidence cannot later be changed. Checklist/security reads project only
+existence, document/signature/custody metadata and preserve completion, verifier, remarks, approval
+signatures, PoA/package state, file access, and readiness. Twice-run PostgreSQL five-worker create
+and changed-custody races retain one current/terminal SH-4 and zero loser success evidence.

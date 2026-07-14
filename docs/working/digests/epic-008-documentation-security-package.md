@@ -14,6 +14,19 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008H SH-4 Physical Security Closure (2026-07-14)
+
+The retained `security_instruments` package now refreshes physical/demat applicability only from the
+canonical frozen sanction mode and owns one protected SH-4 row under the same package lock. Compliance
+prepares current pending/signed facts; a distinct active Company Secretary records terminal custody
+only from the exact sanctioned borrower, verified shareholder witness, active physical shareholding,
+current-renderer SH-4, non-legacy borrower/witness signatures, and adequate non-legacy maker/checker
+stamp. Share count is nullable/positive/bounded but never reserved. Invocation/return remain null and
+blocked. Package/checklist reads project metadata only; PoA, checklist completion/approval, file
+access, package status, and readiness remain unchanged. Exact replay is zero-write, terminal custody
+freezes consumed legal evidence behind one §6.3 action, and twice-run PostgreSQL create/custody races
+retain one current row with attributable winner and zero loser success evidence.
+
 ## Architecture Review 2026-07-14 19:20 - Current Maker and Security Ownership
 
 - 008D2/008E2 close their original adverse-authority, canonical-identity, nondisclosure, action,

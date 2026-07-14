@@ -128,6 +128,55 @@ def poa_evidence_for_update(
     return document, stamp, notary
 
 
+def sh4_evidence_for_update(*, application_id, loan_document_id):
+    """Lock and return current maker-attributed SH-4 execution evidence."""
+    document = (
+        LoanDocument.objects.select_for_update(of=("self",))
+        .select_related("document")
+        .filter(
+            pk=loan_document_id,
+            loan_application_id=application_id,
+            document_type="sh4",
+        )
+        .first()
+    )
+    if document is None:
+        return None, None, []
+    stamp = StampDutyRecord.objects.select_for_update().filter(
+        loan_document=document, legacy_maker_attribution=False
+    ).first()
+    signatures = list(
+        SignatureRecord.objects.select_for_update()
+        .filter(
+            loan_document=document,
+            signer_party_type__in=["borrower", "witness"],
+            legacy_maker_attribution=False,
+        )
+        .values(
+            "signature_record_id", "signer_party_type", "signer_party_id",
+            "signer_name_snapshot", "signature_status", "signature_mismatch_flag",
+            "mismatch_resolution_type", "signed_at", "captured_by_user_id",
+        )
+    )
+    return document, stamp, signatures
+
+
+def sh4_projection_for_application(*, application_id):
+    """Project retained SH-4 ledger facts without importing security policy/models."""
+    from sfpcl_credit.configurations.models import VersionHistory
+
+    row = (
+        VersionHistory.objects.filter(
+            versioned_entity_type="sh4_share_transfer_form",
+            new_value_json__loan_application_id=str(application_id),
+        )
+        .order_by("-created_at", "-version_history_id")
+        .values_list("new_value_json", flat=True)
+        .first()
+    )
+    return row or None
+
+
 def _positive_int(field, value, default):
     if value in (None, ""):
         return default

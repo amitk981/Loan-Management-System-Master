@@ -463,7 +463,7 @@ class PowerOfAttorneyApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         return response.json()["data"]
 
-    def _poa_evidence(self):
+    def _poa_evidence(self, document_type="power_of_attorney"):
         generation_tests = import_module(
             "sfpcl_credit.tests.test_loan_document_generation_api"
         )
@@ -505,8 +505,9 @@ class PowerOfAttorneyApiTests(TestCase):
             },
         )
         template = DocumentTemplate.objects.create(
-            template_code="poa-workflow-v1", template_name="PoA Workflow",
-            document_type="power_of_attorney", borrower_type="individual_farmer",
+            template_code=f"{document_type}-workflow-v1",
+            template_name=f"{document_type.replace('_', ' ').title()} Workflow",
+            document_type=document_type, borrower_type="individual_farmer",
             template_version="1.0", template_file=template_file,
             approval_status="approved", effective_from="2026-01-01",
             merge_fields_json=["borrower_name"],
@@ -514,7 +515,7 @@ class PowerOfAttorneyApiTests(TestCase):
         generated = self.client.post(
             f"/api/v1/loan-applications/{self.application.pk}/loan-documents/generate/",
             {
-                "document_type": "power_of_attorney",
+                "document_type": document_type,
                 "template_id": str(template.pk),
                 "output_format": "docx",
             },

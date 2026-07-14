@@ -1,0 +1,5 @@
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+Command: npm run typecheck
+Result: tsc --noEmit exited 0 with no diagnostics.

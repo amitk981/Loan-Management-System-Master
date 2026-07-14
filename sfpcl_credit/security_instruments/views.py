@@ -5,7 +5,11 @@ from sfpcl_credit.api import error_response, parse_json_body, request_ip, reques
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.security_instruments.modules import power_of_attorney
 from sfpcl_credit.security_instruments.modules import security_package as package_service
-from sfpcl_credit.security_instruments.request_contracts import PowerOfAttorneyRequest
+from sfpcl_credit.security_instruments.modules import sh4
+from sfpcl_credit.security_instruments.request_contracts import (
+    PowerOfAttorneyRequest,
+    SH4ShareTransferFormRequest,
+)
 
 
 def _metadata(request):
@@ -69,6 +73,61 @@ def power_of_attorney_detail(request, power_of_attorney_id):
         return error_response(request, 409, "CONFLICT", str(exc))
     except ValidationError as exc:
         return _validation_response(request, "Power of Attorney failed validation.", exc)
+    return success_response(data, request)
+
+
+@require_http_methods(["GET", "POST"])
+def package_sh4(request, security_package_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "GET":
+            data = sh4.read_sh4(actor=user, security_package_id=security_package_id)
+        else:
+            sh4.require_manage_actor(user)
+            parsed = SH4ShareTransferFormRequest.parse(parse_json_body(request))
+            data = sh4.create_sh4(
+                actor=user, security_package_id=security_package_id,
+                values=parsed.as_values(), metadata=_metadata(request),
+            )
+    except sh4.AccessDenied as exc:
+        return error_response(request, 403, exc.error_code, "You do not have access to this SH-4.")
+    except sh4.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "SH-4 was not found.")
+    except sh4.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "SH-4 failed validation.",
+            sh4.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_http_methods(["PATCH"])
+def sh4_detail(request, sh4_share_transfer_form_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        sh4.require_manage_actor(user)
+        parsed = SH4ShareTransferFormRequest.parse(parse_json_body(request))
+        data = sh4.update_sh4(
+            actor=user, sh4_share_transfer_form_id=sh4_share_transfer_form_id,
+            values=parsed.as_values(), metadata=_metadata(request),
+        )
+    except sh4.AccessDenied as exc:
+        return error_response(request, 403, exc.error_code, "You do not have access to this SH-4.")
+    except sh4.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "SH-4 was not found.")
+    except sh4.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "SH-4 failed validation.",
+            sh4.validation_field_errors(exc),
+        )
     return success_response(data, request)
 
 

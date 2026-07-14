@@ -1,0 +1,353 @@
+Creating test database for alias 'default'...
+Found 819 test(s).
+System check identified no issues (0 silenced).
+.........................................................................................................................................................................................................................................................................................Catalogue seeded: 182 permissions, 20 roles, 8 teams, 186 role-permission links.
+Catalogue seeded: 182 permissions, 20 roles, 8 teams, 186 role-permission links.
+............................................................................................................................................................................................................................................................................................................................................................................Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+...Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 182 permissions, 20 roles, 8 teams, 186 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+..Catalogue seeded: 182 permissions, 20 roles, 8 teams, 186 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 182 permissions, 20 roles, 8 teams, 186 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+...............................................................................sssssss.....ssssss..........sssss.......sss........ssss...sssssssss..........
+----------------------------------------------------------------------
+Ran 819 tests in 286.637s
+
+OK (skipped=34)
+Destroying test database for alias 'default'...
+Name                                                                                            Stmts   Miss  Cover
+-------------------------------------------------------------------------------------------------------------------
+__init__.py                                                                                         0      0   100%
+api.py                                                                                             31      1    97%
+applications/__init__.py                                                                            0      0   100%
+applications/apps.py                                                                                4      0   100%
+applications/migrations/0001_initial.py                                                             8      0   100%
+applications/migrations/0002_loanapplication_submitted_by_user.py                                   5      0   100%
+applications/migrations/0003_systemsequence_loanrequestregisterentry.py                             7      0   100%
+applications/migrations/0004_applicationdocument_and_more.py                                        7      0   100%
+applications/migrations/0005_application_deficiency.py                                              7      0   100%
+applications/migrations/0006_rejection_note.py                                                      7      0   100%
+applications/migrations/0007_eligibilityassessment.py                                               7      0   100%
+applications/migrations/0008_loanlimitassessment.py                                                 7      0   100%
+applications/migrations/0009_loan_limit_policy_snapshot.py                                          4      0   100%
+applications/migrations/0010_loanapplication_nominee.py                                             5      0   100%
+applications/migrations/0011_witness.py                                                             7      0   100%
+applications/migrations/0012_witness_verification_evidence.py                                      19      0   100%
+applications/migrations/0013_witness_correction.py                                                  7      0   100%
+applications/migrations/0014_witness_contact_fields.py                                              4      0   100%
+applications/migrations/__init__.py                                                                 0      0   100%
+applications/models.py                                                                            297     27    91%
+applications/modules/__init__.py                                                                    0      0   100%
+applications/modules/application_authority.py                                                      25      0   100%
+applications/modules/document_checklist_facts.py                                                   38      1    97%
+applications/modules/document_generation_facts.py                                                  18      1    94%
+applications/modules/nominee_validation.py                                                         21      0   100%
+applications/modules/rejection_notes.py                                                            20      1    95%
+applications/modules/signature_identity_facts.py                                                   32      5    84%
+applications/modules/witness_corrections.py                                                       106      8    92%
+applications/services.py                                                                          865     75    91%
+applications/views.py                                                                             540     65    88%
+approvals/__init__.py                                                                               0      0   100%
+approvals/apps.py                                                                                   5      0   100%
+approvals/management/__init__.py                                                                    0      0   100%
+approvals/management/commands/__init__.py                                                           0      0   100%
+approvals/management/commands/seed_approval_configuration.py                                       11      2    82%
+approvals/migrations/0001_initial.py                                                                8      0   100%
+approvals/migrations/0002_approvalcase_workflow_event.py                                           15      4    73%
+approvals/migrations/0003_approvalmatrixrule_sanctioncommittee.py                                  16      0   100%
+approvals/migrations/0004_approval_configuration_history_constraints.py                             4      0   100%
+approvals/migrations/0005_approvalconfigurationproposal.py                                          7      0   100%
+approvals/migrations/0006_approvalcase_configuration_snapshot.py                                    5      0   100%
+approvals/migrations/0007_approvalcase_enrichment_snapshot.py                                       4      0   100%
+approvals/migrations/0008_approvalaction.py                                                         7      0   100%
+approvals/migrations/0009_sanction_decision_and_case_closure.py                                     7      0   100%
+approvals/migrations/0010_approvalcasereadscopegrant_and_more.py                                   79     10    87%
+approvals/migrations/0011_approvalcase_appraisal_facts_json_and_more.py                            23      0   100%
+approvals/migrations/0012_approvalconflictdeclaration_and_more.py                                  20      1    95%
+approvals/migrations/0013_conflict_projection_scope_closure.py                                     35      2    94%
+approvals/migrations/0014_exceptionregisterentry_and_more.py                                        7      0   100%
+approvals/migrations/0015_generalmeetingapproval_and_more.py                                        7      0   100%
+approvals/migrations/0016_creditsanctionregisterentry.py                                            7      0   100%
+approvals/migrations/0017_exceptionregisterentry_supporting_documents_json.py                       4      0   100%
+approvals/migrations/0018_creditsanctionregisterentry_source_review_facts_json.py                   4      0   100%
+approvals/migrations/0019_register_source_facts.py                                                 23     10    57%
+approvals/migrations/0020_approvalaction_approver_display_name.py                                   4      0   100%
+approvals/migrations/__init__.py                                                                    0      0   100%
+approvals/models.py                                                                               307      0   100%
+approvals/modules/__init__.py                                                                       4      0   100%
+approvals/modules/approval_actions.py                                                             173      6    97%
+approvals/modules/approval_case_engine.py                                                         410     48    88%
+approvals/modules/approval_case_projection.py                                                      28      3    89%
+approvals/modules/approval_case_selector.py                                                        30      0   100%
+approvals/modules/approval_matrix.py                                                               45      4    91%
+approvals/modules/approval_matrix_configuration.py                                                306     37    88%
+approvals/modules/conflict_of_interest.py                                                          69      0   100%
+approvals/modules/document_checklist_access.py                                                     54      5    91%
+approvals/modules/document_checklist_facts.py                                                      27      0   100%
+approvals/modules/document_generation_facts.py                                                     29      1    97%
+approvals/modules/exception_register.py                                                           101     10    90%
+approvals/modules/general_meeting.py                                                              141      8    94%
+approvals/modules/read_scope.py                                                                    44      2    95%
+approvals/modules/sanction_committee.py                                                            29      2    93%
+approvals/modules/sanction_handoff.py                                                             218     22    90%
+approvals/modules/sanction_register.py                                                            120      8    93%
+approvals/views.py                                                                                199     21    89%
+communications/__init__.py                                                                          0      0   100%
+communications/apps.py                                                                              4      0   100%
+communications/migrations/0001_initial.py                                                           6      0   100%
+communications/migrations/0002_communication.py                                                     6      0   100%
+communications/migrations/0003_notification.py                                                      6      0   100%
+communications/migrations/__init__.py                                                               0      0   100%
+communications/models.py                                                                           80      0   100%
+communications/services.py                                                                        395     43    89%
+communications/views.py                                                                            95     12    87%
+config/__init__.py                                                                                  0      0   100%
+config/settings.py                                                                                 32      2    94%
+config/urls.py                                                                                     16      0   100%
+configurations/__init__.py                                                                          0      0   100%
+configurations/apps.py                                                                              4      0   100%
+configurations/migrations/0001_initial.py                                                           8      0   100%
+configurations/migrations/0002_version_history_approval_evidence.py                                 4      0   100%
+configurations/migrations/__init__.py                                                               0      0   100%
+configurations/models.py                                                                           52      0   100%
+configurations/modules/__init__.py                                                                  0      0   100%
+configurations/modules/configuration_resolver.py                                                   22      2    91%
+configurations/services.py                                                                        224     28    88%
+configurations/views.py                                                                            71     12    83%
+credit/__init__.py                                                                                  1      0   100%
+credit/apps.py                                                                                      5      0   100%
+credit/migrations/0001_credit_assessment_model_ownership.py                                        20      1    95%
+credit/migrations/0002_riskassessment_loanappraisalnote.py                                          7      0   100%
+credit/migrations/0003_appraisal_prerequisite_snapshots.py                                         32      1    97%
+credit/migrations/0004_appraisal_review_facts.py                                                    4      0   100%
+credit/migrations/0005_appraisalreviewdecision.py                                                  33      0   100%
+credit/migrations/0006_legacy_appraisal_history_remediation.py                                     20      0   100%
+credit/migrations/0007_eligibility_active_member_snapshot.py                                        4      0   100%
+credit/migrations/__init__.py                                                                       0      0   100%
+credit/models.py                                                                                  125      1    99%
+credit/modules/__init__.py                                                                          0      0   100%
+credit/modules/appraisal_workflow.py                                                              479     38    92%
+credit/modules/borrower_limit_projection.py                                                        50      2    96%
+credit/modules/common.py                                                                           43      1    98%
+credit/modules/eligibility_assessment.py                                                          143      6    96%
+credit/modules/loan_limit_calculator.py                                                           268     27    90%
+dashboard/__init__.py                                                                               0      0   100%
+dashboard/services.py                                                                              24      1    96%
+dashboard/views.py                                                                                 17      0   100%
+documents/__init__.py                                                                               0      0   100%
+documents/apps.py                                                                                   4      0   100%
+documents/migrations/0001_initial.py                                                                8      0   100%
+documents/migrations/0002_documenttemplate.py                                                       7      0   100%
+documents/migrations/0003_documenttemplateidentity.py                                              10      0   100%
+documents/migrations/0004_loandocument.py                                                           7      0   100%
+documents/migrations/__init__.py                                                                    0      0   100%
+documents/models.py                                                                                59      2    97%
+documents/modules/__init__.py                                                                       0      0   100%
+documents/modules/document_templates.py                                                           155     15    90%
+documents/selectors.py                                                                             41      5    88%
+documents/services.py                                                                             144      4    97%
+documents/storage.py                                                                               57      2    96%
+documents/views.py                                                                                 67      5    93%
+domain_errors.py                                                                                   18      0   100%
+identity/__init__.py                                                                                0      0   100%
+identity/admin_views.py                                                                            97     16    84%
+identity/audit_views.py                                                                            16      0   100%
+identity/catalogue.py                                                                              37      0   100%
+identity/management/__init__.py                                                                     0      0   100%
+identity/management/commands/__init__.py                                                            0      0   100%
+identity/management/commands/seed_demo_users.py                                                    83      7    92%
+identity/management/commands/seed_e2e_users.py                                                     91      2    98%
+identity/management/commands/seed_role_catalogue.py                                                 7      0   100%
+identity/migrations/0001_initial.py                                                                 8      0   100%
+identity/migrations/0002_permission_rolepermission_and_more.py                                      7      0   100%
+identity/migrations/0003_portal_member_auth.py                                                      7      0   100%
+identity/migrations/__init__.py                                                                     0      0   100%
+identity/models.py                                                                                184      5    97%
+identity/modules/__init__.py                                                                        0      0   100%
+identity/modules/admin_users.py                                                                   125     13    90%
+identity/modules/audit_log.py                                                                      60      1    98%
+identity/modules/auth_service.py                                                                  111      7    94%
+identity/modules/http_auth.py                                                                      31      0   100%
+identity/modules/object_permissions.py                                                             36      0   100%
+identity/modules/portal_auth_service.py                                                           204     30    85%
+identity/modules/tokens.py                                                                         43      4    91%
+identity/views.py                                                                                 135     27    80%
+legal_documents/__init__.py                                                                         0      0   100%
+legal_documents/migrations/0001_transfer_loan_document_owner.py                                    25      1    96%
+legal_documents/migrations/0002_document_checklists.py                                              7      0   100%
+legal_documents/migrations/0003_loan_document_renderer_provenance.py                                4      0   100%
+legal_documents/migrations/0004_checklistitem_notarisation_status_and_more.py                       7      0   100%
+legal_documents/migrations/0005_signature_records.py                                                7      0   100%
+legal_documents/migrations/0006_stamp_notary_preparer_identity.py                                   5      0   100%
+legal_documents/migrations/0007_signature_capture_maker.py                                          5      0   100%
+legal_documents/migrations/0008_securitypackage_powerofattorney_and_more.py                         7      0   100%
+legal_documents/migrations/0009_loandocument_verification_remarks.py                                4      0   100%
+legal_documents/migrations/0010_stage4_maker_checker_constraints.py                                11      0   100%
+legal_documents/migrations/__init__.py                                                              0      0   100%
+legal_documents/models.py                                                                         208      6    97%
+legal_documents/modules/__init__.py                                                                 0      0   100%
+legal_documents/modules/document_authority.py                                                      50      0   100%
+legal_documents/modules/document_checklist.py                                                     209      3    99%
+legal_documents/modules/document_generation.py                                                    162      5    97%
+legal_documents/modules/document_renderer.py                                                      229     21    91%
+legal_documents/modules/loan_document_verification.py                                              87      2    98%
+legal_documents/modules/power_of_attorney.py                                                      186     25    87%
+legal_documents/modules/signatures.py                                                             174     13    93%
+legal_documents/modules/stamp_notary.py                                                           167      7    96%
+legal_documents/request_contracts.py                                                              202     31    85%
+legal_documents/selectors.py                                                                       60      6    90%
+legal_documents/serializers.py                                                                      2      0   100%
+legal_documents/views.py                                                                          140     11    92%
+manage.py                                                                                          10      0   100%
+members/__init__.py                                                                                 0      0   100%
+members/apps.py                                                                                     4      0   100%
+members/migrations/0001_initial.py                                                                  8      0   100%
+members/migrations/0002_profile_shells.py                                                           7      0   100%
+members/migrations/0003_individual_profile_details.py                                               4      0   100%
+members/migrations/0004_nominee.py                                                                  7      0   100%
+members/migrations/0005_shareholding_and_more.py                                                    8      0   100%
+members/migrations/0006_landholding_cropplan_and_more.py                                            7      0   100%
+members/migrations/0007_kycprofile_kycdocument_and_more.py                                          7      0   100%
+members/migrations/0008_cancelledcheque_bankaccount_and_more.py                                     7      0   100%
+members/migrations/0009_member_identity_governance.py                                               7      0   100%
+members/migrations/0010_member_identity_change_request.py                                           7      0   100%
+members/migrations/0011_producesupplyrecord.py                                                      7      0   100%
+members/migrations/0012_memberserviceevidence_activememberstatus_and_more.py                        6      0   100%
+members/migrations/0013_memberserviceevidence_maker_users_and_more.py                              11      0   100%
+members/migrations/0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more.py      14      4    71%
+members/migrations/__init__.py                                                                      0      0   100%
+members/models.py                                                                                 467     33    93%
+members/modules/__init__.py                                                                         3      0   100%
+members/modules/active_member_status.py                                                           290     28    90%
+members/modules/member_authority.py                                                                26      0   100%
+members/modules/member_registry.py                                                                122     17    86%
+members/portal_services.py                                                                        100      2    98%
+members/portal_views.py                                                                           105      9    91%
+members/protected_identity.py                                                                      18      2    89%
+members/services.py                                                                               935     96    90%
+members/views.py                                                                                  425     56    87%
+ops.py                                                                                             16      0   100%
+processes/__init__.py                                                                               0      0   100%
+processes/sanction_completion.py                                                                    6      0   100%
+scheduler/__init__.py                                                                               0      0   100%
+scheduler/apps.py                                                                                   4      0   100%
+scheduler/migrations/0001_initial.py                                                                6      0   100%
+scheduler/migrations/__init__.py                                                                    0      0   100%
+scheduler/models.py                                                                                25      0   100%
+scheduler/services.py                                                                              90     22    76%
+security_instruments/__init__.py                                                                    0      0   100%
+security_instruments/apps.py                                                                        4      0   100%
+security_instruments/migrations/0001_transfer_security_ownership.py                                56      9    84%
+security_instruments/migrations/0002_sh4sharetransferform_and_more.py                               7      0   100%
+security_instruments/migrations/__init__.py                                                         0      0   100%
+security_instruments/models.py                                                                     79      0   100%
+security_instruments/modules/__init__.py                                                            0      0   100%
+security_instruments/modules/power_of_attorney.py                                                   6      0   100%
+security_instruments/modules/security_package.py                                                  107     17    84%
+security_instruments/modules/sh4.py                                                               180     23    87%
+security_instruments/request_contracts.py                                                         105     18    83%
+security_instruments/views.py                                                                     120     24    80%
+tests/__init__.py                                                                                   0      0   100%
+tests/api_contracts.py                                                                             58      0   100%
+tests/base.py                                                                                       8      0   100%
+tests/test_active_member_status_module.py                                                         350     86    75%
+tests/test_admin_users_api.py                                                                     176      0   100%
+tests/test_api_contract_harness.py                                                                133      1    99%
+tests/test_api_envelope.py                                                                         42      0   100%
+tests/test_appraisal_api.py                                                                      1234    163    87%
+tests/test_approval_case_routing_api.py                                                          2416     56    98%
+tests/test_approval_matrix.py                                                                     555    205    63%
+tests/test_approval_read_scope_migration.py                                                       115      0   100%
+tests/test_audit_logs_api.py                                                                      130      0   100%
+tests/test_auth_api.py                                                                            164      0   100%
+tests/test_auth_module.py                                                                         148      0   100%
+tests/test_backend_infrastructure.py                                                               29      0   100%
+tests/test_catalogue_seed.py                                                                      121      0   100%
+tests/test_communications_api.py                                                                  141      0   100%
+tests/test_configurations_api.py                                                                  172      0   100%
+tests/test_content_templates_api.py                                                               132      0   100%
+tests/test_credit_action_parity_matrix.py                                                         569      2    99%
+tests/test_credit_model_ownership_migration.py                                                     92      0   100%
+tests/test_credit_modules.py                                                                      456    121    73%
+tests/test_dashboard_api.py                                                                       105      0   100%
+tests/test_document_checklist_api.py                                                              377     36    90%
+tests/test_document_files_api.py                                                                  228      0   100%
+tests/test_document_templates_api.py                                                              232     39    83%
+tests/test_health_api.py                                                                           28      0   100%
+tests/test_legal_document_boundary.py                                                             140      0   100%
+tests/test_loan_applications_api.py                                                              1729      0   100%
+tests/test_loan_document_generation_api.py                                                        528     19    96%
+tests/test_member_authority_action_matrix.py                                                      355      0   100%
+tests/test_member_bank_accounts_api.py                                                            173      0   100%
+tests/test_member_directory_api.py                                                                 79      0   100%
+tests/test_member_governance_api.py                                                               282     56    80%
+tests/test_member_kyc_api.py                                                                      154      0   100%
+tests/test_member_land_crop_api.py                                                                157      0   100%
+tests/test_member_nominees_api.py                                                                 138      2    99%
+tests/test_member_profile_api.py                                                                  216      0   100%
+tests/test_member_scope_assignment_api.py                                                          70      0   100%
+tests/test_member_shareholdings_api.py                                                            113      0   100%
+tests/test_nominee_validation.py                                                                   25      0   100%
+tests/test_notifications_api.py                                                                   155      1    99%
+tests/test_object_permissions.py                                                                   60      0   100%
+tests/test_portal_auth_api.py                                                                     127      0   100%
+tests/test_portal_member_api.py                                                                   438      0   100%
+tests/test_power_of_attorney_api.py                                                               314     58    82%
+tests/test_produce_supply_api.py                                                                  182      0   100%
+tests/test_sanction_submission_api.py                                                            1012    102    90%
+tests/test_scheduler_services.py                                                                   48      0   100%
+tests/test_security_instrument_boundary.py                                                         47      1    98%
+tests/test_seed_demo_users.py                                                                     147      0   100%
+tests/test_seed_e2e_users.py                                                                      153      0   100%
+tests/test_sh4_api.py                                                                             250     73    71%
+tests/test_signature_mismatch_api.py                                                              376     51    86%
+tests/test_stamp_notary_api.py                                                                    410     28    93%
+tests/test_tracer_api.py                                                                          125      0   100%
+tests/test_tri_party_agreement_api.py                                                             219     26    88%
+tests/test_witness_api.py                                                                         429      0   100%
+tests/test_witness_evidence_migration.py                                                           82      0   100%
+tests/test_workflow_events_api.py                                                                 102      0   100%
+tests/test_workflow_guard.py                                                                       28      0   100%
+tracer/__init__.py                                                                                  0      0   100%
+tracer/apps.py                                                                                      4      0   100%
+tracer/migrations/0001_initial.py                                                                   8      0   100%
+tracer/migrations/0002_remove_tracer_workflowevent_state.py                                         4      0   100%
+tracer/migrations/__init__.py                                                                       0      0   100%
+tracer/models.py                                                                                   46      0   100%
+tracer/services.py                                                                                118      4    97%
+tracer/views.py                                                                                   100     16    84%
+workflows/__init__.py                                                                               2      0   100%
+workflows/apps.py                                                                                   4      0   100%
+workflows/event_views.py                                                                           17      0   100%
+workflows/events.py                                                                                61      2    97%
+workflows/guard.py                                                                                 51      2    96%
+workflows/migrations/0001_canonical_workflow_event.py                                               8      0   100%
+workflows/migrations/__init__.py                                                                    0      0   100%
+workflows/models.py                                                                                16      0   100%
+-------------------------------------------------------------------------------------------------------------------
+TOTAL                                                                                           31787   2353    93%
