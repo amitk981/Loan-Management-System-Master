@@ -14,6 +14,15 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008B2 Boundary Closure (2026-07-14)
+
+`legal_documents` now owns the retained `loan_documents` model/table, authoritative generation
+module, HTTP adapters, and application-scoped collection selector. `documents` retains only file,
+template, provenance, and storage responsibilities. Direct and HTTP callers cross the same active-
+actor/generate-or-read/template-reference/application-scope checks. Until 009C supplies the real
+loan aggregate, A-102 database-constrains `loan_account_id` to `NULL` rather than accepting an
+unconstrained UUID or the synthetic tracer model.
+
 ## Architecture Review 2026-07-14 09:31 - Generation Boundary and Output Proof
 
 - 008A2's database identity lock, template-source provenance decision, strict selector, and borrower-

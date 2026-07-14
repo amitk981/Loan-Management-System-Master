@@ -19,6 +19,7 @@ from sfpcl_credit.identity.views import (
     portal_password_reset_start,
     refresh,
 )
+from sfpcl_credit.legal_documents import views as legal_document_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
@@ -28,12 +29,12 @@ from sfpcl_credit.workflows import event_views
 urlpatterns = [
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/loan-documents/generate/",
-        document_views.generate_loan_document,
+        legal_document_views.generate_loan_document,
         name="loan-document-generate",
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/loan-documents/",
-        document_views.loan_document_collection,
+        legal_document_views.loan_document_collection,
         name="loan-document-list",
     ),
     path(

@@ -2,29 +2,29 @@
 
 ## Last Run
 
-2026-07-14_100104_normal_run
+2026-07-14_102642_normal_run
 
 ## Current Status
 
-007T is complete. S23 consumes the exact backend legacy row with top-level null purpose/risk and
-retains the existing unavailable-value detail without reconstruction. S21 action POST, detail,
-queue-row, optional sanction-decision, and error outcomes now share the newest queue/detail request
-authority, so newer success, denied, malformed, and empty states cannot be overwritten.
+008B2 is complete. `legal_documents` is now the single runtime owner of the retained
+`loan_documents` model/table, generation module, HTTP adapters, and exact application-scoped
+collection selector. The foundation `documents` package imports no application/approval/legal
+business owner and continues to own template files, provenance, and storage only.
 
-The existing 007S browser outputs remain declared, with `sanction-action-filter-race.png` and
-`credit-sanction-register-legacy-null.png` added for 007T. Local collection passes; the coding
-sandbox hit the expected Chromium Mach-port denial before execution, so the orchestrator owns the
-authoritative two runs.
+Direct and HTTP callers cross the same active-actor, generate/read permission, template-reference,
+application-scope, state, replay, and evidence boundary. The single state-only ownership migration
+retains existing rows and adds a database `loan_account_id IS NULL` constraint under A-102 until
+009C installs the real protected loan FK.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_100104_normal_run/evidence/`. Frontend build, typecheck,
-lint, and all 293 tests pass. Django check/migration sync and all 722 backend tests pass with 22
-expected skips at 93% coverage. The focused backend legacy contract and 47 focused register/
-workbench component tests pass; trusted browser collection includes both declared specs.
+Evidence is in `.ralph/runs/2026-07-14_102642_normal_run/evidence/`. Frontend build, typecheck,
+lint, and all 293 tests pass. Django check/migration sync and all 732 backend tests pass with 22
+expected skips at 93% coverage. The 21 focused legal-document tests, fresh migration, retained-row
+migration test, authority/dependency matrices, and two post-review PostgreSQL race runs pass.
 
 ## Next Run
 
-Run 008B2, then 008B3 before 008C. Both were sharpened to test the legal-document public interface,
-exact selector pagination, real DOCX package extraction, parsed PDF content, and the honest real-M05
-configuration blocker without reversing dependencies or relabelling renderer fixtures as end-to-end.
+Run 008B3, then 008C. Both are sharpened against the completed legal owner: the renderer stays
+behind the public module and proves genuine DOCX/PDF content, while checklist work consumes only
+legal-selector metadata and preserves A-102 until 009C.

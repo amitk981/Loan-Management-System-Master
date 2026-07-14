@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+# Run 2026-07-14_102642_normal_run
+
+- Completed 008B2 by moving the retained `loan_documents` model/table, generation orchestration,
+  transport adapters, and collection selector behind the source-defined `legal_documents` owner.
+- Direct and HTTP generation/read calls share active-actor, permission, template-reference, and
+  application-scope authority. Denial matrices prove zero template/frozen/storage reads and zero
+  file/model/audit/workflow writes, including malformed unauthorised payloads.
+- One state-only migration retains pre-existing rows and adds the database-enforced nullable-only
+  loan-account transition recorded as A-102. Fresh migration creates exactly one retained table;
+  009C owns the final protected FK.
+- Exact first/middle/final/empty selector pages, API/direct contract parity, replay, and two final
+  PostgreSQL five-request races pass. Backend check/migration sync and all 732 tests pass with 22
+  expected skips at 93% coverage; frontend build/typecheck/lint and all 293 tests pass.
+- Independent Standards/Spec review findings on authority ordering, denial/dependency evidence,
+  and shallow helpers were fixed before the final gates. Next: 008B3, then 008C.
+
 # Run 2026-07-14_100104_normal_run
 
 - Completed 007T. S23 now consumes the exact retained legacy register shape with top-level null
@@ -6349,6 +6365,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_100104_normal_run/.ralph/runs/2026-07-14_100104_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_100104_normal_run/.ralph/runs/2026-07-14_100104_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 11:13:36 - 2026-07-14_102642_normal_run
+- Agent tool used: codex
+- Slice attempted: 008B2-legal-document-generation-boundary-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/.ralph/runs/2026-07-14_102642_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/.ralph/runs/2026-07-14_102642_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

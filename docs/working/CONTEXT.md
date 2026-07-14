@@ -27,9 +27,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   production-valid S21 pagination fixtures.
   Epic 008 has started: 008A/008A2 provide a versioned template catalogue with serialized effective
   ranges, retained file-reference provenance, and explicit borrower-template variant resolution;
-  008B adds replay-safe generated-document metadata and frozen merge facts. Corrective 008B2/008B3
-  are queued before checklist work to restore the source-defined legal-document dependency seam,
-  enforce authority inside the module, and prove genuine DOCX/PDF rendered content. The full real
+  008B adds replay-safe generated-document metadata and frozen merge facts. Corrective 008B2 now
+  owns generation/reads in the source-defined `legal_documents` boundary, enforces authority inside
+  the module, and retains honest nullable-only loan-account integrity; 008B3 remains queued to prove
+  genuine DOCX/PDF rendered content. The full real
   M05-to-Term-Sheet path remains configuration-blocked until governed owners exist for the missing
   sanction terms; renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task

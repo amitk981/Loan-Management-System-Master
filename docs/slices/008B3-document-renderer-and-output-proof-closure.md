@@ -86,6 +86,15 @@ content-extraction assertions, bounded-input matrix, and all configured gates.
   exercise the real M05-produced nullable-term decision and prove its explicit zero-write blocker;
   do not present the fixture as the missing governed M05-to-M06 production path.
 
+## Run-Ahead Sharpening (008B2 completion, 2026-07-14)
+
+- Install the renderer behind `legal_documents.modules.document_generation`; the foundation
+  `documents` app continues to own only source-file provenance/storage and must not import the
+  renderer, applications, or approvals. Keep direct and HTTP callers on the same authority seam.
+- Preserve `legal_documents.LoanDocument`, the retained `loan_documents` table/replay identity, and
+  A-102's nullable-only loan-account constraint. Renderer work neither moves the model again nor
+  accepts a tracer/unconstrained loan reference.
+
 ## Risk Level
 High
 

@@ -1,4 +1,5 @@
 import tempfile
+import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
@@ -9,7 +10,7 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.db import close_old_connections, connection
+from django.db import IntegrityError, close_old_connections, connection, transaction
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
@@ -17,7 +18,8 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCase, SanctionDecision
 from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
-from sfpcl_credit.documents.modules import document_generation
+from sfpcl_credit.legal_documents.modules import document_generation
+from sfpcl_credit.legal_documents.models import LoanDocument
 from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member, Nominee, Shareholding
@@ -175,7 +177,7 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.assertEqual(body["data"]["generation_status"], "generated")
         self.assertEqual(body["data"]["file_name"], "term-sheet-LO00000801.pdf")
 
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         retained = LoanDocument.objects.get(pk=body["data"]["loan_document_id"])
         self.assertEqual(retained.loan_application_id, self.application.pk)
@@ -213,7 +215,7 @@ class LoanDocumentGenerationApiTests(TestCase):
 
         self.assertEqual(response.status_code, 409, response.content)
         self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 0)
         self.assertEqual(
@@ -332,7 +334,7 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(second.status_code, 200, second.content)
         self.assertEqual(first.json()["data"], second.json()["data"])
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 1)
         self.assertEqual(
@@ -364,7 +366,7 @@ class LoanDocumentGenerationApiTests(TestCase):
                 response = self._generate()
                 self.assertEqual(response.status_code, 400, response.content)
                 self.assertIn(merge_field, response.json()["error"]["field_errors"])
-                from sfpcl_credit.documents.models import LoanDocument
+                from sfpcl_credit.legal_documents.models import LoanDocument
 
                 self.assertEqual(LoanDocument.objects.count(), 0)
                 self.assertEqual(DocumentFile.objects.count(), 1)
@@ -392,13 +394,10 @@ class LoanDocumentGenerationApiTests(TestCase):
             role=self.actor.primary_role, permission=permission
         ).delete()
         denied_without_permission = self._generate()
-        self.assertEqual(denied_without_permission.status_code, 400)
-        self.assertIn(
-            "template_file_id",
-            denied_without_permission.json()["error"]["field_errors"],
-        )
+        self.assertEqual(denied_without_permission.status_code, 403)
+        self.assertEqual(denied_without_permission.json()["error"]["code"], "FORBIDDEN")
 
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 0)
         self.assertEqual(DocumentFile.objects.count(), 1)
@@ -421,7 +420,7 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.assertEqual(unresolved.status_code, 400, unresolved.content)
         self.assertIn("borrower_type", unresolved.json()["error"]["field_errors"])
 
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 0)
         self.assertEqual(DocumentFile.objects.count(), 1)
@@ -429,6 +428,21 @@ class LoanDocumentGenerationApiTests(TestCase):
     def test_generate_read_and_object_scope_permissions_do_not_leak_authority(self):
         generated = self._generate()
         self.assertEqual(generated.status_code, 200, generated.content)
+        direct_replay = document_generation.generate(
+            actor=self.actor,
+            application_id=self.application.pk,
+            payload={
+                "document_type": "term_sheet",
+                "template_id": str(self.template.pk),
+                "output_format": "pdf",
+            },
+            metadata=document_generation.RequestMetadata(
+                request_id="req-direct-replay",
+                ip_address="127.0.0.1",
+                user_agent="test",
+            ),
+        )
+        self.assertEqual(direct_replay, generated.json()["data"])
 
         generate_permission = Permission.objects.get(permission_code="documents.loan_document.generate")
         read_permission = Permission.objects.get(permission_code="documents.loan_document.read")
@@ -470,6 +484,184 @@ class LoanDocumentGenerationApiTests(TestCase):
         self.assertEqual(object_denied.status_code, 403, object_denied.content)
         self.assertEqual(object_denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
 
+        outside_reader = self._user(
+            "outside_reader",
+            "documents.loan_document.read",
+        )
+        object_denied_read = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/loan-documents/",
+            **self._auth(outside_reader),
+        )
+        self.assertEqual(object_denied_read.status_code, 403, object_denied_read.content)
+        self.assertEqual(
+            object_denied_read.json()["error"]["code"],
+            "OBJECT_ACCESS_DENIED",
+        )
+
+    def test_direct_generation_enforces_application_object_scope_before_template_reads(self):
+        outsider = self._user(
+            "direct_outside_generator",
+            "documents.loan_document.generate",
+            "documents.template.file_reference",
+        )
+
+        with (
+            patch.object(
+                document_generation.document_templates,
+                "resolve_borrower_template_variant",
+            ) as variant_read,
+            patch.object(
+                document_generation.approval_facts,
+                "resolve_for_generation",
+            ) as approval_read,
+            patch.object(
+                document_generation.document_services,
+                "resolve_template_source_reference",
+            ) as file_read,
+            patch.object(document_generation.LocalDocumentStorage, "store") as storage_write,
+            self.assertRaises(document_generation.LegalDocumentAccessDenied) as denied,
+        ):
+            document_generation.generate(
+                actor=outsider,
+                application_id=self.application.pk,
+                payload={
+                    "document_type": "term_sheet",
+                    "template_id": str(self.template.pk),
+                    "output_format": "pdf",
+                },
+                metadata=document_generation.RequestMetadata(
+                    request_id="req-direct-object-denied",
+                    ip_address="127.0.0.1",
+                    user_agent="test",
+                ),
+            )
+
+        self.assertEqual(denied.exception.error_code, "OBJECT_ACCESS_DENIED")
+        variant_read.assert_not_called()
+        approval_read.assert_not_called()
+        file_read.assert_not_called()
+        storage_write.assert_not_called()
+        self.assertEqual(LoanDocument.objects.count(), 0)
+        self.assertEqual(DocumentFile.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="documents.loan_document.generated").count(),
+            0,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_document_generation").count(),
+            0,
+        )
+
+    def test_direct_list_enforces_read_scope_before_selector_count_or_serialization(self):
+        generated = self._generate()
+        self.assertEqual(generated.status_code, 200, generated.content)
+        outsider = self._user(
+            "direct_outside_reader",
+            "documents.loan_document.read",
+        )
+
+        with (
+            patch.object(document_generation.legal_document_selector, "list_for_application") as selector,
+            self.assertRaises(document_generation.LegalDocumentAccessDenied) as denied,
+        ):
+            document_generation.list_for_application(
+                actor=outsider,
+                application_id=self.application.pk,
+                query_params={"page": "1", "page_size": "20"},
+            )
+
+        self.assertEqual(denied.exception.error_code, "OBJECT_ACCESS_DENIED")
+        selector.assert_not_called()
+
+    def test_direct_list_returns_exact_first_middle_final_and_empty_pages(self):
+        generated_file = DocumentFile.objects.create(
+            file_name="generated.pdf",
+            file_extension=".pdf",
+            mime_type="application/pdf",
+            file_size_bytes=10,
+            storage_provider="local",
+            storage_key="generated.pdf",
+            checksum_sha256="0" * 64,
+            uploaded_by_user=self.actor,
+            sensitivity_level="confidential",
+        )
+        expected_newest_first = []
+        for index in range(5):
+            template = DocumentTemplate.objects.create(
+                template_code=f"page_template_{index}",
+                template_name=f"Page template {index}",
+                document_type=f"page_document_{index}",
+                borrower_type="individual_farmer",
+                template_version=f"{index + 2}.0",
+                template_file=self.template_file,
+                merge_fields_json=[],
+                approval_status=DocumentTemplate.STATUS_APPROVED,
+                effective_from=timezone.localdate(),
+            )
+            row = LoanDocument.objects.create(
+                loan_application=self.application,
+                document_type=template.document_type,
+                document_category="legal",
+                party_required="borrower",
+                document_template=template,
+                document=generated_file,
+                output_format="pdf",
+                generation_status="generated",
+                execution_status="pending",
+                verification_status="pending",
+            )
+            LoanDocument.objects.filter(pk=row.pk).update(
+                created_at=timezone.now() + timedelta(minutes=index)
+            )
+            expected_newest_first.insert(0, str(row.pk))
+
+        pages = []
+        for requested_page in (1, 2, 3, 99):
+            rows, pagination = document_generation.list_for_application(
+                actor=self.actor,
+                application_id=self.application.pk,
+                query_params={"page": str(requested_page), "page_size": "2"},
+            )
+            pages.append(([row["loan_document_id"] for row in rows], pagination))
+
+        self.assertEqual(pages[0][0], expected_newest_first[:2])
+        self.assertEqual(pages[1][0], expected_newest_first[2:4])
+        self.assertEqual(pages[2][0], expected_newest_first[4:])
+        self.assertEqual(pages[3][0], expected_newest_first[4:])
+        self.assertEqual(
+            [page[1]["page"] for page in pages],
+            [1, 2, 3, 3],
+        )
+        for _, pagination in pages:
+            self.assertEqual(pagination["page_size"], 2)
+            self.assertEqual(pagination["total_count"], 5)
+            self.assertEqual(pagination["total_pages"], 3)
+
+        empty_application = LoanApplication.objects.create(
+            application_reference_number="LO00000802",
+            member=self.member,
+            borrower_type="individual_farmer",
+            received_by_user=self.actor,
+            created_by_user=self.actor,
+        )
+        empty_rows, empty_pagination = document_generation.list_for_application(
+            actor=self.actor,
+            application_id=empty_application.pk,
+            query_params={"page": "99", "page_size": "2"},
+        )
+        self.assertEqual(empty_rows, [])
+        self.assertEqual(
+            empty_pagination,
+            {
+                "page": 1,
+                "page_size": 2,
+                "total_count": 0,
+                "total_pages": 1,
+                "has_next": False,
+                "has_previous": False,
+            },
+        )
+
     def test_ineligible_template_states_fail_closed_before_rendering(self):
         cases = (
             {"approval_status": DocumentTemplate.STATUS_DRAFT},
@@ -498,7 +690,7 @@ class LoanDocumentGenerationApiTests(TestCase):
                 denied = self._generate(document_type="term_sheet")
                 self.assertEqual(denied.status_code, 400, denied.content)
                 self.assertIn("template_id", denied.json()["error"]["field_errors"])
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 0)
         self.assertEqual(DocumentFile.objects.count(), 1)
@@ -507,7 +699,7 @@ class LoanDocumentGenerationApiTests(TestCase):
         storage = LocalDocumentStorage()
         before = set(Path(settings.DOCUMENT_STORAGE_ROOT).rglob("*"))
         with patch(
-            "sfpcl_credit.documents.modules.document_generation.DocumentFile.objects.create",
+            "sfpcl_credit.legal_documents.modules.document_generation.DocumentFile.objects.create",
             side_effect=RuntimeError("metadata write failed"),
         ):
             with self.assertRaisesRegex(RuntimeError, "metadata write failed"):
@@ -525,7 +717,7 @@ class LoanDocumentGenerationApiTests(TestCase):
                     storage=storage,
                 )
         self.assertEqual(set(Path(settings.DOCUMENT_STORAGE_ROOT).rglob("*")), before)
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 0)
         self.assertEqual(
@@ -543,10 +735,25 @@ class LoanDocumentGenerationApiTests(TestCase):
 
         self.assertEqual(denied.status_code, 400, denied.content)
         self.assertIn("template_file_id", denied.json()["error"]["field_errors"])
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 0)
         self.assertEqual(DocumentFile.objects.count(), 1)
+
+    def test_database_rejects_non_null_loan_account_until_epic_009_fk_exists(self):
+        generated = self._generate()
+        self.assertEqual(generated.status_code, 200, generated.content)
+        retained = LoanDocument.objects.get(
+            pk=generated.json()["data"]["loan_document_id"]
+        )
+        self.assertIsNone(retained.loan_account_id)
+
+        retained.loan_account_id = uuid.uuid4()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            retained.save(update_fields=["loan_account_id"])
+
+        retained.refresh_from_db()
+        self.assertIsNone(retained.loan_account_id)
 
     def _generate(self, *, output_format="pdf", template=None, document_type=None):
         template = template or self.template
@@ -691,7 +898,7 @@ class LoanDocumentGenerationConcurrencyTests(TransactionTestCase):
             results = list(pool.map(generate, range(5)))
 
         self.assertEqual(len({row["loan_document_id"] for row in results}), 1)
-        from sfpcl_credit.documents.models import LoanDocument
+        from sfpcl_credit.legal_documents.models import LoanDocument
 
         self.assertEqual(LoanDocument.objects.count(), 1)
         self.assertEqual(DocumentFile.objects.count(), 2)

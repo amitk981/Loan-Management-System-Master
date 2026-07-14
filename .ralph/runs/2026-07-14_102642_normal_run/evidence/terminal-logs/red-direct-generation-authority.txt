@@ -1,0 +1,20 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_legal_document_boundary (unittest.loader._FailedTest.test_legal_document_boundary)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_legal_document_boundary
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/tests/test_legal_document_boundary.py", line 6, in <module>
+    from sfpcl_credit.legal_documents.modules import document_generation
+ModuleNotFoundError: No module named 'sfpcl_credit.legal_documents'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

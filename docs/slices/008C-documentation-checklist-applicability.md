@@ -105,7 +105,7 @@ refresh write nothing. A real applicability change records old/new item facts an
 
 ## Run-Ahead Sharpening Review (008B completion, 2026-07-14)
 
-- Consume 008B loan-document metadata through a documents-owned application-scoped selector. Do
+- Consume 008B loan-document metadata through the legal-documents-owned application-scoped selector. Do
   not query generated `DocumentFile` rows, storage keys, template source files, or generation audit
   payloads to infer checklist authority.
 - A retained 008B row begins `generation_status=generated`, `execution_status=pending`, and
@@ -125,6 +125,13 @@ refresh write nothing. A real applicability change records old/new item facts an
   second independently committed transaction does not satisfy the source side effect.
 - Consume only structurally valid generated-document metadata proven by 008B3. A file extension,
   generated status, or document id alone cannot make a checklist item complete/applicable.
+
+## Run-Ahead Sharpening (008B2 completion, 2026-07-14)
+
+- Build checklist models/selectors/modules beside `legal_documents.LoanDocument`; never restore a
+  `documents -> applications/approvals/legal_documents` dependency or query foundation file rows.
+- Leave A-102's `loan_account_id IS NULL` database transition intact. 009C alone installs the real
+  protected loan FK; checklist creation/linkage remains application-owned until then.
 
 ## Visual Acceptance Criteria
 None.
