@@ -14,6 +14,21 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008I CDSL Pledge Closure (2026-07-14)
+
+The `security_instruments` owner now retains one protected §17.4 CDSL pledge beneath the locked
+package and exposes the exact §28.5 POST/GET/PATCH routes. Only canonical frozen `demat` mode and the
+sanctioned borrower with active demat shares qualify. Compliance owns current PRF/PSN/BO/DP/count/
+agreement/evidence preparation; a distinct Company Secretary terminally accepts or rejects the
+exact retained submission. Acceptance freezes masked accounts, PSN/agreement/count, the explicit
+future-shares obligation, current renderer/file/checksum, maker/checker, and request facts behind a
+durable §6.3 action. Ordinary ledgers stay masked; a separate reason-bearing Company Secretary
+reveal permission/action returns sealed BO values briefly and audits both success and denial.
+Checklist/package reads project metadata only and preserve PoA/SH-4/completion/readiness/share
+truth. Invocation/unpledge remain database-null and 011I-owned. Twice-run PostgreSQL different-PSN
+create and changed-acceptance races retain one current/terminal winner history with no loser success
+evidence.
+
 ## 008H SH-4 Physical Security Closure (2026-07-14)
 
 The retained `security_instruments` package now refreshes physical/demat applicability only from the

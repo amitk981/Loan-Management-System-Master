@@ -3471,3 +3471,47 @@ Consumed signature/stamp evidence cannot later be changed. Checklist/security re
 existence, document/signature/custody metadata and preserve completion, verifier, remarks, approval
 signatures, PoA/package state, file access, and readiness. Twice-run PostgreSQL five-worker create
 and changed-custody races retain one current/terminal SH-4 and zero loser success evidence.
+
+## CDSL demat-share pledge (008I)
+
+`POST/GET /api/v1/security-packages/{security_package_id}/cdsl-share-pledge/` and
+`PATCH /api/v1/cdsl-share-pledges/{cdsl_share_pledge_id}/` implement §28.5. The main request accepts
+exactly pledgor member, the canonical SFPCL pledgee name, write-only 16-digit pledgor/pledgee BO
+accounts, both DP names, `prepared`/`submitted` PRF status, nullable unique PSN, bounded
+`pending`/`accepted`/`rejected` acceptance, nullable positive share count, nullable agreement
+reference, bounded `pending`/`created` pledge status, and nullable evidence-document id. Invocation,
+unpledge, and their timestamps are neither accepted nor persisted; 011I owns those actions.
+
+GET requires `security.package.read`. POST/PATCH require `security.cdsl_pledge.manage` and the same
+canonical latest-cycle Stage-4 package scope. Only frozen `demat` mode is applicable; `physical`,
+`mixed`, or missing mode cannot create a pledge. The pledgor must be the sanctioned borrower with
+active demat shareholding, the pledged count cannot exceed retained available demat shares, and the
+pledgee must be `Sahyadri Farmers Producer Company Limited`. The evidence id must be the retained
+file of the same application's current-renderer `cdsl_pledge_evidence` legal document; reference
+never grants download. The future-shares obligation is a non-client-editable,
+database-constrained `true` fact under A-113.
+
+Compliance creates/changes pending preparation. `submitted` requires a PSN, every real preparation
+edit transfers current-maker attribution, and an exact replay is zero-write. A distinct active
+Company Secretary may accept or reject only the exact retained submitted facts. Acceptance requires
+both BO/DP facts, PSN, positive in-bounds count, loan-agreement reference, current evidence, and
+`created` status; rejection remains uncreated. Accepted/rejected outcomes are terminal, return the
+retained §6.3 action, and freeze masked BO values plus PSN/agreement/count/future-shares,
+renderer/file/checksum, maker/checker, request/network/role/team facts. A role change cannot collapse
+maker/checker identity, and database constraints enforce terminal evidence coherence.
+
+Ordinary pledge, package, checklist, audit, version, and workflow responses show only last-four
+masked BO values. `POST /api/v1/cdsl-share-pledges/{cdsl_share_pledge_id}/reveal-bo-accounts/`
+accepts exactly `{ "reason": "..." }`, requires the dedicated
+`security.cdsl_pledge.reveal` permission, package-read/object scope, and active Company Secretary
+authority, and returns both full values with a five-minute expiry under A-114. Each permitted reveal
+and denial is separately audited without plaintext. New BO values use the versioned authenticated
+sealed-token convention in A-115; hashes support equality/duplicate checks but are never returned.
+
+Package/checklist reads project only masked pledge existence, PRF/PSN/acceptance/created milestones,
+share count, maker, checker, and current legal-document linkage. They preserve PoA/SH-4 facts,
+completion/verifier/remarks/signatures, package status, file authority, share balances,
+loan-account state, and `security_ready_flag=false`. Projection conflict rolls back the pledge and
+all success evidence. Twice-run PostgreSQL five-worker different-PSN create and changed-acceptance
+races retain one current row, one terminal winner ledger, replay-safe same-payload returns, unique
+PSN integrity, masked history, and no loser success evidence.

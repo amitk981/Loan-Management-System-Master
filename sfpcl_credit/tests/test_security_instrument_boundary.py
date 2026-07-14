@@ -8,8 +8,10 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
     def test_security_app_owns_retained_tables_and_policy(self):
         package = apps.get_model("security_instruments", "SecurityPackage")
         poa = apps.get_model("security_instruments", "PowerOfAttorney")
+        cdsl = apps.get_model("security_instruments", "CDSLSharePledge")
         self.assertEqual(package._meta.db_table, "security_packages")
         self.assertEqual(poa._meta.db_table, "power_of_attorneys")
+        self.assertEqual(cdsl._meta.db_table, "cdsl_share_pledges")
         with self.assertRaises(LookupError):
             apps.get_model("legal_documents", "SecurityPackage")
         from sfpcl_credit.security_instruments.modules import security_package

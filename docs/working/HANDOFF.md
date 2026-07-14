@@ -2,35 +2,36 @@
 
 ## Last Run
 
-2026-07-14_220039_normal_run
+2026-07-14_225031_normal_run
 
 ## Current Status
 
-008H is complete. `security_instruments` owns one protected SH-4 per retained package and the exact
-§28.4 POST/GET/PATCH routes. Package refresh now derives only the physical/demat applicability pair
-from canonical frozen sanction facts; missing/`mixed` remains the checklist blocker and creates no
-SH-4 authority.
+008I is complete. `security_instruments` owns one CDSL pledge per retained package and the exact
+§28.5 POST/GET/PATCH routes. The pledge is available only for canonical frozen `demat` packages;
+`physical`, `mixed`, and missing applicability remain fail-closed. Ordinary reads expose masked BO
+accounts, while an explicit Company Secretary reveal permission records a separate audit event.
 
-Compliance owns pending/signed preparation and current-maker identity. A distinct active Company
-Secretary records terminal held custody only from the sanctioned borrower, current verified
-shareholder witness, active physical shareholding, genuine current-renderer SH-4, exact non-legacy
-borrower/witness signatures, and adequate non-legacy stamp maker/checker facts. Custody returns one
-durable §6.3 action, freezes renderer/file/checksum/signature/stamp/maker/request facts, and blocks
-later consumed-evidence mutation. Invocation and return remain null/blocked.
+Compliance owns preparation and real pending changes. A distinct Company Secretary records the
+terminal accepted/rejected result only with retained PSN, SFPCL pledgee identity, active sanctioned
+borrower demat holding, source-required future-shares obligation, and genuine current-renderer
+same-application evidence. Acceptance freezes its evidence and returns one durable action. Exact
+replays are zero-write. Invocation, unpledge, balance changes, checklist completion, package
+readiness, file authority, and loan-account creation remain excluded.
 
-Checklist/package reads project metadata only. Checklist completion/verifier/remarks/signatures,
-PoA, package status, file authority, share balances, and readiness remain unchanged. 008I was already
-sharpened; 008J is now concrete for later blank-cheque custody without implementing it here.
+Checklist/package reads project pledge milestones without changing earlier PoA/tri-party/SH-4 or
+completion-owned facts. 008K was sharpened from source material without implementation; 008J was
+already concrete. Four slices have completed since the last architecture review, so review is due.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_220039_normal_run/evidence/`: three retained TDD red/green
-cycles, 61 impacted tests, genuine public SH-4 generation, migration regression repair, Django
-check/migration sync, both five-worker PostgreSQL create/custody races twice, 819 backend tests with
-34 expected SQLite skips at 93% coverage, and frontend build/typecheck/lint plus 293 tests.
+Evidence is in `.ralph/runs/2026-07-14_225031_normal_run/evidence/`: four retained TDD red/green
+cycles, focused and impacted suites, two successful executions of both PostgreSQL five-worker race
+contracts, Django check/migration sync, 826 backend tests with 36 expected SQLite skips at 92%
+coverage, and frontend build/typecheck/lint plus 293 tests.
 
 ## Next Run
 
-Run 008I. Extend the same package lock with masked CDSL BO-account/PRF/PSN/acceptance facts and the
-existing frozen demat applicability. Preserve PoA/SH-4/checklist/readiness truth and use legal-owned
-evidence selectors only. A-101 still blocks a complete real Term-Sheet path.
+Run the due architecture review. If it produces no corrective priority, run 008J blank-cheque
+custody. Preserve the security-package lock, current renderer/evidence selectors, package/checklist
+truth, and strict exclusion of invocation/disbursement authority. A-101 still blocks a complete real
+Term-Sheet path.

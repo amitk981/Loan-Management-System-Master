@@ -287,6 +287,9 @@ def serialize(checklist):
     sh4_projection = selectors.sh4_projection_for_application(
         application_id=checklist.loan_application_id
     )
+    cdsl_projection = selectors.cdsl_pledge_projection_for_application(
+        application_id=checklist.loan_application_id
+    )
     return {
         "document_checklist_id": str(checklist.pk),
         "loan_application_id": str(checklist.loan_application_id),
@@ -318,6 +321,41 @@ def serialize(checklist):
                 "sh4_custodian_user_id": (
                     sh4_projection.get("custodian_user_id")
                     if item.item_code == "sh4" and sh4_projection
+                    else None
+                ),
+                "cdsl_prf_status": (
+                    cdsl_projection.get("prf_status")
+                    if item.item_code == "cdsl_pledge" and cdsl_projection
+                    else None
+                ),
+                "cdsl_pledge_sequence_number": (
+                    cdsl_projection.get("pledge_sequence_number")
+                    if item.item_code == "cdsl_pledge" and cdsl_projection
+                    else None
+                ),
+                "cdsl_acceptance_status": (
+                    cdsl_projection.get("pledge_acceptance_status")
+                    if item.item_code == "cdsl_pledge" and cdsl_projection
+                    else None
+                ),
+                "cdsl_pledge_status": (
+                    cdsl_projection.get("pledge_status")
+                    if item.item_code == "cdsl_pledge" and cdsl_projection
+                    else None
+                ),
+                "cdsl_pledged_share_count": (
+                    cdsl_projection.get("pledged_share_count")
+                    if item.item_code == "cdsl_pledge" and cdsl_projection
+                    else None
+                ),
+                "cdsl_prepared_by_user_id": (
+                    cdsl_projection.get("prepared_by_user_id")
+                    if item.item_code == "cdsl_pledge" and cdsl_projection
+                    else None
+                ),
+                "cdsl_verified_by_user_id": (
+                    cdsl_projection.get("verified_by_user_id")
+                    if item.item_code == "cdsl_pledge" and cdsl_projection
                     else None
                 ),
                 "applicability_source": item.applicability_source,

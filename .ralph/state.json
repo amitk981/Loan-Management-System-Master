@@ -206,15 +206,16 @@
     "008G-tri-party-agreement-workflow",
     "008G2-stage4-maker-and-verification-contract-closure",
     "008F2-security-instrument-boundary-and-poa-lifecycle-closure",
-    "008H-sh-4-physical-share-security-workflow"
+    "008H-sh-4-physical-share-security-workflow",
+    "008I-cdsl-pledge-workflow"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "12e2dea4",
-  "last_run_id": "2026-07-14_220039_normal_run",
+  "last_run_id": "2026-07-14_225031_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

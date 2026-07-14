@@ -64,6 +64,21 @@ urlpatterns = [
         name="sh4-share-transfer-form-detail",
     ),
     path(
+        "api/v1/security-packages/<uuid:security_package_id>/cdsl-share-pledge/",
+        security_instrument_views.package_cdsl_share_pledge,
+        name="security-package-cdsl-share-pledge",
+    ),
+    path(
+        "api/v1/cdsl-share-pledges/<uuid:cdsl_share_pledge_id>/",
+        security_instrument_views.cdsl_share_pledge_detail,
+        name="cdsl-share-pledge-detail",
+    ),
+    path(
+        "api/v1/cdsl-share-pledges/<uuid:cdsl_share_pledge_id>/reveal-bo-accounts/",
+        security_instrument_views.cdsl_share_pledge_reveal,
+        name="cdsl-share-pledge-reveal-bo-accounts",
+    ),
+    path(
         "api/v1/loan-documents/<uuid:loan_document_id>/signatures/",
         legal_document_views.signature_record,
         name="loan-document-signature-record",

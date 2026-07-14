@@ -55,8 +55,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   tri-party signatures can be rewritten, 008G lacks its promised PostgreSQL/public-generation
   proof, and security-package/PoA ownership sits in `legal_documents` rather than the source-defined
   security module. Corrective 008G2 closes maker/action/consumed-evidence contracts; 008F2 then
-  establishes the security-instruments boundary and terminal canonical-sanction PoA lifecycle
-  before SH-4/CDSL work.
+  establishes the security-instruments boundary and terminal canonical-sanction PoA lifecycle.
+  008H adds terminal SH-4 physical-share custody; 008I now adds the demat CDSL PRF/PSN/acceptance
+  workflow with protected BO accounts, frozen legal evidence, audited reveal, and no invocation,
+  unpledge, checklist-completion, balance, or readiness side effects.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

@@ -139,11 +139,13 @@ def has_canonical_stage4_scope(application_id):
 
 
 def serialize_package(package):
+    from sfpcl_credit.security_instruments.modules.cdsl_share_pledge import serialize_pledge
     from sfpcl_credit.security_instruments.modules.power_of_attorney import serialize_poa
     from sfpcl_credit.security_instruments.modules.sh4 import serialize_sh4
 
     poa = getattr(package, "power_of_attorney", None)
     sh4 = getattr(package, "sh4_share_transfer_form", None)
+    cdsl = getattr(package, "cdsl_share_pledge", None)
     return {
         "security_package_id": str(package.pk),
         "loan_application_id": str(package.loan_application_id),
@@ -157,6 +159,7 @@ def serialize_package(package):
         "security_ready_flag": False,
         "power_of_attorney": serialize_poa(poa) if poa else None,
         "sh4_share_transfer_form": serialize_sh4(sh4) if sh4 else None,
+        "cdsl_share_pledge": serialize_pledge(cdsl) if cdsl else None,
     }
 
 

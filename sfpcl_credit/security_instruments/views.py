@@ -4,10 +4,13 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from sfpcl_credit.api import error_response, parse_json_body, request_ip, request_user_agent, success_response
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.security_instruments.modules import power_of_attorney
+from sfpcl_credit.security_instruments.modules import cdsl_share_pledge
 from sfpcl_credit.security_instruments.modules import security_package as package_service
 from sfpcl_credit.security_instruments.modules import sh4
 from sfpcl_credit.security_instruments.request_contracts import (
     PowerOfAttorneyRequest,
+    CDSLBOAccountRevealRequest,
+    CDSLSharePledgeRequest,
     SH4ShareTransferFormRequest,
 )
 
@@ -127,6 +130,99 @@ def sh4_detail(request, sh4_share_transfer_form_id):
         return error_response(
             request, 400, "VALIDATION_ERROR", "SH-4 failed validation.",
             sh4.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_http_methods(["GET", "POST"])
+def package_cdsl_share_pledge(request, security_package_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "GET":
+            data = cdsl_share_pledge.read_pledge(
+                actor=user, security_package_id=security_package_id
+            )
+        else:
+            cdsl_share_pledge.require_manage_actor(user)
+            parsed = CDSLSharePledgeRequest.parse(parse_json_body(request))
+            data = cdsl_share_pledge.create_pledge(
+                actor=user, security_package_id=security_package_id,
+                values=parsed.as_values(), metadata=_metadata(request),
+            )
+    except cdsl_share_pledge.AccessDenied as exc:
+        return error_response(
+            request, 403, exc.error_code, "You do not have access to this CDSL pledge."
+        )
+    except cdsl_share_pledge.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "CDSL pledge was not found.")
+    except cdsl_share_pledge.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "CDSL pledge failed validation.",
+            cdsl_share_pledge.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_http_methods(["PATCH"])
+def cdsl_share_pledge_detail(request, cdsl_share_pledge_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        cdsl_share_pledge.require_manage_actor(user)
+        parsed = CDSLSharePledgeRequest.parse(parse_json_body(request))
+        data = cdsl_share_pledge.update_pledge(
+            actor=user, cdsl_share_pledge_id=cdsl_share_pledge_id,
+            values=parsed.as_values(), metadata=_metadata(request),
+        )
+    except cdsl_share_pledge.AccessDenied as exc:
+        return error_response(
+            request, 403, exc.error_code, "You do not have access to this CDSL pledge."
+        )
+    except cdsl_share_pledge.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "CDSL pledge was not found.")
+    except cdsl_share_pledge.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "CDSL pledge failed validation.",
+            cdsl_share_pledge.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_POST
+def cdsl_share_pledge_reveal(request, cdsl_share_pledge_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    metadata = _metadata(request)
+    try:
+        cdsl_share_pledge.require_reveal_actor(
+            user, cdsl_share_pledge_id, metadata
+        )
+        parsed = CDSLBOAccountRevealRequest.parse(parse_json_body(request))
+        data = cdsl_share_pledge.reveal_bo_accounts(
+            actor=user, cdsl_share_pledge_id=cdsl_share_pledge_id,
+            reason=parsed.reason, metadata=metadata,
+        )
+    except cdsl_share_pledge.AccessDenied as exc:
+        return error_response(
+            request, 403, exc.error_code,
+            "You do not have access to reveal these BO accounts.",
+        )
+    except cdsl_share_pledge.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "CDSL pledge was not found.")
+    except cdsl_share_pledge.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "BO-account reveal failed validation.",
+            cdsl_share_pledge.validation_field_errors(exc),
         )
     return success_response(data, request)
 

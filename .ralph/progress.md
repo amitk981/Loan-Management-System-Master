@@ -1,5 +1,22 @@
 # Ralph Progress Log
 
+## 2026-07-14 - 2026-07-14_225031_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008I-cdsl-pledge-workflow
+- Summary: Added one package-owned CDSL pledge with protected BO accounts, PRF/PSN/acceptance
+  milestones, Compliance maker transfer, distinct Company Secretary terminal verification,
+  frozen current-renderer evidence, audited explicit reveal, and checklist/package projections.
+  Sharpened 008K without implementing it.
+- Tests run: four retained TDD red/green cycles; focused and impacted suites; both PostgreSQL
+  changed-payload races twice; Django check/migration sync; all 826 backend tests with 36 expected
+  skips at 92% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_225031_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; protected financial identity, schema, legal evidence, permissions, and
+  concurrency changed fail-closed, while invocation/unpledge/readiness remain excluded.
+- Next action: Architecture review is due; otherwise run 008J blank-cheque custody after review.
+
 ## 2026-07-14 - 2026-07-14_143550_normal_run
 
 - Agent tool used: codex
@@ -6843,6 +6860,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_220039_normal_run/.ralph/runs/2026-07-14_220039_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_220039_normal_run/.ralph/runs/2026-07-14_220039_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 23:39:12 - 2026-07-14_225031_normal_run
+- Agent tool used: codex
+- Slice attempted: 008I-cdsl-pledge-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_225031_normal_run/.ralph/runs/2026-07-14_225031_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_225031_normal_run/.ralph/runs/2026-07-14_225031_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
