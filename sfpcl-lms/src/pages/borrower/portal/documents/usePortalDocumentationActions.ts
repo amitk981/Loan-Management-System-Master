@@ -5,6 +5,7 @@ import {
   fetchPortalDocumentContent,
   fetchPortalApplications,
   fetchPortalDocumentationActions,
+  openPortalDocumentBlob,
   PortalDocumentationAction,
   PortalDocumentationProjection,
   uploadPortalDocumentationAction,
@@ -67,9 +68,7 @@ export const usePortalDocumentationActions = () => {
     try {
       const descriptor = await downloadPortalDocumentationAction(action.download.action_url);
       const content = await fetchPortalDocumentContent(descriptor.download_url);
-      const url = URL.createObjectURL(content);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      URL.revokeObjectURL(url);
+      openPortalDocumentBlob(content);
     } catch (requestError) {
       setError(portalErrorMessage(requestError));
     }

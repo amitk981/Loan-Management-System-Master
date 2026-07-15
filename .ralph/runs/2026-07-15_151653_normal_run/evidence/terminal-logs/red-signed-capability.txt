@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 279, in test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit
+    self.assertIn("token=", descriptor["download_url"])
+AssertionError: 'token=' not found in '/api/v1/portal/applications/374db419-83db-41c9-b238-96aef34cb536/documentation-actions/term_sheet/download/?content=1&expires_at=2026-07-15T10:08:44.983872Z'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.094s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

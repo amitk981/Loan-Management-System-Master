@@ -1,0 +1,9 @@
+Command: focused source assertion check for the repaired MP11 trusted-browser contract
+Exit code: 0
+
+50: const applicationHeader scopes from the exact `Application LO000008L3-R` heading.
+51: applicationHeader expects exact `Submitted - Pending Completeness Check`.
+52: the subsequent exact absence check for the `Deficiency Response` heading remains present.
+
+PASS: scoped canonical status assertion is present; stale assertion is absent; subsequent
+deficiency-heading absence check is preserved.

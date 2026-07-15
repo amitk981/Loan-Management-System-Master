@@ -100,6 +100,21 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
   download, asserting the terminal status and Download are both visible while every server-denied
   mutation remains absent. Reuse the existing `StatusBadge` and action-row composition.
 
+## 008L3 Completion Sharpening (2026-07-15)
+
+- Reuse one signed-capability content client whose token is bound to the current file and staff
+  object scope. Do not accept an `expires_at` query parameter as content authority; tamper, expiry,
+  current-document replacement, or cross-action use must remain nondisclosing. Keep the shared
+  delayed object-URL revocation so browser navigation can consume the response.
+- Consume status and every mutation flag independently from the staff projection under the same
+  application/checklist lock. A stale or status-only completion must not be reopened through an
+  upload/generation control, while a terminal badge can coexist with a separately authorised
+  Download.
+- File activity displayed in S26-S35 must use the central `documents.file.uploaded` and
+  `documents.file.downloaded` vocabulary with actor/application/document/version/category/
+  sensitivity/reason/request/network/outcome facts. Do not add portal- or hub-specific parallel
+  file audit semantics.
+
 ## Risk Level
 Medium
 

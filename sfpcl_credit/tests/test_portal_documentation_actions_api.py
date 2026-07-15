@@ -1,6 +1,7 @@
 import hashlib
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -143,7 +144,7 @@ class PortalDocumentationActionsApiTests(TestCase):
         with self.assertRaises(ValidationError):
             submissions[0].save()
         self.assertEqual(
-            AuditLog.objects.filter(action="portal.documentation.uploaded").count(), 2
+            AuditLog.objects.filter(action="documents.file.uploaded").count(), 2
         )
         self.assertEqual(
             AuditLog.objects.filter(action="documents.file.uploaded").count(), 2
@@ -243,7 +244,7 @@ class PortalDocumentationActionsApiTests(TestCase):
                 self.assertEqual(response.status_code, expected_status, response.content)
         self.assertEqual(DocumentFile.objects.count(), 0)
         self.assertFalse(
-            AuditLog.objects.filter(action="portal.documentation.uploaded").exists()
+            AuditLog.objects.filter(action="documents.file.uploaded").exists()
         )
         self.assertFalse(
             AuditLog.objects.filter(action="documents.file.uploaded").exists()
@@ -276,19 +277,36 @@ class PortalDocumentationActionsApiTests(TestCase):
         self.assertEqual(download.status_code, 200, download.content)
         descriptor = download.json()["data"]
         self.assertIn("documentation-actions/term_sheet/download/?content=1", descriptor["download_url"])
+        self.assertIn("token=", descriptor["download_url"])
+        self.assertNotIn("expires_at=", descriptor["download_url"])
         self.assertIn("expires_at", descriptor)
+        tampered = self.client.get(
+            descriptor["download_url"].replace("token=", "token=tampered"),
+            headers=self._portal_auth(),
+        )
+        self.assertEqual(tampered.status_code, 404, tampered.content)
         content = self.client.get(
             descriptor["download_url"],
             headers={**self._portal_auth(), "X-Request-ID": "portal-download-1"})
         self.assertEqual(content.status_code, 200, content.content)
         self.assertEqual(content.content, b"current term sheet bytes")
-        audit = AuditLog.objects.get(action="portal.documentation.downloaded")
+        self.assertEqual(content["Cache-Control"], "no-store")
+        self.assertEqual(content["Pragma"], "no-cache")
+        audit = AuditLog.objects.get(action="documents.file.downloaded")
         self.assertEqual(audit.actor_user, self.portal_user)
         self.assertEqual(audit.new_value_json["portal_account_id"], str(self.portal_account.pk))
         self.assertEqual(audit.new_value_json["member_id"], str(self.application.member_id))
         self.assertEqual(audit.new_value_json["loan_application_id"], str(self.application.pk))
         self.assertEqual(audit.new_value_json["action_code"], "term_sheet")
         self.assertEqual(audit.new_value_json["document_id"], str(output.pk))
+        self.assertEqual(audit.new_value_json["document_version"], "1.0")
+        self.assertEqual(audit.new_value_json["document_category"], "legal")
+        self.assertEqual(audit.new_value_json["sensitivity_level"], "confidential")
+        self.assertEqual(
+            audit.new_value_json["reason"], "borrower_portal_published_document"
+        )
+        self.assertEqual(audit.new_value_json["network"]["ip_address"], "127.0.0.1")
+        self.assertTrue(audit.new_value_json["capability_verified"])
         self.assertEqual(audit.new_value_json["request_id"], "portal-download-1")
         self.assertNotIn("storage_key", str(audit.new_value_json).lower())
         denied = self.client.get(
@@ -297,9 +315,57 @@ class PortalDocumentationActionsApiTests(TestCase):
         )
         self.assertEqual(denied.status_code, 404)
         self.assertEqual(
-            AuditLog.objects.filter(action="portal.documentation.downloaded").count(), 1
+            AuditLog.objects.filter(action="documents.file.downloaded").count(), 1
         )
-    def test_status_only_completion_is_never_shown_complete(self):
+    def test_signed_download_capability_expires_and_cannot_cross_current_document_or_action(self):
+        _output, term_sheet = self._generated_document(
+            "term_sheet", b"term sheet v1", "term-sheet-v1.pdf"
+        )
+        term_item = self.checklist.items.get(item_code="term_sheet")
+        term_item.loan_document = term_sheet
+        term_item.save(update_fields=["loan_document"])
+        action_url = self._action(
+            self.client.get(
+                self._collection_url(), headers=self._portal_auth()
+            ).json()["data"],
+            "term_sheet",
+        )["download"]["action_url"]
+        descriptor = self.client.get(
+            action_url, headers=self._portal_auth()
+        ).json()["data"]
+
+        with patch("django.core.signing.time.time", return_value=9_999_999_999):
+            expired = self.client.get(
+                descriptor["download_url"], headers=self._portal_auth()
+            )
+        self.assertEqual(expired.status_code, 404, expired.content)
+
+        fresh = self.client.get(action_url, headers=self._portal_auth()).json()["data"]
+        _replacement_output, replacement = self._generated_document(
+            "term_sheet", b"term sheet v2", "term-sheet-v2.pdf", template_version="2.0"
+        )
+        term_item.loan_document = replacement
+        term_item.save(update_fields=["loan_document"])
+        replaced = self.client.get(
+            fresh["download_url"], headers=self._portal_auth()
+        )
+        self.assertEqual(replaced.status_code, 404, replaced.content)
+
+        _agreement_output, agreement = self._generated_document(
+            "loan_agreement", b"loan agreement", "loan-agreement.pdf"
+        )
+        agreement_item = self.checklist.items.get(item_code="loan_agreement")
+        agreement_item.loan_document = agreement
+        agreement_item.save(update_fields=["loan_document"])
+        cross_action = self.client.get(
+            fresh["download_url"].replace(
+                "/term_sheet/download/", "/loan_agreement/download/"
+            ),
+            headers=self._portal_auth(),
+        )
+        self.assertEqual(cross_action.status_code, 404, cross_action.content)
+        self.assertFalse(AuditLog.objects.filter(action="documents.file.downloaded").exists())
+    def test_stale_status_only_completion_cannot_be_reopened_by_portal_upload(self):
         item = self.checklist.items.get(item_code="cancelled_cheque")
         _output, loan_document = self._generated_document(
             "cancelled_cheque", b"synthetic cheque", "synthetic-cancelled-cheque.pdf")
@@ -315,8 +381,21 @@ class PortalDocumentationActionsApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         projected = self._action(response.json()["data"], "cancelled_cheque")
         self.assertEqual(projected["status"], "pending_borrower")
-        self.assertTrue(projected["upload_allowed"])
+        self.assertFalse(projected["upload_allowed"])
         self.assertFalse(projected["reupload_allowed"])
+        document_count = DocumentFile.objects.count()
+        crafted = self.client.post(
+            f"{self._collection_url()}cancelled_cheque/upload/",
+            data={"file": self._pdf("crafted.pdf", b"%PDF crafted")},
+            headers=self._portal_auth(),
+        )
+        self.assertEqual(crafted.status_code, 409, crafted.content)
+        self.assertEqual(DocumentFile.objects.count(), document_count)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="documents.file.uploaded"
+            ).exists()
+        )
     def test_every_canonical_borrower_upload_code_is_accepted_only_when_applicable(self):
         self.checklist.items.model.objects.filter(
             document_checklist=self.checklist, item_code="bank_verification_letter").update(
@@ -333,7 +412,7 @@ class PortalDocumentationActionsApiTests(TestCase):
                 self.assertEqual(response.json()["data"]["action_code"], code)
         self.assertEqual(DocumentFile.objects.count(), len(allowed))
         self.assertEqual(AuditLog.objects.filter(
-            action="portal.documentation.uploaded").count(), len(allowed))
+            action="documents.file.uploaded").count(), len(allowed))
     def test_portal_actor_gets_no_internal_checklist_security_or_reveal_authority(self):
         auth = self._portal_auth()
         denied = (
@@ -364,7 +443,7 @@ class PortalDocumentationActionsApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
         return {"Authorization": f"Bearer {response.json()['data']['access_token']}"}
-    def _generated_document(self, code, content, file_name):
+    def _generated_document(self, code, content, file_name, *, template_version="1.0"):
         checksum = hashlib.sha256(content).hexdigest()
         output = DocumentFile.objects.create(
             file_name=file_name, file_extension=".pdf", mime_type="application/pdf",
@@ -375,8 +454,8 @@ class PortalDocumentationActionsApiTests(TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
         template = DocumentTemplate.objects.create(
-            template_code=f"portal-{code}-v1", template_name=f"Portal {code}",
-            document_type=code, borrower_type="individual_farmer", template_version="1.0",
+            template_code=f"portal-{code}-v{template_version}", template_name=f"Portal {code}",
+            document_type=code, borrower_type="individual_farmer", template_version=template_version,
             merge_fields_json=[], approval_status="approved", effective_from=timezone.localdate())
         document = LoanDocument.objects.create(
             loan_application=self.application, document_type=code, document_category="legal",

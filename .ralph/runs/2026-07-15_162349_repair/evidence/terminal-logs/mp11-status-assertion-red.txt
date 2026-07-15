@@ -1,0 +1,12 @@
+Command:
+rg for the corrected exact rendered-label assertion in
+sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+
+Exit code: 1
+
+EXPECTED RED: MP11 E2E does not assert the canonical rendered status label
+
+Trusted original symptom:
+The outside-sandbox Playwright run timed out at line 50 while expecting exact text `Submitted`.
+The application refetch had already succeeded, and StatusBadge renders canonical `submitted` as
+`Submitted - Pending Completeness Check`.

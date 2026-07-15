@@ -324,6 +324,12 @@ export const fetchPortalDocumentContent = async (downloadUrl: string) => {
   return response.blob();
 };
 
+export const openPortalDocumentBlob = (content: Blob) => {
+  const url = URL.createObjectURL(content);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+};
+
 async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; formData?: FormData } = {}): Promise<T> {
   const session = loadStoredAuthSession();
   if (!session) {

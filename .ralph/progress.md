@@ -7269,3 +7269,44 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_151653_normal_run
+
+- Agent tool used: codex with the TDD and codebase-design skills.
+- Slice completed: 008L3-portal-action-and-resubmission-contract-closure.
+- Summary: Unified portal application/action scope, denied stale/completed crafted uploads, replaced
+  caller expiry authority with signed current-file capabilities, moved deficiency resubmission to
+  the guarded application lifecycle owner, restored the approved upload drop-zone, and added the
+  exact two-spec/four-screenshot trusted-browser contract.
+- Tests run: focused RED/GREEN probes; frontend lint, typecheck, build, and all 304 tests; Django
+  check, migration drift, all 887 backend tests, and 92% coverage; Playwright collection passed.
+- Evidence saved: `.ralph/runs/2026-07-15_151653_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator browser validation and commit.
+- Risk level: High; authenticated document authority, lifecycle, audit, and browser download paths
+  are fail-closed and covered through public interfaces.
+- Next action: Run sharpened 008M.
+
+## 2026-07-15 - 2026-07-15_162349_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008L3-portal-action-and-resubmission-contract-closure.
+- Summary: Preserved the quarantined implementation and repaired only the stale MP11 trusted-
+  browser status assertion. It now expects the shared canonical submitted label inside the exact
+  application header while retaining the returned-screen absence proof.
+- Tests run: focused assertion RED/GREEN; Playwright collection; frontend lint, typecheck, build,
+  and all 304 tests; Django check, migration drift, all 887 backend tests, and 92% coverage. Local
+  Chromium launch was blocked by the sandbox's macOS Mach-port policy before test execution.
+- Evidence saved: `.ralph/runs/2026-07-15_162349_repair/evidence/`.
+- Result: Repair complete pending full independent orchestrator validation and commit.
+- Risk level: High inherited slice risk; low repair-delta risk because no production code changed.
+- Next action: Run trusted browser acceptance outside the sandbox, then continue with sharpened 008M.
+
+## 2026-07-15 16:42:46 - 2026-07-15_162349_repair
+- Agent tool used: codex
+- Slice attempted: 008L3-portal-action-and-resubmission-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/.ralph/runs/2026-07-15_162349_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/.ralph/runs/2026-07-15_162349_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

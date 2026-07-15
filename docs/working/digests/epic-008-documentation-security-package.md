@@ -14,6 +14,24 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008L3 Portal Contract Closure (2026-07-15)
+
+MP07/MP13 projection and upload now consume one locked canonical action decision: only a pending,
+required, applicable, unblocked item can accept a first upload or successor. Reconciled completion
+and stale/status-only completion both deny mutation; stale truth remains honestly non-complete and
+cannot be reopened by a crafted POST. Published Term Sheet/Loan Agreement reads use the central
+signed capability bound to portal account, member, application, action, current loan document, and
+file; caller expiry text has no authority, and tamper/expiry/replacement/cross-action/cross-scope
+reads are nondisclosing. Central document upload/download audit vocabulary retains portal
+attribution and full required metadata without parallel portal file events.
+
+MP11 `incomplete_returned -> submitted` now crosses the application-owned `resubmit` transition
+guard and canonical application audit/workflow writer. The open staff deficiency remains open;
+borrower upload/re-upload/resubmit workflow facts instead describe the immutable response aggregate
+as `absent/responded -> responded -> submitted_for_review`. MP07 restores the approved existing
+dashed upload composition, all portal document downloads delay object-URL revocation, and the exact
+two-spec/four-screenshot trusted-browser contract is declared for independent twice-run execution.
+
 ## CR-005 Portal Status and Download Visibility (2026-07-15)
 
 `screen-spec-member-portal.md` MP13 independently requires borrowers to view document status and

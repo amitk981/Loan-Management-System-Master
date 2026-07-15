@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileWarning, Send, Upload } from 'lucide-react';
 import StatusBadge from '../../../../components/ui/StatusBadge';
 import { AuthSessionError } from '../../../../services/authSession';
-import { downloadPortalDeficiencyResponse, downloadPortalDeficiencyNote, fetchPortalApplicationDeficiencies, fetchPortalDocumentContent, PortalDeficiencyItem, PortalDeficiencyProjection, resubmitPortalApplicationDeficiencies, savePortalDeficiencyResponseDraft, uploadPortalDeficiencyResponse } from '../../../../services/portalApi';
+import { downloadPortalDeficiencyResponse, downloadPortalDeficiencyNote, fetchPortalApplicationDeficiencies, fetchPortalDocumentContent, openPortalDocumentBlob, PortalDeficiencyItem, PortalDeficiencyProjection, resubmitPortalApplicationDeficiencies, savePortalDeficiencyResponseDraft, uploadPortalDeficiencyResponse } from '../../../../services/portalApi';
 
 interface MP11DeficiencyResponseProps { applicationId: string; onResubmitted: () => void; }
 
@@ -89,9 +89,7 @@ const MP11_DeficiencyResponse: React.FC<MP11DeficiencyResponseProps> = ({ applic
     setError(null);
     try {
       const content = await downloadPortalDeficiencyNote(applicationId);
-      const url = URL.createObjectURL(content);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      URL.revokeObjectURL(url);
+      openPortalDocumentBlob(content);
     } catch (requestError) {
       setError(deficiencyErrorMessage(requestError));
     }
@@ -103,9 +101,7 @@ const MP11_DeficiencyResponse: React.FC<MP11DeficiencyResponseProps> = ({ applic
     try {
       const descriptor = await downloadPortalDeficiencyResponse(item.response.document.action_url);
       const content = await fetchPortalDocumentContent(descriptor.download_url);
-      const url = URL.createObjectURL(content);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      URL.revokeObjectURL(url);
+      openPortalDocumentBlob(content);
     } catch (requestError) {
       setError(deficiencyErrorMessage(requestError));
     }

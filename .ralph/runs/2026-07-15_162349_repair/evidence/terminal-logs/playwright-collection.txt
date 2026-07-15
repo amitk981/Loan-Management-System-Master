@@ -1,0 +1,11 @@
+Command:
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python
+RALPH_EVIDENCE_DIR=<run evidence> playwright test
+e2e/member-portal-deficiency-response.e2e.spec.ts --list
+
+Exit code: 0
+
+Listing tests:
+  [chromium] member-portal-deficiency-response.e2e.spec.ts:11:5
+  MP11 uploads every correction and returns the application to SFPCL review
+Total: 1 test in 1 file

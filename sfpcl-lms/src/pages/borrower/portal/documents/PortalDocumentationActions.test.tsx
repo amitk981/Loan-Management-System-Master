@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthSessionError } from '../../../../services/authSession';
 import {
   downloadPortalDocumentationAction,
+  fetchPortalDocumentContent,
   fetchPortalApplications,
   fetchPortalDocumentationActions,
   uploadPortalDocumentationAction,
@@ -22,12 +23,14 @@ vi.mock('../../../../services/portalApi', async importOriginal => {
     fetchPortalDocumentationActions: vi.fn(),
     uploadPortalDocumentationAction: vi.fn(),
     downloadPortalDocumentationAction: vi.fn(),
+    fetchPortalDocumentContent: vi.fn(),
   };
 });
 const listMock = vi.mocked(fetchPortalApplications);
 const projectionMock = vi.mocked(fetchPortalDocumentationActions);
 const uploadMock = vi.mocked(uploadPortalDocumentationAction);
 const downloadMock = vi.mocked(downloadPortalDocumentationAction);
+const contentMock = vi.mocked(fetchPortalDocumentContent);
 beforeEach(() => {
   listMock.mockResolvedValue({ items: [approvedApplication] });
   projectionMock.mockResolvedValue(projection);
@@ -36,6 +39,7 @@ beforeEach(() => {
     document: { document_id: 'doc-upload', file_name: 'signed.pdf', mime_type: 'application/pdf', file_size_bytes: 12, checksum_sha256: 'safe-checksum', uploaded_at: '2026-07-15T10:00:00Z' },
   });
   downloadMock.mockResolvedValue({ download_url: '/safe-download', expires_at: '2026-07-15T10:15:00Z' });
+  contentMock.mockResolvedValue(new Blob(['term sheet']));
   vi.stubGlobal('open', vi.fn());
 });
 afterEach(() => {
@@ -68,6 +72,8 @@ describe('member portal documentation actions', () => {
     expect(screen.getByText('Blank-Dated Cheque')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Upload Blank-Dated Cheque' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Upload Term Sheet' }));
+    expect(screen.getByText('Click to select file or drag and drop')).toBeTruthy();
+    expect(screen.getByText('PDF, JPG, PNG · Max 5 MB')).toBeTruthy();
     const file = new File(['signed bytes'], 'signed.pdf', { type: 'application/pdf' });
     await userEvent.upload(screen.getByLabelText('Document file'), file);
     await userEvent.type(screen.getByLabelText('Notes (optional)'), 'Signed by borrower.');
@@ -99,6 +105,23 @@ describe('member portal documentation actions', () => {
     expect(screen.getByRole('button', { name: 'Download Term Sheet' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Upload Term Sheet' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Re-upload Term Sheet' })).toBeNull();
+  });
+  it('keeps the object URL alive after browser navigation starts', async () => {
+    const createObjectURL = vi.fn(() => 'blob:term-sheet');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+    render(<MP07_DocumentChecklist />);
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Download Term Sheet' }),
+    );
+
+    await waitFor(() => expect(contentMock).toHaveBeenCalledWith('/safe-download'));
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(window.open).toHaveBeenCalledWith(
+      'blob:term-sheet', '_blank', 'noopener,noreferrer',
+    );
+    expect(revokeObjectURL).not.toHaveBeenCalled();
   });
   it('shows own-application empty and session-expired states without fixture fallback', async () => {
     listMock.mockResolvedValueOnce({ items: [] });

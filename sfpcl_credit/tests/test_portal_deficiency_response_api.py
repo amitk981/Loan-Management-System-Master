@@ -170,9 +170,67 @@ class PortalDeficiencyResponseApiTests(TestCase):
         self.assertEqual(self.deficiency.resolution_status, ApplicationDeficiency.STATUS_OPEN)
         self.assertIsNone(self.deficiency.resolved_by_user)
         self.assertIsNone(self.deficiency.resolved_at)
-        for action in ("portal.document.uploaded", "portal.deficiency.responded", "portal.application.resubmitted"):
+        for action in (
+            "documents.file.uploaded",
+            "portal.deficiency.responded",
+            "applications.loan_application.resubmitted",
+        ):
             self.assertTrue(AuditLog.objects.filter(action=action).exists())
+        response_id = upload_data["response"]["deficiency_response_id"]
+        self.assertTrue(
+            WorkflowEvent.objects.filter(
+                entity_type="application_deficiency_response",
+                entity_id=response_id,
+                from_state="absent",
+                to_state="responded",
+            ).exists()
+        )
+        self.assertTrue(
+            WorkflowEvent.objects.filter(
+                entity_type="application_deficiency_response",
+                entity_id=response_id,
+                from_state="responded",
+                to_state="submitted_for_review",
+            ).exists()
+        )
         self.assertTrue(WorkflowEvent.objects.filter(entity_type="loan_application", entity_id=self.application.pk, from_state="incomplete_returned", to_state="submitted").exists())
+        lifecycle_audit = AuditLog.objects.get(
+            action="applications.loan_application.resubmitted"
+        )
+        self.assertEqual(
+            lifecycle_audit.old_value_json["application_status"],
+            "incomplete_returned",
+        )
+        self.assertEqual(lifecycle_audit.new_value_json["application_status"], "submitted")
+        self.assertEqual(
+            lifecycle_audit.new_value_json["portal_account_id"],
+            str(self.portal_account.pk),
+        )
+        replay = self.client.post(
+            self._url("resubmit/"),
+            data={},
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(replay.status_code, 409, replay.content)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="applications.loan_application.resubmitted"
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                entity_type="loan_application",
+                entity_id=self.application.pk,
+                from_state="incomplete_returned",
+                to_state="submitted",
+            ).count(),
+            1,
+        )
+        self.assertFalse(
+            AuditLog.objects.filter(action="portal.application.resubmitted").exists()
+        )
         queue = self.client.get("/api/v1/loan-applications/?application_status=submitted", headers={"Authorization": f"Bearer {self._token(staff=True)}"})
         self.assertEqual(queue.status_code, 200)
         self.assertIn(str(self.application.pk), str(queue.json()["data"]))
@@ -271,10 +329,12 @@ class PortalDeficiencyResponseApiTests(TestCase):
         assert_error_envelope(self, denied.json(), "AUTH_REQUIRED")
         content = self.client.get(download_url, headers={"Authorization": f"Bearer {token}"})
         self.assertEqual((content.status_code, content.content, content["Content-Type"]), (200, b"%PDF-1.4 corrected statement", "application/pdf"))
+        self.assertEqual(content["Cache-Control"], "no-store")
+        self.assertEqual(content["Pragma"], "no-cache")
         tampered = self.client.get(download_url.replace("token=", "token=tampered"), headers={"Authorization": f"Bearer {token}"})
         self.assertEqual(tampered.status_code, 404)
         assert_error_envelope(self, tampered.json(), "NOT_FOUND")
-        self.assertTrue(AuditLog.objects.filter(action="portal.deficiency.document_downloaded").exists())
+        self.assertTrue(AuditLog.objects.filter(action="documents.file.downloaded").exists())
 
     def test_deficiency_resubmission_cannot_mutate_stage4_checklist_truth(self):
         checklist = DocumentChecklist.objects.create(

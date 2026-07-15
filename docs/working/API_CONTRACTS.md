@@ -3702,8 +3702,20 @@ any success evidence.
 
 Only current renderer-validated `term_sheet` and `loan_agreement` checklist outputs receive a safe
 download action. It returns a short-lived portal-scoped content URL; authenticated retrieval verifies
-the retained bytes and writes `portal.documentation.downloaded` with portal account, member,
-application, action, document, checksum, request/network, expiry, and accepted outcome—never a key.
+the retained bytes and writes the central `documents.file.downloaded` event with portal account,
+member, application, action, document/version/category/sensitivity/checksum, reason,
+request/network, capability verification, and accepted outcome—never a key.
+
+008L3 closure: projection and upload now consume one locked action-authority decision. A pending
+required/applicable item is mutable only when it has no applicability blocker and no retained
+completion status; a stale/status-only completion remains honestly non-complete but advertises
+neither upload flag and cannot be reopened by a crafted POST. Accepted upload/re-upload uses only
+the central `documents.file.uploaded` vocabulary with portal attribution and immutable version/
+predecessor facts. Downloads use the central signed capability: the content URL contains a token,
+not caller-editable expiry authority, and the signature binds portal account, member, application,
+action, current loan document, and current file. Tamper, expiry, replacement, cross-action, and
+cross-scope reads are nondisclosing and write no success event. Responses remain `no-store` at the
+HTTP content boundary.
 
 ## Member portal deficiency response and resubmission (008L2)
 
@@ -3734,7 +3746,10 @@ Resubmit accepts an empty JSON object and atomically requires a current response
 open deficiency. It retains those deficiency rows as open for staff verification/resolution under
 the existing 005F permission, resets completeness to `not_started`, and moves canonical application
 status from `incomplete_returned` to `submitted`, reopening the existing staff completeness queue.
-Audit/workflow facts explicitly label the borrower action as responded/submitted for review and the
+008L3 places that transition behind the application-owned `resubmit` transition guard and canonical
+`applications.loan_application.resubmitted` audit/workflow writer. Upload/re-upload and resubmit
+workflow facts target the immutable deficiency-response aggregate (`absent/responded -> responded ->
+submitted_for_review`); they never claim that the staff-owned open deficiency changed state. The
 borrower timeline shows `Application resubmitted` (A-095). Empty, partially responded, or
 non-returned applications fail before any transition. Deficiency actions never create or change
 Stage-4 checklist items/actions/history, approvals, verifier/role/remarks, legal/security evidence,

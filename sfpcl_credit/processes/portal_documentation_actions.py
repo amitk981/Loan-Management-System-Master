@@ -1,16 +1,15 @@
 """Borrower-safe post-sanction documentation projection and actions."""
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlencode
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.modules import document_checklist_facts
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.documents.storage import LocalDocumentStorage
-from sfpcl_credit.identity.models import AuditLog, PortalAccount
-from sfpcl_credit.processes import document_checklist_actions
+from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.processes import document_checklist_actions, portal_application_scope
 from sfpcl_credit.legal_documents.models import (
     ChecklistItem,
     DocumentChecklist,
@@ -45,32 +44,25 @@ class PortalDocumentationNotFound(Exception):
 class PortalDocumentationUnavailable(Exception):
     pass
 @dataclass(frozen=True)
-class PortalDocumentationContext:
-    account: PortalAccount
-    application: LoanApplication
-@dataclass(frozen=True)
 class PortalDocumentContent:
     body: bytes
     file_name: str
     mime_type: str
+
+
+@dataclass(frozen=True)
+class PortalActionAuthority:
+    reconciled_complete: bool
+    upload_allowed: bool
+    reupload_allowed: bool
 def resolve_context(*, actor, application_id):
-    account = (
-        PortalAccount.objects.select_related("member")
-        .filter(
-            user=actor,
-            status=PortalAccount.STATUS_ACTIVE,
-            member__is_deleted=False,
+    try:
+        return portal_application_scope.resolve(
+            actor=actor, application_id=application_id
         )
-        .first()
-    )
-    application = (
-        LoanApplication.objects.select_related("member")
-        .filter(pk=application_id, member_id=account.member_id if account else None)
-        .first()
-    )
-    if account is None or application is None:
-        raise PortalDocumentationNotFound
-    return PortalDocumentationContext(account=account, application=application)
+    except portal_application_scope.PortalApplicationScopeNotFound as exc:
+        raise PortalDocumentationNotFound from exc
+@transaction.atomic
 def get_projection(*, actor, application_id):
     context = resolve_context(actor=actor, application_id=application_id)
     application = context.application
@@ -130,25 +122,19 @@ def get_projection(*, actor, application_id):
     }
 def _serialize_item(item, checklist, completion_action_item_ids, submission):
     section, instruction = _ACTION_PRESENTATION[item.item_code]
-    reconciled_complete = (
-        item.completion_status == ChecklistItem.STATUS_COMPLETE
-        and item.pk in completion_action_item_ids
+    authority = _resolve_action_authority(
+        item=item,
+        completion_action_item_ids=completion_action_item_ids,
+        submission=submission,
     )
     status = (
         "not_required"
         if not item.applicable_flag
         else "complete"
-        if reconciled_complete
+        if authority.reconciled_complete
         else "submitted"
         if submission
         else "pending_borrower"
-    )
-    upload_allowed = bool(
-        item.required_flag
-        and item.applicable_flag
-        and not reconciled_complete
-        and item.item_code in UPLOAD_ACTION_CODES
-        and submission is None
     )
     return {
         "action_code": item.item_code,
@@ -168,11 +154,30 @@ def _serialize_item(item, checklist, completion_action_item_ids, submission):
             if item.applicability_blocker
             else None
         ),
-        "upload_allowed": upload_allowed,
-        "reupload_allowed": bool(
-            item.required_flag and item.applicable_flag and submission and not reconciled_complete),
+        "upload_allowed": authority.upload_allowed,
+        "reupload_allowed": authority.reupload_allowed,
         "download": _download_metadata(item),
     }
+
+
+def _resolve_action_authority(*, item, completion_action_item_ids, submission):
+    reconciled_complete = (
+        item.completion_status == ChecklistItem.STATUS_COMPLETE
+        and item.pk in completion_action_item_ids
+    )
+    mutable = bool(
+        item.item_code in UPLOAD_ACTION_CODES
+        and item.required_flag
+        and item.applicable_flag
+        and item.completion_status == ChecklistItem.STATUS_PENDING
+        and not item.applicability_blocker
+        and not reconciled_complete
+    )
+    return PortalActionAuthority(
+        reconciled_complete=reconciled_complete,
+        upload_allowed=mutable and submission is None,
+        reupload_allowed=mutable and submission is not None,
+    )
 def _download_metadata(item):
     document = item.loan_document
     if (
@@ -211,16 +216,6 @@ def upload(*, actor, application_id, action_code, request):
         if checklist
         else None
     )
-    if (
-        action_code not in UPLOAD_ACTION_CODES
-        or item is None
-        or not item.required_flag
-        or not item.applicable_flag
-    ):
-        raise PortalDocumentationUnavailable(
-            "This documentation action is not currently available for upload."
-        )
-    uploaded_file, notes = _validate_upload_request(request)
     previous = (
         PortalDocumentationSubmission.objects.select_for_update()
         .filter(
@@ -231,6 +226,27 @@ def upload(*, actor, application_id, action_code, request):
         .order_by("-created_at", "-portal_documentation_submission_id")
         .first()
     )
+    completed_item_ids = (
+        document_checklist_actions.borrower_safe_completed_item_ids(checklist)
+        if checklist
+        else set()
+    )
+    authority = (
+        _resolve_action_authority(
+            item=item,
+            completion_action_item_ids=completed_item_ids,
+            submission=previous,
+        )
+        if item is not None
+        else None
+    )
+    if authority is None or not (
+        authority.upload_allowed or authority.reupload_allowed
+    ):
+        raise PortalDocumentationUnavailable(
+            "This documentation action is not currently available for upload."
+        )
+    uploaded_file, notes = _validate_upload_request(request)
     document = document_services.store_document_upload(
         user=actor,
         request=request,
@@ -242,7 +258,20 @@ def upload(*, actor, application_id, action_code, request):
         provenance_metadata={
             "portal_account_id": str(context.account.pk),
             "member_id": str(context.account.member_id),
-            "portal_action_code": action_code,
+            "loan_application_id": str(application.pk),
+            "action_code": action_code,
+            "document_version": (
+                PortalDocumentationSubmission.objects.filter(
+                    loan_application=application, action_code=action_code
+                ).count()
+                + 1
+            ),
+            "prior_current_document_id": (
+                str(previous.document_id) if previous else None
+            ),
+            "reason": "borrower_portal_submission",
+            "request_id": request.headers.get("X-Request-ID"),
+            "outcome": "accepted",
         },
     )
     submission = PortalDocumentationSubmission.objects.create(
@@ -253,30 +282,6 @@ def upload(*, actor, application_id, action_code, request):
         uploader_member=context.account.member,
         notes=notes,
         supersedes=previous,
-    )
-    AuditLog.objects.create(
-        actor_user=actor,
-        actor_type="portal_account",
-        action="portal.documentation.uploaded",
-        entity_type="portal_documentation_submission",
-        entity_id=submission.pk,
-        old_value_json=(
-            {"prior_document_id": str(previous.document_id)} if previous else None
-        ),
-        new_value_json={
-            "portal_account_id": str(context.account.pk),
-            "member_id": str(context.account.member_id),
-            "loan_application_id": str(application.pk),
-            "action_code": action_code,
-            "document_id": str(document.pk),
-            "document_category": "legal",
-            "checksum_sha256": document.checksum_sha256,
-            "prior_current_document_id": str(previous.document_id) if previous else None,
-            "request_id": request.headers.get("X-Request-ID"),
-            "outcome": "accepted",
-        },
-        ip_address=document_services.request_ip(request),
-        user_agent=document_services.request_user_agent(request),
     )
     return {
         "action_code": action_code,
@@ -349,24 +354,39 @@ def download(*, actor, application_id, action_code, request, storage=None):
     ):
         raise PortalDocumentationNotFound
     storage = storage or LocalDocumentStorage()
+    scope = {
+        "portal_account_id": str(context.account.pk),
+        "member_id": str(context.account.member_id),
+        "loan_application_id": str(application.pk),
+        "action_code": action_code,
+        "loan_document_id": str(document.pk),
+    }
     if request.GET.get("content") != "1":
-        descriptor = storage.download_descriptor(document.document)
-        expires_at = descriptor["expires_at"]
+        capability = document_services.issue_download_capability(
+            document=document.document,
+            scope=scope,
+        )
+        query = urlencode({"content": "1", "token": capability["token"]})
         return {
             "download_url": (
                 f"/api/v1/portal/applications/{application.pk}/documentation-actions/"
-                f"{action_code}/download/?content=1&expires_at={expires_at}"
+                f"{action_code}/download/?{query}"
             ),
-            "expires_at": expires_at,
+            "expires_at": capability["expires_at"],
         }
-    expires_at = parse_datetime(request.GET.get("expires_at", ""))
-    if expires_at is None or expires_at <= timezone.now():
+    try:
+        body = document_services.read_with_download_capability(
+            document=document.document,
+            scope=scope,
+            token=request.GET.get("token", ""),
+            storage=storage,
+        )
+    except ValidationError:
         raise PortalDocumentationNotFound
-    body = storage.read_verified(document.document)
     AuditLog.objects.create(
         actor_user=actor,
         actor_type="portal_account",
-        action="portal.documentation.downloaded",
+        action="documents.file.downloaded",
         entity_type="document_file",
         entity_id=document.document_id,
         old_value_json=None,
@@ -376,10 +396,17 @@ def download(*, actor, application_id, action_code, request, storage=None):
             "loan_application_id": str(application.pk),
             "action_code": action_code,
             "document_id": str(document.document_id),
+            "document_version": document.document_template.template_version,
             "document_category": document.document_category,
             "checksum_sha256": document.document.checksum_sha256,
             "request_id": request.headers.get("X-Request-ID"),
-            "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
+            "sensitivity_level": document.document.sensitivity_level,
+            "reason": "borrower_portal_published_document",
+            "network": {
+                "ip_address": document_services.request_ip(request),
+                "user_agent": document_services.request_user_agent(request),
+            },
+            "capability_verified": True,
             "outcome": "accepted",
         },
         ip_address=document_services.request_ip(request),

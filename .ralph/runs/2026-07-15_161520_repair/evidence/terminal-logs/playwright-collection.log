@@ -1,0 +1,8 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts --list
+
+Listing tests:
+  [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads every correction and returns the application to SFPCL review
+  [chromium] › member-portal-documentation-actions.e2e.spec.ts:9:5 › MP07 upload authority, signed download, and completed status are routed
+Total: 2 tests in 2 files

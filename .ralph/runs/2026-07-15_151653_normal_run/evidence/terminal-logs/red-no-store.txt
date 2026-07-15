@@ -1,0 +1,24 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 293, in test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit
+    self.assertEqual(content["Cache-Control"], "no-store")
+                     ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/http/response.py", line 199, in __getitem__
+    return self.headers[header]
+           ~~~~~~~~~~~~^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/utils/datastructures.py", line 308, in __getitem__
+    return self._store[key.lower()][1]
+           ~~~~~~~~~~~^^^^^^^^^^^^^
+KeyError: 'cache-control'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.092s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

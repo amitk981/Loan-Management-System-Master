@@ -315,9 +315,7 @@ def portal_application_deficiency_download(request, loan_application_id, deficie
         )
         return error_response(request, 404, "NOT_FOUND", "Document was not found.")
     if isinstance(data, portal_deficiency_process.PortalDeficiencyContent):
-        response = HttpResponse(data.body, content_type=data.mime_type)
-        response["Content-Disposition"] = f'attachment; filename="{data.file_name}"'
-        return response
+        return _no_store_content_response(data)
     return success_response(data, request)
 
 
@@ -383,14 +381,20 @@ def portal_documentation_action_download(request, loan_application_id, action_co
     except portal_documentation_process.PortalDocumentationNotFound:
         return error_response(request, 404, "NOT_FOUND", "Document was not found.")
     if isinstance(data, portal_documentation_process.PortalDocumentContent):
-        response = HttpResponse(data.body, content_type=data.mime_type)
-        response["Content-Disposition"] = f'attachment; filename="{data.file_name}"'
-        return response
+        return _no_store_content_response(data)
     return success_response(data, request)
 
 
 def _portal_object_access_denied(request, exc):
     return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
+
+
+def _no_store_content_response(content):
+    response = HttpResponse(content.body, content_type=content.mime_type)
+    response["Content-Disposition"] = f'attachment; filename="{content.file_name}"'
+    response["Cache-Control"] = "no-store"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 def _portal_application_validation_error(request, exc):

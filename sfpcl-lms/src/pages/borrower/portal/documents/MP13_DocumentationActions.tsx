@@ -104,8 +104,11 @@ const MP13_DocumentationActions: React.FC = () => {
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 mb-4">Upload {selectedAction.label}</h3>
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-slate-700">Document file
-                <input aria-label="Document file" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={event => setFile(event.target.files?.[0] ?? null)} className="mt-1.5 block w-full text-sm text-slate-500" />
+              <label className="block border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer">
+                <Upload size={24} className="mx-auto text-slate-300 mb-2" />
+                <span className="block text-sm text-slate-500">Click to select file or drag and drop</span>
+                <span className="block text-xs text-slate-400 mt-1">PDF, JPG, PNG · Max 5 MB</span>
+                <input aria-label="Document file" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={event => setFile(event.target.files?.[0] ?? null)} className="sr-only" />
               </label>
               <label className="block text-sm font-medium text-slate-700">Notes (optional)
                 <textarea aria-label="Notes (optional)" value={notes} onChange={event => setNotes(event.target.value)} maxLength={4000} className="mt-1.5 w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />

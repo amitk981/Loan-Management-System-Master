@@ -1,0 +1,2159 @@
+Reading prompt from stdin...
+2026-07-15T10:35:50.436472Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-07-15T10:35:50.439188Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.144.0
+--------
+workdir: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: medium
+reasoning summaries: none
+session id: 019f6558-dc31-7a43-aedd-ba3a4c836bf2
+--------
+user
+You are running Ralph AFK mode.
+
+Run ID:
+2026-07-15_160544_repair
+
+Mode:
+repair
+
+Selected slice:
+008L3-portal-action-and-resubmission-contract-closure
+
+Working directory:
+/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+
+You must follow the Ralph workflow exactly.
+
+Core requirements:
+- Do not rely on chat history.
+- Work only inside the active worktree.
+- Implement only the selected vertical slice.
+- Read only the required context files first.
+- Do not modify docs/source.
+- Never modify protected files: scripts/, .ralph/config.yaml, .ralph/permissions.json, .codex/config.toml, AGENTS.md, CLAUDE.md, .gitignore, docs/working/HIGH_RISK_APPROVALS.md, docs/working/DECISION_POLICY.md. Validation fails the run if you do.
+- Write execution-plan.md before coding.
+- Check permissions before editing files.
+- TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
+- Backend Python interpreter: use "/Users/amitkallapa/LMS/.ralph/venv/bin/python" for every backend command (manage.py, tests, coverage). Never use bare python3 — it resolves to the wrong interpreter.
+- Frontend node_modules are pre-installed in the worktree by the orchestrator. Do not run npm install unless you add a new pinned package; if that install fails offline, note it in final-summary.md and finish — the orchestrator installs from the lockfile before validation.
+- Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
+- Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
+- Run required quality gates.
+- For a slice declaring 'localhost-e2e-server', implement the exact specs and screenshot outputs in its '## Trusted Browser Acceptance' section. Your coding sandbox may deny Chromium's macOS services: use Playwright collection or non-browser tests for your local feedback, do not fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch. The orchestrator runs the declared browser contract twice outside your sandbox after you finish; that independent gate decides browser acceptance.
+- Save evidence.
+- Save changed-files.txt.
+- Save risk-assessment.md.
+- Save review-packet.md.
+- Update state, progress, handoff, and slice status.
+- Never run git commit, git add, or git push: your sandbox cannot write the worktree's git metadata and the attempt will fail your run. The orchestrator independently validates and commits passing work after you finish.
+- High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
+- When requirements are ambiguous, follow docs/working/DECISION_POLICY.md: choose the source-doc-compliant option, or the industry-standard default, record it in docs/working/ASSUMPTIONS.md, and continue. Do not stop to ask. Never invent business rules the documents do not state — stub them, record the open question, and continue.
+- If the selected slice file is still an unsharpened template stub (its Goal reads "Deliver this narrow capability as a small, testable Ralph implementation slice" or its scope sections say only "Implement the named backend/API capability only"), your FIRST deliverable is sharpening that slice file with concrete requirements from the epic digest, docs/working/maps/, and the slice's cited source sections — before writing execution-plan.md. Never implement directly from an unsharpened stub.
+- Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
+- Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
+- Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
+- In repair mode: work in this existing quarantined worktree. Diagnose /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/.ralph/runs/2026-07-15_155952_repair/failure-summary.md first, preserve the slice's current uncommitted implementation, fix only the demonstrated failure, and rely on full independent revalidation before any commit.
+- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues.
+- If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
+- If the selected slice is a change request (CR-*): write impact-analysis.md in the run folder BEFORE editing any code — affected backend/frontend pieces, blast radius across modules, and the regression tests to add in each affected module. Validation fails the run without it. Then add those regression tests as part of the fix.
+
+Read in this order:
+1. AGENTS.md or CLAUDE.md
+2. docs/working/TOKEN_RULES.md
+3. docs/working/CONTEXT.md
+4. docs/working/AFK_RUNBOOK.md
+5. .ralph/config.yaml
+6. .ralph/permissions.json
+7. .ralph/state.json
+8. docs/working/HANDOFF.md
+9. docs/working/DECISION_POLICY.md
+10. docs/working/FRONTEND_DESIGN_RULES.md (mandatory before any frontend change)
+11. docs/slices/008L3-portal-action-and-resubmission-contract-closure.md
+12. The matching docs/working/digests/ file for this epic, if it exists
+
+Do not load all docs/source during a normal run unless the selected slice explicitly requires it.
+
+codex
+I’m using the `diagnosing-bugs` skill because this is a repair run. I’ll first reconstruct the repository state in the mandated order, then inspect the prior repair’s failure summary and make only the demonstrated fix.
+exec
+/bin/zsh -lc 'cat AGENTS.md && cat /Users/amitkallapa/.codex/skills/diagnosing-bugs/SKILL.md' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+ succeeded in 159ms:
+# AGENTS.md
+
+You are operating inside the Ralph AFK workflow.
+
+## "run ralph loop"
+
+When the owner says "run ralph loop" (or similar), execute from the repository root:
+
+```
+./scripts/ralph-loop.sh
+```
+
+It runs the slice queue autonomously: one slice per iteration with full gates, auto-commit, auto-merge to the `staging` integration branch, and auto-push of `staging` to GitHub; one repair attempt per failure; stops when the queue is empty, after repeated failures, or on an owner veto. If the active agent's usage limit is exhausted mid-loop (`agent.limit_fallback` in `.ralph/config.yaml`), the loop switches between codex and claude and retries the slice; when both agents are exhausted it stops cleanly — completed slices are already committed, and the queued slice reruns on the next loop. Agents never commit to, merge into, or push `main` — the owner alone promotes `staging` to `main` via a GitHub pull request (see `docs/working/RELEASE_PROMOTION.md`). `ralph-run.sh` refuses to run unless `staging` is checked out. Do not improvise a different loop.
+
+## Core rules
+- Do not rely on chat history.
+- Read repo files to understand current state.
+- Implement only one vertical slice per run.
+- Treat `docs/source/` as read-only source material.
+- Work inside an isolated worktree when Ralph creates one.
+- Run required tests, typecheck, lint, and build gates.
+- Save evidence before marking work complete.
+- Update state, progress, handoff, and slice status.
+- During runs, never invoke git commit/add/push yourself — the orchestrator validates independently and commits passing work after the agent finishes (agent sandboxes cannot write worktree git metadata).
+- TDD is mandatory for backend and business logic: failing test first, red/green evidence saved.
+- The owner has granted standing approval for autonomous runs (`docs/working/HIGH_RISK_APPROVALS.md`). Do not ask for approval; follow `docs/working/DECISION_POLICY.md` for every judgment call and record assumptions in `docs/working/ASSUMPTIONS.md`.
+- Never modify protected files (scripts/, .ralph/config.yaml, .ralph/permissions.json, .codex/config.toml, AGENTS.md, CLAUDE.md, .gitignore, HIGH_RISK_APPROVALS.md, DECISION_POLICY.md, docs/source/) — validation fails the run if you do. Never weaken risk rules or quality gates.
+- Frontend changes follow `docs/working/FRONTEND_DESIGN_RULES.md` exactly: reuse existing components/patterns, never introduce new styling; build missing screens from existing patterns when the documents require them.
+- Never change code directly from a chat request. All code changes flow through queued slices. When the owner reports a bug or requests a feature in chat, help them fill the template in `docs/change-requests/` (see its README), run `./scripts/ralph-intake.sh`, and implement only once a CR slice exists in `docs/slices/`. If the template is not satisfied, change nothing.
+- Before finishing, sharpen the next 1-2 `Not Started` slice files with concrete requirements from source documents you already opened, and store distilled extracts in `docs/working/digests/`.
+- Stop only for the never-do list in DECISION_POLICY.md, unsafe git state, repeated failures, protected/forbidden file edits, an owner veto, or diff limit violations.
+- If a previous session was interrupted mid-run (limit exhaustion, crash — whichever agent was driving), recovery is automatic: `./scripts/ralph-loop.sh` runs `scripts/ralph-recover.sh` at startup, which salvages the dead run's artifacts, removes its worktree, and requeues the slice. For manual single runs, run `./scripts/ralph-recover.sh` yourself first. Never salvage ungated work.
+
+Read in this order during normal runs (same order as the generated run prompt):
+1. `docs/working/TOKEN_RULES.md`
+2. `docs/working/CONTEXT.md`
+3. `docs/working/AFK_RUNBOOK.md`
+4. `.ralph/config.yaml`
+5. `.ralph/permissions.json`
+6. `.ralph/state.json`
+7. `docs/working/HANDOFF.md`
+8. `docs/working/DECISION_POLICY.md`
+9. `docs/working/FRONTEND_DESIGN_RULES.md` (mandatory before any frontend change)
+10. The selected `docs/slices/*.md` file only
+11. The matching `docs/working/digests/` file for the slice's epic, if it exists
+
+Do not load all source documents during normal runs unless the selected slice explicitly requires it.
+---
+name: diagnosing-bugs
+description: Diagnosis loop for hard bugs and performance regressions. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow.
+---
+
+# Diagnosing Bugs
+
+A discipline for hard bugs. Skip phases only when explicitly justified.
+
+When exploring the codebase, read `CONTEXT.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
+
+## Phase 1 — Build a feedback loop
+
+**This is the skill.** Everything else is mechanical. If you have a **tight** pass/fail signal for the bug — one that goes red on _this_ bug — you will find the cause; bisection, hypothesis-testing, and instrumentation all just consume it. If you don't have one, no amount of staring at code will save you.
+
+Spend disproportionate effort here. **Be aggressive. Be creative. Refuse to give up.**
+
+### Ways to construct one — try them in roughly this order
+
+1. **Failing test** at whatever seam reaches the bug — unit, integration, e2e.
+2. **Curl / HTTP script** against a running dev server.
+3. **CLI invocation** with a fixture input, diffing stdout against a known-good snapshot.
+4. **Headless browser script** (Playwright / Puppeteer) — drives the UI, asserts on DOM/console/network.
+5. **Replay a captured trace.** Save a real network request / payload / event log to disk; replay it through the code path in isolation.
+6. **Throwaway harness.** Spin up a minimal subset of the system (one service, mocked deps) that exercises the bug code path with a single function call.
+7. **Property / fuzz loop.** If the bug is "sometimes wrong output", run 1000 random inputs and look for the failure mode.
+8. **Bisection harness.** If the bug appeared between two known states (commit, dataset, version), automate "boot at state X, check, repeat" so you can `git bisect run` it.
+9. **Differential loop.** Run the same input through old-version vs new-version (or two configs) and diff outputs.
+10. **HITL bash script.** Last resort. If a human must click, drive _them_ with `scripts/hitl-loop.template.sh` so the loop is still structured. Captured output feeds back to you.
+
+Build the right feedback loop, and the bug is 90% fixed.
+
+### Tighten the loop
+
+Treat the loop as a product. Once you have _a_ loop, **tighten** it:
+
+- Can I make it faster? (Cache setup, skip unrelated init, narrow the test scope.)
+- Can I make the signal sharper? (Assert on the specific symptom, not "didn't crash".)
+- Can I make it more deterministic? (Pin time, seed RNG, isolate filesystem, freeze network.)
+
+A 30-second flaky loop is barely better than no loop; a 2-second deterministic one is tight — a debugging superpower.
+
+### Non-deterministic bugs
+
+The goal is not a clean repro but a **higher reproduction rate**. Loop the trigger 100×, parallelise, add stress, narrow timing windows, inject sleeps. A 50%-flake bug is debuggable; 1% is not — keep raising the rate until it's debuggable.
+
+### When you genuinely cannot build a loop
+
+Stop and say so explicitly. List what you tried. Ask the user for: (a) access to whatever environment reproduces it, (b) a captured artifact (HAR file, log dump, core dump, screen recording with timestamps), or (c) permission to add temporary production instrumentation. Do **not** proceed to hypothesise without a loop.
+
+### Completion criterion — a tight loop that goes red
+
+Phase 1 is done when the loop is **tight** and **red-capable**: you can name **one command** — a script path, a test invocation, a curl — that you have **already run at least once** (paste the invocation and its output), and that is:
+
+- [ ] **Red-capable** — it drives the actual bug code path and asserts the **user's exact symptom**, so it can go red on this bug and green once fixed. Not "runs without erroring" — it must be able to _catch this specific bug_.
+- [ ] **Deterministic** — same verdict every run (flaky bugs: a pinned, high reproduction rate, per above).
+- [ ] **Fast** — seconds, not minutes.
+- [ ] **Agent-runnable** — you can run it unattended; a human in the loop only via `scripts/hitl-loop.template.sh`.
+
+If you catch yourself reading code to build a theory before this command exists, **stop — jumping straight to a hypothesis is the exact failure this skill prevents.** No red-capable command, no Phase 2.
+
+## Phase 2 — Reproduce + minimise
+
+Run the loop. Watch it go red — the bug appears.
+
+Confirm:
+
+- [ ] The loop produces the failure mode the **user** described — not a different failure that happens to be nearby. Wrong bug = wrong fix.
+- [ ] The failure is reproducible across multiple runs (or, for non-deterministic bugs, reproducible at a high enough rate to debug against).
+- [ ] You have captured the exact symptom (error message, wrong output, slow timing) so later phases can verify the fix actually addresses it.
+
+### Minimise
+
+Once it's red, shrink the repro to the **smallest scenario that still goes red**. Cut inputs, callers, config, data, and steps **one at a time**, re-running the loop after each cut — keep only what's load-bearing for the failure.
+
+Why bother: a minimal repro shrinks the hypothesis space in Phase 3 (fewer moving parts left to suspect) and becomes the clean regression test in Phase 5.
+
+Done when **every remaining element is load-bearing** — removing any one of them makes the loop go green.
+
+Do not proceed until you have reproduced **and** minimised.
+
+## Phase 3 — Hypothesise
+
+Generate **3–5 ranked hypotheses** before testing any of them. Single-hypothesis generation anchors on the first plausible idea.
+
+Each hypothesis must be **falsifiable**: state the prediction it makes.
+
+> Format: "If <X> is the cause, then <changing Y> will make the bug disappear / <changing Z> will make it worse."
+
+If you cannot state the prediction, the hypothesis is a vibe — discard or sharpen it.
+
+**Show the ranked list to the user before testing.** They often have domain knowledge that re-ranks instantly ("we just deployed a change to #3"), or know hypotheses they've already ruled out. Cheap checkpoint, big time saver. Don't block on it — proceed with your ranking if the user is AFK.
+
+## Phase 4 — Instrument
+
+Each probe must map to a specific prediction from Phase 3. **Change one variable at a time.**
+
+Tool preference:
+
+1. **Debugger / REPL inspection** if the env supports it. One breakpoint beats ten logs.
+2. **Targeted logs** at the boundaries that distinguish hypotheses.
+3. Never "log everything and grep".
+
+**Tag every debug log** with a unique prefix, e.g. `[DEBUG-a4f2]`. Cleanup at the end becomes a single grep. Untagged logs survive; tagged logs die.
+
+**Perf branch.** For performance regressions, logs are usually wrong. Instead: establish a baseline measurement (timing harness, `performance.now()`, profiler, query plan), then bisect. Measure first, fix second.
+
+## Phase 5 — Fix + regression test
+
+Write the regression test **before the fix** — but only if there is a **correct seam** for it.
+
+A correct seam is one where the test exercises the **real bug pattern** as it occurs at the call site. If the only available seam is too shallow (single-caller test when the bug needs multiple callers, unit test that can't replicate the chain that triggered the bug), a regression test there gives false confidence.
+
+**If no correct seam exists, that itself is the finding.** Note it. The codebase architecture is preventing the bug from being locked down. Flag this for the next phase.
+
+If a correct seam exists:
+
+1. Turn the minimised repro into a failing test at that seam.
+2. Watch it fail.
+3. Apply the fix.
+4. Watch it pass.
+5. Re-run the Phase 1 feedback loop against the original (un-minimised) scenario.
+
+## Phase 6 — Cleanup + post-mortem
+
+Required before declaring done:
+
+- [ ] Original repro no longer reproduces (re-run the Phase 1 loop)
+- [ ] Regression test passes (or absence of seam is documented)
+- [ ] All `[DEBUG-...]` instrumentation removed (`grep` the prefix)
+- [ ] Throwaway prototypes deleted (or moved to a clearly-marked debug location)
+- [ ] The hypothesis that turned out correct is stated in the commit / PR message — so the next debugger learns
+
+**Then ask: what would have prevented this bug?** If the answer involves architectural change (no good test seam, tangled callers, hidden coupling) hand off to the `/improve-codebase-architecture` skill with the specifics. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.
+
+exec
+/bin/zsh -lc 'cat docs/working/TOKEN_RULES.md && cat docs/working/CONTEXT.md && cat docs/working/AFK_RUNBOOK.md && cat .ralph/config.yaml && cat .ralph/permissions.json && cat .ralph/state.json && cat docs/working/HANDOFF.md && cat docs/working/DECISION_POLICY.md && cat docs/working/FRONTEND_DESIGN_RULES.md && cat docs/slices/008L3-portal-action-and-resubmission-contract-closure.md' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+ succeeded in 150ms:
+# Ralph Handoff
+
+## Last Run
+
+2026-07-15_151653_normal_run
+
+## Current Status
+
+008L3 is complete. MP07/MP13 projection and mutation now share one locked action-authority decision,
+so stale/status-only or reconciled completion cannot be reopened through a crafted upload. Portal
+documentation and deficiency downloads use the central signed, current-file/scope-bound capability
+with no-store content responses, central audit vocabulary, and delayed browser object-URL cleanup.
+MP11 resubmission now delegates to the application-owned guarded lifecycle writer while response
+events truthfully target immutable response rows and leave staff deficiencies open.
+
+## Validation
+
+Evidence is in `.ralph/runs/2026-07-15_151653_normal_run/evidence/`. Focused upload-policy,
+signed-capability, lifecycle, audit, no-store, modal, and browser-navigation RED/GREEN logs are
+preserved. Frontend lint/typecheck/build and all 304 tests pass. Django check and migration drift
+pass; all 887 backend tests pass at 92% coverage. Both declared Playwright specs collect. The local
+browser run could not launch because the sandbox has no Chromium executable, so no screenshot was
+fabricated; the orchestrator owns the exact four screenshots and twice-run acceptance.
+
+## Next Run
+
+Run the sharpened `008M-documentation-hub-frontend-wiring`. It must reuse 008L3's signed capability,
+delayed object-URL cleanup, independent status/action projection, and central document audit
+vocabulary without treating portal submissions as staff verification truth.
+# Decision Policy for Autonomous Runs
+
+The project owner is not a developer and has granted standing approval for autonomous operation (see `docs/working/HIGH_RISK_APPROVALS.md`). Agents therefore do not ask for approval. Instead, every decision follows this policy, in order:
+
+## 1. Decision ladder (ambiguity is not a reason to stop)
+1. If `docs/source/` answers it → do what the source documents say. They are the product truth.
+2. If the source docs are silent → choose the boring, industry-standard option (see §3), record one line in `docs/working/ASSUMPTIONS.md` (what was assumed, why, which slice must confirm it), and continue.
+3. If the choice would invent a business rule (eligibility formulas, money amounts, approval authority, compliance behaviour) that the docs do not state → do NOT invent it. Implement the mechanism with the rule left explicitly configurable/stubbed, record it as an open question in ASSUMPTIONS.md, and continue the rest of the slice.
+4. Only stop when continuing would require doing something on the never-do list (§4) or the same gate has failed after a repair attempt.
+
+## 2. Quality bar (what "done" means)
+- TDD is mandatory for backend and business logic: failing test first, then code, red/green evidence saved.
+- All quality gates green: frontend typecheck/tests/build; backend check/tests/migrations-sync/coverage floor (see `.ralph/config.yaml`).
+- API contract changes are reflected in `docs/working/API_CONTRACTS.md` in the same run.
+- The review packet includes a traceability note: "the source doc says X (file §n), the code does X, verified by test Y" — written for a non-developer.
+- Frontend fidelity: `docs/working/FRONTEND_DESIGN_RULES.md` is binding — reuse the prototype's components and visual system; never introduce new styling or components. If the documents require functionality with no prototype screen, the slice must build that screen from existing patterns and stitch it to the backend; a backend with no reachable UI does not count as done.
+- No dead code, no commented-out blocks, no TODOs without a slice or ASSUMPTIONS entry that owns them.
+
+## 3. Technology standards (the "better tools" defaults)
+Backend: Django + Django REST Framework, PostgreSQL in production (SQLite acceptable only for local tests), djangorestframework-simplejwt/PyJWT for tokens, pytest or Django test runner, coverage.py. Frontend: React + TypeScript + Vite, vitest + Testing Library, ESLint. Infrastructure: environment variables for secrets, pinned dependencies, migrations for every schema change. Prefer the standard, maintained, widely-documented tool over a clever or niche one; new dependencies follow `docs/working/DEPENDENCY_POLICY.md`.
+
+## 4. Never do autonomously (hard-enforced; validation fails the run)
+- Modify protected files: `scripts/`, `.github/`, `.ralph/config.yaml`, `.ralph/permissions.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `docs/working/HIGH_RISK_APPROVALS.md`, `docs/working/DECISION_POLICY.md`, `docs/working/FRONTEND_DESIGN_RULES.md`, or anything in `docs/source/`.
+- Weaken, skip, or reinterpret quality gates, risk rules, or this policy.
+- Delete or rewrite committed history; force-push.
+- Deploy anywhere, call paid external services, or send communications to real people.
+- Store real personal or financial data in fixtures/tests.
+
+## 5. Owner's brake
+The owner can stop any slice without a conversation: add `- [revoked] <slice-id> | <date> | <reason>` to `docs/working/HIGH_RISK_APPROVALS.md`. Runs check this before starting.
+# Frontend Design Rules (binding for every frontend change)
+
+The prototype in `sfpcl-lms/` is the approved visual system. These rules are owner requirements (2026-07-02) and are not negotiable per slice.
+
+## Hard rules
+- No colour changes.
+- No typography changes.
+- No spacing/layout redesign.
+- No new card design.
+- No new badge design.
+- No new table/queue pattern.
+- Only change: labels, sample/real row data, visibility, and role/action logic.
+- Do not redesign existing screens.
+- Reuse the existing dashboard layout, sidebar, header, alert components, metric cards, badges, queue cards, links, spacing, colours, typography, and existing component patterns.
+- Do not introduce new styling, new visual systems, or new components unless absolutely required — and "absolutely required" means no existing component or composition of existing components can express the function. Record any such case in ASSUMPTIONS.md with the reason.
+
+## Gap-closure duty (documents > prototype)
+If `docs/source/` requires functionality that has no screen in the prototype, building that screen IS the slice's responsibility — a backend without a reachable UI does not satisfy the documents. Process:
+1. Check `docs/working/PROTOTYPE_INVENTORY.md` and `docs/working/PROTOTYPE_GAP_REPORT.md` for the closest existing screen.
+2. Compose the new screen ONLY from existing pieces: `AppShell`/`Sidebar`/`Header` shell, `KPICard`, `StatusBadge`, `AlertBanner`, `Modal`, `Tabs`, `StageStepper`, and the loan components (`ApprovalPanel`, `AuditTimeline`, `DocumentChecklist`, `DocumentPackModal`, `EligibilityChecklist`, `LoanLimitCalculator`, `RepaymentLedger`), plus the table/queue/detail patterns already used in `src/pages/`.
+3. Copy the structure of the most similar existing page (same header pattern, same card grid, same table classes) and change only labels, data wiring, visibility, and role/action logic.
+4. Wire it to the real backend API — no new mock data. Route it in the existing router and sidebar following the role rules.
+5. Update `PROTOTYPE_INVENTORY.md` (new screen) and `PROTOTYPE_GAP_REPORT.md` (gap closed) in the same run.
+
+## Mock-surface ratchet and ownership (2026-07-11)
+Rules (from PRODUCTION_COMPLETION_BLUEPRINT.md §6.4):
+1. The total mock/fixture surface may never grow: no slice may add a `mockData` import, an inline business fixture, or a runtime business calculation to a production path. Controlled vocabularies, display metadata, and test fixtures are legitimate when explicitly identified as such.
+2. Each file below has exactly one final-removal owner. That slice must leave the file with no `src/data/mockData.ts` import and no inline business fixtures, and must add a regression test asserting it.
+3. A production screen may not calculate server-owned money, eligibility, approval, state, or permission decisions locally.
+
+| File (sfpcl-lms/src/) | Final-removal owner |
+|---|---|
+| `App.tsx` | 006H5 |
+| `pages/applications/CompletenessWorkbench.tsx` | 005E2 |
+| `pages/sanction/SanctionWorkbench.tsx` | 007I |
+| `pages/settings/SettingsHub.tsx` | 007J (matrix panel) / 007J2 (all remaining panels) |
+| `pages/documentation/DocumentationHub.tsx` | 008M |
+| `components/loan/DocumentChecklist.tsx` | 008M |
+| `components/loan/DocumentPackModal.tsx` | 008M |
+| `components/loan/AuditTimeline.tsx` | 008M |
+| `pages/disbursement/DisbursementHub.tsx` | 009K |
+| `pages/disbursement/PaymentAuthorisationHub.tsx` | 009K |
+| `pages/loan-accounts/LoanAccount360.tsx` | 010M (initial wiring 009J) |
+| `pages/repayments/RepaymentsHub.tsx` | 010M |
+| `pages/monitoring/MonitoringDashboard.tsx` | 010M |
+| `components/loan/RepaymentLedger.tsx` | 010M |
+| `pages/search/GlobalSearchResults.tsx` | 010N |
+| `components/layout/Header.tsx` | 010O (search paths 010N) |
+| `pages/compliance/ComplianceDashboard.tsx` | 011P |
+| `pages/compliance/GrievancesHub.tsx` | 011P |
+| `pages/compliance/AuditArchiveHub.tsx` | 011P |
+| `pages/registers/RegistersHub.tsx` | 012DA (S23/S25 views 007J) |
+| `pages/reports/ReportsMIS.tsx` | 012DA |
+| `components/loan/ApprovalPanel.tsx` (inline ₹5,00,000 matrix + client authority) | 007I |
+| `pages/borrower/portal/applications/MP05_NewApplication.tsx` | client money math removed 2026-07-11; 006Z2 owns the server limit projection |
+| `pages/borrower/portal/auth/MP00_Login.tsx` + `App.tsx` demo-login fallback | fixed 2026-07-11 (005FA2 Complete, regression-tested) |
+
+This table reflects the 20 production files importing `mockData` as of 2026-07-11 plus SettingsHub's inline fixtures. If a slice finds a mock read in a file not listed here, it must add the file to this table with an owner in the same run.
+
+## Owner-approved design amendments (the only exception)
+The owner may change the approved design itself — a label, colour, layout, or visual element — but only through a `ui-change` change request (`docs/change-requests/`, maintenance stage) whose Source Document Reference contains the phrase "owner approved". Intake enforces this mechanically. When implementing such a CR slice, change exactly what the request names and nothing else; every hard rule above still applies to everything the request does not name.
+
+## States and evidence
+Follow `docs/working/VISUAL_ACCEPTANCE.md`: loading/empty/error/unauthorized/validation/success states using existing patterns (e.g., existing alert/empty styles), screenshots saved to the run's evidence folder. Screenshots must be visually indistinguishable from the prototype's design language.
+# Slice 008L3: Portal Action and Resubmission Contract Closure
+
+## Status
+Complete
+
+## Parent Epics
+Epic 008: Documentation, Legal Documents, and Security Package; Epic 005: Application Intake and
+Completeness (portal continuation)
+
+## Depends On
+- 008K4
+- CR-005
+
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Goal
+
+Make portal upload/download authority exactly match the server projection, route deficiency
+resubmission through the application lifecycle owner, and restore the approved MP07/MP11/MP13
+interaction composition with real browser proof.
+
+## Source / Review References
+
+- `docs/source/screen-spec-member-portal.md` MP07, MP11, MP13, §§8.2-8.4, 10, and 11
+- `docs/source/functional-spec.md` M03-FR-010 through M03-FR-012 and M06-FR-018-019
+- `docs/source/api-contracts.md` §§3, 5-8, 26-28, and 44
+- `docs/source/auth-permissions.md` §§19.4 and 21-23
+- `docs/source/codebase-design.md` §§4.2, 20.7, and 21
+- `docs/working/FRONTEND_DESIGN_RULES.md`
+- `docs/slices/008L-member-portal-documentation-actions.md`
+- `docs/slices/008L2-member-portal-deficiency-response-and-resubmission.md`
+- `docs/working/REVIEW_FINDINGS.md` entry for `2026-07-15_085859_architecture_review`
+
+## Concrete Requirements
+
+1. Use one active-portal-account/member/application scope resolver for MP07/MP11/MP13 reads and
+   actions. Missing, cross-member, internal-user, suspended, expired, and claimed-member attempts
+   remain nondisclosing and never receive internal permissions, security ids, or success evidence.
+2. Compute documentation upload/re-upload authority once in the backend and reuse it for GET and
+   POST under the checklist/application lock. Reject a crafted upload whenever the canonical
+   projection advertises both flags false, including reconciled completion, stale/current-evidence
+   blockers, wrong stage/cycle, non-applicable actions, and concurrent completion. Portal evidence
+   never reopens or appends to an internally complete item.
+3. Replace caller-editable `expires_at` content authority with the central signed, short-lived,
+   document-and-scope-bound download capability already used by 008L2. Bind portal account, member,
+   application, action/deficiency, and current document; reject tamper, expiry, replay after current-
+   document replacement, cross-action, and cross-member use. Keep checksum verification and no-store
+   responses; never expose storage keys or raw local-document URLs.
+4. Put `incomplete_returned -> submitted` behind an application-owned `resubmit` transition using
+   the 002H guard and canonical audit/workflow writer. Keep staff-only deficiency resolution honest:
+   borrower response/submission events must target the response aggregate (or another source-backed
+   response state), not claim `ApplicationDeficiency open -> responded` while the deficiency remains
+   open. Re-upload and resubmit histories must state the actual old/new aggregate states exactly.
+5. Align portal upload/download audit events with the central document vocabulary and required
+   actor/member/application/document/version/category/sensitivity/reason/request/network/outcome
+   metadata. Preserve portal-specific attribution without creating parallel audit semantics.
+6. Restore MP07's approved existing upload modal/drop-zone composition and preserve MP11/MP13 cards,
+   badges, spacing, typography, colours, loading/empty/401/403/validation/upload/success/error states.
+   Use the existing safe browser-download interaction so object URLs remain valid until navigation
+   consumes them. Add structural and interaction tests; introduce no styling or mock fixture path.
+7. Carry CR-005's independent status/control contract through the routed proof: after reconciliation
+   the completed Term Sheet must show canonical `Complete` beside its retained authorised Download,
+   while Upload and Re-upload are absent. Capture that exact state in
+   `portal-documentation-complete-upload-denied.png` in both trusted runs.
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/member-portal-documentation-actions.e2e.spec.ts`
+- Spec: `e2e/member-portal-deficiency-response.e2e.spec.ts`
+- Screenshot: `portal-documentation-upload-modal.png`
+- Screenshot: `portal-documentation-complete-upload-denied.png`
+- Screenshot: `portal-deficiency-mobile-response.png`
+- Screenshot: `portal-deficiency-resubmitted.png`
+
+## Trusted Browser Scenario
+
+At 1280x720, sign in through the real portal session, open MP07/MP13, capture the preserved upload
+modal, upload once, refetch, then prove a reconciled-complete action has no control and a direct
+crafted POST is denied. Download a published Term Sheet through a fresh signed capability and prove
+tampering fails. At a 390x844 viewport, open MP11 for a returned application, capture the response
+form, upload every required correction, resubmit through the guarded lifecycle, and capture the
+canonical returned-to-review state. Each spec and screenshot must run twice outside the sandbox.
+
+## Test Cases
+
+- GET/POST predicate parity for upload, re-upload, completed, stale, concurrent, non-applicable,
+  wrong-stage, missing, and cross-member actions with exact zero-success evidence assertions.
+- Signed capability issue/read/tamper/expiry/replacement/cross-scope matrices for both documentation
+  and deficiency downloads; authenticated fresh content and audit metadata remain exact.
+- Application transition guard is invoked for resubmit; invalid state/permission and concurrent
+  resubmits are zero-write, while one success reopens the canonical completeness queue.
+- Deficiency response/re-upload/resubmit workflow rows match the response/application aggregate
+  states and leave staff resolution plus all Stage-4 evidence untouched.
+- Frontend tests click upload/re-upload/download/resubmit, cover 401 and 403 separately, preserve the
+  modal structure, refetch exactly once, and prove no immediate blob-URL revocation race.
+- The routed MP07 assertion observes `Complete` and `Download Term Sheet` together and observes no
+  Upload/Re-upload control before taking the declared completed-state screenshot.
+
+## Evidence Required
+
+Failing-first upload-predicate, signed-capability, lifecycle-guard, event-consistency, and modal
+fidelity probes; API response examples; focused/full gates; and the declared browser outputs twice.
+
+## Risk Level
+High
+
+## Acceptance Criteria
+
+- Portal actions cannot exceed the canonical advertised authority.
+- Downloads are signed and scope bound; resubmission uses the application lifecycle owner.
+- MP07/MP11/MP13 retain the approved visual/interaction language with real browser evidence.
+- All configured gates pass.
+
+## Done Checklist
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence contract implemented; local browser attempt recorded and trusted execution deferred
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [ ] Commit created only after passing gates
+
+codex
+The checked-in handoff says the slice implementation itself is complete, so this repair likely concerns an independent validation artifact rather than missing product scope. I’m narrowing now to the quarantined run’s exact failure signature before touching anything.
+exec
+/bin/zsh -lc 'rg --files docs/working/digests docs/epics .ralph/runs/2026-07-15_155952_repair .ralph/runs/2026-07-15_160544_repair 2>/dev/null | sort && cat .ralph/runs/2026-07-15_155952_repair/failure-summary.md' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+ succeeded in 740ms:
+.ralph/runs/2026-07-15_155952_repair/build-results.md
+.ralph/runs/2026-07-15_155952_repair/changed-files.txt
+.ralph/runs/2026-07-15_155952_repair/codex-settings.md
+.ralph/runs/2026-07-15_155952_repair/evidence/terminal-logs/codex.log
+.ralph/runs/2026-07-15_155952_repair/evidence/terminal-logs/orchestrator-backend-deps.log
+.ralph/runs/2026-07-15_155952_repair/evidence/terminal-logs/orchestrator-frontend-deps.log
+.ralph/runs/2026-07-15_155952_repair/execution-plan.md
+.ralph/runs/2026-07-15_155952_repair/failure-summary.md
+.ralph/runs/2026-07-15_155952_repair/final-summary.md
+.ralph/runs/2026-07-15_155952_repair/frontend-build.log
+.ralph/runs/2026-07-15_155952_repair/frontend-lint.log
+.ralph/runs/2026-07-15_155952_repair/frontend-tests.log
+.ralph/runs/2026-07-15_155952_repair/frontend-typecheck.log
+.ralph/runs/2026-07-15_155952_repair/install-results.md
+.ralph/runs/2026-07-15_155952_repair/preflight-results.md
+.ralph/runs/2026-07-15_155952_repair/prompt.md
+.ralph/runs/2026-07-15_155952_repair/review-packet.md
+.ralph/runs/2026-07-15_155952_repair/risk-assessment.md
+.ralph/runs/2026-07-15_155952_repair/trusted-browser-local-attempt.log
+.ralph/runs/2026-07-15_155952_repair/typecheck-results.md
+.ralph/runs/2026-07-15_160544_repair/codex-settings.md
+.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/codex.log
+.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/orchestrator-backend-deps.log
+.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/orchestrator-frontend-deps.log
+.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+.ralph/runs/2026-07-15_160544_repair/final-summary.md
+.ralph/runs/2026-07-15_160544_repair/preflight-results.md
+.ralph/runs/2026-07-15_160544_repair/prompt.md
+.ralph/runs/2026-07-15_160544_repair/review-packet.md
+.ralph/runs/2026-07-15_160544_repair/risk-assessment.md
+docs/epics/001-ralph-bootstrap-verification.md
+docs/epics/002-platform-auth-shell.md
+docs/epics/003-audit-documents-config-foundation.md
+docs/epics/004-member-kyc-master.md
+docs/epics/005-application-intake-completeness.md
+docs/epics/006-eligibility-loan-limit-appraisal.md
+docs/epics/007-sanction-approval-workflow.md
+docs/epics/008-documentation-security-package.md
+docs/epics/009-sap-loan-account-disbursement.md
+docs/epics/010-servicing-repayments-interest-monitoring.md
+docs/epics/011-default-recovery-closure-compliance.md
+docs/epics/012-reports-exports-hardening-uat.md
+docs/working/digests/README.md
+docs/working/digests/epic-002-platform-auth.md
+docs/working/digests/epic-003-audit-documents-config.md
+docs/working/digests/epic-004-member-kyc-master.md
+docs/working/digests/epic-005-application-intake.md
+docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+docs/working/digests/epic-007-sanction-approval-workflow.md
+docs/working/digests/epic-008-documentation-security-package.md
+# Validation Failure Summary
+
+The independent validation runner was intentionally stopped before repeating the full gates because
+the trusted, outside-sandbox Playwright feedback loop exposed two deterministic selector failures
+after Chromium build 1148 was installed successfully.
+
+## Demonstrated browser failures
+
+1. `member-portal-deficiency-response.e2e.spec.ts:79`
+   - `getByText('Portal Contract Member').first()` resolves to an element hidden in the collapsed
+     mobile navigation and times out waiting for visibility.
+   - Fix the login-ready assertion to target a visible, stable portal surface at the 390x844 viewport.
+2. `member-portal-documentation-actions.e2e.spec.ts:44`
+   - `getByRole('button', { name: 'My Documents', exact: true })` resolves to both the sidebar button
+     and the dashboard quick-action button, causing Playwright strict-mode failure.
+   - Scope the click to the intended navigation or main-region control.
+
+The exact two-spec command is the required tight feedback loop. Run it outside the coding sandbox
+after the selector repair; do not reinterpret these as missing-browser or product/backend failures.
+
+exec
+/bin/zsh -lc 'cat .ralph/permissions.json && cat .ralph/config.yaml && cat docs/epics/008-documentation-security-package.md && cat docs/working/digests/epic-008-documentation-security-package.md && cat .ralph/runs/2026-07-15_160544_repair/execution-plan.md && git status --short && git diff -- e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+ succeeded in 232ms:
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008L3-portal-action-and-resubmission-contract-closure.md
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl-lms/src/pages/borrower/portal/applications/MP11_DeficiencyResponse.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/MP07_DocumentChecklist.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/MP13_DocumentationActions.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/usePortalDocumentationActions.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl_credit/members/portal_views.py
+ M sfpcl_credit/processes/portal_deficiency_response.py
+ M sfpcl_credit/processes/portal_documentation_actions.py
+ M sfpcl_credit/tests/test_portal_deficiency_response_api.py
+ M sfpcl_credit/tests/test_portal_documentation_actions_api.py
+?? .ralph/runs/2026-07-15_151653_normal_run/
+?? .ralph/runs/2026-07-15_155952_repair/
+?? .ralph/runs/2026-07-15_160544_repair/
+?? sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+?? sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+?? sfpcl_credit/applications/modules/loan_application_lifecycle.py
+?? sfpcl_credit/processes/portal_application_scope.py
+
+codex
+The evidence supports two selector-only hypotheses, ranked as follows: (1) Playwright is selecting a hidden duplicate member label on mobile; targeting the visible main/header surface will remove that timeout. (2) “My Documents” is duplicated between navigation and the dashboard; scoping to the navigation region will remove strict-mode ambiguity. A product-state or backend timing defect is unlikely because both failures occur during locator resolution before the target workflows begin. I’ll record this repair plan, reproduce with the exact two-spec command if Chromium is available here, then change only those locators.
+apply patch
+patch: completed
+/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+exec
+/bin/zsh -lc "sed -n '1,180p' sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts && sed -n '1,180p' sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts && rg -n \"playwright|member-portal-(documentation-actions|deficiency-response)\" .ralph/runs/2026-07-15_155952_repair -g '*.log' -g '*.md' sfpcl-lms/package.json sfpcl-lms/playwright.config.*" in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+ succeeded in 102ms:
+exec
+/bin/zsh -lc 'set -o pipefail
+RALPH_EVIDENCE_DIR="$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/screenshots-red" E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts 2>&1 | tee "$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/browser-selector-red.log"' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+ exited 1 in 18378ms:
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts
+
+[2m[WebServer] [22m[15/Jul/2026 10:37:09] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:21511) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+  ✘  1 [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads every correction and returns the application to SFPCL review (4ms)
+  ✘  2 [chromium] › member-portal-documentation-actions.e2e.spec.ts:9:5 › MP07 upload authority, signed download, and completed status are routed (3ms)
+
+
+  1) [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads every correction and returns the application to SFPCL review 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    <launching> /Users/amitkallapa/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate,HttpsUpgrades,PaintHolding,ThirdPartyStoragePartitioning,LensOverlay,PlzDedicatedWorker --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-use-zoom-for-dsf=false --use-angle --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/zq/3s8051dx39q0tk8whcqx44y00000gn/T/playwright_chromiumdev_profile-pNHFXW --remote-debugging-pipe --no-startup-window
+    <launched> pid=21515
+    [pid=21515][err] [0715/160711.451693:ERROR:thermal_state_observer_mac.mm(88)] ThermalStateObserverMac unable to register to power notifications. Result: 9
+    [pid=21515][err] [0715/160711.467693:ERROR:dns_config_service_posix.cc(142)] DNS config watch failed to start.
+    [pid=21515][err] [0715/160711.476453:FATAL:mach_port_rendezvous.cc(399)] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.21515: Permission denied (1100)
+    Call log:
+    [2m  - <launching> /Users/amitkallapa/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate,HttpsUpgrades,PaintHolding,ThirdPartyStoragePartitioning,LensOverlay,PlzDedicatedWorker --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-use-zoom-for-dsf=false --use-angle --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/zq/3s8051dx39q0tk8whcqx44y00000gn/T/playwright_chromiumdev_profile-pNHFXW --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=21515[22m
+    [2m  - [pid=21515][err] [0715/160711.451693:ERROR:thermal_state_observer_mac.mm(88)] ThermalStateObserverMac unable to register to power notifications. Result: 9[22m
+    [2m  - [pid=21515][err] [0715/160711.467693:ERROR:dns_config_service_posix.cc(142)] DNS config watch failed to start.[22m
+    [2m  - [pid=21515][err] [0715/160711.476453:FATAL:mach_port_rendezvous.cc(399)] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.21515: Permission denied (1100)[22m
+
+
+  2) [chromium] › member-portal-documentation-actions.e2e.spec.ts:9:5 › MP07 upload authority, signed download, and completed status are routed 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    <launching> /Users/amitkallapa/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate,HttpsUpgrades,PaintHolding,ThirdPartyStoragePartitioning,LensOverlay,PlzDedicatedWorker --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-use-zoom-for-dsf=false --use-angle --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/zq/3s8051dx39q0tk8whcqx44y00000gn/T/playwright_chromiumdev_profile-v2ECHe --remote-debugging-pipe --no-startup-window
+    <launched> pid=21524
+    [pid=21524][err] [0715/160712.224287:ERROR:thermal_state_observer_mac.mm(88)] ThermalStateObserverMac unable to register to power notifications. Result: 9
+    [pid=21524][err] [0715/160712.227387:ERROR:dns_config_service_posix.cc(142)] DNS config watch failed to start.
+    [pid=21524][err] [0715/160712.228433:FATAL:mach_port_rendezvous.cc(399)] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.21524: Permission denied (1100)
+    Call log:
+    [2m  - <launching> /Users/amitkallapa/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate,HttpsUpgrades,PaintHolding,ThirdPartyStoragePartitioning,LensOverlay,PlzDedicatedWorker --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-use-zoom-for-dsf=false --use-angle --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/zq/3s8051dx39q0tk8whcqx44y00000gn/T/playwright_chromiumdev_profile-v2ECHe --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=21524[22m
+    [2m  - [pid=21524][err] [0715/160712.224287:ERROR:thermal_state_observer_mac.mm(88)] ThermalStateObserverMac unable to register to power notifications. Result: 9[22m
+    [2m  - [pid=21524][err] [0715/160712.227387:ERROR:dns_config_service_posix.cc(142)] DNS config watch failed to start.[22m
+    [2m  - [pid=21524][err] [0715/160712.228433:FATAL:mach_port_rendezvous.cc(399)] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.21524: Permission denied (1100)[22m
+
+
+  2 failed
+    [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads every correction and returns the application to SFPCL review 
+    [chromium] › member-portal-documentation-actions.e2e.spec.ts:9:5 › MP07 upload authority, signed download, and completed status are routed 
+
+exec
+/bin/zsh -lc "rg -n \"My Documents|memberDisplayName|member_display_name|displayName|Portal Contract Member\" sfpcl-lms/src -g '*.tsx' -g '*.ts' | head -100 && sed -n '1,240p' sfpcl-lms/src/components/layout/PortalSidebar.tsx 2>/dev/null || true && rg -n \"<nav|aria-label=.*nav|role=.navigation\" sfpcl-lms/src -g '*.tsx'" in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+ succeeded in 204ms:
+sfpcl-lms/src/services/authSession.ts:73:  member_display_name?: string;
+sfpcl-lms/src/services/authSession.ts:93:  memberDisplayName?: string;
+sfpcl-lms/src/services/authSession.ts:262:    memberDisplayName: user.member_display_name,
+sfpcl-lms/src/contexts/RoleContext.tsx:24:  memberDisplayName?: string;
+sfpcl-lms/src/contexts/RoleContext.tsx:60:    memberDisplayName: user.memberDisplayName,
+sfpcl-lms/src/services/authSession.test.ts:72:    member_display_name: 'Ganesh Thorat',
+sfpcl-lms/src/components/layout/Sidebar.tsx:71:  { id: 'documents',       label: 'My Documents',        icon: <FileCheck size={18} /> },
+sfpcl-lms/src/pages/borrower/BorrowerPortal.tsx:81:    { id: 'documents',    label: 'My Documents' },
+sfpcl-lms/src/pages/borrower/portal/MP03_Dashboard.tsx:148:          { label: 'My Documents', icon: <FileCheck size={20} />, style: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200', tab: 'documents' },
+sfpcl-lms/src/pages/borrower/portal/documents/MP07_DocumentChecklist.tsx:31:          <h2 className="text-xl font-bold text-slate-900">My Documents</h2>
+sfpcl-lms/src/pages/registers/RegistersHub.tsx:548:                  let displayName = m.name;
+sfpcl-lms/src/pages/registers/RegistersHub.tsx:549:                  if (displayName === 'Green Valley F P C') displayName = 'Green Valley FPC';
+sfpcl-lms/src/pages/registers/RegistersHub.tsx:573:                      <td className="table-cell font-semibold text-slate-900">{displayName}</td>
+sfpcl-lms/src/components/layout/Sidebar.tsx:110:      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+
+exec
+/bin/zsh -lc "sed -n '1,210p' sfpcl-lms/src/components/layout/Sidebar.tsx && sed -n '1,210p' sfpcl-lms/src/pages/borrower/BorrowerPortal.tsx && sed -n '120,180p' sfpcl-lms/src/pages/borrower/portal/MP03_Dashboard.tsx && rg -n \"memberDisplayName|display_name|displayName\" sfpcl-lms/src/components sfpcl-lms/src/pages/borrower -g '*.tsx'" in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+ succeeded in 628ms:
+import React, { useState } from 'react';
+import {
+  LayoutDashboard, FileText, Users, ClipboardCheck, Gavel,
+  FolderCheck, Database, Banknote, ReceiptIndianRupee, TimerReset,
+  ShieldCheck, BarChart3, Settings, History, ChevronRight,
+  Sprout, MessageSquareWarning, ChevronLeft, BadgeCheck, TrendingDown,
+  Percent, Inbox, ClipboardList, FileCheck, Leaf, MessageSquare
+} from 'lucide-react';
+import { useRole } from '../../contexts/RoleContext';
+import { Permission } from '../../contexts/RoleContext';
+import { navigationPermissionsFor, visibleStaffNavItems, type Page } from '../../services/navigationPermissions';
+
+export interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  badge?: number;
+  requiredPermission?: Permission;
+  alternativePermissions?: Permission[];
+}
+
+export interface StaffNavItem extends NavItem {
+  id: Page;
+}
+
+const staffNavItem = (item: Omit<StaffNavItem, 'requiredPermission' | 'alternativePermissions'>): StaffNavItem => ({
+  ...item,
+  ...navigationPermissionsFor(item.id),
+});
+
+export const allNavItems: StaffNavItem[] = [
+  staffNavItem({ id: 'dashboard',     label: 'Dashboard',             icon: <LayoutDashboard size={18} /> }),
+  staffNavItem({ id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} />,           badge: 5 }),
+  staffNavItem({ id: 'applications',  label: 'Applications',          icon: <FileText size={18} />,        badge: 3 }),
+  staffNavItem({ id: 'completeness',  label: 'Completeness',          icon: <ClipboardList size={18} />,   badge: 3 }),
+  staffNavItem({ id: 'members',       label: 'Members & Borrowers',   icon: <Users size={18} /> }),
+  staffNavItem({ id: 'appraisal',     label: 'Appraisal',             icon: <ClipboardCheck size={18} />,  badge: 2 }),
+  staffNavItem({ id: 'sanction',      label: 'Sanction',              icon: <Gavel size={18} />,           badge: 1 }),
+  staffNavItem({ id: 'documentation', label: 'Documentation',         icon: <FolderCheck size={18} />,     badge: 1 }),
+  staffNavItem({ id: 'disbursement',  label: 'SAP & Disbursement',    icon: <Database size={18} /> }),
+  staffNavItem({ id: 'cfc',           label: 'Payment Authorisation', icon: <BadgeCheck size={18} /> }),
+  staffNavItem({ id: 'interest',      label: 'Interest Management',   icon: <Percent size={18} /> }),
+  staffNavItem({ id: 'loan-accounts', label: 'Loan Accounts',         icon: <Banknote size={18} /> }),
+  staffNavItem({ id: 'repayments',    label: 'Repayments',            icon: <ReceiptIndianRupee size={18} /> }),
+  staffNavItem({ id: 'monitoring',    label: 'Monitoring',            icon: <TimerReset size={18} />,      badge: 3 }),
+  staffNavItem({ id: 'defaults',      label: 'Default & Recovery',    icon: <TrendingDown size={18} />,    badge: 2 }),
+  staffNavItem({ id: 'closure',       label: 'Closure & Archive',     icon: <BadgeCheck size={18} /> }),
+  staffNavItem({ id: 'compliance',    label: 'Compliance',            icon: <ShieldCheck size={18} /> }),
+  staffNavItem({ id: 'registers',     label: 'Registers',             icon: <Sprout size={18} /> }),
+  staffNavItem({ id: 'reports',       label: 'Reports & MIS',         icon: <BarChart3 size={18} /> }),
+  staffNavItem({ id: 'grievances',    label: 'Grievances',            icon: <MessageSquareWarning size={18} /> }),
+  staffNavItem({ id: 'audit',         label: 'Audit & Archive',       icon: <History size={18} /> }),
+  staffNavItem({ id: 'settings',      label: 'Settings',              icon: <Settings size={18} /> }),
+  staffNavItem({ id: 'admin-users',   label: 'Admin Users',           icon: <Users size={18} /> }),
+  staffNavItem({ id: 'tracer',        label: 'Tracer',                icon: <ClipboardCheck size={18} /> }),
+];
+
+// Borrower portal nav
+const borrowerNavItems: NavItem[] = [
+  { id: 'overview',        label: 'Overview',            icon: <BarChart3 size={18} /> },
+  { id: 'myProfile',       label: 'My Profile',          icon: <Users size={18} /> },
+  { id: 'newApplication',  label: 'New Application',     icon: <ClipboardList size={18} /> },
+  { id: 'myApplications',  label: 'My Applications',     icon: <FileText size={18} /> },
+  { id: 'application',     label: 'Application Status',  icon: <FileText size={18} /> },
+  { id: 'sanctionOutcome', label: 'Sanction Terms',      icon: <Gavel size={18} /> },
+  { id: 'documentationActions', label: 'Documentation',  icon: <FolderCheck size={18} /> },
+  { id: 'disbursementStatus', label: 'Disbursement',     icon: <Database size={18} /> },
+  { id: 'loanHistory',     label: 'My Loans',            icon: <History size={18} /> },
+  { id: 'repayments',      label: 'Repayments',          icon: <ReceiptIndianRupee size={18} /> },
+  { id: 'directRepayment', label: 'Direct Repayment',    icon: <Banknote size={18} /> },
+  { id: 'documents',       label: 'My Documents',        icon: <FileCheck size={18} /> },
+  { id: 'notices',         label: 'Notices & Letters',   icon: <MessageSquareWarning size={18} /> },
+  { id: 'closureNoc',      label: 'Closure & NOC',       icon: <BadgeCheck size={18} /> },
+  { id: 'notifications',   label: 'Notifications',       icon: <Inbox size={18} /> },
+  { id: 'supply',          label: 'Produce Supply',      icon: <Leaf size={18} /> },
+  { id: 'grievance',       label: 'Raise Grievance',     icon: <MessageSquare size={18} /> },
+  { id: 'securitySettings', label: 'Security Settings',  icon: <Settings size={18} /> },
+];
+
+interface SidebarProps {
+  activePage: string;
+  onNavigate: (page: string) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  const { currentUser, can } = useRole();
+
+  const isBorrower = currentUser.role === 'borrower';
+  const items = isBorrower
+    ? borrowerNavItems
+    : visibleStaffNavItems(allNavItems, can);
+
+  return (
+    <aside className={`flex flex-col bg-white border-r border-slate-200 transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 h-full`}>
+      {/* Logo */}
+      <div className="flex items-center h-16 border-b border-slate-200 px-4 gap-3 flex-shrink-0">
+        <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain flex-shrink-0" />
+        {!collapsed && (
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-slate-900 truncate">SFPCL</div>
+            <div className="text-xs text-slate-500 truncate">
+              {isBorrower ? 'Member Portal' : 'Credit Management'}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+        {items.map(item => {
+          const isActive = activePage === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group ${
+                isActive
+                  ? 'bg-green-50 text-green-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              } ${collapsed ? 'justify-center' : ''}`}
+              title={collapsed ? item.label : undefined}
+            >
+              <span className={`flex-shrink-0 ${isActive ? 'text-green-600' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                {item.icon}
+              </span>
+              {!collapsed && (
+                <>
+                  <span className="flex-1 text-left truncate">{item.label}</span>
+                  {item.badge !== undefined && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 ${
+                      isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
+                    }`}>{item.badge}</span>
+                  )}
+                  {isActive && <ChevronRight size={14} className="flex-shrink-0 text-green-500" />}
+                </>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Collapse toggle */}
+      <div className="border-t border-slate-200 p-2">
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full flex items-center justify-center p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
+import React, { useState } from 'react';
+import { HelpCircle, Bell, Search, Upload, Download, FileText, CheckCircle2, AlertTriangle, FileSignature, Landmark, CreditCard, Clock, Calendar, Check, Leaf, MapPin, IndianRupee, Printer, ArrowLeft, MoreVertical, X, Signature, Building, Briefcase, FileCheck, Phone, Shield, Eye, ShieldCheck, FileKey, UserCheck, Smartphone, Lock, Activity, BadgePercent, ArrowRight, MessageSquare, Plus, Edit, CornerDownRight, Mail, AlertCircle, ChevronDown, ListFilter, Trash2, ArrowUpRight, ArrowDownRight, User } from 'lucide-react';
+import StatusBadge from '../../components/ui/StatusBadge';
+import { Role } from '../../types';
+import MP03_Dashboard from './portal/MP03_Dashboard';
+import MP04_MyProfile from './portal/MP04_MyProfile';
+import MP05_NewApplication from './portal/applications/MP05_NewApplication';
+import MP09_MyApplications from './portal/applications/MP09_MyApplications';
+import MP10_ApplicationStatus from './portal/applications/MP10_ApplicationStatus';
+import MP12_SanctionOutcome from './portal/applications/MP12_SanctionOutcome';
+import MP07_DocumentChecklist from './portal/documents/MP07_DocumentChecklist';
+import MP13_DocumentationActions from './portal/documents/MP13_DocumentationActions';
+import MP14_DisbursementStatus from './portal/disbursement/MP14_DisbursementStatus';
+import MP15_MyLoans from './portal/loans/MP15_MyLoans';
+import MP17_Repayments from './portal/loans/MP17_Repayments';
+import MP18_DirectRepaymentInfo from './portal/loans/MP18_DirectRepaymentInfo';
+import MP20_ClosureNOC from './portal/loans/MP20_ClosureNOC';
+import MP19_NoticesLetters from './portal/notices/MP19_NoticesLetters';
+import MP23_Notifications from './portal/notifications/MP23_Notifications';
+import MP22_ProduceSupply from './portal/supply/MP22_ProduceSupply';
+import MP24_SupportGrievance from './portal/support/MP24_SupportGrievance';
+import MP25_SecuritySettings from './portal/auth/MP25_SecuritySettings';
+import MemberPortalLayout from './portal/MemberPortalLayout';
+import { useRole } from '../../contexts/RoleContext';
+
+export type BorrowerTab =
+  | 'overview' | 'myProfile'
+  | 'newApplication' | 'myApplications' | 'application' | 'sanctionOutcome'
+  | 'documentationActions' | 'disbursementStatus'
+  | 'repayments' | 'directRepayment' | 'documents' | 'notices'
+  | 'loanHistory' | 'closureNoc' | 'notifications' | 'supply'
+  | 'grievance' | 'securitySettings';
+type ApplicationStep = 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'documents' | 'declarations' | 'review';
+
+// Mock: check if this borrower is an FPC
+const isFPCMember = false; // Set true to demo FPC view
+
+const repaymentSchedule = [
+  { due: '2024-12-31', principal: 100000, interest: 6000, total: 106000, status: 'paid', paid: '2024-12-28', utr: 'SFPCL2024120010' },
+  { due: '2025-03-31', principal: 100000, interest: 5500, total: 105500, status: 'paid', paid: '2025-03-29', utr: 'SFPCL2025030022' },
+  { due: '2025-06-30', principal: 100000, interest: 5000, total: 105000, status: 'overdue', paid: null, utr: null },
+  { due: '2025-09-30', principal: 100000, interest: 4500, total: 104500, status: 'upcoming', paid: null, utr: null },
+  { due: '2025-12-31', principal: 100000, interest: 4000, total: 104000, status: 'upcoming', paid: null, utr: null },
+  { due: '2026-03-31', principal: 0,      interest: 3500, total: 3500,   status: 'upcoming', paid: null, utr: null },
+];
+
+const myDocuments = [
+  { name: 'PAN Card Copy',              status: 'verified',   date: '2024-08-10', section: 'KYC', note: 'Self-attested borrower copy' },
+  { name: 'Aadhaar Card Copy',          status: 'verified',   date: '2024-08-10', section: 'KYC', note: 'Masked display; full value restricted' },
+  { name: 'Nominee PAN and Aadhaar',    status: 'verified',   date: '2024-08-12', section: 'Nominee', note: 'Includes signed nominee declaration' },
+  { name: 'Share Certificate Copy',     status: 'verified',   date: '2024-08-12', section: 'Shareholding', note: 'Folio M-00042; 5 shares' },
+  { name: '7/12 Extract',               status: 'verified',   date: '2024-08-14', section: 'Land', note: '4.5 acres under cultivation' },
+  { name: 'Crop Plan',                  status: 'verified',   date: '2024-08-14', section: 'Crop', note: 'Grapes and tomato cultivation plan' },
+  { name: 'Six-Month Bank Statement',   status: 'deficient',  date: '2024-08-15', section: 'Bank', note: 'February to April pages requested again' },
+  { name: 'Term Sheet',                 status: 'available',  date: '2024-09-15', section: 'Sanction', note: 'Signed by CFO for amount up to ₹5,00,000' },
+  { name: 'Loan Agreement',             status: 'available',  date: '2024-09-18', section: 'Legal', note: 'Stamped and notarised' },
+  { name: 'Disbursement Advice',        status: 'available',  date: '2024-09-22', section: 'Disbursement', note: 'UTR retained in loan file' },
+  { name: 'Repayment Schedule',         status: 'available',  date: '2024-09-22', section: 'Repayment', note: 'Principal-first allocation' },
+  { name: 'FY 2025 Interest Invoice',   status: 'available',  date: '2025-04-30', section: 'Interest', note: 'Yearly interest invoice' },
+  { name: 'NOC',                        status: 'pending',    date: null,         section: 'Closure', note: 'Available after full repayment and security return' },
+];
+
+const BorrowerPortal: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
+  const { currentUser } = useRole();
+  const [activeTab, setActiveTab] = useState<BorrowerTab>('overview');
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
+  const tabs: { id: BorrowerTab; label: string; }[] = [
+    { id: 'overview',     label: 'Overview' },
+    { id: 'myProfile',    label: 'My Profile' },
+    { id: 'newApplication', label: 'New Application' },
+    { id: 'myApplications', label: 'My Applications' },
+    { id: 'application',  label: 'Application Status' },
+    { id: 'sanctionOutcome', label: 'Sanction Terms' },
+    { id: 'documentationActions', label: 'Documentation Actions' },
+    { id: 'disbursementStatus', label: 'Disbursement Status' },
+    { id: 'loanHistory',  label: 'My Loans' },
+    { id: 'repayments',   label: 'Repayments' },
+    { id: 'directRepayment', label: 'Direct Repayment' },
+    { id: 'documents',    label: 'My Documents' },
+    { id: 'notices',      label: 'Notices & Letters' },
+    { id: 'closureNoc',   label: 'Closure & NOC' },
+    { id: 'notifications', label: 'Notifications' },
+    { id: 'supply',       label: 'Produce Supply' },
+    { id: 'grievance',    label: 'Raise Grievance' },
+    { id: 'securitySettings', label: 'Security Settings' },
+  ];
+  const activeSectionLabel = tabs.find(tab => tab.id === activeTab)?.label || 'My Loan';
+
+  return (
+    <>
+      <MemberPortalLayout
+        activeTab={activeTab}
+        activeSectionLabel={activeSectionLabel}
+        onNavigate={(page) => setActiveTab(page as BorrowerTab)}
+        onLogout={onLogout}
+      >
+
+        {/* Tab content */}
+        {activeTab === 'newApplication' && (
+          <MP05_NewApplication
+            onNavigateToApplication={(id) => {
+              setSelectedApplicationId(id);
+              setActiveTab('application');
+            }}
+          />
+        )}
+
+        {activeTab === 'myApplications' && (
+          <MP09_MyApplications
+            onNavigateToApplication={(id) => {
+              setSelectedApplicationId(id);
+              setActiveTab('application');
+            }}
+            onNavigateToNew={() => setActiveTab('newApplication')}
+          />
+        )}
+
+        {activeTab === 'overview' && (
+          <MP03_Dashboard onNavigate={(page) => setActiveTab(page as BorrowerTab)} />
+        )}
+        
+        {activeTab === 'myProfile' && (
+          <MP04_MyProfile />
+        )}
+
+        {activeTab === 'application' && (
+          <MP10_ApplicationStatus 
+            applicationId={selectedApplicationId}
+            onBack={() => setActiveTab('myApplications')}
+          />
+        )}
+
+        {activeTab === 'sanctionOutcome' && <MP12_SanctionOutcome />}
+        {activeTab === 'documentationActions' && <MP13_DocumentationActions />}
+        {activeTab === 'disbursementStatus' && <MP14_DisbursementStatus />}
+        {activeTab === 'repayments' && <MP17_Repayments />}
+        {activeTab === 'directRepayment' && <MP18_DirectRepaymentInfo />}
+        {activeTab === 'documents' && <MP07_DocumentChecklist />}
+        {activeTab === 'notices' && <MP19_NoticesLetters />}
+        {activeTab === 'closureNoc' && <MP20_ClosureNOC />}
+        {activeTab === 'notifications' && <MP23_Notifications />}
+        {activeTab === 'grievance' && <MP24_SupportGrievance />}
+        {activeTab === 'supply' && <MP22_ProduceSupply />}
+        {activeTab === 'loanHistory' && <MP15_MyLoans />}
+        {activeTab === 'securitySettings' && <MP25_SecuritySettings />}
+      </MemberPortalLayout>
+
+      {/* Upload modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+            <h3 className="font-semibold text-slate-900 mb-4">Upload Document</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Document Type</label>
+                <select className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                  <option>PAN Card</option>
+                  <option>Aadhaar Card</option>
+                  <option>Nominee PAN/Aadhaar</option>
+                  <option>Share Certificate Copy</option>
+                  <option>7/12 Extract</option>
+                  <option>Bank Statement</option>
+                  <option>Crop Plan</option>
+                  <option>Borrower/Nominee Signature Page</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center">
+                <Upload size={24} className="mx-auto text-slate-300 mb-2" />
+                <p className="text-sm text-slate-500">Click to select file or drag and drop</p>
+                <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG · Max 5 MB</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default BorrowerPortal;
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">Your application is with SFPCL for review. No action is required from you right now.</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <InfoCard title="Member & Eligibility" icon={<Shield size={16} className="text-green-600" />} rows={[
+          ['Member Type', formatLabel(member.member_type)],
+          ['Folio Number', member.folio_number],
+          ['Shares Held', `${member.share_summary?.number_of_shares ?? 0} shares (${member.share_summary?.holding_mode ?? 'not recorded'})`],
+          ['KYC Status', formatLabel(member.kyc_status)],
+          ['Default Status', formatLabel(member.default_status)],
+        ]} />
+        <InfoCard title="Application Summary" icon={<Leaf size={16} className="text-green-600" />} rows={[
+          ['Draft', String(application_counts.draft ?? 0)],
+          ['Submitted', String(application_counts.submitted ?? 0)],
+          ['Returned incomplete', String(application_counts.incomplete_returned ?? 0)],
+          ['Reference generated', String(application_counts.reference_generated ?? 0)],
+          ['Notices', String(summary.notices.length)],
+        ]} />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'New Loan Application', icon: <ClipboardList size={20} />, style: 'bg-green-600 hover:bg-green-700 text-white shadow-sm shadow-green-200', tab: 'newApplication' },
+          { label: 'Repayment Schedule', icon: <IndianRupee size={20} />, style: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200', tab: 'repayments' },
+          { label: 'My Documents', icon: <FileCheck size={20} />, style: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200', tab: 'documents' },
+          { label: 'Raise Grievance', icon: <MessageSquare size={20} />, style: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200', tab: 'grievance' },
+        ].map(action => (
+          <button key={action.label} onClick={() => onNavigate(action.tab as BorrowerTab)} className={`flex flex-col items-center justify-center gap-2 rounded-xl p-4 text-sm font-medium transition-colors ${action.style}`}>
+            {action.icon}
+            <span className="text-center leading-tight">{action.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const InfoCard: React.FC<{ title: string; icon: React.ReactNode; rows: [string, string][] }> = ({ title, icon, rows }) => (
+  <div className="bg-white rounded-xl border border-slate-100 p-6">
+    <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">{icon}{title}</h3>
+    <div className="space-y-2.5">
+      {rows.map(([label, value]) => (
+        <div key={label} className="flex items-center justify-between text-sm border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+          <span className="text-slate-500">{label}</span>
+          <span className="font-medium text-slate-900 text-right">{value}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const PortalPanel: React.FC<{ title: string; message: string; tone: 'loading' | 'error' }> = ({ title, message, tone }) => (
+  <div className="bg-white rounded-xl border border-slate-100 p-6">
+    <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+      {tone === 'loading' ? <StatusBadge label="loading" size="sm" /> : <AlertTriangle size={16} className="text-amber-600" />}
+      {title}
+    </h3>
+sfpcl-lms/src/pages/borrower/portal/MP04_MyProfile.tsx:50:            {member.display_name.charAt(0)}
+sfpcl-lms/src/pages/borrower/portal/MP04_MyProfile.tsx:53:            <h2 className="text-xl font-bold text-slate-900">{member.display_name}</h2>
+sfpcl-lms/src/pages/borrower/portal/MP04_MyProfile.tsx:69:              ['Full Name', member.legal_name || member.display_name],
+sfpcl-lms/src/pages/borrower/portal/MP03_Dashboard.tsx:64:            <h2 className="text-2xl font-bold">{member.display_name}</h2>
+sfpcl-lms/src/pages/borrower/portal/PortalMemberViews.test.tsx:66:  display_name: 'Ganesh Thorat',
+sfpcl-lms/src/pages/borrower/portal/applications/MP10_ApplicationStatus.tsx:55:        ['Full Legal Name', application?.member?.display_name ?? 'Not available'],
+
+exec
+/bin/zsh -lc "sed -n '1,260p' sfpcl-lms/src/pages/borrower/portal/MemberPortalLayout.tsx && sed -n '1,110p' sfpcl-lms/src/pages/borrower/portal/MP03_Dashboard.tsx" in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+ succeeded in 0ms:
+import React from 'react';
+import { Bell, HelpCircle, LogOut } from 'lucide-react';
+import Sidebar from '../../../components/layout/Sidebar';
+import { useRole } from '../../../contexts/RoleContext';
+
+export type BorrowerTab =
+  | 'overview' | 'myProfile'
+  | 'newApplication' | 'myApplications' | 'application' | 'sanctionOutcome'
+  | 'documentationActions' | 'disbursementStatus'
+  | 'repayments' | 'directRepayment' | 'documents' | 'notices'
+  | 'loanHistory' | 'closureNoc' | 'notifications' | 'supply'
+  | 'grievance' | 'securitySettings';
+
+interface MemberPortalLayoutProps {
+  children: React.ReactNode;
+  activeTab: BorrowerTab;
+  activeSectionLabel: string;
+  onNavigate: (tab: BorrowerTab) => void;
+  onLogout?: () => void;
+}
+
+const MemberPortalLayout: React.FC<MemberPortalLayoutProps> = ({ children, activeTab, activeSectionLabel, onNavigate, onLogout }) => {
+  const { currentUser } = useRole();
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-slate-50">
+      <Sidebar
+        activePage={activeTab}
+        onNavigate={(page) => onNavigate(page as BorrowerTab)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 gap-4 flex-shrink-0 z-10">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-500">Member Portal</div>
+            <h1 className="text-lg font-bold text-slate-900 truncate">{activeSectionLabel}</h1>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <button
+              onClick={() => onNavigate('notifications')}
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors relative"
+              title="Notifications"
+            >
+              <Bell size={18} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            </button>
+            <button
+              onClick={() => onNavigate('grievance')}
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Help"
+            >
+              <HelpCircle size={18} />
+            </button>
+            <div className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold text-sm">
+                {currentUser.name.charAt(0)}
+              </div>
+              <div className="hidden sm:block text-left">
+                <div className="text-sm font-medium text-slate-900 leading-tight">{currentUser.name}</div>
+                <div className="text-xs text-slate-500 leading-tight">Member · Folio M-00042</div>
+              </div>
+            </div>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-1 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <LogOut size={15} />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
+            )}
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto">
+          <div className="w-full px-4 sm:px-6 py-6">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default MemberPortalLayout;
+import React, { useEffect, useState } from 'react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
+  CreditCard,
+  FileCheck,
+  IndianRupee,
+  Leaf,
+  MessageSquare,
+  Shield,
+} from 'lucide-react';
+import StatusBadge from '../../../components/ui/StatusBadge';
+import { AuthSessionError } from '../../../services/authSession';
+import { fetchPortalDashboard, type PortalDashboard } from '../../../services/portalApi';
+import { BorrowerTab } from './MemberPortalLayout';
+
+interface DashboardProps {
+  onNavigate: (tab: BorrowerTab) => void;
+}
+
+const MP03_Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+  const [summary, setSummary] = useState<PortalDashboard | null>(null);
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('Loading your member dashboard...');
+
+  useEffect(() => {
+    let mounted = true;
+    fetchPortalDashboard()
+      .then(data => {
+        if (!mounted) return;
+        setSummary(data);
+        setStatus('success');
+      })
+      .catch((error: AuthSessionError) => {
+        if (!mounted) return;
+        setMessage(error.message || 'Member dashboard could not be loaded.');
+        setStatus('error');
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (status !== 'success' || !summary) {
+    return <PortalPanel title="Member dashboard unavailable" message={message} tone={status === 'loading' ? 'loading' : 'error'} />;
+  }
+
+  return <MP03DashboardView summary={summary} onNavigate={onNavigate} />;
+};
+
+export const MP03DashboardView: React.FC<{ summary: PortalDashboard; onNavigate: (tab: BorrowerTab) => void }> = ({ summary, onNavigate }) => {
+  const { member, application_counts, loan_counts, pending_actions } = summary;
+  const openDeficiencies = pending_actions.open_deficiencies ?? 0;
+  const hasActions = Object.values(pending_actions).some(count => Number(count) > 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-5 sm:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <p className="text-green-100 text-sm mb-1">Welcome back</p>
+            <h2 className="text-2xl font-bold">{member.display_name}</h2>
+            <p className="text-green-100 text-sm mt-1">
+              Folio: {member.folio_number} · Shares: {member.share_summary?.number_of_shares ?? 0}
+            </p>
+            <div className="mt-2 inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+              <CheckCircle2 size={11} /> {formatLabel(member.active_member_status?.status || member.membership_status)}
+            </div>
+          </div>
+          <div className="sm:text-right">
+            <p className="text-green-100 text-xs mb-1">Active Loans</p>
+            <p className="text-2xl font-bold">{loan_counts.active ?? 0}</p>
+            <p className="text-green-100 text-xs mt-1">Own account summary</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Applications', value: String(application_counts.total ?? 0), icon: <ClipboardList size={16} />, color: 'text-green-600' },
+          { label: 'Returned', value: String(application_counts.incomplete_returned ?? 0), icon: <AlertTriangle size={16} />, color: 'text-amber-600' },
+          { label: 'Open deficiencies', value: String(openDeficiencies), icon: <AlertCircle size={16} />, color: openDeficiencies ? 'text-red-500' : 'text-green-600' },
+          { label: 'Active loans', value: String(loan_counts.active ?? 0), icon: <CreditCard size={16} />, color: 'text-slate-600' },
+        ].map(item => (
+          <div key={item.label} className="bg-white rounded-xl p-4 border border-slate-100">
+            <div className={`${item.color} mb-2`}>{item.icon}</div>
+            <div className="text-lg font-bold text-slate-900">{item.value}</div>
+            <div className="text-xs text-slate-500">{item.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-100 p-6">
+        <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+          <AlertCircle size={16} className="text-amber-500" />
+          Pending Actions
+        </h3>
+        {hasActions ? (
+          <div className="space-y-3">
+            {openDeficiencies > 0 && (
+              <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <AlertTriangle size={15} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-800">Open deficiencies</p>
+                  <p className="text-xs text-amber-700 mt-0.5">{openDeficiencies} returned application action pending with you.</p>
+                </div>
+                <button onClick={() => onNavigate('application')} className="flex-shrink-0 text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors">Respond</button>
+              </div>
+
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+
+codex
+The local sandbox reproduces the expected macOS Chromium service denial, so it cannot reach the selectors; that limitation is captured in the RED log. Source inspection confirms the trusted runner’s diagnosis: the visible mobile readiness surface is the dashboard’s level-2 member heading, and the intended “My Documents” control is uniquely inside the navigation landmark. The `diagnosing-bugs` loop therefore leads to a three-line E2E-only repair, with no production-code change.
+apply patch
+patch: completed
+/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+exec
+/bin/zsh -lc 'set -o pipefail
+RALPH_EVIDENCE_DIR="$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/screenshots" npm run e2e -- e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts --list 2>&1 | tee "$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/playwright-collection-green.log"
+npm run lint 2>&1 | tee "$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/frontend-lint.log"
+npm run typecheck 2>&1 | tee "$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/frontend-typecheck.log"
+npm test -- --run 2>&1 | tee "$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/frontend-tests.log"
+npm run build 2>&1 | tee "$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/frontend-build.log"' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+ succeeded in 23271ms:
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts --list
+
+Error: E2E_DJANGO_PYTHON is required. Set it to the Ralph venv interpreter, for example: /Users/amitkallapa/LMS/.ralph/venv/bin/python
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/playwright.config.ts:16:9)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module.f._compile (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/utilsBundleImpl.js:16:994)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Object.i.<computed>.ut._extensions.<computed> [as .ts] (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/utilsBundleImpl.js:16:1010)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at requireOrImport (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/transform/transform.js:230:18)
+    at loadUserConfig (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/common/configLoader.js:94:83)
+    at loadConfig (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/common/configLoader.js:105:28)
+    at loadConfigFromFileRestartIfNeeded (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/common/configLoader.js:286:10)
+    at runTests (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/program.js:199:18)
+    at t.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms/node_modules/playwright/lib/program.js:54:7)
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms
+
+ ✓ src/pages/registers/RegistersHub.test.tsx (8 tests) 948ms
+   ✓ RegistersHub owned approval register panels > applies only canonical financial-year values  346ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (7 tests) 1268ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > shows independent 400, 403, and 409 errors without retry or projection refetch  718ms
+ ✓ src/pages/settings/SettingsHub.test.tsx (10 tests) 1459ms
+   ✓ SettingsHub Approval Matrix panel > permits a canonical manager to submit a complete successor version as a pending proposal  699ms
+   ✓ SettingsHub remaining panels > creates a complete successor as a separate audited draft for a canonical policy manager  342ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.container.test.tsx (14 tests) 2451ms
+   ✓ default AppraisalWorkbench authenticated HTTP container > calculates a limit from entered source IDs and refreshes four reads  559ms
+   ✓ default AppraisalWorkbench authenticated HTTP container > posts the rejected Credit Manager decision once  511ms
+ ✓ src/pages/members/MemberGovernanceForm.test.tsx (5 tests) 2859ms
+   ✓ MemberGovernanceForm > submits the institution create variant without individual identity/profile fields  1263ms
+   ✓ MemberGovernanceForm > submits every individual registration profile field  1267ms
+ ✓ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx (7 tests) 602ms
+   ✓ member portal documentation actions > renders server-owned actions and performs one canonical refetch after upload  378ms
+ ✓ src/pages/borrower/portal/applications/MP11_DeficiencyResponse.test.tsx (2 tests) 538ms
+   ✓ MP11 deficiency response > uploads a server-contracted response, refetches canonical state, and resubmits  433ms
+ ✓ src/pages/applications/WitnessPanel.container.test.tsx (10 tests) 1324ms
+   ✓ mounted witness resource actions > captures with the exact body and refetches the canonical collection once  450ms
+ ✓ src/pages/members/MemberProfile.container.test.tsx (4 tests) 358ms
+ ✓ src/pages/members/MemberProfile.test.tsx (26 tests) 208ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (22 tests) 195ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 88ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 99ms
+ ✓ src/services/authSession.test.ts (36 tests) 50ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (5 tests) 73ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 59ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 36ms
+(node:22199) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/services/portalApi.test.ts (6 tests) 40ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 73ms
+ ✓ src/services/applicationIntakeApi.test.ts (5 tests) 8ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 42ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 37ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 15ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 17ms
+ ✓ src/services/navigationPermissions.test.ts (9 tests) 9ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 18ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 9ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 8ms
+ ✓ src/services/approvalRegistersApi.test.ts (5 tests) 8ms
+ ✓ src/services/loanPolicyApi.test.ts (2 tests) 4ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 5ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 4ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 3265ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  2622ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is explicit false  375ms
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (39 tests) 6424ms
+   ✓ SanctionWorkbench authenticated container > renders the authoritative total and replaces the queue from the next server page  517ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer filter authoritative while an action detail refresh finishes  518ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer empty filter authoritative while action submission finishes  505ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer denied state authoritative when an action detail refresh fails later  392ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer empty state authoritative when an action detail refresh fails later  329ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer filter authoritative while an action decision refresh finishes  303ms
+   ✓ SanctionWorkbench authenticated container > loads frozen case truth and approves through the exact case boundary before canonical refresh  330ms
+   ✓ SanctionWorkbench authenticated container > requires a reason and sends the exact Reject request  380ms
+   ✓ SanctionWorkbench authenticated container > requires a reason and sends the exact Return for Clarification request  353ms
+   ✓ SanctionWorkbench authenticated container > surfaces GENERAL_MEETING_APPROVAL_PENDING without fabricating completion or refetching  303ms
+   ✓ SanctionWorkbench authenticated container > uploads three application-scoped legal files before recording bounded special-case evidence  747ms
+ ✓ src/pages/members/MemberGovernanceForm.container.test.tsx (16 tests) 4989ms
+   ✓ MemberGovernanceForm production container > routes Directory registration into canonical Profile readback with the exact create ledger  2830ms
+   ✓ MemberGovernanceForm production container > performs one ordinary human-like update before canonical Profile readback with the exact update ledger  497ms
+
+ Test Files  35 passed (35)
+      Tests  304 passed (304)
+   Start at  16:08:22
+   Duration  8.61s (transform 5.99s, setup 0ms, collect 12.04s, tests 27.59s, environment 6.14s, prepare 2.60s)
+
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+vite v5.4.21 building for production...
+transforming...
+✓ 1879 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-DQG5Eo0-.css     51.36 kB │ gzip:   8.93 kB
+dist/assets/index-BscemGmV.js   1,161.88 kB │ gzip: 250.86 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.42s
+
+codex
+The repair did not disturb the frontend: lint, typecheck, all 304 Vitest tests, and the production build are green. The first collection probe omitted the required Django interpreter environment variable, so I’m correcting that invocation and then running the unchanged backend check/migration/coverage gates required by Ralph.
+exec
+/bin/zsh -lc 'set -o pipefail
+RALPH_EVIDENCE_DIR="$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/screenshots" E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts --list 2>&1 | tee "$PWD/../.ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/playwright-collection-green.log"' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+ succeeded in 3383ms:
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts --list
+
+Listing tests:
+  [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads every correction and returns the application to SFPCL review
+  [chromium] › member-portal-documentation-actions.e2e.spec.ts:9:5 › MP07 upload authority, signed download, and completed status are routed
+Total: 2 tests in 2 files
+
+exec
+/bin/zsh -lc "rg -n \"coverage run|coverage report|makemigrations --check|manage.py check\" .ralph/runs/2026-07-15_151653_normal_run .ralph/runs/2026-07-15_155952_repair -g '*.log' -g '*.md' | tail -40 && rg --files sfpcl_credit | rg 'coveragerc|pytest|manage.py"'$'"'" in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+ succeeded in 157ms:
+.ralph/runs/2026-07-15_151653_normal_run/backend-migrations-results.md:3:Command: "/Users/amitkallapa/LMS/.ralph/venv/bin/python" sfpcl_credit/manage.py makemigrations --check --dry-run
+.ralph/runs/2026-07-15_151653_normal_run/backend-check-results.md:3:Command: "/Users/amitkallapa/LMS/.ralph/venv/bin/python" sfpcl_credit/manage.py check
+.ralph/runs/2026-07-15_155952_repair/evidence/terminal-logs/codex.log:483:- Backend (`sfpcl_credit/`): `manage.py check`, full test suite, `makemigrations --check` (models and migrations must stay in sync), and coverage with a hard floor (`coverage_fail_under` in `.ralph/config.yaml`, currently 85%; measured 92% on 2026-07-02 — raise the floor as coverage grows, never lower it).
+.ralph/runs/2026-07-15_155952_repair/evidence/terminal-logs/codex.log:637:  # backend_tests disabled 2026-07-10 (owner action): backend_coverage runs the
+.ralph/runs/2026-07-15_155952_repair/evidence/terminal-logs/codex.log:638:  # identical full suite under `coverage run` and fails on any test failure, so
+.ralph/runs/2026-07-15_151653_normal_run/backend-coverage-results.md:3:Command: "/Users/amitkallapa/LMS/.ralph/venv/bin/python" -m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests && "/Users/amitkallapa/LMS/.ralph/venv/bin/python" -m coverage report --fail-under=85
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:343:- Backend (`sfpcl_credit/`): `manage.py check`, full test suite, `makemigrations --check` (models and migrations must stay in sync), and coverage with a hard floor (`coverage_fail_under` in `.ralph/config.yaml`, currently 85%; measured 92% on 2026-07-02 — raise the floor as coverage grows, never lower it).
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:493:  # backend_tests disabled 2026-07-10 (owner action): backend_coverage runs the
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:494:  # identical full suite under `coverage run` and fails on any test failure, so
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:93082:/bin/zsh -lc 'set -o pipefail && /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check 2>&1 | tee ../.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/backend-check.txt && /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run 2>&1 | tee ../.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/backend-migrations.txt' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl_credit
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:94583:/bin/zsh -lc 'rg -n "coverage run|coverage report" scripts/ralph-validate.sh | head -n 20' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:94585:376:      run_backend_gate backend-coverage "\"$venv_python\" -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests && \"$venv_python\" -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:96051:/bin/zsh -lc 'set -o pipefail && /Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests && /Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85 2>&1 | tee .ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/backend-coverage-full.txt' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:99073:Frontend gates are fully GREEN: lint, typecheck, production build, and all 304 tests pass. The backend coverage run is still progressing through 887 tests; I’m checking that process and will capture its final coverage result before marking the slice complete.
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:99075:/bin/zsh -lc 'pgrep -af "coverage run --source=sfpcl_credit" || true; tail -n 25 .ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/backend-coverage-full.txt 2>/dev/null || true' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:100540:/bin/zsh -lc '/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+.ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/codex.log:133073:/bin/zsh -lc 'set -o pipefail && /Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85 2>&1 | tee .ralph/runs/2026-07-15_151653_normal_run/evidence/terminal-logs/backend-coverage-full.txt' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+sfpcl_credit/manage.py
+
+exec
+/bin/zsh -lc 'set -o pipefail
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py check 2>&1 | tee .ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/backend-check.log
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py makemigrations --check --dry-run 2>&1 | tee .ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/backend-migrations.log
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests 2>&1 | tee .ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/backend-tests.log
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85 2>&1 | tee .ralph/runs/2026-07-15_160544_repair/evidence/terminal-logs/backend-coverage.log' in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+diff --git a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+index 972d955f0e9dacc7893776f2e848036842b2927c..2bfd51ee1400d2737112eb68174bf1f382753047
+--- a/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
++++ b/.ralph/runs/2026-07-15_160544_repair/execution-plan.md
+@@ -2,4 +2,12 @@
+ 
+ Selected slice: 008L3-portal-action-and-resubmission-contract-closure
+ 
+-The selected agent must replace this template with a slice-specific execution plan before editing product code.
++1. Preserve the completed 008L3 implementation and use the prior repair's exact two-spec
++   Playwright command as the tight feedback loop.
++2. Repair only the two demonstrated ambiguous/hidden browser selectors: use a visible stable
++   portal surface for the mobile login-ready assertion and scope the My Documents action to its
++   intended navigation region.
++3. Run both declared Playwright specs together, twice when Chromium can launch, then run the
++   relevant frontend tests, lint, typecheck, and build gates.
++4. Save terminal evidence and update this repair run's changed-files, risk assessment, review
++   packet, final summary, plus Ralph state/progress/handoff only if their current truth changes.
+diff --git a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+index ec1a1cc19c2f1fc4f78dada24de6d7d77df88b24..12e4fbefea114edad09ca63a4c3a59a0f72d28e2
+--- a/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+@@ -76,7 +76,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+ const error = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, field_errors: {} }, meta: {} }) });
+diff --git a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+index de9a09b213b8e21653ffb1a9086eb487c8608457..731c8908bb32b7c23df36fc3bf244fbb684aa020
+--- a/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
++++ b/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+@@ -41,7 +41,7 @@
+   });
+ 
+   await portalLogin(page);
+-  await page.getByRole('button', { name: 'My Documents', exact: true }).click();
++  await page.getByRole('navigation').getByRole('button', { name: 'My Documents', exact: true }).click();
+   await expect(page.getByRole('heading', { name: 'My Documents' })).toBeVisible();
+   await page.getByRole('button', { name: 'Upload Term Sheet' }).click();
+   await expect(page.getByText('Click to select file or drag and drop')).toBeVisible();
+@@ -106,7 +106,7 @@
+   await page.getByLabel('Mobile Number or Email').fill('portal.008l3@example.test');
+   await page.getByLabel('Password').fill('correct horse battery staple');
+   await page.getByRole('button', { name: 'Sign in securely' }).click();
+-  await expect(page.getByText('Portal Contract Member').first()).toBeVisible();
++  await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+ }
+ const routePortal = (page: Page, handler: (route: Route) => Promise<unknown>) => page.route('**/api/v1/**', handler);
+ const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, meta: {} }) });
+
+turn interrupted
+2026-07-15T10:39:32.962125Z ERROR codex_core::tools::router: error=write_stdin failed: Unknown process id 1515
+tokens used
+85,174

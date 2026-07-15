@@ -1,5 +1,19 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## 008L3 Borrower Resubmission Closure (2026-07-15)
+
+The portal process now resolves active portal-account/member/application scope once, locks the
+returned application and every open response, requires a current immutable response for each item,
+then delegates `incomplete_returned -> submitted` to the application-owned `resubmit` transition.
+That owner invokes the 002H guard and writes the canonical
+`applications.loan_application.resubmitted` audit plus loan-application workflow event while
+resetting completeness to `not_started`. Invalid or repeated resubmission retains one success only.
+
+The staff-owned deficiency remains `open` until 005F authority resolves it. Borrower upload,
+re-upload, and resubmit workflow events instead target the immutable deficiency-response aggregate
+and truthfully state `absent/responded -> responded -> submitted_for_review`; no shadow deficiency
+state is claimed and no Stage-4 evidence changes.
+
 ## Architecture Review 2026-07-15 09:11 - Borrower Resubmission Lifecycle Closure
 
 - 008L2 correctly self-scopes deficiency reads and replacement uploads, but its final resubmission

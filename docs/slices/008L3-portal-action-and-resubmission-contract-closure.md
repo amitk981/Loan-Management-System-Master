@@ -1,7 +1,7 @@
 # Slice 008L3: Portal Action and Resubmission Contract Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epics
 Epic 008: Documentation, Legal Documents, and Security Package; Epic 005: Application Intake and
@@ -114,16 +114,16 @@ High
 - All configured gates pass.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence contract implemented; local browser attempt recorded and trusted execution deferred
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

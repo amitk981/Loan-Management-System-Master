@@ -1,0 +1,7 @@
+Backend configured gates used only the mandated Ralph interpreter:
+`/Users/amitkallapa/LMS/.ralph/venv/bin/python`
+
+- `manage.py check`: PASS; no issues (exit 0)
+- `manage.py makemigrations --check --dry-run`: PASS; no changes detected (exit 0)
+- full coverage suite: PASS; 887 tests, 44 skipped (exit 0)
+- coverage report: PASS; 92% total against 85% floor

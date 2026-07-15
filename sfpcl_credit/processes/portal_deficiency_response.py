@@ -15,19 +15,15 @@ from sfpcl_credit.applications.models import (
     LoanApplication,
 )
 from sfpcl_credit.applications import services as application_services
+from sfpcl_credit.applications.modules import loan_application_lifecycle
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.identity.models import AuditLog, PortalAccount
+from sfpcl_credit.processes import portal_application_scope
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
 class PortalDeficiencyNotFound(Exception):
     pass
-
-
-@dataclass(frozen=True)
-class PortalDeficiencyContext:
-    account: PortalAccount
-    application: LoanApplication
 
 
 @dataclass(frozen=True)
@@ -38,23 +34,12 @@ class PortalDeficiencyContent:
 
 
 def resolve_context(*, actor, application_id):
-    account = (
-        PortalAccount.objects.select_related("member")
-        .filter(
-            user=actor,
-            status=PortalAccount.STATUS_ACTIVE,
-            member__is_deleted=False,
+    try:
+        return portal_application_scope.resolve(
+            actor=actor, application_id=application_id
         )
-        .first()
-    )
-    application = (
-        LoanApplication.objects.select_related("member")
-        .filter(pk=application_id, member_id=account.member_id if account else None)
-        .first()
-    )
-    if account is None or application is None:
-        raise PortalDeficiencyNotFound
-    return PortalDeficiencyContext(account=account, application=application)
+    except portal_application_scope.PortalApplicationScopeNotFound as exc:
+        raise PortalDeficiencyNotFound from exc
 
 
 def audit_access_denied(*, actor, application_id, attempted_action, request):
@@ -286,6 +271,18 @@ def upload(*, actor, application_id, deficiency_id, request):
             "member_id": str(context.account.member_id),
             "deficiency_id": str(deficiency.pk),
             "item_code": deficiency.item_code,
+            "deficiency_response_version": (
+                ApplicationDeficiencyResponse.objects.filter(
+                    deficiency=deficiency
+                ).count()
+                + 1
+            ),
+            "prior_current_document_id": (
+                str(previous.document_id) if previous else None
+            ),
+            "reason": "borrower_portal_deficiency_response",
+            "request_id": request.headers.get("X-Request-ID"),
+            "outcome": "accepted",
         },
     )
     party_type, party_id = _application_document_party(application, deficiency.item_code)
@@ -326,14 +323,13 @@ def upload(*, actor, application_id, deficiency_id, request):
         "request_id": request.headers.get("X-Request-ID"),
         "outcome": "accepted",
     }
-    _audit(actor=actor, action="portal.document.uploaded", entity=response, payload=common, request=request)
     _audit(actor=actor, action="portal.deficiency.responded", entity=response, payload=common, request=request)
     record_workflow_event(
         actor=actor,
         workflow_name="application_deficiency",
-        entity_type="application_deficiency",
-        entity_id=deficiency.pk,
-        from_state=ApplicationDeficiency.STATUS_OPEN,
+        entity_type="application_deficiency_response",
+        entity_id=response.pk,
+        from_state="responded" if previous else "absent",
         to_state="responded",
         trigger_reason="Borrower uploaded a deficiency response for completeness review.",
         action_code="respond",
@@ -377,26 +373,20 @@ def resubmit(*, actor, application_id, request):
                 )
             }
         )
-    now = timezone.now()
     for deficiency in open_items:
+        response = ApplicationDeficiencyResponse.objects.get(
+            deficiency=deficiency, successor__isnull=True
+        )
         record_workflow_event(
             actor=actor,
             workflow_name="application_deficiency",
-            entity_type="application_deficiency",
-            entity_id=deficiency.pk,
+            entity_type="application_deficiency_response",
+            entity_id=response.pk,
             from_state="responded",
             to_state="submitted_for_review",
             trigger_reason="Borrower resubmitted the response for staff completeness review.",
             action_code="resubmit",
         )
-    old_status = application.application_status
-    application.application_status = LoanApplication.STATUS_SUBMITTED
-    application.completeness_status = LoanApplication.COMPLETENESS_NOT_STARTED
-    application.current_stage = LoanApplication.STAGE_INITIAL
-    application.submitted_at = application.submitted_at or now
-    application.updated_by_user = actor
-    application.updated_at = now
-    application.save()
     payload = {
         "portal_account_id": str(context.account.pk),
         "member_id": str(context.account.member_id),
@@ -405,22 +395,15 @@ def resubmit(*, actor, application_id, request):
         "request_id": request.headers.get("X-Request-ID"),
         "outcome": "accepted",
     }
-    _audit(
+    application = loan_application_lifecycle.resubmit(
+        application_id=application.pk,
         actor=actor,
-        action="portal.application.resubmitted",
-        entity=application,
-        payload=payload,
-        request=request,
-    )
-    record_workflow_event(
-        actor=actor,
-        workflow_name="loan_application",
-        entity_type="loan_application",
-        entity_id=application.pk,
-        from_state=old_status,
-        to_state=LoanApplication.STATUS_SUBMITTED,
-        trigger_reason="Borrower resubmitted rectified deficiencies for completeness review.",
-        action_code="resubmit",
+        portal_scope=payload,
+        request_metadata={
+            "request_id": request.headers.get("X-Request-ID"),
+            "ip_address": _request_ip(request),
+            "user_agent": request.headers.get("User-Agent", ""),
+        },
     )
     return {
         "loan_application_id": str(application.pk),
@@ -476,7 +459,7 @@ def download(*, actor, application_id, deficiency_id, request, storage=None):
         raise PortalDeficiencyNotFound
     _audit(
         actor=actor,
-        action="portal.deficiency.document_downloaded",
+        action="documents.file.downloaded",
         entity=response,
         payload={
             "portal_account_id": str(context.account.pk),
