@@ -1,0 +1,39 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/documentation/DocumentationHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/documentation/DocumentationHub.test.tsx [ src/pages/documentation/DocumentationHub.test.tsx ]
+Error: Transform failed with 1 error:
+/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/sfpcl-lms/src/pages/documentation/DocumentationHub.test.tsx:25:4: ERROR: Expected identifier but found "{"
+  Plugin: vite:esbuild
+  File: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/sfpcl-lms/src/pages/documentation/DocumentationHub.test.tsx:25:4
+  
+  Expected identifier but found "{"
+  23 |    items: [
+  24 |      { ...item('term_sheet', 'Term Sheet'), status: 'complete', document: { loan_document_id: 'doc-1', version: '2.0', generation_status: 'generated', execution_status: 'executed', verification_status: 'verified', download: { file_name: 'term-sheet.pdf', mime_type: 'application/pdf', action_url: '/api/v1/loan-applications/application-1/documentation-workspace/term_sheet/download/' } },
+  25 |      { ...item('poa', 'Power of Attorney'), blocker: 'notarisation_pending', stamp_status: 'adequate', notarisation_status: 'pending', poa_status: 'draft', available_actions: [{ action: 'generate_document', action_url: '/api/v1/loan-applications/application-1/loan-documents/generate/', document_type: 'power_of_attorney', template_id: 'template-1', template_version: '3.0', output_formats: ['pdf', 'docx'] }] },
+     |      ^
+  26 |    ],
+  27 |    security_workflows: Object.fromEntries([
+  
+ ❯ failureErrorWithLog node_modules/esbuild/lib/main.js:1472:15
+ ❯ node_modules/esbuild/lib/main.js:755:50
+ ❯ responseCallbacks.<computed> node_modules/esbuild/lib/main.js:622:9
+ ❯ handleIncomingPacket node_modules/esbuild/lib/main.js:677:12
+ ❯ Socket.readFromStdout node_modules/esbuild/lib/main.js:600:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  01:31:59
+   Duration  530ms (transform 7ms, setup 0ms, collect 0ms, tests 0ms, environment 199ms, prepare 34ms)
+

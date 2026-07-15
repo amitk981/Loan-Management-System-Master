@@ -128,6 +128,23 @@ def require_finance_actor(actor):
     )
 
 
+def available_approval_action(*, actor, checklist, completed_item_ids):
+    """Return the one currently executable approval type, or no client authority."""
+    by_status = {DocumentChecklist.STATUS_IN_PROGRESS: ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL, DocumentChecklist.STATUS_CS_APPROVED: ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL, DocumentChecklist.STATUS_CREDIT_APPROVED: ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL}
+    action_type = by_status.get(checklist.checklist_status)
+    if action_type is None: return None
+    try:
+        require_stage_actor(actor, action_type)
+        case = _require_stage4_scope(checklist)
+        if action_type == ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL:
+            _require_eligible_frozen_director(actor, case)
+    except (AccessDenied, Conflict): return None
+    if action_type == ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL:
+        required_ids = {item.pk for item in checklist.items.all() if item.required_flag and item.applicable_flag}
+        if set(completed_item_ids) != required_ids: return None
+    return action_type
+
+
 def _require_actor(actor, *, permission, roles):
     if (
         not actor.can_authenticate()

@@ -1,152 +1,48 @@
 import React from 'react';
 import {
-  Download, Eye, CheckCircle2, AlertTriangle, FileText, Upload, Check, Stamp
+  Download, Eye, AlertTriangle, FileText, Upload, Check, Stamp
 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
-import { useRole } from '../../contexts/RoleContext';
-import type { LoanApplication, DocumentRecord } from '../../types';
-import { documents } from '../../data/mockData';
-
-const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
+import type { DocumentationAction, DocumentationItem } from '../../services/documentationWorkspaceApi';
 
 interface DocumentPackModalProps {
   isOpen: boolean;
   onClose: () => void;
-  app: LoanApplication;
+  applicationReference: string;
+  borrowerName: string;
+  checklistStatus: string;
+  blockerCount: number;
+  summary: { status: string; available_count: number; missing_count: number; pending_review_count: number };
+  items: DocumentationItem[];
+  onDownload: (item: DocumentationItem) => void;
+  onAction: (action: DocumentationAction) => void;
 }
 
-const DocumentPackModal: React.FC<DocumentPackModalProps> = ({ isOpen, onClose, app }) => {
-  const { currentUser, can } = useRole();
-  const role = currentUser.role;
-
-  // Find actual documents for this app from mock data
-  const appDocs = documents.filter(d => d.applicationId === app.id);
-
-  const getDoc = (type: string) => appDocs.find(d => d.documentType === type);
-
-  // Helper to determine status and action for a row
-  const evaluateRow = (
-    name: string,
-    docType: string | null,
-    isApplicable: boolean,
-    isMandatory: boolean,
-    ownerRole?: string
-  ) => {
-    if (!isApplicable) {
-      return { name, status: 'Not Required', action: null };
-    }
-
-    const doc = docType ? getDoc(docType) : null;
-    let status = 'Missing';
-    
-    if (doc) {
-      if (['verified', 'stamped', 'notarised', 'complete'].includes(doc.status)) {
-        status = 'Available';
-      } else if (['uploaded', 'under_review'].includes(doc.status)) {
-        status = 'Pending Review';
-      } else {
-        status = 'Missing';
-      }
-    } else {
-      if (!isMandatory) status = 'Not Required';
-      else status = 'Missing';
-    }
-
-    // Determine action based on role permissions
-    let action = null;
-    const canManage = ownerRole ? role === ownerRole : false;
-
-    if (status === 'Available') {
-      action = 'View'; // Everyone can view available docs in the pack
-    } else if (status === 'Pending Review' && canManage) {
-      action = 'Verify';
-    } else if (status === 'Missing' && canManage) {
-      action = 'Upload';
-    }
-
-    // Note: The document pack must not expose approval actions or state bypasses.
-    // Ensure we restrict actions if readOnly
-    if (role === 'auditor') {
-      action = status === 'Available' ? 'Download' : null;
-    }
-
-    return { name, status, action };
-  };
-
-  const sections = [
-    {
-      title: 'Application & KYC',
-      rows: [
-        evaluateRow('Loan Application Form', 'checklist', true, true),
-        evaluateRow('Borrower PAN', 'pan', true, true),
-        evaluateRow('Borrower Aadhaar', 'aadhaar', true, true),
-        evaluateRow('Nominee PAN', 'nominee_pan', true, true),
-        evaluateRow('Nominee Aadhaar', 'nominee_aadhaar', true, true),
-        evaluateRow('7/12 Extract', 'land_712', true, true),
-        evaluateRow('Crop Plan', 'crop_plan', true, true),
-        evaluateRow('Six-month Bank Statement', 'bank_statement', true, true),
-      ]
-    },
-    {
-      title: 'Appraisal & Sanction',
-      rows: [
-        evaluateRow('Appraisal Note', 'appraisal_note', true, true),
-        evaluateRow('Sanction Letter', 'sanction_letter', true, true),
-        evaluateRow('Exception Note', 'exception_note', !!app.isException, !!app.isException),
-      ]
-    },
-    {
-      title: 'Legal Documents',
-      rows: [
-        evaluateRow('Term Sheet', 'term_sheet', true, true, 'compliance_team'),
-        evaluateRow('Loan Agreement', 'loan_agreement', true, true, 'compliance_team'),
-        evaluateRow('Power of Attorney', 'poa', true, true, 'compliance_team'),
-        evaluateRow('Tri-party Agreement', 'tri_party', true, true, 'compliance_team'),
-        evaluateRow('Bank Verification Letter', 'bank_verification_letter', !!app.sapCustomerCode, !!app.sapCustomerCode, 'compliance_team'),
-      ]
-    },
-    {
-      title: 'Security Documents',
-      rows: [
-        evaluateRow('SH-4 Physical Share Transfer Form', 'sh4', app.shareMode === 'physical', app.shareMode === 'physical', 'company_secretary'),
-        evaluateRow('CDSL Pledge Evidence', 'cdsl_pledge', app.shareMode === 'demat', app.shareMode === 'demat', 'compliance_team'),
-        evaluateRow('Blank-dated Cheque', 'blank_cheque', true, true, 'compliance_team'),
-        evaluateRow('Custody Acknowledgement', 'custody_ack', app.shareMode === 'physical', app.shareMode === 'physical', 'company_secretary'),
-      ]
-    },
-    {
-      title: 'Audit',
-      rows: [
-        { name: 'Pack generated', status: 'Available', action: 'View' },
-        { name: 'Document viewed events', status: 'Available', action: 'View' },
-      ]
-    }
-  ];
-
-  const allRows = sections.flatMap(s => s.rows).filter(r => r.status !== 'Not Required');
-  const availableCount = allRows.filter(r => r.status === 'Available').length;
-  const missingCount = allRows.filter(r => r.status === 'Missing').length;
-  const pendingReviewCount = allRows.filter(r => r.status === 'Pending Review').length;
-
-  const packStatus = (missingCount > 0 || pendingReviewCount > 0 ? 'Incomplete' : 'Ready') as 'Ready' | 'Incomplete' | 'Missing';
-
-  // Pack generation mocked metadata
-  const generatedAt = new Date().toISOString();
-  const generatedBy = 'Suresh Patil';
-  
+const DocumentPackModal: React.FC<DocumentPackModalProps> = ({
+  isOpen, onClose, applicationReference, borrowerName, checklistStatus, blockerCount,
+  summary, items, onDownload, onAction,
+}) => {
+  const sectionFor = (code: string) => ({
+    witness_pan_aadhaar: 'Application & KYC', cancelled_cheque: 'Application & KYC',
+    final_checklist: 'Appraisal & Sanction', term_sheet: 'Legal Documents',
+    loan_agreement: 'Legal Documents', poa: 'Legal Documents',
+    tri_party_agreement: 'Legal Documents', bank_verification_letter: 'Legal Documents',
+    sh4: 'Security Documents', cdsl_pledge: 'Security Documents', blank_dated_cheque: 'Security Documents',
+  }[code] || 'Legal Documents');
+  const sections = ['Application & KYC', 'Appraisal & Sanction', 'Legal Documents', 'Security Documents']
+    .map(title => ({ title, rows: items.filter(item => sectionFor(item.item_code) === title) }));
+  const isBlocked = blockerCount > 0;
+  const actionLabel = (action: string) => action === 'generate_document' ? 'Generate document' : action === 'complete_item' ? 'Mark complete' : 'Verify document';
   const getBadgeFamily = (status: string) => {
     switch (status) {
-      case 'Available': return 'approved';
-      case 'Missing': return 'rejected';
-      case 'Pending Review': return 'pending';
-      case 'Not Required': return 'neutral';
-      case 'Not Generated': return 'neutral';
-      case 'Outdated': return 'blocked';
+      case 'complete': return 'approved';
+      case 'blocked': return 'rejected';
+      case 'pending': return 'pending';
+      case 'not_required': return 'neutral';
       default: return 'neutral';
     }
   };
-
   const getActionIcon = (action: string | null) => {
     switch (action) {
       case 'View': return <Eye size={14} />;
@@ -158,14 +54,12 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  const isBlocked = packStatus === 'Incomplete';
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Document Pack — ${app.applicationNumber}`}
-      subtitle={`${app.memberName} · ${fmt(app.requestedAmount)} · ${app.status.replace(/_/g, ' ')}`}
+      title={'Document Pack — ' + applicationReference}
+      subtitle={borrowerName}
       size="xl"
       footer={
         <div className="flex items-center justify-between w-full">
@@ -178,11 +72,6 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({ isOpen, onClose, 
           </div>
           <div className="flex items-center gap-3">
             <button onClick={onClose} className="btn-secondary">Close</button>
-            {!isBlocked && (
-              <button className="btn-primary flex items-center gap-2">
-                <Download size={16} /> Download available docs
-              </button>
-            )}
           </div>
         </div>
       }
@@ -195,30 +84,24 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({ isOpen, onClose, 
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="font-bold text-slate-900">Pack Status</h3>
                 <StatusBadge 
-                  label={packStatus} 
-                  family={packStatus === 'Ready' ? 'approved' : 'pending'} 
-                  size="md" 
+                  label={summary.status}
+                  family={summary.status === 'ready' ? 'approved' : 'pending'}
+                  size="md"
                 />
               </div>
               <p className="text-sm text-slate-600 flex items-center gap-4">
-                <span className="font-medium text-green-700">{availableCount} available</span>
-                <span className="font-medium text-red-600">{missingCount} missing</span>
-                <span className="font-medium text-amber-600">{pendingReviewCount} pending review</span>
+                <span className="font-medium text-green-700">{summary.available_count} available</span>
+                <span className="font-medium text-red-600">{summary.missing_count} missing</span>
+                <span className="font-medium text-amber-600">{summary.pending_review_count} pending review</span>
               </p>
             </div>
-            
-            {packStatus !== 'Missing' && (
-              <div className="text-right">
-                <p className="text-xs text-slate-500">Last generated: {new Date(generatedAt).toLocaleString('en-IN')}</p>
-                <p className="text-xs text-slate-500 mt-1">Generated by: {generatedBy} · Compliance Team</p>
-              </div>
-            )}
+            <StatusBadge label={checklistStatus} size="sm" />
           </div>
           
           {isBlocked && (
             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex items-center gap-2">
               <AlertTriangle size={16} className="text-amber-600" />
-              Pack incomplete: {missingCount + pendingReviewCount} required item(s) missing or pending review.
+              Pack incomplete: {blockerCount} required item(s) missing or pending review.
             </div>
           )}
         </div>
@@ -231,29 +114,36 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({ isOpen, onClose, 
                 {section.title}
               </h4>
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white">
-                {section.rows.map((row, rIdx) => (
-                  <div key={rIdx} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                {section.rows.map(item => {
+                  const action = item.available_actions[0];
+                  return (
+                  <div key={item.item_code} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-400">
                         <FileText size={14} />
                       </div>
-                      <p className="text-sm font-medium text-slate-800 truncate">{row.name}</p>
+                      <p className="text-sm font-medium text-slate-800 truncate">{item.item_label}</p>
                     </div>
                     
                     <div className="flex items-center gap-4 flex-shrink-0">
-                      <StatusBadge label={row.status} family={getBadgeFamily(row.status)} size="sm" />
+                      <StatusBadge label={!item.applicable ? 'not_required' : item.status} family={getBadgeFamily(item.status)} size="sm" />
                       
                       <div className="w-28 flex justify-end">
-                        {row.action && (
-                          <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors">
-                            {getActionIcon(row.action)}
-                            {row.action}
+                        {item.document?.download && (
+                          <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors" onClick={() => onDownload(item)}>
+                            {getActionIcon('Download')} Download
+                          </button>
+                        )}
+                        {!item.document?.download && action && (
+                          <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors" onClick={() => onAction(action)}>
+                            {action.action === 'generate_document' ? <Upload size={14} /> : <Check size={14} />}
+                            {actionLabel(action.action)}
                           </button>
                         )}
                       </div>
                     </div>
                   </div>
-                ))}
+                );})}
               </div>
             </div>
           ))}

@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_staff_workspace_advances_the_action_to_the_next_exact_role (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_advances_the_action_to_the_next_exact_role)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 356, in test_staff_workspace_advances_the_action_to_the_next_exact_role
+    self.assertEqual(
+AssertionError: Lists differ: [] != [{'action': 'approve_as_credit_manager', '[103 chars]r/'}]
+
+Second list contains 1 additional elements.
+First extra element 0:
+{'action': 'approve_as_credit_manager', 'action_url': '/api/v1/document-checklists/d8a7826c-bfe5-44dc-8c69-2e22f2b27579/approve-as-credit-manager/'}
+
+- []
++ [{'action': 'approve_as_credit_manager',
++   'action_url': '/api/v1/document-checklists/d8a7826c-bfe5-44dc-8c69-2e22f2b27579/approve-as-credit-manager/'}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.303s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

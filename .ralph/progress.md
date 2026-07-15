@@ -1,5 +1,16 @@
 # Ralph Progress Log
 
+## 2026-07-16 - 2026-07-16_015254_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M-documentation-hub-frontend-wiring.
+- Summary: Preserved the staff documentation workspace and reduced redundant added formatting/prose until the exact Ralph tracked-plus-untracked diff calculation passed at final 1,994/2,000. No workflow contract, assertion, action, permission, or current-renderer boundary was removed.
+- Tests run: focused backend 5/5 and frontend 6/6; frontend lint/typecheck/build and all 311 tests; Django check/migration drift; all 905 backend tests with 46 expected capability skips at 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_015254_repair/evidence/`.
+- Result: Repair complete; Ralph validation passed, pending orchestrator commit/merge/push.
+- Risk level: Medium inherited frontend/API authority risk; Low repair delta because only representation density changed and focused/full behavior remained green.
+- Next action: run the due architecture review, then 009A; sharpened 009B follows.
+
 ## 2026-07-15 - 2026-07-15_204059_repair
 
 - Agent tool used: codex with the diagnosing-bugs and browser-control skills.
@@ -7484,6 +7495,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/.ralph/runs/2026-07-15_213859_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/.ralph/runs/2026-07-15_213859_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 02:29:43 - 2026-07-16_015254_repair
+- Agent tool used: codex
+- Slice attempted: 008M-documentation-hub-frontend-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/.ralph/runs/2026-07-16_015254_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/.ralph/runs/2026-07-16_015254_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

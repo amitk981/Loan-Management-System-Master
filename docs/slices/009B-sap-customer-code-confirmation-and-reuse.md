@@ -8,10 +8,10 @@ Epic 009: SAP, Loan Account Creation, and Disbursement
 Epic file: `docs/epics/009-sap-loan-account-disbursement.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Let Senior Manager Finance confirm or reuse one active member SAP customer code from a sent 009A request, with immutable evidence and replay.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Finance can finish the manual SAP handoff once and reuse the governed member code without duplicate customer masters.
 
 ## Depends On
 - 009A
@@ -35,31 +35,31 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+Lock the application, member, terminal sanction, sent 009A request, and active SAP codes. Confirm one trimmed code (optional vendor code, SAP timestamp, restricted evidence), or reuse the active same-member code; mark the request completed and bind the application. Exact replay returns retained ids; changed facts/conflicting active code return `409` with no loser evidence. Do not create a loan account/readiness fact.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Complete 009A's `sap_customer_codes` shell with unique code, provenance/creator, optional vendor/timestamp/evidence, status, and one active code per member.
 
 ## API Contracts
-Create or update the API contract for this capability.
+`POST /api/v1/sap-customer-profile-requests/{request_id}/confirm/` accepts `sap_customer_code` plus optional `sap_vendor_code`, `sap_created_at`, `evidence_file_id`; returns request/code ids, completed status, and `reuse`.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Require active Senior Manager Finance, narrow confirm permission, and assigned-request/object scope; inaccessible ids are nondisclosing and other roles denied.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Atomically record one confirmation/reuse workflow and audit event with request/code/member/application/actor/evidence/provenance/outcome, never identity/bank values.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+Reject wrong request/application state, blank/oversize code, cross-object evidence, inactive conflicts, and evidence outside restricted scope.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+Test confirmation/reuse, replay/conflict, state/role/object denial, redaction, zero side effects, and PostgreSQL one-active-code/one-terminal-request winner ledgers.
 
 ## Visual Acceptance Criteria
 None.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+RED/GREEN logs, sanitized contract/audit examples, full gates, and twice-run PostgreSQL races; no screenshot because there is no screen.
 
 ## Risk Level
 High

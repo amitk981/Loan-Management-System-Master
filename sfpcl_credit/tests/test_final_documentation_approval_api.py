@@ -293,6 +293,51 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertEqual(replay.json()["data"]["checklist_action_id"], cs_action_id)
         self.assertEqual(self._evidence_counts(), counts)
 
+    def test_staff_workspace_is_one_redacted_action_projection(self):
+        self._grant(self.cs, "documents.file.download"); self._complete_all_applicable_items(); response = self._workspace(self.cs)
+        self.assertEqual(response.status_code, 200, response.content); assert_success_envelope(self, response.json())
+        data = response.json()["data"]
+        self.assertEqual(data["loan_application_id"], str(self.application.pk))
+        self.assertEqual((set(data["security_workflows"]), data["available_actions"][0]["action"]), ({"power_of_attorney", "tri_party_agreement", "sh4", "cdsl_pledge", "blank_dated_cheque", "cancelled_cheque"}, "approve_as_company_secretary"))
+        term_sheet = next(item for item in data["items"] if item["item_code"] == "term_sheet")
+        self.assertEqual((term_sheet["status"], term_sheet["document"]["download"]["action_url"].endswith("/documentation-workspace/term_sheet/download/")), ("complete", True))
+        serialized = str(response.json()).lower()
+        for forbidden in ("terminal_evidence", "workflow_event_id", "checklist_action_id", "storage_key", "checksum", "ciphertext", "ip_address", "user_agent", "signer_name_snapshot"):
+            self.assertNotIn(forbidden, serialized)
+
+    def test_staff_workspace_advances_only_to_the_exact_role_turn(self):
+        self._complete_all_applicable_items(); approved = self._post_stage("approve-as-company-secretary", self.cs, {"comments": "All documents verified and attached."})
+        self.assertEqual(approved.status_code, 200, approved.json())
+        cs_view, credit_view = self._workspace(self.cs), self._workspace(self.credit)
+        self.assertEqual((cs_view.status_code, cs_view.json()["data"]["available_actions"], credit_view.json()["data"]["available_actions"][0]["action"]), (200, [], "approve_as_credit_manager"))
+
+    def test_staff_workspace_projects_generation_verification_and_security_actions(self):
+        self._grant(self.compliance, "documents.checklist.read", "documents.loan_document.generate", "documents.template.file_reference", "documents.loan_document.verify", "security.poa.manage", "security.sh4.manage", "security.cdsl_pledge.manage", "security.blank_cheque.manage")
+        term_sheet = self._current_document("term_sheet"); template = term_sheet.document_template; term_sheet.delete()
+        generation_view = self._workspace(self.compliance); generation_item = next(item for item in generation_view.json()["data"]["items"] if item["item_code"] == "term_sheet"); generation = generation_item["available_actions"][0]
+        self.assertEqual((generation["action"], generation["document_type"], generation["template_id"], generation["output_formats"]), ("generate_document", "term_sheet", str(template.pk), ["pdf", "docx"]))
+        current = self._current_document("loan_agreement"); current.verification_status = LoanDocument.VERIFICATION_PENDING; current.verified_by_user = None; current.verified_at = None
+        current.save(update_fields=["verification_status", "verified_by_user", "verified_at"])
+        SecurityPackage.objects.create(loan_application=self.application, physical_share_security_required_flag=True, demat_pledge_required_flag=False, poa_required_flag=True, blank_cheque_required_flag=True, cancelled_cheque_required_flag=True)
+        data = self._workspace(self.compliance).json()["data"]; agreement = next(item for item in data["items"] if item["item_code"] == "loan_agreement"); self.assertEqual({action["action"] for action in agreement["available_actions"]}, {"complete_item", "verify_document"}); projected = data["security_workflows"]
+        self.assertEqual(([projected[code]["available_actions"][0]["action"] for code in ("power_of_attorney", "sh4", "blank_dated_cheque")], projected["cdsl_pledge"]["available_actions"]), (["manage_power_of_attorney", "manage_sh4", "manage_blank_dated_cheque"], []))
+
+    def test_staff_workspace_denies_unscoped_reader_without_security_disclosure(self):
+        response = self._workspace(self.fixture._user("field_officer", "Documentation Outsider"))
+        self.assertEqual(response.status_code, 403, response.content); assert_error_envelope(self, response.json()); self.assertNotIn("security_workflows", str(response.json()).lower())
+
+    def test_staff_download_capability_is_invalid_after_current_renderer_replacement(self):
+        self._grant(self.cs, "documents.file.download"); current = self._current_document("term_sheet")
+        descriptor = self.client.get(f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/term_sheet/download/", **self.fixture._auth(self.cs))
+        self.assertEqual(descriptor.status_code, 200, descriptor.content); content_url = descriptor.json()["data"]["download_url"]
+        current.document_template.template_code = "008k-term-sheet-predecessor"; current.document_template.template_version = "0.9"; current.document_template.approval_status = DocumentTemplate.STATUS_RETIRED
+        current.document_template.save(update_fields=["template_code", "template_version", "approval_status"])
+        self.assertNotEqual(self._current_document("term_sheet").pk, current.pk); content = self.client.get(content_url, **self.fixture._auth(self.cs))
+        self.assertEqual(content.status_code, 404, content.content); assert_error_envelope(self, content.json()); self.assertNotIn("storage", str(content.json()).lower())
+
+    def _workspace(self, actor):
+        return self.client.get(f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/", **self.fixture._auth(actor))
+
     def test_company_secretary_rejects_status_only_completion_without_actions(self):
         now = timezone.now()
         self.checklist.items.filter(applicable_flag=True, required_flag=True).update(

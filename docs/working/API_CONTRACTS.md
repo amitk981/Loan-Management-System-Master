@@ -3678,6 +3678,11 @@ rows, their action linkages and full retained body, the current renderer/termina
 digest; any missing, extra, changed, cross-object, or newer source fact removes completion without
 exposing the evidence.
 
+## Staff documentation workspace (008M)
+
+- `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/` returns one locked, redacted application/checklist snapshot with pack/blocker truth, current-renderer rows, six security workflows, ordered approvals, and only currently executable actions.
+- `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/{item_code}/download/` issues an actor/application/item/current-renderer-bound capability; content re-resolves current truth, records the generic staff download audit, and returns `404` after replacement/tamper.
+
 ## Member portal documentation actions (008L)
 
 Authenticated borrower portal sessions use these application-scoped routes:

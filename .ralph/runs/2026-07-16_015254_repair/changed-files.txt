@@ -1,0 +1,23 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/slices/009B-sap-customer-code-confirmation-and-reuse.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl-lms/src/components/loan/AuditTimeline.tsx
+ M sfpcl-lms/src/components/loan/DocumentChecklist.tsx
+ M sfpcl-lms/src/components/loan/DocumentPackModal.tsx
+ M sfpcl-lms/src/pages/documentation/DocumentationHub.tsx
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/legal_documents/modules/checklist_actions.py
+ M sfpcl_credit/legal_documents/views.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+?? .ralph/runs/2026-07-16_000538_normal_run/
+?? .ralph/runs/2026-07-16_004952_repair/
+?? .ralph/runs/2026-07-16_015254_repair/
+?? sfpcl-lms/src/pages/documentation/DocumentationHub.test.tsx
+?? sfpcl-lms/src/services/documentationWorkspaceApi.ts
+?? sfpcl_credit/processes/staff_documentation_workspace.py

@@ -50,6 +50,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 | `SanctionWorkbench` | `GET /api/v1/approval-cases/`; case action endpoints; `POST /general-meeting-approval/`; `GET /sanction-decision/` | API-backed committee workbench | Uses exact sanction/status/assignment filters, complete frozen S21 row facts, frozen ten-point review facts, immutable S22 action history, case `available_actions`, optimistic versions, conflict/exclusion facts, three fresh exact-application legal uploads for every changed special-case evidence submission, and an independently permissioned terminal decision read. No register/live appraisal fallback, metadata-id reuse, or local authority matrix remains. |
 | `RegistersHub` S23/S25 | `GET /api/v1/credit-sanction-register/`; `GET /api/v1/exception-register/` | API-backed generated registers | Uses independent actor-scoped filters and server pagination. S23 renders the 15 frozen sanction fields; S25 keeps description and business reason distinct. Metadata ids create no case/document actions. Other register tabs remain prototype/mock until 012DA. |
 | `SettingsHub` S71 | `GET/PATCH /api/v1/approval-matrix-rules/` | API-backed versioned matrix panel | Renders retained matrix versions. Canonical managers submit complete successor versions as pending maker-checker proposals; the UI never overwrites an active rule or activates its maker's proposal. Remaining SettingsHub panels remain owned by 007J2. |
+| `DocumentationHub` S26-S35 | `GET /api/v1/loan-applications/{id}/documentation-workspace/`; projected action and signed-download routes | API-backed staff documentation | One locked redacted snapshot owns blockers, checklist/document/security status, exact role turn, and actions; the hub refetches only after accepted writes and keeps conflicts non-optimistic. |
 
 ## API-Backed Borrower Portal Screens
 
@@ -67,5 +68,5 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 
 | Prototype reference | Current implementation status |
 |---|---|
-| `AuditTimeline` | Still prototype/mock data. Backend audit/workflow read APIs exist, but shared audit timeline UI wiring remains future scope. |
-| `DocumentPackModal` | Still prototype/mock data. Generic document upload/download APIs exist, but document pack generation, legal document lifecycle, and template-driven packs remain future scope. |
+| `AuditTimeline` | Mock-free injected-event presentation component; Documentation Hub currently shows an honest empty audit state because its closed workspace DTO exposes no raw audit evidence. |
+| `DocumentPackModal` | API-backed in Documentation Hub from server pack summary, current document status, and projected actions; no role/count/status authority remains local. |

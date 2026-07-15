@@ -740,6 +740,8 @@ Blockers that must be visible before disbursement: unstamped/unnotarised instrum
 signature mismatch unresolved (§4.11), missing witness (p.32 #4), incomplete checklist
 signatures in the §4.13 order, custody not recorded. Deck p.7-8 is the visual/stage reference.
 
+Screen/API extract (008M): S26-S35 compose checklist applicability, current generation/verification, stamp/notary, PoA/tri-party/SH-4/CDSL/cheque, and ordered CS → Credit Manager → Sanction Committee → post-disbursement Finance truth. §26-§28 actions/downloads are server authority; terminal status and independently authorised Download coexist.
+
 ## Cross-epic boundary notes
 - Witness identity (PAN/Aadhaar, existing-shareholder rule) is Epic 004 data (004E/006Y2);
   Epic 008 consumes it in SH-4/agreement execution.
