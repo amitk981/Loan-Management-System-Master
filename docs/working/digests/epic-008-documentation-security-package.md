@@ -14,6 +14,35 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008L4 Real Portal Boundary Closure (2026-07-15)
+
+Repair closure: the canonical role catalogue now provisions `borrower_portal_user` as active because
+MP00/005FA portal authentication is a live MVP boundary. This makes real `/auth/me` return the
+borrower role used by the frontend shell; all other future external identities remain inactive and
+the portal session still receives only its central own-data permission allowlist.
+
+MP07/MP13 GET, upload, and published-document download now consume one application/checklist-locked
+decision containing current checklist items, completion evidence, portal submissions, and canonical
+latest renderer outputs. Term Sheet/Loan Agreement authority no longer follows the checklist FK;
+a production generation successor changes the projection immediately and invalidates a predecessor
+capability. PostgreSQL-only threaded regressions cover completion-versus-upload and generation-
+versus-content serialization, while ordinary tests prove zero artifacts for every denied writer.
+
+Borrower document uploads/downloads retain exactly one central `portal.document.uploaded` or
+`portal.document.downloaded` event with safe actor/member/application/document/version/category/
+sensitivity/reason/request/network/outcome facts and no parallel generic event, checksum, or storage
+fact. MP11 derives `responded`/`submitted_for_review` from immutable response workflow evidence;
+staff resolution removes the open borrower item without rewriting response history. The guarded E2E
+seed creates real authenticated MP07/MP11 fixtures without pre-sanction bank evidence, and the two
+declared Playwright specs now call Django directly for upload, re-upload, download, tamper, crafted
+denial, resubmit, and replay. Chromium screenshots/twice-run acceptance remain the independent
+orchestrator gate when the coding sandbox denies browser launch.
+
+008M must consume the same latest-current selector/signed capability and one server snapshot for
+status/action rendering. It must never derive a staff download from a checklist FK, portal
+submission, cached descriptor, or file id, and must not duplicate either staff-generic or
+portal-specific document audit events.
+
 ## 008K5 Final Evidence Authority Closure (2026-07-15)
 
 Immutable bank decisions now fail before evidence lookup unless the authenticated Compliance/CS

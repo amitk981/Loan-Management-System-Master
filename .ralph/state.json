@@ -222,14 +222,15 @@
     "008L3-portal-action-and-resubmission-contract-closure",
     "CR-006-register-date-time-timezone-determinism",
     "CR-007-github-ci-missing-legal-pdf-unicode-font",
-    "008K5-final-evidence-authority-and-migration-closure"
+    "008K5-final-evidence-authority-and-migration-closure",
+    "008L4-portal-production-boundary-and-browser-proof"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "fad70f95",
-  "last_run_id": "2026-07-15_184900_normal_run",
+  "last_run_id": "2026-07-15_204059_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

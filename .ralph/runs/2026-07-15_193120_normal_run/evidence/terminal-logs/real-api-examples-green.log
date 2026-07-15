@@ -1,0 +1,45 @@
+{
+  "login_status": 200,
+  "applications_status": 200,
+  "documentation_status": 200,
+  "term_sheet": {
+    "action_code": "term_sheet",
+    "label": "Term Sheet",
+    "section": "Sanction",
+    "required": true,
+    "applicable": true,
+    "status": "complete",
+    "updated_date": "2026-07-15",
+    "instruction": "Download the current Term Sheet, sign it, and upload the signed copy.",
+    "note": null,
+    "upload_allowed": false,
+    "reupload_allowed": false,
+    "download": {
+      "file_name": "term-sheet-LO000008L4.pdf",
+      "mime_type": "application/pdf",
+      "action_url": "/api/v1/portal/applications/6ded2018-948e-4e0a-8889-1c8fb6f56146/documentation-actions/term_sheet/download/"
+    }
+  },
+  "deficiencies_status": 200,
+  "deficiency": {
+    "deficiency_id": "d3dbe750-c475-45eb-bf95-e5f46cd06e47",
+    "item_code": "six_month_bank_statement",
+    "deficiency_type": "missing_document",
+    "description": "Upload the missing six-month bank statement.",
+    "resolution_status": "open",
+    "raised_at": "2026-07-15T14:22:01.819654Z",
+    "upload_contract": {
+      "document_category": "finance",
+      "sensitivity_level": "confidential",
+      "allowed_extensions": [
+        "pdf",
+        "jpg",
+        "jpeg",
+        "png"
+      ],
+      "max_size_bytes": 5242880
+    },
+    "response": null,
+    "draft": null
+  }
+}

@@ -21,6 +21,9 @@ if (!djangoPython) {
 // Isolated sqlite DB for the E2E dev server so the suite never touches the
 // default local dev DB. settings.py honours SFPCL_DB_PATH.
 const e2eDbPath = process.env.SFPCL_DB_PATH || path.join(repoRoot, 'sfpcl_credit', 'e2e.sqlite3');
+const e2eStorageRoot =
+  process.env.SFPCL_DOCUMENT_STORAGE_ROOT ||
+  path.join(repoRoot, 'sfpcl_credit', 'e2e-document-storage');
 
 const manage = `"${djangoPython}" sfpcl_credit/manage.py`;
 
@@ -50,10 +53,12 @@ export default defineConfig({
       // deleted first so entity sequence numbers (MEM-000001, ...) are identical
       // every run — screenshot baselines depend on that determinism.
       command:
-        `rm -f "${e2eDbPath}" && ` +
+        `rm -f "${e2eDbPath}" && mkdir -p "${e2eStorageRoot}" && ` +
+        `find "${e2eStorageRoot}" -type f -delete && ` +
         `${manage} migrate --noinput && ` +
         `${manage} seed_role_catalogue && ` +
         `${manage} seed_e2e_users && ` +
+        `${manage} seed_portal_e2e_fixture && ` +
         `${manage} runserver 127.0.0.1:8000 --noreload`,
       cwd: repoRoot,
       url: 'http://127.0.0.1:8000/api/v1/health/ready/',
@@ -61,6 +66,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       env: {
         SFPCL_DB_PATH: e2eDbPath,
+        SFPCL_DOCUMENT_STORAGE_ROOT: e2eStorageRoot,
         SFPCL_DEBUG: 'true',
         SFPCL_ALLOW_E2E_SEED: 'true',
       },

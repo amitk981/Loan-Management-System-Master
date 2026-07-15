@@ -1,0 +1,101 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/.ralph/runs/2026-07-15_204059_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts
+
+[2m[WebServer] [22m[15/Jul/2026 15:31:31] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[15/Jul/2026 15:31:34] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "OPTIONS /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "OPTIONS /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "GET /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "GET /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "OPTIONS /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "OPTIONS /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "GET /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/deficiencies/ HTTP/1.1" 200 915
+[2m[WebServer] [22m[15/Jul/2026 15:31:35] "GET /api/v1/portal/applications/62a56ecc-573a-442e-8fba-f96c0d8b6c60/deficiencies/ HTTP/1.1" 200 915
+  ✘  1 [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads and resubmits through the real Django lifecycle boundary (2.3s)
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "OPTIONS /api/v1/portal/applications/2bc52f75-1a95-4a3b-892d-cb732123e9be/documentation-actions/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[15/Jul/2026 15:31:36] "GET /api/v1/portal/applications/2bc52f75-1a95-4a3b-892d-cb732123e9be/documentation-actions/ HTTP/1.1" 200 4514
+[2m[WebServer] [22m[15/Jul/2026 15:31:37] "OPTIONS /api/v1/portal/applications/2bc52f75-1a95-4a3b-892d-cb732123e9be/documentation-actions/cancelled_cheque/upload/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:31:37] "POST /api/v1/portal/applications/2bc52f75-1a95-4a3b-892d-cb732123e9be/documentation-actions/cancelled_cheque/upload/ HTTP/1.1" 200 474
+[2m[WebServer] [22m[15/Jul/2026 15:31:37] "GET /api/v1/portal/applications/2bc52f75-1a95-4a3b-892d-cb732123e9be/documentation-actions/ HTTP/1.1" 200 4507
+  ✘  2 [chromium] › member-portal-documentation-actions.e2e.spec.ts:11:5 › MP07 uses the real portal session, upload, current download, and denial boundary (6.6s)
+
+
+  1) [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads and resubmits through the real Django lifecycle boundary
+
+    Error: expect.toBeVisible: Error: strict mode violation: getByText('Upload the missing six-month bank statement.') resolved to 2 elements:
+        1) <span>Upload the missing six-month bank statement.</span> aka locator('span').filter({ hasText: 'Upload the missing six-month' })
+        2) <p class="text-sm font-semibold text-slate-900 mt-1">Upload the missing six-month bank statement.</p> aka locator('p').filter({ hasText: 'Upload the missing six-month' })
+
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Upload the missing six-month bank statement.')[22m
+
+
+      15 |   await page.getByRole('button', { name: 'Submitted Data & Deficiencies' }).click();
+      16 |   await expect(page.getByRole('heading', { name: 'Deficiency Response', exact: true })).toBeVisible();
+    > 17 |   await expect(page.getByText('Upload the missing six-month bank statement.')).toBeVisible();
+         |                                                                                ^
+      18 |   await page.screenshot({ path: path.join(evidenceRoot, 'portal-deficiency-mobile-response.png'), fullPage: true });
+      19 |
+      20 |   await page.getByLabel('Replacement document').setInputFiles({
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts:17:80
+
+  2) [chromium] › member-portal-documentation-actions.e2e.spec.ts:11:5 › MP07 uses the real portal session, upload, current download, and denial boundary
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText('Submitted', { exact: true })
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Submitted', { exact: true })[22m
+
+
+      23 |   await page.getByRole('button', { name: 'Upload', exact: true }).click();
+      24 |   await expect(page.getByText('Document uploaded for SFPCL review.')).toBeVisible();
+    > 25 |   await expect(page.getByText('Submitted', { exact: true })).toBeVisible();
+         |                                                              ^
+      26 |
+      27 |   await expect(page.getByText('Complete', { exact: true })).toBeVisible();
+      28 |   await expect(page.getByRole('button', { name: 'Download Term Sheet' })).toBeVisible();
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts:25:62
+
+  2 failed
+    [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads and resubmits through the real Django lifecycle boundary
+    [chromium] › member-portal-documentation-actions.e2e.spec.ts:11:5 › MP07 uses the real portal session, upload, current download, and denial boundary
+
+Exit code: 1

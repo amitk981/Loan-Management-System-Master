@@ -95,9 +95,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   remaining integrity gaps: draft/out-of-scope applications can create immutable bank decisions,
   and borrower-safe reconciliation skips changed retained evidence because of conditional
   precedence. It also found cross-app migration ownership drift, existence-only race/reader proof,
-  and trusted browser specs that intercept every backend call. Corrective 008K5 then 008L4 now own
-  final evidence authority, migration anchoring, exact ledgers, locked portal action truth, and a
-  real authenticated browser boundary before the 008M staff documentation hub.
+  and trusted browser specs that intercept every backend call. Corrective 008K5 and 008L4 now close
+  final evidence authority, migration anchoring, exact ledgers, locked latest-renderer portal truth,
+  single source-defined portal audit events, honest deficiency-response state, and a real
+  authenticated Django browser boundary. The 008M staff documentation hub is next.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

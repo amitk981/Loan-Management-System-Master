@@ -1,0 +1,18 @@
+Commands:
+git diff --check
+git diff --name-only -- <protected paths>
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m json.tool .ralph/state.json
+git diff --numstat plus untracked non-.ralph line counts
+search declared E2E specs for page.route/route(
+search product/spec paths for [DEBUG-*]
+
+Results:
+- PASS: git diff has no whitespace errors.
+- PASS: no protected or docs/source path is modified.
+- PASS: .ralph/state.json parses as valid JSON.
+- PASS: 18 non-.ralph files and 1909 changed lines including new product/test files remain within
+  configured limits of 30 files and 2000 lines.
+- PASS: neither declared Playwright spec contains API route interception.
+- PASS: no tagged debugging instrumentation remains.
+- PASS: generated E2E document-storage output was removed; no runtime PDF is left for commit.
+- PASS: 008M remains the already-sharpened next Not Started slice.

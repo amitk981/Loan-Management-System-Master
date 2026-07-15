@@ -1,0 +1,27 @@
+^DTraceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/manage.py", line 17, in <module>
+    main()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/manage.py", line 13, in main
+    execute_from_command_line(sys.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 413, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/identity/management/commands/seed_portal_e2e_fixture.py", line 109, in handle
+    approved, case = self._approved_application(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/identity/management/commands/seed_portal_e2e_fixture.py", line 346, in _approved_application
+    case.appraisal_facts_json = project_approval_case_review_facts(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 277, in project_approval_case_review_facts
+    "recommended_amount": f"{appraisal_note.recommended_amount:.2f}",
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Unknown format code 'f' for object of type 'str'

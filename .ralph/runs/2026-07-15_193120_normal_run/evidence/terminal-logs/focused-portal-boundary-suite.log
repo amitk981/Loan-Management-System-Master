@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 19 test(s).
+System check identified no issues (0 silenced).
+......F..........Catalogue seeded: 183 permissions, 20 roles, 8 teams, 203 role-permission links.
+Portal E2E fixture seeded for e2e.portal@sfpcl.example: LO000008L4, LO000008L4-R.
+Portal E2E fixture already exists.
+..
+======================================================================
+FAIL: test_stale_status_only_completion_cannot_be_reopened_by_portal_upload (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_stale_status_only_completion_cannot_be_reopened_by_portal_upload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 413, in test_stale_status_only_completion_cannot_be_reopened_by_portal_upload
+    self.assertFalse(
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 19 tests in 1.697s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

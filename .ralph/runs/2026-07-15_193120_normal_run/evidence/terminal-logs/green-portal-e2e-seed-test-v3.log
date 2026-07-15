@@ -1,0 +1,21 @@
+^DFound 2 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+Catalogue seeded: 183 permissions, 20 roles, 8 teams, 203 role-permission links.
+Portal E2E fixture seeded for e2e.portal@sfpcl.example: LO000008L4, LO000008L4-R.
+Portal E2E fixture already exists.
+E.
+======================================================================
+ERROR: test_seed_is_idempotent_and_exposes_real_portal_contracts (sfpcl_credit.tests.test_seed_portal_e2e_fixture.SeedPortalE2eFixtureTests.test_seed_is_idempotent_and_exposes_real_portal_contracts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/tests/test_seed_portal_e2e_fixture.py", line 94, in test_seed_is_idempotent_and_exposes_real_portal_contracts
+    self.assertTrue(term_sheet["download_allowed"])
+                    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'download_allowed'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.171s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

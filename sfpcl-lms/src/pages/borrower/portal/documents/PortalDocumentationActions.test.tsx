@@ -81,6 +81,8 @@ describe('member portal documentation actions', () => {
     await waitFor(() => expect(uploadMock).toHaveBeenCalledWith('app-approved', 'term_sheet', file, 'Signed by borrower.'));
     await waitFor(() => expect(projectionMock).toHaveBeenCalledTimes(2));
     expect(await screen.findByText('Document uploaded for SFPCL review.')).toBeTruthy();
+    expect(screen.getAllByText('Submitted for review', { exact: true }).length).toBeGreaterThan(1);
+    expect(screen.queryAllByText('Submitted - Pending Completeness Check', { exact: true })).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Re-upload Term Sheet' })).toBeTruthy();
     for (const secret of ['******', '9876543210', 'enc:v1:', 'storage_key', 'checklist_item_id']) {
       expect(document.body.textContent).not.toContain(secret);
@@ -105,6 +107,19 @@ describe('member portal documentation actions', () => {
     expect(screen.getByRole('button', { name: 'Download Term Sheet' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Upload Term Sheet' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Re-upload Term Sheet' })).toBeNull();
+  });
+  it('keeps submitted status visible alongside the server-authorised re-upload action', async () => {
+    projectionMock.mockResolvedValueOnce({
+      ...projection,
+      actions: projection.actions.map(action => action.action_code === 'term_sheet'
+        ? { ...action, status: 'submitted', upload_allowed: false, reupload_allowed: true }
+        : action),
+    });
+
+    render(<MP07_DocumentChecklist />);
+
+    expect(await screen.findAllByText('Submitted for review', { exact: true })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Re-upload Term Sheet' })).toBeTruthy();
   });
   it('keeps the object URL alive after browser navigation starts', async () => {
     const createObjectURL = vi.fn(() => 'blob:term-sheet');

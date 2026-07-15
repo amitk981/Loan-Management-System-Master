@@ -225,7 +225,7 @@ Member portal endpoints added in 005FA:
 |---|---|---|---|
 | `POST /api/v1/portal/auth/activation/start/` | `folio_or_member_id`, `contact`, optional `pan_last4`, optional `aadhaar_last4` | `challenge_id`, `masked_contact`, `expires_at` | Member/contact/last-four facts must match a non-deleted member; already-active accounts return `409 PORTAL_ACCOUNT_ACTIVE`; no full PAN/Aadhaar or OTP is returned. Creates an OTP challenge, a pending communication-shell row, and `portal.auth.activation.started` audit metadata. |
 | `POST /api/v1/portal/auth/activation/complete/` | `challenge_id`, `otp`, `password`, `confirm_password` | `portal_account` with `portal_account_id`, `member_id`, `status`, masked contact facts | OTP must be pending and unexpired; password must match and be at least 10 characters. Creates/updates a `borrower_portal_user` user linked one-to-one to the member, activates the portal account, and writes `portal.account.activated`. |
-| `POST /api/v1/portal/auth/login/` | `identifier`, `password` | bearer token payload plus user payload | Identifier may match portal user email, member email, or member mobile. Invalid/inactive/suspended cases return generic `401 INVALID_CREDENTIALS` and write `portal.login.failed`; successful login writes `portal.login.success`. Access tokens include `member_id`, `portal_account_id`, and `portal_role = borrower_member` only for active, non-deleted member portal accounts; `/auth/me` returns the same member scope and only portal own-data permissions while the portal account remains active. |
+| `POST /api/v1/portal/auth/login/` | `identifier`, `password` | bearer token payload plus user payload | Identifier may match portal user email, member email, or member mobile. Invalid/inactive/suspended cases return generic `401 INVALID_CREDENTIALS` and write `portal.login.failed`; successful login writes `portal.login.success`. Access tokens include `member_id`, `portal_account_id`, and `portal_role = borrower_member` only for active, non-deleted member portal accounts; `/auth/me` returns the active `borrower_portal_user` role, the same member scope, and only portal own-data permissions while the portal account remains active. |
 | `POST /api/v1/portal/auth/password-reset/start/` | `identifier` | generic message plus challenge details when a valid account exists | Returns a generic response to avoid account enumeration; valid active portal accounts receive an OTP challenge and `portal.auth.password_reset.started` audit metadata. |
 | `POST /api/v1/portal/auth/password-reset/complete/` | `challenge_id`, `otp`, `password`, `confirm_password` | `{ "reset": true }` | OTP is single-use and expiring; successful reset updates the password hash, revokes all active sessions with reason `portal_password_reset`, and writes `portal.auth.password_reset.completed`. Replay returns `400 OTP_INVALID`. |
 | `POST /api/v1/portal/auth/password/change/` | bearer token plus `current_password`, `new_password`, `confirm_password` | `{ "password_changed": true }` | Requires a portal bearer session whose linked portal account is still active. Suspended/inactive portal accounts using old bearer tokens receive `401 INVALID_TOKEN` and the session is revoked with reason `portal_account_status_changed`. Current password must match. Successful change updates the password hash, revokes other active sessions with reason `portal_password_change`, keeps the current session active, and writes `portal.password.changed`. |
@@ -3711,22 +3711,27 @@ loan-account, or disbursement facts. Unknown fields/action codes, crafted eviden
 inapplicable actions, empty/oversize/type-mismatched files, and cross-member references fail before
 any success evidence.
 
-Only current renderer-validated `term_sheet` and `loan_agreement` checklist outputs receive a safe
+Only canonical latest current renderer-validated `term_sheet` and `loan_agreement` outputs receive a safe
 download action. It returns a short-lived portal-scoped content URL; authenticated retrieval verifies
-the retained bytes and writes the central `documents.file.downloaded` event with portal account,
-member, application, action, document/version/category/sensitivity/checksum, reason,
-request/network, capability verification, and accepted outcome—never a key.
+the retained bytes and writes exactly one central `portal.document.downloaded` event with portal
+account, member, application, action, document/version/category/sensitivity, reason,
+request/network, capability verification, and accepted outcome—never a checksum or storage fact.
 
-008L3 closure: projection and upload now consume one locked action-authority decision. A pending
+008L4 closure: projection, upload, and download now consume one application/checklist-locked
+action-authority decision, including locked current submissions and canonical latest generated
+renderer outputs. A pending
 required/applicable item is mutable only when it has no applicability blocker and no retained
 completion status; a stale/status-only completion remains honestly non-complete but advertises
 neither upload flag and cannot be reopened by a crafted POST. Accepted upload/re-upload uses only
-the central `documents.file.uploaded` vocabulary with portal attribution and immutable version/
-predecessor facts. Downloads use the central signed capability: the content URL contains a token,
+the central `portal.document.uploaded` vocabulary with portal attribution and immutable version/
+predecessor facts, without a parallel generic event. Downloads use the central signed capability:
+the content URL contains a token,
 not caller-editable expiry authority, and the signature binds portal account, member, application,
 action, current loan document, and current file. Tamper, expiry, replacement, cross-action, and
 cross-scope reads are nondisclosing and write no success event. Responses remain `no-store` at the
-HTTP content boundary.
+HTTP content boundary. A production generation successor immediately changes projection/download
+authority and invalidates a descriptor issued for its predecessor; no checklist pointer assignment
+participates in current-document selection.
 
 ## Member portal deficiency response and resubmission (008L2)
 
@@ -3761,6 +3766,11 @@ status from `incomplete_returned` to `submitted`, reopening the existing staff c
 `applications.loan_application.resubmitted` audit/workflow writer. Upload/re-upload and resubmit
 workflow facts target the immutable deficiency-response aggregate (`absent/responded -> responded ->
 submitted_for_review`); they never claim that the staff-owned open deficiency changed state. The
+008L4 borrower projection derives the current immutable response state from those retained workflow
+facts, so it reports `submitted_for_review` after resubmission while the staff-owned deficiency
+continues to report `open`. Deficiency uploads and downloads likewise retain exactly one central
+`portal.document.uploaded` or `portal.document.downloaded` event with safe portal scope and document
+metadata, without a parallel generic event or checksum/storage disclosure. The
 borrower timeline shows `Application resubmitted` (A-095). Empty, partially responded, or
 non-returned applications fail before any transition. Deficiency actions never create or change
 Stage-4 checklist items/actions/history, approvals, verifier/role/remarks, legal/security evidence,

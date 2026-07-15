@@ -1,0 +1,17 @@
+^DFound 1 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_upload_and_reupload_retain_provenance_without_completing_internal_item (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_upload_and_reupload_retain_provenance_without_completing_internal_item)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 151, in test_upload_and_reupload_retain_provenance_without_completing_internal_item
+    self.assertEqual(len(audits), 2)
+AssertionError: 0 != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 0.125s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

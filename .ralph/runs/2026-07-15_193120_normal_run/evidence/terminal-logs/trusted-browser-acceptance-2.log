@@ -1,0 +1,85 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/.ralph/runs/2026-07-15_193120_normal_run/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts
+
+[2m[WebServer] [22m[15/Jul/2026 15:04:37] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22m[15/Jul/2026 15:04:39] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:04:40] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2050
+[2m[WebServer] [22m[15/Jul/2026 15:04:40] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:04:40] "GET /api/v1/auth/me/ HTTP/1.1" 200 963
+[2m[WebServer] [22m[15/Jul/2026 15:04:40] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:04:40] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[15/Jul/2026 15:04:40] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[15/Jul/2026 15:04:40] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+  ✘  1 [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads and resubmits through the real Django lifecycle boundary (6.6s)
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2050
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "GET /api/v1/auth/me/ HTTP/1.1" 200 963
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[15/Jul/2026 15:04:46] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+  ✘  2 [chromium] › member-portal-documentation-actions.e2e.spec.ts:11:5 › MP07 uses the real portal session, upload, current download, and denial boundary (5.6s)
+
+
+  1) [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads and resubmits through the real Django lifecycle boundary
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })[22m
+
+
+      74 |   await page.getByLabel('Password').fill('E2eTracer123!');
+      75 |   await page.getByRole('button', { name: 'Sign in securely' }).click();
+    > 76 |   await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+         |                                                                                                           ^
+      77 | }
+      78 |
+        at portalLogin (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts:76:107)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts:12:3
+
+  2) [chromium] › member-portal-documentation-actions.e2e.spec.ts:11:5 › MP07 uses the real portal session, upload, current download, and denial boundary
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })[22m
+
+
+      71 |   await page.getByLabel('Password').fill('E2eTracer123!');
+      72 |   await page.getByRole('button', { name: 'Sign in securely' }).click();
+    > 73 |   await expect(page.getByRole('main').getByRole('heading', { name: 'Portal Contract Member', level: 2 })).toBeVisible();
+         |                                                                                                           ^
+      74 | }
+      75 |
+        at portalLogin (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts:73:107)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts:12:3
+
+  2 failed
+    [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads and resubmits through the real Django lifecycle boundary
+    [chromium] › member-portal-documentation-actions.e2e.spec.ts:11:5 › MP07 uses the real portal session, upload, current download, and denial boundary
+
+Exit code: 1

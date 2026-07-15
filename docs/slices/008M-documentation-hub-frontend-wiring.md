@@ -133,6 +133,20 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
   terminal evidence bodies, request/network facts, signer snapshots, internal action identities,
   hashes, ciphertext, checksums, or storage keys in component state or error output.
 
+## 008L4 Completion Sharpening (2026-07-15)
+
+- Reuse the canonical latest-current renderer selector and its server-issued signed capability;
+  never recover a downloadable Term Sheet or Loan Agreement from a checklist FK, cached descriptor,
+  portal submission row, or locally retained file id. A generated successor must replace the staff
+  action on refetch and make predecessor content nondisclosing.
+- Treat projection flags, terminal status, and download metadata as one server snapshot. Do not
+  combine an application status from one request with checklist/action facts from another or infer
+  a mutation from a terminal badge.
+- Keep staff and portal audit semantics distinct: staff document activity continues to consume the
+  central generic document events, while borrower portal uploads/downloads expose the source-defined
+  `portal.document.uploaded`/`portal.document.downloaded` events exactly once. The hub must not write
+  either family or duplicate a retained backend event.
+
 ## Risk Level
 Medium
 

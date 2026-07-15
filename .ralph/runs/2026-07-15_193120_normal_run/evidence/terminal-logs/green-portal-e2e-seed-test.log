@@ -1,0 +1,126 @@
+^DFound 2 test(s).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+[36;1mOperations to perform:[0m
+[1m  Synchronize unmigrated apps: [0mcorsheaders
+[1m  Apply all migrations: [0mapplications, approvals, communications, configurations, contenttypes, credit, documents, identity, legal_documents, members, scheduler, security_instruments, tracer, workflows
+[36;1mSynchronizing apps without migrations:[0m
+  Creating tables...
+    Running deferred SQL...
+[36;1mRunning migrations:[0m
+  Applying identity.0001_initial...[32;1m OK[0m
+  Applying identity.0002_permission_rolepermission_and_more...[32;1m OK[0m
+  Applying tracer.0001_initial...[32;1m OK[0m
+  Applying workflows.0001_canonical_workflow_event...[32;1m OK[0m
+  Applying members.0001_initial...[32;1m OK[0m
+  Applying members.0002_profile_shells...[32;1m OK[0m
+  Applying members.0003_individual_profile_details...[32;1m OK[0m
+  Applying members.0004_nominee...[32;1m OK[0m
+  Applying members.0005_shareholding_and_more...[32;1m OK[0m
+  Applying members.0006_landholding_cropplan_and_more...[32;1m OK[0m
+  Applying documents.0001_initial...[32;1m OK[0m
+  Applying members.0007_kycprofile_kycdocument_and_more...[32;1m OK[0m
+  Applying members.0008_cancelledcheque_bankaccount_and_more...[32;1m OK[0m
+  Applying identity.0003_portal_member_auth...[32;1m OK[0m
+  Applying members.0009_member_identity_governance...[32;1m OK[0m
+  Applying members.0010_member_identity_change_request...[32;1m OK[0m
+  Applying members.0011_producesupplyrecord...[32;1m OK[0m
+  Applying members.0012_memberserviceevidence_activememberstatus_and_more...[32;1m OK[0m
+  Applying members.0013_memberserviceevidence_maker_users_and_more...[32;1m OK[0m
+  Applying members.0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more...[32;1m OK[0m
+  Applying documents.0002_documenttemplate...[32;1m OK[0m
+  Applying documents.0003_documenttemplateidentity...[32;1m OK[0m
+  Applying applications.0001_initial...[32;1m OK[0m
+  Applying documents.0004_loandocument...[32;1m OK[0m
+  Applying legal_documents.0001_transfer_loan_document_owner...[32;1m OK[0m
+  Applying legal_documents.0002_document_checklists...[32;1m OK[0m
+  Applying legal_documents.0003_loan_document_renderer_provenance...[32;1m OK[0m
+  Applying legal_documents.0004_checklistitem_notarisation_status_and_more...[32;1m OK[0m
+  Applying legal_documents.0005_signature_records...[32;1m OK[0m
+  Applying legal_documents.0006_stamp_notary_preparer_identity...[32;1m OK[0m
+  Applying legal_documents.0007_signature_capture_maker...[32;1m OK[0m
+  Applying applications.0002_loanapplication_submitted_by_user...[32;1m OK[0m
+  Applying applications.0003_systemsequence_loanrequestregisterentry...[32;1m OK[0m
+  Applying applications.0004_applicationdocument_and_more...[32;1m OK[0m
+  Applying applications.0005_application_deficiency...[32;1m OK[0m
+  Applying applications.0006_rejection_note...[32;1m OK[0m
+  Applying applications.0007_eligibilityassessment...[32;1m OK[0m
+  Applying applications.0008_loanlimitassessment...[32;1m OK[0m
+  Applying applications.0009_loan_limit_policy_snapshot...[32;1m OK[0m
+  Applying applications.0010_loanapplication_nominee...[32;1m OK[0m
+  Applying legal_documents.0008_securitypackage_powerofattorney_and_more...[32;1m OK[0m
+  Applying legal_documents.0009_loandocument_verification_remarks...[32;1m OK[0m
+  Applying legal_documents.0010_stage4_maker_checker_constraints...[32;1m OK[0m
+  Applying legal_documents.0011_final_documentation_approval_sequence...[32;1m OK[0m
+  Applying legal_documents.0012_portal_documentation_submission...[32;1m OK[0m
+  Applying configurations.0001_initial...[32;1m OK[0m
+  Applying configurations.0002_version_history_approval_evidence...[32;1m OK[0m
+  Applying applications.0011_witness...[32;1m OK[0m
+  Applying applications.0012_witness_verification_evidence...[32;1m OK[0m
+  Applying applications.0013_witness_correction...[32;1m OK[0m
+  Applying applications.0014_witness_contact_fields...[32;1m OK[0m
+  Applying applications.0015_applicationdeficiencyresponse...[32;1m OK[0m
+  Applying applications.0016_bankverificationdecision_and_more...[32;1m OK[0m
+  Applying communications.0001_initial...[32;1m OK[0m
+  Applying communications.0002_communication...[32;1m OK[0m
+  Applying communications.0003_notification...[32;1m OK[0m
+  Applying credit.0001_credit_assessment_model_ownership...[32;1m OK[0m
+  Applying credit.0002_riskassessment_loanappraisalnote...[32;1m OK[0m
+  Applying credit.0003_appraisal_prerequisite_snapshots...[32;1m OK[0m
+  Applying credit.0004_appraisal_review_facts...[32;1m OK[0m
+  Applying credit.0005_appraisalreviewdecision...[32;1m OK[0m
+  Applying credit.0006_legacy_appraisal_history_remediation...[32;1m OK[0m
+  Applying credit.0007_eligibility_active_member_snapshot...[32;1m OK[0m
+  Applying approvals.0001_initial...[32;1m OK[0m
+  Applying approvals.0002_approvalcase_workflow_event...[32;1m OK[0m
+  Applying approvals.0003_approvalmatrixrule_sanctioncommittee...[32;1m OK[0m
+  Applying approvals.0004_approval_configuration_history_constraints...[32;1m OK[0m
+  Applying approvals.0005_approvalconfigurationproposal...[32;1m OK[0m
+  Applying approvals.0006_approvalcase_configuration_snapshot...[32;1m OK[0m
+  Applying approvals.0007_approvalcase_enrichment_snapshot...[32;1m OK[0m
+  Applying approvals.0008_approvalaction...[32;1m OK[0m
+  Applying approvals.0009_sanction_decision_and_case_closure...[32;1m OK[0m
+  Applying approvals.0010_approvalcasereadscopegrant_and_more...[32;1m OK[0m
+  Applying approvals.0011_approvalcase_appraisal_facts_json_and_more...[32;1m OK[0m
+  Applying approvals.0012_approvalconflictdeclaration_and_more...[32;1m OK[0m
+  Applying approvals.0013_conflict_projection_scope_closure...[32;1m OK[0m
+  Applying approvals.0014_exceptionregisterentry_and_more...[32;1m OK[0m
+  Applying approvals.0015_generalmeetingapproval_and_more...[32;1m OK[0m
+  Applying approvals.0016_creditsanctionregisterentry...[32;1m OK[0m
+  Applying approvals.0017_exceptionregisterentry_supporting_documents_json...[32;1m OK[0m
+  Applying approvals.0018_creditsanctionregisterentry_source_review_facts_json...[32;1m OK[0m
+  Applying approvals.0019_register_source_facts...[32;1m OK[0m
+  Applying approvals.0020_approvalaction_approver_display_name...[32;1m OK[0m
+  Applying contenttypes.0001_initial...[32;1m OK[0m
+  Applying contenttypes.0002_remove_content_type_name...[32;1m OK[0m
+  Applying legal_documents.0013_application_evidence_state_anchor...[32;1m OK[0m
+  Applying scheduler.0001_initial...[32;1m OK[0m
+  Applying security_instruments.0001_transfer_security_ownership...[32;1m OK[0m
+  Applying security_instruments.0002_sh4sharetransferform_and_more...[32;1m OK[0m
+  Applying security_instruments.0003_cdslsharepledge_and_more...[32;1m OK[0m
+  Applying security_instruments.0004_migrate_cdsl_field_encryption...[32;1m OK[0m
+  Applying security_instruments.0005_blankdatedcheque_and_more...[32;1m OK[0m
+  Applying security_instruments.0006_migrate_opaque_field_tokens...[32;1m OK[0m
+  Applying tracer.0002_remove_tracer_workflowevent_state...[32;1m OK[0m
+System check identified no issues (0 silenced).
+test_seed_is_idempotent_and_exposes_real_portal_contracts (sfpcl_credit.tests.test_seed_portal_e2e_fixture.SeedPortalE2eFixtureTests.test_seed_is_idempotent_and_exposes_real_portal_contracts) ... Catalogue seeded: 183 permissions, 20 roles, 8 teams, 203 role-permission links.
+Portal E2E fixture seeded for e2e.portal@sfpcl.example: LO000008L4, LO000008L4-R.
+Portal E2E fixture already exists.
+FAIL
+test_seed_refuses_without_both_isolated_e2e_guards (sfpcl_credit.tests.test_seed_portal_e2e_fixture.SeedPortalE2eFixtureTests.test_seed_refuses_without_both_isolated_e2e_guards) ... ok
+
+======================================================================
+FAIL: test_seed_is_idempotent_and_exposes_real_portal_contracts (sfpcl_credit.tests.test_seed_portal_e2e_fixture.SeedPortalE2eFixtureTests.test_seed_is_idempotent_and_exposes_real_portal_contracts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/tests/test_seed_portal_e2e_fixture.py", line 52, in test_seed_is_idempotent_and_exposes_real_portal_contracts
+    self.assertEqual(current_term_sheet.renderer_contract_version, "pdf_v1")
+AssertionError: 'legal-renderer-v1' != 'pdf_v1'
+- legal-renderer-v1
++ pdf_v1
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.180s
+
+FAILED (failures=1)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

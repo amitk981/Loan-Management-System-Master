@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/manage.py", line 17, in <module>
+    main()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/manage.py", line 13, in main
+    execute_from_command_line(sys.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 413, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/shell.py", line 117, in handle
+    exec(options["command"], globals())
+  File "<string>", line 1
+    from django.test import Client; import json; c=Client(); login=c.post("/api/v1/auth/login/", data={"email":"e2e.portal@sfpcl.example","password":"E2eTracer123!"}, content_type="application/json"); token=login.json()["data"]["access_token"]; h={"Authorization":f"Bearer {token}"}; apps=c.get("/api/v1/portal/applications/", headers=h).json()["data"]["items"]; approved=next(x for x in apps if x["application_reference_number"]=="LO000008L4"); returned=next(x for x in apps if x["application_reference_number"]=="LO000008L4-R"); docs=c.get(f"/api/v1/portal/applications/{approved[\"loan_application_id\"]}/documentation-actions/", headers=h); deficiencies=c.get(f"/api/v1/portal/applications/{returned[\"loan_application_id\"]}/deficiencies/", headers=h); print(json.dumps({"login_status":login.status_code,"applications_status":200,"documentation_status":docs.status_code,"term_sheet":next(x for x in docs.json()["data"]["actions"] if x["action_code"]=="term_sheet"),"deficiencies_status":deficiencies.status_code,"deficiency":deficiencies.json()["data"]["items"][0]}, indent=2))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ^
+SyntaxError: f-string expression part cannot include a backslash

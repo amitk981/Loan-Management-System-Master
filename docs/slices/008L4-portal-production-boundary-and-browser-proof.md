@@ -1,7 +1,7 @@
 # Slice 008L4: Portal Production Boundary and Browser Proof
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epics
 Epic 008: Documentation, Legal Documents, and Security Package; Epic 005: Application Intake and
@@ -95,6 +95,34 @@ and all four genuine non-empty screenshots.
   and assert the complete §6.3 response; they may not insert or reuse pre-sanction immutable bank
   evidence as checklist truth.
 
+## Repair Closure (2026-07-15)
+
+- Independent browser execution reproduced successful portal login and `/auth/me`, followed by a
+  staff `/api/v1/dashboard/` request and missing member heading. The guarded seed had consumed the
+  catalogue's inactive borrower role, so `/auth/me` returned no role and the frontend selected the
+  neutral staff shell.
+- `borrower_portal_user` is now the canonical catalogue's one active external role. The remaining
+  future external roles stay inactive, no staff permission link was added, and real portal sessions
+  retain only their existing own-data permissions. A failing-first seed/API regression freezes the
+  exact `/auth/me` role payload.
+- All local gates pass; Chromium remains locally unavailable under the macOS Mach-port sandbox, so
+  the orchestrator-owned twice-run browser/screenshots gate remains the final acceptance authority.
+
+## Manual Recovery Closure (2026-07-15)
+
+- The owner stopped the failed loop and the real Django-backed Playwright command reproduced two
+  deterministic UI assertion defects: the deficiency sentence was unscoped across the application
+  summary and response panel, while MP07 hid the submitted status whenever re-upload remained
+  authorised. Named region/group boundaries now scope the browser contract, and MP07/MP13 display
+  the documentation-specific `Submitted for review` label independently of action controls.
+- The next real-browser boundary exposed a CORS preflight denial for the canonical
+  `X-Request-ID` audit header. Django now explicitly allows that header, with an infrastructure
+  regression proving the frontend preflight contract.
+- Both trusted specs then passed twice against fresh isolated databases (2/2 each), and all four
+  required screenshots are retained in the repair evidence. Backend passed 898 tests at 92%
+  coverage; frontend passed 305 tests plus typecheck, lint, and build; Django check and migration
+  drift passed.
+
 ## Risk Level
 High
 
@@ -107,16 +135,16 @@ High
 - All configured gates pass.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit created only after passing gates

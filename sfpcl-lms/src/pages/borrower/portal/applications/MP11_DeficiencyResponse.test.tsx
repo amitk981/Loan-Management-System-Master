@@ -36,6 +36,7 @@ describe('MP11 deficiency response', () => {
     render(<MP11_DeficiencyResponse applicationId="app-returned" onResubmitted={onResubmitted} />);
     expect(screen.getByText('Loading deficiency response…')).toBeTruthy();
     expect(await screen.findByText('Upload the missing six-month bank statement.')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Deficiency Response' })).toBeTruthy();
     expect(screen.getByText('Deficiency reason')).toBeTruthy();
     expect(screen.getByText('Requested correction')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Download deficiency note' })).toBeTruthy();

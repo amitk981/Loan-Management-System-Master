@@ -1,5 +1,45 @@
 # Ralph Progress Log
 
+## 2026-07-15 - 2026-07-15_204059_repair
+
+- Agent tool used: codex with the diagnosing-bugs and browser-control skills.
+- Slice repaired: 008L4-portal-production-boundary-and-browser-proof.
+- Summary: Preserved the quarantined implementation and repaired only the demonstrated trusted-
+  browser login boundary. The canonical catalogue had kept `borrower_portal_user` inactive, so real
+  portal login and `/auth/me` succeeded but returned no role; the frontend selected the staff shell
+  and called `/api/v1/dashboard/`. The borrower role is now the one active external role, while all
+  future external identities remain inactive and portal permissions remain own-data-only.
+- Tests run: focused role/API RED then GREEN; 25 affected identity/portal tests; Playwright
+  collection; frontend lint, typecheck, build, and all 304 tests; Django check/migration drift; all
+  897 backend tests with 46 expected capability skips and 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_204059_repair/evidence/` plus the original browser failure
+  in `.ralph/runs/2026-07-15_193120_normal_run/evidence/`.
+- Result: Repair complete pending full independent orchestrator validation, twice-run trusted
+  browser execution, and all four genuine screenshots.
+- Risk level: High inherited slice risk; Medium repair-delta risk because the canonical RBAC seed
+  now activates the already-source-required borrower portal role without granting staff permissions.
+- Next action: Let the orchestrator rerun the declared browser contract twice; after acceptance,
+  continue with sharpened 008M.
+
+## 2026-07-15 - 2026-07-15_193120_normal_run
+
+- Agent tool used: codex with implement, TDD, codebase-design, and two-axis review skills.
+- Slice completed: 008L4-portal-production-boundary-and-browser-proof.
+- Summary: Replaced catch-all mocked portal browser traffic with guarded real Django fixtures and
+  authenticated API calls; unified portal documentation projection/upload/download behind one
+  locked current decision; selected published files from the canonical latest renderer; retained
+  single safe `portal.document.*` audits; and aligned response projections with resubmission and
+  staff-resolution workflow truth.
+- Tests run: staged backend RED/GREEN; 22-test final portal suite (20 pass, two PostgreSQL-only race
+  tests collected); Playwright collection; Django check/migration drift; frontend lint, typecheck,
+  build, and all 304 tests; all 897 backend tests with 46 expected capability skips at 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_193120_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation, twice-run trusted browser contract,
+  screenshot capture, and commit.
+- Risk level: High; authenticated document access, audit vocabulary, lifecycle projection, and
+  concurrency authority changed behind fail-closed locks and current-renderer capabilities.
+- Next action: Run sharpened 008M documentation hub frontend wiring.
+
 ## 2026-07-15 - 2026-07-15_073659_normal_run
 
 - Agent tool used: codex
@@ -7396,6 +7436,21 @@ Validation evidence added:
 - Result: Complete pending independent orchestrator validation and commit.
 - Risk level: High; immutable compliance evidence, permissions, migrations, and concurrency.
 - Next action: Run 008L4, then 008M.
+
+## 2026-07-15 - 008L4 manual stopped-run recovery
+
+- Slice completed: 008L4-portal-production-boundary-and-browser-proof.
+- Summary: Recovered the preserved worktree after the owner stopped the failed loop; activated the
+  canonical borrower portal role, corrected stable browser locator boundaries, kept portal status
+  visible beside re-upload authority, and allowed the required `X-Request-ID` CORS preflight.
+- Tests run: both real Django-backed Playwright specs twice (2/2 each); all four screenshots;
+  frontend 305 tests, typecheck, lint, build; backend 898 tests at 92% coverage; Django check and
+  migration drift.
+- Evidence saved: `.ralph/runs/2026-07-15_204059_repair/evidence/`.
+- Result: Complete and ready for the recovered branch commit/merge.
+- Risk level: High; authenticated portal data, document audit, upload/download authority, and
+  lifecycle browser proof.
+- Next action: Run 008M.
 
 ## 2026-07-15 19:31:08 - 2026-07-15_184900_normal_run
 - Agent tool used: codex

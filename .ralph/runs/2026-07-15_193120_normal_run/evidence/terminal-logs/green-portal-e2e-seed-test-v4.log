@@ -1,0 +1,12 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 183 permissions, 20 roles, 8 teams, 203 role-permission links.
+Portal E2E fixture seeded for e2e.portal@sfpcl.example: LO000008L4, LO000008L4-R.
+Portal E2E fixture already exists.
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.339s
+
+OK
+Destroying test database for alias 'default'...

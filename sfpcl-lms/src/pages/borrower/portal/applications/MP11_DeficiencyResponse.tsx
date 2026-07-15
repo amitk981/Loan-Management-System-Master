@@ -114,10 +114,14 @@ const MP11_DeficiencyResponse: React.FC<MP11DeficiencyResponseProps> = ({ applic
   const items = projection?.items ?? [];
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+      <div
+        role="region"
+        aria-labelledby="portal-deficiency-response-heading"
+        className="bg-white rounded-xl border border-slate-100 overflow-hidden"
+      >
         <div className="px-5 py-4 bg-slate-50 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-semibold text-slate-900 flex items-center gap-2"><FileWarning size={17} className="text-amber-600" /> Deficiency Response</h3>
+            <h3 id="portal-deficiency-response-heading" className="font-semibold text-slate-900 flex items-center gap-2"><FileWarning size={17} className="text-amber-600" /> Deficiency Response</h3>
             <p className="text-xs text-slate-500 mt-1">SFPCL requested {items.length} correction{items.length === 1 ? '' : 's'} for {projection?.application_reference_number ?? 'this application'}.</p>
           </div>
           <button onClick={() => void downloadNote()} className="flex items-center gap-2 text-sm font-medium text-green-700" aria-label="Download deficiency note">

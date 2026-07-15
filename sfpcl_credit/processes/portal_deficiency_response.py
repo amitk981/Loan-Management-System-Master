@@ -20,6 +20,7 @@ from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.identity.models import AuditLog, PortalAccount
 from sfpcl_credit.processes import portal_application_scope
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 class PortalDeficiencyNotFound(Exception):
@@ -100,6 +101,18 @@ def get_projection(*, actor, application_id, request):
             successor__isnull=True,
         ).select_related("document")
     }
+    response_states = {}
+    for entity_id, to_state in (
+        WorkflowEvent.objects.filter(
+            workflow_name="application_deficiency",
+            entity_type="application_deficiency_response",
+            entity_id__in=[row.pk for row in responses.values()],
+            to_state__in={"responded", "submitted_for_review"},
+        )
+        .order_by("entity_id", "-created_at", "-workflow_event_id")
+        .values_list("entity_id", "to_state")
+    ):
+        response_states.setdefault(entity_id, to_state)
     drafts = {
         row.deficiency_id: row
         for row in ApplicationDeficiencyResponseDraft.objects.filter(
@@ -134,7 +147,9 @@ def get_projection(*, actor, application_id, request):
                     "allowed_extensions": ["pdf", "jpg", "jpeg", "png"],
                     "max_size_bytes": 5 * 1024 * 1024,
                 },
-                "response": _serialize_response(responses.get(item.pk)),
+                "response": _serialize_response(
+                    responses.get(item.pk), response_states=response_states
+                ),
                 "draft": _serialize_draft(drafts.get(item.pk)),
             }
             for item in items
@@ -258,6 +273,9 @@ def upload(*, actor, application_id, deficiency_id, request):
         .order_by("-created_at", "-application_deficiency_response_id")
         .first()
     )
+    document_version = (
+        ApplicationDeficiencyResponse.objects.filter(deficiency=deficiency).count() + 1
+    )
     document = document_services.store_document_upload(
         user=actor,
         request=request,
@@ -266,24 +284,27 @@ def upload(*, actor, application_id, deficiency_id, request):
         sensitivity_level=cleaned["sensitivity_level"],
         related_entity_type="application",
         related_entity_id=application.pk,
-        provenance_metadata={
-            "portal_account_id": str(context.account.pk),
-            "member_id": str(context.account.member_id),
-            "deficiency_id": str(deficiency.pk),
-            "item_code": deficiency.item_code,
-            "deficiency_response_version": (
-                ApplicationDeficiencyResponse.objects.filter(
-                    deficiency=deficiency
-                ).count()
-                + 1
-            ),
-            "prior_current_document_id": (
-                str(previous.document_id) if previous else None
-            ),
-            "reason": "borrower_portal_deficiency_response",
-            "request_id": request.headers.get("X-Request-ID"),
-            "outcome": "accepted",
-        },
+        audit_spec=document_services.DocumentAuditSpec(
+            action="portal.document.uploaded",
+            actor_type="portal_account",
+            metadata={
+                "portal_account_id": str(context.account.pk),
+                "member_id": str(context.account.member_id),
+                "loan_application_id": str(application.pk),
+                "action_code": deficiency.item_code,
+                "deficiency_id": str(deficiency.pk),
+                "document_version": document_version,
+                "document_category": cleaned["document_category"],
+                "sensitivity_level": cleaned["sensitivity_level"],
+                "reason": "borrower_portal_deficiency_response",
+                "request_id": request.headers.get("X-Request-ID"),
+                "network": {
+                    "ip_address": document_services.request_ip(request),
+                    "user_agent": document_services.request_user_agent(request),
+                },
+                "outcome": "accepted",
+            },
+        ),
     )
     party_type, party_id = _application_document_party(application, deficiency.item_code)
     application_document = application_services.attach_application_document(
@@ -457,23 +478,35 @@ def download(*, actor, application_id, deficiency_id, request, storage=None):
         )
     except ValidationError:
         raise PortalDeficiencyNotFound
-    _audit(
-        actor=actor,
-        action="documents.file.downloaded",
-        entity=response,
-        payload={
-            "portal_account_id": str(context.account.pk),
-            "member_id": str(context.account.member_id),
-            "loan_application_id": str(context.application.pk),
-            "deficiency_id": str(response.deficiency_id),
-            "deficiency_response_id": str(response.pk),
-            "document_id": str(response.document_id),
-            "checksum_sha256": response.document.checksum_sha256,
-            "request_id": request.headers.get("X-Request-ID"),
-            "capability_verified": True,
-            "outcome": "accepted",
-        },
+    document_services.record_document_audit(
+        user=actor,
         request=request,
+        document=response.document,
+        spec=document_services.DocumentAuditSpec(
+            action="portal.document.downloaded",
+            actor_type="portal_account",
+            metadata={
+                "portal_account_id": str(context.account.pk),
+                "member_id": str(context.account.member_id),
+                "loan_application_id": str(context.application.pk),
+                "action_code": response.deficiency.item_code,
+                "deficiency_id": str(response.deficiency_id),
+                "deficiency_response_id": str(response.pk),
+                "document_version": _response_version(response),
+                "document_category": _expected_document_category(
+                    response.deficiency.item_code
+                ),
+                "sensitivity_level": response.document.sensitivity_level,
+                "reason": "borrower_portal_deficiency_response_download",
+                "request_id": request.headers.get("X-Request-ID"),
+                "network": {
+                    "ip_address": document_services.request_ip(request),
+                    "user_agent": document_services.request_user_agent(request),
+                },
+                "capability_verified": True,
+                "outcome": "accepted",
+            },
+        ),
     )
     return PortalDeficiencyContent(
         body=body,
@@ -562,18 +595,30 @@ def _expected_document_category(item_code):
     return "legal"
 
 
+def _response_version(response):
+    version = 1
+    current = response
+    while current.supersedes_id is not None:
+        version += 1
+        current = ApplicationDeficiencyResponse.objects.only("supersedes_id").get(
+            pk=current.supersedes_id
+        )
+    return version
+
+
 def _application_document_party(application, item_code):
     if item_code in {"nominee_pan", "nominee_aadhaar_ovd"}:
         return "nominee", application.nominee_id
     return "borrower", application.member_id
 
 
-def _serialize_response(response):
+def _serialize_response(response, response_states=None):
     if response is None:
         return None
+    response_states = response_states or {}
     return {
         "deficiency_response_id": str(response.pk),
-        "response_status": "responded",
+        "response_status": response_states.get(response.pk, "responded"),
         "response_remark": response.response_remark,
         "document": _serialize_document(response.document, response),
         "responded_at": response.created_at.isoformat().replace("+00:00", "Z"),

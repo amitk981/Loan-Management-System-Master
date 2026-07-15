@@ -1,0 +1,8 @@
+Command:
+RALPH_EVIDENCE_DIR=<repair-run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npx playwright test --list e2e/member-portal-documentation-actions.e2e.spec.ts e2e/member-portal-deficiency-response.e2e.spec.ts
+
+Exit code: 0
+Listing tests:
+  [chromium] member-portal-deficiency-response.e2e.spec.ts - MP11 uploads and resubmits through the real Django lifecycle boundary
+  [chromium] member-portal-documentation-actions.e2e.spec.ts - MP07 uses the real portal session, upload, current download, and denial boundary
+Total: 2 tests in 2 files
