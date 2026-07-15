@@ -3626,3 +3626,17 @@ the frozen committee may give the final documentation approval. The Senior Manag
 intentionally present but returns `409 DISBURSEMENT_EVIDENCE_UNAVAILABLE` with zero writes until an
 Epic 009 owner supplies a real successful-disbursement relation. No route creates a loan account or
 changes package/security readiness.
+
+008K3 hardening: the completion route now receives security facts only through the public
+cross-owner process coordinator and resolves current source-owned rows rather than accepting
+`VersionHistory` JSON as truth. Cheque evidence must reconcile the exact application, package,
+member, bank account, cancelled cheque/file, blank cheque/scan, maker, custodian, and custody
+workflow while retaining only the fixed `******` mask. PoA, SH-4, and CDSL likewise reconcile their
+current terminal owner rows; PoA requires an exact ₹500 adequate stamp. Term Sheet completion
+requires borrower/nominee/frozen CFO signatures and, above ₹5,00,000, two eligible frozen-director
+signatures. Company Secretary approval now revalidates every current item and requires exactly one
+matching public completion action/history identity, current renderer checksum, verifier/time/
+remarks, applicability flags/cycle, and terminal-evidence digest. Status-only, missing/extra,
+stale, cross-object, or changed evidence returns `409 CHECKLIST_EVIDENCE_INCOMPLETE` with zero
+approval writes. Retained actions freeze the role that authorised the requested stage, even for a
+multi-role user.

@@ -14,6 +14,23 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008K3 Final Checklist Evidence Closure (2026-07-15)
+
+The §27.3 public completion boundary now consumes locked current security rows through a top-level
+coordinator rather than trusting application-labelled version JSON. Blank/cancelled-cheque truth
+reconciles exact package/member/bank/cheque/file/maker/custodian/workflow identities and retains
+only the fixed mask; PoA/SH-4/CDSL consume their terminal source-owned rows, including exact ₹500
+PoA stamp truth. Legal completion revalidates current renderer/checksum, canonical signatures,
+mismatch status, and the frozen Term Sheet CFO/two-director threshold route.
+
+Every item completion freezes verifier, time, remarks, applicability/case cycle, terminal evidence
+and digest behind one action/audit/version/workflow identity. Company Secretary approval locks and
+reconciles exactly one such action for every current required/applicable item; bulk status, missing/
+extra/stale/cross-object/changed evidence is zero-write blocked. Stage actions freeze the role that
+authorised that stage for multi-role users. The PostgreSQL five-request item and three approval
+races bind the sole winner and exclude every loser success identity twice. A-101 and the Epic 009
+Senior Manager Finance blocker remain unchanged.
+
 ## 008K2 Sensitive Security Contract Closure (2026-07-15)
 
 `field:v2` now authenticates field, key version, and plaintext byte length without retaining length

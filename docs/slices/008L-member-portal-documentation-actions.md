@@ -182,6 +182,18 @@ High
 - Add response/DOM plaintext scans covering full BO/cheque fixtures, suffixes, token prefixes,
   lookup hashes, storage keys, and internal evidence identities after load, upload, and refetch.
 
+## 008K3 Completion Sharpening (2026-07-15)
+
+- Consume a borrower-safe projection from the checklist owner, never the new terminal security
+  coordinator callback, completion digest, action history, request id, verifier/time/remarks, or
+  exact bank/security ids. The portal cannot construct or pass source-owned evidence authority.
+- A row may display complete/approved only when K3's current action-backed reconciliation succeeds.
+  A missing/stale completion action or changed current evidence must project blocked/pending; portal
+  upload and refetch must not preserve a stale complete label.
+- Add a crafted-upload regression proving that portal-supplied JSON/file metadata cannot mimic
+  `terminal_evidence_digest`, applicability cycle, canonical role, cheque custody ids, or an
+  internal §27.3 request and that no checklist action/audit/version/workflow success is written.
+
 ## Acceptance Criteria
 - The named capability works through the intended backend/API/frontend path, where applicable.
 - Source-doc business rules are enforced or documented as assumptions.

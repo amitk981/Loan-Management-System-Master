@@ -199,6 +199,30 @@ def update_blank_cheque(**kwargs):
     return _call_with_canonical_evidence(blank_dated_cheque.update_cheque, kwargs)
 
 
+def terminal_checklist_evidence(*, item_code, application_id, document):
+    access = _access()
+    if item_code == "poa":
+        return power_of_attorney.checklist_terminal_evidence(
+            application_id=application_id, document=document, evidence_access=access
+        )
+    if item_code == "sh4":
+        return sh4.checklist_terminal_evidence(
+            application_id=application_id, document=document, evidence_access=access
+        )
+    if item_code == "cdsl_pledge":
+        return cdsl_share_pledge.checklist_terminal_evidence(
+            application_id=application_id, document=document, evidence_access=access
+        )
+    if item_code in {"blank_dated_cheque", "cancelled_cheque"}:
+        return blank_dated_cheque.checklist_terminal_evidence(
+            application_id=application_id,
+            document=document,
+            item_code=item_code,
+            evidence_access=access,
+        )
+    return None
+
+
 def reveal_blank_cheque(**kwargs):
     if "evidence_access" in kwargs:
         raise UncoordinatedEvidence("Caller-supplied evidence authority is forbidden.")

@@ -1,0 +1,17 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalConcurrencyTests \
+  --settings=sfpcl_credit.config.postgres_test_settings --noinput --verbosity 1
+
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+Ran 2 tests in 3.487s
+OK
+
+Each independent test creates source-owned prerequisite aggregates and completes every prerequisite
+through public checklist-item completion before racing five changed payloads for final item
+completion, Company Secretary approval, Credit Manager approval, and Sanction Committee approval.
+Thus every item/stage race executes twice. Assertions bind the sole winning request to its action,
+audit, version, and workflow identities. Every loser request is queried explicitly across actions,
+audits, and versions, while exactly one stage workflow row proves no loser workflow identity exists.

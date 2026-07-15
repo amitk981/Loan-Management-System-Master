@@ -10,6 +10,7 @@ from sfpcl_credit.security_instruments.modules import security_package
 from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.shared.encryption import FieldEncryption
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 MANAGE_PERMISSION = "security.blank_cheque.manage"
@@ -32,6 +33,73 @@ def read_cheque(*, actor, security_package_id, evidence_access):
     if cheque is None:
         raise NotFound
     return serialize_cheque(cheque)
+
+
+def checklist_terminal_evidence(
+    *, application_id, document, item_code, evidence_access
+):
+    access = require_coordinated(evidence_access)
+    cheque = (
+        BlankDatedCheque.objects.select_for_update(of=("self",))
+        .select_related("cancelled_cheque")
+        .filter(security_package__loan_application_id=application_id)
+        .first()
+    )
+    bank_fact = access.blank_cheque_bank_fact(application_id=application_id)
+    expected_file_id = (
+        cheque.document_id
+        if cheque and item_code == "blank_dated_cheque"
+        else cheque.cancelled_cheque.document_id if cheque else None
+    )
+    custody = cheque.custody_evidence_json if cheque else {}
+    workflow_valid = bool(
+        cheque
+        and cheque.custody_workflow_event_id
+        and WorkflowEvent.objects.filter(
+            pk=cheque.custody_workflow_event_id,
+            workflow_name="blank_dated_cheque",
+            entity_type="blank_dated_cheque",
+            entity_id=cheque.pk,
+            to_state=BlankDatedCheque.STATUS_HELD,
+            triggered_by_user_id=cheque.custodian_user_id,
+            trigger_reason="security.blank_cheque.held",
+        ).exists()
+    )
+    exact_ids = {
+        "loan_application_id": str(application_id),
+        "security_package_id": str(cheque.security_package_id) if cheque else None,
+        "member_id": str(cheque.member_id) if cheque else None,
+        "bank_account_id": str(cheque.bank_account_id) if cheque else None,
+        "cancelled_cheque_id": str(cheque.cancelled_cheque_id) if cheque else None,
+        "document_id": str(cheque.document_id) if cheque and cheque.document_id else None,
+    }
+    if (
+        cheque is None
+        or not bank_fact.valid
+        or cheque.cheque_status != BlankDatedCheque.STATUS_HELD
+        or cheque.member_id != bank_fact.member_id
+        or cheque.bank_account_id != bank_fact.bank_account_id
+        or cheque.cancelled_cheque_id != bank_fact.cancelled_cheque_id
+        or cheque.cancelled_cheque.verification_status != "verified"
+        or expected_file_id != document.document_id
+        or not cheque.prepared_by_user_id
+        or not cheque.custodian_user_id
+        or cheque.prepared_by_user_id == cheque.custodian_user_id
+        or not workflow_valid
+        or any(custody.get(key) != value for key, value in exact_ids.items())
+    ):
+        return None
+    return {
+        **exact_ids,
+        "blank_dated_cheque_id": str(cheque.pk),
+        "cancelled_cheque_document_id": str(cheque.cancelled_cheque.document_id),
+        "cheque_number": "******",
+        "cheque_status": cheque.cheque_status,
+        "prepared_by_user_id": str(cheque.prepared_by_user_id),
+        "custodian_user_id": str(cheque.custodian_user_id),
+        "custody_workflow_event_id": str(cheque.custody_workflow_event_id),
+        "cancelled_cheque_verification_status": cheque.cancelled_cheque.verification_status,
+    }
 
 
 def create_cheque(*, actor, security_package_id, values, metadata, evidence_access):

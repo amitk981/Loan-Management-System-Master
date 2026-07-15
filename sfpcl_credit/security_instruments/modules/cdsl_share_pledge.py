@@ -11,6 +11,7 @@ from sfpcl_credit.security_instruments.evidence_contract import require_coordina
 from sfpcl_credit.security_instruments.modules import security_package
 from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 MANAGE_PERMISSION = "security.cdsl_pledge.manage"
@@ -31,6 +32,62 @@ def read_pledge(*, actor, security_package_id, evidence_access):
     if pledge is None:
         raise NotFound
     return serialize_pledge(pledge, evidence_access)
+
+
+def checklist_terminal_evidence(*, application_id, document, evidence_access):
+    require_coordinated(evidence_access)
+    pledge = (
+        CDSLSharePledge.objects.select_for_update(of=("self",))
+        .select_related("security_package__loan_application")
+        .filter(security_package__loan_application_id=application_id)
+        .first()
+    )
+    accepted = pledge.acceptance_evidence_json if pledge else {}
+    workflow_valid = bool(
+        pledge
+        and pledge.acceptance_workflow_event_id
+        and WorkflowEvent.objects.filter(
+            pk=pledge.acceptance_workflow_event_id,
+            workflow_name="cdsl_share_pledge",
+            entity_type="cdsl_share_pledge",
+            entity_id=pledge.pk,
+            to_state=CDSLSharePledge.STATUS_CREATED,
+            triggered_by_user_id=pledge.verified_by_user_id,
+            trigger_reason="security.cdsl_pledge.accepted",
+        ).exists()
+    )
+    if (
+        pledge is None
+        or pledge.pledge_status != CDSLSharePledge.STATUS_CREATED
+        or pledge.pledge_acceptance_status != CDSLSharePledge.ACCEPTANCE_ACCEPTED
+        or pledge.pledgor_member_id != pledge.security_package.loan_application.member_id
+        or pledge.evidence_document_id != document.document_id
+        or not pledge.future_shares_pledged_flag
+        or not pledge.verified_by_user_id
+        or not workflow_valid
+        or accepted.get("loan_application_id") != str(application_id)
+        or accepted.get("security_package_id") != str(pledge.security_package_id)
+        or accepted.get("pledgor_member_id") != str(pledge.pledgor_member_id)
+        or accepted.get("loan_document_id") != str(document.pk)
+        or accepted.get("document_file_id") != str(document.document_id)
+        or accepted.get("document_checksum_sha256")
+        != document.renderer_validated_checksum_sha256
+        or accepted.get("cdsl_prepared_by_user_id") != str(pledge.prepared_by_user_id)
+        or accepted.get("cdsl_verified_by_user_id") != str(pledge.verified_by_user_id)
+    ):
+        return None
+    return {
+        "security_package_id": str(pledge.security_package_id),
+        "cdsl_share_pledge_id": str(pledge.pk),
+        "pledgor_member_id": str(pledge.pledgor_member_id),
+        "evidence_document_id": str(pledge.evidence_document_id),
+        "prepared_by_user_id": str(pledge.prepared_by_user_id),
+        "verified_by_user_id": str(pledge.verified_by_user_id),
+        "acceptance_workflow_event_id": str(pledge.acceptance_workflow_event_id),
+        "pledge_status": pledge.pledge_status,
+        "pledge_acceptance_status": pledge.pledge_acceptance_status,
+        "future_shares_pledged_flag": pledge.future_shares_pledged_flag,
+    }
 def sensitive_entity_facts(pledge):
     return {
         "entity_type": "cdsl_share_pledge",

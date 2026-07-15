@@ -12,6 +12,7 @@ from sfpcl_credit.security_instruments.models import PowerOfAttorney
 from sfpcl_credit.security_instruments.modules import security_package
 from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 MANAGE_PERMISSION = "security.poa.manage"
@@ -35,6 +36,70 @@ def read_poa(*, actor, security_package_id, evidence_access):
     if poa is None:
         raise NotFound
     return serialize_poa(poa)
+
+
+def checklist_terminal_evidence(*, application_id, document, evidence_access):
+    require_coordinated(evidence_access)
+    poa = (
+        PowerOfAttorney.objects.select_for_update(of=("self",))
+        .select_related(
+            "security_package__loan_application", "stamp_duty_record",
+            "notarisation_record",
+        )
+        .filter(security_package__loan_application_id=application_id)
+        .first()
+    )
+    activation = poa.activation_evidence_json if poa else {}
+    workflow_valid = bool(
+        poa
+        and poa.activation_workflow_event_id
+        and WorkflowEvent.objects.filter(
+            pk=poa.activation_workflow_event_id,
+            workflow_name="power_of_attorney",
+            entity_type="power_of_attorney",
+            entity_id=poa.pk,
+            to_state="active",
+            triggered_by_user_id=poa.verified_by_user_id,
+            trigger_reason="security.poa.activated",
+        ).exists()
+    )
+    if (
+        poa is None
+        or poa.status != PowerOfAttorney.STATUS_ACTIVE
+        or poa.execution_status != PowerOfAttorney.EXECUTION_EXECUTED
+        or poa.borrower_member_id != poa.security_package.loan_application.member_id
+        or poa.nominee_id != poa.security_package.loan_application.nominee_id
+        or poa.loan_document_id != document.pk
+        or poa.stamp_duty_record.stamp_paper_amount != Decimal("500.00")
+        or poa.stamp_duty_record.status != "adequate"
+        or poa.notarisation_record.status != "completed"
+        or poa.legacy_activation_evidence
+        or not workflow_valid
+        or activation.get("loan_document_id") != str(document.pk)
+        or activation.get("document_file_id") != str(document.document_id)
+        or activation.get("document_checksum_sha256")
+        != document.renderer_validated_checksum_sha256
+        or activation.get("stamp_duty_record_id") != str(poa.stamp_duty_record_id)
+        or activation.get("notarisation_record_id") != str(poa.notarisation_record_id)
+        or activation.get("poa_prepared_by_user_id") != str(poa.prepared_by_user_id)
+        or activation.get("poa_verified_by_user_id") != str(poa.verified_by_user_id)
+    ):
+        return None
+    return {
+        "security_package_id": str(poa.security_package_id),
+        "power_of_attorney_id": str(poa.pk),
+        "borrower_member_id": str(poa.borrower_member_id),
+        "nominee_id": str(poa.nominee_id),
+        "attorney_user_id": str(poa.attorney_user_id),
+        "loan_document_id": str(poa.loan_document_id),
+        "stamp_duty_record_id": str(poa.stamp_duty_record_id),
+        "notarisation_record_id": str(poa.notarisation_record_id),
+        "prepared_by_user_id": str(poa.prepared_by_user_id),
+        "verified_by_user_id": str(poa.verified_by_user_id),
+        "activation_workflow_event_id": str(poa.activation_workflow_event_id),
+        "status": poa.status,
+        "execution_status": poa.execution_status,
+    }
 
 
 def create_poa(*, actor, security_package_id, values, metadata, evidence_access):

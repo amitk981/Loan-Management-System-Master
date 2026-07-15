@@ -1,0 +1,11 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_company_secretary_rejects_status_only_completion_without_actions \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_synthetic_cheque_version_cannot_complete_item --verbosity 2
+
+System check identified no issues (0 silenced).
+test_company_secretary_rejects_status_only_completion_without_actions ... ok
+test_synthetic_cheque_version_cannot_complete_item ... ok
+
+Ran 2 tests in 0.100s
+OK

@@ -45,6 +45,16 @@ Borrowers rectify deficient applications from the portal instead of physically v
 ## Out of Scope
 Staff deficiency creation/resolution (005F), portal documentation-package actions (008L), portal KYC correction (011M2), notifications content (011NA).
 
+## 008K3 Run-Ahead Sharpening (2026-07-15)
+
+- Reuse 008L's portal upload/provenance boundary, but deficiency files remain intake evidence and
+  can never be attached as a Stage-4 current-renderer document, terminal security fact, checklist
+  completion action, approval action, or evidence digest merely because the application later
+  enters documentation.
+- Add a cross-boundary regression that deficiency upload/respond/resubmit writes no
+  `checklist_item_completion` or `document_checklist_approval` version, no documentation-checklist
+  workflow/audit success, and does not alter any K3 verifier, remarks, role, or checklist status.
+
 ## Risk Level
 High
 

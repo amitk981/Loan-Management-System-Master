@@ -12,6 +12,7 @@ from sfpcl_credit.security_instruments.models import SH4ShareTransferForm
 from sfpcl_credit.security_instruments.modules import security_package
 from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 MANAGE_PERMISSION = "security.sh4.manage"
@@ -35,6 +36,63 @@ def read_sh4(*, actor, security_package_id, evidence_access):
     if form is None:
         raise NotFound
     return serialize_sh4(form)
+
+
+def checklist_terminal_evidence(*, application_id, document, evidence_access):
+    require_coordinated(evidence_access)
+    form = (
+        SH4ShareTransferForm.objects.select_for_update(of=("self",))
+        .select_related("security_package__loan_application", "witness")
+        .filter(security_package__loan_application_id=application_id)
+        .first()
+    )
+    custody = form.custody_evidence_json if form else {}
+    workflow_valid = bool(
+        form
+        and form.custody_workflow_event_id
+        and WorkflowEvent.objects.filter(
+            pk=form.custody_workflow_event_id,
+            workflow_name="sh4",
+            entity_type="sh4_share_transfer_form",
+            entity_id=form.pk,
+            to_state="held_in_custody",
+            triggered_by_user_id=form.custodian_user_id,
+            trigger_reason="security.sh4.custodied",
+        ).exists()
+    )
+    if (
+        form is None
+        or form.form_status != SH4ShareTransferForm.STATUS_HELD_IN_CUSTODY
+        or form.member_id != form.security_package.loan_application.member_id
+        or form.witness.loan_application_id != application_id
+        or form.loan_document_id != document.pk
+        or not form.custodian_user_id
+        or not workflow_valid
+        or custody.get("loan_application_id") != str(application_id)
+        or custody.get("security_package_id") != str(form.security_package_id)
+        or custody.get("member_id") != str(form.member_id)
+        or custody.get("witness_id") != str(form.witness_id)
+        or custody.get("shareholding_id") != str(form.shareholding_id)
+        or custody.get("loan_document_id") != str(document.pk)
+        or custody.get("document_file_id") != str(document.document_id)
+        or custody.get("document_checksum_sha256")
+        != document.renderer_validated_checksum_sha256
+        or custody.get("sh4_prepared_by_user_id") != str(form.prepared_by_user_id)
+        or custody.get("sh4_custodian_user_id") != str(form.custodian_user_id)
+    ):
+        return None
+    return {
+        "security_package_id": str(form.security_package_id),
+        "sh4_share_transfer_form_id": str(form.pk),
+        "member_id": str(form.member_id),
+        "witness_id": str(form.witness_id),
+        "shareholding_id": str(form.shareholding_id),
+        "loan_document_id": str(form.loan_document_id),
+        "prepared_by_user_id": str(form.prepared_by_user_id),
+        "custodian_user_id": str(form.custodian_user_id),
+        "custody_workflow_event_id": str(form.custody_workflow_event_id),
+        "form_status": form.form_status,
+    }
 
 
 def create_sh4(*, actor, security_package_id, values, metadata, evidence_access):

@@ -1,5 +1,8 @@
+import hashlib
+import json
 import uuid
 from dataclasses import dataclass
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -9,6 +12,7 @@ from django.utils import timezone
 from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules import document_checklist_facts
+from sfpcl_credit.applications.models import Witness
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
@@ -133,7 +137,9 @@ def _require_actor(actor, *, permission, roles):
 
 
 @transaction.atomic
-def complete_item(*, actor, checklist_item_id, payload, metadata):
+def complete_item(
+    *, actor, checklist_item_id, payload, metadata, terminal_security_evidence=None
+):
     require_item_completion_actor(actor)
     request = (
         payload
@@ -178,7 +184,11 @@ def complete_item(*, actor, checklist_item_id, payload, metadata):
         item=item,
         loan_document_id=values["loan_document_id"],
     )
-    terminal_evidence = _terminal_evidence(item=item, document=document)
+    terminal_evidence = _terminal_evidence(
+        item=item,
+        document=document,
+        terminal_security_evidence=terminal_security_evidence,
+    )
     previous_status = item.completion_status
     item.loan_document = document
     item.completion_status = ChecklistItem.STATUS_COMPLETE
@@ -202,6 +212,11 @@ def complete_item(*, actor, checklist_item_id, payload, metadata):
         "loan_document_id": str(document.pk),
         "remarks": values["remarks"],
         "consumed_terminal_evidence": terminal_evidence,
+        "terminal_evidence_digest": _evidence_digest(terminal_evidence),
+        "verified_by_user_id": str(actor.pk),
+        "verified_at": item.verified_at.isoformat(),
+        "required_flag": item.required_flag,
+        "applicable_flag": item.applicable_flag,
         "approval_case_id": str(case.pk),
     }
     action = _create_action(
@@ -216,6 +231,7 @@ def complete_item(*, actor, checklist_item_id, payload, metadata):
         new_status=ChecklistItem.STATUS_COMPLETE,
         context=context,
         metadata=metadata,
+        canonical_role_code=_completion_role(actor),
     )
     return _action_response(action)
 
@@ -239,7 +255,10 @@ def approve_sanction_committee(**kwargs):
 
 
 @transaction.atomic
-def _approve(*, actor, document_checklist_id, payload, metadata, action_type):
+def _approve(
+    *, actor, document_checklist_id, payload, metadata, action_type,
+    terminal_security_evidence=None,
+):
     require_stage_actor(actor, action_type)
     request = (
         payload
@@ -286,6 +305,11 @@ def _approve(*, actor, document_checklist_id, payload, metadata, action_type):
         ).exclude(completion_status=ChecklistItem.STATUS_COMPLETE)
         if incomplete.exists():
             raise EvidenceBlocked("Every required applicable checklist item must be complete.")
+        _reconcile_completion_actions(
+            checklist=checklist,
+            case=case,
+            terminal_security_evidence=terminal_security_evidence,
+        )
     if action_type == ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL:
         try:
             approval_case_engine.validated_frozen_terminal_facts(case)
@@ -317,6 +341,7 @@ def _approve(*, actor, document_checklist_id, payload, metadata, action_type):
         new_status=stage["to_status"],
         context=context,
         metadata=metadata,
+        canonical_role_code=stage["role"],
     )
     setattr(checklist, stage["signature_field"], action)
     checklist.checklist_status = stage["to_status"]
@@ -442,7 +467,7 @@ def _current_document(*, application_id, item, loan_document_id):
     return document
 
 
-def _terminal_evidence(*, item, document):
+def _terminal_evidence(*, item, document, terminal_security_evidence=None):
     evidence = {
         "renderer_contract_version": document.renderer_contract_version,
         "document_file_id": str(document.document_id),
@@ -473,8 +498,40 @@ def _terminal_evidence(*, item, document):
     ):
         raise EvidenceBlocked("Every retained document signature must be terminal and mismatch-free.")
     party_types = {row["signer_party_type"] for row in signatures}
-    if item.item_code == "loan_agreement" and not {"borrower", "witness"} <= party_types:
-        raise EvidenceBlocked("Loan Agreement requires borrower and witness signatures.")
+    required_parties = {
+        "poa": {"borrower", "nominee"},
+        "tri_party_agreement": {"borrower", "nominee"},
+        "sh4": {"borrower", "witness"},
+        "term_sheet": {"borrower", "nominee"},
+        "loan_agreement": {"borrower", "witness"},
+    }.get(item.item_code, set())
+    if not required_parties <= party_types:
+        raise EvidenceBlocked(
+            f"{item.item_label} requires its exact canonical signatures."
+        )
+    application = document.loan_application
+    expected_party_ids = {
+        "borrower": {str(application.member_id)},
+        "nominee": {str(application.nominee_id)} if application.nominee_id else set(),
+        "witness": {
+            str(value)
+            for value in Witness.objects.filter(
+                loan_application_id=application.pk,
+                verification_status="verified",
+                shareholder_verified_flag=True,
+            ).values_list("witness_id", flat=True)
+        },
+    }
+    for party_type in required_parties:
+        retained_ids = {
+            str(row["signer_party_id"])
+            for row in signatures
+            if row["signer_party_type"] == party_type and row["signer_party_id"]
+        }
+        if retained_ids != expected_party_ids[party_type]:
+            raise EvidenceBlocked(
+                f"{item.item_label} signature identity is not current."
+            )
     if item.item_code == "term_sheet":
         case = (
             ApprovalCase.objects.filter(loan_application_id=document.loan_application_id)
@@ -487,58 +544,48 @@ def _terminal_evidence(*, item, document):
             for row in signatures
             if row["signer_party_type"] == "user" and row["signer_party_id"]
         }
-        if not {"borrower", "nominee"} <= party_types or not cfo_id or cfo_id not in signed_user_ids:
+        director_ids = {
+            str(value)
+            for value in (case.committee_projection_json if case else {}).get(
+                "director_user_ids", []
+            )
+            if value
+        }
+        excluded_ids = {
+            str(row.get("user_id"))
+            for row in (case.excluded_approvers_json if case else [])
+            if isinstance(row, dict) and row.get("user_id")
+        }
+        eligible_director_ids = director_ids - excluded_ids
+        try:
+            frozen = approval_case_engine.validated_frozen_terminal_facts(case)
+            above_threshold = Decimal(str(frozen["recommended_amount"])) > Decimal("500000.00")
+        except (KeyError, TypeError, ValidationError) as exc:
+            raise EvidenceBlocked("Canonical frozen Term Sheet routing is unavailable.") from exc
+        signed_directors = signed_user_ids & eligible_director_ids
+        if (
+            not {"borrower", "nominee"} <= party_types
+            or not cfo_id
+            or cfo_id not in signed_user_ids
+            or (above_threshold and len(signed_directors) < 2)
+        ):
             raise EvidenceBlocked("Term Sheet requires borrower, nominee, and frozen CFO signatures.")
     evidence["signature_record_ids"] = [
         str(row["signature_record_id"]) for row in signatures
     ]
-    if item.item_code == "poa":
-        if item.poa_status != "active" or item.poa_execution_status != "executed":
-            raise EvidenceBlocked("Power of Attorney must be terminally active and executed.")
-        evidence.update(
-            {"poa_status": item.poa_status, "poa_execution_status": item.poa_execution_status}
-        )
-    elif item.item_code == "sh4":
-        projection = selectors.sh4_projection_for_application(
-            application_id=item.document_checklist.loan_application_id
-        )
-        if not projection or projection.get("form_status") != "held_in_custody":
-            raise EvidenceBlocked("Physical SH-4 must be held in custody.")
-        if projection.get("loan_document_id") != str(document.pk):
-            raise EvidenceBlocked("Physical SH-4 custody does not match the current document.")
-        evidence["security_ledger"] = projection
-    elif item.item_code == "cdsl_pledge":
-        projection = selectors.cdsl_pledge_projection_for_application(
-            application_id=item.document_checklist.loan_application_id
-        )
-        if (
-            not projection
-            or projection.get("pledge_status") != "created"
-            or projection.get("pledge_acceptance_status") != "accepted"
-            or not projection.get("evidence_document_id")
-            or projection.get("evidence_document_id") != str(document.document_id)
-        ):
-            raise EvidenceBlocked("Demat pledge must be accepted and created from retained evidence.")
-        evidence["security_ledger"] = projection
-    elif item.item_code in {"blank_dated_cheque", "cancelled_cheque"}:
-        projection = selectors.blank_cheque_projection_for_application(
-            application_id=item.document_checklist.loan_application_id
-        )
-        cancelled = (projection or {}).get("cancelled_cheque") or {}
-        if (
-            not projection
-            or projection.get("cheque_status") != "held"
-            or projection.get("cheque_number") != "******"
-            or cancelled.get("verification_status") != "verified"
-            or not projection.get("prepared_by_user_id")
-            or not projection.get("custodian_user_id")
-            or projection.get("prepared_by_user_id") == projection.get("custodian_user_id")
-            or not projection.get("custody_workflow_event_id")
-        ):
-            raise EvidenceBlocked(
-                "Blank-cheque custody and canonical cancelled-cheque verification are required."
+    if item.item_code in {"poa", "sh4", "cdsl_pledge", "blank_dated_cheque", "cancelled_cheque"}:
+        security = (
+            terminal_security_evidence(
+                item_code=item.item_code,
+                application_id=item.document_checklist.loan_application_id,
+                document=document,
             )
-        evidence["security_ledger"] = projection
+            if terminal_security_evidence is not None
+            else None
+        )
+        if not security:
+            raise EvidenceBlocked("Current source-owned security evidence is required.")
+        evidence["security_ledger"] = security
     if item.item_code in {"poa", "loan_agreement"}:
         stamp = StampDutyRecord.objects.filter(loan_document=document).first()
         notary = NotarisationRecord.objects.filter(loan_document=document).first()
@@ -553,9 +600,114 @@ def _terminal_evidence(*, item, document):
     return _redact(evidence)
 
 
+def _completion_role(actor):
+    roles = set(auth_service.effective_role_codes(actor))
+    allowed = {"compliance_team_member", "company_secretary"}
+    primary = actor.primary_role.role_code
+    if primary in roles & allowed:
+        return primary
+    return sorted(roles & allowed)[0]
+
+
+def _evidence_digest(evidence):
+    canonical = json.dumps(
+        evidence,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _reconcile_completion_actions(*, checklist, case, terminal_security_evidence):
+    items = list(
+        checklist.items.select_for_update(of=("self",))
+        .select_related("loan_document")
+        .filter(required_flag=True, applicable_flag=True)
+        .order_by("display_order", "checklist_item_id")
+    )
+    actions = list(
+        ChecklistAction.objects.select_for_update()
+        .filter(
+            document_checklist=checklist,
+            action_type=ChecklistAction.TYPE_ITEM_COMPLETION,
+        )
+        .order_by("checklist_action_id")
+    )
+    by_item = {row.checklist_item_id: row for row in actions}
+    if len(actions) != len(items) or len(by_item) != len(items):
+        raise EvidenceBlocked(
+            "Every current required applicable item needs exactly one completion action."
+        )
+    for item in items:
+        action = by_item.get(item.pk)
+        if (
+            action is None
+            or item.completion_status != ChecklistItem.STATUS_COMPLETE
+            or not item.loan_document_id
+            or not item.verified_by_user_id
+            or not item.verified_at
+            or action.loan_document_id != item.loan_document_id
+            or action.actor_user_id != item.verified_by_user_id
+            or (action.comments or "") != (item.remarks or "")
+            or action.signed_at != item.verified_at
+            or action.canonical_role_code
+            not in {"compliance_team_member", "company_secretary"}
+        ):
+            raise EvidenceBlocked("Checklist item and completion action evidence do not match.")
+        document = _current_document(
+            application_id=checklist.loan_application_id,
+            item=item,
+            loan_document_id=item.loan_document_id,
+        )
+        terminal = _terminal_evidence(
+            item=item,
+            document=document,
+            terminal_security_evidence=terminal_security_evidence,
+        )
+        histories = list(
+            VersionHistory.objects.filter(
+                versioned_entity_type="checklist_item_completion",
+                versioned_entity_id=item.pk,
+            ).values_list("new_value_json", flat=True)[:2]
+        )
+        if (
+            len(histories) != 1
+            or (histories[0] or {}).get("checklist_action_id") != str(action.pk)
+        ):
+            raise EvidenceBlocked("Completion action history is missing or ambiguous.")
+        retained = histories[0] or {}
+        expected = {
+            "loan_application_id": str(checklist.loan_application_id),
+            "document_checklist_id": str(checklist.pk),
+            "checklist_item_id": str(item.pk),
+            "item_code": item.item_code,
+            "loan_document_id": str(item.loan_document_id),
+            "remarks": item.remarks or None,
+            "verified_by_user_id": str(item.verified_by_user_id),
+            "verified_at": item.verified_at.isoformat(),
+            "required_flag": True,
+            "applicable_flag": True,
+            "approval_case_id": str(case.pk),
+            "terminal_evidence_digest": _evidence_digest(terminal),
+            "actor_user_id": str(action.actor_user_id),
+            "actor_user_name_snapshot": action.actor_user_name_snapshot,
+            "canonical_role_code": action.canonical_role_code,
+            "request_id": action.request_id,
+        }
+        if any(retained.get(key) != value for key, value in expected.items()):
+            raise EvidenceBlocked("Completion action does not match current terminal evidence.")
+        retained_terminal = retained.get("consumed_terminal_evidence")
+        if (
+            retained_terminal != terminal
+            or _evidence_digest(retained_terminal) != retained.get("terminal_evidence_digest")
+        ):
+            raise EvidenceBlocked("Retained completion evidence body and digest do not match.")
+
+
 def _create_action(
     *, actor, checklist, item, document, action_type, meaning, comments,
-    previous_status, new_status, context, metadata,
+    previous_status, new_status, context, metadata, canonical_role_code,
 ):
     action_id = uuid.uuid4()
     evidence = _redact(
@@ -566,7 +718,7 @@ def _create_action(
             "meaning": meaning,
             "actor_user_id": str(actor.pk),
             "actor_user_name_snapshot": actor.full_name,
-            "canonical_role_code": auth_service.effective_role_codes(actor)[0],
+            "canonical_role_code": canonical_role_code,
             "actor_role_codes": auth_service.effective_role_codes(actor),
             "actor_team_codes": actor.team_codes(),
             "request_id": metadata.request_id,
@@ -597,9 +749,10 @@ def _create_action(
         comments=comments,
         actor_user=actor,
         actor_user_name_snapshot=actor.full_name,
-        canonical_role_code=auth_service.effective_role_codes(actor)[0],
+        canonical_role_code=canonical_role_code,
         request_id=metadata.request_id,
         workflow_event=workflow,
+        signed_at=item.verified_at if item else timezone.now(),
     )
     AuditLog.objects.create(
         actor_user=actor,

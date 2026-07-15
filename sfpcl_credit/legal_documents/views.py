@@ -14,6 +14,7 @@ from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.legal_documents.modules import checklist_actions
+from sfpcl_credit.processes import document_checklist_actions as checklist_action_process
 from sfpcl_credit.legal_documents.modules import stamp_notary
 from sfpcl_credit.legal_documents.modules import signatures
 from sfpcl_credit.legal_documents.modules import loan_document_verification
@@ -217,7 +218,7 @@ def _run_checklist_action(request, recorder, target_id, label):
 def complete_checklist_item(request, checklist_item_id):
     return _run_checklist_action(
         request,
-        checklist_actions.complete_item,
+        checklist_action_process.complete_item,
         {"checklist_item_id": checklist_item_id},
         "checklist item",
     )
@@ -227,7 +228,7 @@ def complete_checklist_item(request, checklist_item_id):
 def approve_checklist_company_secretary(request, document_checklist_id):
     return _run_checklist_action(
         request,
-        checklist_actions.approve_company_secretary,
+        checklist_action_process.approve_company_secretary,
         {"document_checklist_id": document_checklist_id},
         "document checklist",
     )
@@ -237,7 +238,7 @@ def approve_checklist_company_secretary(request, document_checklist_id):
 def approve_checklist_credit_manager(request, document_checklist_id):
     return _run_checklist_action(
         request,
-        checklist_actions.approve_credit_manager,
+        checklist_action_process.approve_credit_manager,
         {"document_checklist_id": document_checklist_id},
         "document checklist",
     )
@@ -247,7 +248,7 @@ def approve_checklist_credit_manager(request, document_checklist_id):
 def approve_checklist_sanction_committee(request, document_checklist_id):
     return _run_checklist_action(
         request,
-        checklist_actions.approve_sanction_committee,
+        checklist_action_process.approve_sanction_committee,
         {"document_checklist_id": document_checklist_id},
         "document checklist",
     )
@@ -257,7 +258,7 @@ def approve_checklist_sanction_committee(request, document_checklist_id):
 def sign_checklist_disbursement_complete(request, document_checklist_id):
     return _run_checklist_action(
         request,
-        checklist_actions.sign_disbursement_complete,
+        checklist_action_process.sign_disbursement_complete,
         {"document_checklist_id": document_checklist_id},
         "document checklist",
     )
