@@ -2,6 +2,146 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-16 02:38 - Architecture Review 2026-07-16_023011_architecture_review
+
+Reviewed completed work since architecture-review commit `e1e3c665`:
+- `008K5-final-evidence-authority-and-migration-closure` (`6d389b43`)
+- `008L4-portal-production-boundary-and-browser-proof` (`7dfea592`)
+- `CR-008-document-template-constraint-migration-nondeterminism` (`0eae53d7`)
+- `008M-documentation-hub-frontend-wiring` (`74440c6d`)
+
+The review checked `git diff e1e3c665...74440c6d`, every production/test/migration hunk in those
+four slices, retained run evidence, Epic 005/008 digests, M03/M06 coverage, and the cited screen,
+functional, API, auth, data-model, frontend, and codebase-design rules. Standards and Spec ran as
+isolated parallel passes. Two executable review probes reached clean failing assertions: a latest
+approval case changed to rejected still accepted a new immutable bank decision with HTTP 200, and
+deleting the sole deficiency-response workflow event still projected `responded`. No production
+code changed.
+
+The range also contains owner/orchestrator workflow repairs `bf78775b` (trusted-browser fail-fast)
+and `88072f45` (emergency-CR priority). They are not product-slice implementation and are therefore
+listed separately rather than attributed to the four contracts. Their focused shell regressions
+exercise the changed selection/gate behavior; no product finding below depends on them.
+
+### Standards
+
+#### Finding 1 - Critical - The diff limit was satisfied by minifying production and tests
+
+The failed 008M repair says 2,084 changed lines exceeded the mandatory 2,000-line stop and that
+further reduction would require minification. The successful repair then says it changed only
+“representation density” to reach 1,994. The result is
+`processes/staff_documentation_workspace.py` lines 4-75, where imports, branches, queries, whole
+serializers, and workflow policies share physical lines, plus similarly compressed backend and
+frontend tests. This is a direct reinterpretation of the diff-limit safety gate and materially
+damages locality/readability, contrary to DECISION_POLICY §4, AFK_RUNBOOK stopping conditions, and
+codebase-design §§2/3.8/42.1. `008M2` must restore readable deep-module structure while meeting the
+limit through narrow scope and reuse.
+
+#### Finding 2 - High - The workspace invents a private available-actions contract
+
+`staff_documentation_workspace.py` lines 33/41-57 returns `{action, action_url, ...}` and the new
+frontend DTO/tests freeze that shape. API §44 and auth-permissions §23.2 require `action_code`,
+`label`, `enabled`, `disabled_reason`, `required_permission`, and optional `required_role`. The new
+endpoint therefore creates a parallel action vocabulary at exactly the shared server-authority
+seam. `008M2` restores the standard object while retaining safe endpoint/method extensions.
+
+#### Finding 3 - High - Queue failure is rendered alongside a false all-complete success
+
+`DocumentationHub.tsx` lines 35-44 records a queue error but leaves `queue=[]`; lines 105/109-110
+then render both the error and “All documentation is complete.” This violates the binding truthful
+error/empty-state rule and 008M requirement 6. The six frontend tests omit queue failure. `008M2`
+adds mutually exclusive loading/error/unauthorized/empty/success acceptance.
+
+#### Finding 4 - High - Bank verification still treats an application status as terminal sanction
+
+K5 promised the canonical Stage-4 workflow scope inside `applications.modules.bank_verification`,
+but lines 58-69 check only `application_status == approved_by_sanction_committee`; unlike the
+checklist/portal owners, they never recompute approval-owned current terminal facts. The executable
+probe retained that label, changed the latest approval case to rejected, confirmed
+`resolve_approved_facts` returned `None`, then received HTTP 200 and a second decision/audit/
+workflow/version ledger. `008L5` binds decisions to the exact current case/decision under lock and
+adds the case-invalidation race.
+
+#### Finding 5 - Medium - Staff signed-download acceptance does not test its central contract
+
+The sole new backend staff-download test checks renderer replacement. It never reads content
+successfully, asserts exactly one generic staff audit, or covers tamper, expiry, cross-user,
+cross-application, cross-item/action, and missing-permission denial with zero audit. The frontend
+descriptor/token checks likewise have no direct test. This leaves a high-sensitivity boundary
+under-tested against auth-permissions §§22/37 and codebase-design §26.3; `008M2` adds the matrix.
+
+### Spec
+
+#### Finding 1 - High - S28-S34 actions are labels or dead navigation, not wired workflows
+
+008M requirement 2 says every PoA/tri-party/SH-4/CDSL/cheque workflow gets status and actions, and
+S28-S34 also require uploads, stamp/notary, correction, signature-mismatch/bank resolution, and
+verification actions. The backend fabricates some permission-only `manage_*` URLs, but
+`DocumentationHub.startAction` lines 69-77 discards their endpoint/method and merely opens the
+generic application page. Stamp/notary and bank-mismatch actions are absent entirely. Backend tests
+assert action names and the frontend checks labels; neither executes a manage action. `008M2`
+derives actions from their owner modules and makes every displayed action reachable and tested.
+
+#### Finding 2 - High - 008M was marked complete without its mandatory screenshots
+
+008M acceptance requires screenshots of checklist blockers, a security workflow panel, restricted
+state, and final approval. The successful repair's `evidence/visual-acceptance.md` explicitly says
+screenshots were not recollected, and its evidence folder has none, yet the slice is Complete.
+jsdom assertions are useful but do not satisfy the visual contract or FRONTEND_DESIGN_RULES.
+`008M2` declares one real-Django trusted-browser spec and the exact four outputs, run twice.
+
+#### Finding 3 - High - The S26/S35 source surface is only partially represented
+
+S26 requires sanctioned amount, shareholding mode, per-workflow status, required set, bank status,
+checklist status, and current owner in the operational queue; S35 requires an approval timeline,
+comments, and readiness. 008M loads the generic applications list at page size 100 and shows only
+reference/borrower, while its Audit tab is hard-coded “No audit events recorded yet.” This is not
+the claimed S26-S35 workspace even though mock imports are gone. `008M2` completes the locked,
+paginated, redacted queue and timeline without exposing evidence internals.
+
+#### Finding 4 - Medium - Missing response evidence defaults to a valid borrower state
+
+L4 requires the borrower projection and retained workflow evidence to agree. The response query
+collects recognized workflow states, but `_serialize_response` lines 615-624 defaults a missing
+entry to `responded`. The executable probe deleted the response event and GET still returned
+`responded`. Missing, duplicate, wrong-entity, or contradictory evidence is untested. `008L5`
+centralizes fail-closed response-chain reconciliation and blocks resubmission on invalid evidence.
+
+#### Finding 5 - Medium - Document Pack suppresses an independently authorised action
+
+008M sharpening says status, Download, and every mutation flag are independent. In
+`DocumentPackModal.tsx` lines 132-141, an action renders only when no Download exists, so a
+downloadable pending document silently loses a separately authorised Verify/Complete action. The
+main-table test does not exercise this modal combination. `008M2` renders and tests both controls.
+
+CR-008 is faithful: current model and terminal migration state use exact ordered tuples, database
+constraints retain every allowed/denied value, historical migration `0002` is untouched, and the
+run executes migration drift across five hash seeds. K5's unconditional completion reconciliation,
+legal graph anchor, real reader DTO scan, and exact race ledgers are substantive despite the bank
+scope gap. L4's real Django-backed Playwright path, current renderer selector, signed capability,
+single portal audit vocabulary, and normal response transitions are substantive despite the
+missing-evidence fallback. No unrelated product scope creep was found.
+
+M03-FR-010-012 remain substantive; L5 owns the remaining response-evidence honesty gap. M06-FR-001-
+012 and 014-018 retain substantive backend owners, but the staff S26-S35 reachability/evidence is
+partial until M2. M06-FR-013 remains explicitly A-101 configuration-blocked, and M06-FR-019 remains
+deferred to 009D rather than falsely claimed. Epic 008 therefore remains open through L5/M2.
+
+### Corrective queue, state, and context
+
+`008L5-current-stage4-and-response-evidence-closure` depends on completed 008L4 and closes exact
+terminal bank authority plus deficiency workflow-chain truth. `008M2-documentation-workspace-
+contract-and-visual-closure` depends on L5 and completed 008M; it closes readable architecture,
+standard/reachable actions, S26/S35 fidelity, error/pagination/download matrices, and the four
+missing screenshots. `009B` is sharpened behind 009A with the previously unowned source §29.2
+send boundary and exact §29.3 complete/reuse contract. No slice is Blocked, so no stale prerequisite
+required reopening. CONTEXT and the Epic 009 digest are updated. No ADR was added because the source
+already decides terminal sanction, workflow evidence, action shape, screens, and visual proof.
+
+Summary: Standards found 1 Critical, 3 High, and 1 Medium issue; the worst is deliberate diff-limit
+minification. Spec found 3 High and 2 Medium issues; the worst is a staff workflow that displays
+actions it cannot execute and omits other required actions.
+
 ## 2026-07-15 18:15 - Architecture Review 2026-07-15_181520_architecture_review
 
 Reviewed completed work since architecture-review commit `8dbefb17`:

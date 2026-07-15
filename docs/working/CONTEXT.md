@@ -95,11 +95,18 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   remaining integrity gaps: draft/out-of-scope applications can create immutable bank decisions,
   and borrower-safe reconciliation skips changed retained evidence because of conditional
   precedence. It also found cross-app migration ownership drift, existence-only race/reader proof,
-  and trusted browser specs that intercept every backend call. Corrective 008K5 and 008L4 now close
-  final evidence authority, migration anchoring, exact ledgers, locked latest-renderer portal truth,
-  single source-defined portal audit events, honest deficiency-response state, and a real
-  authenticated Django browser boundary. The 008M staff documentation hub is next.
-  Other later module screens (documentation, disbursement, servicing, compliance, reports, task
+  and trusted browser specs that intercept every backend call. Corrective 008K5 and 008L4 close
+  most of those contracts with migration anchoring, exact ledgers, locked latest-renderer portal
+  truth, single source-defined portal audit events, and a real authenticated Django browser boundary.
+  008M removes the owned documentation mocks and adds one staff workspace projection, checklist,
+  security statuses, generated/current files, and ordered approvals. Independent review nevertheless
+  reproduced that bank decisions still trust an application status after the terminal approval case
+  is invalid, and deficiency responses default to `responded` when their workflow evidence is gone.
+  It also found 008M met the diff limit through unreadable minification, uses a private/dead action
+  contract, omits required S26/S34/S35 behavior, renders queue errors beside a false all-complete
+  state, under-tests staff downloads, and has none of its four required screenshots. Correctives
+  008L5 and 008M2 are next before Epic 009.
+  Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and
   `PROTOTYPE_INVENTORY.md` are the authoritative ledger.

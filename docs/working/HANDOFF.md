@@ -2,16 +2,26 @@
 
 ## Last Run
 
-2026-07-16_015254_repair
+2026-07-16_023011_architecture_review
 
 ## Current Status
 
-008M is complete: the staff S26-S35 documentation hub now consumes one locked/redacted backend snapshot, current-renderer capabilities, server actions, security states, blockers, and ordered approvals; all owned mock reads are gone.
+Architecture review of 008K5, 008L4, CR-008, and 008M is complete. CR-008 is faithful and the
+K5/L4 evidence closures are substantive, but two executable probes reproduced stale Stage-4 bank
+authority and fabricated deficiency-response state. The 008M hub removed its mocks but retains a
+private/dead action contract, partial S26-S35 behavior, false queue-error success, under-tested
+downloads, diff-limit minification, and no required screenshots. Correctives 008L5 then 008M2 are
+queued before Epic 009.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-16_015254_repair/evidence/`: exact final diff arithmetic is 1,994/2,000; focused backend 5/5 and frontend 6/6 pass; full frontend 311 tests/build/typecheck/lint and backend 905 tests/check/migration drift pass at 92% coverage.
+Evidence is in `.ralph/runs/2026-07-16_023011_architecture_review/evidence/`. Separate Standards and
+Spec passes found 1 Critical/3 High/1 Medium and 3 High/2 Medium issues respectively. Focused review
+probes fail exactly at HTTP 200 for a non-terminal sanction bank decision and `responded` after the
+response workflow event is deleted. Queue lint, corrective capability checks, JSON/diff/protected
+path checks, frontend build/typecheck/lint with 311 tests, and Django checks with 905 tests and 91%
+coverage all passed. Exact results are recorded in the run folder.
 
 ## Next Run
 
-Run the due architecture review, then concrete 009A; sharpened 009B follows 009A.
+Run 008L5, then 008M2. After those corrective slices, run concrete 009A followed by sharpened 009B.

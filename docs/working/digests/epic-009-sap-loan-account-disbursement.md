@@ -27,3 +27,23 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - Source schema says Aadhaar is non-null while the integration payload says “individual only” and
   the platform supports FPC borrowers. Treat Aadhaar as conditionally required/encrypted for
   individuals and absent for FPCs; do not fabricate an FPC Aadhaar value.
+
+## 009B SAP Request Send, Confirmation, and Reuse
+
+- API §29.2 and integrations §8.2 make `draft -> sent` a real boundary: the Credit Manager sends the
+  retained Excel request to its frozen Senior Manager Finance assignee through the communication/
+  task adapter. No later slice owns this transition, so 009B must deliver it before confirmation.
+- API §29.3 uses `/complete/` and fields `sap_customer_code`, optional `sap_vendor_code`,
+  `created_at_sap`, `confirmation_document_id`, and `confirmation_notes`. Preserve this source
+  vocabulary instead of inventing a `/confirm/` route or renamed payload fields.
+- BR-047/048/050 and M07-FR-001/002/007/008 require one member-level unique active code, assigned
+  Senior Manager Finance confirmation, and reuse instead of duplicate creation. Global code
+  uniqueness and one-active-code-per-member are database-backed; request/code races retain exact
+  winner evidence and zero loser artifacts.
+- The source ties reuse to an existing outstanding loan, but Epic 009 has not yet created the loan-
+  account owner and OC-019 leaves multi-active-loan semantics open. Reusing an already active code
+  for the exact member is conservative; do not infer outstanding state from identity text or invent
+  loan statuses. 009C+ may add governed outstanding-loan linkage without rewriting code history.
+- Confirmation evidence is optional but recommended and must be a restricted request/application-
+  scoped file. Send/complete/read responses and all audit/workflow/communication facts exclude the
+  frozen Aadhaar, PAN, address, bank, storage, and signed-capability values.
