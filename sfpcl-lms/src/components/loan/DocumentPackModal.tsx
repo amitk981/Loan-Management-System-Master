@@ -33,7 +33,6 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({
   const sections = ['Application & KYC', 'Appraisal & Sanction', 'Legal Documents', 'Security Documents']
     .map(title => ({ title, rows: items.filter(item => sectionFor(item.item_code) === title) }));
   const isBlocked = blockerCount > 0;
-  const actionLabel = (action: string) => action === 'generate_document' ? 'Generate document' : action === 'complete_item' ? 'Mark complete' : 'Verify document';
   const getBadgeFamily = (status: string) => {
     switch (status) {
       case 'complete': return 'approved';
@@ -128,16 +127,16 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({
                     <div className="flex items-center gap-4 flex-shrink-0">
                       <StatusBadge label={!item.applicable ? 'not_required' : item.status} family={getBadgeFamily(item.status)} size="sm" />
                       
-                      <div className="w-28 flex justify-end">
+                      <div className="flex justify-end gap-2">
                         {item.document?.download && (
                           <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors" onClick={() => onDownload(item)}>
                             {getActionIcon('Download')} Download
                           </button>
                         )}
-                        {!item.document?.download && action && (
-                          <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors" onClick={() => onAction(action)}>
-                            {action.action === 'generate_document' ? <Upload size={14} /> : <Check size={14} />}
-                            {actionLabel(action.action)}
+                        {action && (
+                          <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors disabled:opacity-50" onClick={() => onAction(action)} disabled={!action.enabled} title={action.disabled_reason ?? undefined}>
+                            {action.action_code === 'generate_document' ? <Upload size={14} /> : <Check size={14} />}
+                            {action.label}
                           </button>
                         )}
                       </div>

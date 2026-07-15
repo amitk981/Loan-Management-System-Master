@@ -176,9 +176,30 @@ def legal_document_checklist(request, loan_application_id):
 
 
 @require_GET
+def documentation_workspace_queue(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = staff_documentation_workspace.list_queue(
+            actor=user,
+            query_params=request.GET,
+        )
+    except staff_documentation_workspace.AccessDenied as exc:
+        return error_response(
+            request,
+            403,
+            exc.error_code,
+            "You do not have access to the documentation queue.",
+        )
+    return list_response(data["items"], data["pagination"], request)
+
+
+@require_GET
 def documentation_workspace(request, loan_application_id):
     user, response = http_auth.authenticated_user(request)
-    if response is not None: return response
+    if response is not None:
+        return response
     try:
         data = staff_documentation_workspace.read(actor=user, application_id=loan_application_id)
     except staff_documentation_workspace.AccessDenied as exc:

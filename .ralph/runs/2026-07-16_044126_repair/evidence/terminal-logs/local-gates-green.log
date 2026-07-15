@@ -1,0 +1,20 @@
+# Local Gate Summary
+
+- PASS focused backend action projection: 2 tests.
+- PASS frontend build: 1,880 modules transformed.
+- PASS frontend typecheck.
+- PASS frontend lint.
+- PASS frontend tests: 36 files, 319 tests.
+- PASS Django system check.
+- PASS Django migration drift: no changes detected.
+- PASS backend suite under coverage: 916 executions including the temporary failing-first
+  regression before it was folded into an existing test; 48 expected skips.
+- PASS backend coverage: 91% total, floor 85%.
+- PASS Playwright collection: 1 declared test in 1 file.
+- PASS `git diff --check`.
+- PASS diff limit: 1,945 tracked non-`.ralph/` changed lines plus 53 untracked E2E-spec lines = 1,998/2,000.
+- PASS protected-path inspection: no protected file modified.
+
+Chromium execution is not claimed locally. The sandbox denied its Mach-port registration before
+page creation; Ralph's independent browser gate remains authoritative for the twice-run spec and
+four PNGs.

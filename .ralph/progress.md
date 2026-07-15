@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-16 - 2026-07-16_042513_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Repaired the strict trusted-browser declaration by moving its behavioral prose out of
+  the machine-readable Spec/Screenshot section; no production implementation was changed.
+- Tests run: strict contract RED/GREEN, Ralph workflow regressions, Playwright collection, frontend
+  build/typecheck/lint/319 tests, Django check/migration drift, and 915 tests at 91% coverage. Local
+  Chromium remained sandbox-denied before page creation.
+- Evidence: `.ralph/runs/2026-07-16_042513_repair/evidence/`. Next: independent twice-run browser
+  acceptance and screenshots, then 009A followed by 009B.
+
+## 2026-07-16 - 2026-07-16_033311_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Restored a readable locked S26-S35 projection, strict queue, §44 owner actions, redacted timeline, exact signed downloads, and the real-Django four-screenshot browser contract.
+- Tests run: 915 backend tests at 91% coverage; 319 frontend tests, lint/build/typecheck; Django check/migration drift; Playwright collection. Local Chromium was sandbox-denied before page creation.
+- Evidence: `.ralph/runs/2026-07-16_033311_repair/evidence/`. Next: 009A, then sharpened 009B.
+
 ## 2026-07-16 - 2026-07-16_015254_repair
 
 - Agent tool used: codex with the diagnosing-bugs skill.
@@ -7559,6 +7579,46 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_025941_normal_run/.ralph/runs/2026-07-16_025941_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_025941_normal_run/.ralph/runs/2026-07-16_025941_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_044126_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow and backend TDD.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Removed impossible evidence-mutation actions from completed checklist items and changed
+  the real-Django browser proof to assert a successful exact completion replay before the changed
+  replay conflict and restricted download denial.
+- Tests run: focused RED/GREEN workspace action projection; Playwright collection; frontend
+  build/typecheck/lint and 319 tests; Django check/migration drift and the full backend suite plus
+  temporary TDD regression (916 executions) at 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_044126_repair/evidence/`.
+- Result: Ready for independent trusted-browser validation; local Chromium is sandbox-blocked before
+  page creation and no screenshots were fabricated.
+- Risk level: High by slice declaration; Medium incremental action-contract/browser repair.
+- Next action: Run the declared browser spec twice externally, verify four PNGs, then run 009A.
+
+## 2026-07-16 - 2026-07-16_050957_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Moved disposable Playwright document storage from the measured worktree to a
+  worktree-namespaced OS temp path, preventing the E2E seed PDF from exceeding the 2,000-line cap.
+- Tests run: exact diff-limit RED/GREEN; frontend build/typecheck/lint and all 319 tests; Django
+  check; Playwright collection; real server/browser setup through the expected Chromium sandbox
+  denial. The seed artifact was verified outside the repository; final bookkeeping left 1,998.
+- Evidence saved: `.ralph/runs/2026-07-16_050957_repair/evidence/`.
+- Result: Ready for full independent validation and twice-run trusted-browser acceptance.
+- Risk level: High by slice declaration; Low incremental test-infrastructure repair.
+- Next action: Independently validate 008M2, then run concrete 009A followed by 009B.
+
+## 2026-07-16 05:24:19 - 2026-07-16_050957_repair
+- Agent tool used: codex
+- Slice attempted: 008M2-documentation-workspace-contract-and-visual-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_033311_repair/.ralph/runs/2026-07-16_050957_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_033311_repair/.ralph/runs/2026-07-16_050957_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

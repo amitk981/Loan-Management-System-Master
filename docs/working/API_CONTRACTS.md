@@ -3689,7 +3689,7 @@ retained ids and fails closed when they are no longer the current terminal cycle
 
 ## Staff documentation workspace (008M)
 
-- `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/` returns one locked, redacted application/checklist snapshot with pack/blocker truth, current-renderer rows, six security workflows, ordered approvals, and only currently executable actions.
+- `GET /api/v1/documentation-workspaces/` returns the strictly paginated S26 queue; `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/` returns one locked, redacted S26-S35 snapshot whose executable owner-authorized actions use the shared §44 shape and whose timeline omits internal evidence identities.
 - `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/{item_code}/download/` issues an actor/application/item/current-renderer-bound capability; content re-resolves current truth, records the generic staff download audit, and returns `404` after replacement/tamper.
 
 ## Member portal documentation actions (008L)

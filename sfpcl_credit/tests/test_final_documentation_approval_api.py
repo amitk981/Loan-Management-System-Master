@@ -5,7 +5,10 @@ from pathlib import Path
 import tempfile
 from threading import Barrier
 from unittest import skipUnless
+from unittest.mock import patch
+from uuid import uuid4
 
+from django.core.files.base import ContentFile
 from django.db import close_old_connections, connection, connections, transaction
 from django.test import TestCase
 from django.test import TransactionTestCase, override_settings
@@ -303,9 +306,10 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content); assert_success_envelope(self, response.json())
         data = response.json()["data"]
         self.assertEqual(data["loan_application_id"], str(self.application.pk))
-        self.assertEqual((set(data["security_workflows"]), data["available_actions"][0]["action"]), ({"power_of_attorney", "tri_party_agreement", "sh4", "cdsl_pledge", "blank_dated_cheque", "cancelled_cheque"}, "approve_as_company_secretary"))
+        self.assertEqual((set(data["security_workflows"]), data["available_actions"][0]["action_code"]), ({"power_of_attorney", "tri_party_agreement", "sh4", "cdsl_pledge", "blank_dated_cheque", "cancelled_cheque"}, "approve_as_company_secretary"))
         term_sheet = next(item for item in data["items"] if item["item_code"] == "term_sheet")
-        self.assertEqual((term_sheet["status"], term_sheet["document"]["download"]["action_url"].endswith("/documentation-workspace/term_sheet/download/")), ("complete", True))
+        self.assertEqual((term_sheet["status"], term_sheet["document"]["download"]["action_url"].endswith("/documentation-workspace/term_sheet/download/"), term_sheet["available_actions"]), ("complete", True, []))
+        self._grant(self.compliance, "documents.checklist.read", "documents.signature.record", "documents.stamp.record", "documents.notary.record"); compliance_term = next(item for item in self._workspace(self.compliance).json()["data"]["items"] if item["item_code"] == "term_sheet"); self.assertEqual(compliance_term["available_actions"], [])
         serialized = str(response.json()).lower()
         for forbidden in ("terminal_evidence", "workflow_event_id", "checklist_action_id", "storage_key", "checksum", "ciphertext", "ip_address", "user_agent", "signer_name_snapshot"):
             self.assertNotIn(forbidden, serialized)
@@ -314,22 +318,221 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self._complete_all_applicable_items(); approved = self._post_stage("approve-as-company-secretary", self.cs, {"comments": "All documents verified and attached."})
         self.assertEqual(approved.status_code, 200, approved.json())
         cs_view, credit_view = self._workspace(self.cs), self._workspace(self.credit)
-        self.assertEqual((cs_view.status_code, cs_view.json()["data"]["available_actions"], credit_view.json()["data"]["available_actions"][0]["action"]), (200, [], "approve_as_credit_manager"))
+        self.assertEqual((cs_view.status_code, cs_view.json()["data"]["available_actions"], credit_view.json()["data"]["available_actions"][0]["action_code"]), (200, [], "approve_as_credit_manager"))
 
     def test_staff_workspace_projects_generation_verification_and_security_actions(self):
-        self._grant(self.compliance, "documents.checklist.read", "documents.loan_document.generate", "documents.template.file_reference", "documents.loan_document.verify", "security.poa.manage", "security.sh4.manage", "security.cdsl_pledge.manage", "security.blank_cheque.manage")
+        self._grant(self.compliance, "documents.checklist.read", "documents.loan_document.generate", "documents.template.file_reference", "documents.loan_document.verify", "documents.signature.record", "documents.stamp.record", "documents.notary.record", "security.poa.manage", "security.sh4.manage", "security.cdsl_pledge.manage", "security.blank_cheque.manage")
         term_sheet = self._current_document("term_sheet"); template = term_sheet.document_template; term_sheet.delete()
         generation_view = self._workspace(self.compliance); generation_item = next(item for item in generation_view.json()["data"]["items"] if item["item_code"] == "term_sheet"); generation = generation_item["available_actions"][0]
-        self.assertEqual((generation["action"], generation["document_type"], generation["template_id"], generation["output_formats"]), ("generate_document", "term_sheet", str(template.pk), ["pdf", "docx"]))
+        self.assertEqual((generation["action_code"], generation["fixed_payload"]["document_type"], generation["fixed_payload"]["template_id"], generation["fields"][0]["options"]), ("generate_document", "term_sheet", str(template.pk), ["pdf", "docx"]))
         current = self._current_document("loan_agreement"); current.verification_status = LoanDocument.VERIFICATION_PENDING; current.verified_by_user = None; current.verified_at = None
         current.save(update_fields=["verification_status", "verified_by_user", "verified_at"])
         SecurityPackage.objects.create(loan_application=self.application, physical_share_security_required_flag=True, demat_pledge_required_flag=False, poa_required_flag=True, blank_cheque_required_flag=True, cancelled_cheque_required_flag=True)
-        data = self._workspace(self.compliance).json()["data"]; agreement = next(item for item in data["items"] if item["item_code"] == "loan_agreement"); self.assertEqual({action["action"] for action in agreement["available_actions"]}, {"complete_item", "verify_document"}); projected = data["security_workflows"]
-        self.assertEqual(([projected[code]["available_actions"][0]["action"] for code in ("power_of_attorney", "sh4", "blank_dated_cheque")], projected["cdsl_pledge"]["available_actions"]), (["manage_power_of_attorney", "manage_sh4", "manage_blank_dated_cheque"], []))
+        data = self._workspace(self.compliance).json()["data"]; agreement = next(item for item in data["items"] if item["item_code"] == "loan_agreement"); self.assertEqual({action["action_code"] for action in agreement["available_actions"]}, {"complete_item", "record_signature", "record_stamp", "record_notarisation"})
+        self.assertTrue(all(not workflow["available_actions"] for workflow in data["security_workflows"].values()), "Create actions stay hidden until every server-selected prerequisite exists.")
 
     def test_staff_workspace_denies_unscoped_reader_without_security_disclosure(self):
         response = self._workspace(self.fixture._user("field_officer", "Documentation Outsider"))
         self.assertEqual(response.status_code, 403, response.content); assert_error_envelope(self, response.json()); self.assertNotIn("security_workflows", str(response.json()).lower())
+
+    def test_staff_workspace_uses_standard_owner_authorised_action_contract(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.loan_document.generate",
+            "documents.template.file_reference",
+            "documents.loan_document.verify",
+            "documents.signature.record",
+            "documents.stamp.record",
+            "documents.notary.record",
+        )
+        document = self._current_document("loan_agreement")
+        document.verification_status = LoanDocument.VERIFICATION_PENDING
+        document.save(update_fields=["verification_status"])
+
+        data = self._workspace(self.compliance).json()["data"]
+        actions = [
+            action
+            for item in data["items"]
+            for action in item["available_actions"]
+        ]
+        required = {
+            "action_code",
+            "label",
+            "enabled",
+            "disabled_reason",
+            "required_permission",
+        }
+        self.assertTrue(actions)
+        self.assertTrue(all(required <= set(action) for action in actions))
+        self.assertNotIn(
+            "verify_document",
+            {action["action_code"] for action in actions},
+            "Compliance has the permission string but the verification owner requires CS.",
+        )
+
+    def test_staff_workspace_projects_s26_queue_and_redacted_s35_timeline(self):
+        self._complete_all_applicable_items()
+        approved = self._post_stage(
+            "approve-as-company-secretary",
+            self.cs,
+            {"comments": "All documents verified and attached."},
+        )
+        self.assertEqual(approved.status_code, 200, approved.json())
+
+        queue = self.client.get(
+            "/api/v1/documentation-workspaces/?page=1&page_size=20",
+            **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(queue.status_code, 200, queue.content)
+        queue_data = queue.json()["data"]
+        pagination = queue.json()["pagination"]
+        self.assertEqual(pagination["page_size"], 20)
+        self.assertGreaterEqual(pagination["total_count"], 1)
+        queue_row = next(
+            row
+            for row in queue_data
+            if row["loan_application_id"] == str(self.application.pk)
+        )
+        self.assertEqual(
+            {
+                "sanctioned_amount",
+                "shareholding_mode",
+                "required_document_summary",
+                "poa_status",
+                "tri_party_status",
+                "sh4_status",
+                "cdsl_pledge_status",
+                "term_sheet_status",
+                "loan_agreement_status",
+                "bank_verification_status",
+                "checklist_status",
+                "current_owner",
+            }
+            <= set(queue_row),
+            True,
+        )
+
+        workspace = self._workspace(self.cs).json()["data"]
+        self.assertEqual(workspace["timeline"][0]["comment"], "All documents verified and attached.")
+        serialized = str(workspace).lower()
+        for forbidden in (
+            "terminal_evidence",
+            "workflow_event_id",
+            "checklist_action_id",
+            "request_id",
+            "checksum",
+            "storage_key",
+            "signer_name_snapshot",
+        ):
+            self.assertNotIn(forbidden, serialized)
+
+    def test_staff_download_succeeds_once_and_scope_denials_write_no_audit(self):
+        self._grant(self.cs, "documents.file.download")
+        body = b"current staff document bytes"
+        with tempfile.TemporaryDirectory() as root:
+            stored = document_generation.LocalDocumentStorage(root=root).store(
+                ContentFile(body, name="staff-term-sheet.pdf")
+            )
+            output = DocumentFile.objects.create(
+                file_name="staff-term-sheet.pdf",
+                mime_type="application/pdf",
+                file_size_bytes=stored.file_size_bytes,
+                storage_provider=stored.storage_provider,
+                storage_key=stored.storage_key,
+                checksum_sha256=stored.checksum_sha256,
+                sensitivity_level="confidential",
+            )
+            template = DocumentTemplate.objects.create(
+                template_code="008m2-staff-term-sheet",
+                template_name="008M2 Staff Term Sheet",
+                document_type="term_sheet",
+                borrower_type="individual_farmer",
+                template_version="9.0",
+                merge_fields_json=[],
+                approval_status=DocumentTemplate.STATUS_APPROVED,
+                effective_from=timezone.localdate(),
+            )
+            current = LoanDocument.objects.create(
+                loan_application=self.application,
+                document_type="term_sheet",
+                document_category="legal",
+                party_required="borrower",
+                document_template=template,
+                document=output,
+                output_format="pdf",
+                generation_status="generated",
+                execution_status="pending",
+                verification_status="verified",
+                renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+                renderer_validated_document_id=output.pk,
+                renderer_validated_checksum_sha256=stored.checksum_sha256,
+            )
+
+            with override_settings(DOCUMENT_STORAGE_ROOT=root):
+                descriptor = self.client.get(
+                    f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/term_sheet/download/",
+                    **self.fixture._auth(self.cs),
+                )
+                self.assertEqual(descriptor.status_code, 200, descriptor.content)
+                content_url = descriptor.json()["data"]["download_url"]
+                before = AuditLog.objects.filter(
+                    action="documents.file.downloaded",
+                    actor_user=self.cs,
+                ).count()
+                content = self.client.get(
+                    content_url,
+                    HTTP_X_REQUEST_ID="staff-download-success",
+                    **self.fixture._auth(self.cs),
+                )
+                self.assertEqual(content.status_code, 200, content.content)
+                self.assertEqual(content.content, body)
+                self.assertEqual(
+                    AuditLog.objects.filter(
+                        action="documents.file.downloaded",
+                        actor_user=self.cs,
+                    ).count(),
+                    before + 1,
+                )
+
+                outsider = self.fixture._user("company_secretary", "Other Checklist CS")
+                self._grant(outsider, "documents.checklist.read", "documents.file.download")
+                denied_urls = [
+                    content_url,
+                    content_url.replace("term_sheet", "loan_agreement"),
+                    content_url.replace(str(self.application.pk), str(uuid4())),
+                    content_url[:-1] + ("a" if not content_url.endswith("a") else "b"),
+                ]
+                denied_users = [outsider, self.cs, self.cs, self.cs]
+                audit_count = AuditLog.objects.filter(action="documents.file.downloaded").count()
+                for url, actor in zip(denied_urls, denied_users):
+                    denied = self.client.get(url, **self.fixture._auth(actor))
+                    self.assertIn(denied.status_code, {403, 404})
+                self.assertEqual(
+                    AuditLog.objects.filter(action="documents.file.downloaded").count(),
+                    audit_count,
+                )
+
+                missing_permission = self.client.get(
+                    f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/term_sheet/download/",
+                    **self.fixture._auth(self.credit),
+                )
+                self.assertEqual(missing_permission.status_code, 404)
+                self.assertEqual(
+                    AuditLog.objects.filter(action="documents.file.downloaded").count(),
+                    audit_count,
+                )
+
+                with patch(
+                    "sfpcl_credit.documents.services._DOWNLOAD_CAPABILITY_TTL_SECONDS",
+                    -1,
+                ):
+                    expired = self.client.get(content_url, **self.fixture._auth(self.cs))
+                self.assertEqual(expired.status_code, 404, expired.content)
+                self.assertEqual(
+                    AuditLog.objects.filter(action="documents.file.downloaded").count(),
+                    audit_count,
+                )
 
     def test_staff_download_capability_is_invalid_after_current_renderer_replacement(self):
         self._grant(self.cs, "documents.file.download"); current = self._current_document("term_sheet")

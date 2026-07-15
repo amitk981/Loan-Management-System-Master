@@ -1,7 +1,7 @@
 # Slice 008M2: Documentation Workspace Contract and Visual Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package
@@ -73,12 +73,12 @@ evidence that 008M declared but did not deliver.
 - Screenshot: `documentation-restricted-state.png`
 - Screenshot: `documentation-final-approval.png`
 
-The spec must use a real authenticated Django server and persisted S26-S35 facts. It must execute at
-least one real workflow action, verify a conflict remains non-optimistic, prove a restricted content
-request reaches Django and is denied, and capture all four source-required states twice.
-
 ## Test Cases
 
+- The trusted browser spec uses a real authenticated Django server and persisted S26-S35 facts. It
+  executes at least one real workflow action, verifies a conflict remains non-optimistic, proves a
+  restricted content request reaches Django and is denied, and captures all four source-required
+  states twice.
 - Backend action matrices compare projection to each owner module's public allow/deny result for
   Compliance, CS, Credit, Director, Finance, CFC, Auditor, and a permission-without-role actor.
 - Frontend clicks every returned action family and asserts exact endpoint/method/payload/refetch.

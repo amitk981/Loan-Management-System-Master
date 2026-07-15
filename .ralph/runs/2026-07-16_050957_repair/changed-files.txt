@@ -1,0 +1,22 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008M2-documentation-workspace-contract-and-visual-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M sfpcl-lms/playwright.config.ts
+ M sfpcl-lms/src/components/loan/DocumentChecklist.tsx
+ M sfpcl-lms/src/components/loan/DocumentPackModal.tsx
+ M sfpcl-lms/src/pages/documentation/DocumentationHub.test.tsx
+ M sfpcl-lms/src/pages/documentation/DocumentationHub.tsx
+ M sfpcl-lms/src/services/documentationWorkspaceApi.ts
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/legal_documents/modules/document_generation.py
+ M sfpcl_credit/legal_documents/views.py
+ M sfpcl_credit/processes/staff_documentation_workspace.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+?? .ralph/runs/2026-07-16_033311_repair/
+?? .ralph/runs/2026-07-16_042513_repair/
+?? .ralph/runs/2026-07-16_044126_repair/
+?? .ralph/runs/2026-07-16_050957_repair/
+?? sfpcl-lms/e2e/staff-documentation-workspace.e2e.spec.ts

@@ -1,0 +1,11 @@
+Command:
+bash -lc 'source scripts/lib/ralph-browser-acceptance.sh; ralph_validate_trusted_browser_acceptance docs/slices/008M2-documentation-workspace-contract-and-visual-closure.md sfpcl-lms'
+
+Exit: 1
+
+Unknown trusted browser acceptance entry 'The spec must use a real authenticated Django server and persisted S26-S35 facts. It must execute at' in docs/slices/008M2-documentation-workspace-contract-and-visual-closure.md.
+Unknown trusted browser acceptance entry 'least one real workflow action, verify a conflict remains non-optimistic, prove a restricted content' in docs/slices/008M2-documentation-workspace-contract-and-visual-closure.md.
+Unknown trusted browser acceptance entry 'request reaches Django and is denied, and capture all four source-required states twice.' in docs/slices/008M2-documentation-workspace-contract-and-visual-closure.md.
+
+This is the independent validator's exact failed contract seam. The strict section parser accepts
+only Spec and Screenshot entries until the next level-two heading.

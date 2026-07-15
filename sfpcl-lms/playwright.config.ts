@@ -23,7 +23,7 @@ if (!djangoPython) {
 const e2eDbPath = process.env.SFPCL_DB_PATH || path.join(repoRoot, 'sfpcl_credit', 'e2e.sqlite3');
 const e2eStorageRoot =
   process.env.SFPCL_DOCUMENT_STORAGE_ROOT ||
-  path.join(repoRoot, 'sfpcl_credit', 'e2e-document-storage');
+  path.join(process.env.TMPDIR || '/tmp', 'sfpcl-e2e-document-storage', path.basename(repoRoot));
 
 const manage = `"${djangoPython}" sfpcl_credit/manage.py`;
 

@@ -1,0 +1,18 @@
+Repair feedback and configured local gates
+
+PASS strict trusted-browser contract parser (exit 0)
+PASS Ralph workflow regressions
+PASS Playwright collection: 1 test in 1 file
+PASS frontend build
+PASS frontend typecheck
+PASS frontend lint
+PASS frontend tests: 36 files, 319 tests
+PASS Django system check
+PASS Django migration drift: No changes detected
+PASS backend coverage: 915 tests, 48 expected skips, 91% total coverage (floor 85%)
+PASS slice queue lint
+PASS git diff --check
+PASS non-.ralph diff limit: 1,992 / 2,000 lines including the untracked 53-line E2E spec
+
+Backend interpreter for every Django/coverage command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python

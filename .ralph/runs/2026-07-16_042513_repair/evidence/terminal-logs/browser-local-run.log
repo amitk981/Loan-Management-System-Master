@@ -1,0 +1,15 @@
+Command:
+RALPH_EVIDENCE_DIR=.ralph/runs/2026-07-16_042513_repair/evidence/screenshots \
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python \
+npx playwright test e2e/staff-documentation-workspace.e2e.spec.ts --workers=1
+
+Result: local sandbox limitation (exit 1 before page creation)
+
+The isolated Django health endpoint returned HTTP 200 and Vite started. Playwright found the one
+declared Chromium test, but Chromium terminated 3 ms after launch with:
+
+FATAL: mach_port_rendezvous.cc(399) Check failed: kr == KERN_SUCCESS.
+bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer: Permission denied (1100)
+
+No screenshot was created or fabricated. Per the slice contract, the orchestrator's two browser
+runs outside the coding sandbox determine browser acceptance.

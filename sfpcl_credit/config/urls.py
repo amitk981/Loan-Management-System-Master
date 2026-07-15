@@ -123,6 +123,11 @@ urlpatterns = [
         legal_document_views.loan_document_collection,
         name="loan-document-list",
     ),
+    path(
+        "api/v1/documentation-workspaces/",
+        legal_document_views.documentation_workspace_queue,
+        name="documentation-workspace-queue",
+    ),
     path("api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/", legal_document_views.documentation_workspace, name="loan-application-documentation-workspace"),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/<slug:item_code>/download/",

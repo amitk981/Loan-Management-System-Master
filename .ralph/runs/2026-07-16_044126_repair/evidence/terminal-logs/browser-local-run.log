@@ -1,0 +1,9 @@
+Command:
+RALPH_EVIDENCE_DIR=.ralph/runs/2026-07-16_044126_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/staff-documentation-workspace.e2e.spec.ts
+
+Result: browser launch blocked by the coding sandbox before page creation.
+
+Chromium exited at `mach_port_rendezvous.cc(399)` because
+`bootstrap_check_in ... Permission denied (1100)`. No application request was made and no
+screenshot was fabricated. The prior external run is the red-capable application repro; Ralph's
+independent trusted-browser gate must run the repaired spec twice and create all four screenshots.

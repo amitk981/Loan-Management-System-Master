@@ -71,6 +71,27 @@ class LegalDocumentNotFound(Exception):
     pass
 
 
+def can_generate(*, actor, application_id):
+    """Return the same global/object authority decision used by ``generate``."""
+    permissions = auth_service.effective_permission_codes(actor)
+    if (
+        not actor.can_authenticate()
+        or GENERATE_PERMISSION not in permissions
+        or document_services.TEMPLATE_FILE_REFERENCE_PERMISSION not in permissions
+    ):
+        return False
+    application, access = application_authority.resolve_documentation_application_access(
+        application_id=application_id,
+        actor=actor,
+        required_permission=GENERATE_PERMISSION,
+        actor_permissions=permissions,
+    )
+    return bool(application and access.allowed)
+
+
+resolve_borrower_template_variant = document_templates.resolve_borrower_template_variant
+
+
 def generate(*, actor, application_id, payload, metadata, storage=None):
     permissions = auth_service.effective_permission_codes(actor)
     if (

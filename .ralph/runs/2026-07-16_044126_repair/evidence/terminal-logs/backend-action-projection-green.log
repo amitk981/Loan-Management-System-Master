@@ -1,0 +1,8 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_is_one_redacted_action_projection sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_projects_generation_verification_and_security_actions
+
+Result: PASS
+
+The final focused run is recorded after the regression was folded into the existing workspace
+test to respect Ralph's diff limit. A completed Term Sheet exposes no evidence mutations, while an
+ordinary pending document retains its signature/stamp/notary action family.
