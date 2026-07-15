@@ -2,6 +2,139 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-15 18:15 - Architecture Review 2026-07-15_181520_architecture_review
+
+Reviewed completed work since architecture-review commit `8dbefb17`:
+- `008K4-current-evidence-and-security-read-closure` (`36435151`)
+- `CR-005-mp07-completed-download-status-visible` (`525fe572`)
+- `008L3-portal-action-and-resubmission-contract-closure` (`a9a518a8`)
+- `CR-006-register-date-time-timezone-determinism` (`2de35942`)
+- `CR-007-github-ci-missing-legal-pdf-unicode-font` (`615c1876`, closed at `fad70f95`)
+
+The review checked `git diff 8dbefb17...fad70f95`, all production/test/migration/workflow hunks,
+the five completed contracts, Epic 005/007/008 digests, M03/M06 requirement coverage, and cited API,
+data-model, auth, member-portal, deployment, frontend, and codebase-design rules. Standards and Spec
+ran as isolated passes. Two executable review probes reached clean failing assertions: a changed
+completion VersionHistory body still projected complete, and a draft application accepted a new
+immutable bank-verification decision. No production code changed.
+
+### Standards
+
+#### Finding 1 - Critical - Bank verification has role permission but no object or workflow scope
+
+`applications.modules.bank_verification.record_decision` checks only a global Compliance/Company
+Secretary role plus `documents.checklist.update`, then accepts any application id. It never applies
+the §19.2 application object scope or requires the §20.1 approved/documentation state. The review
+probe first retained valid current bank evidence, moved the application to `draft`, submitted a new
+rejected decision through HTTP, and received 200 with a second immutable ledger. Such pre-Stage-4
+evidence can later become checklist authority. `008K5` adds module-owned object/stage enforcement,
+nondisclosure, and a complete zero-write matrix.
+
+#### Finding 2 - High - Borrower-safe reconciliation skips most predicates in the normal case
+
+In `borrower_safe_completed_item_ids`, the inline `... == audits[0].pk if len(audits) == 1 else
+False and ...` is parsed as one conditional expression. When the normal single audit exists, every
+following version-body/current-terminal/digest predicate is outside the evaluated branch. The review
+probe changed only the sole completion VersionHistory request id and the item remained borrower-safe
+complete. This contradicts K4's exact action/audit/workflow/version/current-evidence contract and can
+surface stale truth to MP07. `008K5` makes every predicate unconditional and regression-tests changed
+durable/current evidence.
+
+#### Finding 3 - High - A generic cross-app migration operation obscures checklist schema ownership
+
+`applications.0016` adds two fields to `legal_documents.ChecklistAction` through the new
+`shared.migration_operations.AddFieldToAppModel`. The physical migration depends on legal 0012, but
+the legal app's own future branch does not own or necessarily depend on that schema state. This
+works on the current full fresh plan but violates codebase-design §§6.2/7.1/36.2 and creates fragile
+future/partial migration ordering. `008K5` adds a non-destructive legal-owned graph anchor and
+forward/reverse/fresh-install proof without rewriting applied history.
+
+#### Finding 4 - High - Trusted browser tests replace every backend boundary with fixtures
+
+Both new Playwright files route `**/api/v1/**`; login, scope, upload, refetch, signed capability,
+tamper denial, crafted POST denial, lifecycle guard, and resubmission are all in-memory booleans and
+responses. The screenshots are genuine browser renders, but Django receives none of the promised
+business requests. This does not satisfy L3's explicit “real portal session” scenario or its matched
+frontend/API evidence requirement. `008L4` moves the same four-screen contract onto the real Django
+test server and permits mocks only at genuine external adapters.
+
+#### Finding 5 - Medium - Workflow response and concurrency evidence are incomplete
+
+The new bank-decision POST returns a resource DTO without the §6.3 entity/previous/new/action body.
+K4's generation races assert only one returned winner plus action/document existence, not the exact
+request, current document, action, audit, workflow, version, terminal digest, or loser zero-ledger.
+The portal suite has no real completion-versus-upload race. `008K5` closes the action envelope and
+exact PostgreSQL ledger; `008L4` adds the real portal writer race.
+
+#### Finding 6 - Medium - Portal GET and POST do not share one locked decision
+
+POST locks application/checklist/item, but `get_projection` merely enters an atomic transaction and
+reads application/checklist/submission facts without acquiring the same locks. A concurrent
+completion can therefore produce a mixed projection rather than the one locked authority required
+by L3. `008L4` exposes one locked decision interface for read and write and proves coherent winner/
+loser artifacts.
+
+### Spec
+
+#### Finding 1 - High - Browser acceptance does not exercise the specified production path
+
+L3's Trusted Browser Scenario requires a real portal session, real upload/refetch, signed download
+and tamper rejection, crafted POST denial, and guarded resubmission. Catch-all request interception
+means the production backend is never exercised, so the required acceptance and screenshots do not
+prove those behaviors. `008L4` owns an exact real-boundary rerun twice.
+
+#### Finding 2 - High - K4's current-evidence promise is false for changed retained bodies
+
+K4 requires missing, extra, changed, deleted, or cross-object action/workflow/audit/version/current
+evidence to block both Company Secretary and borrower-safe projections. The executable changed-
+VersionHistory probe remains green in the projection because of the precedence defect above.
+`008K5` makes this acceptance matrix executable through public projections and approval.
+
+#### Finding 3 - High - The required real-row reader matrix remains partial
+
+K4 explicitly replaces K2's 404-only finance proof with real PoA, SH-4, CDSL, cheque, package, and
+checklist rows before/after approval for every reader role and CFC zero-read state. Individual module
+tests now validate real redacted rows for one principal role, but the cross-role package test still
+has no nested instruments and accepts 404. The retained focused ordinary-read evidence ran only one
+PoA test. `008K5` adds real rows and full DTO scans for the complete role/state matrix.
+
+#### Finding 4 - Medium - Portal source audit and response states remain inconsistent
+
+Member-portal source §11 requires the critical actions `portal.document.uploaded` and
+`portal.document.downloaded`; L3 retains only `documents.file.*`. Resubmission writes a response
+workflow state `submitted_for_review`, while `_serialize_response` always returns `responded` and
+the immutable response has no corresponding retained state. Source wins over the digest's parallel-
+vocabulary sharpening. `008L4` keeps one central audit writer but emits the source-defined portal
+action once, and makes response projection/history agree without resolving the staff-owned
+deficiency.
+
+No unrelated scope creep was found. CR-005 correctly keeps Complete beside Download without
+reopening mutation; CR-006 fixes Asia/Kolkata display while retaining UTC instants; CR-007 only
+provisions the existing fail-closed renderer font and its complete remote CI run is green. K4's
+immutable bank evidence, ordinary DTO redaction, mask tightening, and shared generation lock are
+substantive; L3's signed capabilities, application transition owner, no-store downloads, and visual
+composition are substantive despite the gaps above.
+
+M03-FR-010-012 remain substantive for staff completeness and unique numbering; borrower
+resubmission evidence needs L4 state/browser closure. M06-FR-005/006/018 remain partial until K5
+closes bank authority and exact current projection. M06-FR-007-012/014-017 retain substantive
+owners. M06-FR-013 remains explicitly A-101 configuration-blocked; M06-FR-019 remains deferred to
+009D. Epic 008 remains open through K5/L4/008M.
+
+### Corrective queue, state, and context
+
+`008K5-final-evidence-authority-and-migration-closure` depends on completed 008L3 and closes bank
+scope/envelope, borrower reconciliation, legal migration ownership, exact race evidence, and the
+real-reader matrix. `008L4-portal-production-boundary-and-browser-proof` depends on K5 and closes
+the real authenticated browser boundary, locked read/write decision, current renderer download,
+source audit vocabulary, and response-state truth. `008M` now depends on L4. No slice is Blocked,
+so no stale prerequisite required reopening. No ADR was added because source documents already
+decide object/stage access, app ownership, audit vocabulary, current evidence, and browser scope.
+
+Summary: Standards found 1 Critical, 3 High, and 2 Medium issues; the worst is globally writable
+immutable bank authority. Spec found 3 High and 1 Medium issues; the worst is acceptance evidence
+that never reaches the production backend.
+
 ## 2026-07-15 09:11 - Architecture Review 2026-07-15_085859_architecture_review
 
 Reviewed completed work since architecture-review commit `fc8d3380`:

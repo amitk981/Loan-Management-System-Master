@@ -1,0 +1,20 @@
+Command:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-15_181520_architecture_review/evidence/review_probes.py
+
+Result: expected RED, exit 1. The isolated Django test database migrated successfully and both
+review probes reached their assertions (no setup errors).
+
+FAIL: test_borrower_projection_rejects_changed_completion_version_body
+AssertionError: the completed final-checklist item remained in borrower_safe_completed_item_ids
+after its sole VersionHistory.new_value_json request_id was changed to
+"tampered-after-completion". This reproduces the conditional-expression precedence gap in
+legal_documents/modules/checklist_actions.py.
+
+FAIL: test_bank_decision_rejects_non_documentation_application_state
+AssertionError: HTTP 200 was returned instead of 403/409 after a Compliance actor recorded a new
+immutable rejected bank-verification decision while the application was in draft status. This
+reproduces the missing workflow-stage/object-authority boundary in
+applications/modules/bank_verification.py.
+
+Ran 2 tests in 4.007s
+FAILED (failures=2)

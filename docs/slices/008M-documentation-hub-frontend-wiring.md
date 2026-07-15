@@ -14,7 +14,7 @@ Wire the staff documentation surface to the backend built in 008A-008K: Document
 Compliance and CS staff work the real legal/security package — blockers, checklist state, and approval sequence come from the backend, so disbursement readiness reflects the truth.
 
 ## Depends On
-- 008L3
+- 008L4
 
 ## Source References
 - docs/source/screen-spec.md screens S26-S35 and section 9.5 (documentation rules)
@@ -114,6 +114,16 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
   `documents.file.downloaded` vocabulary with actor/application/document/version/category/
   sensitivity/reason/request/network/outcome facts. Do not add portal- or hub-specific parallel
   file audit semantics.
+
+## Architecture Review Sharpening (2026-07-15 18:15)
+
+- Depend on 008L4 and reuse only its real-boundary-proven current-document capability and locked
+  action projection. Do not copy the former catch-all mocked browser fixtures into staff acceptance.
+- Treat every K4-era borrower-safe completion as untrusted until 008K5 has reconciled its exact
+  action/audit/workflow/version/current-terminal body and digest. A terminal badge or action remains
+  blocked when any durable identity differs.
+- Consume only the source-defined single file audit vocabulary delivered by 008L4; the staff hub
+  must not add a hub-specific duplicate event for the same upload or download.
 
 ## Risk Level
 Medium

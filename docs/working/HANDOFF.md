@@ -2,27 +2,28 @@
 
 ## Last Run
 
-2026-07-15_164806_normal_run
+2026-07-15_181520_architecture_review
 
 ## Current Status
 
-CR-006 and CR-007 are complete. Register decision timestamps render deterministically in
-`Asia/Kolkata`, and GitHub's Ubuntu backend job now provisions the Noto Devanagari font required by
-the fail-closed retained legal-PDF renderer. The application renderer, stored/API instants, glyph
-validation, permissions, persistence, layout, and styling contracts were not weakened or changed.
-The next SAP request slice, 009A, is sharpened from the cited Epic 009 sources; 008M was already
-concrete.
+The independent architecture review of 008K4, CR-005, 008L3, CR-006, and CR-007 is complete. K4/L3
+substantively close immutable bank evidence, generation locking, ordinary security redaction,
+signed downloads, guarded resubmission, and portal composition. Two executable probes still
+reproduce changed completion-version evidence projecting complete and a draft application creating
+immutable bank evidence. Review also found cross-app migration ownership drift, partial race/reader
+ledgers, unlocked GET projection, and Playwright specs that intercept every backend call. No
+production code changed. Corrective 008K5 then 008L4 are queued before 008M.
 
 ## Validation
 
-CR-006 evidence is in `.ralph/runs/2026-07-15_164806_normal_run/evidence/`: 8/8 focused register
-tests pass under both `TZ=UTC` and `TZ=Asia/Kolkata`, and all local gates passed. For CR-007, the
-workflow YAML and deterministic font-provisioning contract passed locally. GitHub Actions run
-`29414744868` is fully green: frontend CI passed, the Ubuntu font install/path assertion passed, and
-backend CI passed all 887 tests plus the 85% coverage threshold.
+Review evidence is in `.ralph/runs/2026-07-15_181520_architecture_review/evidence/`. The isolated
+two-test probe has two clean expected failures with no setup errors. Separate Standards and Spec
+reports, exact source citations, queue changes, diff inventory, risk assessment, and validation
+logs are retained in the run packet. CR-005/006/007 match their requests; GitHub Actions run
+`29414744868` remains fully green.
 
 ## Next Run
 
-Run the due architecture review, then the already-sharpened
-`008M-documentation-hub-frontend-wiring`. After 008M, 009A now has concrete SAP request, restricted
-Excel, permission, idempotency, and PostgreSQL race requirements.
+Run `008K5-final-evidence-authority-and-migration-closure`, then
+`008L4-portal-production-boundary-and-browser-proof`, then the sharpened
+`008M-documentation-hub-frontend-wiring`. After 008M, 009A remains concrete.

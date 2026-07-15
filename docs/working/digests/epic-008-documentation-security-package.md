@@ -14,6 +14,27 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-15 18:15 - Final Evidence and Real Portal Boundary
+
+- K4 materially adds immutable bank decisions, current terminal recomputation, shared application
+  locking, redacted ordinary security DTOs, and stricter masks. Independent probes nevertheless
+  show a draft application can create a new immutable decision because the module checks only
+  global role/permission, and the borrower-safe reconciliation conditional skips every predicate
+  after the audit-id check when exactly one audit exists. `008K5` restores §19.2/§20.1 object/state
+  authority and unconditional current action/audit/workflow/version/body/digest reconciliation.
+- K4's cross-app application migration mutates the legal checklist schema through a shared custom
+  operation; K5 must add a non-destructive legal-owned dependency anchor before future legal
+  migrations. It also replaces existence-only generation-race assertions and the partial one-role
+  instrument tests with exact winner/loser ledgers and real rows across the reader/state matrix.
+- L3 materially adds signed scope-bound capabilities, a guarded application resubmit owner,
+  no-store downloads, and the approved MP07/MP11/MP13 composition. Its declared browser specs,
+  however, intercept every API call, so login, upload, tamper/crafted denial, and resubmission never
+  reach Django. `008L4` reruns the four screenshots twice against the real authenticated backend.
+- L4 also makes GET/POST share one locked action decision, resolves downloads from the current
+  renderer through production generation, emits the source §11 single `portal.document.*` audit
+  vocabulary through the central writer, and makes response projection agree with retained
+  `responded/submitted_for_review` evidence. 008M now waits for K5 then L4.
+
 ## 008L3 Portal Contract Closure (2026-07-15)
 
 MP07/MP13 projection and upload now consume one locked canonical action decision: only a pending,
