@@ -2,27 +2,25 @@
 
 ## Last Run
 
-2026-07-15_101427_repair
+2026-07-15_145044_normal_run
 
 ## Current Status
 
-Corrective slice 008K4 is complete after repair. It adds immutable application/member-owned bank
-verification decisions, exact checklist action/audit/workflow/version reconciliation, one
-application-first generation/completion lock order, fail-closed mixed-mask handling, and explicit
-ordinary security projections that omit retained internal evidence. The quarantined normal run's
-implementation was preserved; repair corrected its single migration so two checklist-action fields
-target the owning `legal_documents` migration state and table while retaining the one-migration
-limit. The original artifact templates were also completed.
+CR-005 is complete. MP07 My Documents now renders the canonical Complete badge alongside an
+authorised retained Download instead of hiding the badge whenever any control exists. The focused
+public-interface regression proves Complete and Download Term Sheet are simultaneously visible and
+that Upload/Re-upload remain absent. No backend, API, permission, storage, or styling contract
+changed.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-15_101427_repair/evidence/`. The migration graph is green
-and the complete chain applies on fresh SQLite and PostgreSQL databases. The standard five-race
-PostgreSQL acceptance passed twice; all four 008K4 generation/completion/CS race tests passed. All
-886 backend tests pass at 92% coverage, all 302 frontend tests pass, and lint, typecheck, build,
-Django check, migration drift, diff/protected-path checks, and queue lint are green.
+Evidence is in `.ralph/runs/2026-07-15_145044_normal_run/evidence/`. The focused test has preserved
+RED/GREEN logs. Frontend lint, typecheck, build, and all 303 tests pass. Django check and migration
+drift pass; all 886 backend tests pass at 92% coverage. CR-005 does not declare a localhost browser
+capability, and the two 008L3 Playwright files are not present in this worktree, so no screenshot was
+fabricated. 008L3 now explicitly owns the twice-run routed assertion and four genuine screenshots.
 
 ## Next Run
 
-Run `008L3-portal-action-and-resubmission-contract-closure`, then the already-sharpened
-`008M-documentation-hub-frontend-wiring`.
+Run the sharpened `008L3-portal-action-and-resubmission-contract-closure`, including its declared
+trusted-browser specs/screenshots twice, then `008M-documentation-hub-frontend-wiring`.

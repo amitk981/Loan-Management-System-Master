@@ -1,0 +1,12 @@
+Slice CR-005 does not declare `localhost-e2e-server` under a Runtime Capabilities heading.
+
+The accepted CR references the two 008L3 browser specs and four screenshots, but this active
+worktree contains neither:
+
+- sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+- sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+
+`docs/slices/008L3-portal-action-and-resubmission-contract-closure.md` remains Not Started. No
+browser execution or screenshot was fabricated in this CR run. The focused rendered-interface
+regression covers the exact completed-and-downloadable MP07 state fixed by CR-005. The orchestrator
+can run 008L3's declared trusted-browser contract when that owning slice supplies its specs.

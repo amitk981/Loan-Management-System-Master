@@ -9,6 +9,7 @@ Completeness (portal continuation)
 
 ## Depends On
 - 008K4
+- CR-005
 
 ## Runtime Capabilities
 
@@ -59,6 +60,10 @@ interaction composition with real browser proof.
    badges, spacing, typography, colours, loading/empty/401/403/validation/upload/success/error states.
    Use the existing safe browser-download interaction so object URLs remain valid until navigation
    consumes them. Add structural and interaction tests; introduce no styling or mock fixture path.
+7. Carry CR-005's independent status/control contract through the routed proof: after reconciliation
+   the completed Term Sheet must show canonical `Complete` beside its retained authorised Download,
+   while Upload and Re-upload are absent. Capture that exact state in
+   `portal-documentation-complete-upload-denied.png` in both trusted runs.
 
 ## Trusted Browser Acceptance
 
@@ -90,6 +95,8 @@ canonical returned-to-review state. Each spec and screenshot must run twice outs
   states and leave staff resolution plus all Stage-4 evidence untouched.
 - Frontend tests click upload/re-upload/download/resubmit, cover 401 and 403 separately, preserve the
   modal structure, refetch exactly once, and prove no immediate blob-URL revocation race.
+- The routed MP07 assertion observes `Complete` and `Download Term Sheet` together and observes no
+  Upload/Re-upload control before taking the declared completed-state screenshot.
 
 ## Evidence Required
 

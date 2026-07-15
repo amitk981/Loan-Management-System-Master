@@ -73,7 +73,7 @@ const MP07_DocumentChecklist: React.FC = () => {
                   <div className="flex items-center sm:justify-end gap-3 w-full sm:w-auto">
                     {action.download && <button onClick={() => void download(action)} className="flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors" aria-label={`Download ${action.label}`}><Download size={16} className="text-slate-400" />Download</button>}
                     {(action.upload_allowed || action.reupload_allowed) && <button onClick={() => setSelectedAction(action)} className="flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition-colors" aria-label={`${action.reupload_allowed ? 'Re-upload' : 'Upload'} ${action.label}`}><Upload size={16} />{action.reupload_allowed ? 'Re-upload' : 'Upload'}</button>}
-                    {!action.download && !action.upload_allowed && !action.reupload_allowed && <div className="flex-1 sm:flex-none flex justify-center sm:justify-end"><StatusBadge label={action.status} size="sm" /></div>}
+                    {(action.status === 'complete' || (!action.download && !action.upload_allowed && !action.reupload_allowed)) && <div className="flex-1 sm:flex-none flex justify-center sm:justify-end"><StatusBadge label={action.status} size="sm" /></div>}
                   </div>
                 </div>
               );

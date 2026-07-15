@@ -1,0 +1,16 @@
+Command: npm test -- --run src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx
+Working directory: sfpcl-lms
+Result: expected RED (exit 1)
+
+FAIL src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx
+  member portal documentation actions
+    x shows complete status with its retained download and no upload controls
+
+TestingLibraryElementError: Unable to find an element with the text: Complete.
+
+The rendered Term Sheet row contained the authorised `Download Term Sheet` button but no Complete
+badge. The other five tests passed.
+
+Test Files  1 failed (1)
+Tests       1 failed | 5 passed (6)
+Duration    2.35s

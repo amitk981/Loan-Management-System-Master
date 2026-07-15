@@ -14,6 +14,16 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## CR-005 Portal Status and Download Visibility (2026-07-15)
+
+`screen-spec-member-portal.md` MP13 independently requires borrowers to view document status and
+download published Term Sheets/Loan Agreements; its status vocabulary includes Completed, and the
+permissions matrix grants both the own-approved-application view and published-document download.
+Therefore an authorised retained Download must not suppress the canonical Complete status, while
+status visibility itself grants no upload, re-upload, acceptance, or approval authority. CR-005
+locks this into MP07's shared My Documents presentation; 008L3 owns routed browser evidence and
+008M must retain the same independent status/control treatment in staff projections.
+
 ## Architecture Review 2026-07-15 09:11 - Current Evidence and Portal Contract Closure
 
 - Review of 008K2, 008K3, 008L, and 008L2 found that checklist evidence can remain projected

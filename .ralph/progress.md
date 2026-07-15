@@ -7244,3 +7244,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_145044_normal_run
+
+- Agent tool used: codex with the TDD skill.
+- Slice completed: CR-005-mp07-completed-download-status-visible.
+- Summary: Corrected MP07 so a completed documentation action keeps its canonical Complete badge
+  visible beside an authorised Download; Upload and Re-upload remain absent. Added a rendered-
+  interface regression and sharpened 008L3/008M to preserve the independent status/control rule.
+- Tests run: focused frontend RED then GREEN; frontend lint, typecheck, build, and all 303 tests;
+  Django check, migration drift, all 886 backend tests, and 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_145044_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High by slice declaration; the implementation is presentation-only and changes no
+  authority, state, API, backend, persistence, or styling behavior.
+- Next action: Run 008L3 and its declared trusted-browser contract twice, then 008M.
+
+## 2026-07-15 15:13:45 - 2026-07-15_145044_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-005-mp07-completed-download-status-visible
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_145044_normal_run/.ralph/runs/2026-07-15_145044_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_145044_normal_run/.ralph/runs/2026-07-15_145044_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

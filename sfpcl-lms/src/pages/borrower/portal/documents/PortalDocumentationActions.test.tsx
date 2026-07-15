@@ -80,6 +80,26 @@ describe('member portal documentation actions', () => {
       expect(document.body.textContent).not.toContain(secret);
     }
   });
+  it('shows complete status with its retained download and no upload controls', async () => {
+    projectionMock.mockResolvedValueOnce({
+      ...projection,
+      actions: projection.actions.map(action => action.action_code === 'term_sheet'
+        ? {
+            ...action,
+            status: 'complete',
+            upload_allowed: false,
+            reupload_allowed: false,
+          }
+        : action),
+    });
+
+    render(<MP07_DocumentChecklist />);
+
+    expect(await screen.findByText('Complete', { exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Download Term Sheet' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Upload Term Sheet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Re-upload Term Sheet' })).toBeNull();
+  });
   it('shows own-application empty and session-expired states without fixture fallback', async () => {
     listMock.mockResolvedValueOnce({ items: [] });
     const { unmount } = render(<MP07_DocumentChecklist />);

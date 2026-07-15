@@ -91,6 +91,15 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
   published files. Portal submission rows, unsigned `expires_at` values, or internal file metadata
   never create a staff download action.
 
+## CR-005 Completion Sharpening (2026-07-15)
+
+- Treat canonical status and authorised file controls as independent server facts in every S26-S35
+  row. A retained signed download must not suppress a terminal status badge, and badge visibility
+  must not create upload, verification, generation, approval, or download authority.
+- Add a rendered-interface regression for one terminal staff checklist row with an authorised
+  download, asserting the terminal status and Download are both visible while every server-denied
+  mutation remains absent. Reuse the existing `StatusBadge` and action-row composition.
+
 ## Risk Level
 Medium
 

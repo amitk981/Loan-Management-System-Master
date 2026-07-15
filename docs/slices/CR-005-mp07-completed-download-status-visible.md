@@ -1,7 +1,7 @@
 # Slice CR-005: Show completed document status alongside retained downloads
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-15 from docs/change-requests/accepted/CR-005-mp07-completed-download-status-visible.md.
