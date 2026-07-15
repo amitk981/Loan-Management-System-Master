@@ -6,13 +6,13 @@ import tempfile
 from threading import Barrier
 from unittest import skipUnless
 
-from django.db import close_old_connections, connection, connections
+from django.db import close_old_connections, connection, connections, transaction
 from django.test import TestCase
 from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import VersionHistory
-from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
+from sfpcl_credit.approvals.models import ApprovalCase, ApprovalCaseReadScopeGrant
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission
 from sfpcl_credit.legal_documents.models import (
@@ -29,7 +29,12 @@ from sfpcl_credit.legal_documents.modules import checklist_actions
 from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.processes import document_checklist_actions as checklist_action_process
 from sfpcl_credit.applications.modules import bank_verification
-from sfpcl_credit.applications.models import Witness
+from sfpcl_credit.applications.modules import document_checklist_facts
+from sfpcl_credit.applications.models import (
+    BankVerificationDecision,
+    LoanApplication,
+    Witness,
+)
 from sfpcl_credit.members.models import (
     BankAccount,
     CancelledCheque,
@@ -923,6 +928,11 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertEqual(decision["decision_status"], "verified")
         self.assertEqual(decision["bank_account_id"], str(bank.pk))
         self.assertEqual(decision["cancelled_cheque_id"], str(cancelled.pk))
+        self.assertEqual(decision["approval_case_id"], str(self.case.pk))
+        self.assertEqual(
+            decision["sanction_decision_id"],
+            str(self.case.sanction_decision.pk),
+        )
         self.assertEqual(decision["entity_type"], "bank_verification_decision")
         self.assertEqual(
             decision["entity_id"], decision["bank_verification_decision_id"]
@@ -1020,6 +1030,258 @@ class FinalDocumentationApprovalApiTests(TestCase):
                 )
                 self.assertEqual(response.status_code, 403, response.json())
                 self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+    def test_status_label_cannot_replace_current_terminal_sanction_for_bank_decision(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            current_status=ApprovalCase.STATUS_REJECTED
+        )
+
+        reconciled = document_checklist_facts.resolve_blank_cheque_bank_fact(
+            application_id=self.application.pk
+        )
+        self.assertFalse(reconciled.valid)
+        self.assertEqual(
+            reconciled.blocker,
+            "bank_verification_terminal_sanction_invalid",
+        )
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-invalid-terminal-case",
+            **self.fixture._auth(self.compliance),
+        )
+
+        self.assertEqual(response.status_code, 403, response.json())
+        self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+        self.assertNotIn(str(self.case.pk), str(response.json()))
+
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            current_status=ApprovalCase.STATUS_RETURNED
+        )
+        returned = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-returned-terminal-case",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(returned.status_code, 403, returned.json())
+        self.assertNotIn(str(self.case.pk), str(returned.json()))
+
+        unrelated_application = LoanApplication.objects.create(
+            member=self.application.member,
+            borrower_type=self.application.borrower_type,
+            received_by_user=self.application.received_by_user,
+            required_loan_amount="100000.00",
+            declared_purpose="Separate application for missing-case probe",
+            purpose_category="crop_production",
+            application_status=LoanApplication.STATUS_DRAFT,
+            completeness_status=LoanApplication.COMPLETENESS_NOT_STARTED,
+            current_stage=LoanApplication.STAGE_INITIAL,
+        )
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            loan_application=unrelated_application
+        )
+        missing = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-missing-terminal-case",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(missing.status_code, 403, missing.json())
+        self.assertNotIn(str(self.case.pk), str(missing.json()))
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+    def test_bank_decision_replay_and_change_retain_exact_terminal_cycle(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "bank-verification-decision/"
+        )
+        payload = {
+            "bank_account_id": str(prior.bank_account_id),
+            "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+            "decision_status": prior.decision_status,
+        }
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+
+        replay = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            HTTP_X_REQUEST_ID=prior.request_id,
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(replay.status_code, 200, replay.json())
+        self.assertEqual(
+            replay.json()["data"]["bank_verification_decision_id"],
+            str(prior.pk),
+        )
+        self.assertEqual(
+            replay.json()["data"]["approval_case_id"], str(self.case.pk)
+        )
+        self.assertEqual(
+            replay.json()["data"]["sanction_decision_id"],
+            str(self.case.sanction_decision.pk),
+        )
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+        changed = self.client.post(
+            url,
+            {**payload, "decision_status": "rejected"},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-bank-changed",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(changed.status_code, 200, changed.json())
+        changed_data = changed.json()["data"]
+        self.assertNotEqual(
+            changed_data["bank_verification_decision_id"], str(prior.pk)
+        )
+        self.assertEqual(changed_data["approval_case_id"], str(self.case.pk))
+        self.assertEqual(
+            changed_data["sanction_decision_id"],
+            str(self.case.sanction_decision.pk),
+        )
+        retained = self.application.bank_verification_decisions.get(
+            pk=changed_data["bank_verification_decision_id"]
+        )
+        expected = bank_verification.decision_evidence(retained)
+        self.assertEqual(
+            retained.audit_log.new_value_json,
+            {**expected, "evidence_digest": retained.evidence_digest},
+        )
+        self.assertEqual(
+            retained.version_history.new_value_json,
+            retained.audit_log.new_value_json,
+        )
+        self.assertEqual(
+            retained.evidence_digest,
+            bank_verification.evidence_digest(expected),
+        )
+
+    def test_malformed_terminal_facts_block_changed_bank_decision_without_writes(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        ApprovalCase.objects.filter(pk=self.case.pk).update(appraisal_facts_json={})
+
+        denied = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-malformed-terminal-facts",
+            **self.fixture._auth(self.compliance),
+        )
+
+        self.assertEqual(denied.status_code, 403, denied.json())
+        self.assertNotIn(str(self.case.pk), str(denied.json()))
+        self.assertNotIn(str(self.case.sanction_decision.pk), str(denied.json()))
         self.assertEqual(
             {
                 "decisions": self.application.bank_verification_decisions.count(),
@@ -1459,6 +1721,118 @@ class FinalDocumentationApprovalConcurrencyTests(TransactionTestCase):
 
     def test_generation_versus_cs_approval_retain_one_current_winner_repeat(self):
         self._exercise_generation_race("approval")
+
+    def test_changed_bank_decision_versus_terminal_case_invalidation(self):
+        self._exercise_bank_terminal_case_race()
+
+    def test_changed_bank_decision_versus_terminal_case_invalidation_repeat(self):
+        self._exercise_bank_terminal_case_race()
+
+    def _exercise_bank_terminal_case_race(self):
+        helper = FinalDocumentationApprovalApiTests(
+            methodName="test_bank_decision_replay_and_change_retain_exact_terminal_cycle"
+        )
+        helper.setUp()
+        helper._complete_all_applicable_items()
+        prior = helper.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        baseline = {
+            "decisions": BankVerificationDecision.objects.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        gate = Barrier(2)
+
+        def changed_writer():
+            close_old_connections()
+            try:
+                from sfpcl_credit.identity.models import User
+
+                actor = User.objects.get(pk=helper.compliance.pk)
+                gate.wait(timeout=10)
+                try:
+                    decision = bank_verification.record_decision(
+                        actor=actor,
+                        application_id=helper.application.pk,
+                        payload={
+                            "bank_account_id": str(prior.bank_account_id),
+                            "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                            "decision_status": "rejected",
+                        },
+                        metadata=bank_verification.RequestMetadata(
+                            "008l5-bank-terminal-race", "203.0.113.20", "race"
+                        ),
+                    )
+                    return "written", str(decision.pk)
+                except bank_verification.AccessDenied:
+                    return "denied", None
+            finally:
+                connections["default"].close()
+
+        def invalidate_case():
+            close_old_connections()
+            try:
+                gate.wait(timeout=10)
+                with transaction.atomic():
+                    LoanApplication.objects.select_for_update().get(
+                        pk=helper.application.pk
+                    )
+                    if BankVerificationDecision.objects.filter(
+                        loan_application_id=helper.application.pk
+                    ).count() > baseline["decisions"]:
+                        return "blocked", None
+                    ApprovalCase.objects.filter(pk=helper.case.pk).update(
+                        current_status=ApprovalCase.STATUS_REJECTED
+                    )
+                    return "invalidated", None
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            writer_future = pool.submit(changed_writer)
+            invalidator_future = pool.submit(invalidate_case)
+            results = [writer_future.result(timeout=30), invalidator_future.result(timeout=30)]
+
+        outcomes = {result[0] for result in results}
+        self.assertIn(outcomes, ({"written", "blocked"}, {"denied", "invalidated"}))
+        after = {
+            "decisions": BankVerificationDecision.objects.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        if "written" in outcomes:
+            self.assertEqual(
+                {key: after[key] - baseline[key] for key in after},
+                {"decisions": 1, "audit": 1, "workflow": 1, "versions": 1},
+            )
+            decision_id = next(value for outcome, value in results if outcome == "written")
+            winner = BankVerificationDecision.objects.get(pk=decision_id)
+            self.assertEqual(winner.approval_case_id_snapshot, helper.case.pk)
+            self.assertEqual(
+                winner.sanction_decision_id_snapshot,
+                helper.case.sanction_decision.pk,
+            )
+            helper.case.refresh_from_db()
+            self.assertEqual(helper.case.current_status, ApprovalCase.STATUS_APPROVED)
+        else:
+            self.assertEqual(after, baseline)
+            helper.case.refresh_from_db()
+            self.assertEqual(helper.case.current_status, ApprovalCase.STATUS_REJECTED)
 
     def _exercise_generation_race(self, mode):
         helper = FinalDocumentationApprovalApiTests(

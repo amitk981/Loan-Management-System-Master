@@ -275,6 +275,135 @@ class PortalDeficiencyResponseApiTests(TestCase):
         status = self.client.get(f"/api/v1/portal/applications/{self.application.pk}/", headers={"Authorization": f"Bearer {token}"})
         self.assertIn("Application resubmitted", [event["event"] for event in status.json()["data"]["timeline"]])
 
+    def test_missing_response_workflow_cannot_project_responded_truth(self):
+        token = self._token()
+        uploaded = self._upload(token)
+        self.assertEqual(uploaded.status_code, 200, uploaded.content)
+        response_id = uploaded.json()["data"]["response"]["deficiency_response_id"]
+        WorkflowEvent.objects.filter(
+            workflow_name="application_deficiency",
+            entity_type="application_deficiency_response",
+            entity_id=response_id,
+        ).delete()
+
+        projection = self.client.get(
+            self._url(), headers={"Authorization": f"Bearer {token}"}
+        )
+
+        self.assertEqual(projection.status_code, 200, projection.content)
+        data = projection.json()["data"]
+        self.assertEqual(
+            data["items"][0]["response"]["response_status"],
+            "evidence_invalid",
+        )
+        self.assertFalse(data["resubmission_allowed"])
+        self.deficiency.refresh_from_db()
+        self.assertEqual(
+            self.deficiency.resolution_status,
+            ApplicationDeficiency.STATUS_OPEN,
+        )
+
+    def test_invalid_response_event_matrix_blocks_projection_and_resubmission(self):
+        token = self._token()
+        uploaded = self._upload(token)
+        self.assertEqual(uploaded.status_code, 200, uploaded.content)
+        response = ApplicationDeficiencyResponse.objects.get(
+            pk=uploaded.json()["data"]["response"]["deficiency_response_id"]
+        )
+        response_reason = (
+            "Borrower uploaded a deficiency response for completeness review."
+        )
+        submitted_reason = (
+            "Borrower resubmitted the response for staff completeness review."
+        )
+        valid_responded = {
+            "workflow_name": "application_deficiency",
+            "entity_type": "application_deficiency_response",
+            "entity_id": response.pk,
+            "from_state": "absent",
+            "to_state": "responded",
+            "triggered_by_user": self.portal_user,
+            "trigger_reason": response_reason,
+        }
+        invalid_cases = {
+            "missing": [],
+            "duplicate": [valid_responded, valid_responded],
+            "wrong_workflow": [
+                {**valid_responded, "workflow_name": "loan_application"}
+            ],
+            "wrong_entity": [
+                {**valid_responded, "entity_type": "application_deficiency"}
+            ],
+            "wrong_actor": [
+                {**valid_responded, "triggered_by_user": self.staff_user}
+            ],
+            "wrong_state": [
+                {**valid_responded, "from_state": "pending"}
+            ],
+            "reversed": [
+                {
+                    **valid_responded,
+                    "from_state": "responded",
+                    "to_state": "submitted_for_review",
+                    "trigger_reason": submitted_reason,
+                },
+                valid_responded,
+            ],
+            "extra_terminal": [
+                valid_responded,
+                {
+                    **valid_responded,
+                    "from_state": "responded",
+                    "to_state": "resolved",
+                    "trigger_reason": "Unexpected terminal response state.",
+                },
+            ],
+        }
+        for name, events in invalid_cases.items():
+            with self.subTest(name=name):
+                WorkflowEvent.objects.filter(entity_id=response.pk).delete()
+                retained_ids = [
+                    str(WorkflowEvent.objects.create(**event).pk) for event in events
+                ]
+                projection = self.client.get(
+                    self._url(), headers={"Authorization": f"Bearer {token}"}
+                )
+                self.assertEqual(projection.status_code, 200, projection.content)
+                data = projection.json()["data"]
+                self.assertEqual(
+                    data["items"][0]["response"]["response_status"],
+                    "evidence_invalid",
+                )
+                self.assertFalse(data["resubmission_allowed"])
+                self.assertTrue(
+                    all(event_id not in str(data) for event_id in retained_ids)
+                )
+                resubmit = self.client.post(
+                    self._url("resubmit/"),
+                    data={},
+                    content_type="application/json",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                self.assertEqual(resubmit.status_code, 400, resubmit.content)
+                assert_error_envelope(self, resubmit.json(), "VALIDATION_ERROR")
+                self.assertFalse(
+                    AuditLog.objects.filter(
+                        action="applications.loan_application.resubmitted"
+                    ).exists()
+                )
+                self.assertFalse(
+                    WorkflowEvent.objects.filter(
+                        entity_type="loan_application",
+                        entity_id=self.application.pk,
+                        to_state="submitted",
+                    ).exists()
+                )
+                self.deficiency.refresh_from_db()
+                self.assertEqual(
+                    self.deficiency.resolution_status,
+                    ApplicationDeficiency.STATUS_OPEN,
+                )
+
     def test_cross_member_read_upload_and_resubmit_are_nondisclosing_and_audited(self):
         other_member = self._member("M-OTHER-L2", "FOL-OTHER-L2")
         other_application = LoanApplication.objects.create(

@@ -86,6 +86,17 @@ request reaches Django and is denied, and capture all four source-required state
 - Staff download success/audit/tamper/expiry/replacement/cross-scope matrix is exact.
 - Mock ratchet and recursive redaction scans remain green; all four screenshots are non-empty.
 
+## 008L5 Completion Sharpening (2026-07-16)
+
+- The S26 bank/checklist status and every related action must consume 008L5's reconciled current
+  terminal-sanction bank fact. An application status label, a latest bank row whose retained
+  approval-case/sanction-decision ids are stale, or an invalid current approval cycle must render a
+  safe blocker and advertise no completion/verification action.
+- Staff projections may show the borrower-safe bank outcome/status but must not expose either
+  retained approval id, bank-decision evidence/digest, workflow/audit/version identity, or the
+  internal terminal-sanction blocker code. Add the invalidated-cycle case to the existing recursive
+  redaction and projection/action parity matrices.
+
 ## Evidence Required
 
 Failing-first action/error/modal/download probes; focused backend/frontend results; full gates;

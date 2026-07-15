@@ -14,6 +14,21 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008L5 Current Stage-4 and Response Evidence Closure (2026-07-16)
+
+Application status no longer substitutes for approval-owned terminal sanction truth. Bank decision
+creation/replay and cancelled-cheque reconciliation share the application lock, resolve the latest
+approved case plus its sanctioned decision, and retain both exact ids in the immutable decision,
+audit/version body, and digest. Missing/rejected/returned/replaced/malformed current cycles deny
+nondisclosing and zero-write; the changed-decision/invalidation lock race passed twice on
+PostgreSQL with either one current-cycle writer or an invalidated-cycle denial.
+
+MP11 now uses one canonical workflow-chain resolver for GET and resubmit. A response is `responded`
+only from its exact borrower-attributed response event and `submitted_for_review` only from the
+ordered response then resubmission pair. Missing, duplicate, foreign-shape, wrong actor/state,
+reversed, contradictory, or extra terminal evidence projects `evidence_invalid`, disables
+resubmission, leaves the staff deficiency open, and discloses no workflow evidence identity.
+
 ## CR-008 Deterministic Template Constraint State (2026-07-15)
 
 The `DocumentTemplate` approval-status and borrower-type check constraints retain the exact 008A

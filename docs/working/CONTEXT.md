@@ -104,8 +104,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   is invalid, and deficiency responses default to `responded` when their workflow evidence is gone.
   It also found 008M met the diff limit through unreadable minification, uses a private/dead action
   contract, omits required S26/S34/S35 behavior, renders queue errors beside a false all-complete
-  state, under-tests staff downloads, and has none of its four required screenshots. Correctives
-  008L5 and 008M2 are next before Epic 009.
+  state, under-tests staff downloads, and has none of its four required screenshots. Corrective
+  008L5 now binds bank decisions and reconciliation to the exact current approval case/sanction
+  decision and makes MP11 response state depend on one coherent retained workflow chain. Corrective
+  008M2 is next before Epic 009.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

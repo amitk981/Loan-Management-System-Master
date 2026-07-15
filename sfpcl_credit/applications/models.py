@@ -229,6 +229,8 @@ class BankVerificationDecision(models.Model):
     verified_at = models.DateTimeField(default=timezone.now, db_index=True)
     request_id = models.CharField(max_length=255)
     decision_version = models.PositiveIntegerField()
+    approval_case_id_snapshot = models.UUIDField(null=True, blank=True, db_index=True)
+    sanction_decision_id_snapshot = models.UUIDField(null=True, blank=True, db_index=True)
     workflow_event = models.OneToOneField(
         "workflows.WorkflowEvent", on_delete=models.PROTECT,
         related_name="bank_verification_decision",

@@ -3678,6 +3678,15 @@ rows, their action linkages and full retained body, the current renderer/termina
 digest; any missing, extra, changed, cross-object, or newer source fact removes completion without
 exposing the evidence.
 
+008L5 current-terminal closure: `approved_by_sanction_committee` remains necessary but no longer
+supplies sanction authority by itself. Under the application lock, every new or replayed bank
+decision must resolve the approval owner's latest approved case and its sanctioned decision; the
+response and immutable audit/version digest now include `approval_case_id` and
+`sanction_decision_id`. Missing, rejected, returned, replaced, malformed, or stale latest-cycle
+facts return nondisclosing `403 FORBIDDEN` before bank/document lookup or any decision/audit/
+workflow/version write. Downstream cancelled-cheque/checklist truth also re-resolves those exact
+retained ids and fails closed when they are no longer the current terminal cycle.
+
 ## Staff documentation workspace (008M)
 
 - `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/` returns one locked, redacted application/checklist snapshot with pack/blocker truth, current-renderer rows, six security workflows, ordered approvals, and only currently executable actions.
@@ -3780,3 +3789,11 @@ borrower timeline shows `Application resubmitted` (A-095). Empty, partially resp
 non-returned applications fail before any transition. Deficiency actions never create or change
 Stage-4 checklist items/actions/history, approvals, verifier/role/remarks, legal/security evidence,
 readiness, loan-account, or disbursement truth.
+
+008L5 response-evidence closure: each projected current response is `responded` only when it has
+one exact borrower-attributed `absent/responded -> responded` workflow fact, and becomes
+`submitted_for_review` only when that fact is followed by one exact
+`responded -> submitted_for_review` fact. Missing, duplicate, wrong-workflow/entity/actor/state,
+reversed, contradictory, or extra terminal facts project `response_status = evidence_invalid`,
+set `resubmission_allowed = false`, and make resubmit return `400 VALIDATION_ERROR`. The open staff
+deficiency remains unchanged and internal workflow evidence ids are never returned.

@@ -7535,3 +7535,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_025941_normal_run
+
+- Agent tool used: codex with the TDD skill.
+- Slice completed: 008L5-current-stage4-and-response-evidence-closure.
+- Summary: Bound every immutable bank decision to the approval owner's current terminal case and
+  sanctioned decision, reconciled those retained ids for checklist truth, and replaced MP11's
+  fabricated response fallback with an exact fail-closed workflow-chain resolver shared by GET and
+  resubmit.
+- Tests run: both architecture-review probes RED then GREEN; focused public bank/MP11 matrices;
+  PostgreSQL decision-versus-invalidation race twice; Django check and migration drift; all 912
+  backend tests at 91% coverage; frontend build/typecheck/lint and all 311 tests.
+- Evidence saved: `.ralph/runs/2026-07-16_025941_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; immutable compliance evidence, cross-module terminal sanction authority, one
+  schema migration, portal workflow truth, and PostgreSQL concurrency.
+- Next action: Run 008M2, then 009A and 009B.
+
+## 2026-07-16 03:33:01 - 2026-07-16_025941_normal_run
+- Agent tool used: codex
+- Slice attempted: 008L5-current-stage4-and-response-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_025941_normal_run/.ralph/runs/2026-07-16_025941_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_025941_normal_run/.ralph/runs/2026-07-16_025941_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

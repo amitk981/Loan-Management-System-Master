@@ -99,20 +99,9 @@ def get_projection(*, actor, application_id, request):
         for row in ApplicationDeficiencyResponse.objects.filter(
             deficiency__loan_application=context.application,
             successor__isnull=True,
-        ).select_related("document")
+        ).select_related("document", "portal_account")
     }
-    response_states = {}
-    for entity_id, to_state in (
-        WorkflowEvent.objects.filter(
-            workflow_name="application_deficiency",
-            entity_type="application_deficiency_response",
-            entity_id__in=[row.pk for row in responses.values()],
-            to_state__in={"responded", "submitted_for_review"},
-        )
-        .order_by("entity_id", "-created_at", "-workflow_event_id")
-        .values_list("entity_id", "to_state")
-    ):
-        response_states.setdefault(entity_id, to_state)
+    response_states = _resolve_response_states(responses.values())
     drafts = {
         row.deficiency_id: row
         for row in ApplicationDeficiencyResponseDraft.objects.filter(
@@ -131,7 +120,11 @@ def get_projection(*, actor, application_id, request):
             context.application.application_status
             == LoanApplication.STATUS_INCOMPLETE_RETURNED
             and bool(items)
-            and all(item.pk in responses for item in items)
+            and all(
+                item.pk in responses
+                and response_states.get(responses[item.pk].pk) == "responded"
+                for item in items
+            )
         ),
         "items": [
             {
@@ -358,7 +351,9 @@ def upload(*, actor, application_id, deficiency_id, request):
     return {
         "deficiency_id": str(deficiency.pk),
         "response_status": "responded",
-        "response": _serialize_response(response),
+        "response": _serialize_response(
+            response, response_states=_resolve_response_states([response])
+        ),
         "document": _serialize_document(document),
     }
 
@@ -379,13 +374,19 @@ def resubmit(*, actor, application_id, request):
         )
         .order_by("item_code", "raised_at", "deficiency_id")
     )
-    responded_ids = set(
-        ApplicationDeficiencyResponse.objects.filter(
-            deficiency__in=open_items,
-            successor__isnull=True,
-        ).values_list("deficiency_id", flat=True)
+    responses = list(
+        ApplicationDeficiencyResponse.objects.select_for_update()
+        .select_related("portal_account", "supersedes")
+        .filter(deficiency__in=open_items, successor__isnull=True)
     )
-    missing = [item for item in open_items if item.pk not in responded_ids]
+    responses_by_deficiency = {response.deficiency_id: response for response in responses}
+    response_states = _resolve_response_states(responses)
+    missing = [
+        item
+        for item in open_items
+        if item.pk not in responses_by_deficiency
+        or response_states.get(responses_by_deficiency[item.pk].pk) != "responded"
+    ]
     if not open_items or missing:
         raise PortalDeficiencyValidationError(
             {
@@ -395,9 +396,7 @@ def resubmit(*, actor, application_id, request):
             }
         )
     for deficiency in open_items:
-        response = ApplicationDeficiencyResponse.objects.get(
-            deficiency=deficiency, successor__isnull=True
-        )
+        response = responses_by_deficiency[deficiency.pk]
         record_workflow_event(
             actor=actor,
             workflow_name="application_deficiency",
@@ -618,11 +617,57 @@ def _serialize_response(response, response_states=None):
     response_states = response_states or {}
     return {
         "deficiency_response_id": str(response.pk),
-        "response_status": response_states.get(response.pk, "responded"),
+        "response_status": response_states.get(response.pk, "evidence_invalid"),
         "response_remark": response.response_remark,
         "document": _serialize_document(response.document, response),
         "responded_at": response.created_at.isoformat().replace("+00:00", "Z"),
     }
+
+
+def _resolve_response_states(responses):
+    responses = list(responses)
+    if not responses:
+        return {}
+    events_by_response = {response.pk: [] for response in responses}
+    for event in WorkflowEvent.objects.filter(
+        entity_id__in=events_by_response
+    ).order_by("created_at", "workflow_event_id"):
+        events_by_response[event.entity_id].append(event)
+
+    states = {}
+    for response in responses:
+        events = events_by_response[response.pk]
+        expected_actor_id = response.portal_account.user_id
+        expected_from = "responded" if response.supersedes_id else "absent"
+        response_event_valid = (
+            len(events) >= 1
+            and events[0].workflow_name == "application_deficiency"
+            and events[0].entity_type == "application_deficiency_response"
+            and events[0].from_state == expected_from
+            and events[0].to_state == "responded"
+            and events[0].triggered_by_user_id == expected_actor_id
+            and events[0].trigger_reason
+            == "Borrower uploaded a deficiency response for completeness review."
+        )
+        if len(events) == 1 and response_event_valid:
+            states[response.pk] = "responded"
+            continue
+        submitted_event_valid = (
+            len(events) == 2
+            and events[1].workflow_name == "application_deficiency"
+            and events[1].entity_type == "application_deficiency_response"
+            and events[1].from_state == "responded"
+            and events[1].to_state == "submitted_for_review"
+            and events[1].triggered_by_user_id == expected_actor_id
+            and events[1].trigger_reason
+            == "Borrower resubmitted the response for staff completeness review."
+        )
+        states[response.pk] = (
+            "submitted_for_review"
+            if response_event_valid and submitted_event_valid
+            else "evidence_invalid"
+        )
+    return states
 
 
 def _serialize_draft(draft):
