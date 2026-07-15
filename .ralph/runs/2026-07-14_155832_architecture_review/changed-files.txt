@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008F-power-of-attorney-workflow.md
+ M docs/slices/008G-tri-party-agreement-workflow.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-14_155832_architecture_review/
+?? docs/slices/008D2-stamp-notary-verification-authority-closure.md
+?? docs/slices/008E2-signature-identity-mismatch-lifecycle-closure.md

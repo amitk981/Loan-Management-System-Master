@@ -1,7 +1,7 @@
 # Slice 007J: Sanction/Exception Registers and Approval Matrix Settings UI Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -25,14 +25,12 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
 ## Prototype Reference
 - sfpcl-lms/src/pages/registers/RegistersHub.tsx
 - sfpcl-lms/src/pages/settings/SettingsHub.tsx (approval matrix panel)
-- sfpcl-lms/src/pages/borrower/portal/applications/MP12_SanctionOutcome.tsx
 
 ## Concrete Requirements
 1. Wire the sanction and exception register views in `RegistersHub.tsx` to the 007H register APIs with pagination/filtering per api-contracts §8; registers stay read-only generated views — no manual row editing.
 2. Wire the approval matrix panel in `SettingsHub.tsx` to the 007A configuration API: display current versioned rules; edits only for permitted admin roles, creating a new config version (003E pattern), never overwriting silently.
 3. Export actions appear only for roles with register-export permission; actual export jobs arrive in 012B — show the permitted action state, keep the button wired to whatever exists, and record the interim behaviour in API_CONTRACTS.md.
-4. Wire the member portal Sanction Outcome view (spec MP12, `MP12_SanctionOutcome.tsx`) to the sanction decision API: borrower sees own outcome, sanctioned amount, and borrower-facing terms only — no internal approval history.
-5. Loading, empty, error, unauthorized states throughout; reuse existing table/queue patterns only.
+4. Loading, empty, error, unauthorized states throughout; reuse existing table/queue patterns only.
 
 ## Owned Mock Removals
 - `src/pages/registers/RegistersHub.tsx` — the S23 (Credit Sanction Register) and S25 (Exception Register) views must run with no mock reads after this slice; the file's remaining register views and final `mockData` import removal are owned by 012DA.
@@ -62,8 +60,60 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
   satisfy the screen. Preserve rejected outcome copy from the borrower-authorised source the MP12
   contract names.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_200023, 2026-07-13)
+
+- Consume 007H2's already scoped register pages exactly. Never infer global register visibility
+  from the presence of `approvals.sanction_register.read`, merge pages from another case endpoint,
+  or display a client-computed total; the server count is object-scoped before pagination.
+- A Director's register can contain only attributable original/effective/acted cycles, while
+  persisted legal/audit/management readers retain their backend-defined read-only scope. Empty and
+  filtered states must not reveal that out-of-scope rows exist.
+
+## Run-Ahead Sharpening Review (007H2 delivered contract, 2026-07-13)
+
+- Render the server pagination object verbatim after every filter change. `total_count`,
+  `total_pages`, normalized `page`, empty results, and next/previous state are already computed
+  inside the caller's canonical case scope; never preserve or merge a total from an earlier actor,
+  filter, or page.
+- Director rows include only original/effective/conflicted/acted attributable cycles. A persisted
+  legal/audit/management scope is usable only with the separate register permission, and neither
+  kind of visibility enables case actions, sanction-decision reads, document references, or
+  downloads.
+- Keep `reasons` and `exception_reference.business_reason` as distinct frozen values. Do not
+  substitute one for the other or derive either from live application, case, or exception data.
+
+## Run-Ahead Sharpening Review (007H3 delivered contract, 2026-07-13)
+
+- Render only rows and pagination returned by the register endpoint after each actor/filter/page
+  request. The server now removes frozen-invalid cases before filters, `total_count`,
+  `total_pages`, and normalized `page`; the client must not preserve a stale earlier total or add a
+  row recovered from case/detail/decision data.
+- Add a container regression where a server fixture marks one terminal frozen case invalid while a
+  second remains valid: render exactly the valid row, server count `1`, normalized page, and no
+  placeholder indicating the hidden row. A later live-appraisal edit to the valid row must not
+  change its 15 frozen displayed fields.
+- Register metadata remains a read projection only. Even when a row contains case, exception, or
+  meeting ids, do not use them to grant case actions, sanction-decision access, evidence reference,
+  or document download.
+
+## Run-Ahead Sharpening Review (007I delivered frontend seam, 2026-07-13)
+
+- Reuse `services/sanctionApi.ts` types only where the §25 register payload genuinely shares a
+  frozen nested shape; do not fetch approval-case pages through the workbench queue to populate or
+  “repair” register rows. Register filters/counts remain one independent server interface.
+- A register row's case/application/document ids are display metadata. Do not reuse the workbench's
+  enabled case actions or general-meeting upload/record affordance in `RegistersHub`; register
+  permission and row visibility grant neither capability.
+- Add a raw-source regression for the owned S23/S25 paths analogous to 007I: no `mockData` import may
+  feed those tabs, while unrelated register tabs remain explicitly owned by 012DA.
+
 ## Out of Scope
-Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011 compliance views).
+Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011
+compliance views), and borrower MP12 outcome wiring. The source §25.8 endpoint is an internal
+approval-scoped read and deliberately returns no rejected decision; do not grant its permission to
+borrowers or widen it from this frontend slice. MP12 may continue to show the member-owned
+application status from `/api/v1/portal/applications/{id}/` until a separately sliced,
+source-authorised borrower outcome/terms projection exists.
 
 ## Risk Level
 Medium
@@ -73,15 +123,15 @@ Medium
 - All gates pass; screenshots of registers and matrix settings saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Permissions tested
+- [x] Audit events tested (existing 007A governed proposal API regression retained)
+- [ ] Visual evidence saved (local server blocked by sandbox EPERM; genuine attempt retained)
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit left to the orchestrator after independent gates

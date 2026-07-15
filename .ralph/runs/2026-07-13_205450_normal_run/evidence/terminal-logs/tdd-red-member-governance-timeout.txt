@@ -1,0 +1,23 @@
+Command:
+npx vitest run src/pages/members/MemberGovernanceForm.container.test.tsx -t "routes Directory registration into canonical Profile readback with the exact create ledger" --testTimeout=1 --maxWorkers=1 --fileParallelism=false
+
+Exit code: 1 (expected RED)
+
+RUN  v3.2.6 sfpcl-lms
+
+FAIL  src/pages/members/MemberGovernanceForm.container.test.tsx
+MemberGovernanceForm production container
+  routes Directory registration into canonical Profile readback with the exact create ledger
+
+Error: Test timed out in 1ms.
+Location: src/pages/members/MemberGovernanceForm.container.test.tsx:26:3
+
+Test Files  1 failed (1)
+Tests       1 failed | 15 skipped (16)
+Duration    2.49s (transform 913ms, collect 1.30s, tests 512ms, environment 303ms)
+
+Interpretation:
+The unchanged exact mounted journey inherits Vitest's configured/default timeout. The deliberately
+constrained global value therefore terminates it before its authenticated navigation, registration,
+POST ledger, and canonical readback assertions can complete. A suite-local integration policy must
+override that unit-test-oriented ceiling without changing the repository-wide default.

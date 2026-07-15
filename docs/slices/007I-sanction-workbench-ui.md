@@ -1,7 +1,7 @@
 # Slice 007I: Sanction Workbench UI
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -14,7 +14,8 @@ Wire the Sanction Workbench (screen-spec S21 committee workbench, S22 case detai
 The Sanction Committee reviews and decides real cases — with the ten-point checklist, conflict/abstention visibility, exception flags, and mandatory reasons — in the approved prototype composition.
 
 ## Depends On
-- 007H
+- 007H2
+- 007H3
 
 ## Source References
 - docs/source/screen-spec.md S21, S22, S24
@@ -72,8 +73,69 @@ The Sanction Committee reviews and decides real cases — with the ten-point che
   The UI must treat action failure as no completion and re-fetch the canonical case/decision only
   after success; never optimistically fabricate a register or sanction outcome.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_200023, 2026-07-13)
+
+- Depend on 007H2 so the workbench never consumes the permission-only sanction read. A case with
+  `approvals.sanction.read` still requires the server's case/application object decision; treat an
+  unrelated `OBJECT_ACCESS_DENIED` as nondisclosing and never fall back to register data.
+- Depend on 007G2's current-versus-frozen meeting projection. Pending/rejected current evidence is
+  rendered from the canonical case response; returned/terminal history renders only the cycle-
+  frozen reference. Do not fetch “latest” evidence independently.
+- The record form may submit only document ids that the document resource marked referenceable for
+  this application. A general download permission or a visible register metadata id must never
+  enable the form or a download action.
+
 ## Visual Acceptance Criteria
 Queue, case detail (pending/partially approved/approved/rejected/returned), exception-flagged case, special-case panel, conflict/abstention display, empty, loading, denied, and error states; deterministic Playwright baselines per the 006H3 harness conventions.
+
+## Run-Ahead Sharpening Review (007G2 delivered contract, 2026-07-13)
+
+- Render `general_meeting_approval.evidence_scope` exactly: `current_pending` may change while the
+  case remains pending; `cycle_frozen` is immutable historical evidence after reject, return, or
+  final approval. The §25.11 POST success itself has no scope discriminator.
+- Final-gate errors now carry the same nullable nested `general_meeting_approval` object as case
+  readers. Do not reconstruct status from legacy flat id/status details or fetch application-latest
+  evidence for a returned/terminal cycle.
+- Offer a reference only for document resources uploaded as exact-application legal evidence with
+  a source-defined sensitivity matching immutable upload provenance. Backend nondisclosing rejection remains authoritative; case
+  or register metadata visibility never enables download/reference on its own.
+
+## Run-Ahead Sharpening Review (007H2 delivered contract, 2026-07-13)
+
+- A successful case detail does not by itself authorise the §25.8 decision request: call it only
+  when `/auth/me` also carries `approvals.sanction.read`, and preserve the server's independent
+  `403 FORBIDDEN`, `403 OBJECT_ACCESS_DENIED`, and `404 NOT_FOUND` states without fallback reads.
+- Original, effective, conflicted, and acted historical approvers can receive a terminal decision
+  only for their attributable cycle. Never infer decision scope from committee membership,
+  `routing_snapshot_is_coherent`, Exception Register visibility, or meeting metadata.
+- The workbench must not call the Credit Sanction Register for counts or case reconstruction. Its
+  independently scoped pages grant no action, decision, evidence-reference, or document-download
+  authority.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_222951, 2026-07-13)
+
+- Depend on 007H3 before wiring historical/terminal reads. The same frozen cycle must remain
+  reachable after a later appraisal correction; never treat a detail `404` plus a successful
+  sanction/register read as a client-recoverable split state.
+- Render `loan_limit_provenance`, `review_facts`, authority, and available actions only from the
+  case projection. Do not refresh any historical fact from the live appraisal or loan-limit APIs,
+  and never use a live mismatch to hide a server-returned frozen cycle.
+- Add a container regression with a returned old cycle and a corrected/re-reviewed new cycle. The
+  selected cycle's ids, version, provenance, meeting scope, and actions must stay isolated while
+  navigating between them.
+
+## Run-Ahead Sharpening Review (007H3 delivered contract, 2026-07-13)
+
+- Treat a returned/terminal cycle returned by §25.3/§25.4 as self-contained. Its
+  `loan_limit_provenance`, `review_facts`, authority, attribution, and disabled actions remain
+  renderable after any later appraisal policy/correction; do not issue a live credit request to
+  validate or replace those fields.
+- Container-test old/new navigation with distinct `review_facts.borrowing_history`, cycle ids, and
+  versions. Switching rows must never retain cycle 2 facts/actions on cycle 1 or recompute either
+  cycle's queue membership.
+- Preserve the server's nondisclosure states independently: malformed/incoherent cases do not enter
+  list totals and detail/action return `NOT_FOUND`; an unrelated actor remains
+  `OBJECT_ACCESS_DENIED`. Do not recover either case from sanction-decision or register endpoints.
 
 ## Risk Level
 Medium
@@ -83,15 +145,15 @@ Medium
 - All gates pass; screenshots/baselines saved via the pinned e2e harness.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

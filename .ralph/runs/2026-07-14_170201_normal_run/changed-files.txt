@@ -1,0 +1,21 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008E2-signature-identity-mismatch-lifecycle-closure.md
+ M docs/slices/008F-power-of-attorney-workflow.md
+ M docs/slices/008G-tri-party-agreement-workflow.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl_credit/legal_documents/models.py
+ M sfpcl_credit/legal_documents/modules/document_authority.py
+ M sfpcl_credit/legal_documents/modules/document_checklist.py
+ M sfpcl_credit/legal_documents/modules/signatures.py
+ M sfpcl_credit/legal_documents/selectors.py
+ M sfpcl_credit/legal_documents/serializers.py
+ M sfpcl_credit/legal_documents/views.py
+ M sfpcl_credit/tests/test_signature_mismatch_api.py
+?? .ralph/runs/2026-07-14_170201_normal_run/
+?? sfpcl_credit/applications/modules/signature_identity_facts.py
+?? sfpcl_credit/legal_documents/migrations/0007_signature_capture_maker.py

@@ -1,4 +1,6 @@
-"""Database-narrowed candidate selection for approval-case reads."""
+"""Query shaping for database-narrowed approval-case read candidates."""
+
+from math import ceil
 
 from django.db.models import Q
 
@@ -10,16 +12,20 @@ from sfpcl_credit.identity.modules.auth_service import effective_permission_code
 def select_approval_case_candidates(
     *,
     actor,
-    current_status=None,
-    approval_type=None,
-    assigned_to_me=False,
     actor_permissions=None,
+    approval_type=None,
+    current_status=None,
+    assigned_to_me=False,
 ):
-    """Return actor-scoped candidates and the persisted scope used to select them."""
+    """Return coarse actor-scoped candidates and the persisted selector scope."""
     persisted_scope_type = resolve_persisted_role_scope(actor)
     queryset = (
         ApprovalCase.objects.select_related(
-            "loan_application", "loan_appraisal_note", "general_meeting_approval"
+            "loan_application",
+            "loan_appraisal_note",
+            "appraisal_review_decision",
+            "general_meeting_approval",
+            "exception_register_entry",
         )
         .prefetch_related("actions")
         .filter(
@@ -32,10 +38,6 @@ def select_approval_case_candidates(
             routing_snapshot_is_coherent=True,
         )
     )
-    if current_status:
-        queryset = queryset.filter(current_status=current_status)
-    if approval_type:
-        queryset = queryset.filter(approval_type=approval_type)
     if persisted_scope_type:
         queryset = queryset.filter(
             approval_type=ApprovalCase.TYPE_SANCTION,
@@ -53,9 +55,32 @@ def select_approval_case_candidates(
                     | Q(loan_application__received_by_user=actor)
                 )
         queryset = queryset.filter(object_scope).distinct()
+    if approval_type:
+        queryset = queryset.filter(approval_type=approval_type)
+    if current_status:
+        queryset = queryset.filter(current_status=current_status)
     if assigned_to_me:
         queryset = queryset.filter(
             current_status=ApprovalCase.STATUS_PENDING,
             required_approver_index__user_id=actor.pk,
         )
-    return queryset.order_by("-submitted_at", "-approval_case_id"), persisted_scope_type
+    return (
+        queryset.order_by("-submitted_at", "-approval_case_id"),
+        persisted_scope_type,
+    )
+
+
+def paginate_approval_case_candidates(queryset, *, page, page_size):
+    """Count, normalize, and slice an already canonically readable queryset."""
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    return list(queryset[offset : offset + page_size]), {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }

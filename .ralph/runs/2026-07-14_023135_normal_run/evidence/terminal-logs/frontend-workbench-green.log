@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/sanction/SanctionWorkbench.test.tsx -t loads frozen case truth
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl-lms
+
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (21 tests | 20 skipped) 265ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 20 skipped (21)
+   Start at  02:39:46
+   Duration  1.10s (transform 181ms, setup 0ms, collect 311ms, tests 265ms, environment 200ms, prepare 35ms)
+

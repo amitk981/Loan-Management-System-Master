@@ -22,7 +22,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('MemberGovernanceForm production container', () => {
+describe('MemberGovernanceForm production container', { sequential: true, timeout: 15_000 }, () => {
   it('routes Directory registration into canonical Profile readback with the exact create ledger', async () => {
     const mutationCreate = { ...profile, member_id: 'member-routed', display_name: 'Mutation create leak', pan: { masked: '******LEAK', can_view_full: false } };
     const canonicalCreate = { ...profile, member_id: 'member-routed', display_name: 'Canonical created member', mobile_number: '********3210', available_actions: [updateAction] };

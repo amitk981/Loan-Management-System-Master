@@ -1,0 +1,32 @@
+Found 2 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_legal_documents_has_no_reverse_security_policy_dependency (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentBoundaryTests.test_legal_documents_has_no_reverse_security_policy_dependency) ... ok
+test_security_app_owns_retained_package_and_poa_tables (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentBoundaryTests.test_security_app_owns_retained_package_and_poa_tables) ... ERROR
+
+======================================================================
+ERROR: test_security_app_owns_retained_package_and_poa_tables (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentBoundaryTests.test_security_app_owns_retained_package_and_poa_tables)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/registry.py", line 158, in get_app_config
+    return self.app_configs[app_label]
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: 'security_instruments'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_security_instrument_boundary.py", line 9, in test_security_app_owns_retained_package_and_poa_tables
+    package = apps.get_model("security_instruments", "SecurityPackage")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/registry.py", line 208, in get_model
+    app_config = self.get_app_config(app_label)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/registry.py", line 165, in get_app_config
+    raise LookupError(message)
+LookupError: No installed app with label 'security_instruments'.
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.004s
+
+FAILED (errors=1)

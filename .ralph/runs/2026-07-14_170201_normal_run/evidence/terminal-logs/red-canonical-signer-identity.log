@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_capture_rejects_noncanonical_borrower_identity_without_writes (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_capture_rejects_noncanonical_borrower_identity_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 283, in test_capture_rejects_noncanonical_borrower_identity_without_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"signature_record_id": "04862f4b-4935-48d2-90a2-10215cdcf552", "loan_document_id": "2d8ce9a5-72aa-496e-84df-baea8fd2b1f9", "signer_party_type": "borrower", "signer_party_id": "5d89198e-1f22-494d-8321-71bd362bac12", "signer_name_snapshot": "Caller Supplied Borrower", "signature_method": "wet_ink", "signature_status": "pending", "signed_at": null, "signature_mismatch_flag": false, "mismatch_resolution_type": null, "mismatch_resolution_document_id": null, "mismatch_resolution_document_name": null, "remarks": null}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:37:05.421265Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_company_secretary_activates_only_with_current_maker_checker_and_signatures (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_company_secretary_activates_only_with_current_maker_checker_and_signatures)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 387, in test_company_secretary_activates_only_with_current_maker_checker_and_signatures
+    self.assertEqual(wrong_amount.status_code, 400, wrong_amount.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"entity_type": "power_of_attorney", "entity_id": "70e45ebb-3b1d-4f7a-9f63-4d73790e4cc1", "previous_status": "draft", "new_status": "active", "workflow_event_id": "e784a75c-b0cf-4684-a971-52e341195299", "available_actions": []}, "meta": {"request_id": "req-poa-wrong-stamp", "timestamp": "2026-07-14T18:45:38.427719Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.140s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

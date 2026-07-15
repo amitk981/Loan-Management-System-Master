@@ -1,0 +1,29 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008L3-portal-action-and-resubmission-contract-closure.md
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl-lms/src/pages/borrower/portal/applications/MP11_DeficiencyResponse.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/MP07_DocumentChecklist.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/MP13_DocumentationActions.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx
+ M sfpcl-lms/src/pages/borrower/portal/documents/usePortalDocumentationActions.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl_credit/members/portal_views.py
+ M sfpcl_credit/processes/portal_deficiency_response.py
+ M sfpcl_credit/processes/portal_documentation_actions.py
+ M sfpcl_credit/tests/test_portal_deficiency_response_api.py
+ M sfpcl_credit/tests/test_portal_documentation_actions_api.py
+?? .ralph/runs/2026-07-15_151653_normal_run/
+?? .ralph/runs/2026-07-15_155952_repair/
+?? .ralph/runs/2026-07-15_160544_repair/
+?? .ralph/runs/2026-07-15_161008_repair/
+?? .ralph/runs/2026-07-15_161520_repair/
+?? .ralph/runs/2026-07-15_162349_repair/
+?? sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts
+?? sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts
+?? sfpcl_credit/applications/modules/loan_application_lifecycle.py
+?? sfpcl_credit/processes/portal_application_scope.py

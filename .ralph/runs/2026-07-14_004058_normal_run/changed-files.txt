@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007J2-settings-hub-panels-wiring-or-lockdown.md
+ M docs/slices/008B-document-generation-shell.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl-lms/src/pages/settings/SettingsHub.test.tsx
+ M sfpcl-lms/src/pages/settings/SettingsHub.tsx
+?? .ralph/runs/2026-07-14_004058_normal_run/
+?? sfpcl-lms/src/pages/settings/LoanPolicySettingsPanel.tsx
+?? sfpcl-lms/src/services/loanPolicyApi.test.ts
+?? sfpcl-lms/src/services/loanPolicyApi.ts

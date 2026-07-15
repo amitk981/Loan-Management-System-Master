@@ -1,0 +1,49 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/sfpcl-lms
+
+ ❯ src/services/authSession.test.ts (18 tests | 1 failed) 30ms
+   × auth session API flow > returns typed list data and pagination through the shared authenticated envelope boundary 4ms
+     → authenticatedPaginatedRequest is not a function
+   ✓ auth session API flow > sends multipart bodies through the shared authenticated envelope boundary 18ms
+   ✓ auth session API flow > posts credentials, stores tokens, calls /auth/me/, and returns backend current user state 1ms
+   ✓ auth session API flow > does not store a session when login returns invalid credentials 1ms
+   ✓ auth session API flow > clears stored auth when /auth/me/ rejects an expired or invalid token 0ms
+   ✓ auth session API flow > posts the refresh token on logout and clears local auth state 0ms
+   ✓ member portal auth API flow > posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/ 1ms
+   ✓ member portal auth API flow > calls portal activation and password reset endpoints using standard envelopes 1ms
+   ✓ member portal auth API flow > posts portal password changes with the stored bearer token 1ms
+   ✓ backend current-user mapping > uses roles and teams objects for display and derives compatibility codes from those arrays 0ms
+   ✓ backend current-user mapping > maps canonical backend permissions to existing prototype permission checks without granting unknown codes 0ms
+   ✓ backend current-user mapping > maps approval register and matrix permissions to resource-scoped navigation gates 1ms
+   ✓ backend current-user mapping > maps only the explicit tracer permission to the tracer workspace action 0ms
+   ✓ backend current-user mapping > keeps tracer lifecycle mapping isolated from every non-tracer prototype permission 1ms
+   ✓ backend current-user mapping > keeps zero-permission roles restricted to unrestricted routes 0ms
+   ✓ backend current-user mapping > maps zero-permission IT Head to a neutral backend staff role without auditor/admin/borrower behavior 0ms
+   ✓ backend current-user mapping > maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions 0ms
+   ✓ backend current-user mapping > maps unknown and empty-role current-user responses to neutral backend staff without prototype permissions 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/authSession.test.ts > auth session API flow > returns typed list data and pagination through the shared authenticated envelope boundary
+TypeError: authenticatedPaginatedRequest is not a function
+ ❯ src/services/authSession.test.ts:104:18
+    102|     vi.stubGlobal('fetch', fetchMock);
+    103| 
+    104|     await expect(authenticatedPaginatedRequest<{ approval_matrix_rule_…
+       |                  ^
+    105|       '/api/v1/approval-matrix-rules/?page=2&page_size=10',
+    106|     )).resolves.toEqual({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  03:25:37
+   Duration  521ms (transform 88ms, setup 0ms, collect 90ms, tests 30ms, environment 0ms, prepare 38ms)
+

@@ -19,6 +19,8 @@ from sfpcl_credit.identity.views import (
     portal_password_reset_start,
     refresh,
 )
+from sfpcl_credit.legal_documents import views as legal_document_views
+from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
@@ -26,6 +28,101 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/loan-documents/<uuid:loan_document_id>/verify/",
+        legal_document_views.verify_loan_document,
+        name="loan-document-verify",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/security-package/",
+        security_instrument_views.security_package,
+        name="loan-application-security-package",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/security-package/refresh/",
+        security_instrument_views.security_package_refresh,
+        name="loan-application-security-package-refresh",
+    ),
+    path(
+        "api/v1/security-packages/<uuid:security_package_id>/power-of-attorney/",
+        security_instrument_views.package_power_of_attorney,
+        name="security-package-power-of-attorney",
+    ),
+    path(
+        "api/v1/power-of-attorneys/<uuid:power_of_attorney_id>/",
+        security_instrument_views.power_of_attorney_detail,
+        name="power-of-attorney-detail",
+    ),
+    path(
+        "api/v1/security-packages/<uuid:security_package_id>/sh4-share-transfer-form/",
+        security_instrument_views.package_sh4,
+        name="security-package-sh4-share-transfer-form",
+    ),
+    path(
+        "api/v1/sh4-share-transfer-forms/<uuid:sh4_share_transfer_form_id>/",
+        security_instrument_views.sh4_detail,
+        name="sh4-share-transfer-form-detail",
+    ),
+    path(
+        "api/v1/security-packages/<uuid:security_package_id>/cdsl-share-pledge/",
+        security_instrument_views.package_cdsl_share_pledge,
+        name="security-package-cdsl-share-pledge",
+    ),
+    path(
+        "api/v1/cdsl-share-pledges/<uuid:cdsl_share_pledge_id>/",
+        security_instrument_views.cdsl_share_pledge_detail,
+        name="cdsl-share-pledge-detail",
+    ),
+    path(
+        "api/v1/cdsl-share-pledges/<uuid:cdsl_share_pledge_id>/reveal-bo-accounts/",
+        security_instrument_views.cdsl_share_pledge_reveal,
+        name="cdsl-share-pledge-reveal-bo-accounts",
+    ),
+    path(
+        "api/v1/security-packages/<uuid:security_package_id>/blank-dated-cheque/",
+        security_instrument_views.package_blank_dated_cheque,
+        name="security-package-blank-dated-cheque",
+    ),
+    path(
+        "api/v1/blank-dated-cheques/<uuid:blank_dated_cheque_id>/",
+        security_instrument_views.blank_dated_cheque_detail,
+        name="blank-dated-cheque-detail",
+    ),
+    path(
+        "api/v1/blank-dated-cheques/<uuid:blank_dated_cheque_id>/reveal-cheque-number/",
+        security_instrument_views.blank_dated_cheque_reveal,
+        name="blank-dated-cheque-reveal",
+    ),
+    path(
+        "api/v1/loan-documents/<uuid:loan_document_id>/signatures/",
+        legal_document_views.signature_record,
+        name="loan-document-signature-record",
+    ),
+    path(
+        "api/v1/signature-records/<uuid:signature_record_id>/resolve-mismatch/",
+        legal_document_views.resolve_signature_mismatch,
+        name="signature-record-resolve-mismatch",
+    ),
+    path(
+        "api/v1/loan-documents/<uuid:loan_document_id>/stamp-duty-record/",
+        legal_document_views.stamp_duty_record,
+        name="loan-document-stamp-duty-record",
+    ),
+    path(
+        "api/v1/loan-documents/<uuid:loan_document_id>/notarisation-record/",
+        legal_document_views.notarisation_record,
+        name="loan-document-notarisation-record",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/loan-documents/generate/",
+        legal_document_views.generate_loan_document,
+        name="loan-document-generate",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/loan-documents/",
+        legal_document_views.loan_document_collection,
+        name="loan-document-list",
+    ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/sanction-decision/",
         approval_views.loan_application_sanction_decision,
@@ -113,6 +210,51 @@ urlpatterns = [
         name="portal-application-submit",
     ),
     path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/",
+        portal_views.portal_application_deficiencies,
+        name="portal-application-deficiencies",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/note/",
+        portal_views.portal_application_deficiency_note,
+        name="portal-application-deficiency-note",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/<uuid:deficiency_id>/draft/",
+        portal_views.portal_application_deficiency_draft,
+        name="portal-application-deficiency-draft",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/<uuid:deficiency_id>/upload/",
+        portal_views.portal_application_deficiency_upload,
+        name="portal-application-deficiency-upload",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/resubmit/",
+        portal_views.portal_application_deficiency_resubmit,
+        name="portal-application-deficiency-resubmit",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/<uuid:deficiency_id>/download/",
+        portal_views.portal_application_deficiency_download,
+        name="portal-application-deficiency-download",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/",
+        portal_views.portal_documentation_actions,
+        name="portal-documentation-actions",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/<slug:action_code>/upload/",
+        portal_views.portal_documentation_action_upload,
+        name="portal-documentation-action-upload",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/<slug:action_code>/download/",
+        portal_views.portal_documentation_action_download,
+        name="portal-documentation-action-download",
+    ),
+    path(
         "api/v1/loan-applications/",
         application_views.loan_application_collection,
         name="loan-application-list-create",
@@ -144,13 +286,43 @@ urlpatterns = [
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/",
-        application_views.loan_application_document_checklist,
+        legal_document_views.legal_document_checklist,
         name="loan-application-document-checklist",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/bank-verification-decision/",
+        application_views.bank_verification_decision,
+        name="loan-application-bank-verification-decision",
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/refresh/",
         application_views.loan_application_document_checklist,
         name="loan-application-document-checklist-refresh",
+    ),
+    path(
+        "api/v1/checklist-items/<uuid:checklist_item_id>/complete/",
+        legal_document_views.complete_checklist_item,
+        name="checklist-item-complete",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/approve-as-company-secretary/",
+        legal_document_views.approve_checklist_company_secretary,
+        name="document-checklist-approve-company-secretary",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/approve-as-credit-manager/",
+        legal_document_views.approve_checklist_credit_manager,
+        name="document-checklist-approve-credit-manager",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/approve-as-sanction-committee/",
+        legal_document_views.approve_checklist_sanction_committee,
+        name="document-checklist-approve-sanction-committee",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/sign-disbursement-complete/",
+        legal_document_views.sign_checklist_disbursement_complete,
+        name="document-checklist-sign-disbursement-complete",
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/completeness-check/",
@@ -432,6 +604,16 @@ urlpatterns = [
         "api/v1/document-files/<uuid:document_id>/download/",
         document_views.download_document_file,
         name="document-file-download",
+    ),
+    path(
+        "api/v1/document-templates/",
+        document_views.document_template_collection,
+        name="document-template-list-create",
+    ),
+    path(
+        "api/v1/document-templates/<uuid:document_template_id>/",
+        document_views.document_template_detail,
+        name="document-template-successor-create",
     ),
     path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
     path(

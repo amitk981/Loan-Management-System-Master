@@ -1,0 +1,3 @@
+Listing tests:
+  [chromium] › exception-register-evidence.e2e.spec.ts:9:5 › S25 renders frozen comments and supporting metadata without granting download authority
+Total: 1 test in 1 file

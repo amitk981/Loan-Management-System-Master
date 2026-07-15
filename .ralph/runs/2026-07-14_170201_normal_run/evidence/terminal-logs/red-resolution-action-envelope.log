@@ -1,0 +1,39 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 466, in test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata
+    self.assertEqual(
+AssertionError: Items in the first set but not the second:
+'signer_party_id'
+'loan_document_id'
+'signature_method'
+'remarks'
+'signature_record_id'
+'mismatch_resolution_document_name'
+'mismatch_resolution_type'
+'verified_by_user_id'
+'signature_mismatch_flag'
+'signer_name_snapshot'
+'mismatch_resolution_document_id'
+'captured_by_user_id'
+'signature_status'
+'signed_at'
+'signer_party_type'
+Items in the second set but not the first:
+'available_actions'
+'workflow_event_id'
+'new_status'
+'previous_status'
+'entity_id'
+'entity_type'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.043s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

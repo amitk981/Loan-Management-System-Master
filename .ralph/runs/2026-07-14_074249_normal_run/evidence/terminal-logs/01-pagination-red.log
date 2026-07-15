@@ -1,0 +1,85 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/sfpcl-lms
+
+ ❯ src/services/authSession.test.ts (36 tests | 1 failed) 37ms
+   ✓ auth session API flow > returns typed list data and pagination through the shared authenticated envelope boundary 3ms
+   ✓ auth session API flow > accepts a collection envelope with an exact empty collection page 0ms
+   ✓ auth session API flow > accepts a collection envelope with an exact full first page page 1ms
+   ✓ auth session API flow > accepts a collection envelope with an exact full middle page page 0ms
+   ✓ auth session API flow > accepts a collection envelope with an exact exact final remainder page 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with non-array data 1ms
+   ✓ auth session API flow > rejects a successful collection envelope with missing pagination 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with missing pagination field 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with negative pagination field 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with non-integer pagination field 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with inconsistent total pages 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with inconsistent navigation flags 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with page data beyond the total 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with under-filled first page 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with under-filled middle page 0ms
+   × auth session API flow > rejects a successful collection envelope with under-filled final remainder 6ms
+     → promise resolved "{ items: [], pagination: { …(6) } }" instead of rejecting
+   ✓ auth session API flow > rejects a successful collection envelope with over-filled final remainder 0ms
+   ✓ auth session API flow > rejects a successful collection envelope with nonempty zero-total page 0ms
+   ✓ auth session API flow > preserves authentication and server-error behavior for paginated requests 1ms
+   ✓ auth session API flow > sends multipart bodies through the shared authenticated envelope boundary 17ms
+   ✓ auth session API flow > posts credentials, stores tokens, calls /auth/me/, and returns backend current user state 1ms
+   ✓ auth session API flow > does not store a session when login returns invalid credentials 0ms
+   ✓ auth session API flow > clears stored auth when /auth/me/ rejects an expired or invalid token 0ms
+   ✓ auth session API flow > posts the refresh token on logout and clears local auth state 0ms
+   ✓ member portal auth API flow > posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/ 0ms
+   ✓ member portal auth API flow > calls portal activation and password reset endpoints using standard envelopes 1ms
+   ✓ member portal auth API flow > posts portal password changes with the stored bearer token 0ms
+   ✓ backend current-user mapping > uses roles and teams objects for display and derives compatibility codes from those arrays 0ms
+   ✓ backend current-user mapping > maps canonical backend permissions to existing prototype permission checks without granting unknown codes 0ms
+   ✓ backend current-user mapping > maps approval register and matrix permissions to resource-scoped navigation gates 1ms
+   ✓ backend current-user mapping > maps only the explicit tracer permission to the tracer workspace action 0ms
+   ✓ backend current-user mapping > keeps tracer lifecycle mapping isolated from every non-tracer prototype permission 1ms
+   ✓ backend current-user mapping > keeps zero-permission roles restricted to unrestricted routes 0ms
+   ✓ backend current-user mapping > maps zero-permission IT Head to a neutral backend staff role without auditor/admin/borrower behavior 0ms
+   ✓ backend current-user mapping > maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions 0ms
+   ✓ backend current-user mapping > maps unknown and empty-role current-user responses to neutral backend staff without prototype permissions 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/authSession.test.ts > auth session API flow > rejects a successful collection envelope with under-filled final remainder
+AssertionError: promise resolved "{ items: [], pagination: { …(6) } }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "items": [],
++   "pagination": {
++     "has_next": false,
++     "has_previous": true,
++     "page": 2,
++     "page_size": 10,
++     "total_count": 11,
++     "total_pages": 2,
++   },
+  }
+
+ ❯ src/services/authSession.test.ts:158:74
+    156|     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(response(200,…
+    157| 
+    158|     await expect(authenticatedPaginatedRequest('/api/v1/approval-cases…
+       |                                                                          ^
+    159|       code: 'MALFORMED_RESPONSE',
+    160|       status: 200,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 35 passed (36)
+   Start at  07:46:09
+   Duration  394ms (transform 95ms, setup 0ms, collect 99ms, tests 37ms, environment 0ms, prepare 42ms)
+

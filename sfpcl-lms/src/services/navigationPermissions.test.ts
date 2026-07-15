@@ -3,12 +3,30 @@ import type { Permission } from '../contexts/RoleContext';
 import { allNavItems } from '../components/layout/Sidebar';
 import { mapBackendUserToFrontendUser, mapCanonicalPermissions } from './authSession';
 import {
+  PAGE_NAVIGATION_MANIFEST,
   PAGE_PERMISSIONS,
   resolveNavigationAttempt,
   visibleStaffNavItems,
 } from './navigationPermissions';
+import sidebarSource from '../components/layout/Sidebar.tsx?raw';
+import navigationSource from './navigationPermissions.ts?raw';
 
 describe('role-aware staff navigation contract', () => {
+  it('uses one manifest for sidebar visibility and direct route guards', () => {
+    expect(PAGE_NAVIGATION_MANIFEST.registers).toEqual({
+      requiredPermission: 'view_registers',
+      alternativePermissions: ['view_approval_registers'],
+    });
+    expect(PAGE_NAVIGATION_MANIFEST.settings).toEqual({
+      requiredPermission: 'view_settings',
+      alternativePermissions: ['view_approval_matrix'],
+    });
+    expect(sidebarSource).toContain('navigationPermissionsFor');
+    expect(sidebarSource).not.toMatch(/requiredPermission:\s*['"]|alternativePermissions:\s*\[/);
+    expect(navigationSource.match(/view_approval_registers/g)).toHaveLength(1);
+    expect(navigationSource.match(/view_approval_matrix/g)).toHaveLength(1);
+  });
+
   it('gates every staff sidebar item except Dashboard with its matching page permission', () => {
     expect(allNavItems.length).toBe(24);
 
@@ -116,6 +134,20 @@ describe('role-aware staff navigation contract', () => {
       blockedPage: 'members',
       allowed: false,
     });
+  });
+
+  it('uses resource-scoped approval permissions only for their owning hubs', () => {
+    const prototypePermissions = mapCanonicalPermissions([
+      'approvals.sanction_register.read',
+      'approvals.matrix.read',
+    ]);
+    const visibleIds = visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id);
+
+    expect(visibleIds).toEqual(['dashboard', 'registers', 'settings']);
+    expect(prototypePermissions).not.toContain('view_registers');
+    expect(prototypePermissions).not.toContain('view_settings');
+    expect(resolveNavigationAttempt('registers', permission => prototypePermissions.includes(permission)).allowed).toBe(true);
+    expect(resolveNavigationAttempt('settings', permission => prototypePermissions.includes(permission)).allowed).toBe(true);
   });
 
   it('shows and guards Admin Users only through mapped manage_users permission', () => {

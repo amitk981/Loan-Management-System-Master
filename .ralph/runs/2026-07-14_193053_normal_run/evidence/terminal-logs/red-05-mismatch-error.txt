@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_unresolved_mismatch_cannot_be_cleared_by_same_signer_capture (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_unresolved_mismatch_cannot_be_cleared_by_same_signer_capture)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_193053_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 252, in test_unresolved_mismatch_cannot_be_cleared_by_same_signer_capture
+    self.assertEqual(changed.status_code, 400, changed.content)
+AssertionError: 409 != 400 : b'{"success": false, "error": {"code": "CONFLICT", "message": "An unresolved signature mismatch can only be cleared through mismatch resolution.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-14T14:10:45.434867Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

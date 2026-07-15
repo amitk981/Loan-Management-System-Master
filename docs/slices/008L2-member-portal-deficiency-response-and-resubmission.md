@@ -1,7 +1,7 @@
 # Slice 008L2: Member Portal Deficiency Response and Resubmission
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Application Intake and Completeness (portal continuation)
@@ -45,23 +45,38 @@ Borrowers rectify deficient applications from the portal instead of physically v
 ## Out of Scope
 Staff deficiency creation/resolution (005F), portal documentation-package actions (008L), portal KYC correction (011M2), notifications content (011NA).
 
+## 008K3 Run-Ahead Sharpening (2026-07-15)
+
+- Reuse 008L's portal upload/provenance boundary, but deficiency files remain intake evidence and
+  can never be attached as a Stage-4 current-renderer document, terminal security fact, checklist
+  completion action, approval action, or evidence digest merely because the application later
+  enters documentation.
+- Add a cross-boundary regression that deficiency upload/respond/resubmit writes no
+  `checklist_item_completion` or `document_checklist_approval` version, no documentation-checklist
+  workflow/audit success, and does not alter any K3 verifier, remarks, role, or checklist status.
+
 ## Risk Level
 High
+
+## 008L Completion Sharpening (2026-07-15)
+- Reuse 008L's central upload/storage helper and immutable portal-account/member/application
+  attribution, but create a deficiency-owned relation; never reuse `PortalDocumentationSubmission`.
+- Deficiency content downloads must remain authenticated portal reads, not internal download URLs.
 
 ## Acceptance Criteria
 - The full returned → rectified → resubmitted loop works end to end for a real borrower account.
 - All gates pass; mobile portal screenshots of deficiency list, upload, and resubmission saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence attempt recorded; localhost binds denied by the sandbox
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

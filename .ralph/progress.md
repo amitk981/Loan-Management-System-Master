@@ -1,5 +1,301 @@
 # Ralph Progress Log
 
+## 2026-07-15 - 2026-07-15_073659_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008L2-member-portal-deficiency-response-and-resubmission
+- Summary: Added own-member deficiency projection, immutable replacement-document response chains,
+  authenticated downloads, canonical completeness resubmission, and MP11 interaction states inside
+  MP10 while preserving the Stage-4 zero-write boundary.
+- Tests run: staged backend/frontend RED-GREEN; 8 focused backend tests; Django check and migration
+  sync; all 881 backend tests with 40 expected skips at 92% coverage; frontend lint, typecheck,
+  build, and all 302 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_073659_normal_run/evidence/`
+- Result: Complete pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; portal document access, immutable evidence, deficiency resolution, and
+  application lifecycle changed fail-closed without creating Stage-4 completion authority.
+- Next action: Run the due architecture review, then sharpened 008M.
+
+## 2026-07-15 - 2026-07-15_042336_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008K2-sensitive-security-contract-closure
+- Summary: Replaced suffix-bearing field tokens with opaque authenticated v2 tokens and a frozen
+  retained-data migration, separated CDSL display masking from reveal decryption, made blank-cheque
+  PATCH genuinely partial under lock, enforced finance state scope, centralized redaction, and
+  completed executable dependency/forged-access regressions.
+- Tests run: staged confidentiality/PATCH/finance RED-GREEN; expanded 42-test security suite; Django
+  check and migration sync; 859 backend tests with 39 expected skips at 92% coverage; frontend lint,
+  typecheck, 293 tests, and build; plaintext scans; five affected PostgreSQL race classes twice.
+- Evidence saved: `.ralph/runs/2026-07-15_042336_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High sensitive-data/schema/object-scope change, bounded by frozen reconciliation,
+  central reveal-only decryption, locked validation, fail-closed scope, and twice-run races.
+- Next action: Run sharpened 008K3, then 008L.
+
+## 2026-07-15 - 2026-07-15_001106_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008I2-security-poa-owner-and-read-contract-closure
+- Summary: Moved the complete retained PoA policy into the security owner, replaced the dynamic
+  forwarding shell with a temporary policy-free compatibility import, enforced exact ₹500.00
+  activation, and restored canonical masked package reads for every source role without mutation,
+  reveal, download, invocation, release, or readiness authority.
+- Tests run: retained module/migration/API suites; staged ownership, amount, read-matrix, and
+  catalogue RED/GREEN evidence; exact activation/downgrade PostgreSQL races twice; Django check,
+  migration sync, 829 backend tests at 92% coverage; frontend lint/typecheck/build and 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_001106_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High legal/security authority and terminal-evidence change, bounded by atomic
+  fail-closed validation, unchanged schema/routes/ids, scoped read-only access, and twice-run races.
+- Next action: Run sharpened 008I3, then 008I4 before 008J.
+
+## 2026-07-14 - 2026-07-14_234031_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Independently reviewed 008G2, 008F2, 008H, and 008I through separate Standards and Spec
+  passes. Reproduced the missing exact ₹500 PoA rule and nullable CDSL evidence crash; found reversed
+  security/legal dependencies, incomplete source read roles, non-central reversible crypto/reveal,
+  and shallow race evidence. No production code changed.
+- Corrective queue: Added 008I2, 008I3, and 008I4 in dependency order; made 008J wait for I4 and
+  sharpened 008K/012E3 from already-opened source material.
+- Tests run: two focused failing regressions plus queue, protected-path, diff, frontend, and backend
+  configured architecture-review gates; exact evidence is retained in the run folder.
+- Evidence saved: `.ralph/runs/2026-07-14_234031_architecture_review/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium documentation/queue risk; High product findings are parked in executable
+  corrective slices, and no production code or protected/source file changed.
+- Next action: Run 008I2, then 008I3, then 008I4 before 008J.
+
+## 2026-07-14 - 2026-07-14_225031_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008I-cdsl-pledge-workflow
+- Summary: Added one package-owned CDSL pledge with protected BO accounts, PRF/PSN/acceptance
+  milestones, Compliance maker transfer, distinct Company Secretary terminal verification,
+  frozen current-renderer evidence, audited explicit reveal, and checklist/package projections.
+  Sharpened 008K without implementing it.
+- Tests run: four retained TDD red/green cycles; focused and impacted suites; both PostgreSQL
+  changed-payload races twice; Django check/migration sync; all 826 backend tests with 36 expected
+  skips at 92% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_225031_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; protected financial identity, schema, legal evidence, permissions, and
+  concurrency changed fail-closed, while invocation/unpledge/readiness remain excluded.
+- Next action: Architecture review is due; otherwise run 008J blank-cheque custody after review.
+
+## 2026-07-14 - 2026-07-14_143550_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008D-stamp-duty-and-notarisation-tracking
+- Summary: Added source §26.9/§26.10 stamp-duty and notarisation current records, exact replay and
+  retained change evidence, a legal-document-owned Stage 4 authority seam, documents-owned
+  same-application evidence reference authority, and status-only loan-document/checklist projections.
+- Tests run: staged RED/GREEN; focused legal-document suites; genuine PostgreSQL five-worker
+  changed-submission race passed twice; Django check/migration sync; all 766 backend tests with 24
+  expected skips and 93% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_143550_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium legal/compliance mutation risk; one additive migration, protected relations,
+  fail-closed authority/provenance, atomic row locks, and no external side effects.
+- Next action: Run sharpened 008E signature mismatch workflow, then sharpened 008F PoA workflow.
+
+# Run 2026-07-14_134809_normal_run
+
+- Completed 008C2. Public approval actions can no longer inject a terminal completion hook; direct
+  terminal calls fail zero-write while the private sanction-completion coordinator atomically owns
+  the decision, checklist, eleven items, and evidence.
+- Replaced cached checklist coherence with canonical frozen latest-cycle facts. Refresh preserves
+  completion/verification/checklist/signature ownership, conflicts on completed-evidence reversals,
+  and records disjoint applicability versus current-provenance linkage ledgers with full request,
+  network, role, and team context.
+- Added application-owned cancelled-cheque mismatch facts, complete subsidiary-route validation,
+  and one approval-owned checklist read resolver for permission, A-104 compatibility, nondisclosure,
+  and application/case scope before checklist queries.
+- The genuine PostgreSQL five-worker final-sanction race passed twice. All 758 backend tests pass
+  with 23 expected PostgreSQL-only skips and 93% coverage; frontend build/typecheck/lint and all 293
+  tests pass. Independent Standards and Spec reviews report no remaining findings.
+- Next: 008D uses the sharpened narrow lifecycle/status seam for stamp duty and notarisation; 008E
+  consumes the application-owned mismatch fact seam afterward.
+
+# Run 2026-07-14_102642_normal_run
+
+- Completed 008B2 by moving the retained `loan_documents` model/table, generation orchestration,
+  transport adapters, and collection selector behind the source-defined `legal_documents` owner.
+- Direct and HTTP generation/read calls share active-actor, permission, template-reference, and
+  application-scope authority. Denial matrices prove zero template/frozen/storage reads and zero
+  file/model/audit/workflow writes, including malformed unauthorised payloads.
+- One state-only migration retains pre-existing rows and adds the database-enforced nullable-only
+  loan-account transition recorded as A-102. Fresh migration creates exactly one retained table;
+  009C owns the final protected FK.
+- Exact first/middle/final/empty selector pages, API/direct contract parity, replay, and two final
+  PostgreSQL five-request races pass. Backend check/migration sync and all 732 tests pass with 22
+  expected skips at 93% coverage; frontend build/typecheck/lint and all 293 tests pass.
+- Independent Standards/Spec review findings on authority ordering, denial/dependency evidence,
+  and shallow helpers were fixed before the final gates. Next: 008B3, then 008C.
+
+# Run 2026-07-14_100104_normal_run
+
+- Completed 007T. S23 now consumes the exact retained legacy register shape with top-level null
+  purpose/risk and renders unavailable folio, loan type, purpose, risk, approver, terminal, and
+  communication facts without reconstruction or new visual composition.
+- S21 action submission and its canonical detail/decision refresh share the existing queue/detail
+  generation authority. Newer success, denied, malformed, and empty filter states remain
+  authoritative across delayed POST/detail/decision outcomes.
+- Replaced impossible one-row non-final pagination fixtures with exact 20-row pages. Component tests
+  cover the complete ordering matrix; trusted browser specs retain 007S outputs and add the two
+  declared 007T screenshots. Local collection passes; Chromium hit the expected Mach-port sandbox
+  denial before test execution, leaving the authoritative two runs to the orchestrator.
+- Frontend build/typecheck/lint and all 293 tests pass. Django check/migration sync and all 722
+  backend tests pass with 22 expected skips at 93% coverage; the focused backend legacy serializer
+  test also passes. Evidence: `.ralph/runs/2026-07-14_100104_normal_run/evidence/`.
+- Next: 008B2, then 008B3 before 008C. Both next slices were sharpened with interface-level
+  authority/pagination and genuine DOCX/PDF extraction requirements.
+
+# Run 2026-07-14_093142_architecture_review
+
+- Independently reviewed commits `220f3038...e1698e87`, covering 007R, 007S, 008A2, and 008B,
+  through separate Standards and Spec passes; no production code changed.
+- Confirmed substantive frozen legacy history, template identity/reference integrity, exact
+  generated-document replay, and retained PostgreSQL race evidence. Found two High and two Medium
+  Standards issues plus two High, two Medium, and one Low Spec issue.
+- Queued High-risk 007T for the exact legacy-null S23 contract, production-valid pagination
+  fixtures, and post-action ordering. Queued High-risk 008B2/008B3 for the legal-document dependency
+  seam, module-enforced authority, selector/loan-account integrity, and genuine bounded DOCX/PDF
+  content proof. 008C now depends on 008B3; 008C/008D were sharpened from already-opened sources.
+- Recorded A-101: real M05 decisions still lack governed owners for several mandatory Term Sheet
+  terms, so the full M05-to-M06 path remains explicitly configuration-blocked rather than invented.
+  No ADR was needed and no Blocked slice exists to reopen.
+- Frontend build/typecheck/lint and all 287 tests pass. Django check/migration sync and all 722
+  backend tests pass with 22 expected skips at 93% coverage. Focused legacy/backend and register/
+  workbench UI tests, queue lint, runtime-capability lint, state JSON, and diff checks pass.
+- Next: 007T, then 008B2, then 008B3 before 008C.
+
+# Run 2026-07-14_081204_normal_run
+
+- Completed 008A2. A unique non-null template-identity row now serializes every create/successor,
+  including first approved versions; five different overlapping PostgreSQL requests retain one
+  template, audit, version-history, and identity row. Exact successor replay remains one-write, and
+  both authoritative races pass twice.
+- Added the documents-owned template-source reference decision. It requires a singular immutable
+  global/template-source upload ledger, matching file metadata/sensitivity, and dedicated
+  `documents.template.file_reference` authority. Bare/corrupt/duplicate/application-owned/invalid-
+  sensitivity/download-only references fail with one nondisclosing zero-write response.
+- Moved catalogue filtering/count/page shaping into `documents/selectors.py`, passed
+  transport-neutral request metadata to writes, and added the explicit borrower-template resolver:
+  only `individual_farmer` resolves while `fpc`/`producer_institution` remain configuration-blocked.
+- Added migration 0003, A-099, API contract notes, and sharpened 008B to consume the public
+  reference/resolver boundaries. No frontend, generation endpoint, rendered document, dependency,
+  or protected/source file changed.
+- Validation: 710 backend tests pass with 21 expected skips and 93% coverage; Django check and
+  migration sync pass. Both PostgreSQL race tests pass twice. Frontend build/typecheck/lint and all
+  287 tests pass. Evidence: `.ralph/runs/2026-07-14_081204_normal_run/evidence/`.
+- Next: independent orchestrator validation/commit/merge/push, then run sharpened 008B.
+
+# Run 2026-07-14_064206_architecture_review
+
+- Independently reviewed commits `4b5b4b1...15b8d02` covering completed slices 007O, 007P, 007Q,
+  and 008A through separate Standards and Spec passes; no production code changed.
+- Confirmed substantive new-row frozen terminal/register behavior, authoritative S21 pagination,
+  restored S23/S25 fields, reviewable two-run browser screenshots, immutable template successors,
+  metadata-only template responses, and genuine PostgreSQL successor-race evidence.
+- Found two Critical schema-evolution regressions: older `approval-review-v2` cases become
+  unreadable because new terminal keys reused the old version, and older register rows can raise on
+  empty source JSON instead of returning nulls. Also found mutable approver names and queued 007R.
+- Found High template file-reference and first-version effective-range race gaps; queued 008A2 and
+  made 008B depend on it. Found S21 stale/final-page gaps and a fixed-design register-table
+  violation; queued 007S behind 007R.
+- Added A-097/A-098 for unresolved borrower-template vocabulary and sensitive-change rationale,
+  refreshed CONTEXT plus Epic 007/008 digests, and found no Blocked slice to reopen. No ADR was
+  needed because existing frozen-history, documents-boundary, selector, and frontend rules decide
+  the corrections.
+- Frontend build/typecheck/lint and 269 tests pass. Django check/migration sync and all 700 backend
+  tests pass with 20 expected skips and 93% coverage. Queue lint, JSON validation, and diff checks
+  pass.
+- Next: 007R, then 007S, then 008A2; sharpened 008B follows only after template integrity closes.
+
+# Repair 2026-07-14_062457_repair
+
+- Preserved the complete 008A implementation and repaired the PostgreSQL `FOR UPDATE` failure by
+  limiting two eager-load queries to locking their owning row: the historical approval action gate
+  locks only `ApprovalCase`, and the 008A successor race locks only `DocumentTemplate`.
+- The exact failing sanction concurrency test now passes; the full historical five-race acceptance
+  command passes twice on PostgreSQL. The 008A five-request successor race also passes twice on
+  PostgreSQL with one successor and one evidence set.
+- Django check/migration sync and all 700 backend tests pass with 20 expected SQLite skips at 93%
+  coverage. Frontend build/typecheck/lint and all 269 tests pass. No schema, API, frontend,
+  permission, template lifecycle, or business rule changed.
+- Evidence: `.ralph/runs/2026-07-14_062457_repair/`. Next: independent full validation, then the
+  due architecture review before sharpened 008B.
+
+# Repair 2026-07-14_050413_repair
+
+- Preserved the complete 007P implementation and repaired only the independently demonstrated
+  trusted-browser failure. The malformed-envelope response mode now expects the UI's selected
+  `approved` query filter instead of incorrectly demanding an unfiltered request.
+- The prior mock assertion had aborted route fulfillment, allowed a real unauthenticated request,
+  and cascaded into the missing malformed-response error. No production transport, pagination,
+  approval boundary, styling, or business behavior changed.
+- Playwright collection passes. Local Chromium reached the documented macOS Mach-port denial before
+  test execution; the orchestrator retains ownership of the required two post-repair browser runs.
+- Frontend build/typecheck/lint and all 269 tests pass. Django check/migration sync and all 692 tests
+  pass with 19 expected PostgreSQL-only skips and 93% coverage.
+- Evidence: `.ralph/runs/2026-07-14_050413_repair/`. Next: independent full validation and two-run
+  browser acceptance, then 007Q.
+
+# Run 2026-07-14_043916_normal_run
+
+- Completed 007P by making the shared authenticated list interface reject non-array data and
+  missing, malformed, negative, or internally inconsistent pagination instead of fabricating an
+  empty page.
+- S21 now retains exact sanction/status/assignment filters with explicit page/page size, renders
+  the server total, navigates every page, resets filters to page one, and clears prior rows/totals
+  on permission, transport, or malformed-response failure.
+- Approval collection rejects unknown type/status values and applies actor/type/status/assignment
+  narrowing before the canonical frozen/read-scope validator. Instrumentation proves irrelevant
+  candidates cause no validator calls and a stale-malformed candidate creates no total/page hole.
+- Frontend build/typecheck/lint and 269 tests pass. Django check/migration sync and 692 tests pass
+  with 19 expected PostgreSQL-only skips and 93% coverage. The trusted spec collects; local
+  Chromium hit the expected Mach-port sandbox denial, leaving the two declared screenshot runs to
+  orchestrator acceptance. Next: 007Q.
+
+# Run 2026-07-14_034706_architecture_review
+
+- Independently reviewed commits `d106e16...eab8b0d` covering completed slices 007K-007N across
+  separate Standards and Spec passes; no production code changed.
+- Confirmed substantive mandatory frozen review-package reads, shared authenticated transport,
+  immutable exception evidence/action history, server-owned matrix authority, source-shaped policy
+  settings, and genuine two-run trusted-browser execution.
+- Found a Critical terminal-truth defect: final decisions/registers still read mutable live owner
+  rows. Found High S21 pagination/truncation and S23/S25 source/evidence gaps, plus narrower shared-
+  pagination, canonical-read-boundary, and bounded-work concerns.
+- Created High-risk corrective slices 007O (terminal frozen truth), 007P (queue pagination/read
+  boundary), and 007Q (register source fields/reviewable visual evidence). Clarified A-076/A-079/
+  A-094 and refreshed CONTEXT plus the Epic 007 digest. No ADR was needed.
+- Sharpened next pending 008A/008B with the required PostgreSQL five-race runtime capability; no
+  Blocked slice needed reopening and the dependency graph drains.
+- Frontend build/typecheck/lint and 257 tests pass. Django check/migration sync and 687 tests pass
+  with 19 expected skips and 93% coverage. Queue/integrity checks pass.
+- Next: 007O, then 007P; 007Q follows both before 008A.
+
+# Run 2026-07-14_025903_normal_run
+
+- Completed 007M by extending exception enrichment with an optional ordered, distinct, bounded
+  supporting-document list. The documents owner validates public upload, exact application,
+  legal category, matching sensitivity, role, permission, workflow, and object scope; approvals
+  freezes only returned metadata on the exact Exception Register cycle.
+- Exact ordered replay is zero-write, changed evidence conflicts, and denial matrices leave
+  business/audit/workflow ledgers unchanged. Creation evidence records the associated ids and the
+  workflow event records the attributable reference count in the locked transaction.
+- S25 now renders distinct description/business reason, immutable actor/decision/comment/time, and
+  supporting metadata in the existing table pattern without exposing mutation or inferred download.
+- Backend check/migration sync and 687 tests pass with 19 expected skips and 93% coverage. Frontend
+  build/typecheck/lint and 253 tests pass. The named Playwright spec collects; local Chromium hit
+  the expected macOS Mach-port sandbox denial, so the orchestrator owns both trusted screenshot runs.
+- 007N was inspected and remains concretely sharpened with exact fields, authority rules, shared
+  transport work, and six trusted screenshots. Next: 007N.
+
 # Run 2026-07-13_135007_normal_run
 
 - Completed 007C3 by separating `approvals.case.read` from attributable object scope: immutable
@@ -5598,6 +5894,1446 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_190107_normal_run/.ralph/runs/2026-07-13_190107_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_190107_normal_run/.ralph/runs/2026-07-13_190107_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_200023_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Review window: `b32559c...78d912f` (007E2, 007F, 007G, and 007H); the later docs-only CR-004
+  intake commit was excluded from product findings.
+- Summary: Found a Critical exception coherence/predicate failure and High object-scope gaps in
+  sanction/register reads and General Meeting document references/current evidence. Queued 007F2,
+  007G2, and 007H2; sharpened 007I/007J. Production code unchanged.
+- Tests run: independent Standards/Spec reviews; frontend build/typecheck/lint and 208 tests;
+  backend check/migration sync and 669 tests with 19 expected SQLite skips at 93% coverage; queue
+  lint, state JSON, diff whitespace, and path checks.
+- Evidence saved: `.ralph/runs/2026-07-13_200023_architecture_review/evidence/`
+- Result: Success
+- Risk level: Low review run; queued corrective slices are High risk.
+- Next action: Run 007F2, then 007G2 and 007H2 before 007I.
+
+## 2026-07-13 20:27:47 - 2026-07-13_200023_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_200023_architecture_review/.ralph/runs/2026-07-13_200023_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_200023_architecture_review/.ralph/runs/2026-07-13_200023_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_202809_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007F2-exception-routing-coherence-and-explicit-projection-closure
+- Summary: Corrected frozen exception amount/flag truth, distinct sanction/Exception Register
+  reason coherence, same-case register projection, full public three-approver lifecycle, and removed
+  the hidden appraisal-save projection receiver in favor of explicit approval-owned refreshes.
+- Tests run: retained RED/GREEN cycles; 128 affected approval tests; backend check/migration sync
+  and 670 tests with 19 expected SQLite skips at 93% coverage; frontend build/typecheck/lint and
+  208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_202809_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Run 007G2, then 007H2 before 007I.
+
+## 2026-07-13 20:53:50 - 2026-07-13_202809_normal_run
+- Agent tool used: codex
+- Slice attempted: 007F2-exception-routing-coherence-and-explicit-projection-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/.ralph/runs/2026-07-13_202809_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/.ralph/runs/2026-07-13_202809_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_205450_normal_run
+
+- Agent tool used: codex
+- Slice attempted: CR-004-member-governance-container-recurring-ci-timeout
+- Summary: Added a suite-local 15-second integration budget and sequential policy to the mounted
+  member-governance container, plus a retained one-worker/file-serial CI-shaped command. Production
+  journeys and assertions are unchanged; the global frontend timeout remains 5000 ms.
+- Tests run: retained exact-command RED/GREEN; 10 repeated exact journeys; all 16 container rows;
+  frontend build/typecheck/lint and 208 tests; backend check/migration sync and 670 tests with 19
+  expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_205450_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Independent validation/commit/push, then confirm staging push and PR #5 frontend
+  checks are green; execute 007G2 next.
+
+## 2026-07-13 21:14:14 - 2026-07-13_205450_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-004-member-governance-container-recurring-ci-timeout
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_205450_normal_run/.ralph/runs/2026-07-13_205450_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_205450_normal_run/.ralph/runs/2026-07-13_205450_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_212122_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007G2-general-meeting-current-evidence-and-document-scope-closure
+- Summary: Added canonical current-pending/cycle-frozen General Meeting projection semantics,
+  terminal evidence freezing, and a documents-owned typed per-file reference decision with exact
+  application/category/sensitivity/workflow/role scope and nondisclosing zero-write denials.
+- Tests run: retained four RED/GREEN defect cycles; 130 affected approval tests; backend
+  check/migration sync and 672 tests with 19 expected SQLite skips at 93% coverage; frontend
+  build/typecheck/lint and 208 tests; independent Standards/Spec review with no remaining findings.
+- Evidence saved: `.ralph/runs/2026-07-13_212122_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Run 007H2, then 007I.
+
+## 2026-07-13 21:57:16 - 2026-07-13_212122_normal_run
+- Agent tool used: codex
+- Slice attempted: 007G2-general-meeting-current-evidence-and-document-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_212122_normal_run/.ralph/runs/2026-07-13_212122_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_212122_normal_run/.ralph/runs/2026-07-13_212122_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_215812_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007H2-sanction-decision-and-register-object-scope-closure
+- Summary: Scoped sanction decisions and Credit Sanction Register rows through the canonical
+  approval-case selector before decision lookup, filters, counts, and pagination; preserved frozen
+  cycle ownership, distinct exception reasons, and permission/action/document separation.
+- Tests run: retained RED/GREEN endpoint cycles; 116 scoped approval/seed tests; 19 review-finding
+  regressions; backend check/migration sync and 677 tests with 19 expected SQLite skips above the
+  85% coverage floor; frontend build/typecheck/lint and 208 tests; independent Standards/Spec
+  reviews with no remaining findings.
+- Evidence saved: `.ralph/runs/2026-07-13_215812_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Independent orchestrator validation/commit/merge/push, then architecture review.
+
+## 2026-07-13 22:29:38 - 2026-07-13_215812_normal_run
+- Agent tool used: codex
+- Slice attempted: 007H2-sanction-decision-and-register-object-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_215812_normal_run/.ralph/runs/2026-07-13_215812_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_215812_normal_run/.ralph/runs/2026-07-13_215812_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_222951_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Review window: `c843ea8...5ea122b` (007F2, CR-004, 007G2, and 007H2).
+- Summary: Found a High frozen-provenance/read-parity defect: a live appraisal edit hides the
+  frozen case detail while terminal sanction/register reads remain visible. Queued 007H3, blocked
+  007I on it, removed unsupported borrower use of internal §25.8 from 007J, and retained CR-004's
+  hosted-CI evidence gap for owner/orchestrator confirmation. Production code unchanged.
+- Tests run: two injected public HTTP repro probes; frontend build/typecheck/lint and 208 tests;
+  backend check/migration sync and 677 tests with 19 expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_222951_architecture_review/evidence/`
+- Result: Success
+- Risk level: Low review run; queued corrective slice 007H3 is High risk.
+- Next action: Run 007H3, then 007I.
+
+## 2026-07-13 22:57:23 - 2026-07-13_222951_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_222951_architecture_review/.ralph/runs/2026-07-13_222951_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_222951_architecture_review/.ralph/runs/2026-07-13_222951_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_225742_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007H3-frozen-case-provenance-and-read-scope-parity-closure
+- Summary: Removed mutable live-appraisal comparisons from canonical frozen case validity and
+  applied frozen validity plus actor scope to every database-narrowed candidate before case/register
+  counts, pagination, decision lookup, and serialization. Added focused pending, terminal,
+  malformed-snapshot, and returned/new-cycle public regressions.
+- Tests run: retained RED/GREEN probes; all 106 approval-routing tests; related approval suites;
+  frontend build/typecheck/lint and 208 tests; backend check/migration sync and all 679 tests with 19
+  expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_225742_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007I.
+
+## 2026-07-13 23:19:55 - 2026-07-13_225742_normal_run
+- Agent tool used: codex
+- Slice attempted: 007H3-frozen-case-provenance-and-read-scope-parity-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_225742_normal_run/.ralph/runs/2026-07-13_225742_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_225742_normal_run/.ralph/runs/2026-07-13_225742_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_232007_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007I-sanction-workbench-ui
+- Summary: Replaced the Sanction Workbench mock/client-authority path with actor-scoped approval
+  queue/detail/actions, frozen review and history facts, terminal sanction reads, and a backend-owned
+  General Meeting record action plus exact-application legal document upload flow.
+- Tests run: retained frontend and backend RED/GREEN cycles; 21 focused workbench tests; frontend
+  build/typecheck/lint and 227 tests; backend check/migration sync and 680 tests with 19 expected
+  SQLite skips at 93% coverage; Playwright contract collection plus genuine sandbox-denied launch.
+- Evidence saved: `.ralph/runs/2026-07-13_232007_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007J.
+
+## 2026-07-14 00:02:58 - 2026-07-13_232007_normal_run
+- Agent tool used: codex
+- Slice attempted: 007I-sanction-workbench-ui
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_232007_normal_run/.ralph/runs/2026-07-13_232007_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_232007_normal_run/.ralph/runs/2026-07-13_232007_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_000359_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007J-registers-and-approval-matrix-frontend-wiring
+- Summary: Wired actor-scoped Credit Sanction and Exception Registers plus retained Approval Matrix
+  versions and governed successor proposals, with resource-scoped navigation/action permission
+  bridges and no owned mock fallback or client-derived approval facts.
+- Tests run: retained focused RED/GREEN cycles plus independent Standards/Spec review fixes;
+  frontend build/typecheck/lint and 245 tests;
+  backend check/migration sync and 680 tests with 19 expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-14_000359_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007J2.
+
+## 2026-07-14 00:40:42 - 2026-07-14_000359_normal_run
+- Agent tool used: codex
+- Slice attempted: 007J-registers-and-approval-matrix-frontend-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/.ralph/runs/2026-07-14_000359_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/.ralph/runs/2026-07-14_000359_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_004058_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007J2-settings-hub-panels-wiring-or-lockdown
+- Summary: Wired retained S70 loan-policy versions and complete POST-created drafts to the real
+  003E/006C boundary; removed all remaining SettingsHub business fixtures and the duplicate user
+  tab; made TAT and document-template surfaces explicitly inert under 012EA and 008A; preserved the
+  delivered 007J approval-matrix boundary unchanged.
+- Tests run: retained frontend RED/GREEN cycles and two-axis review fixes; frontend build,
+  typecheck, lint, and 251 tests; backend check/migration sync and 680 tests with 19 expected SQLite
+  skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-14_004058_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium
+- Next action: Independent orchestrator validation/commit/merge/push, then the due architecture
+  review before 008A.
+
+## 2026-07-14 01:05:24 - 2026-07-14_004058_normal_run
+- Agent tool used: codex
+- Slice attempted: 007J2-settings-hub-panels-wiring-or-lockdown
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/.ralph/runs/2026-07-14_004058_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/.ralph/runs/2026-07-14_004058_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_010536_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Review window: `82027f7...0f0968d` (007H3, 007I, 007J, and 007J2).
+- Summary: Found mandatory frozen-review fallback and engine/selector dependency defects, partial
+  S21/S22/S25 fidelity, duplicated frontend transport/approval/navigation decisions, Settings
+  layout drift, and missing trusted browser execution. Queued executable corrective slices
+  007K-007N, corrected CONTEXT/A-090/digest/findings, and changed no production code.
+- Tests run: independent Standards and Spec passes; source/functional-ID/evidence inspection;
+  Ralph slice queue lint; full frontend build/typecheck/lint/tests and backend check/migration/
+  coverage gates retained in the run folder.
+- Evidence saved: `.ralph/runs/2026-07-14_010536_architecture_review/`
+- Result: Success
+- Risk level: Low review run; queued corrective slices are High under standing approval.
+- Next action: Run 007K, then 007L; complete 007M/007N before closing Epic 007 frontend evidence.
+
+## 2026-07-14 01:34:55 - 2026-07-14_010536_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_010536_architecture_review/.ralph/runs/2026-07-14_010536_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_010536_architecture_review/.ralph/runs/2026-07-14_010536_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_013505_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007K-frozen-review-snapshot-and-selector-boundary-closure
+- Summary: Made the locked credit-owned review package mandatory immutable approval truth; removed
+  live appraisal fallback and the selector/engine cycle; unified pre-filter actor-scoped validity
+  across cases, actions, decisions, and both approval registers.
+- Tests run: retained backend RED/GREEN cycles and two-axis review fixes; backend check/migration
+  sync and 685 tests with 19 expected SQLite skips at 93% coverage; frontend build/typecheck/lint
+  and 251 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_013505_normal_run/evidence/`
+- Result: Success
+- Risk level: High under standing approval; no schema migration or external side effect.
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007L.
+
+## 2026-07-14 02:31:21 - 2026-07-14_013505_normal_run
+- Agent tool used: codex
+- Slice attempted: 007K-frozen-review-snapshot-and-selector-boundary-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/.ralph/runs/2026-07-14_013505_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/.ralph/runs/2026-07-14_013505_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_023135_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007L-sanction-workbench-contract-and-browser-closure
+- Summary: Added the mandatory frozen S21 workbench projection and exact sanction queue filters;
+  rendered immutable S22 action history; deepened shared authenticated JSON/multipart transport;
+  required three fresh legal uploads for changed General Meeting evidence; and tightened the named
+  seven-state browser contract without introducing styling or client-owned business rules.
+- Tests run: retained backend/frontend RED/GREEN cycles; Django check and migration sync; 686 backend
+  tests with 19 expected SQLite skips at 93% coverage; frontend build/typecheck/lint and 253 tests;
+  Playwright collection successful; genuine local Chromium sandbox denial retained without images.
+- Evidence saved: `.ralph/runs/2026-07-14_023135_normal_run/evidence/`
+- Result: Success pending independent orchestrator browser/quality validation.
+- Risk level: High under standing approval; no migration or external side effect.
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007M followed by 007N.
+
+## 2026-07-14 02:58:50 - 2026-07-14_023135_normal_run
+- Agent tool used: codex
+- Slice attempted: 007L-sanction-workbench-contract-and-browser-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/.ralph/runs/2026-07-14_023135_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/.ralph/runs/2026-07-14_023135_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 03:21:03 - 2026-07-14_025903_normal_run
+- Agent tool used: codex
+- Slice attempted: 007M-exception-supporting-evidence-and-register-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_025903_normal_run/.ralph/runs/2026-07-14_025903_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_025903_normal_run/.ralph/runs/2026-07-14_025903_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_032113_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007N-register-matrix-settings-contract-and-browser-closure
+- Summary: Centralised register/matrix pagination and authenticated transport; added server-owned
+  matrix authority/count display facts; unified sidebar/direct-guard navigation permissions;
+  restored the approved S70 policy card/field composition; and authored the six-state routed
+  S23/S25/S70/S71 trusted browser contract.
+- Tests run: retained backend/frontend RED/GREEN cycles; frontend build/typecheck/lint and 257
+  tests; backend check/migration sync and 687 tests with 19 expected skips at 93% coverage;
+  Playwright collection successful and honest local Chromium sandbox denial retained.
+- Evidence saved: `.ralph/runs/2026-07-14_032113_normal_run/evidence/`
+- Result: Success pending independent orchestrator browser/quality validation.
+- Risk level: High under standing approval; no migration, external communication, or deployment.
+- Next action: Independent orchestrator validation/commit/merge/push, then the due architecture
+  review before 008A.
+
+## 2026-07-14 03:46:54 - 2026-07-14_032113_normal_run
+- Agent tool used: codex
+- Slice attempted: 007N-register-matrix-settings-contract-and-browser-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/.ralph/runs/2026-07-14_032113_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/.ralph/runs/2026-07-14_032113_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 04:14:51 - 2026-07-14_034706_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_034706_architecture_review/.ralph/runs/2026-07-14_034706_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_034706_architecture_review/.ralph/runs/2026-07-14_034706_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_041501_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007O-frozen-terminal-decision-and-register-source-closure
+- Summary: Froze terminal decision/register identity, amount, purpose, risk, and sanction-term
+  sources in the routed review package; removed live owner reads from final creation; unified
+  General Meeting readability; added immutable register source-package persistence.
+- Tests run: backend RED/GREEN cycles and 146 focused regressions; Django check/migration sync;
+  691 backend tests with 19 expected PostgreSQL-only skips at 93% coverage; frontend
+  build/typecheck/lint and 257 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_041501_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High under standing approval; one additive JSON migration, no deployment or real
+  external communication.
+- Next action: Independent orchestrator validation, then run 007P followed by 007Q.
+
+## 2026-07-14 04:39:07 - 2026-07-14_041501_normal_run
+- Agent tool used: codex
+- Slice attempted: 007O-frozen-terminal-decision-and-register-source-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_041501_normal_run/.ralph/runs/2026-07-14_041501_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_041501_normal_run/.ralph/runs/2026-07-14_041501_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 05:18:34 - 2026-07-14_050413_repair
+- Agent tool used: codex
+- Slice attempted: 007P-sanction-queue-pagination-and-read-boundary-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/.ralph/runs/2026-07-14_050413_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/.ralph/runs/2026-07-14_050413_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_051852_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007Q-register-source-fields-and-visual-evidence-closure
+- Summary: Completed immutable S23/S25 source-field projections, including terminal conditions,
+  approver and communication evidence; restored the established semantic register-table
+  composition; and strengthened the three-output browser contract against blank capture regions.
+- Tests run: backend and frontend RED/GREEN cycles; Django check/migration sync; all 693 backend
+  tests with 19 expected PostgreSQL-only skips at 93% coverage; frontend build/typecheck/lint and
+  all 269 tests; both trusted browser specs collected successfully.
+- Evidence saved: `.ralph/runs/2026-07-14_051852_normal_run/evidence/`
+- Result: Success pending independent orchestrator browser/quality validation.
+- Risk level: High under standing approval; one additive/backfilled migration, no deployment or
+  real external communication.
+- Next action: Independent orchestrator validation/commit/merge/push, then start sharpened 008A.
+
+## 2026-07-14 05:58:34 - 2026-07-14_051852_normal_run
+- Agent tool used: codex
+- Slice attempted: 007Q-register-source-fields-and-visual-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_051852_normal_run/.ralph/runs/2026-07-14_051852_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_051852_normal_run/.ralph/runs/2026-07-14_051852_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_055848_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008A-document-template-model-and-versioning
+- Summary: Added the immutable document-template catalogue, complete successor-version PATCH,
+  bounded/filterable reads, explicit read/manage/file-reference permissions, non-overlapping
+  approved effective periods, and atomic audit/version-history evidence. No generation/download
+  or Annexure routing was introduced.
+- Tests run: retained backend RED/GREEN cycles; Django check/migration sync; all 700 backend tests
+  with 20 expected PostgreSQL-only skips at 93% coverage; frontend build/typecheck/lint and all 269
+  tests.
+- Evidence saved: `.ralph/runs/2026-07-14_055848_normal_run/evidence/`
+- Result: Success pending independent orchestrator PostgreSQL/quality validation.
+- Risk level: Medium; one additive migration and Critical template-manage permission boundary, no
+  destructive data change, generation, download, external communication, or deployment.
+- Next action: Independent validation/commit/merge/push, then the due architecture review before 008B.
+
+## 2026-07-14 06:41:52 - 2026-07-14_062457_repair
+- Agent tool used: codex
+- Slice attempted: 008A-document-template-model-and-versioning
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_055848_normal_run/.ralph/runs/2026-07-14_062457_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_055848_normal_run/.ralph/runs/2026-07-14_062457_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 07:07:54 - 2026-07-14_064206_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_064206_architecture_review/.ralph/runs/2026-07-14_064206_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_064206_architecture_review/.ralph/runs/2026-07-14_064206_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_070825_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007R-legacy-approval-history-and-frozen-identity-closure
+- Summary: Versioned new frozen review packages as v3; restored actor-scoped v2 history with a
+  zero-write return/correct/review remediation path; made legacy approved/rejected register rows
+  null-safe; and froze original/replacement approver display identity without live user reads.
+- Tests run: backend RED/GREEN cycles and 124 focused approval regressions; Django check and
+  migration sync; all 707 backend tests with 20 expected PostgreSQL-only skips at 93% coverage;
+  frontend build/typecheck/lint and all 269 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_070825_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High under standing approval; one additive nullable field migration, no backfill,
+  destructive data change, external communication, deployment, commit, merge, or push.
+- Next action: Independent validation, then run sharpened 007S.
+
+## 2026-07-14 07:42:05 - 2026-07-14_070825_normal_run
+- Agent tool used: codex
+- Slice attempted: 007R-legacy-approval-history-and-frozen-identity-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/.ralph/runs/2026-07-14_070825_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/.ralph/runs/2026-07-14_070825_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_074249_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007S-register-pattern-and-pagination-order-closure
+- Summary: Enforced exact shared pagination, generation-guarded S21 queue/detail reads, restored
+  S23/S25 retained tables plus selected evidence cards, and moved approval-case query/order/page
+  mechanics behind the selector without weakening canonical engine validation.
+- Tests run: frontend RED/GREEN cycles and all 287 tests plus typecheck/lint/build; backend
+  RED/GREEN cycles, 126 focused approval tests, Django check/migration sync, and all 707 backend
+  tests with 20 expected PostgreSQL-only skips at 93% coverage; three browser specs collected.
+- Evidence saved: `.ralph/runs/2026-07-14_074249_normal_run/evidence/`
+- Result: Success pending independent orchestrator browser/quality validation.
+- Risk level: High under standing approval; no migration, dependency, deployment, communication,
+  commit, merge, or push.
+- Next action: Independent validation/commit/merge/push, then run sharpened 008A2.
+
+## 2026-07-14 08:11:45 - 2026-07-14_074249_normal_run
+- Agent tool used: codex
+- Slice attempted: 007S-register-pattern-and-pagination-order-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/.ralph/runs/2026-07-14_074249_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/.ralph/runs/2026-07-14_074249_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 08:41:58 - 2026-07-14_081204_normal_run
+- Agent tool used: codex
+- Slice attempted: 008A2-template-effective-integrity-and-file-reference-boundary
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_081204_normal_run/.ralph/runs/2026-07-14_081204_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_081204_normal_run/.ralph/runs/2026-07-14_081204_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_084216_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008B-document-generation-shell
+- Summary: Added retained-template PDF/Word generation, immutable loan-document metadata,
+  object-scoped metadata listing, frozen reviewed/sanctioned merge projections, exact replay, and
+  content-free audit/workflow evidence. Loan Agreement remains guarded by executed Term Sheet state.
+- Tests run: backend RED/GREEN cycles; focused generation and frozen-snapshot regressions; repeated
+  PostgreSQL five-request replay race; Django check/migration sync; all 722 backend tests with 22
+  expected PostgreSQL-only skips at 93% coverage; frontend build/typecheck/lint and all 287 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_084216_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium; one additive migration and confidential generated-document path, with no
+  destructive data change, external communication, deployment, commit, merge, or push.
+- Next action: Independent validation, then the due architecture review before sharpened 008C.
+
+## 2026-07-14 09:30:17 - 2026-07-14_084216_normal_run
+- Agent tool used: codex
+- Slice attempted: 008B-document-generation-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/.ralph/runs/2026-07-14_084216_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/.ralph/runs/2026-07-14_084216_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 10:00:17 - 2026-07-14_093142_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_093142_architecture_review/.ralph/runs/2026-07-14_093142_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_093142_architecture_review/.ralph/runs/2026-07-14_093142_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 10:26:20 - 2026-07-14_100104_normal_run
+- Agent tool used: codex
+- Slice attempted: 007T-register-null-contract-and-action-order-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_100104_normal_run/.ralph/runs/2026-07-14_100104_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_100104_normal_run/.ralph/runs/2026-07-14_100104_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 11:13:36 - 2026-07-14_102642_normal_run
+- Agent tool used: codex
+- Slice attempted: 008B2-legal-document-generation-boundary-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/.ralph/runs/2026-07-14_102642_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/.ralph/runs/2026-07-14_102642_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_111448_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008B3-document-renderer-and-output-proof-closure
+- Summary: Replaced metadata-only/fake-DOCX rendering with a legal-documents-owned bounded OPC
+  renderer, genuine split-run Word merging, pinned Unicode/shaped multi-page PDF rendering, pypdf
+  structural/content reopening, and explicit pathological-input zero-write enforcement. Preserved
+  exact replay, cleanup, safe names, metadata-only reads, A-101's real M05 blocker, and A-102.
+- Tests run: TDD RED/GREEN DOCX, placeholder/bounds, and M05 blocker cycles; 26 focused legal tests
+  (18 pass, 1 expected PostgreSQL skip, 7 dependency-only PDF failures locally); Django check and
+  migration sync; full 736 backend tests (same 7 dependency-only failures, 22 expected skips) at
+  92% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_111448_normal_run/evidence/`
+- Result: Implementation complete pending orchestrator dependency installation and independent
+  validation. No local PDF artifact was fabricated while the pinned packages were unavailable.
+- Risk level: High under standing approval; local legal-record rendering and three pinned packages,
+  with no migration, destructive data change, network conversion, deployment, communication,
+  commit, merge, or push.
+- Next action: Independent validation must install pins and prove parsed DOCX/PDF outputs, then run
+  sharpened 008C.
+
+## 2026-07-14 - 2026-07-14_114627_repair
+
+- Agent tool used: codex
+- Slice repaired: 008B3-document-renderer-and-output-proof-closure
+- Summary: Reproduced the independent PDF readability failure and corrected the renderer to use
+  pypdf layout extraction for shaped text plus token-level host-font fallback when the primary
+  font lacks a glyph such as the Indian rupee. Preserved shaping, bounded rendering, zero-write
+  failure behavior, generation authority, replay, A-101, and A-102.
+- Tests run: exact two-test PDF RED/GREEN loop; all 20 document-generation tests with one expected
+  PostgreSQL skip; Django check/migration sync; all 736 backend tests with 22 expected PostgreSQL
+  skips at 93% coverage; frontend build/typecheck/lint and all 293 tests; strict retained-PDF
+  reopen and exact Unicode/rupee extraction proof.
+- Evidence saved: `.ralph/runs/2026-07-14_114627_repair/evidence/`
+- Result: Repair complete pending full independent orchestrator revalidation/commit/merge/push.
+- Risk level: High under standing approval; local legal-record rendering only, with no migration,
+  new dependency, destructive data change, network conversion, deployment, communication, commit,
+  merge, or push.
+- Next action: Independent validation, then run sharpened 008C.
+
+## 2026-07-14 12:09:37 - 2026-07-14_114627_repair
+- Agent tool used: codex
+- Slice attempted: 008B3-document-renderer-and-output-proof-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/.ralph/runs/2026-07-14_114627_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_111448_normal_run/.ralph/runs/2026-07-14_114627_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_120956_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008C-documentation-checklist-applicability
+- Summary: Added atomic post-sanction legal checklist creation, eleven ordered applicability items,
+  source-fact blockers, metadata-only generated-document links, object-scoped §27.1 reads, and the
+  pre-sanction 005D compatibility branch. Sharpened 008D and the previously stubbed 008E.
+- Tests run: focused TDD RED/GREEN; final approval creation and rollback; two PostgreSQL five-worker
+  races; Django check/migration sync; all 746 backend tests with 23 expected skips at 93% coverage;
+  frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_120956_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium slice with critical sanction-transaction and permission considerations; one
+  additive migration, no destructive data change or external side effect.
+- Next action: Run the now-due architecture review, then sharpened 008D.
+
+## 2026-07-14 12:43:22 - 2026-07-14_120956_normal_run
+- Agent tool used: codex
+- Slice attempted: 008C-documentation-checklist-applicability
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/.ralph/runs/2026-07-14_120956_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/.ralph/runs/2026-07-14_120956_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_124337_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Independently reviewed 007T, 008B2, 008B3, and 008C along separate Standards and Spec
+  axes. Confirmed substantive UI ordering, deep generation ownership, direct authority, and genuine
+  new renderer output. Found legacy renderer provenance/replay gaps plus checklist terminal-bypass,
+  completion-refresh, dependency, fact-authority, audit-context, and error-contract gaps. Created
+  corrective 008B4/008C2 and made 008D depend on 008C2; no production code changed.
+- Tests run: slice-queue lint; frontend build/typecheck/lint and 293 tests; Django check and migration
+  sync; 746 backend tests with 23 expected PostgreSQL-only skips; 93% coverage (85% floor).
+- Evidence saved: `.ralph/runs/2026-07-14_124337_architecture_review/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Low review-run mutation risk; High product findings are isolated in corrective slices.
+- Next action: Run 008B4, then 008C2, before 008D.
+
+## 2026-07-14 13:08:46 - 2026-07-14_124337_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_124337_architecture_review/.ralph/runs/2026-07-14_124337_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_124337_architecture_review/.ralph/runs/2026-07-14_124337_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_130857_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008B4-renderer-provenance-and-replay-contract-closure
+- Summary: Added immutable renderer contract/file/checksum provenance for new legal outputs, made
+  retained legacy rows explicit and replay-conflicting without overwrites, restricted checklist
+  linkage to exact current provenance, and aligned authorised absent-parent generation/list reads
+  with 404 while preserving nondisclosing 403 ordering.
+- Tests run: staged TDD RED/GREEN; genuine DOCX/PDF stored-byte, exact replay, and selector proof;
+  retained migration and legacy downstream-history matrix; Django check/migration sync; all 752
+  backend tests with 23 expected skips at 93% coverage; frontend build/typecheck/lint and 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_130857_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; one additive non-destructive migration and legal-history/authority boundary
+  changes, mitigated by fail-closed conflicts, immutable ORM paths, full gates, and independent
+  Standards/Spec review with no remaining findings.
+- Next action: Run 008C2, then 008D.
+
+## 2026-07-14 13:45:59 - 2026-07-14_130857_normal_run
+- Agent tool used: codex
+- Slice attempted: 008B4-renderer-provenance-and-replay-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/.ralph/runs/2026-07-14_130857_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/.ralph/runs/2026-07-14_130857_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 14:35:28 - 2026-07-14_134809_normal_run
+- Agent tool used: codex
+- Slice attempted: 008C2-checklist-lifecycle-authority-and-side-effect-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_134809_normal_run/.ralph/runs/2026-07-14_134809_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_134809_normal_run/.ralph/runs/2026-07-14_134809_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 15:21:13 - 2026-07-14_143550_normal_run
+- Agent tool used: codex
+- Slice attempted: 008D-stamp-duty-and-notarisation-tracking
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_143550_normal_run/.ralph/runs/2026-07-14_143550_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_143550_normal_run/.ralph/runs/2026-07-14_143550_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_152156_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008E-signature-mismatch-workflow
+- Summary: Added bounded signature records, §26.7 capture and §26.8 mismatch resolution, protected
+  bank-letter/declaration evidence, immutable replay/history behavior, and atomic Bank Verification
+  Letter applicability projection through the application-owned fact seam. Sharpened 008F and 008G.
+- Tests run: staged TDD RED/GREEN; 29 focused signature/checklist/stamp regressions; Django check and
+  migration sync; all 773 backend tests with 24 expected skips and 93% coverage; frontend build,
+  typecheck, lint, and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_152156_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium implementation risk with a High evidence-model assumption recorded as A-107;
+  one additive migration, no destructive data change, frontend change, or external side effect.
+- Next action: Run the due architecture review, then 008F.
+
+## 2026-07-14 15:57:09 - 2026-07-14_152156_normal_run
+- Agent tool used: codex
+- Slice attempted: 008E-signature-mismatch-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/.ralph/runs/2026-07-14_152156_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/.ralph/runs/2026-07-14_152156_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_155832_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Independently reviewed 008B4, 008C2, 008D, and 008E across isolated Standards and Spec
+  axes. Confirmed substantive renderer-provenance, checklist-lifecycle, locked legal-record, and
+  mismatch-projection work. Reproduced unresolved-mismatch capture bypass and Compliance adverse
+  stamp authority; found signature nondisclosure/concurrency plus legal ownership/HTTP seam gaps.
+  Created corrective 008D2/008E2 and made 008F depend on E2; no production code changed.
+- Tests run: temporary two-case regression reproduction; queue/protected-path/document checks;
+  configured frontend and backend quality gates (see run artifacts for exact results).
+- Evidence saved: `.ralph/runs/2026-07-14_155832_architecture_review/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Low review-run mutation risk; High product authority findings are isolated in
+  dependency-valid corrective slices.
+- Next action: Run 008D2, then 008E2, before 008F.
+
+## 2026-07-14 16:26:08 - 2026-07-14_155832_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_155832_architecture_review/.ralph/runs/2026-07-14_155832_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_155832_architecture_review/.ralph/runs/2026-07-14_155832_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_162646_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008D2-stamp-notary-verification-authority-closure
+- Summary: Closed stamp/notary positive and adverse outcome authority, retained distinct maker and
+  checker identities, blocked preparer downgrade/evidence replacement, added strict legal HTTP
+  serializers, and moved Stage-4 evidence policy behind a generic documents provenance fact.
+- Tests run: staged RED/GREEN authority and seam tracers; 43 focused legal regressions; two final
+  PostgreSQL five-checker race passes; Django check/migration sync; all 780 backend tests with 24
+  expected skips and 93% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_162646_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; additive attribution migration and legal authority changes are fail-closed,
+  fully audited, race-tested, and have no external effects.
+- Next action: Run 008E2, then 008F.
+
+## 2026-07-14 17:01:43 - 2026-07-14_162646_normal_run
+- Agent tool used: codex
+- Slice attempted: 008D2-stamp-notary-verification-authority-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/.ralph/runs/2026-07-14_162646_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/.ralph/runs/2026-07-14_162646_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_170201_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008E2-signature-identity-mismatch-lifecycle-closure
+- Summary: Closed signature canonical identity, frozen maker/checker, unresolved-mismatch lifecycle,
+  nondisclosing Stage-4 lookup, §6.3 action identity, typed serializer, shared-selector, and
+  five-worker concurrency gaps. Sharpened 008F/008G from the completed seams.
+- Tests run: six staged RED/GREEN tracers; 16 focused tests; two PostgreSQL passes of both five-worker
+  races; Django check/migration sync; all 789 backend tests with 26 expected skips and 93% coverage;
+  frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_170201_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; additive nullable legacy-safe attribution migration, fail-closed legal authority,
+  no frontend/external effect.
+- Next action: Run 008F, then 008G.
+
+## 2026-07-14 17:36:37 - 2026-07-14_170201_normal_run
+- Agent tool used: codex
+- Slice attempted: 008E2-signature-identity-mismatch-lifecycle-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/.ralph/runs/2026-07-14_170201_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/.ralph/runs/2026-07-14_170201_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_173654_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008F-power-of-attorney-workflow
+- Summary: Added the locked §28 security-package parent and one-current-PoA workflow with canonical
+  parties, retained Compliance/Company Secretary maker-checker identity, current renderer and exact
+  stamp/notary/signature selectors, strict draft/active lifecycle, metadata-only projections, and
+  zero-write replay/denial/forbidden invocation-release behavior.
+- Tests run: staged package/draft/activation/review RED-GREEN tracers; 50 legal regressions; repeated
+  PostgreSQL five-worker create/change races; Django check/migration sync; all 796 backend tests with
+  28 expected skips and 93% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_173654_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium; additive protected legal/security schema, fail-closed activation and
+  concurrency controls, no frontend/external effect.
+- Next action: Run 008G, then 008H.
+
+## 2026-07-14 18:28:46 - 2026-07-14_173654_normal_run
+- Agent tool used: codex
+- Slice attempted: 008F-power-of-attorney-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_173654_normal_run/.ralph/runs/2026-07-14_173654_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_173654_normal_run/.ralph/runs/2026-07-14_173654_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_183058_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008G-tri-party-agreement-workflow
+- Summary: Added strict §26.6 tri-party verification with Company Secretary authority, frozen true
+  subsidiary applicability, exact canonical borrower/nominee execution signatures, retained
+  remarks/history, and metadata-only document/checklist projections. Sharpened 008I.
+- Tests run: staged route RED/GREEN tracer; seven focused tests including one expected PostgreSQL
+  skip; 83 legal regressions; Django check/migration sync; all 803 backend tests with 29 expected
+  skips and 93% coverage; frontend build/typecheck/lint and all 293 tests after one isolated retry.
+- Evidence saved: `.ralph/runs/2026-07-14_183058_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium; additive nullable remarks migration, fail-closed legal verification, no
+  frontend/external effects, and no checklist/security/repayment/readiness mutation.
+- Next action: Architecture review, then 008H.
+
+## 2026-07-14 18:58:47 - 2026-07-14_183058_normal_run
+- Agent tool used: codex
+- Slice attempted: 008G-tri-party-agreement-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_183058_normal_run/.ralph/runs/2026-07-14_183058_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_183058_normal_run/.ralph/runs/2026-07-14_183058_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_185927_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Independently reviewed 008D2, 008E2, 008F, and 008G across isolated Standards and Spec
+  axes. Confirmed substantive authority/identity/package/verification work, then reproduced fake-
+  status package creation, active-PoA downgrade, and post-verification signature rewrite. Found
+  stale current-maker attribution, security ownership reversal, transport/action drift, and absent
+  008G PostgreSQL/public-generation proof. Created corrective 008G2/008F2 and made 008H depend on
+  F2; no production code changed.
+- Tests run: three-case independent RED regression; queue/dependency/protected-path/document checks;
+  configured frontend and backend gates (see run artifacts for exact results).
+- Evidence saved: `.ralph/runs/2026-07-14_185927_architecture_review/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Low review-run mutation risk; High product lifecycle/architecture findings are isolated
+  in dependency-valid corrective slices.
+- Next action: Run 008G2, then 008F2, then 008H.
+
+## 2026-07-14 19:30:26 - 2026-07-14_185927_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_185927_architecture_review/.ralph/runs/2026-07-14_185927_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_185927_architecture_review/.ralph/runs/2026-07-14_185927_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_193053_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008G2-stage4-maker-and-verification-contract-closure
+- Summary: Closed actual-current-maker attribution for stamp/notary/signature evidence, added
+  legacy-safe database maker/checker constraints, restored HTTP/domain dependency and authority
+  order, returned §6.3 tri-party action identities, mapped the mismatch-specific error, froze
+  consumed signatures, and replaced manual provenance with a public renderer tracer.
+- Tests run: five retained RED/GREEN cycles; 45 Stage-4 tests on SQLite and PostgreSQL; twice-run
+  exact and changed five-worker tri-party races; Django check/migration sync; all 810 backend tests
+  with 32 expected PostgreSQL skips and 93% coverage; frontend build/typecheck/lint and 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_193053_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; lifecycle authority and database integrity changed fail-closed, with explicit
+  legacy-null compatibility and no frontend/external/checklist/readiness mutation.
+- Next action: Run 008F2, then 008H.
+
+## 2026-07-14 20:11:54 - 2026-07-14_193053_normal_run
+- Agent tool used: codex
+- Slice attempted: 008G2-stage4-maker-and-verification-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_193053_normal_run/.ralph/runs/2026-07-14_193053_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_193053_normal_run/.ralph/runs/2026-07-14_193053_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_201756_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008F2-security-instrument-boundary-and-poa-lifecycle-closure
+- Summary: Moved retained security-package and PoA ownership into `security_instruments` without
+  table/id/API breakage; canonicalized sanctioned-cycle package scope; enforced Compliance maker
+  handoff, secondary-role Company Secretary attorney authority, exact-draft terminal activation,
+  frozen activation evidence, and exact consumed-document mutation guards.
+- Tests run: retained TDD RED/GREEN matrices; migration preservation for package and active legacy
+  PoA; focused lifecycle/boundary regressions; twice-run PostgreSQL five-worker activation and
+  downgrade races; Django check/migration sync; all 815 backend tests with 32 expected skips and
+  93% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_201756_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; state-only model-owner transfer plus legal lifecycle authority and terminal
+  evidence constraints, with explicit retained-row compatibility and fail-closed mutations.
+- Next action: Run 008H, then 008I.
+
+## 2026-07-14 - 2026-07-14_212222_repair
+
+- Agent tool used: codex
+- Slice repaired: 008F2-security-instrument-boundary-and-poa-lifecycle-closure
+- Summary: Repaired the sole independent failure by reducing the ownership-transfer diff from
+  2,965 to 1,994 lines. Preserved the security boundary and terminal PoA behavior; compacted the
+  state-only migration and bound the legal evidence engine from the security-owned public module.
+- Tests run: 11 focused boundary/PoA tests; both PostgreSQL race tests twice; Django check and
+  migration sync; all 814 backend tests with 32 expected skips at 93% coverage; frontend build,
+  typecheck, lint, and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_212222_repair/evidence/`
+- Result: Repair successful pending independent orchestrator revalidation/commit/merge/push.
+- Risk level: High; state/model ownership and terminal legal evidence remain fail-closed. Repair
+  changed no API, database operation, frontend, external integration, or protected file.
+- Next action: Run 008H, then 008I.
+
+## 2026-07-14 21:48:47 - 2026-07-14_212222_repair
+- Agent tool used: codex
+- Slice attempted: 008F2-security-instrument-boundary-and-poa-lifecycle-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/.ralph/runs/2026-07-14_212222_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/.ralph/runs/2026-07-14_212222_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_220039_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008H-sh-4-physical-share-security-workflow
+- Summary: Added one package-owned SH-4 with exact §28.4 routes, frozen physical applicability,
+  Compliance preparation, distinct Company Secretary terminal custody, current renderer/signature/
+  stamp validation, immutable ledgers, checklist/package metadata projections, and consumed-evidence
+  protection. Sharpened 008J without implementing it.
+- Tests run: three TDD red/green cycles; 61 impacted tests; migration regression; both PostgreSQL
+  five-worker create/custody races twice; Django check/migration sync; all 819 backend tests at 93%
+  coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_220039_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; critical custody, permission, evidence, schema, and concurrency behavior changed
+  fail-closed with invocation/return/file/readiness explicitly excluded.
+- Next action: Run 008I.
+
+## 2026-07-14 22:49:40 - 2026-07-14_220039_normal_run
+- Agent tool used: codex
+- Slice attempted: 008H-sh-4-physical-share-security-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_220039_normal_run/.ralph/runs/2026-07-14_220039_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_220039_normal_run/.ralph/runs/2026-07-14_220039_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 23:39:12 - 2026-07-14_225031_normal_run
+- Agent tool used: codex
+- Slice attempted: 008I-cdsl-pledge-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_225031_normal_run/.ralph/runs/2026-07-14_225031_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_225031_normal_run/.ralph/runs/2026-07-14_225031_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 00:10:50 - 2026-07-14_234031_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_234031_architecture_review/.ralph/runs/2026-07-14_234031_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_234031_architecture_review/.ralph/runs/2026-07-14_234031_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 00:41:43 - 2026-07-15_001106_normal_run
+- Agent tool used: codex
+- Slice attempted: 008I2-security-poa-owner-and-read-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/.ralph/runs/2026-07-15_001106_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/.ralph/runs/2026-07-15_001106_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_004202_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008I3-security-legal-evidence-seam-and-race-closure
+- Summary: Restored the source §36.2 dependency graph through one immutable top-level evidence
+  coordinator, removed the legal PoA alias, centralised redacting security ledgers, and closed the
+  changed tri-party material-winner race without changing public §28 contracts.
+- Tests run: three TDD RED/GREEN tracers; 39 focused tests; 10 PoA/tri-party/SH-4/CDSL PostgreSQL
+  race tests twice; Django check/migration sync; all 832 backend tests with 36 expected SQLite skips
+  at 92% coverage; frontend lint/typecheck/build and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_004202_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; cross-owner legal/security authority, sensitive evidence recording, and terminal
+  concurrency changed fail-closed with routes, table identities, exact ₹500, read scope, and side-
+  effect exclusions preserved.
+- Next action: Run sharpened 008I4, then 008J.
+
+## 2026-07-15 01:15:47 - 2026-07-15_004202_normal_run
+- Agent tool used: codex
+- Slice attempted: 008I3-security-legal-evidence-seam-and-race-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/.ralph/runs/2026-07-15_004202_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/.ralph/runs/2026-07-15_004202_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_011600_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008I4-sensitive-field-encryption-and-cdsl-null-contract-closure
+- Summary: Added independently keyed/versioned AES-GCM field encryption, central sensitive reveal/
+  masking policy, retained CDSL token reconciliation, and safe nullable pending evidence while
+  preserving terminal evidence and the I3 dependency boundary.
+- Tests run: nullable and rate-limit RED tracers; Python compile/dependency/plaintext scans;
+  frontend lint/typecheck/build and all 293 tests. Backend focused/full/migration/PostgreSQL gates
+  are dependency-pending because the sandbox lacks newly pinned `cryptography==46.0.3`; the
+  orchestrator installs it before independent validation.
+- Evidence saved: `.ralph/runs/2026-07-15_011600_normal_run/evidence/`
+- Result: Complete pending orchestrator dependency installation and independent validation.
+- Risk level: High; reversible security data, reveal authority/audit, migration, and nullable legal
+  evidence changed fail-closed with no invocation/unpledge/balance/readiness side effects.
+- Next action: Run sharpened 008J, then 008K.
+
+## 2026-07-15 - 2026-07-15_014532_repair
+
+- Agent tool used: codex
+- Slice repaired: 008I4-sensitive-field-encryption-and-cdsl-null-contract-closure
+- Summary: Corrected three CDSL test fixtures to generate the canonical evidence type, preserved
+  centrally owned reveal-denial audit rows by committing them before re-raising the same API error,
+  and made the fresh-process dependency probe use Ralph's architecture-preserving virtualenv entry.
+- Tests run: focused four-failure RED/GREEN; dependency-probe RED/GREEN; Django check and migration
+  sync; all 841 backend tests with 36 expected SQLite skips at 92% coverage; frontend lint,
+  typecheck, all 293 tests, and build; 10 PoA/tri-party/SH-4/CDSL PostgreSQL races twice.
+- Evidence saved: `.ralph/runs/2026-07-15_014532_repair/evidence/`
+- Result: Repair complete pending independent orchestrator validation/commit/merge/push.
+- Risk level: High inherited security/migration risk; the repair is narrowly bounded to denial
+  transaction semantics and test execution/fixture correctness. No new schema or product rule.
+- Next action: Run sharpened 008J, then 008K.
+
+## 2026-07-15 02:14:38 - 2026-07-15_014532_repair
+- Agent tool used: codex
+- Slice attempted: 008I4-sensitive-field-encryption-and-cdsl-null-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/.ralph/runs/2026-07-15_014532_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/.ralph/runs/2026-07-15_014532_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_021455_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008J-blank-dated-cheque-and-cancelled-cheque-custody
+- Summary: Added canonical blank-dated cheque collection/Company Secretary custody, encrypted
+  number storage, fixed masked package/checklist projections, exact cancelled-cheque/bank and scan
+  provenance, central audited reveal, and protected later-lifecycle null constraints.
+- Tests run: three TDD RED/GREEN cycles; 11 focused API/boundary tests; two PostgreSQL five-worker
+  create/custody races twice; Django check/migration sync; all 849 backend tests with 38 expected
+  SQLite skips at 92% coverage; frontend lint/typecheck/build and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_021455_normal_run/evidence/`
+- Result: Complete pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; sensitive cheque custody, maker-checker authority, cross-owner evidence,
+  encryption/reveal policy, schema, and concurrency changed fail-closed with no invocation,
+  presentment, return, checklist completion, bank mutation, readiness, or loan-account side effects.
+- Next action: Run the due architecture review, then sharpened 008K.
+
+## 2026-07-15 03:00:32 - 2026-07-15_021455_normal_run
+- Agent tool used: codex
+- Slice attempted: 008J-blank-dated-cheque-and-cancelled-cheque-custody
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/.ralph/runs/2026-07-15_021455_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/.ralph/runs/2026-07-15_021455_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_030045_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008K-final-documentation-approval-sequence
+- Summary: Added exact terminal checklist completion, immutable CS/Credit/frozen-director approval
+  actions, masked terminal-evidence consumption, and an honest zero-write disbursement blocker.
+- Tests run: failing-first/focused/regression tests; PostgreSQL five-request item and three-stage race
+  twice; Django check/migration sync; all 855 backend tests at 92% coverage; frontend lint,
+  typecheck, build, and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_030045_normal_run/evidence/`
+- Result: Complete pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; legal approval authority, immutable evidence, schema, permissions, and
+  concurrency changed fail-closed without creating disbursement/readiness/loan-account truth.
+- Next action: Run the due architecture review, then sharpened 008L.
+
+## 2026-07-15 03:48:44 - 2026-07-15_030045_normal_run
+- Agent tool used: codex
+- Slice attempted: 008K-final-documentation-approval-sequence
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_030045_normal_run/.ralph/runs/2026-07-15_030045_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_030045_normal_run/.ralph/runs/2026-07-15_030045_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_034859_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Independently reviewed 008I2/I3/I4/J/K across Standards and Spec from fixed point
+  `85f142c2`; reproduced recoverable ciphertext suffix, synthetic cheque-ledger completion, and
+  status-only checklist approval without modifying production code.
+- Tests run: review regression harness; Django/system/migration, repository backend/frontend, queue,
+  documentation, and protected-path checks recorded in the run evidence packet.
+- Evidence saved: `.ralph/runs/2026-07-15_034859_architecture_review/evidence/`
+- Result: Review complete; findings recorded and corrective slices 008K2/008K3 queued.
+- Risk level: Low execution risk (review-only); findings include Critical sensitive-data and legal-
+  evidence integrity risk.
+- Next action: Run 008K2, then 008K3, then sharpened 008L.
+
+## 2026-07-15 04:22:57 - 2026-07-15_034859_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_034859_architecture_review/.ralph/runs/2026-07-15_034859_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_034859_architecture_review/.ralph/runs/2026-07-15_034859_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 05:24:23 - 2026-07-15_042336_normal_run
+- Agent tool used: codex
+- Slice attempted: 008K2-sensitive-security-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_042336_normal_run/.ralph/runs/2026-07-15_042336_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_042336_normal_run/.ralph/runs/2026-07-15_042336_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_052444_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008K3-final-checklist-evidence-closure
+- Summary: Bound checklist completion and ordered approvals to exact current renderer, signer,
+  security-owner, canonical workflow, completion-action/history, role, request, and terminal-digest
+  evidence; replaced status-only success fixtures with the complete public physical terminal path.
+- Tests run: TDD RED/GREEN; 13 focused tests; two PostgreSQL five-worker item/all-stage matrices;
+  Django check/migration sync; all 866 backend tests at 92% coverage; frontend lint/typecheck/build
+  and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_052444_normal_run/evidence/`
+- Result: Complete pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; legal completion/approval and cross-owner evidence integrity changed fail-closed
+  without exposing protected cheque fields or creating readiness/disbursement/loan-account truth.
+- Next action: Run sharpened 008L, then 008L2.
+
+## 2026-07-15 06:40:34 - 2026-07-15_052444_normal_run
+- Agent tool used: codex
+- Slice attempted: 008K3-final-checklist-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_052444_normal_run/.ralph/runs/2026-07-15_052444_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_052444_normal_run/.ralph/runs/2026-07-15_052444_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_064104_normal_run
+- Agent tool used: codex
+- Slice attempted: 008L-member-portal-documentation-actions
+- Summary: Added self-scoped documentation projection, immutable upload history, safe authenticated
+  downloads, and real MP07/MP13 wiring without internal completion authority.
+- Tests run: focused TDD plus full backend/frontend quality gates; see run evidence.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; portal/legal evidence and document access changed fail-closed.
+- Next action: Run sharpened 008L2.
+
+## 2026-07-15 07:36:08 - 2026-07-15_064104_normal_run
+- Agent tool used: codex
+- Slice attempted: 008L-member-portal-documentation-actions
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/.ralph/runs/2026-07-15_064104_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/.ralph/runs/2026-07-15_064104_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_083105_repair
+
+- Agent tool used: codex
+- Slice repaired: 008L2-member-portal-deficiency-response-and-resubmission
+- Summary: Repaired the quarantined run by aligning two test assertions with the canonical null
+  pre-completeness application reference, compacting repeated test/UI scaffolding to bring the diff
+  within limits, and filling the missing Ralph risk/review/evidence artifacts. Production behavior
+  remains unchanged by the repair.
+- Tests run: 9 focused backend tests; 8 focused frontend tests; all 882 backend tests at 92%
+  coverage; all 302 frontend tests; lint, typecheck, build, Django check, and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-15_083105_repair/evidence/`
+- Result: Repair complete pending independent orchestrator validation and commit.
+- Risk level: High; authenticated borrower evidence and lifecycle behavior remain guarded by the
+  original slice's scope, validation, immutability, audit, and Stage-4 non-interference tests.
+- Next action: Run the due architecture review, then sharpened 008M.
+
+## 2026-07-15 08:58:31 - 2026-07-15_083105_repair
+- Agent tool used: codex
+- Slice attempted: 008L2-member-portal-deficiency-response-and-resubmission
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/.ralph/runs/2026-07-15_083105_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/.ralph/runs/2026-07-15_083105_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_085859_architecture_review
+
+- Agent tool used: codex with separate Standards and Spec review passes.
+- Slice attempted: architecture-review.
+- Summary: Independently reviewed 008K2, 008K3, 008L, and 008L2 from fixed point `fc8d3380`.
+  Reproduced unsigned portal download expiry, stale checklist completion after a newer renderer
+  document, and application-transition-guard bypass without modifying production code. Also found
+  current bank-evidence, lock-ordering, ordinary-read redaction, upload-policy parity, deficiency
+  lifecycle, test-depth, and prototype-fidelity gaps.
+- Tests run: three-test expected-failure review probe; all 882 backend tests at 92% coverage; all
+  302 frontend tests; lint, typecheck, build, Django check, migration drift, queue, diff, and
+  protected-path checks recorded in the run evidence packet.
+- Evidence saved: `.ralph/runs/2026-07-15_085859_architecture_review/evidence/`.
+- Result: Review complete; findings recorded and corrective slices 008K4/008L3 queued before 008M.
+- Risk level: Low execution risk (review-only); findings include High legal-evidence, access-
+  control, and application-lifecycle integrity risk.
+- Next action: Run 008K4, then 008L3, then sharpened 008M.
+
+## 2026-07-15 09:32:37 - 2026-07-15_085859_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_085859_architecture_review/.ralph/runs/2026-07-15_085859_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_085859_architecture_review/.ralph/runs/2026-07-15_085859_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_101427_repair
+
+- Agent tool used: codex
+- Slice repaired: 008K4-current-evidence-and-security-read-closure
+- Summary: Preserved the quarantined 008K4 implementation and repaired its migration graph by
+  targeting checklist-action audit/version fields at the owning `legal_documents` model through a
+  reusable cross-app migration operation. Completed the missing risk/review/final artifacts.
+- Tests run: 61 focused backend tests; standard PostgreSQL five-race acceptance twice; four 008K4
+  generation/completion/CS PostgreSQL races; all 886 backend tests at 92% coverage; all 302 frontend
+  tests; lint, typecheck, build, Django check, migration sync, queue, diff, and protected-path checks.
+- Evidence saved: `.ralph/runs/2026-07-15_101427_repair/evidence/`
+- Result: Repair complete pending independent orchestrator validation and commit.
+- Risk level: High; legal/security access, checklist authority, immutable evidence, and concurrent
+  generation paths are fail-closed and regression-tested.
+- Next action: Run 008L3, then the already-sharpened 008M.
+
+## 2026-07-15 10:42:29 - 2026-07-15_101427_repair
+- Agent tool used: codex
+- Slice attempted: 008K4-current-evidence-and-security-read-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/.ralph/runs/2026-07-15_101427_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/.ralph/runs/2026-07-15_101427_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_145044_normal_run
+
+- Agent tool used: codex with the TDD skill.
+- Slice completed: CR-005-mp07-completed-download-status-visible.
+- Summary: Corrected MP07 so a completed documentation action keeps its canonical Complete badge
+  visible beside an authorised Download; Upload and Re-upload remain absent. Added a rendered-
+  interface regression and sharpened 008L3/008M to preserve the independent status/control rule.
+- Tests run: focused frontend RED then GREEN; frontend lint, typecheck, build, and all 303 tests;
+  Django check, migration drift, all 886 backend tests, and 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_145044_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High by slice declaration; the implementation is presentation-only and changes no
+  authority, state, API, backend, persistence, or styling behavior.
+- Next action: Run 008L3 and its declared trusted-browser contract twice, then 008M.
+
+## 2026-07-15 15:13:45 - 2026-07-15_145044_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-005-mp07-completed-download-status-visible
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_145044_normal_run/.ralph/runs/2026-07-15_145044_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_145044_normal_run/.ralph/runs/2026-07-15_145044_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_151653_normal_run
+
+- Agent tool used: codex with the TDD and codebase-design skills.
+- Slice completed: 008L3-portal-action-and-resubmission-contract-closure.
+- Summary: Unified portal application/action scope, denied stale/completed crafted uploads, replaced
+  caller expiry authority with signed current-file capabilities, moved deficiency resubmission to
+  the guarded application lifecycle owner, restored the approved upload drop-zone, and added the
+  exact two-spec/four-screenshot trusted-browser contract.
+- Tests run: focused RED/GREEN probes; frontend lint, typecheck, build, and all 304 tests; Django
+  check, migration drift, all 887 backend tests, and 92% coverage; Playwright collection passed.
+- Evidence saved: `.ralph/runs/2026-07-15_151653_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator browser validation and commit.
+- Risk level: High; authenticated document authority, lifecycle, audit, and browser download paths
+  are fail-closed and covered through public interfaces.
+- Next action: Run sharpened 008M.
+
+## 2026-07-15 - 2026-07-15_162349_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008L3-portal-action-and-resubmission-contract-closure.
+- Summary: Preserved the quarantined implementation and repaired only the stale MP11 trusted-
+  browser status assertion. It now expects the shared canonical submitted label inside the exact
+  application header while retaining the returned-screen absence proof.
+- Tests run: focused assertion RED/GREEN; Playwright collection; frontend lint, typecheck, build,
+  and all 304 tests; Django check, migration drift, all 887 backend tests, and 92% coverage. Local
+  Chromium launch was blocked by the sandbox's macOS Mach-port policy before test execution.
+- Evidence saved: `.ralph/runs/2026-07-15_162349_repair/evidence/`.
+- Result: Repair complete pending full independent orchestrator validation and commit.
+- Risk level: High inherited slice risk; low repair-delta risk because no production code changed.
+- Next action: Run trusted browser acceptance outside the sandbox, then continue with sharpened 008M.
+
+## 2026-07-15 16:42:46 - 2026-07-15_162349_repair
+- Agent tool used: codex
+- Slice attempted: 008L3-portal-action-and-resubmission-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/.ralph/runs/2026-07-15_162349_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/.ralph/runs/2026-07-15_162349_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_164806_normal_run
+
+- Agent tool used: codex with the implement, TDD, and two-axis review skills.
+- Slice completed: CR-006-register-date-time-timezone-determinism.
+- Summary: Made the shared approval-register decision timestamp formatter explicitly render in
+  `Asia/Kolkata`; added Exception Register coverage alongside the existing Credit Sanction
+  regression. No backend/API/storage/UI-design behavior changed. Sharpened 009A and added its Epic
+  009 digest after confirming 008M was already executable.
+- Tests run: focused register RED under `TZ=UTC`; focused GREEN under both `TZ=UTC` and
+  `TZ=Asia/Kolkata`; frontend lint, typecheck, build, and all 304 tests; Django check, migration
+  drift, all 887 backend tests, and 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_164806_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: Medium by CR declaration; low implementation blast radius because the delta is one
+  presentation formatter option plus rendered-interface coverage.
+- Next action: Run the due architecture review, then 008M.
+
+## 2026-07-15 17:12:03 - 2026-07-15_164806_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-006-register-date-time-timezone-determinism
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_164806_normal_run/.ralph/runs/2026-07-15_164806_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_164806_normal_run/.ralph/runs/2026-07-15_164806_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

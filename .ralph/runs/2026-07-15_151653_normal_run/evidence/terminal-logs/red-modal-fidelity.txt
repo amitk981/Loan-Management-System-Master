@@ -1,0 +1,2000 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms
+
+ ❯ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx (6 tests | 4 failed) 3155ms
+   ✓ member portal documentation actions > removes inline business fixtures from both screens 1ms
+   × member portal documentation actions > renders server-owned actions and performs one canonical refetch after upload 87ms
+     → Unable to find an element with the text: Click to select file or drag and drop. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDocumentation Actions[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mComplete borrower-side signatures, uploads, and acknowledgements.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-4"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPending borrower actions[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900 mt-1"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-4"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mSubmitted for review[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900 mt-1"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-4"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mFinal approvals by SFPCL[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900 mt-1"[39m
+          [36m>[39m
+            [0mInternal only[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 bg-slate-50 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-file-pen-line text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"17"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"17"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14.364 13.634a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l4.013-4.009a1 1 0 0 0-3.004-3.004z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14.487 7.858A1 1 0 0 1 14 7V2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20 19.645V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l2.516 2.516"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M8 18h1"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mLegal Document Checklist[0m
+          [36m</h3>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-pen-line text-slate-500"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14.364 13.634a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l4.013-4.009a1 1 0 0 0-3.004-3.004z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14.487 7.858A1 1 0 0 1 14 7V2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M20 19.645V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l2.516 2.516"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M8 18h1"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2"[39m
+                [36m>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</p>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+     ...
+   × member portal documentation actions > shows complete status with its retained download and no upload controls 1020ms
+     → Unable to find an element with the text: Complete. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-upload"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v12"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m17 8-5-5-5 5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Upload Document[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-upload"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v12"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m17 8-5-5-5 5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Upload Document[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  ...
+   ✓ member portal documentation actions > shows own-application empty and session-expired states without fixture fallback 15ms
+   × member portal documentation actions > shows forbidden, server-error, and canonical blocked states 1021ms
+     → Unable to find an element with the text: Documentation actions are available after sanction.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+  [36m<div />[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  [0m • [0m
+                  [0mSign and upload.[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center sm:justify-end gap-3 w-full sm:w-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Download Term Sheet"[39m
+                [33mclass[39m=[32m"flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-download text-slate-400"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidt...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+  [36m<div />[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  [0m • [0m
+                  [0mSign and upload.[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center sm:justify-end gap-3 w-full sm:w-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Download Term Sheet"[39m
+                [33mclass[39m=[32m"flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-download text-slate-400"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidt...
+   × member portal documentation actions > shows server validation and keeps canonical status after a failed upload 1010ms
+     → Unable to find an element with the text: Term Sheet. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"[39m
+      [36m>[39m
+        [0mDocumentation actions are available after sanction.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-6 text-sm text-slate-500"[39m
+          [36m>[39m
+            [0mNo documentation requirements are available.[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"[39m
+      [36m>[39m
+        [0mDocumentation actions are available after sanction.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-6 text-sm text-slate-500"[39m
+          [36m>[39m
+            [0mNo documentation requirements are available.[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx > member portal documentation actions > renders server-owned actions and performs one canonical refetch after upload
+TestingLibraryElementError: Unable to find an element with the text: Click to select file or drag and drop. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDocumentation Actions[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mComplete borrower-side signatures, uploads, and acknowledgements.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-4"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPending borrower actions[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900 mt-1"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-4"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mSubmitted for review[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900 mt-1"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-4"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mFinal approvals by SFPCL[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900 mt-1"[39m
+          [36m>[39m
+            [0mInternal only[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 bg-slate-50 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-file-pen-line text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"17"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"17"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14.364 13.634a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l4.013-4.009a1 1 0 0 0-3.004-3.004z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14.487 7.858A1 1 0 0 1 14 7V2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20 19.645V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l2.516 2.516"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M8 18h1"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mLegal Document Checklist[0m
+          [36m</h3>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-pen-line text-slate-500"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14.364 13.634a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l4.013-4.009a1 1 0 0 0-3.004-3.004z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14.487 7.858A1 1 0 0 1 14 7V2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M20 19.645V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l2.516 2.516"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M8 18h1"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2"[39m
+                [36m>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</p>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+     ...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx:71:19
+     69|     expect(screen.queryByRole('button', { name: 'Upload Blank-Dated Ch…
+     70|     await userEvent.click(screen.getByRole('button', { name: 'Upload T…
+     71|     expect(screen.getByText('Click to select file or drag and drop')).…
+       |                   ^
+     72|     expect(screen.getByText('PDF, JPG, PNG · Max 5 MB')).toBeTruthy();
+     73|     const file = new File(['signed bytes'], 'signed.pdf', { type: 'app…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx > member portal documentation actions > shows complete status with its retained download and no upload controls
+TestingLibraryElementError: Unable to find an element with the text: Complete. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-upload"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v12"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m17 8-5-5-5 5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Upload Document[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-upload"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v12"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m17 8-5-5-5 5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Upload Document[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  ...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx:100:25
+     98|     render(<MP07_DocumentChecklist />);
+     99| 
+    100|     expect(await screen.findByText('Complete', { exact: true })).toBeT…
+       |                         ^
+    101|     expect(screen.getByRole('button', { name: 'Download Term Sheet' })…
+    102|     expect(screen.queryByRole('button', { name: 'Upload Term Sheet' })…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx > member portal documentation actions > shows forbidden, server-error, and canonical blocked states
+TestingLibraryElementError: Unable to find an element with the text: Documentation actions are available after sanction.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+  [36m<div />[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  [0m • [0m
+                  [0mSign and upload.[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center sm:justify-end gap-3 w-full sm:w-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Download Term Sheet"[39m
+                [33mclass[39m=[32m"flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-download text-slate-400"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidt...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+  [36m<div />[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-start sm:items-center gap-3 min-w-0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-file-text text-green-600"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 2v5a1 1 0 0 0 1 1h5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 9H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 13H8"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M16 17H8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap items-center gap-2 mb-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-slate-800"[39m
+                  [36m>[39m
+                    [0mTerm Sheet[0m
+                  [36m</div>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5"[39m
+                  [36m>[39m
+                    [0mSanction[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                [36m>[39m
+                  [0mUpdated on 2026-07-15[0m
+                  [0m • [0m
+                  [0mSign and upload.[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center sm:justify-end gap-3 w-full sm:w-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Download Term Sheet"[39m
+                [33mclass[39m=[32m"flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-download text-slate-400"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidt...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx:127:25
+    125|       unavailable_reason: 'Documentation actions are available after s…
+    126|     render(<MP07_DocumentChecklist />);
+    127|     expect(await screen.findByText('Documentation actions are availabl…
+       |                         ^
+    128|   });
+    129|   it('shows server validation and keeps canonical status after a faile…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx > member portal documentation actions > shows server validation and keeps canonical status after a failed upload
+TestingLibraryElementError: Unable to find an element with the text: Term Sheet. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"[39m
+      [36m>[39m
+        [0mDocumentation actions are available after sanction.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-6 text-sm text-slate-500"[39m
+          [36m>[39m
+            [0mNo documentation requirements are available.[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mMy Documents[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mAccess your post-sanction documentation requirements and borrower-safe files.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"[39m
+      [36m>[39m
+        [0mDocumentation actions are available after sanction.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mDocument Checklist[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 text-xs text-slate-500"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-info text-slate-400"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 16v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 8h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mUploads are reviewed internally[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-6 text-sm text-slate-500"[39m
+          [36m>[39m
+            [0mNo documentation requirements are available.[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx:134:25
+    132|     ));
+    133|     render(<MP07_DocumentChecklist />);
+    134|     expect(await screen.findByText('Term Sheet')).toBeTruthy();
+       |                         ^
+    135|     await userEvent.click(screen.getByRole('button', { name: 'Upload T…
+    136|     await userEvent.upload(screen.getByLabelText('Document file'), new…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 2 passed (6)
+   Start at  15:31:19
+   Duration  4.10s (transform 150ms, setup 0ms, collect 321ms, tests 3.16s, environment 327ms, prepare 39ms)
+

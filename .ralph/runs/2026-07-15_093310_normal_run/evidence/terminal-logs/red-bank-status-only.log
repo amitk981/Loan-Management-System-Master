@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 719, in test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque
+    self.assertEqual(response.status_code, 409, response.json())
+AssertionError: 200 != 409 : {'success': True, 'data': {'checklist_action_id': 'f1521019-fce8-4b0e-a3d0-bdd1338d4bc6', 'entity_type': 'checklist_item', 'entity_id': 'b7c132a0-ceb4-4645-a4a8-dc1db8eb7924', 'previous_status': 'pending', 'new_status': 'complete', 'workflow_event_id': '968ba645-86ee-46b3-ad12-bcdcf0b13ad8', 'available_actions': []}, 'meta': {'request_id': '008k3-source-cheque-complete', 'timestamp': '2026-07-15T04:08:56.831460Z', 'api_version': 'v1'}}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

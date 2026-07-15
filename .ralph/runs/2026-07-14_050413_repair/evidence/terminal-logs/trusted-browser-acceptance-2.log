@@ -1,0 +1,19 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/.ralph/runs/2026-07-14_050413_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/sanction-workbench.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/sanction-workbench.e2e.spec.ts
+
+[2m[WebServer] [22m[13/Jul/2026 23:45:47] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states (3.3s)
+
+  1 passed (9.3s)
+
+Exit code: 0

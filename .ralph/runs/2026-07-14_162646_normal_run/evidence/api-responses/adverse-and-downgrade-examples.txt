@@ -1,0 +1,11 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.057s
+
+OK
+Destroying test database for alias 'default'...
+ADVERSE_STAMP_DENIAL= {"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Stamp duty record failed validation.", "details": {}, "field_errors": {"status": "Only Company Secretary authority may record a verification outcome."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:13:31.928475Z", "api_version": "v1"}}
+NOTARY_DOWNGRADE_DENIAL= {"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Notarisation record failed validation.", "details": {}, "field_errors": {"status": "Compliance cannot replace or erase a verification outcome."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:13:31.960746Z", "api_version": "v1"}}

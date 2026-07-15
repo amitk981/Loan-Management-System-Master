@@ -539,11 +539,20 @@ class ApprovalMatrixApiTests(TestCase):
         self.assertEqual(self._configuration_snapshot(), before)
 
     def test_configuration_collections_are_bounded_paginated_and_reject_unknown_params(self):
+        ApprovalMatrixRule.objects.create(
+            decision_type="loan_sanction", amount_min="0.00", amount_max="500000.00",
+            required_approver_roles_json=["cfo", "director"], required_director_count=1,
+            register_required="credit_sanction_register", effective_from="2026-04-01",
+            status=ApprovalMatrixRule.STATUS_ACTIVE, version_number="reader-v1",
+        )
         headers = self._headers(self.reader)
         response = self.client.get("/api/v1/approval-matrix-rules/?page=1&page_size=1", headers=headers)
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(response.json()["pagination"]["page_size"], 1)
         self.assertLessEqual(len(response.json()["data"]), 1)
+        rule = response.json()["data"][0]
+        self.assertEqual(rule["authority_summary"], "CFO + one Director")
+        self.assertEqual(rule["minimum_approver_count"], 2)
         unknown = self.client.get("/api/v1/sanction-committees/?all=true", headers=headers)
         self.assertEqual(unknown.status_code, 400, unknown.content)
 

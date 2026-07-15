@@ -51,18 +51,37 @@ def can_read_proposal(user, proposal):
 
 
 def serialize_rule(rule):
+    roles = list(rule.required_approver_roles_json)
     return {
         "approval_matrix_rule_id": str(rule.pk), "decision_type": rule.decision_type,
         "amount_min": _decimal(rule.amount_min), "amount_max": _decimal(rule.amount_max),
         "condition_code": rule.condition_code,
-        "required_approver_roles": list(rule.required_approver_roles_json),
+        "required_approver_roles": roles,
         "required_director_count": rule.required_director_count,
+        "authority_summary": _authority_summary(roles, rule.required_director_count),
+        "minimum_approver_count": sum(
+            rule.required_director_count if role == "director" else 1 for role in roles
+        ),
         "joint_approval_required_flag": rule.joint_approval_required_flag,
         "register_required": rule.register_required,
         "effective_from": rule.effective_from.isoformat(),
         "effective_to": rule.effective_to.isoformat() if rule.effective_to else None,
         "status": rule.status, "version_number": rule.version_number,
     }
+
+
+def _authority_summary(roles, director_count):
+    labels = []
+    for role in roles:
+        if role == "cfo":
+            labels.append("CFO")
+        elif role == "director":
+            count = {1: "one", 2: "two"}.get(director_count, str(director_count))
+            suffix = "Director" if director_count == 1 else "Directors"
+            labels.append(f"{count} {suffix}")
+        else:
+            labels.append(role.replace("_", " ").title())
+    return " + ".join(labels)
 
 
 def serialize_committee(row):

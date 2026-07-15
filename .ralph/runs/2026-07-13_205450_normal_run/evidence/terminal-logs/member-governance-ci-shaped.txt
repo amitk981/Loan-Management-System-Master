@@ -1,0 +1,17 @@
+Command:
+npm run test:member-governance-container:ci
+
+Expanded command:
+vitest run src/pages/members/MemberGovernanceForm.container.test.tsx --maxWorkers=1 --fileParallelism=false
+
+Exit code: 0
+
+PASS  src/pages/members/MemberGovernanceForm.container.test.tsx (16 tests) 2434ms
+  routes Directory registration into canonical Profile readback with the exact create ledger 1269ms
+
+Test Files  1 passed (1)
+Tests       16 passed (16)
+Duration    4.17s (transform 907ms, collect 1.26s, tests 2.43s, environment 204ms)
+
+All mounted create, update, complete-body, identity, stale-write, permission, validation, and
+conflict rows executed; none was skipped or quarantined.

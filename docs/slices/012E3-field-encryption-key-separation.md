@@ -15,6 +15,7 @@ Rotating or leaking the application secret does not expose or brick PAN/Aadhaar 
 
 ## Depends On
 - 012E2
+- 008I4
 
 ## Source References
 - docs/source/security-privacy.md key management, encryption-at-rest, and key-separation requirements
@@ -26,10 +27,16 @@ Rotating or leaking the application secret does not expose or brick PAN/Aadhaar 
 None (backend/security slice).
 
 ## Concrete Requirements
-1. Introduce a dedicated field-encryption key, provisioned via environment/secret store, independent of `SECRET_KEY` and the JWT signing key; document custody in deployment-ops working notes.
+1. Extend the central `shared.encryption` interface established by 008I4; do not create a second
+   field-encryption module. Introduce a dedicated field-encryption key, provisioned via
+   environment/secret store, independent of `SECRET_KEY` and the JWT signing key; document custody
+   in deployment-ops working notes.
 2. Key versioning: ciphertexts record the key version; decryption supports current plus previous versions during rotation.
 3. Rotation path: a management command re-encrypts all affected columns from version N to N+1, idempotent and resumable, with row-count reconciliation evidence; run it in tests against fixture data.
-4. Migration from the current SECRET_KEY-derived scheme: one-time re-encryption of existing data with reconciliation proof; no window where data is unreadable or plaintext.
+4. Migration from the current SECRET_KEY-derived one-way identity tokens and any retained older
+   field formats: one-time governed migration where reversible source truth exists, with
+   reconciliation proof and no window where data is unreadable or plaintext. Preserve 008I4 CDSL
+   ciphertexts through the shared key-version interface rather than reimplementing them.
 5. Fail-closed startup check: production settings refuse to boot when the field key is missing/malformed; development keeps a safe local default clearly marked non-production.
 6. Backup/recovery note: document which key versions must be retained to read backups; record in RELEASE_PROMOTION.md or deployment notes.
 7. Masking/reveal (004I) behaviour unchanged; reveal audit events unaffected.
@@ -39,6 +46,8 @@ None (backend/security slice).
 - Rotation command re-encrypts fixtures with reconciliation counts and is safely re-runnable.
 - Production settings without the key fail to start; with the key, boot succeeds.
 - Regression: no sensitive field falls back to SECRET_KEY-derived encryption.
+- Regression: CDSL BO-account and blank-cheque adapters still cross the same shared encryption and
+  sensitive-reveal seams after whole-repository rotation support lands.
 
 ## Out of Scope
 Storage/backup encryption implementation (deployment scope, 012H+), JWT key rotation procedures (auth hardening owns), HSM/KMS integration beyond env-provisioned secrets (record as assumption if required).

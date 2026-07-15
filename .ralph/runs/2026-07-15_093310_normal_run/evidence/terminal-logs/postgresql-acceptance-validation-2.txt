@@ -1,0 +1,127 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_2_2026_07_15_093310_normal_run /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+
+Working directory: sfpcl_credit/
+
+Creating test database for alias 'default' ('test_sfpcl_credit_2_2026_07_15_093310_normal_run')...
+Found 5 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, legal_documents, members, scheduler, security_instruments, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying members.0009_member_identity_governance... OK
+  Applying members.0010_member_identity_change_request... OK
+  Applying members.0011_producesupplyrecord... OK
+  Applying members.0012_memberserviceevidence_activememberstatus_and_more... OK
+  Applying members.0013_memberserviceevidence_maker_users_and_more... OK
+  Applying members.0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more... OK
+  Applying documents.0002_documenttemplate... OK
+  Applying documents.0003_documenttemplateidentity... OK
+  Applying applications.0001_initial... OK
+  Applying documents.0004_loandocument... OK
+  Applying legal_documents.0001_transfer_loan_document_owner... OK
+  Applying legal_documents.0002_document_checklists... OK
+  Applying legal_documents.0003_loan_document_renderer_provenance... OK
+  Applying legal_documents.0004_checklistitem_notarisation_status_and_more... OK
+  Applying legal_documents.0005_signature_records... OK
+  Applying legal_documents.0006_stamp_notary_preparer_identity... OK
+  Applying legal_documents.0007_signature_capture_maker... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying legal_documents.0008_securitypackage_powerofattorney_and_more... OK
+  Applying legal_documents.0009_loandocument_verification_remarks... OK
+  Applying legal_documents.0010_stage4_maker_checker_constraints... OK
+  Applying legal_documents.0011_final_documentation_approval_sequence... OK
+  Applying legal_documents.0012_portal_documentation_submission... OK
+  Applying configurations.0001_initial... OK
+  Applying configurations.0002_version_history_approval_evidence... OK
+  Applying applications.0011_witness... OK
+  Applying applications.0012_witness_verification_evidence... OK
+  Applying applications.0013_witness_correction... OK
+  Applying applications.0014_witness_contact_fields... OK
+  Applying applications.0015_applicationdeficiencyresponse... OK
+  Applying applications.0016_bankverificationdecision_and_more...Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/manage.py", line 17, in <module>
+    main()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/manage.py", line 13, in main
+    execute_from_command_line(sys.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/test.py", line 24, in run_from_argv
+    super().run_from_argv(argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 413, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/test.py", line 68, in handle
+    failures = test_runner.run_tests(test_labels)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/runner.py", line 1061, in run_tests
+    old_config = self.setup_databases(
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/runner.py", line 959, in setup_databases
+    return _setup_databases(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/utils.py", line 203, in setup_databases
+    connection.creation.create_test_db(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/base/creation.py", line 78, in create_test_db
+    call_command(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 194, in call_command
+    return command.execute(*args, **defaults)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 107, in wrapper
+    res = handle_func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/migrate.py", line 356, in handle
+    post_migrate_state = executor.migrate(
+                         ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 135, in migrate
+    state = self._migrate_all_forwards(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 167, in _migrate_all_forwards
+    state = self.apply_migration(
+            ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 252, in apply_migration
+    state = migration.apply(state, schema_editor)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/migration.py", line 118, in apply
+    operation.state_forwards(self.app_label, project_state)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/operations/fields.py", line 93, in state_forwards
+    state.add_field(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/state.py", line 248, in add_field
+    self.models[model_key].fields[name] = field
+    ~~~~~~~~~~~^^^^^^^^^^^
+KeyError: ('applications', 'checklistaction')
+
+Exit code: 1
+Cleanup exit code: 0

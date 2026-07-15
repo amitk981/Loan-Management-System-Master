@@ -1,0 +1,17 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007L-sanction-workbench-contract-and-browser-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M sfpcl-lms/e2e/sanction-workbench.e2e.spec.ts
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.test.tsx
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
+ M sfpcl-lms/src/services/authSession.test.ts
+ M sfpcl-lms/src/services/authSession.ts
+ M sfpcl-lms/src/services/sanctionApi.ts
+ M sfpcl_credit/approvals/modules/approval_case_engine.py
+ M sfpcl_credit/credit/modules/appraisal_workflow.py
+ M sfpcl_credit/tests/test_approval_case_routing_api.py
+?? .ralph/runs/2026-07-14_023135_normal_run/

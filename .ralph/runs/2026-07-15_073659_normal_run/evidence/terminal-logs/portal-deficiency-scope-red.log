@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_cross_member_read_upload_and_resubmit_are_nondisclosing_and_audited (sfpcl_credit.tests.test_portal_deficiency_response_api.PortalDeficiencyResponseApiTests.test_cross_member_read_upload_and_resubmit_are_nondisclosing_and_audited)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/sfpcl_credit/tests/test_portal_deficiency_response_api.py", line 237, in test_cross_member_read_upload_and_resubmit_are_nondisclosing_and_audited
+    self.assertEqual(
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 1 test in 0.023s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -14,7 +14,9 @@ from sfpcl_credit.approvals.models import (
     SanctionDecision,
 )
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.domain_errors import DomainObjectAccessDenied
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 
 
 REGISTER_READ_PERMISSION = "approvals.sanction_register.read"
@@ -24,7 +26,7 @@ _FINANCIAL_YEAR = re.compile(r"^FY(?P<start>\d{4})-(?P<end>\d{2})$")
 
 
 def generate_for_terminal_case(
-    *, actor, case, sanction_decision, workflow_event, request_meta=None
+    *, actor, case, sanction_decision, workflow_event, communication, request_meta=None
 ):
     """Freeze the 15-field source projection for one approved/rejected case."""
     if case.current_status not in {
@@ -44,30 +46,39 @@ def generate_for_terminal_case(
 
     case = (
         ApprovalCase.objects.select_related(
-            "loan_application__member",
-            "loan_appraisal_note",
             "general_meeting_approval",
         )
-        .prefetch_related("actions__approver_user")
+        .prefetch_related("actions")
         .get(pk=case.pk)
     )
-    application = case.loan_application
-    note = case.loan_appraisal_note
     authority = approval_case_engine.serialize_case_authority(case)
+    terminal_facts = approval_case_engine.validated_frozen_terminal_facts(case)
     action_rows = authority["approval_actions"]
     exception = _case_exception(case)
     meeting = case.general_meeting_approval
     defaults = {
-        "loan_application": application,
-        "member": application.member,
+        "loan_application_id": case.loan_application_id,
+        "member_id": terminal_facts["member_id"],
         "sanction_decision": sanction_decision,
         "workflow_event": workflow_event,
-        "application_number": application.application_reference_number,
-        "borrower_name": application.member.display_name or application.member.legal_name,
-        "borrower_type": application.borrower_type,
-        "requested_amount": application.required_loan_amount,
-        "eligible_amount": note.loan_limit_snapshot_json["final_eligible_loan_amount"],
-        "recommended_amount": note.recommended_amount,
+        "application_number": terminal_facts["application_number"],
+        "borrower_name": terminal_facts["borrower_name"],
+        "borrower_type": terminal_facts["borrower_type"],
+        "requested_amount": terminal_facts["requested_amount"],
+        "eligible_amount": terminal_facts["eligible_amount"],
+        "recommended_amount": terminal_facts["recommended_amount"],
+        "source_review_facts_json": terminal_facts["review_facts"],
+        "terminal_facts_json": {
+            "rejection_reason": (
+                case.reason_for_rejection
+                if decision == CreditSanctionRegisterEntry.DECISION_REJECTED
+                else None
+            ),
+            "conditions": (
+                sanction_decision.conditions_precedent or None
+                if sanction_decision else None
+            ),
+        },
         "sanctioned_amount": (
             sanction_decision.sanctioned_amount if sanction_decision else None
         ),
@@ -76,6 +87,19 @@ def generate_for_terminal_case(
         ),
         "approver_names_json": [
             row["full_name"]
+            for row in action_rows
+            if row["decision"] in {"approved", "rejected"}
+        ],
+        "approver_decisions_json": [
+            {
+                "approval_action_id": row["approval_action_id"],
+                "user_id": row["user_id"],
+                "full_name": row["full_name"],
+                "role_code": row["role_code"],
+                "decision": row["decision"],
+                "comments": row["comments"],
+                "acted_at": row["acted_at"],
+            }
             for row in action_rows
             if row["decision"] in {"approved", "rejected"}
         ],
@@ -89,6 +113,14 @@ def generate_for_terminal_case(
         "exception_reference_json": _exception_reference(exception, case),
         "conflict_abstention_details_json": _conflict_details(case, action_rows),
         "general_meeting_approval_reference_json": _meeting_reference(meeting),
+        "communication_json": {
+            "communication_id": str(communication.pk),
+            "status": communication.delivery_status,
+            "sent_at": (
+                communication.sent_at.isoformat().replace("+00:00", "Z")
+                if communication.sent_at else None
+            ),
+        },
         "recorded_by_user": actor,
     }
     entry, created = CreditSanctionRegisterEntry.objects.get_or_create(
@@ -107,7 +139,7 @@ def generate_for_terminal_case(
         new_value_json={
             "approval_case_id": str(case.pk),
             "cycle_number": case.cycle_number,
-            "loan_application_id": str(application.pk),
+            "loan_application_id": str(case.loan_application_id),
             "sanction_decision_id": (
                 str(sanction_decision.pk) if sanction_decision else None
             ),
@@ -121,8 +153,25 @@ def generate_for_terminal_case(
     return entry
 
 
-def get_sanction_decision(application_id):
-    decision = SanctionDecision.objects.get(loan_application_id=application_id)
+def get_sanction_decision(*, actor, application_id, actor_permissions):
+    cases, _ = approval_case_engine.select_readable_approval_cases(
+        actor=actor,
+        actor_permissions=actor_permissions,
+    )
+    application_cases = cases.filter(loan_application_id=application_id)
+    if not application_cases.exists():
+        raise DomainObjectAccessDenied(
+            ObjectAccessResult(
+                allowed=False,
+                reason="sanction_decision_not_attributable",
+                error_code="OBJECT_ACCESS_DENIED",
+                required_permission=SANCTION_READ_PERMISSION,
+            )
+        )
+    decision = SanctionDecision.objects.select_related("approval_case").get(
+        loan_application_id=application_id,
+        approval_case__in=application_cases,
+    )
     return serialize_sanction_decision(decision)
 
 
@@ -145,7 +194,7 @@ def serialize_sanction_decision(decision):
     }
 
 
-def list_entries(query_params):
+def list_entries(*, actor, query_params, actor_permissions):
     unknown = set(query_params.keys()) - _LIST_PARAMS
     if unknown:
         raise ValidationError(
@@ -159,7 +208,11 @@ def list_entries(query_params):
         CreditSanctionRegisterEntry.DECISION_REJECTED,
     }:
         raise ValidationError({"decision": "Unknown sanction decision."})
-    queryset = CreditSanctionRegisterEntry.objects.all()
+    cases, _ = approval_case_engine.select_readable_approval_cases(
+        actor=actor,
+        actor_permissions=actor_permissions,
+    )
+    queryset = CreditSanctionRegisterEntry.objects.filter(approval_case__in=cases)
     financial_year = query_params.get("financial_year")
     if financial_year:
         start, end = _financial_year_dates(financial_year)
@@ -182,6 +235,18 @@ def list_entries(query_params):
 
 
 def serialize_entry(entry):
+    source_facts = (
+        entry.source_review_facts_json
+        if isinstance(entry.source_review_facts_json, dict)
+        else {}
+    )
+    borrower_facts = source_facts.get("borrower")
+    borrower_facts = borrower_facts if isinstance(borrower_facts, dict) else {}
+    terminal_facts = (
+        entry.terminal_facts_json
+        if isinstance(entry.terminal_facts_json, dict)
+        else {}
+    )
     return {
         "credit_sanction_register_entry_id": str(entry.pk),
         "approval_case_id": str(entry.approval_case_id),
@@ -191,17 +256,39 @@ def serialize_entry(entry):
         ),
         "workflow_event_id": str(entry.workflow_event_id),
         "application_number": entry.application_number,
+        "entry_number": entry.entry_number,
         "borrower_name": entry.borrower_name,
         "borrower_type": entry.borrower_type,
+        "folio_number": borrower_facts.get("folio_number"),
+        "loan_type": borrower_facts.get("loan_type") or None,
+        "purpose": source_facts.get("purpose"),
+        "risk": source_facts.get("risk"),
         "requested_amount": _money(entry.requested_amount),
         "eligible_amount": _money(entry.eligible_amount),
         "recommended_amount": _money(entry.recommended_amount),
         "sanctioned_amount": _money(entry.sanctioned_amount),
         "approval_authority": entry.authority_applied_summary,
-        "approver_names": entry.approver_names_json,
+        "approver_names": (
+            entry.approver_names_json
+            if isinstance(entry.approver_names_json, list)
+            else []
+        ),
+        "approver_decisions": (
+            entry.approver_decisions_json
+            if isinstance(entry.approver_decisions_json, list)
+            else []
+        ),
         "approval_date": entry.approval_date.isoformat(),
         "decision": entry.decision,
         "reasons": entry.reasons,
+        "rejection_reason": terminal_facts.get("rejection_reason"),
+        "conditions": terminal_facts.get("conditions"),
+        "communication": (
+            entry.communication_json
+            if isinstance(entry.communication_json, dict)
+            and entry.communication_json
+            else None
+        ),
         "exception_reference": entry.exception_reference_json,
         "conflict_abstention_details": entry.conflict_abstention_details_json,
         "general_meeting_approval_reference": (

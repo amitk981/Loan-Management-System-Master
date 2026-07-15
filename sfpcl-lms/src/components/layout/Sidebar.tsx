@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { Permission } from '../../contexts/RoleContext';
-import { visibleStaffNavItems, type Page } from '../../services/navigationPermissions';
+import { navigationPermissionsFor, visibleStaffNavItems, type Page } from '../../services/navigationPermissions';
 
 export interface NavItem {
   id: string;
@@ -16,37 +16,43 @@ export interface NavItem {
   icon: React.ReactNode;
   badge?: number;
   requiredPermission?: Permission;
+  alternativePermissions?: Permission[];
 }
 
 export interface StaffNavItem extends NavItem {
   id: Page;
 }
 
+const staffNavItem = (item: Omit<StaffNavItem, 'requiredPermission' | 'alternativePermissions'>): StaffNavItem => ({
+  ...item,
+  ...navigationPermissionsFor(item.id),
+});
+
 export const allNavItems: StaffNavItem[] = [
-  { id: 'dashboard',     label: 'Dashboard',             icon: <LayoutDashboard size={18} /> },
-  { id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} />,           badge: 5, requiredPermission: 'view_applications' },
-  { id: 'applications',  label: 'Applications',          icon: <FileText size={18} />,        badge: 3, requiredPermission: 'view_applications' },
-  { id: 'completeness',  label: 'Completeness',          icon: <ClipboardList size={18} />,   badge: 3, requiredPermission: 'do_completeness_check' },
-  { id: 'members',       label: 'Members & Borrowers',   icon: <Users size={18} />,           requiredPermission: 'view_members' },
-  { id: 'appraisal',     label: 'Appraisal',             icon: <ClipboardCheck size={18} />,  badge: 2, requiredPermission: 'do_appraisal' },
-  { id: 'sanction',      label: 'Sanction',              icon: <Gavel size={18} />,           badge: 1, requiredPermission: 'view_sanction' },
-  { id: 'documentation', label: 'Documentation',         icon: <FolderCheck size={18} />,     badge: 1, requiredPermission: 'view_documentation' },
-  { id: 'disbursement',  label: 'SAP & Disbursement',    icon: <Database size={18} />,        requiredPermission: 'initiate_disbursement' },
-  { id: 'cfc',           label: 'Payment Authorisation', icon: <BadgeCheck size={18} />,      requiredPermission: 'authorise_disbursement' },
-  { id: 'interest',      label: 'Interest Management',   icon: <Percent size={18} />,         requiredPermission: 'manage_interest' },
-  { id: 'loan-accounts', label: 'Loan Accounts',         icon: <Banknote size={18} />,        requiredPermission: 'view_loan_accounts' },
-  { id: 'repayments',    label: 'Repayments',            icon: <ReceiptIndianRupee size={18} />, requiredPermission: 'post_repayment' },
-  { id: 'monitoring',    label: 'Monitoring',            icon: <TimerReset size={18} />,      badge: 3, requiredPermission: 'view_monitoring' },
-  { id: 'defaults',      label: 'Default & Recovery',    icon: <TrendingDown size={18} />,    badge: 2, requiredPermission: 'manage_defaults' },
-  { id: 'closure',       label: 'Closure & Archive',     icon: <BadgeCheck size={18} />,      requiredPermission: 'manage_closure' },
-  { id: 'compliance',    label: 'Compliance',            icon: <ShieldCheck size={18} />,     requiredPermission: 'view_compliance' },
-  { id: 'registers',     label: 'Registers',             icon: <Sprout size={18} />,          requiredPermission: 'view_registers' },
-  { id: 'reports',       label: 'Reports & MIS',         icon: <BarChart3 size={18} />,       requiredPermission: 'view_reports' },
-  { id: 'grievances',    label: 'Grievances',            icon: <MessageSquareWarning size={18} />, requiredPermission: 'view_compliance' },
-  { id: 'audit',         label: 'Audit & Archive',       icon: <History size={18} />,         requiredPermission: 'view_audit' },
-  { id: 'settings',      label: 'Settings',              icon: <Settings size={18} />,        requiredPermission: 'view_settings' },
-  { id: 'admin-users',   label: 'Admin Users',           icon: <Users size={18} />,           requiredPermission: 'manage_users' },
-  { id: 'tracer',        label: 'Tracer',                icon: <ClipboardCheck size={18} />,  requiredPermission: 'run_tracer' },
+  staffNavItem({ id: 'dashboard',     label: 'Dashboard',             icon: <LayoutDashboard size={18} /> }),
+  staffNavItem({ id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} />,           badge: 5 }),
+  staffNavItem({ id: 'applications',  label: 'Applications',          icon: <FileText size={18} />,        badge: 3 }),
+  staffNavItem({ id: 'completeness',  label: 'Completeness',          icon: <ClipboardList size={18} />,   badge: 3 }),
+  staffNavItem({ id: 'members',       label: 'Members & Borrowers',   icon: <Users size={18} /> }),
+  staffNavItem({ id: 'appraisal',     label: 'Appraisal',             icon: <ClipboardCheck size={18} />,  badge: 2 }),
+  staffNavItem({ id: 'sanction',      label: 'Sanction',              icon: <Gavel size={18} />,           badge: 1 }),
+  staffNavItem({ id: 'documentation', label: 'Documentation',         icon: <FolderCheck size={18} />,     badge: 1 }),
+  staffNavItem({ id: 'disbursement',  label: 'SAP & Disbursement',    icon: <Database size={18} /> }),
+  staffNavItem({ id: 'cfc',           label: 'Payment Authorisation', icon: <BadgeCheck size={18} /> }),
+  staffNavItem({ id: 'interest',      label: 'Interest Management',   icon: <Percent size={18} /> }),
+  staffNavItem({ id: 'loan-accounts', label: 'Loan Accounts',         icon: <Banknote size={18} /> }),
+  staffNavItem({ id: 'repayments',    label: 'Repayments',            icon: <ReceiptIndianRupee size={18} /> }),
+  staffNavItem({ id: 'monitoring',    label: 'Monitoring',            icon: <TimerReset size={18} />,      badge: 3 }),
+  staffNavItem({ id: 'defaults',      label: 'Default & Recovery',    icon: <TrendingDown size={18} />,    badge: 2 }),
+  staffNavItem({ id: 'closure',       label: 'Closure & Archive',     icon: <BadgeCheck size={18} /> }),
+  staffNavItem({ id: 'compliance',    label: 'Compliance',            icon: <ShieldCheck size={18} /> }),
+  staffNavItem({ id: 'registers',     label: 'Registers',             icon: <Sprout size={18} /> }),
+  staffNavItem({ id: 'reports',       label: 'Reports & MIS',         icon: <BarChart3 size={18} /> }),
+  staffNavItem({ id: 'grievances',    label: 'Grievances',            icon: <MessageSquareWarning size={18} /> }),
+  staffNavItem({ id: 'audit',         label: 'Audit & Archive',       icon: <History size={18} /> }),
+  staffNavItem({ id: 'settings',      label: 'Settings',              icon: <Settings size={18} /> }),
+  staffNavItem({ id: 'admin-users',   label: 'Admin Users',           icon: <Users size={18} /> }),
+  staffNavItem({ id: 'tracer',        label: 'Tracer',                icon: <ClipboardCheck size={18} /> }),
 ];
 
 // Borrower portal nav

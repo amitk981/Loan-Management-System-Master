@@ -15,14 +15,90 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   began as the approved visual prototype and is being wired to the real backend one vertical
   slice at a time. Auth shell, navigation, dashboard, notifications, admin, member/KYC,
   Borrower 360, application intake, member portal (auth/dashboard/profile/applications), and the
-  Epic 006 credit screens are API-backed. The routed sanction screen deliberately shows an empty
-  not-connected state until 007I; its component-level mock fallback remains isolated from the app
-  route. Other later module screens (documentation, disbursement, servicing, compliance, reports,
-  task inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
+  Epic 006 credit screens are API-backed. The Epic 007 sanction workbench, sanction/exception
+  registers, approval matrix, and loan-policy settings use authenticated backend boundaries;
+  corrective slices 007K-007P completed frozen review facts and terminal evidence, S21/S22/S25
+  contract evidence, strict shared pagination, full S21 navigation, prototype-layout fidelity,
+  and declared trusted-browser contracts. 007Q restored source-required S23/S25 columns and
+  reviewable trusted-browser evidence; 007R/007S then preserved legacy approval/register history,
+  froze approver identity, closed final-page/stale-response gaps, and restored the fixed register
+  pattern. Corrective 007T now consumes real legacy S23 top-level null purpose/risk values safely,
+  keeps action/detail/decision refreshes behind the same newest-request authority, and uses only
+  production-valid S21 pagination fixtures.
+  Epic 008 has started: 008A/008A2 provide a versioned template catalogue with serialized effective
+  ranges, retained file-reference provenance, and explicit borrower-template variant resolution;
+  008B adds replay-safe generated-document metadata and frozen merge facts. Corrective 008B2 now
+  owns generation/reads in the source-defined `legal_documents` boundary, enforces authority inside
+  the module, and retains honest nullable-only loan-account integrity. 008B3 proves genuine bounded
+  DOCX/PDF rendering for new rows, and 008C creates the initial post-sanction legal checklist
+  atomically through the HTTP completion path. Architecture review found that legacy generated rows
+  still lack renderer provenance and that lower-level terminal/refresh seams can bypass creation or
+  overwrite later completion. Corrective 008B4 now immutably binds current output to its renderer
+  contract/file/checksum, labels legacy rows honestly, excludes them from replay/checklist truth,
+  and closes absent-parent errors. Corrective 008C2 now makes terminal checklist creation
+  structurally unavoidable, recomputes canonical frozen approval facts, preserves completion-owned
+  evidence, separates applicability/linkage ledgers, consumes application-owned cheque facts, and
+  centralises checklist read scope before stamp/notary work. 008D then added locked stamp/notary
+  current rows, projections, history, and a genuine changed-submission race; 008E added signature
+  capture, mismatch evidence, and atomic Bank Verification Letter applicability. Independent review
+  found that Compliance can still record checker-owned adverse stamp/notary outcomes and can erase
+  an unresolved same-signer mismatch through ordinary capture; signature resolution also leaks
+  absent-versus-inaccessible ids and lacks its promised race. Corrective 008D2 restores legal
+  evidence ownership and maker-checker verification; corrective 008E2 now closes signature identity,
+  lifecycle, nondisclosure, action-contract, and concurrency gaps. 008F adds the locked security
+  package and PoA workflow; 008G verifies conditional tri-party agreements only from frozen true
+  subsidiary applicability and exact canonical borrower/nominee signatures, while preserving
+  checklist, package, repayment, and readiness truth. The full real M05-to-Term-Sheet
+  path remains configuration-blocked until governed owners exist for the missing sanction terms;
+  renderer fixtures must not be presented as that end-to-end path. Independent review found that
+  a later Stage-4 editor can retain the first maker id and then check their own facts, verified
+  tri-party signatures can be rewritten, 008G lacks its promised PostgreSQL/public-generation
+  proof, and security-package/PoA ownership sits in `legal_documents` rather than the source-defined
+  security module. Corrective 008G2 closes maker/action/consumed-evidence contracts; 008F2 then
+  establishes the security-instruments boundary and terminal canonical-sanction PoA lifecycle.
+  008H adds terminal SH-4 physical-share custody; 008I adds the demat CDSL PRF/PSN/acceptance
+  workflow with protected BO accounts, frozen legal evidence, audited reveal, and no invocation,
+  unpledge, checklist-completion, balance, or readiness side effects. Independent review of
+  008G2/008F2/008H/008I found that F2's PoA owner is still a forwarding shell over
+  `legal_documents`, the security app imports legal/approval owners in the source-forbidden
+  direction, source-authorised read-only roles cannot read packages, and PoA activation accepts an
+  adequate stamp of any amount rather than exactly ₹500. A valid pending CDSL row with null evidence
+  also crashes during serialization, while reversible BO values and reveal policy bypass the
+  source-defined central encryption/sensitive-access seams. Corrective 008I2 makes
+  `security_instruments` the real PoA policy owner, enforces exact ₹500 activation, and restores the
+  scoped masked reader matrix. Corrective 008I3 now removes every executable
+  security-to-legal/approval import through one top-level immutable evidence coordinator, deletes
+  the legal PoA alias, centralises redacting security ledgers, and proves the PoA/tri-party/SH-4/CDSL
+  races twice on PostgreSQL. Corrective 008I4 now provides independently keyed/versioned AES-GCM
+  field encryption, one central sensitive reveal/masking policy owner, retained-token
+  reconciliation, and nullable pending CDSL evidence without weakening terminal acceptance. 008J
+  adds protected blank-cheque collection/custody through the same coordinator/encryption/reveal
+  seams. 008K now owns strict terminal item completion plus immutable CS, Credit Manager, and one
+  eligible frozen-committee director approvals; the Senior Manager Finance route remains honestly
+  zero-write blocked until Epic 009 supplies real successful-disbursement evidence. Independent
+  review of 008I2-I4/J/K found that encryption tokens expose plaintext suffixes, finance readers
+  receive Stage-4 objects before their source-defined documentation/readiness states, and blank-
+  cheque PATCH uses replacement semantics. More critically, checklist completion trusts synthetic
+  application-labelled version JSON and ordered approvals accept bulk-completed items with no
+  durable completion actions; most promised terminal paths are bypassed in tests. Corrective 008K2
+  now closes sensitive ciphertext, partial-update, reader-scope, redaction, and executable-boundary
+  contracts. Corrective 008K3 now binds every completion/approval to current source-owned evidence,
+  reconciles exact durable action identities before Company Secretary approval, freezes the role
+  that actually authorises each action, and proves the full public terminal matrix plus twice-run
+  PostgreSQL winner/loser races. 008L and 008L2 add self-scoped borrower documentation actions,
+  immutable upload/re-upload provenance, current-document retrieval, deficiency responses, and
+  completeness resubmission. Independent review found remaining current-truth and boundary drift:
+  mutable status-only bank evidence, stale checklist completion after renderer regeneration, a
+  completion/generation lock gap, ordinary security evidence leakage, read/write upload-policy
+  divergence, caller-forgeable download expiry, and direct application lifecycle assignment.
+  Corrective 008K4 then 008L3 close those contracts before the 008M staff documentation hub.
+  Other later module screens (documentation, disbursement, servicing, compliance, reports, task
+  inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and
   `PROTOTYPE_INVENTORY.md` are the authoritative ledger.
 - Backend: `sfpcl_credit/` — Django modular monolith (identity, members, applications, credit,
-  approvals, documents, workflows, communications, dashboard, configurations, scheduler, tracer)
+  approvals, documents, legal_documents, security_instruments, workflows, communications,
+  dashboard, configurations, scheduler, tracer)
   with JWT auth, role and object-level permissions, audit/workflow events, versioned
   configuration, document storage adapter, and seeded demo users.
 - Quality gates run on every slice: frontend build, typecheck, ESLint, vitest; backend Django

@@ -1,0 +1,37 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/settings/SettingsHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/settings/SettingsHub.test.tsx [ src/pages/settings/SettingsHub.test.tsx ]
+Error: Failed to resolve import "../../services/loanPolicyApi" from "src/pages/settings/SettingsHub.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/sfpcl-lms/src/pages/settings/SettingsHub.test.tsx:7:0
+  19 |  const __vi_import_3__ = await import("./SettingsHub");
+  20 |  const __vi_import_4__ = await import("../../services/approvalRegistersApi");
+  21 |  const __vi_import_5__ = await import("../../services/loanPolicyApi");
+     |                                       ^
+  22 |  const __vi_import_6__ = await import("./SettingsHub.tsx?raw");
+  23 |  
+ ❯ TransformPluginContext._formatError node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41
+ ❯ TransformPluginContext.error node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16
+ ❯ normalizeUrl node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23
+ ❯ node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+ ❯ TransformPluginContext.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7
+ ❯ PluginContainer.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  00:43:50
+   Duration  603ms (transform 7ms, setup 0ms, collect 0ms, tests 0ms, environment 303ms, prepare 59ms)
+

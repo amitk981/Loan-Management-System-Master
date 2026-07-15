@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_borrower_reads_open_deficiencies_without_internal_staff_notes (sfpcl_credit.tests.test_portal_deficiency_response_api.PortalDeficiencyResponseApiTests.test_borrower_reads_open_deficiencies_without_internal_staff_notes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/sfpcl_credit/tests/test_portal_deficiency_response_api.py", line 105, in test_borrower_reads_open_deficiencies_without_internal_staff_notes
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

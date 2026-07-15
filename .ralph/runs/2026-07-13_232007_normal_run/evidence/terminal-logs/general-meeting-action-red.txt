@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_case_detail_projects_general_meeting_record_authority (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_case_detail_projects_general_meeting_record_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_232007_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1339, in test_case_detail_projects_general_meeting_record_authority
+    action = next(
+             ^^^^^
+StopIteration
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

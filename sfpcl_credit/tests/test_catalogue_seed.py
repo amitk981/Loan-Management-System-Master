@@ -240,6 +240,41 @@ class CatalogueSeedTests(TestCase):
                     ).exists()
                 )
 
+    def test_source_security_read_roles_receive_package_read_without_mutation(self):
+        seed_catalogue()
+
+        read_roles = {
+            "credit_manager",
+            "compliance_team_member",
+            "company_secretary",
+            "senior_manager_finance",
+            "chief_financial_controller",
+            "cfo",
+            "director",
+            "internal_auditor",
+        }
+        mutation_codes = {
+            "security.package.create",
+            "security.package.update",
+            "security.poa.manage",
+            "security.sh4.manage",
+            "security.cdsl_pledge.manage",
+            "security.blank_cheque.manage",
+            "security.custody.record",
+            "security.instrument.invoke",
+            "security.instrument.release",
+        }
+        for role_code in read_roles:
+            with self.subTest(role_code=role_code):
+                codes = set(
+                    RolePermission.objects.filter(
+                        role__role_code=role_code
+                    ).values_list("permission__permission_code", flat=True)
+                )
+                self.assertIn("security.package.read", codes)
+                if role_code not in {"compliance_team_member", "company_secretary"}:
+                    self.assertFalse(codes.intersection(mutation_codes))
+
     def test_exception_register_permissions_support_system_generation_and_source_readers(self):
         seed_catalogue()
 
@@ -269,6 +304,25 @@ class CatalogueSeedTests(TestCase):
                         permission__permission_code="approvals.sanction_register.read",
                     ).exists()
                 )
+
+        for role_code in {"cfo", "director"}:
+            with self.subTest(role_code=role_code):
+                self.assertTrue(
+                    RolePermission.objects.filter(
+                        role__role_code=role_code,
+                        permission__permission_code="approvals.sanction.read",
+                    ).exists()
+                )
+        credit_manager = Role.objects.get(role_code="credit_manager")
+        self.assertFalse(
+            RolePermission.objects.filter(
+                role=credit_manager,
+                permission__permission_code__in={
+                    "approvals.sanction.read",
+                    "approvals.sanction_register.read",
+                },
+            ).exists()
+        )
 
     def test_seed_creates_only_source_named_approval_case_read_scope_grants(self):
         seed_catalogue()

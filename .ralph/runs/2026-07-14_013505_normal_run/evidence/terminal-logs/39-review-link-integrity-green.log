@@ -1,0 +1,14 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+E..
+======================================================================
+ERROR: test_scoped_register_rows_respect_canonical_case_access (unittest.loader._FailedTest.test_scoped_register_rows_respect_canonical_case_access)
+----------------------------------------------------------------------
+AttributeError: type object 'SanctionSubmissionApiTests' has no attribute 'test_scoped_register_rows_respect_canonical_case_access'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.060s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

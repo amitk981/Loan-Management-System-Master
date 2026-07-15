@@ -1,0 +1,47 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_resolution_rolls_back_when_completed_bank_letter_would_be_reversed (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_resolution_rolls_back_when_completed_bank_letter_would_be_reversed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 273, in test_resolution_rolls_back_when_completed_bank_letter_would_be_reversed
+    response = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/sfpcl_credit/legal_documents/views.py", line 203, in resolve_signature_mismatch
+    data = signatures.resolve_mismatch(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/sfpcl_credit/legal_documents/modules/signatures.py", line 193, in resolve_mismatch
+    document_checklist.project_signature_mismatch(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/sfpcl_credit/legal_documents/modules/document_checklist.py", line 113, in project_signature_mismatch
+    raise ChecklistApplicabilityConflict(
+sfpcl_credit.legal_documents.modules.document_checklist.ChecklistApplicabilityConflict: Completed Bank Verification Letter evidence conflicts with corrected signature truth.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

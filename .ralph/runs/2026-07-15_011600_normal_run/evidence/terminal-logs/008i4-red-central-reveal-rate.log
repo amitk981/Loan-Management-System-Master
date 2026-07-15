@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_explicit_company_secretary_reveal_is_one_time_and_separately_audited (sfpcl_credit.tests.test_cdsl_share_pledge_api.CDSLSharePledgeApiTests.test_explicit_company_secretary_reveal_is_one_time_and_separately_audited)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/sfpcl_credit/tests/test_cdsl_share_pledge_api.py", line 414, in test_explicit_company_secretary_reveal_is_one_time_and_separately_audited
+    self.assertEqual(repeated.status_code, 429, repeated.content)
+AssertionError: 200 != 429 : b'{"success": true, "data": {"cdsl_share_pledge_id": "14514cf1-deb7-4940-b7c0-8e718994b877", "pledgor_bo_account": "1234567890123456", "pledgee_bo_account": "9876543210987654", "expires_at": "2026-07-14T19:57:50.074659Z"}, "meta": {"request_id": null, "timestamp": "2026-07-14T19:52:50.075015Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.129s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

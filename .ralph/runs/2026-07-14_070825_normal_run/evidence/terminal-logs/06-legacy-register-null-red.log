@@ -1,0 +1,52 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_legacy_approved_and_rejected_register_rows_are_null_safe (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_legacy_approved_and_rejected_register_rows_are_null_safe)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2602, in test_legacy_approved_and_rejected_register_rows_are_null_safe
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/approvals/views.py", line 109, in credit_sanction_register_collection
+    data, pagination = sanction_register.list_entries(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/approvals/modules/sanction_register.py", line 226, in list_entries
+    rows = [serialize_entry(row) for row in queryset[offset : offset + page_size]]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/approvals/modules/sanction_register.py", line 226, in <listcomp>
+    rows = [serialize_entry(row) for row in queryset[offset : offset + page_size]]
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/approvals/modules/sanction_register.py", line 250, in serialize_entry
+    "folio_number": entry.source_review_facts_json["borrower"].get("folio_number"),
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'borrower'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.048s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

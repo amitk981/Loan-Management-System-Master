@@ -1,0 +1,18 @@
+Command:
+PYTHONPATH=/tmp:$PWD /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test architecture_review_regressions.ArchitectureReviewRegressions -v 2
+
+Interpreter: mandated Ralph backend venv.
+Result: expected RED, 3 tests found, 3 failures, test database destroyed, exit 1.
+
+1. test_compliance_cannot_downgrade_active_poa_to_draft
+   Expected HTTP 409; received HTTP 200 with status=draft, execution_status=pending,
+   verified_by_user_id=null.
+2. test_package_requires_canonical_final_sanction_not_mutable_status_only
+   Expected HTTP 409; received HTTP 200 and a new pending security package for a fixture having only
+   mutable application_status=approved_by_sanction and no canonical terminal sanction decision.
+3. test_verified_tri_party_signatures_cannot_be_rewritten
+   Verified §26.6 first returned HTTP 200. A later borrower capture expected HTTP 409 but returned
+   HTTP 200 with signature_status=pending while the loan document remained verified.
+
+The temporary regression module lived in `/tmp` and was not added to the repository. No production
+code was modified to obtain this evidence.

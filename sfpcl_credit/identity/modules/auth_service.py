@@ -25,6 +25,18 @@ from sfpcl_credit.identity.modules.tokens import (
 )
 
 
+def effective_role_codes(user):
+    """Return active primary and governed approval-authority role memberships."""
+    codes = set(user.role_codes())
+    authority = (user.approval_authority_type or "").strip()
+    if authority and user.can_authenticate() and user.primary_role.__class__.objects.filter(
+        role_code=authority,
+        status="active",
+    ).exists():
+        codes.add(authority)
+    return sorted(codes)
+
+
 class CredentialError(Exception):
     """Raised when login credentials are rejected.
 

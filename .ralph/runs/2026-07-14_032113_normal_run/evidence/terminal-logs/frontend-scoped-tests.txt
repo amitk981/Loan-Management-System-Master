@@ -1,0 +1,55 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts src/services/approvalRegistersApi.test.ts src/services/loanPolicyApi.test.ts src/services/navigationPermissions.test.ts src/pages/settings/SettingsHub.test.tsx src/pages/registers/RegistersHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/sfpcl-lms
+
+ ❯ src/services/loanPolicyApi.test.ts (2 tests | 1 failed) 12ms
+   × loan policy API client > reads retained versions and creates successors only through the collection boundary 10ms
+     → expected 1st "spy" call to have been called with [ …(2) ]
+   ✓ loan policy API client > surfaces a direct permission denial without fallback data 1ms
+ ✓ src/services/approvalRegistersApi.test.ts (5 tests) 10ms
+ ✓ src/services/authSession.test.ts (18 tests) 34ms
+ ✓ src/services/navigationPermissions.test.ts (9 tests) 7ms
+ ✓ src/pages/registers/RegistersHub.test.tsx (7 tests) 370ms
+ ✓ src/pages/settings/SettingsHub.test.tsx (10 tests) 733ms
+   ✓ SettingsHub Approval Matrix panel > permits a canonical manager to submit a complete successor version as a pending proposal  321ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/loanPolicyApi.test.ts > loan policy API client > reads retained versions and creates successors only through the collection boundary
+AssertionError: expected 1st "spy" call to have been called with [ …(2) ]
+
+- Expected
++ Received
+
+@@ -2,9 +2,10 @@
+    "http://127.0.0.1:8000/api/v1/config/loan-policy/?page=1&page_size=100",
+    {
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer policy-token",
++       "X-Request-ID": "web-1783980244032",
+      },
+      "method": "GET",
+    },
+  ]
+
+ ❯ src/services/loanPolicyApi.test.ts:33:23
+     31|     await expect(createLoanPolicyVersion(successor)).resolves.toMatchO…
+     32| 
+     33|     expect(fetchMock).toHaveBeenNthCalledWith(1,
+       |                       ^
+     34|       'http://127.0.0.1:8000/api/v1/config/loan-policy/?page=1&page_si…
+     35|     expect(fetchMock).toHaveBeenNthCalledWith(2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  1 failed | 50 passed (51)
+   Start at  03:34:03
+   Duration  1.63s (transform 458ms, setup 0ms, collect 1.20s, tests 1.17s, environment 741ms, prepare 312ms)
+

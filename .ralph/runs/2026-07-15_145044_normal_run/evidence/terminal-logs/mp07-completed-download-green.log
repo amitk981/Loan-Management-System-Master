@@ -1,0 +1,12 @@
+Command: npm test -- --run src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx
+Working directory: sfpcl-lms
+Result: GREEN (exit 0)
+
+PASS src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx (6 tests) 285ms
+
+Test Files  1 passed (1)
+Tests       6 passed (6)
+Duration    1.33s
+
+The public MP07 rendering regression now observes Complete and Download Term Sheet together, with
+both Upload Term Sheet and Re-upload Term Sheet absent.

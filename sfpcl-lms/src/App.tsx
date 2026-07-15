@@ -280,7 +280,7 @@ const AppInner: React.FC = () => {
       case 'appraisal':
         return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'sanction':
-        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={[]} />;
+        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'documentation':
         return <DocumentationHub onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'disbursement':

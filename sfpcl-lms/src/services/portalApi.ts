@@ -124,6 +124,60 @@ export interface PortalApplicationList {
   items: PortalApplication[];
 }
 
+export interface PortalDeficiencyResponseDocument {
+  document_id: string;
+  file_name: string;
+  mime_type: string | null;
+  file_size_bytes: number;
+  checksum_sha256: string | null;
+  uploaded_at: string;
+  action_url: string;
+}
+
+export interface PortalDeficiencyItem {
+  deficiency_id: string;
+  item_code: string;
+  deficiency_type: string;
+  description: string;
+  resolution_status: string;
+  raised_at: string;
+  upload_contract: {
+    document_category: string;
+    sensitivity_level: string;
+    allowed_extensions: string[];
+    max_size_bytes: number;
+  };
+  response: {
+    deficiency_response_id: string;
+    response_status: 'responded';
+    response_remark: string | null;
+    document: PortalDeficiencyResponseDocument;
+    responded_at: string;
+  } | null;
+  draft: {
+    response_remark: string;
+    updated_at: string;
+  } | null;
+}
+
+export interface PortalDeficiencyProjection {
+  loan_application_id: string;
+  application_reference_number: string | null;
+  application_status: string;
+  deficiency_note_action_url: string;
+  resubmission_allowed: boolean;
+  items: PortalDeficiencyItem[];
+}
+
+export interface PortalDeficiencyResubmission {
+  loan_application_id: string;
+  application_status: string;
+  completeness_status: string;
+  current_stage: string;
+  pending_with: string;
+  responded_deficiency_count: number;
+}
+
 export interface PortalApplicationLimitProjection {
   status: 'available' | 'unavailable';
   unavailable_reason: string | null;
@@ -135,6 +189,54 @@ export interface PortalApplicationLimitProjection {
   exception_required_flag: boolean | null;
   calculated_as_of_date: string | null;
   calculation_rule_version: string | null;
+}
+
+export interface PortalDocumentationDownload {
+  file_name: string;
+  mime_type: string | null;
+  action_url: string;
+}
+
+export interface PortalDocumentationAction {
+  action_code: string;
+  label: string;
+  section: string;
+  required: boolean;
+  applicable: boolean;
+  status: string;
+  updated_date: string | null;
+  instruction: string;
+  note: string | null;
+  upload_allowed: boolean;
+  reupload_allowed: boolean;
+  download: PortalDocumentationDownload | null;
+}
+
+export interface PortalDocumentationProjection {
+  loan_application_id: string;
+  application_reference_number: string | null;
+  application_status: string;
+  availability: 'available' | 'blocked';
+  unavailable_reason: string | null;
+  actions: PortalDocumentationAction[];
+}
+
+export interface PortalDocumentationUploadResult {
+  action_code: string;
+  status: string;
+  document: {
+    document_id: string;
+    file_name: string;
+    mime_type: string | null;
+    file_size_bytes: number;
+    checksum_sha256: string;
+    uploaded_at: string;
+  };
+}
+
+export interface PortalDownloadDescriptor {
+  download_url: string;
+  expires_at: string;
 }
 
 export interface PortalApplicationDraftPayload {
@@ -159,8 +261,76 @@ export const fetchPortalApplication = (applicationId: string) => request<PortalA
 export const createPortalApplicationDraft = (payload: PortalApplicationDraftPayload) => request<PortalApplication>('/api/v1/portal/applications/', { method: 'POST', body: payload });
 export const updatePortalApplicationDraft = (applicationId: string, payload: PortalApplicationDraftPayload) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/`, { method: 'PATCH', body: payload });
 export const submitPortalApplication = (applicationId: string) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/submit/`, { method: 'POST', body: {} });
+export const fetchPortalApplicationDeficiencies = (applicationId: string) => request<PortalDeficiencyProjection>(`/api/v1/portal/applications/${applicationId}/deficiencies/`);
+export const uploadPortalDeficiencyResponse = (applicationId: string, item: PortalDeficiencyItem, file: File, responseRemark?: string) => {
+  const formData = new FormData();
+  formData.append('file', file, file.name);
+  formData.append('document_category', item.upload_contract.document_category);
+  formData.append('sensitivity_level', item.upload_contract.sensitivity_level);
+  if (responseRemark?.trim()) formData.append('response_remark', responseRemark.trim());
+  return request<{ deficiency_id: string; response_status: string; response: PortalDeficiencyItem['response']; document: PortalDeficiencyResponseDocument }>(
+    `/api/v1/portal/applications/${applicationId}/deficiencies/${item.deficiency_id}/upload/`,
+    { method: 'POST', formData },
+  );
+};
+export const savePortalDeficiencyResponseDraft = (
+  applicationId: string,
+  deficiencyId: string,
+  responseRemark: string,
+) => request<{ deficiency_id: string; response_remark: string; updated_at: string }>(
+  `/api/v1/portal/applications/${applicationId}/deficiencies/${deficiencyId}/draft/`,
+  { method: 'POST', body: { response_remark: responseRemark.trim() } },
+);
+export const downloadPortalDeficiencyNote = (applicationId: string) => fetchPortalDocumentContent(
+  `/api/v1/portal/applications/${applicationId}/deficiencies/note/`,
+);
+export const resubmitPortalApplicationDeficiencies = (applicationId: string) => request<PortalDeficiencyResubmission>(
+  `/api/v1/portal/applications/${applicationId}/deficiencies/resubmit/`,
+  { method: 'POST', body: {} },
+);
+export const downloadPortalDeficiencyResponse = (actionUrl: string) => {
+  if (!actionUrl.startsWith('/api/v1/portal/applications/') || !actionUrl.includes('/deficiencies/')) {
+    throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Deficiency response download action is invalid.', 400);
+  }
+  return request<PortalDownloadDescriptor>(actionUrl);
+};
+export const fetchPortalDocumentationActions = (applicationId: string) => request<PortalDocumentationProjection>(`/api/v1/portal/applications/${applicationId}/documentation-actions/`);
+export const uploadPortalDocumentationAction = (applicationId: string, actionCode: string, file: File, notes?: string) => {
+  const formData = new FormData();
+  formData.append('file', file, file.name);
+  if (notes?.trim()) formData.append('notes', notes.trim());
+  return request<PortalDocumentationUploadResult>(
+    `/api/v1/portal/applications/${applicationId}/documentation-actions/${actionCode}/upload/`,
+    { method: 'POST', formData },
+  );
+};
+export const downloadPortalDocumentationAction = (actionUrl: string) => {
+  if (!actionUrl.startsWith('/api/v1/portal/applications/')) {
+    throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Document download action is invalid.', 400);
+  }
+  return request<PortalDownloadDescriptor>(actionUrl);
+};
 
-async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown } = {}): Promise<T> {
+export const fetchPortalDocumentContent = async (downloadUrl: string) => {
+  if (!downloadUrl.startsWith('/api/v1/portal/applications/')) {
+    throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Document download URL is invalid.', 400);
+  }
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
+  const response = await fetch(`${API_BASE_URL}${downloadUrl}`, {
+    headers: { Authorization: `Bearer ${session.accessToken}` },
+  });
+  if (!response.ok) throw new AuthSessionError('DOWNLOAD_FAILED', 'Document download failed.', response.status);
+  return response.blob();
+};
+
+export const openPortalDocumentBlob = (content: Blob) => {
+  const url = URL.createObjectURL(content);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+};
+
+async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; formData?: FormData } = {}): Promise<T> {
   const session = loadStoredAuthSession();
   if (!session) {
     throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
@@ -171,9 +341,11 @@ async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PA
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${session.accessToken}`,
-      ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
+      ...(method === 'GET' || options.formData ? {} : { 'Content-Type': 'application/json' }),
     },
-    ...(method === 'GET' ? {} : { body: JSON.stringify(options.body ?? {}) }),
+    ...(method === 'GET' ? {} : {
+      body: options.formData ?? JSON.stringify(options.body ?? {}),
+    }),
   });
   const envelope = await response.json() as ApiEnvelope<T>;
   if (!response.ok || !envelope.success || !envelope.data) {

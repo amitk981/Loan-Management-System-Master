@@ -1,0 +1,19 @@
+Using existing test database for alias 'default' ('test_sfpcl_credit')...
+Found 2 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  No migrations to apply.
+System check identified no issues (0 silenced).
+test_five_exact_successor_requests_persist_one_winner_and_evidence_set (sfpcl_credit.tests.test_document_templates_api.DocumentTemplateConcurrencyTests.test_five_exact_successor_requests_persist_one_winner_and_evidence_set) ... ok
+test_five_overlapping_first_versions_persist_one_winner_and_evidence_set (sfpcl_credit.tests.test_document_templates_api.DocumentTemplateConcurrencyTests.test_five_overlapping_first_versions_persist_one_winner_and_evidence_set) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.835s
+
+OK
+Preserving test database for alias 'default' ('test_sfpcl_credit')...

@@ -1,0 +1,118 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/settings/SettingsHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/sfpcl-lms
+
+ ❯ src/pages/settings/SettingsHub.test.tsx (8 tests | 1 failed) 670ms
+   ✓ SettingsHub Approval Matrix panel > renders active and retained historical rules from the versioned API without local fixtures 86ms
+   ✓ SettingsHub Approval Matrix panel > permits a canonical manager to submit a complete successor version as a pending proposal  315ms
+   ✓ SettingsHub Approval Matrix panel > shows denied/error states without falling back to the inline prototype matrix 14ms
+   ✓ SettingsHub Approval Matrix panel > clears matrix rows when the actor loses canonical read permission 16ms
+   ✓ SettingsHub Approval Matrix panel > removes inline business fixtures from the owned S71 panel source 0ms
+   ✓ SettingsHub remaining panels > loads retained policy versions from the authenticated configuration boundary without exposing edits to a reader 16ms
+   ✓ SettingsHub remaining panels > creates a complete successor as a separate audited draft for a canonical policy manager 190ms
+   × SettingsHub remaining panels > renders unsupported settings as explicitly inert and contains no former live business fixtures 33ms
+     → expected 'import React, { useEffect, useState }…' not to match /POL-2026-01|Admin User|Rajesh Sharma|…/
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/settings/SettingsHub.test.tsx > SettingsHub remaining panels > renders unsupported settings as explicitly inert and contains no former live business fixtures
+AssertionError: expected 'import React, { useEffect, useState }…' not to match /POL-2026-01|Admin User|Rajesh Sharma|…/
+
+- Expected: 
+/POL-2026-01|Admin User|Rajesh Sharma|Loan Application Form|Completeness Check|30% of share value|D-3, D\+1, D\+7/
+
++ Received: 
+"import React, { useEffect, useState } from 'react';
+import { AlertTriangle, FileText, Settings, Shield, Users } from 'lucide-react';
+import { useRole } from '../../contexts/RoleContext';
+import { ApprovalMatrixSettingsPanel } from './ApprovalMatrixSettingsPanel';
+import { LoanPolicySettingsPanel } from './LoanPolicySettingsPanel';
+
+type SettingsTab = 'policy' | 'approval_matrix' | 'templates' | 'users';
+
+const DeferredPanel: React.FC<{ title: string; owner: string; children: React.ReactNode }> = ({ title, owner, children }) => (
+  <div className=\"max-w-4xl space-y-5\">
+    <div className=\"bg-white border border-slate-200 rounded-xl p-6\">
+      <h3 className=\"font-semibold text-slate-900 mb-2\">{title}</h3>
+      <p className=\"text-sm text-slate-600\">{children}</p>
+      <div className=\"bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3 text-sm text-amber-800 mt-4\">
+        <AlertTriangle size={16} className=\"mt-0.5 flex-shrink-0\" />
+        Configuration is managed outside the product until slice {owner}. This panel is read-only and exposes no save, upload, activation, or assignment action.
+      </div>
+    </div>
+  </div>
+);
+
+const SettingsHub: React.FC = () => {
+  const { can } = useRole();
+  const matrixOnly = can('view_approval_matrix') && !can('view_settings');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(matrixOnly ? 'approval_matrix' : 'policy');
+
+  useEffect(() => {
+    if (matrixOnly) setActiveTab('approval_matrix');
+  }, [matrixOnly]);
+
+  if (!can('view_settings') && !can('view_approval_matrix')) {
+    return <div className=\"p-6\"><div className=\"flex flex-col items-center py-20 text-center\">
+      <Shield size={40} className=\"text-slate-300 mb-4\" />
+      <h2 className=\"text-lg font-semibold text-slate-700 mb-2\">Access Restricted</h2>
+      <p className=\"text-sm text-slate-400\">Your account has no permission to view configuration.</p>
+    </div></div>;
+  }
+
+  const allTabs: Array<{ id: SettingsTab; label: string; icon: React.ReactNode }> = [
+    { id: 'policy', label: 'Policy & Product Configuration', icon: <Settings size={15} /> },
+    { id: 'approval_matrix', label: 'Approval Matrix', icon: <Shield size={15} /> },
+    { id: 'templates', label: 'Template Management', icon: <FileText size={15} /> },
+    { id: 'users', label: 'User & Role Management', icon: <Users size={15} /> },
+  ];
+  const tabs = allTabs.filter(tab => !matrixOnly || tab.id === 'approval_matrix');
+
+  return <div className=\"p-6\">
+    <div className=\"mb-6\">
+      <h1 className=\"text-xl font-bold text-slate-900\">Settings</h1>
+      <p className=\"text-sm text-slate-500 mt-1\">View governed configuration and the delivery status of settings domains.</p>
+    </div>
+    <div className=\"border-b border-slate-200 mb-6\"><div className=\"flex gap-1 overflow-x-auto\">{tabs.map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${activeTab === tab.id ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>{tab.icon}{tab.label}</button>)}</div></div>
+
+    {activeTab === 'policy' && <LoanPolicySettingsPanel />}
+    {activeTab === 'approval_matrix' && <div className=\"max-w-4xl space-y-5\">
+      {/* OWNED S71 START: API-backed by 007J. */}
+      <ApprovalMatrixSettingsPanel />
+      {/* OWNED S71 END */}
+      <DeferredPanel title=\"Workflow TAT & Escalation Rules\" owner=\"012EA\">
+        Workflow task generation will become the authoritative source for stage owners, due dates, and escalations.
+      </DeferredPanel>
+    </div>}
+    {activeTab === 'templates' && <DeferredPanel title=\"Document Template Management\" owner=\"008A\">
+      S72 document files, borrower applicability, approval evidence, effective dates, and retained versions require the document-template model. Communication-template content remains a separate 003F resource.
+    </DeferredPanel>}
+    {activeTab === 'users' && <DeferredPanel title=\"User & Role Management\" owner=\"002G/002G2 Admin User Management\">
+      The existing Admin User Management screen is the authoritative API-backed surface for staff status, role assignment, and team membership. Settings does not duplicate those users or controls.
+    </DeferredPanel>}
+  </div>;
+};
+
+export default SettingsHub;
+"
+
+ ❯ src/pages/settings/SettingsHub.test.tsx:166:32
+    164|     expect(screen.queryByRole('button', { name: /add user|edit roles|d…
+    165| 
+    166|     expect(settingsSource).not.toMatch(/POL-2026-01|Admin User|Rajesh …
+       |                                ^
+    167|     expect(settingsSource).not.toMatch(/defaultValue=|handleSave|setSa…
+    168|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  00:46:33
+   Duration  1.57s (transform 166ms, setup 0ms, collect 321ms, tests 670ms, environment 256ms, prepare 40ms)
+

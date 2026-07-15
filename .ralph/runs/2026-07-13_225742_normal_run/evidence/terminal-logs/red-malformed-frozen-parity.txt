@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_malformed_frozen_terminal_case_fails_closed_at_every_read_boundary (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_malformed_frozen_terminal_case_fails_closed_at_every_read_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_225742_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2630, in test_malformed_frozen_terminal_case_fails_closed_at_every_read_boundary
+    self.assertEqual(collection.json()["pagination"]["total_count"], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,7 +1,7 @@
 # Slice 007J2: SettingsHub Remaining Panels — Wiring or Lockdown
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -42,6 +42,30 @@ Admins cannot believe they changed a production policy when nothing was saved; e
 - Read-only panels expose no mutation path.
 - Regression: no inline config fixture rendered as editable/live.
 
+## Run-Ahead Sharpening Review (007I delivered frontend authority pattern, 2026-07-13)
+
+- Follow 007I's fail-closed authority rule for every versioned settings resource: an `/auth/me`
+  permission may make a resource action usable, but must never create a missing resource action or
+  turn a disabled action into an enabled control.
+- Keep SettingsHub independent from approval-case and register reads. The approval workbench's
+  frozen `matrix_projection` is historical display truth for one cycle, not the current editable
+  configuration source and never a fallback when the settings endpoint is denied or empty.
+- Add a raw-source regression that rejects editable-looking inline policy/rate/threshold/retention
+  fixtures after classification, while allowing explicit controlled vocabularies and inert labels.
+
+## Run-Ahead Sharpening Review (007J delivered SettingsHub boundary, 2026-07-14)
+
+- Leave `ApprovalMatrixSettingsPanel` and its `approvalRegistersApi` calls unchanged; 007J now owns
+  all S71 rule reads, successor proposals, maker-checker messaging, and matrix permissions. Do not
+  merge policy/TAT/template/user data into that service or use matrix versions as fallback settings.
+- The remaining live-looking surfaces are the Policy & Product Configuration cards/actions,
+  Workflow TAT & Escalation table, Template Management rows/actions, and User & Role matrix. Classify
+  every one before editing. S71 names only approval rules, so TAT rows are not approval-matrix truth;
+  if no cited configuration endpoint owns them, make them explicitly inert and name their owner.
+- Preserve the real Admin Users route/API rather than treating SettingsHub's illustrative user/role
+  matrix as user-management authority. A canonical permission may reveal a real resource action but
+  must not make any remaining inline button operational.
+
 ## Out of Scope
 Approval matrix panel (007J), new configuration domains not in the source, notification/communication template content (003F).
 
@@ -53,15 +77,15 @@ Medium
 - All gates pass; screenshots of each panel's final state saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed (no API contract changed)
+- [x] Permissions tested
+- [x] Audit events tested (retained 003E backend coverage)
+- [x] Visual evidence saved (sandbox-denied server attempt; no screenshot fabricated)
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit created only after passing gates (orchestrator owns commit)

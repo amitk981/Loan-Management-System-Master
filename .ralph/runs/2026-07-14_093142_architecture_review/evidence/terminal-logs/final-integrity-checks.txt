@@ -1,0 +1,7 @@
+PASS: .ralph/state.json parses
+PASS: slice queue parses and pending dependency graph drains
+PASS: corrective runtime capabilities parse
+PASS: git diff --check
+PASS: no protected/source path changed
+PASS: non-run changed files=14 (limit 30); changed lines=523 (limit 2000)
+PASS: final review integrity, required artifacts, queue, and review-only scope

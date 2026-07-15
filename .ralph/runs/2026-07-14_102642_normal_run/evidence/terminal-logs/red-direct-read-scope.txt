@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_direct_list_enforces_read_scope_before_selector_count_or_serialization (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_direct_list_enforces_read_scope_before_selector_count_or_serialization)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 519, in test_direct_list_enforces_read_scope_before_selector_count_or_serialization
+    patch.object(document_generation.legal_document_selector, "list_for_application") as selector,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.legal_documents.modules.document_generation' has no attribute 'legal_document_selector'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.023s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

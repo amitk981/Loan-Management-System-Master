@@ -1,0 +1,4 @@
+Production source literal scan (tests and migrations excluded):
+PASS: no fixture plaintext or suffix-bearing metadata token in production Python
+Generated evidence-output scan (agent transcript excluded because it quotes test source):
+PASS: no sensitive fixture plaintext or suffix-bearing metadata token in generated evidence outputs

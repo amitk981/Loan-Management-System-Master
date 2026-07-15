@@ -1,0 +1,3367 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/registers/RegistersHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/sfpcl-lms
+
+ ❯ src/pages/registers/RegistersHub.test.tsx (8 tests | 3 failed) 559ms
+   × RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change 231ms
+     → Unable to find an accessible element with the role "columnheader" and name "Application"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Credit sanction register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Apply financial year":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary text-sm"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Financial year":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Financial year"[39m
+    [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+    [33mplaceholder[39m=[32m"FY2026-27"[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Sanction decision":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Sanction decision"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All decisions":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<option[39m
+    [33mvalue[39m=[32m"sanctioned"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Register / decision Borrower / loan Amounts / authority Source evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "CSR-2026-0001 LO00000042 Sanctioned 13 Jul 2026 Frozen Borrower FOL-APPROVAL-QUEUE-001 individual farmer · short term Crop production · crop production Risk: medium Requested ₹5,00,000.00 Eligible ₹4,50,000.00 Sanctioned ₹4,40,000.00 CFO + one Director Decision reason: Frozen sanction reason Rejection reason: — Conditions: Complete legal documents. Director One · approved · 13 Jul 2026, 14:30 · Director approved with conditions. Communication: pending · not sent Exception: exceeds loan limit Frozen exception business reason approved · cycle 1 exception-1 Conflict / abstention: abstention · self declared abstention Director One: Borrower is my relative. Action: action-1 · 13 Jul 2026 General meeting evidence: 12 Jul 2026 · approved director relative · director-1 Meeting: meeting-1 Notice: notice-1 Minutes: minutes-1 Resolution: resolution-1":
+  [36m<tr[39m
+    [33mclass[39m=[32m"hover:bg-slate-50"[39m
+    [33mdata-testid[39m=[32m"sanction-source-evidence"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Register / decision":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Borrower / loan":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Amounts / authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Source evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "CSR-2026-0001 LO00000042 Sanctioned 13 Jul 2026":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top"[39m
+  [36m/>[39m
+
+  Name "Frozen Borrower FOL-APPROVAL-QUEUE-001 individual farmer · short term Crop production · crop production Risk: medium":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Requested ₹5,00,000.00 Eligible ₹4,50,000.00 Sanctioned ₹4,40,000.00 CFO + one Director":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Decision reason: Frozen sanction reason Rejection reason: — Conditions: Complete legal documents. Director One · approved · 13 Jul 2026, 14:30 · Director approved with conditions. Communication: pending · not sent Exception: exceeds loan limit Frozen exception business reason approved · cycle 1 exception-1 Conflict / abstention: abstention · self declared abstention Director One: Borrower is my relative. Action: action-1 · 13 Jul 2026 General meeting evidence: 12 Jul 2026 · approved director relative · director-1 Meeting: meeting-1 Notice: notice-1 Minutes: minutes-1 Resolution: resolution-1":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mPermission-scoped approval registers[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto pt-5"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Financial year"[39m
+                [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+                [33mplaceholder[39m=[32m"FY2026-27"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary text-sm"[39m
+              [36m>[39m
+                [0mApply financial year[0m
+              [36m</button>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Sanction decision"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll decisions[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"sanctioned"[39m
+                [36m>[39m
+                  [0mSanctioned[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"rejected"[39m
+                [36m>[39m
+                  [0mRejected[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"card p-0 overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-gavel text-green-600"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"14"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"14"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m14 13-8.381 8.38a1 1 0 0 1-3.001-3l8.384-8.381"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m16 16 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m21.5 10.5-8-8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8 8 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8.5 7.5 8 8"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0m Credit sanction register[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+                [36m>[39m
+                  [0m21 records[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"overflow-x-auto"[39m
+              [36m>[39m
+                [36m<table[39m
+                  [33mclass[39m=[32m"w-full text-sm"[39m
+                [36m>[39m
+                  [36m<thead>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+                    [36m>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mRegister / decision[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mBorrower / loan[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mAmounts / authority[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mSource evidence[0m
+                      [36m</th>[39m
+                    [36m</tr>[39m
+                  [36m</thead>[39m
+                  [36m<tbody[39m
+                    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+                  [36m>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"hover:bg-slate-50"[39m
+                      [33mdata-testid[39m=[32m"sanction-source-evidence"[39m
+                    [36m>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-semibold text-green-700 num"[39m
+                        [36m>[39m
+                          [0mCSR-2026-0001[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num text-slate-500"[39m
+                        [36m>[39m
+                          [0mLO00000042[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-green-50 text-green-900 border-green-100 text-xs px-2 py-0.5 h-5"[39m
+                        [36m>[39m
+                          [36m<svg[39m
+                            [33maria-hidden[39m=[32m"true"[39m
+                            [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                            [33mfill[39m=[32m"none"[39m
+                            [33mheight[39m=[32m"10"[39m
+                            [33mstroke[39m=[32m"currentColor"[39m
+                            [33mstroke-linecap[39m=[32m"round"[39m
+                            [33mstroke-linejoin[39m=[32m"round"[39m
+                            [33mstroke-width[39m=[32m"2"[39m
+                            [33mviewBox[39m=[32m"0 0 24 24"[39m
+                            [33mwidth[39m=[32m"10"[39m
+                            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                          [36m>[39m
+                            [36m<circle[39m
+                              [33mcx[39m=[32m"12"[39m
+                              [33mcy[39m=[32m"12"[39m
+                              [33mr[39m=[32m"10"[39m
+                            [36m/>[39m
+                            [36m<path[39m
+                              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                            [36m/>[39m
+                          [36m</svg>[39m
+                          [0mSanctioned[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0m13 Jul 2026[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mFrozen Borrower[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mFOL-APPROVAL-QUEUE-001[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mindividual farmer[0m
+                          [0m · [0m
+                          [0mshort term[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mCrop production[0m
+                        [0m · [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mcrop production[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mRisk: [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mmedium[0m
+                        [36m</span>[39m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mRequested [0m
+                          [0m₹5,00,000.00[0m
+                          [36m<br />[39m
+                          [0mEligible [0m
+                          [0m₹4,50,000.00[0m
+                          [36m<br />[39m
+                          [0mSanctioned [0m
+                          [0m₹4,40,000.00[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mCFO + one Director[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mDecision reason:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0mFrozen sanction reason[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mRejection reason:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0m—[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mConditions:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0mComplete legal documents.[0m
+                        [36m<div[39m
+                          [33mdata-testid[39m=[32m"sanction-approver-decisions"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"block"[39m
+                          [36m>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"font-medium"[39m
+                            [36m>[39m
+                              [0mDirector One[0m
+                            [36m</span>[39m
+                            [0m · [0m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"capitalize"[39m
+                            [36m>[39m
+                              [0mapproved[0m
+                            [36m</span>[39m
+                            [0m · [0m
+                            [0m13 Jul 2026, 14:30[0m
+                            [0m · [0m
+                            [0mDirector approved with conditions.[0m
+                          [36m</span>[39m
+                        [36m</div>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mCommunication:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0mpending · not sent[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mException:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium capitalize"[39m
+                        [36m>[39m
+                          [0mexceeds loan limit[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mFrozen exception business reason[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mapproved[0m
+                          [0m · cycle [0m
+                          [0m1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num text-xs"[39m
+                        [36m>[39m
+                          [0mexception-1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mConflict / abstention:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"block"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"font-medium capitalize"[39m
+                          [36m>[39m
+                            [0mabstention[0m
+                            [0m · [0m
+                            [0mself declared abstention[0m
+                          [36m</span>[39m
+                          [36m<br />[39m
+                          [0mDirector One[0m
+                          [0m: [0m
+                          [0mBorrower is my relative.[0m
+                          [36m<br />[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"num text-xs"[39m
+                          [36m>[39m
+                            [0mAction: [0m
+                            [0maction-1[0m
+                            [0m · [0m
+                            [0m13 Jul 2026[0m
+                          [36m</span>[39m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mGeneral meeting evidence:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0m12 Jul 2026[0m
+                        [0m · [0m
+                        [0mapproved[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mdirector relative[0m
+                        [36m</span>[39m
+                        [0m · [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mdirector-1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num text-xs"[39m
+                        [36m>[39m
+                          [0mMeeting: [0m
+                          [0mmeeting-1[0m
+                          [36m<br />[39m
+                          [0mNotice: [0m
+                          [0mnotice-1[0m
+                          [36m<br />[39m
+                          [0mMinutes: [0m
+                          [0mminutes-1[0m
+                          [36m<br />[39m
+                          [0mResolution: [0m
+                          [0mresolution-1[0m
+                        [36m</span>[39m
+                      [36m</td>[39m
+                    [36m</tr>[39m
+                  [36m</tbody>[39m
+                [36m</table>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"px-4 py-3 border-t border-slate-200 flex items-center justify-between text-sm"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-slate-500"[39m
+                [36m>[39m
+                  [0mPage [0m
+                  [0m2[0m
+                  [0m of [0m
+                  [0m2[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex gap-2"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m15 18-6-6 6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                    [0m Previous[0m
+                  [36m</button>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                    [33mdisabled[39m=[32m""[39m
+                  [36m>[39m
+                    [0mNext [0m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m9 18 6-6-6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ RegistersHub owned approval register panels > applies only canonical financial-year values 178ms
+   × RegistersHub owned approval register panels > loads S25 independently with immutable comments and evidence but no inferred download 75ms
+     → Unable to find an accessible element with the role "columnheader" and name "Exception ID"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Exception status":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Exception status"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  Name "Exception type":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Exception type"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All statuses":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Pending":
+  [36m<option[39m
+    [33mvalue[39m=[32m"pending"[39m
+  [36m/>[39m
+
+  Name "Approved":
+  [36m<option[39m
+    [33mvalue[39m=[32m"approved"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  Name "All exception types":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Exceeds loan limit":
+  [36m<option[39m
+    [33mvalue[39m=[32m"exceeds_loan_limit"[39m
+  [36m/>[39m
+
+  Name "Stage bypass":
+  [36m<option[39m
+    [33mvalue[39m=[32m"stage_bypass"[39m
+  [36m/>[39m
+
+  Name "Waiver":
+  [36m<option[39m
+    [33mvalue[39m=[32m"waiver"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Exception / status Borrower / impact Reason / authority Evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "exception-1 stage bypass Pending Cycle 1 · 13 Jul 2026 Frozen Borrower ₹4,40,000.00 Requested by Case Preparer · preparer-1 application-valid Frozen exception description Frozen exception business reason Risk: Medium CFO: CFO One (pending) Case: pending Approver comments: CFO One · approved · 13 Jul 2026, 17:00 · CFO approved with monitoring. Supporting documents: cash-flow-evidence.pdf · restricted · 13 Jul 2026 document-1 · application/pdf · 2048 bytes Created 13 Jul 2026 · closed —":
+  [36m<tr[39m
+    [33mclass[39m=[32m"hover:bg-slate-50"[39m
+    [33mdata-testid[39m=[32m"exception-source-evidence"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Exception / status":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Borrower / impact":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Reason / authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "exception-1 stage bypass Pending Cycle 1 · 13 Jul 2026":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Frozen Borrower ₹4,40,000.00 Requested by Case Preparer · preparer-1 application-valid":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Frozen exception description Frozen exception business reason Risk: Medium CFO: CFO One (pending) Case: pending":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Approver comments: CFO One · approved · 13 Jul 2026, 17:00 · CFO approved with monitoring. Supporting documents: cash-flow-evidence.pdf · restricted · 13 Jul 2026 document-1 · application/pdf · 2048 bytes Created 13 Jul 2026 · closed —":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mPermission-scoped approval registers[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto pt-5"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Exception status"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll statuses[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"pending"[39m
+                [36m>[39m
+                  [0mPending[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"approved"[39m
+                [36m>[39m
+                  [0mApproved[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"rejected"[39m
+                [36m>[39m
+                  [0mRejected[0m
+                [36m</option>[39m
+              [36m</select>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Exception type"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll exception types[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"exceeds_loan_limit"[39m
+                [36m>[39m
+                  [0mExceeds loan limit[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"stage_bypass"[39m
+                [36m>[39m
+                  [0mStage bypass[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"waiver"[39m
+                [36m>[39m
+                  [0mWaiver[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"card p-0 overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-octagon-alert text-violet-600"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"14"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"14"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 16h.01"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 8v4"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0m Exception register[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+                [36m>[39m
+                  [0m1 record[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"overflow-x-auto"[39m
+              [36m>[39m
+                [36m<table[39m
+                  [33mclass[39m=[32m"w-full text-sm"[39m
+                [36m>[39m
+                  [36m<thead>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+                    [36m>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mException / status[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mBorrower / impact[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mReason / authority[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mEvidence[0m
+                      [36m</th>[39m
+                    [36m</tr>[39m
+                  [36m</thead>[39m
+                  [36m<tbody[39m
+                    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+                  [36m>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"hover:bg-slate-50"[39m
+                      [33mdata-testid[39m=[32m"exception-source-evidence"[39m
+                    [36m>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-semibold text-violet-700 num"[39m
+                        [36m>[39m
+                          [0mexception-1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mstage bypass[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                        [36m>[39m
+                          [36m<svg[39m
+                            [33maria-hidden[39m=[32m"true"[39m
+                            [33mclass[39m=[32m"lucide lucide-circle"[39m
+                            [33mfill[39m=[32m"none"[39m
+                            [33mheight[39m=[32m"10"[39m
+                            [33mstroke[39m=[32m"currentColor"[39m
+                            [33mstroke-linecap[39m=[32m"round"[39m
+                            [33mstroke-linejoin[39m=[32m"round"[39m
+                            [33mstroke-width[39m=[32m"2"[39m
+                            [33mviewBox[39m=[32m"0 0 24 24"[39m
+                            [33mwidth[39m=[32m"10"[39m
+                            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                          [36m>[39m
+                            [36m<circle[39m
+                              [33mcx[39m=[32m"12"[39m
+                              [33mcy[39m=[32m"12"[39m
+                              [33mr[39m=[32m"10"[39m
+                            [36m/>[39m
+                          [36m</svg>[39m
+                          [0mPending[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mCycle [0m
+                        [0m1[0m
+                        [0m · [0m
+                        [0m13 Jul 2026[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mFrozen Borrower[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0m₹4,40,000.00[0m
+                        [36m<br />[39m
+                        [0mRequested by [0m
+                        [0mCase Preparer · preparer-1[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mapplication-valid[0m
+                        [36m</span>[39m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mFrozen exception description[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mFrozen exception business reason[0m
+                        [36m<br />[39m
+                        [0mRisk: [0m
+                        [0mMedium[0m
+                        [36m<br />[39m
+                        [0mCFO: CFO One (pending)[0m
+                        [36m<br />[39m
+                        [0mCase: [0m
+                        [0mpending[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mApprover comments:[0m
+                        [36m</span>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"block"[39m
+                        [36m>[39m
+                          [0mCFO One[0m
+                          [0m · [0m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"capitalize"[39m
+                          [36m>[39m
+                            [0mapproved[0m
+                          [36m</span>[39m
+                          [0m · [0m
+                          [0m13 Jul 2026, 17:00[0m
+                          [0m · [0m
+                          [0mCFO approved with monitoring.[0m
+                        [36m</span>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mSupporting documents:[0m
+                        [36m</span>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"block"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"font-medium"[39m
+                          [36m>[39m
+                            [0mcash-flow-evidence.pdf[0m
+                          [36m</span>[39m
+                          [0m · [0m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"capitalize"[39m
+                          [36m>[39m
+                            [0mrestricted[0m
+                          [36m</span>[39m
+                          [0m · [0m
+                          [0m13 Jul 2026[0m
+                          [36m<br />[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"num text-xs"[39m
+                          [36m>[39m
+                            [0mdocument-1[0m
+                            [0m · [0m
+                            [0mapplication/pdf[0m
+                            [0m · [0m
+                            [0m2048[0m
+                            [0m bytes[0m
+                          [36m</span>[39m
+                        [36m</span>[39m
+                        [0mCreated [0m
+                        [0m13 Jul 2026[0m
+                        [0m · closed [0m
+                        [0m—[0m
+                      [36m</td>[39m
+                    [36m</tr>[39m
+                  [36m</tbody>[39m
+                [36m</table>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"px-4 py-3 border-t border-slate-200 flex items-center justify-between text-sm"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-slate-500"[39m
+                [36m>[39m
+                  [0mPage [0m
+                  [0m1[0m
+                  [0m of [0m
+                  [0m1[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex gap-2"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                    [33mdisabled[39m=[32m""[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m15 18-6-6 6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                    [0m Previous[0m
+                  [36m</button>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                    [33mdisabled[39m=[32m""[39m
+                  [36m>[39m
+                    [0mNext [0m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m9 18 6-6-6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × RegistersHub owned approval register panels > selects a null-safe legacy S23 row without fabricating unavailable source facts 28ms
+     → Unable to find an accessible element with the role "button" and name "View CSR-LEGACY-0001"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Credit sanction register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Apply financial year":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Financial year":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Financial year"[39m
+    [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+    [33mplaceholder[39m=[32m"FY2026-27"[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Sanction decision":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Sanction decision"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All decisions":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<option[39m
+    [33mvalue[39m=[32m"sanctioned"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Register / decision Borrower / loan Amounts / authority Source evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "Loading Credit Sanction Register…":
+  [36m<tr />[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Register / decision":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Borrower / loan":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Amounts / authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Source evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "Loading Credit Sanction Register…":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell text-center text-slate-400 py-12"[39m
+    [33mcolspan[39m=[32m"4"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mPermission-scoped approval registers[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto pt-5"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Financial year"[39m
+                [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+                [33mplaceholder[39m=[32m"FY2026-27"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary text-sm"[39m
+              [36m>[39m
+                [0mApply financial year[0m
+              [36m</button>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Sanction decision"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll decisions[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"sanctioned"[39m
+                [36m>[39m
+                  [0mSanctioned[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"rejected"[39m
+                [36m>[39m
+                  [0mRejected[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"card p-0 overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-gavel text-green-600"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"14"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"14"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m14 13-8.381 8.38a1 1 0 0 1-3.001-3l8.384-8.381"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m16 16 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m21.5 10.5-8-8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8 8 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8.5 7.5 8 8"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0m Credit sanction register[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+                [36m>[39m
+                  [0mLoading register…[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"overflow-x-auto"[39m
+              [36m>[39m
+                [36m<table[39m
+                  [33mclass[39m=[32m"w-full text-sm"[39m
+                [36m>[39m
+                  [36m<thead>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+                    [36m>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mRegister / decision[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mBorrower / loan[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mAmounts / authority[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mSource evidence[0m
+                      [36m</th>[39m
+                    [36m</tr>[39m
+                  [36m</thead>[39m
+                  [36m<tbody[39m
+                    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+                  [36m>[39m
+                    [36m<tr>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell text-center text-slate-400 py-12"[39m
+                        [33mcolspan[39m=[32m"4"[39m
+                      [36m>[39m
+                        [0mLoading Credit Sanction Register…[0m
+                      [36m</td>[39m
+                    [36m</tr>[39m
+                  [36m</tbody>[39m
+                [36m</table>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ RegistersHub owned approval register panels > hides export without canonical permission and reports its deferred state when permitted 20ms
+   ✓ RegistersHub owned approval register panels > shows a nondisclosing denied state with no fallback register facts 14ms
+   ✓ RegistersHub owned approval register panels > clears scoped register facts when the actor loses canonical permission 12ms
+   ✓ RegistersHub owned approval register panels > keeps mock-backed variables outside the owned S23/S25 panel source 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change
+TestingLibraryElementError: Unable to find an accessible element with the role "columnheader" and name "Application"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Credit sanction register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Apply financial year":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary text-sm"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Financial year":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Financial year"[39m
+    [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+    [33mplaceholder[39m=[32m"FY2026-27"[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Sanction decision":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Sanction decision"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All decisions":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<option[39m
+    [33mvalue[39m=[32m"sanctioned"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Register / decision Borrower / loan Amounts / authority Source evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "CSR-2026-0001 LO00000042 Sanctioned 13 Jul 2026 Frozen Borrower FOL-APPROVAL-QUEUE-001 individual farmer · short term Crop production · crop production Risk: medium Requested ₹5,00,000.00 Eligible ₹4,50,000.00 Sanctioned ₹4,40,000.00 CFO + one Director Decision reason: Frozen sanction reason Rejection reason: — Conditions: Complete legal documents. Director One · approved · 13 Jul 2026, 14:30 · Director approved with conditions. Communication: pending · not sent Exception: exceeds loan limit Frozen exception business reason approved · cycle 1 exception-1 Conflict / abstention: abstention · self declared abstention Director One: Borrower is my relative. Action: action-1 · 13 Jul 2026 General meeting evidence: 12 Jul 2026 · approved director relative · director-1 Meeting: meeting-1 Notice: notice-1 Minutes: minutes-1 Resolution: resolution-1":
+  [36m<tr[39m
+    [33mclass[39m=[32m"hover:bg-slate-50"[39m
+    [33mdata-testid[39m=[32m"sanction-source-evidence"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Register / decision":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Borrower / loan":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Amounts / authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Source evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "CSR-2026-0001 LO00000042 Sanctioned 13 Jul 2026":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top"[39m
+  [36m/>[39m
+
+  Name "Frozen Borrower FOL-APPROVAL-QUEUE-001 individual farmer · short term Crop production · crop production Risk: medium":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Requested ₹5,00,000.00 Eligible ₹4,50,000.00 Sanctioned ₹4,40,000.00 CFO + one Director":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Decision reason: Frozen sanction reason Rejection reason: — Conditions: Complete legal documents. Director One · approved · 13 Jul 2026, 14:30 · Director approved with conditions. Communication: pending · not sent Exception: exceeds loan limit Frozen exception business reason approved · cycle 1 exception-1 Conflict / abstention: abstention · self declared abstention Director One: Borrower is my relative. Action: action-1 · 13 Jul 2026 General meeting evidence: 12 Jul 2026 · approved director relative · director-1 Meeting: meeting-1 Notice: notice-1 Minutes: minutes-1 Resolution: resolution-1":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mPermission-scoped approval registers[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto pt-5"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Financial year"[39m
+                [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+                [33mplaceholder[39m=[32m"FY2026-27"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary text-sm"[39m
+              [36m>[39m
+                [0mApply financial year[0m
+              [36m</button>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Sanction decision"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll decisions[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"sanctioned"[39m
+                [36m>[39m
+                  [0mSanctioned[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"rejected"[39m
+                [36m>[39m
+                  [0mRejected[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"card p-0 overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-gavel text-green-600"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"14"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"14"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m14 13-8.381 8.38a1 1 0 0 1-3.001-3l8.384-8.381"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m16 16 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m21.5 10.5-8-8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8 8 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8.5 7.5 8 8"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0m Credit sanction register[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+                [36m>[39m
+                  [0m21 records[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"overflow-x-auto"[39m
+              [36m>[39m
+                [36m<table[39m
+                  [33mclass[39m=[32m"w-full text-sm"[39m
+                [36m>[39m
+                  [36m<thead>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+                    [36m>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mRegister / decision[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mBorrower / loan[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mAmounts / authority[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mSource evidence[0m
+                      [36m</th>[39m
+                    [36m</tr>[39m
+                  [36m</thead>[39m
+                  [36m<tbody[39m
+                    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+                  [36m>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"hover:bg-slate-50"[39m
+                      [33mdata-testid[39m=[32m"sanction-source-evidence"[39m
+                    [36m>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-semibold text-green-700 num"[39m
+                        [36m>[39m
+                          [0mCSR-2026-0001[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num text-slate-500"[39m
+                        [36m>[39m
+                          [0mLO00000042[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-green-50 text-green-900 border-green-100 text-xs px-2 py-0.5 h-5"[39m
+                        [36m>[39m
+                          [36m<svg[39m
+                            [33maria-hidden[39m=[32m"true"[39m
+                            [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                            [33mfill[39m=[32m"none"[39m
+                            [33mheight[39m=[32m"10"[39m
+                            [33mstroke[39m=[32m"currentColor"[39m
+                            [33mstroke-linecap[39m=[32m"round"[39m
+                            [33mstroke-linejoin[39m=[32m"round"[39m
+                            [33mstroke-width[39m=[32m"2"[39m
+                            [33mviewBox[39m=[32m"0 0 24 24"[39m
+                            [33mwidth[39m=[32m"10"[39m
+                            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                          [36m>[39m
+                            [36m<circle[39m
+                              [33mcx[39m=[32m"12"[39m
+                              [33mcy[39m=[32m"12"[39m
+                              [33mr[39m=[32m"10"[39m
+                            [36m/>[39m
+                            [36m<path[39m
+                              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                            [36m/>[39m
+                          [36m</svg>[39m
+                          [0mSanctioned[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0m13 Jul 2026[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mFrozen Borrower[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mFOL-APPROVAL-QUEUE-001[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mindividual farmer[0m
+                          [0m · [0m
+                          [0mshort term[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mCrop production[0m
+                        [0m · [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mcrop production[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mRisk: [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mmedium[0m
+                        [36m</span>[39m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mRequested [0m
+                          [0m₹5,00,000.00[0m
+                          [36m<br />[39m
+                          [0mEligible [0m
+                          [0m₹4,50,000.00[0m
+                          [36m<br />[39m
+                          [0mSanctioned [0m
+                          [0m₹4,40,000.00[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mCFO + one Director[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mDecision reason:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0mFrozen sanction reason[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mRejection reason:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0m—[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mConditions:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0mComplete legal documents.[0m
+                        [36m<div[39m
+                          [33mdata-testid[39m=[32m"sanction-approver-decisions"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"block"[39m
+                          [36m>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"font-medium"[39m
+                            [36m>[39m
+                              [0mDirector One[0m
+                            [36m</span>[39m
+                            [0m · [0m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"capitalize"[39m
+                            [36m>[39m
+                              [0mapproved[0m
+                            [36m</span>[39m
+                            [0m · [0m
+                            [0m13 Jul 2026, 14:30[0m
+                            [0m · [0m
+                            [0mDirector approved with conditions.[0m
+                          [36m</span>[39m
+                        [36m</div>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mCommunication:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0mpending · not sent[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mException:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium capitalize"[39m
+                        [36m>[39m
+                          [0mexceeds loan limit[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mFrozen exception business reason[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mapproved[0m
+                          [0m · cycle [0m
+                          [0m1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num text-xs"[39m
+                        [36m>[39m
+                          [0mexception-1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mConflict / abstention:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"block"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"font-medium capitalize"[39m
+                          [36m>[39m
+                            [0mabstention[0m
+                            [0m · [0m
+                            [0mself declared abstention[0m
+                          [36m</span>[39m
+                          [36m<br />[39m
+                          [0mDirector One[0m
+                          [0m: [0m
+                          [0mBorrower is my relative.[0m
+                          [36m<br />[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"num text-xs"[39m
+                          [36m>[39m
+                            [0mAction: [0m
+                            [0maction-1[0m
+                            [0m · [0m
+                            [0m13 Jul 2026[0m
+                          [36m</span>[39m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mGeneral meeting evidence:[0m
+                        [36m</span>[39m
+                        [0m [0m
+                        [0m12 Jul 2026[0m
+                        [0m · [0m
+                        [0mapproved[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mdirector relative[0m
+                        [36m</span>[39m
+                        [0m · [0m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mdirector-1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num text-xs"[39m
+                        [36m>[39m
+                          [0mMeeting: [0m
+                          [0mmeeting-1[0m
+                          [36m<br />[39m
+                          [0mNotice: [0m
+                          [0mnotice-1[0m
+                          [36m<br />[39m
+                          [0mMinutes: [0m
+                          [0mminutes-1[0m
+                          [36m<br />[39m
+                          [0mResolution: [0m
+                          [0mresolution-1[0m
+                        [36m</span>[39m
+                      [36m</td>[39m
+                    [36m</tr>[39m
+                  [36m</tbody>[39m
+                [36m</table>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"px-4 py-3 border-t border-slate-200 flex items-center justify-between text-sm"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-slate-500"[39m
+                [36m>[39m
+                  [0mPage [0m
+                  [0m2[0m
+                  [0m of [0m
+                  [0m2[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex gap-2"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m15 18-6-6 6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                    [0m Previous[0m
+                  [36m</button>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                    [33mdisabled[39m=[32m""[39m
+                  [36m>[39m
+                    [0mNext [0m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m9 18 6-6-6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/registers/RegistersHub.test.tsx:62:19
+     60|     expect(screen.getByText('21 records')).toBeTruthy();
+     61|     expect(screen.getByText('Page 2 of 2')).toBeTruthy();
+     62|     expect(screen.getByRole('columnheader', { name: 'Application' })).…
+       |                   ^
+     63|     expect(screen.getByRole('columnheader', { name: 'Approval authorit…
+     64|     expect(screen.getByRole('heading', { name: 'Credit sanction regist…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > loads S25 independently with immutable comments and evidence but no inferred download
+TestingLibraryElementError: Unable to find an accessible element with the role "columnheader" and name "Exception ID"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Exception status":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Exception status"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  Name "Exception type":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Exception type"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All statuses":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Pending":
+  [36m<option[39m
+    [33mvalue[39m=[32m"pending"[39m
+  [36m/>[39m
+
+  Name "Approved":
+  [36m<option[39m
+    [33mvalue[39m=[32m"approved"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  Name "All exception types":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Exceeds loan limit":
+  [36m<option[39m
+    [33mvalue[39m=[32m"exceeds_loan_limit"[39m
+  [36m/>[39m
+
+  Name "Stage bypass":
+  [36m<option[39m
+    [33mvalue[39m=[32m"stage_bypass"[39m
+  [36m/>[39m
+
+  Name "Waiver":
+  [36m<option[39m
+    [33mvalue[39m=[32m"waiver"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Exception / status Borrower / impact Reason / authority Evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "exception-1 stage bypass Pending Cycle 1 · 13 Jul 2026 Frozen Borrower ₹4,40,000.00 Requested by Case Preparer · preparer-1 application-valid Frozen exception description Frozen exception business reason Risk: Medium CFO: CFO One (pending) Case: pending Approver comments: CFO One · approved · 13 Jul 2026, 17:00 · CFO approved with monitoring. Supporting documents: cash-flow-evidence.pdf · restricted · 13 Jul 2026 document-1 · application/pdf · 2048 bytes Created 13 Jul 2026 · closed —":
+  [36m<tr[39m
+    [33mclass[39m=[32m"hover:bg-slate-50"[39m
+    [33mdata-testid[39m=[32m"exception-source-evidence"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Exception / status":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Borrower / impact":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Reason / authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "exception-1 stage bypass Pending Cycle 1 · 13 Jul 2026":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Frozen Borrower ₹4,40,000.00 Requested by Case Preparer · preparer-1 application-valid":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Frozen exception description Frozen exception business reason Risk: Medium CFO: CFO One (pending) Case: pending":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+  [36m/>[39m
+
+  Name "Approver comments: CFO One · approved · 13 Jul 2026, 17:00 · CFO approved with monitoring. Supporting documents: cash-flow-evidence.pdf · restricted · 13 Jul 2026 document-1 · application/pdf · 2048 bytes Created 13 Jul 2026 · closed —":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mPermission-scoped approval registers[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto pt-5"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Exception status"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll statuses[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"pending"[39m
+                [36m>[39m
+                  [0mPending[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"approved"[39m
+                [36m>[39m
+                  [0mApproved[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"rejected"[39m
+                [36m>[39m
+                  [0mRejected[0m
+                [36m</option>[39m
+              [36m</select>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Exception type"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll exception types[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"exceeds_loan_limit"[39m
+                [36m>[39m
+                  [0mExceeds loan limit[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"stage_bypass"[39m
+                [36m>[39m
+                  [0mStage bypass[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"waiver"[39m
+                [36m>[39m
+                  [0mWaiver[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"card p-0 overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-octagon-alert text-violet-600"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"14"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"14"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 16h.01"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 8v4"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0m Exception register[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+                [36m>[39m
+                  [0m1 record[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"overflow-x-auto"[39m
+              [36m>[39m
+                [36m<table[39m
+                  [33mclass[39m=[32m"w-full text-sm"[39m
+                [36m>[39m
+                  [36m<thead>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+                    [36m>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mException / status[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mBorrower / impact[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mReason / authority[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mEvidence[0m
+                      [36m</th>[39m
+                    [36m</tr>[39m
+                  [36m</thead>[39m
+                  [36m<tbody[39m
+                    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+                  [36m>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"hover:bg-slate-50"[39m
+                      [33mdata-testid[39m=[32m"exception-source-evidence"[39m
+                    [36m>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-semibold text-violet-700 num"[39m
+                        [36m>[39m
+                          [0mexception-1[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"capitalize"[39m
+                        [36m>[39m
+                          [0mstage bypass[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                        [36m>[39m
+                          [36m<svg[39m
+                            [33maria-hidden[39m=[32m"true"[39m
+                            [33mclass[39m=[32m"lucide lucide-circle"[39m
+                            [33mfill[39m=[32m"none"[39m
+                            [33mheight[39m=[32m"10"[39m
+                            [33mstroke[39m=[32m"currentColor"[39m
+                            [33mstroke-linecap[39m=[32m"round"[39m
+                            [33mstroke-linejoin[39m=[32m"round"[39m
+                            [33mstroke-width[39m=[32m"2"[39m
+                            [33mviewBox[39m=[32m"0 0 24 24"[39m
+                            [33mwidth[39m=[32m"10"[39m
+                            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                          [36m>[39m
+                            [36m<circle[39m
+                              [33mcx[39m=[32m"12"[39m
+                              [33mcy[39m=[32m"12"[39m
+                              [33mr[39m=[32m"10"[39m
+                            [36m/>[39m
+                          [36m</svg>[39m
+                          [0mPending[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mCycle [0m
+                        [0m1[0m
+                        [0m · [0m
+                        [0m13 Jul 2026[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-48 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mFrozen Borrower[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0m₹4,40,000.00[0m
+                        [36m<br />[39m
+                        [0mRequested by [0m
+                        [0mCase Preparer · preparer-1[0m
+                        [36m<br />[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"num"[39m
+                        [36m>[39m
+                          [0mapplication-valid[0m
+                        [36m</span>[39m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-56 whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mFrozen exception description[0m
+                        [36m</span>[39m
+                        [36m<br />[39m
+                        [0mFrozen exception business reason[0m
+                        [36m<br />[39m
+                        [0mRisk: [0m
+                        [0mMedium[0m
+                        [36m<br />[39m
+                        [0mCFO: CFO One (pending)[0m
+                        [36m<br />[39m
+                        [0mCase: [0m
+                        [0mpending[0m
+                      [36m</td>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell align-top max-w-xl whitespace-normal"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mApprover comments:[0m
+                        [36m</span>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"block"[39m
+                        [36m>[39m
+                          [0mCFO One[0m
+                          [0m · [0m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"capitalize"[39m
+                          [36m>[39m
+                            [0mapproved[0m
+                          [36m</span>[39m
+                          [0m · [0m
+                          [0m13 Jul 2026, 17:00[0m
+                          [0m · [0m
+                          [0mCFO approved with monitoring.[0m
+                        [36m</span>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"font-medium"[39m
+                        [36m>[39m
+                          [0mSupporting documents:[0m
+                        [36m</span>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"block"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"font-medium"[39m
+                          [36m>[39m
+                            [0mcash-flow-evidence.pdf[0m
+                          [36m</span>[39m
+                          [0m · [0m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"capitalize"[39m
+                          [36m>[39m
+                            [0mrestricted[0m
+                          [36m</span>[39m
+                          [0m · [0m
+                          [0m13 Jul 2026[0m
+                          [36m<br />[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"num text-xs"[39m
+                          [36m>[39m
+                            [0mdocument-1[0m
+                            [0m · [0m
+                            [0mapplication/pdf[0m
+                            [0m · [0m
+                            [0m2048[0m
+                            [0m bytes[0m
+                          [36m</span>[39m
+                        [36m</span>[39m
+                        [0mCreated [0m
+                        [0m13 Jul 2026[0m
+                        [0m · closed [0m
+                        [0m—[0m
+                      [36m</td>[39m
+                    [36m</tr>[39m
+                  [36m</tbody>[39m
+                [36m</table>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"px-4 py-3 border-t border-slate-200 flex items-center justify-between text-sm"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-slate-500"[39m
+                [36m>[39m
+                  [0mPage [0m
+                  [0m1[0m
+                  [0m of [0m
+                  [0m1[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex gap-2"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                    [33mdisabled[39m=[32m""[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m15 18-6-6 6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                    [0m Previous[0m
+                  [36m</button>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+                    [33mdisabled[39m=[32m""[39m
+                  [36m>[39m
+                    [0mNext [0m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m9 18 6-6-6-6"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/registers/RegistersHub.test.tsx:105:19
+    103|     const exceptionEvidence = screen.getByTestId('exception-source-evi…
+    104|     expect(screen.getByText('Frozen Borrower')).toBeTruthy();
+    105|     expect(screen.getByRole('columnheader', { name: 'Exception ID' }))…
+       |                   ^
+    106|     expect(screen.getByRole('columnheader', { name: 'Required authorit…
+    107|     expect(screen.getByRole('heading', { name: 'Exception register ent…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > selects a null-safe legacy S23 row without fabricating unavailable source facts
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "View CSR-LEGACY-0001"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Credit sanction register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Apply financial year":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Financial year":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Financial year"[39m
+    [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+    [33mplaceholder[39m=[32m"FY2026-27"[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Sanction decision":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Sanction decision"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All decisions":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<option[39m
+    [33mvalue[39m=[32m"sanctioned"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Register / decision Borrower / loan Amounts / authority Source evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "Loading Credit Sanction Register…":
+  [36m<tr />[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Register / decision":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Borrower / loan":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Amounts / authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  Name "Source evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "Loading Credit Sanction Register…":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell text-center text-slate-400 py-12"[39m
+    [33mcolspan[39m=[32m"4"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mPermission-scoped approval registers[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto pt-5"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Financial year"[39m
+                [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+                [33mplaceholder[39m=[32m"FY2026-27"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary text-sm"[39m
+              [36m>[39m
+                [0mApply financial year[0m
+              [36m</button>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Sanction decision"[39m
+                [33mclass[39m=[32m"field-select text-sm py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll decisions[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"sanctioned"[39m
+                [36m>[39m
+                  [0mSanctioned[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"rejected"[39m
+                [36m>[39m
+                  [0mRejected[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"card p-0 overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-gavel text-green-600"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"14"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"14"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m14 13-8.381 8.38a1 1 0 0 1-3.001-3l8.384-8.381"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m16 16 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m21.5 10.5-8-8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8 8 6-6"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m8.5 7.5 8 8"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0m Credit sanction register[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+                [36m>[39m
+                  [0mLoading register…[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"overflow-x-auto"[39m
+              [36m>[39m
+                [36m<table[39m
+                  [33mclass[39m=[32m"w-full text-sm"[39m
+                [36m>[39m
+                  [36m<thead>[39m
+                    [36m<tr[39m
+                      [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+                    [36m>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mRegister / decision[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mBorrower / loan[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mAmounts / authority[0m
+                      [36m</th>[39m
+                      [36m<th[39m
+                        [33mclass[39m=[32m"table-header text-left"[39m
+                      [36m>[39m
+                        [0mSource evidence[0m
+                      [36m</th>[39m
+                    [36m</tr>[39m
+                  [36m</thead>[39m
+                  [36m<tbody[39m
+                    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+                  [36m>[39m
+                    [36m<tr>[39m
+                      [36m<td[39m
+                        [33mclass[39m=[32m"table-cell text-center text-slate-400 py-12"[39m
+                        [33mcolspan[39m=[32m"4"[39m
+                      [36m>[39m
+                        [0mLoading Credit Sanction Register…[0m
+                      [36m</td>[39m
+                    [36m</tr>[39m
+                  [36m</tbody>[39m
+                [36m</table>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/registers/RegistersHub.test.tsx:151:34
+    149| 
+    150|     render(<RegistersHub />);
+    151|     await userEvent.click(screen.getByRole('button', { name: 'View CSR…
+       |                                  ^
+    152| 
+    153|     const evidence = screen.getByTestId('sanction-source-evidence').te…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 5 passed (8)
+   Start at  07:49:42
+   Duration  1.76s (transform 235ms, setup 0ms, collect 453ms, tests 559ms, environment 328ms, prepare 37ms)
+

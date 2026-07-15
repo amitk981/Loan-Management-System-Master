@@ -1,0 +1,8 @@
+Frontend configured gates, 2026-07-15:
+
+- `npm run lint`: PASS (exit 0)
+- `npm run typecheck`: PASS (exit 0)
+- `npm test -- --run`: PASS, 35 files / 304 tests (exit 0)
+- `npm run build`: PASS, 1,879 modules transformed (exit 0)
+
+The existing Vite CJS deprecation and chunk-size warnings were non-failing and unchanged.

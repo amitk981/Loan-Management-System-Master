@@ -1,0 +1,17 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007T-register-null-contract-and-action-order-closure.md
+ M docs/slices/008B2-legal-document-generation-boundary-closure.md
+ M docs/slices/008B3-document-renderer-and-output-proof-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M sfpcl-lms/e2e/approval-register-settings.e2e.spec.ts
+ M sfpcl-lms/e2e/sanction-workbench.e2e.spec.ts
+ M sfpcl-lms/src/pages/registers/ApprovalRegisterPanels.tsx
+ M sfpcl-lms/src/pages/registers/RegistersHub.test.tsx
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.test.tsx
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
+ M sfpcl-lms/src/services/approvalRegistersApi.ts
+?? .ralph/runs/2026-07-14_100104_normal_run/

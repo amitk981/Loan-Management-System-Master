@@ -1,0 +1,774 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/sanction/SanctionWorkbench.test.tsx -t renders unavailable frozen legacy approver names
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/sfpcl-lms
+
+ ❯ src/pages/sanction/SanctionWorkbench.test.tsx (29 tests | 1 failed | 28 skipped) 1038ms
+   ↓ SanctionWorkbench authenticated container > renders the authoritative total and replaces the queue from the next server page
+   ↓ SanctionWorkbench authenticated container > clears prior rows and totals when a later collection fails with 'OBJECT_ACCESS_DENIED'
+   ↓ SanctionWorkbench authenticated container > clears prior rows and totals when a later collection fails with 'MALFORMED_RESPONSE'
+   ↓ SanctionWorkbench authenticated container > keeps the newest filter authoritative when an older list response arrives last
+   ↓ SanctionWorkbench authenticated container > keeps the newest empty filter state when an older denial arrives last
+   ↓ SanctionWorkbench authenticated container > keeps the newest filter detail when an older detail response arrives last
+   ↓ SanctionWorkbench authenticated container > loads frozen case truth and approves through the exact case boundary before canonical refresh
+   ↓ SanctionWorkbench authenticated container > renders immutable action actor, role, decision, comment, and acted-at confirmation
+   × SanctionWorkbench authenticated container > renders unavailable frozen legacy approver names without a live identity lookup 1037ms
+     → Unable to find an element with the text: Not recorded. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between flex-wrap gap-3"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mSanction Workbench[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m cases from the approval-case service[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Sanction case status"[39m
+          [33mclass[39m=[32m"field-input w-auto"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"pending"[39m
+          [36m>[39m
+            [0mPending my approval[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"approved"[39m
+          [36m>[39m
+            [0mApproved history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"rejected"[39m
+          [36m>[39m
+            [0mRejected history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"returned_for_clarification"[39m
+          [36m>[39m
+            [0mReturned history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"blocked_by_conflict"[39m
+          [36m>[39m
+            [0mConflict-blocked history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll readable cases[0m
+          [36m</option>[39m
+        [36m</select>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card p-0 overflow-hidden lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-500 uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mCases ([0m
+              [0m1[0m
+              [0m)[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full p-4 hover:bg-slate-50 text-left bg-green-50 border-l-4 border-l-green-500"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-2"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"font-semibold text-slate-900 num text-sm"[39m
+                    [36m>[39m
+                      [0mLO000001[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm text-slate-700 mt-1"[39m
+                  [36m>[39m
+                    [0mFrozen Borrower[0m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                  [36m>[39m
+                    [0mindividual farmer[0m
+                    [0m · [0m
+                    [0mmedium[0m
+                    [0m risk[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mPending[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-3 space-y-1"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mRequested [0m
+                  [0m₹4,40,000.00[0m
+                  [0m · Recommended [0m
+                  [0m₹4,50,000.00[0m
+                  [0m · Eligible [0m
+                  [0m₹4,75,000.00[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mCFO + one Director[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mSubmitted [0m
+                  [0m2026-07-13T09:00:00Z[0m
+                  [0m · Elapsed pending time: 2h 30m[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0m1[0m
+                  [0m decision(s) recorded[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-3 border-t border-slate-200 flex items-center justify-between gap-2 text-xs"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-slate-500"[39m
+            [36m>[39m
+              [0mPage [0m
+              [0m1[0m
+              [0m of [0m
+              [0m1[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex gap-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary fl...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between flex-wrap gap-3"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mSanction Workbench[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m cases from the approval-case service[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Sanction case status"[39m
+          [33mclass[39m=[32m"field-input w-auto"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"pending"[39m
+          [36m>[39m
+            [0mPending my approval[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"approved"[39m
+          [36m>[39m
+            [0mApproved history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"rejected"[39m
+          [36m>[39m
+            [0mRejected history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"returned_for_clarification"[39m
+          [36m>[39m
+            [0mReturned history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"blocked_by_conflict"[39m
+          [36m>[39m
+            [0mConflict-blocked history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll readable cases[0m
+          [36m</option>[39m
+        [36m</select>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card p-0 overflow-hidden lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-500 uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mCases ([0m
+              [0m1[0m
+              [0m)[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full p-4 hover:bg-slate-50 text-left bg-green-50 border-l-4 border-l-green-500"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-2"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"font-semibold text-slate-900 num text-sm"[39m
+                    [36m>[39m
+                      [0mLO000001[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm text-slate-700 mt-1"[39m
+                  [36m>[39m
+                    [0mFrozen Borrower[0m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                  [36m>[39m
+                    [0mindividual farmer[0m
+                    [0m · [0m
+                    [0mmedium[0m
+                    [0m risk[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mPending[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-3 space-y-1"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mRequested [0m
+                  [0m₹4,40,000.00[0m
+                  [0m · Recommended [0m
+                  [0m₹4,50,000.00[0m
+                  [0m · Eligible [0m
+                  [0m₹4,75,000.00[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mCFO + one Director[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mSubmitted [0m
+                  [0m2026-07-13T09:00:00Z[0m
+                  [0m · Elapsed pending time: 2h 30m[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0m1[0m
+                  [0m decision(s) recorded[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-3 border-t border-slate-200 flex items-center justify-between gap-2 text-xs"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-slate-500"[39m
+            [36m>[39m
+              [0mPage [0m
+              [0m1[0m
+              [0m of [0m
+              [0m1[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex gap-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary fl...
+   ↓ SanctionWorkbench authenticated container > requires a reason and sends the exact Reject request
+   ↓ SanctionWorkbench authenticated container > requires a reason and sends the exact Return for Clarification request
+   ↓ SanctionWorkbench authenticated container > applies the 'CFO' resource/permission usability matrix
+   ↓ SanctionWorkbench authenticated container > applies the 'Director' resource/permission usability matrix
+   ↓ SanctionWorkbench authenticated container > applies the 'Credit Manager' resource/permission usability matrix
+   ↓ SanctionWorkbench authenticated container > blocks an unauthorized role at the case collection boundary
+   ↓ SanctionWorkbench authenticated container > does not union global permission into absent or disabled resource authority
+   ↓ SanctionWorkbench authenticated container > surfaces CONFLICTED_APPROVER_NOT_ALLOWED without fabricating completion or refetching
+   ↓ SanctionWorkbench authenticated container > surfaces GENERAL_MEETING_EVIDENCE_REQUIRED without fabricating completion or refetching
+   ↓ SanctionWorkbench authenticated container > surfaces GENERAL_MEETING_APPROVAL_PENDING without fabricating completion or refetching
+   ↓ SanctionWorkbench authenticated container > surfaces GENERAL_MEETING_APPROVAL_REJECTED without fabricating completion or refetching
+   ↓ SanctionWorkbench authenticated container > keeps returned and corrected cycles isolated while navigating
+   ↓ SanctionWorkbench authenticated container > reads terminal sanction terms only with the independent sanction permission
+   ↓ SanctionWorkbench authenticated container > uploads three application-scoped legal files before recording bounded special-case evidence
+   ↓ SanctionWorkbench authenticated container > renders nondisclosing access state for 'AUTH_REQUIRED'
+   ↓ SanctionWorkbench authenticated container > renders nondisclosing access state for 'OBJECT_ACCESS_DENIED'
+   ↓ SanctionWorkbench authenticated container > renders loading then the honest empty assigned queue
+   ↓ SanctionWorkbench authenticated container > surfaces action error state 'VALIDATION_ERROR' without retry
+   ↓ SanctionWorkbench authenticated container > surfaces action error state 'STALE_VERSION' without retry
+   ↓ SanctionWorkbench authenticated container > leaves no mock or client authority path in the shell and owned files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/sanction/SanctionWorkbench.test.tsx > SanctionWorkbench authenticated container > renders unavailable frozen legacy approver names without a live identity lookup
+TestingLibraryElementError: Unable to find an element with the text: Not recorded. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between flex-wrap gap-3"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mSanction Workbench[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m cases from the approval-case service[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Sanction case status"[39m
+          [33mclass[39m=[32m"field-input w-auto"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"pending"[39m
+          [36m>[39m
+            [0mPending my approval[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"approved"[39m
+          [36m>[39m
+            [0mApproved history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"rejected"[39m
+          [36m>[39m
+            [0mRejected history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"returned_for_clarification"[39m
+          [36m>[39m
+            [0mReturned history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"blocked_by_conflict"[39m
+          [36m>[39m
+            [0mConflict-blocked history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll readable cases[0m
+          [36m</option>[39m
+        [36m</select>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card p-0 overflow-hidden lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-500 uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mCases ([0m
+              [0m1[0m
+              [0m)[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full p-4 hover:bg-slate-50 text-left bg-green-50 border-l-4 border-l-green-500"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-2"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"font-semibold text-slate-900 num text-sm"[39m
+                    [36m>[39m
+                      [0mLO000001[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm text-slate-700 mt-1"[39m
+                  [36m>[39m
+                    [0mFrozen Borrower[0m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                  [36m>[39m
+                    [0mindividual farmer[0m
+                    [0m · [0m
+                    [0mmedium[0m
+                    [0m risk[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mPending[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-3 space-y-1"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mRequested [0m
+                  [0m₹4,40,000.00[0m
+                  [0m · Recommended [0m
+                  [0m₹4,50,000.00[0m
+                  [0m · Eligible [0m
+                  [0m₹4,75,000.00[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mCFO + one Director[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mSubmitted [0m
+                  [0m2026-07-13T09:00:00Z[0m
+                  [0m · Elapsed pending time: 2h 30m[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0m1[0m
+                  [0m decision(s) recorded[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-3 border-t border-slate-200 flex items-center justify-between gap-2 text-xs"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-slate-500"[39m
+            [36m>[39m
+              [0mPage [0m
+              [0m1[0m
+              [0m of [0m
+              [0m1[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex gap-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary fl...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between flex-wrap gap-3"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mSanction Workbench[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m cases from the approval-case service[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Sanction case status"[39m
+          [33mclass[39m=[32m"field-input w-auto"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"pending"[39m
+          [36m>[39m
+            [0mPending my approval[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"approved"[39m
+          [36m>[39m
+            [0mApproved history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"rejected"[39m
+          [36m>[39m
+            [0mRejected history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"returned_for_clarification"[39m
+          [36m>[39m
+            [0mReturned history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"blocked_by_conflict"[39m
+          [36m>[39m
+            [0mConflict-blocked history[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll readable cases[0m
+          [36m</option>[39m
+        [36m</select>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card p-0 overflow-hidden lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-4 bg-slate-50 border-b border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-500 uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mCases ([0m
+              [0m1[0m
+              [0m)[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full p-4 hover:bg-slate-50 text-left bg-green-50 border-l-4 border-l-green-500"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-2"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"font-semibold text-slate-900 num text-sm"[39m
+                    [36m>[39m
+                      [0mLO000001[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm text-slate-700 mt-1"[39m
+                  [36m>[39m
+                    [0mFrozen Borrower[0m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-xs text-slate-500"[39m
+                  [36m>[39m
+                    [0mindividual farmer[0m
+                    [0m · [0m
+                    [0mmedium[0m
+                    [0m risk[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mPending[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-3 space-y-1"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mRequested [0m
+                  [0m₹4,40,000.00[0m
+                  [0m · Recommended [0m
+                  [0m₹4,50,000.00[0m
+                  [0m · Eligible [0m
+                  [0m₹4,75,000.00[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mCFO + one Director[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mSubmitted [0m
+                  [0m2026-07-13T09:00:00Z[0m
+                  [0m · Elapsed pending time: 2h 30m[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0m1[0m
+                  [0m decision(s) recorded[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-3 border-t border-slate-200 flex items-center justify-between gap-2 text-xs"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-slate-500"[39m
+            [36m>[39m
+              [0mPage [0m
+              [0m1[0m
+              [0m of [0m
+              [0m1[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex gap-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn-secondary fl...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/sanction/SanctionWorkbench.test.tsx:260:26
+    258|     render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+    259| 
+    260|     expect((await screen.findAllByText('Not recorded')).length).toBeGr…
+       |                          ^
+    261|     expect(screen.getByText('Not recorded · director')).toBeTruthy();
+    262|     expect(screen.getByText('Legacy immutable decision.')).toBeTruthy(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 skipped (29)
+   Start at  08:00:08
+   Duration  2.37s (transform 210ms, setup 0ms, collect 415ms, tests 1.04s, environment 467ms, prepare 50ms)
+

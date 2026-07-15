@@ -1,0 +1,15 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/sfpcl_credit/tests/test_field_encryption.py", line 21, in test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable
+    from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
+ModuleNotFoundError: No module named 'sfpcl_credit.shared'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)

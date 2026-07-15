@@ -1,0 +1,7 @@
+Commands:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run
+
+System check identified no issues (0 silenced).
+No changes detected.
+Result: PASS

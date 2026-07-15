@@ -1,0 +1,62 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx -t keeps the object URL alive
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms
+
+ ❯ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx (7 tests | 1 failed | 6 skipped) 83ms
+   ↓ member portal documentation actions > removes inline business fixtures from both screens
+   ↓ member portal documentation actions > renders server-owned actions and performs one canonical refetch after upload
+   ↓ member portal documentation actions > shows complete status with its retained download and no upload controls
+   × member portal documentation actions > keeps the object URL alive after browser navigation starts 83ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "blob:term-sheet",
+    ]
+
+
+Number of calls: 1
+
+   ↓ member portal documentation actions > shows own-application empty and session-expired states without fixture fallback
+   ↓ member portal documentation actions > shows forbidden, server-error, and canonical blocked states
+   ↓ member portal documentation actions > shows server validation and keeps canonical status after a failed upload
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx > member portal documentation actions > keeps the object URL alive after browser navigation starts
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "blob:term-sheet",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx:124:33
+    122|       'blob:term-sheet', '_blank', 'noopener,noreferrer',
+    123|     );
+    124|     expect(revokeObjectURL).not.toHaveBeenCalled();
+       |                                 ^
+    125|   });
+    126|   it('shows own-application empty and session-expired states without f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 skipped (7)
+   Start at  15:32:24
+   Duration  1.04s (transform 155ms, setup 0ms, collect 332ms, tests 83ms, environment 331ms, prepare 43ms)
+

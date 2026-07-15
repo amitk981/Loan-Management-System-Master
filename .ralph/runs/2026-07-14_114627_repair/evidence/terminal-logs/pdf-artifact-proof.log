@@ -1,0 +1,4 @@
+PASS: genuine DOCX input is an OPC ZIP package
+PASS: retained PDF reopened strictly with pypdf
+PASS: exact Unicode borrower, Indian-currency label, and amount were extracted
+PDF SHA-256: dc89a9aa4db8a515b8dfbfb3b8b994caa6f226f27d16c2b988651cbed8fcef8c

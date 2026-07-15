@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_authorized_resolution_hides_unknown_and_wrong_stage_signature_ids (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_authorized_resolution_hides_unknown_and_wrong_stage_signature_ids)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 407, in test_authorized_resolution_hides_unknown_and_wrong_stage_signature_ids
+    self.assertEqual(wrong_stage.status_code, 404, wrong_stage.content)
+AssertionError: 403 != 404 : b'{"success": false, "error": {"code": "OBJECT_ACCESS_DENIED", "message": "You do not have access to this signature record.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:41:19.662952Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

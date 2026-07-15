@@ -1,0 +1,21 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_five_identical_requests_retain_one_result_and_one_evidence_set (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationConcurrencyTests.test_five_identical_requests_retain_one_result_and_one_evidence_set)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 34, in setUp
+    self.actor = self._user(
+                 ^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 544, in _user
+    user.set_password(self.password)
+                      ^^^^^^^^^^^^^
+AttributeError: 'LoanDocumentGenerationConcurrencyTests' object has no attribute 'password'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.330s
+
+FAILED (errors=1)
+Preserving test database for alias 'default'...

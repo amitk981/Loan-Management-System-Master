@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_exact_stamp_replay_is_zero_write_and_change_retains_history_in_reads (sfpcl_credit.tests.test_stamp_notary_api.StampDutyAndNotarisationApiTests.test_exact_stamp_replay_is_zero_write_and_change_retains_history_in_reads)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_143550_normal_run/sfpcl_credit/tests/test_stamp_notary_api.py", line 176, in test_exact_stamp_replay_is_zero_write_and_change_retains_history_in_reads
+    self.assertEqual(poa["stamp_status"], "pending")
+                     ~~~^^^^^^^^^^^^^^^^
+KeyError: 'stamp_status'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.037s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

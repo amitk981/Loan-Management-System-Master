@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_new_outputs_bind_current_provenance_to_reopened_stored_checksum (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_new_outputs_bind_current_provenance_to_reopened_stored_checksum) (output_format='docx')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 502, in test_new_outputs_bind_current_provenance_to_reopened_stored_checksum
+    self.assertEqual(
+AssertionError: None != 'legal-renderer-v1'
+
+======================================================================
+FAIL: test_new_outputs_bind_current_provenance_to_reopened_stored_checksum (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_new_outputs_bind_current_provenance_to_reopened_stored_checksum) (output_format='pdf')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 502, in test_new_outputs_bind_current_provenance_to_reopened_stored_checksum
+    self.assertEqual(
+AssertionError: None != 'legal-renderer-v1'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.295s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

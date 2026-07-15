@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_missing_retained_template_source_bytes_fail_before_output_storage (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_missing_retained_template_source_bytes_fail_before_output_storage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 514, in test_missing_retained_template_source_bytes_fail_before_output_storage
+    self.assertEqual(denied.status_code, 400, denied.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"loan_document_id": "8b51eede-d01d-48f3-855e-cc7be405b656", "document_type": "term_sheet", "generation_status": "generated", "document_id": "a5347959-76e1-400f-8cb8-dede84ae095e", "file_name": "term-sheet-LO00000801.pdf"}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T03:27:51.516488Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

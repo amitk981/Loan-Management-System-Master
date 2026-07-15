@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_pre_007o_v2_terminal_actions_are_blocked_but_return_is_available (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_pre_007o_v2_terminal_actions_are_blocked_but_return_is_available)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2503, in test_pre_007o_v2_terminal_actions_are_blocked_but_return_is_available
+    self.assertFalse(availability["approve"]["enabled"])
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.025s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

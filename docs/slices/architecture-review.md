@@ -23,3 +23,11 @@ none
 
 ## Risk Level
 Low
+
+## Last Review
+
+Run `2026-07-15_085859_architecture_review` independently reviewed completed slices 008K2, 008K3,
+008L, and 008L2 from fixed point `fc8d3380` across separate Standards and Spec passes. Findings and
+three executable failing probes are recorded newest-first in `docs/working/REVIEW_FINDINGS.md` and
+the run evidence; corrective slices 008K4 and 008L3 are queued in dependency order before sharpened
+008M. No production code changed.

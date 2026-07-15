@@ -14,12 +14,28 @@ export interface AuthSession {
 interface ApiEnvelope<T> {
   success: boolean;
   data?: T;
+  pagination?: Pagination;
+  response_status?: number;
   error?: {
     code: string;
     message: string;
     details?: Record<string, unknown>;
     field_errors?: Record<string, unknown>;
   };
+}
+
+export interface Pagination {
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  pagination: Pagination;
 }
 
 interface LoginData {
@@ -92,13 +108,15 @@ export class AuthSessionError extends Error {
   code: string;
   status?: number;
   fieldErrors?: Record<string, string>;
+  details?: Record<string, unknown>;
 
-  constructor(code: string, message: string, status?: number, fieldErrors?: Record<string, string>) {
+  constructor(code: string, message: string, status?: number, fieldErrors?: Record<string, string>, details?: Record<string, unknown>) {
     super(message);
     this.name = 'AuthSessionError';
     this.code = code;
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.details = details;
   }
 }
 
@@ -141,6 +159,10 @@ export const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
   'approvals.case.approve': 'approve_sanction',
   'approvals.case.reject': 'reject_sanction',
   'approvals.sanction.read': 'view_sanction',
+  'approvals.sanction_register.read': 'view_approval_registers',
+  'approvals.exception_register.read': 'view_approval_registers',
+  'approvals.matrix.read': 'view_approval_matrix',
+  'approvals.matrix.manage': 'view_approval_matrix',
   'documents.loan_document.read': 'view_documentation',
   'documents.loan_document.generate': 'manage_documentation',
   'documents.loan_document.verify': 'manage_documentation',
@@ -262,14 +284,7 @@ export const clearStoredAuthSession = (): void => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
 };
 
-export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
-  const session = loadStoredAuthSession();
-  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method ?? 'GET',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}`, ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
-    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
-  });
+const parseAuthenticatedEnvelope = async <T>(response: Response): Promise<ApiEnvelope<T>> => {
   let envelope: ApiEnvelope<T>;
   try { envelope = await response.json() as ApiEnvelope<T>; }
   catch { throw new AuthSessionError('MALFORMED_RESPONSE', 'The server returned an invalid response.', response.status); }
@@ -277,9 +292,85 @@ export const authenticatedRequest = async <T>(path: string, options: { method?: 
     const fieldErrors = envelope.error?.field_errors
       ? Object.fromEntries(Object.entries(envelope.error.field_errors).map(([field, value]) => [field, String(value)]))
       : undefined;
-    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors);
+    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors, envelope.error?.details);
   }
-  return envelope.data;
+  return { ...envelope, response_status: response.status };
+};
+
+const isValidPagination = (value: unknown, itemCount: number): value is Pagination => {
+  if (!value || typeof value !== 'object') return false;
+  const pagination = value as Record<string, unknown>;
+  const integer = (field: string, minimum: number) =>
+    Number.isInteger(pagination[field]) && (pagination[field] as number) >= minimum;
+  if (
+    !integer('page', 1)
+    || !integer('page_size', 1)
+    || !integer('total_count', 0)
+    || !integer('total_pages', 1)
+    || typeof pagination.has_next !== 'boolean'
+    || typeof pagination.has_previous !== 'boolean'
+  ) return false;
+
+  const { page, page_size: pageSize, total_count: totalCount, total_pages: totalPages } = pagination as unknown as Pagination;
+  const expectedPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const firstItemOffset = (page - 1) * pageSize;
+  const expectedItemCount = totalCount === 0
+    ? 0
+    : page < totalPages ? pageSize : totalCount - firstItemOffset;
+  return totalPages === expectedPages
+    && page <= totalPages
+    && pagination.has_next === (page < totalPages)
+    && pagination.has_previous === (page > 1)
+    && itemCount === expectedItemCount;
+};
+
+const authenticatedHeaders = (accessToken: string, jsonBody = false): Record<string, string> => ({
+  Accept: 'application/json',
+  Authorization: `Bearer ${accessToken}`,
+  'X-Request-ID': globalThis.crypto?.randomUUID?.() ?? `web-${Date.now()}`,
+  ...(jsonBody ? { 'Content-Type': 'application/json' } : {}),
+});
+
+const authenticatedEnvelopeRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<ApiEnvelope<T>> => {
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: options.method ?? 'GET',
+    headers: authenticatedHeaders(session.accessToken, options.body !== undefined),
+    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+  });
+  return parseAuthenticatedEnvelope<T>(response);
+};
+
+export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
+  const envelope = await authenticatedEnvelopeRequest<T>(path, options);
+  return envelope.data as T;
+};
+
+export const authenticatedPaginatedRequest = async <T>(path: string): Promise<PaginatedResult<T>> => {
+  const envelope = await authenticatedEnvelopeRequest<T[]>(path);
+  if (!Array.isArray(envelope.data) || !isValidPagination(envelope.pagination, envelope.data.length)) {
+    throw new AuthSessionError(
+      'MALFORMED_RESPONSE',
+      'The server returned an invalid paginated response.',
+      envelope.response_status,
+    );
+  }
+  return { items: envelope.data, pagination: envelope.pagination };
+};
+
+export const authenticatedMultipartRequest = async <T>(path: string, fields: Record<string, string | Blob>): Promise<T> => {
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
+  const body = new FormData();
+  Object.entries(fields).forEach(([field, value]) => body.set(field, value));
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: authenticatedHeaders(session.accessToken),
+    body,
+  });
+  const envelope = await parseAuthenticatedEnvelope<T>(response);
+  return envelope.data as T;
 };
 
 export const loginAndLoadCurrentUser = async (credentials: { email: string; password: string }): Promise<FrontendCurrentUser> => {

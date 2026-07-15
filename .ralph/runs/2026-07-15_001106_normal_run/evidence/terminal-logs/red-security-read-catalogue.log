@@ -1,0 +1,57 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFFF
+======================================================================
+FAIL: test_source_security_read_roles_receive_package_read_without_mutation (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_security_read_roles_receive_package_read_without_mutation) (role_code='director')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 274, in test_source_security_read_roles_receive_package_read_without_mutation
+    self.assertIn("security.package.read", codes)
+AssertionError: 'security.package.read' not found in {'management_readonly', 'approvals.case.return', 'approvals.exception_register.read', 'communications.notification.read', 'approvals.sanction_register.read', 'approvals.sanction.read', 'approvals.case.approve', 'approvals.case.reject', 'documents.loan_document.read', 'approvals.case.read'}
+
+======================================================================
+FAIL: test_source_security_read_roles_receive_package_read_without_mutation (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_security_read_roles_receive_package_read_without_mutation) (role_code='internal_auditor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 274, in test_source_security_read_roles_receive_package_read_without_mutation
+    self.assertIn("security.package.read", codes)
+AssertionError: 'security.package.read' not found in {'management_readonly', 'compliance.evidence.review', 'approvals.exception_register.read', 'compliance.task.read', 'communications.notification.read', 'reports.portfolio.read', 'approvals.sanction_register.read', 'members.witness.read', 'reports.application_pipeline.read', 'audit.audit_log.read', 'reports.compliance.read', 'documents.loan_document.read', 'audit.version_history.read', 'approvals.case.read', 'audit.workflow_event.read'}
+
+======================================================================
+FAIL: test_source_security_read_roles_receive_package_read_without_mutation (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_security_read_roles_receive_package_read_without_mutation) (role_code='chief_financial_controller')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 274, in test_source_security_read_roles_receive_package_read_without_mutation
+    self.assertIn("security.package.read", codes)
+AssertionError: 'security.package.read' not found in {'management_readonly', 'finance.disbursement.authorise', 'finance.disbursement.readiness', 'finance.loan_account.read', 'reports.portfolio.read', 'communications.notification.read', 'audit.audit_log.read', 'finance.disbursement.mark_success'}
+
+======================================================================
+FAIL: test_source_security_read_roles_receive_package_read_without_mutation (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_security_read_roles_receive_package_read_without_mutation) (role_code='cfo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 274, in test_source_security_read_roles_receive_package_read_without_mutation
+    self.assertIn("security.package.read", codes)
+AssertionError: 'security.package.read' not found in {'compliance.section186.read', 'compliance.nbfc_test.read', 'management_readonly', 'config.loan_policy.read', 'approvals.case.return', 'compliance.evidence.review', 'approvals.exception_register.read', 'communications.notification.read', 'reports.portfolio.read', 'approvals.sanction_register.read', 'approvals.sanction.read', 'approvals.exception.create', 'approvals.case.approve', 'approvals.case.reject', 'recovery.decision.create', 'monitoring.mis.review', 'approvals.case.read'}
+
+======================================================================
+FAIL: test_source_security_read_roles_receive_package_read_without_mutation (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_security_read_roles_receive_package_read_without_mutation) (role_code='senior_manager_finance')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 274, in test_source_security_read_roles_receive_package_read_without_mutation
+    self.assertIn("security.package.read", codes)
+AssertionError: 'security.package.read' not found in {'management_readonly', 'finance.disbursement.readiness', 'finance.disbursement.initiate', 'finance.sap_request.complete', 'finance.loan_account.read', 'communications.notification.read', 'documents.checklist.sign_disbursement_complete', 'finance.sap_code.read', 'documents.file.upload', 'finance.disbursement.mark_success'}
+
+======================================================================
+FAIL: test_source_security_read_roles_receive_package_read_without_mutation (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_security_read_roles_receive_package_read_without_mutation) (role_code='credit_manager')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 274, in test_source_security_read_roles_receive_package_read_without_mutation
+    self.assertIn("security.package.read", codes)
+AssertionError: 'security.package.read' not found in {'finance.repayment.allocate', 'credit.eligibility.run', 'approvals.exception.create', 'applications.rejection_note.create', 'defaults.case.open', 'approvals.case.read', 'management_readonly', 'applications.rejection_note.send', 'members.witness.read', 'defaults.non_payment_note.create', 'finance.repayment.create', 'credit.appraisal.review', 'defaults.extension.grant', 'applications.loan_application.create', 'credit.loan_limit.calculate', 'finance.sap_request.send', 'closure.readiness.read', 'monitoring.dpd.calculate', 'credit.appraisal.submit_sanction', 'defaults.assessment.create', 'applications.loan_application.complete_check', 'monitoring.reminder.create', 'finance.loan_account.read', 'communications.notification.read', 'closure.loan.close', 'finance.sap_request.create', 'approvals.case.create', 'applications.loan_application.read', 'monitoring.mis.generate'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.093s
+
+FAILED (failures=6)
+Destroying test database for alias 'default'...

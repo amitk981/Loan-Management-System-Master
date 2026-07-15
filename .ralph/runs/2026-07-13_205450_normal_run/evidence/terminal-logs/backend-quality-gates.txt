@@ -1,0 +1,10 @@
+Commands and results (all used the mandated Ralph interpreter):
+
+1. `/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check` — exit 0
+   `System check identified no issues (0 silenced).`
+2. `/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run`
+   — exit 0; `No changes detected`.
+3. `/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests`
+   — exit 0; 670 tests passed in 154.523s with 19 expected PostgreSQL-only skips.
+4. `/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85` — exit 0;
+   24,363 statements, 1,724 missed, 93% total coverage against the 85% floor.

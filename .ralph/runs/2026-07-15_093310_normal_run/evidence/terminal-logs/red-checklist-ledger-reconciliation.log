@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_company_secretary_reconciles_changed_and_extra_terminal_evidence (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_company_secretary_reconciles_changed_and_extra_terminal_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 386, in test_company_secretary_reconciles_changed_and_extra_terminal_evidence
+    assert_blocked("changed completion audit")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 331, in assert_blocked
+    self.assertEqual(response.status_code, 409, response.json())
+AssertionError: 200 != 409 : {'success': True, 'data': {'checklist_action_id': '7c067b1b-fbb5-4d73-a61d-75dc9a1cccc2', 'entity_type': 'document_checklist', 'entity_id': 'b7b5ccd6-bf5e-47f8-8eef-7477877460d9', 'previous_status': 'in_progress', 'new_status': 'cs_approved', 'workflow_event_id': '267906b3-9609-4400-8914-3866a7e2653c', 'available_actions': []}, 'meta': {'request_id': None, 'timestamp': '2026-07-15T04:22:10.428991Z', 'api_version': 'v1'}}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.391s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,26 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008I4-sensitive-field-encryption-and-cdsl-null-contract-closure.md
+ M docs/slices/008J-blank-dated-cheque-and-cancelled-cheque-custody.md
+ M docs/slices/008K-final-documentation-approval-sequence.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/members/protected_identity.py
+ M sfpcl_credit/processes/security_instrument_evidence.py
+ M sfpcl_credit/requirements.txt
+ M sfpcl_credit/security_instruments/evidence_contract.py
+ M sfpcl_credit/security_instruments/modules/cdsl_share_pledge.py
+ M sfpcl_credit/security_instruments/modules/security_package.py
+ M sfpcl_credit/security_instruments/request_contracts.py
+ M sfpcl_credit/security_instruments/views.py
+ M sfpcl_credit/tests/test_cdsl_share_pledge_api.py
+ M sfpcl_credit/tests/test_security_instrument_boundary.py
+?? .ralph/runs/2026-07-15_011600_normal_run/
+?? sfpcl_credit/documents/modules/sensitive_data_access.py
+?? sfpcl_credit/security_instruments/migrations/0004_migrate_cdsl_field_encryption.py
+?? sfpcl_credit/shared/
+?? sfpcl_credit/tests/test_field_encryption.py

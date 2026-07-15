@@ -1,0 +1,37 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/codex-settings.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/review-summary.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/review_probes.py
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/codex.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/django-check.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/focused-backend-tests.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/focused-frontend-tests.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/frontend-build.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/frontend-lint.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/frontend-typecheck.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/git-status.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/migration-check.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/orchestrator-backend-deps.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/orchestrator-frontend-deps.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/review-probes-red-2.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/review-probes-red-final-3.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/review-probes-red-final.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/review-probes-red.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/terminal-logs/slice-queue-lint.log
+?? .ralph/runs/2026-07-15_085859_architecture_review/evidence/validation-summary.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/execution-plan.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/final-summary.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/preflight-results.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/prompt.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/review-packet.md
+?? .ralph/runs/2026-07-15_085859_architecture_review/risk-assessment.md
+?? docs/slices/008K4-current-evidence-and-security-read-closure.md
+?? docs/slices/008L3-portal-action-and-resubmission-contract-closure.md

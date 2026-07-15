@@ -1,0 +1,13 @@
+Command:
+for run in {1..10}; do npx vitest run src/pages/members/MemberGovernanceForm.container.test.tsx -t "routes Directory registration into canonical Profile readback with the exact create ledger" --maxWorkers=1 --fileParallelism=false --reporter=dot || exit 1; done
+
+Exit code: 0
+
+Result:
+- 10 of 10 fresh-process executions passed.
+- Every execution ran the exact mounted create-ledger journey with one worker and file parallelism
+  disabled.
+- Per-execution test time was 1.28-1.30 seconds.
+- Per-execution total duration was 3.01-3.25 seconds.
+- The filtered command selected one test and reported the other 15 as unselected; the complete-file
+  evidence runs all 16 tests with no skip or quarantine in source.

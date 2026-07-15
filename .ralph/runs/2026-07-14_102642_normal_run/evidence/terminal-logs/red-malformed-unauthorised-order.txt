@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_direct_generation_without_permission_reads_nothing_and_writes_nothing (sfpcl_credit.tests.test_legal_document_boundary.LegalDocumentGenerationAuthorityTests.test_direct_generation_without_permission_reads_nothing_and_writes_nothing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/tests/test_legal_document_boundary.py", line 156, in test_direct_generation_without_permission_reads_nothing_and_writes_nothing
+    document_generation.generate(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/legal_documents/modules/document_generation.py", line 72, in generate
+    cleaned = _validate_request(payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/legal_documents/modules/document_generation.py", line 258, in _validate_request
+    raise ValidationError(errors)
+django.core.exceptions.ValidationError: {'document_type': ['This field is required.'], 'template_id': ['This field is required.'], 'output_format': ['This field is required.']}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

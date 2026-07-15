@@ -1,0 +1,14 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage erase &&
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage run manage.py test --noinput &&
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85
+
+Found 866 test(s).
+System check identified no issues (0 silenced).
+Ran 866 tests in 328.798s
+OK (skipped=40 PostgreSQL-only tests in the routine SQLite suite)
+
+Coverage:
+TOTAL 35095 statements, 2866 missed, 92%
+Required floor: 85%
+Result: PASS

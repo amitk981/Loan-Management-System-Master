@@ -173,6 +173,125 @@ class LoanApplication(models.Model):
         return super().save(*args, **kwargs)
 
 
+class BankVerificationDecisionQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+    def delete(self):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+
+class BankVerificationDecision(models.Model):
+    STATUS_VERIFIED = "verified"
+    STATUS_REJECTED = "rejected"
+    STATUSES = {STATUS_VERIFIED, STATUS_REJECTED}
+
+    bank_verification_decision_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_application = models.ForeignKey(
+        LoanApplication, on_delete=models.PROTECT, related_name="bank_verification_decisions"
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="bank_verification_decisions"
+    )
+    bank_account = models.ForeignKey(
+        "members.BankAccount", on_delete=models.PROTECT,
+        related_name="verification_decisions",
+    )
+    cancelled_cheque = models.ForeignKey(
+        "members.CancelledCheque", on_delete=models.PROTECT,
+        related_name="verification_decisions",
+    )
+    cancelled_cheque_document = models.ForeignKey(
+        "documents.DocumentFile", on_delete=models.PROTECT,
+        related_name="bank_verification_decisions",
+    )
+    cancelled_cheque_checksum_sha256 = models.CharField(max_length=128)
+    bank_account_hash_snapshot = models.CharField(max_length=128)
+    ifsc_snapshot = models.CharField(max_length=20)
+    branch_name_snapshot = models.CharField(max_length=150, blank=True)
+    decision_status = models.CharField(max_length=60, db_index=True)
+    verifier_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT,
+        related_name="bank_verification_decisions",
+    )
+    verifier_role_code = models.CharField(max_length=80)
+    verified_at = models.DateTimeField(default=timezone.now, db_index=True)
+    request_id = models.CharField(max_length=255)
+    decision_version = models.PositiveIntegerField()
+    workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent", on_delete=models.PROTECT,
+        related_name="bank_verification_decision",
+    )
+    audit_log = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT,
+        related_name="bank_verification_decision",
+    )
+    version_history = models.OneToOneField(
+        "configurations.VersionHistory", on_delete=models.PROTECT,
+        related_name="bank_verification_decision",
+    )
+    evidence_digest = models.CharField(max_length=64)
+
+    objects = BankVerificationDecisionQuerySet.as_manager()
+
+    class Meta:
+        db_table = "bank_verification_decisions"
+        ordering = ["decision_version", "bank_verification_decision_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "decision_status", "verified_at"],
+                name="idx_bank_verify_app_status",
+            )
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["loan_application", "decision_version"],
+                name="unique_bank_verify_app_version",
+            ),
+            models.CheckConstraint(
+                check=models.Q(decision_status__in=["verified", "rejected"]),
+                name="bank_verify_status_bounded",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.decision_status not in self.STATUSES:
+            errors["decision_status"] = "Unsupported bank verification decision."
+        if self.member_id and self.loan_application_id:
+            if self.loan_application.member_id != self.member_id:
+                errors["member"] = "Decision member must own the application."
+        if not (self.request_id or "").strip():
+            errors["request_id"] = "A request identity is required."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"bank_verification_decision": "Bank verification evidence is immutable."}
+            )
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+
 class Witness(models.Model):
     VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
 
@@ -537,6 +656,134 @@ class ApplicationDeficiency(models.Model):
             self.resolved_by_user_id is None or self.resolved_at is None
         ):
             errors["resolved_by_user"] = "Resolved deficiencies require resolver facts."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class ApplicationDeficiencyResponseQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+    def delete(self):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+
+class ApplicationDeficiencyResponse(models.Model):
+    application_deficiency_response_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    deficiency = models.ForeignKey(
+        ApplicationDeficiency,
+        on_delete=models.PROTECT,
+        related_name="portal_responses",
+    )
+    document = models.OneToOneField(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="application_deficiency_response",
+    )
+    portal_account = models.ForeignKey(
+        "identity.PortalAccount",
+        on_delete=models.PROTECT,
+        related_name="deficiency_responses",
+    )
+    uploader_member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="portal_deficiency_responses",
+    )
+    response_remark = models.TextField(blank=True, null=True)
+    supersedes = models.OneToOneField(
+        "self",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="successor",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    objects = ApplicationDeficiencyResponseQuerySet.as_manager()
+
+    class Meta:
+        db_table = "application_deficiency_responses"
+        ordering = ["created_at", "application_deficiency_response_id"]
+        indexes = [
+            models.Index(
+                fields=["deficiency", "created_at"],
+                name="idx_def_response_history",
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.deficiency_id and self.uploader_member_id:
+            if self.deficiency.loan_application.member_id != self.uploader_member_id:
+                errors["uploader_member"] = "Uploader member must own the deficient application."
+        if self.portal_account_id and self.uploader_member_id:
+            if self.portal_account.member_id != self.uploader_member_id:
+                errors["portal_account"] = "Portal account must belong to the uploader member."
+        if self.supersedes_id and (
+            self.supersedes.deficiency_id != self.deficiency_id
+            or type(self).objects.filter(supersedes_id=self.supersedes_id).exists()
+        ):
+            errors["supersedes"] = "A successor must extend the current deficiency response chain."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+
+class ApplicationDeficiencyResponseDraft(models.Model):
+    application_deficiency_response_draft_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    deficiency = models.OneToOneField(
+        ApplicationDeficiency,
+        on_delete=models.CASCADE,
+        related_name="portal_response_draft",
+    )
+    portal_account = models.ForeignKey(
+        "identity.PortalAccount",
+        on_delete=models.PROTECT,
+        related_name="deficiency_response_drafts",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="portal_deficiency_response_drafts",
+    )
+    response_remark = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "application_deficiency_response_drafts"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.deficiency_id and self.member_id:
+            if self.deficiency.loan_application.member_id != self.member_id:
+                errors["member"] = "Draft member must own the deficient application."
+        if self.portal_account_id and self.member_id:
+            if self.portal_account.member_id != self.member_id:
+                errors["portal_account"] = "Portal account must belong to the draft member."
+        if len(self.response_remark or "") > 4000:
+            errors["response_remark"] = "Must not exceed 4000 characters."
         if errors:
             raise ValidationError(errors)
 

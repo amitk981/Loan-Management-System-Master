@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_direct_generation_without_template_reference_permission_reads_nothing (sfpcl_credit.tests.test_legal_document_boundary.LegalDocumentGenerationAuthorityTests.test_direct_generation_without_template_reference_permission_reads_nothing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/tests/test_legal_document_boundary.py", line 63, in test_direct_generation_without_template_reference_permission_reads_nothing
+    document_generation.generate(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/legal_documents/modules/document_generation.py", line 28, in generate
+    return _legacy_generation.generate(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/documents/modules/document_generation.py", line 76, in generate
+    raise InvalidGenerationState(
+sfpcl_credit.documents.modules.document_generation.InvalidGenerationState: Loan documents can be generated only after sanction approval.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

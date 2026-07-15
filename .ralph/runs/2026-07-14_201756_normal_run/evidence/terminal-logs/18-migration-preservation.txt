@@ -1,0 +1,62 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+..E
+======================================================================
+ERROR: test_retained_package_row_survives_state_only_owner_transfer (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentOwnershipMigrationTests.test_retained_package_row_survives_state_only_owner_transfer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 329, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: error in table power_of_attorneys after drop column: no such column: activation_workflow_event_id
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/tests/test_security_instrument_boundary.py", line 36, in test_retained_package_row_survives_state_only_owner_transfer
+    executor.migrate([("security_instruments", None)])
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 141, in migrate
+    state = self._migrate_all_backwards(plan, full_plan, fake=fake)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 219, in _migrate_all_backwards
+    self.unapply_migration(states[migration], migration, fake=fake)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 279, in unapply_migration
+    state = migration.unapply(state, schema_editor)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/migration.py", line 193, in unapply
+    operation.database_backwards(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_201756_normal_run/sfpcl_credit/security_instruments/migrations/0001_transfer_security_ownership.py", line 128, in database_backwards
+    schema_editor.remove_field(model, model._meta.get_field("activation_workflow_event_id"))
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/schema.py", line 342, in remove_field
+    super().remove_field(model, field)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/base/schema.py", line 810, in remove_field
+    self.execute(sql)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/base/schema.py", line 202, in execute
+    cursor.execute(sql, params)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 329, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: error in table power_of_attorneys after drop column: no such column: activation_workflow_event_id
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.206s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,59 @@
+Creating test database for alias 'default'...
+Found 109 test(s).
+System check identified no issues (0 silenced).
+...................................................................................F...........FF.F....F...ss
+======================================================================
+FAIL: test_rejected_and_returned_cycles_do_not_leak_decision_or_register_existence (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_rejected_and_returned_cycles_do_not_leak_decision_or_register_existence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2810, in test_rejected_and_returned_cycles_do_not_leak_decision_or_register_existence
+    self.assertEqual(returned.status_code, 200, returned.json())
+AssertionError: 404 != 200 : {'success': False, 'error': {'code': 'NOT_FOUND', 'message': 'Approval case was not found.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-13T20:11:21.269188Z', 'api_version': 'v1'}}
+
+======================================================================
+FAIL: test_review_facts_are_read_through_projections_from_the_owning_records (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_review_facts_are_read_through_projections_from_the_owning_records)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4311, in test_review_facts_are_read_through_projections_from_the_owning_records
+    self.assertEqual(facts["purpose"]["description"], "Updated owning application purpose")
+AssertionError: 'Crop production' != 'Updated owning application purpose'
+- Crop production
++ Updated owning application purpose
+
+
+======================================================================
+FAIL: test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4293, in test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change
+    self.assertEqual(
+AssertionError: Lists differ: [] != ['ca6f45c7-8964-422f-aac0-df8f7170803b']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'ca6f45c7-8964-422f-aac0-df8f7170803b'
+
+- []
++ ['ca6f45c7-8964-422f-aac0-df8f7170803b']
+
+======================================================================
+FAIL: test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2408, in test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists
+    self.assertTrue(refresh_approval_case_projection(later_cycle))
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_two_terminal_cases_keep_director_and_persisted_reader_scopes_distinct (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_two_terminal_cases_keep_director_and_persisted_reader_scopes_distinct)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2513, in test_two_terminal_cases_keep_director_and_persisted_reader_scopes_distinct
+    self.assertEqual(cfo_action.status_code, 200, cfo_action.json())
+AssertionError: 404 != 200 : {'success': False, 'error': {'code': 'NOT_FOUND', 'message': 'Approval case was not found.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-13T20:11:21.862027Z', 'api_version': 'v1'}}
+
+----------------------------------------------------------------------
+Ran 109 tests in 2.908s
+
+FAILED (failures=5, skipped=2)
+Destroying test database for alias 'default'...

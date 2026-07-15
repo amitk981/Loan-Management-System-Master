@@ -1,0 +1,17 @@
+Command:
+RALPH_EVIDENCE_DIR=<repair-run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/sanction-workbench.e2e.spec.ts
+
+Trusted reproduction (both independent runs from 2026-07-14_043916_normal_run):
+- FAIL at sanction-workbench.e2e.spec.ts route assertion: malformed response mode expected
+  `current_status` to be absent, but the UI correctly retained the selected `approved` filter.
+- The route assertion aborted response fulfillment, a real backend request returned 401, and the
+  subsequent `invalid paginated response` assertion timed out.
+
+Repair-sandbox rerun:
+- Chromium launch was denied by macOS Mach-port sandboxing before the test body executed:
+  `bootstrap_check_in ... Permission denied (1100)`.
+- Per the declared localhost browser contract, this environment limitation is not treated as the
+  product/test verdict; the orchestrator owns the two post-repair browser executions.
+
+Verdict: RED from the exact trusted browser contract is deterministic and specific to the mock
+route's malformed-response query assertion.

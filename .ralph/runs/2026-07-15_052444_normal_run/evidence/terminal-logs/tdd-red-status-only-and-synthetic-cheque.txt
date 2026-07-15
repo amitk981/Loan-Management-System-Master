@@ -1,0 +1,19 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_company_secretary_rejects_status_only_completion_without_actions \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_synthetic_cheque_version_cannot_complete_item --verbosity 2
+
+Result: FAILED (failures=2), exit code 1
+
+test_company_secretary_rejects_status_only_completion_without_actions ... FAIL
+AssertionError: 200 != 409
+The response created a Company Secretary approval even though all items had only bulk-mutated
+completion status and no retained item_completion actions.
+
+test_synthetic_cheque_version_cannot_complete_item ... FAIL
+AssertionError: 200 != 409
+The response created a checklist item action from a fabricated blank_dated_cheque VersionHistory
+JSON row even though no source-owned BlankDatedCheque existed.
+
+Ran 2 tests in 0.104s
+FAILED (failures=2)

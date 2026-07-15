@@ -19,6 +19,12 @@ def protected_identity_token(value, expected_length):
 
 def mask_protected_identity(token, default_length):
     parts = str(token or "").split(":")
+    if len(parts) == 7 and parts[0] == "seal" and parts[1] == "v1":
+        try:
+            length = int(parts[2])
+        except ValueError:
+            length = default_length
+        return f"{'*' * max(length - 4, 0)}{parts[6]}"
     if len(parts) == 5 and parts[0] == "enc" and parts[1] == "v1":
         try:
             length = int(parts[2])

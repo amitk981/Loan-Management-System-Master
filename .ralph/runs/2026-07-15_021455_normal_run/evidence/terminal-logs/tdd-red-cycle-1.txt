@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_compliance_collects_one_encrypted_masked_cheque_from_canonical_bank_facts (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_compliance_collects_one_encrypted_masked_cheque_from_canonical_bank_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 71, in test_compliance_collects_one_encrypted_masked_cheque_from_canonical_bank_facts
+    self.assertTrue(package["blank_cheque_required_flag"])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.058s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

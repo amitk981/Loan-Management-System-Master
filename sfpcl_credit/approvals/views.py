@@ -5,6 +5,7 @@ from sfpcl_credit.api import error_response, list_response, parse_json_body, suc
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules import approval_actions
+from sfpcl_credit.processes import sanction_completion
 from sfpcl_credit.approvals.modules import exception_register
 from sfpcl_credit.approvals.modules import general_meeting
 from sfpcl_credit.approvals.modules import sanction_register
@@ -106,7 +107,11 @@ def credit_sanction_register_collection(request):
             "You do not have Credit Sanction Register read permission.",
         )
     try:
-        data, pagination = sanction_register.list_entries(request.GET)
+        data, pagination = sanction_register.list_entries(
+            actor=user,
+            query_params=request.GET,
+            actor_permissions=permissions,
+        )
         return list_response(data, pagination, request)
     except ValidationError as exc:
         details = exc.message_dict if hasattr(exc, "message_dict") else {}
@@ -127,16 +132,29 @@ def loan_application_sanction_decision(request, loan_application_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
-    if sanction_register.SANCTION_READ_PERMISSION not in effective_permission_codes(user):
+    permissions = effective_permission_codes(user)
+    if sanction_register.SANCTION_READ_PERMISSION not in permissions:
         return error_response(
             request, 403, "FORBIDDEN", "You do not have sanction decision read permission."
         )
     try:
         return success_response(
-            sanction_register.get_sanction_decision(loan_application_id), request
+            sanction_register.get_sanction_decision(
+                actor=user,
+                application_id=loan_application_id,
+                actor_permissions=permissions,
+            ),
+            request,
         )
     except ObjectDoesNotExist:
         return error_response(request, 404, "NOT_FOUND", "Sanction decision was not found.")
+    except DomainObjectAccessDenied:
+        return error_response(
+            request,
+            403,
+            "OBJECT_ACCESS_DENIED",
+            "You cannot access this approval case.",
+        )
 
 
 @require_http_methods(["POST"])
@@ -216,7 +234,7 @@ def approval_case_detail(request, approval_case_id):
 
 @require_http_methods(["POST"])
 def approval_case_approve(request, approval_case_id):
-    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+    return _approval_case_action(request, approval_case_id, sanction_completion.approve_case)
 
 
 @require_http_methods(["POST"])

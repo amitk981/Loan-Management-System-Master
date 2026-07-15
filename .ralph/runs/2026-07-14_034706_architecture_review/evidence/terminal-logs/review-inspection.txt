@@ -1,0 +1,20 @@
+Architecture review inspection record
+Run: 2026-07-14_034706_architecture_review
+Fixed point: d106e16
+Reviewed HEAD: eab8b0d
+Commits: 234cd52 007K; d0481b8 007L; f52021e 007M; eab8b0d 007N
+
+Verified directly:
+- approval_actions.py terminal construction reads live note recommendation fields.
+- sanction_register.py reads live application/member/note facts during terminal generation.
+- sanctionApi.ts fixes page_size=100 and drops top-level pagination.
+- SanctionWorkbench.tsx renders cases.length as its count.
+- authSession.ts permits missing pagination through an empty fallback.
+- general_meeting.py bypasses the canonical public readable-case wrapper.
+- performance regression compares statement count after SQL-excluded rows, not validator work.
+- all declared 007L/007M/007N browser commands were retained as two successful external runs.
+- all 15 declared screenshots exist; S25/settings retained outputs show opaque regions and S25
+  claimed detail lies outside the captured viewport; 007M outputs have identical hashes.
+- no slice has Status Blocked; 008A/008B were the next Not Started slices.
+
+No production code, protected path, or docs/source file was modified by this review.

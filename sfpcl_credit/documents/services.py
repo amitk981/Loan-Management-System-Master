@@ -1,8 +1,12 @@
 import uuid
+from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 
+from django.core import signing
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.documents.models import DocumentFile
@@ -15,7 +19,35 @@ DOCUMENT_UPLOAD_PERMISSION = "documents.file.upload"
 DOCUMENT_DOWNLOAD_PERMISSION = "documents.file.download"
 DOCUMENT_UPLOAD_AUDIT_ACTION = "documents.file.uploaded"
 DOCUMENT_DOWNLOAD_AUDIT_ACTION = "documents.file.downloaded"
+TEMPLATE_FILE_REFERENCE_PERMISSION = "documents.template.file_reference"
+TEMPLATE_SOURCE_CATEGORY = "template_source"
+TEMPLATE_SOURCE_ENTITY_TYPE = "global"
 ALLOWED_SENSITIVITY_LEVELS = DocumentFile.SENSITIVITY_LEVELS
+GENERAL_MEETING_REFERENCE_PURPOSE = "general_meeting_evidence"
+GENERAL_MEETING_WORKFLOW_SCOPE = "related_party_sanction_case"
+EXCEPTION_REFERENCE_PURPOSE = "exception_supporting_evidence"
+EXCEPTION_WORKFLOW_SCOPE = "approval_case_exception"
+_INACCESSIBLE_REFERENCE_MESSAGE = "Document file was not found or is inaccessible."
+_DOWNLOAD_CAPABILITY_SALT = "sfpcl.document-download-capability.v1"
+_DOWNLOAD_CAPABILITY_TTL_SECONDS = 15 * 60
+
+
+@dataclass(frozen=True)
+class DocumentReferenceContext:
+    related_entity_type: str
+    related_entity_id: uuid.UUID
+    related_entity_access_allowed: bool
+    workflow_scope: str
+    actor_role_codes: frozenset[str]
+    actor_is_related_case_approver: bool
+
+
+@dataclass(frozen=True)
+class ImmutableUploadProvenance:
+    document: DocumentFile
+    document_category: str
+    related_entity_type: str | None
+    related_entity_id: uuid.UUID | None
 
 
 def user_can_upload_documents(user):
@@ -28,8 +60,33 @@ def user_can_download_documents(user):
 
 def upload_document_file(user, request, storage=None):
     cleaned = validate_upload_request(request)
+    document = store_document_upload(
+        user=user,
+        request=request,
+        uploaded_file=cleaned["file"],
+        document_category=cleaned["document_category"],
+        sensitivity_level=cleaned["sensitivity_level"],
+        related_entity_type=cleaned.get("related_entity_type"),
+        related_entity_id=cleaned.get("related_entity_id"),
+        storage=storage,
+    )
+    return serialize_document_file(document)
+
+
+def store_document_upload(
+    *,
+    user,
+    request,
+    uploaded_file,
+    document_category,
+    sensitivity_level,
+    related_entity_type=None,
+    related_entity_id=None,
+    provenance_metadata=None,
+    storage=None,
+):
+    """Store bytes and retain exact immutable provenance supplied by a trusted owner."""
     storage = storage or LocalDocumentStorage()
-    uploaded_file = cleaned["file"]
     stored = storage.store(uploaded_file)
     file_name = uploaded_file.name
     file_extension = Path(file_name).suffix or None
@@ -44,8 +101,23 @@ def upload_document_file(user, request, storage=None):
             storage_key=stored.storage_key,
             checksum_sha256=stored.checksum_sha256,
             uploaded_by_user=user,
-            sensitivity_level=cleaned["sensitivity_level"],
+            sensitivity_level=sensitivity_level,
         )
+        metadata = {
+            "document_id": str(document.document_id),
+            "file_name": document.file_name,
+            "file_extension": document.file_extension,
+            "mime_type": document.mime_type,
+            "file_size_bytes": document.file_size_bytes,
+            "storage_provider": document.storage_provider,
+            "storage_key": document.storage_key,
+            "checksum_sha256": document.checksum_sha256,
+            "sensitivity_level": document.sensitivity_level,
+            "document_category": document_category,
+            "related_entity_type": related_entity_type,
+            "related_entity_id": str(related_entity_id) if related_entity_id else None,
+        }
+        metadata.update(provenance_metadata or {})
         AuditLog.objects.create(
             actor_user=user,
             actor_type="user",
@@ -53,26 +125,41 @@ def upload_document_file(user, request, storage=None):
             entity_type="document_file",
             entity_id=document.document_id,
             old_value_json=None,
-            new_value_json={
-                "document_id": str(document.document_id),
-                "file_name": document.file_name,
-                "file_extension": document.file_extension,
-                "mime_type": document.mime_type,
-                "file_size_bytes": document.file_size_bytes,
-                "storage_provider": document.storage_provider,
-                "storage_key": document.storage_key,
-                "checksum_sha256": document.checksum_sha256,
-                "sensitivity_level": document.sensitivity_level,
-                "document_category": cleaned["document_category"],
-                "related_entity_type": cleaned.get("related_entity_type"),
-                "related_entity_id": str(cleaned["related_entity_id"])
-                if cleaned.get("related_entity_id")
-                else None,
-            },
+            new_value_json=metadata,
             ip_address=request_ip(request),
             user_agent=request_user_agent(request),
         )
-    return serialize_document_file(document)
+    return document
+
+
+def issue_download_capability(*, document, scope):
+    """Issue a signed, short-lived capability bound to one document and caller-owned scope."""
+    expires_at = timezone.now() + timedelta(seconds=_DOWNLOAD_CAPABILITY_TTL_SECONDS)
+    token = signing.dumps(
+        {"document_id": str(document.pk), "scope": scope},
+        salt=_DOWNLOAD_CAPABILITY_SALT,
+        compress=True,
+    )
+    return {
+        "token": token,
+        "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def read_with_download_capability(*, document, scope, token, storage=None):
+    """Verify the signed capability before reading checksum-verified retained bytes."""
+    try:
+        payload = signing.loads(
+            token,
+            salt=_DOWNLOAD_CAPABILITY_SALT,
+            max_age=_DOWNLOAD_CAPABILITY_TTL_SECONDS,
+        )
+    except (signing.BadSignature, signing.SignatureExpired) as exc:
+        raise ValidationError("Document download capability is invalid or expired.") from exc
+    if payload != {"document_id": str(document.pk), "scope": scope}:
+        raise ValidationError("Document download capability is invalid or expired.")
+    storage = storage or LocalDocumentStorage()
+    return storage.read_verified(document)
 
 
 def download_document_file(user, request, document_id, storage=None):
@@ -100,6 +187,174 @@ def download_document_file(user, request, document_id, storage=None):
         user_agent=request_user_agent(request),
     )
     return descriptor
+
+
+def resolve_referenceable_documents(
+    *,
+    actor_permissions,
+    document_ids_by_field,
+    context,
+    purpose,
+):
+    """Resolve document references only when immutable upload provenance proves access."""
+    if not document_ids_by_field:
+        return {}
+    permissions = set(actor_permissions)
+    if DOCUMENT_DOWNLOAD_PERMISSION not in permissions:
+        raise ValidationError(
+            {field: _INACCESSIBLE_REFERENCE_MESSAGE for field in document_ids_by_field}
+        )
+    general_meeting_context = (
+        purpose == GENERAL_MEETING_REFERENCE_PURPOSE
+        and context.workflow_scope == GENERAL_MEETING_WORKFLOW_SCOPE
+    )
+    exception_context = (
+        purpose == EXCEPTION_REFERENCE_PURPOSE
+        and context.workflow_scope == EXCEPTION_WORKFLOW_SCOPE
+    )
+    legal_category_access_allowed = (
+        bool(
+            context.actor_role_codes
+            & {"compliance_team_member", "company_secretary", "credit_manager"}
+        )
+        or context.actor_is_related_case_approver
+    )
+    documents = DocumentFile.objects.in_bulk(document_ids_by_field.values())
+    upload_metadata = {}
+    for audit in AuditLog.objects.filter(
+        action=DOCUMENT_UPLOAD_AUDIT_ACTION,
+        entity_type="document_file",
+        entity_id__in=document_ids_by_field.values(),
+    ).order_by("-created_at", "-audit_log_id"):
+        upload_metadata.setdefault(str(audit.entity_id), audit.new_value_json or {})
+
+    denied_fields = {}
+    for field, document_id in document_ids_by_field.items():
+        document = documents.get(document_id)
+        metadata = upload_metadata.get(str(document_id), {})
+        reference_is_allowed = (
+            (general_meeting_context or exception_context)
+            and context.related_entity_access_allowed
+            and legal_category_access_allowed
+            and document is not None
+            and metadata.get("document_id") == str(document_id)
+            and metadata.get("related_entity_type") == context.related_entity_type
+            and metadata.get("related_entity_id") == str(context.related_entity_id)
+            and metadata.get("document_category") == "legal"
+            and document.sensitivity_level in ALLOWED_SENSITIVITY_LEVELS
+            and metadata.get("sensitivity_level") == document.sensitivity_level
+        )
+        if not reference_is_allowed:
+            denied_fields[field] = _INACCESSIBLE_REFERENCE_MESSAGE
+    if denied_fields:
+        raise ValidationError(denied_fields)
+    return {
+        field: documents[document_id]
+        for field, document_id in document_ids_by_field.items()
+    }
+
+
+def resolve_template_source_reference(*, actor_permissions, document_id):
+    """Return a globally uploaded template source only with explicit reference authority."""
+    permissions = set(actor_permissions)
+    document = DocumentFile.objects.filter(document_id=document_id).first()
+    audits = list(
+        AuditLog.objects.filter(
+            action=DOCUMENT_UPLOAD_AUDIT_ACTION,
+            entity_type="document_file",
+            entity_id=document_id,
+        ).order_by("-created_at", "-audit_log_id")[:2]
+    )
+    audit = audits[0] if len(audits) == 1 else None
+    metadata = audit.new_value_json if audit and audit.new_value_json else {}
+    metadata_matches = bool(
+        document
+        and audit
+        and audit.actor_user_id == document.uploaded_by_user_id
+        and metadata.get("document_id") == str(document.document_id)
+        and metadata.get("file_name") == document.file_name
+        and metadata.get("file_extension") == document.file_extension
+        and metadata.get("mime_type") == document.mime_type
+        and metadata.get("file_size_bytes") == document.file_size_bytes
+        and metadata.get("storage_provider") == document.storage_provider
+        and metadata.get("storage_key") == document.storage_key
+        and metadata.get("checksum_sha256") == document.checksum_sha256
+        and metadata.get("sensitivity_level") == document.sensitivity_level
+        and metadata.get("document_category") == TEMPLATE_SOURCE_CATEGORY
+        and metadata.get("related_entity_type") == TEMPLATE_SOURCE_ENTITY_TYPE
+        and metadata.get("related_entity_id") is None
+        and document.sensitivity_level in ALLOWED_SENSITIVITY_LEVELS
+    )
+    if TEMPLATE_FILE_REFERENCE_PERMISSION not in permissions or not metadata_matches:
+        raise ValidationError({"template_file_id": _INACCESSIBLE_REFERENCE_MESSAGE})
+    return document
+
+
+def resolve_immutable_upload_provenance(*, document_id):
+    """Return exact immutable upload facts without making workflow-policy decisions."""
+    document = DocumentFile.objects.filter(document_id=document_id).first()
+    audits = list(
+        AuditLog.objects.filter(
+            action=DOCUMENT_UPLOAD_AUDIT_ACTION,
+            entity_type="document_file",
+            entity_id=document_id,
+        ).order_by("-created_at", "-audit_log_id")[:2]
+    )
+    audit = audits[0] if len(audits) == 1 else None
+    metadata = audit.new_value_json if audit and audit.new_value_json else {}
+    related_entity_id = None
+    raw_related_entity_id = metadata.get("related_entity_id")
+    if raw_related_entity_id is not None:
+        try:
+            related_entity_id = uuid.UUID(str(raw_related_entity_id))
+        except (TypeError, ValueError, AttributeError):
+            related_entity_id = None
+    valid = bool(
+        document
+        and audit
+        and audit.actor_user_id == document.uploaded_by_user_id
+        and metadata.get("document_id") == str(document.pk)
+        and metadata.get("file_name") == document.file_name
+        and metadata.get("file_extension") == document.file_extension
+        and metadata.get("mime_type") == document.mime_type
+        and metadata.get("file_size_bytes") == document.file_size_bytes
+        and metadata.get("storage_provider") == document.storage_provider
+        and metadata.get("storage_key") == document.storage_key
+        and metadata.get("checksum_sha256") == document.checksum_sha256
+        and metadata.get("sensitivity_level") == document.sensitivity_level
+        and isinstance(metadata.get("document_category"), str)
+        and bool(metadata.get("document_category"))
+        and (raw_related_entity_id is None or related_entity_id is not None)
+        and document.sensitivity_level in ALLOWED_SENSITIVITY_LEVELS
+    )
+    if not valid:
+        raise ValidationError({"document_id": _INACCESSIBLE_REFERENCE_MESSAGE})
+    return ImmutableUploadProvenance(
+        document=document,
+        document_category=metadata["document_category"],
+        related_entity_type=metadata.get("related_entity_type"),
+        related_entity_id=related_entity_id,
+    )
+
+
+def resolve_generated_legal_evidence_reference(
+    *, document_id, expected_checksum_sha256
+):
+    """Resolve a generated legal file only when its retained document facts still agree."""
+    document = DocumentFile.objects.filter(pk=document_id).first()
+    if (
+        document is None
+        or document.checksum_sha256 != expected_checksum_sha256
+        or document.sensitivity_level not in ALLOWED_SENSITIVITY_LEVELS
+    ):
+        raise ValidationError(
+            {
+                "mismatch_resolution_document_id": (
+                    "Document file was not found or is inaccessible."
+                )
+            }
+        )
+    return document
 
 
 def validate_upload_request(request):
@@ -165,6 +420,19 @@ __all__ = [
     "DOCUMENT_UPLOAD_AUDIT_ACTION",
     "DOCUMENT_UPLOAD_PERMISSION",
     "download_document_file",
+    "DocumentReferenceContext",
+    "EXCEPTION_REFERENCE_PURPOSE",
+    "EXCEPTION_WORKFLOW_SCOPE",
+    "GENERAL_MEETING_REFERENCE_PURPOSE",
+    "GENERAL_MEETING_WORKFLOW_SCOPE",
+    "resolve_referenceable_documents",
+    "ImmutableUploadProvenance",
+    "resolve_immutable_upload_provenance",
+    "resolve_template_source_reference",
+    "store_document_upload",
+    "TEMPLATE_FILE_REFERENCE_PERMISSION",
+    "TEMPLATE_SOURCE_CATEGORY",
+    "TEMPLATE_SOURCE_ENTITY_TYPE",
     "upload_document_file",
     "user_can_download_documents",
     "user_can_upload_documents",

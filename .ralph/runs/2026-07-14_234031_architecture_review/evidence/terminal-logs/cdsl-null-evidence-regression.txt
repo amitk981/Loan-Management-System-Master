@@ -1,0 +1,18 @@
+Command:
+PYTHONPATH=<run evidence>:$PWD /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test ArchitectureReviewCDSLRegression.test_pending_preparation_accepts_nullable_evidence_document -v 2
+
+Result: expected review regression failed, proving the merged defect.
+
+System check identified no issues (0 silenced).
+test_pending_preparation_accepts_nullable_evidence_document ... ERROR
+
+Traceback (most recent call last):
+  File "security_instruments/views.py", line 150, in package_cdsl_share_pledge
+    data = cdsl_share_pledge.create_pledge(...)
+  File "security_instruments/modules/cdsl_share_pledge.py", line 152, in create_pledge
+    evidence_document = cleaned.pop("evidence_loan_document").document
+AttributeError: 'NoneType' object has no attribute 'document'
+
+Ran 1 test in 0.082s
+FAILED (errors=1)
+Exit code: 1 (expected for an independently reproduced review finding)

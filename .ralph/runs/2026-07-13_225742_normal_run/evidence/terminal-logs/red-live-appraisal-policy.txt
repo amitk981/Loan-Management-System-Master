@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_live_appraisal_policy_change_preserves_pending_case_reads_and_action (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_live_appraisal_policy_change_preserves_pending_case_reads_and_action)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_225742_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 855, in test_live_appraisal_policy_change_preserves_pending_case_reads_and_action
+    self.assertEqual(detail_after.status_code, 200, detail_after.json())
+AssertionError: 404 != 200 : {'success': False, 'error': {'code': 'NOT_FOUND', 'message': 'Approval case was not found.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-13T17:31:11.504427Z', 'api_version': 'v1'}}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

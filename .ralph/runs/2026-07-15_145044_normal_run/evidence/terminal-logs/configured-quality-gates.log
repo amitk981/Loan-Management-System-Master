@@ -1,0 +1,25 @@
+Configured quality gates for CR-005
+Run date: 2026-07-15
+
+Frontend (`sfpcl-lms`)
+- `npm run lint`: PASS (exit 0)
+- `npm run typecheck`: PASS (exit 0)
+- `npm run build`: PASS (exit 0; 1879 modules transformed)
+- `npm test`: PASS (exit 0; 35 files, 303 tests)
+
+Backend (`sfpcl_credit`, all commands used `/Users/amitkallapa/LMS/.ralph/venv/bin/python`)
+- `manage.py check`: PASS; no issues
+- `manage.py makemigrations --check --dry-run`: PASS; no changes detected
+- `-m coverage run manage.py test`: PASS; 886 tests, 44 skipped, 319.230s
+- `-m coverage report --fail-under=85`: PASS; TOTAL 36,525 statements, 3,021 missed,
+  92% coverage
+
+The frontend build retained the existing non-failing large-chunk warning and Vite CJS deprecation
+warning. No dependencies or migrations changed.
+
+Ralph bookkeeping checks
+- JSON state parse: PASS
+- slice queue lint: PASS
+- protected-path diff check: PASS
+- `git diff --check`: PASS
+- required artifact placeholder scan: PASS

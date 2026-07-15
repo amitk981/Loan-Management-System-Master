@@ -1,0 +1,82 @@
+Creating test database for alias 'default'...
+Found 841 test(s).
+System check identified no issues (0 silenced).
+.........................................................................................................................................................................................................................................................................................Catalogue seeded: 183 permissions, 20 roles, 8 teams, 193 role-permission links.
+Catalogue seeded: 183 permissions, 20 roles, 8 teams, 193 role-permission links.
+............................................................................................................................................F...........................................................................................................................................................................................................................................Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+...Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.Demo users seeded: demo.cfo@sfpcl.example, demo.director1@sfpcl.example, demo.director2@sfpcl.example, demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Approval configuration seeded: Demo Sanction Committee FY 2026 (seed-2026-1).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 183 permissions, 20 roles, 8 teams, 193 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+..Catalogue seeded: 183 permissions, 20 roles, 8 teams, 193 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 183 permissions, 20 roles, 8 teams, 193 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+...............................................................................sssssss.....ssssss........ss..sssss............sss........ssss......sssssssss..........
+======================================================================
+FAIL: test_foundation_imports_without_business_owners_and_legal_module_has_no_transport (sfpcl_credit.tests.test_legal_document_boundary.LegalDocumentDependencyDirectionTests.test_foundation_imports_without_business_owners_and_legal_module_has_no_transport)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/sfpcl_credit/tests/test_legal_document_boundary.py", line 78, in test_foundation_imports_without_business_owners_and_legal_module_has_no_transport
+    self.assertEqual(completed.returncode, 0, completed.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 26, in <module>
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/sfpcl_credit/documents/services.py", line 12, in <module>
+    from sfpcl_credit.identity.modules import auth_service
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/sfpcl_credit/identity/modules/auth_service.py", line 18, in <module>
+    from sfpcl_credit.identity.modules.tokens import (
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/sfpcl_credit/identity/modules/tokens.py", line 12, in <module>
+    import jwt
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/jwt/__init__.py", line 1, in <module>
+    from .api_jwk import PyJWK, PyJWKSet
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/jwt/api_jwk.py", line 7, in <module>
+    from .algorithms import get_default_algorithms, has_crypto, requires_cryptography
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/jwt/algorithms.py", line 11, in <module>
+    from .utils import (
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/jwt/utils.py", line 7, in <module>
+    from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurve
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/cryptography/hazmat/primitives/asymmetric/ec.py", line 11, in <module>
+    from cryptography.exceptions import UnsupportedAlgorithm, _Reasons
+  File "<string>", line 9, in guarded_import
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/cryptography/exceptions.py", line 9, in <module>
+    from cryptography.hazmat.bindings._rust import exceptions as rust_exceptions
+  File "<string>", line 9, in guarded_import
+  File "<string>", line 9, in guarded_import
+ImportError: dlopen(/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/_cffi_backend.cpython-311-darwin.so, 0x0002): tried: '/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/_cffi_backend.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have 'arm64', need 'x86_64')), '/System/Volumes/Preboot/Cryptexes/OS/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/_cffi_backend.cpython-311-darwin.so' (no such file), '/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/_cffi_backend.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have 'arm64', need 'x86_64'))
+
+
+----------------------------------------------------------------------
+Ran 841 tests in 283.778s
+
+FAILED (failures=1, skipped=36)
+Destroying test database for alias 'default'...

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_distinct_company_secretary_records_terminal_custody_from_exact_legal_evidence (sfpcl_credit.tests.test_sh4_api.SH4ApiTests.test_distinct_company_secretary_records_terminal_custody_from_exact_legal_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_220039_normal_run/sfpcl_credit/tests/test_sh4_api.py", line 209, in test_distinct_company_secretary_records_terminal_custody_from_exact_legal_evidence
+    self.assertEqual(signed_audit.new_value_json["stamp_duty_record_id"], str(stamp.pk))
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'stamp_duty_record_id'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.136s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_documents_exposes_only_generic_immutable_upload_provenance (sfpcl_credit.tests.test_stamp_notary_api.StampDutyAndNotarisationApiTests.test_documents_exposes_only_generic_immutable_upload_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/sfpcl_credit/tests/test_stamp_notary_api.py", line 374, in test_documents_exposes_only_generic_immutable_upload_provenance
+    provenance = document_services.resolve_immutable_upload_provenance(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.documents.services' has no attribute 'resolve_immutable_upload_provenance'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

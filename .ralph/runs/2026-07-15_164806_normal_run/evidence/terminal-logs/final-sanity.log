@@ -1,0 +1,8 @@
+git diff --check
+slice queue lint
+ralph_slice_queue_lint:7: read-only variable: status
+PASS: slice queue drains
+runtime capability validation
+PASS: 009A capabilities valid
+protected path check
+PASS: no protected path changed

@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 13 test(s).
+System check identified no issues (0 silenced).
+FF..........F
+======================================================================
+FAIL: test_approval_rejects_completed_rows_without_completion_actions (architecture_review_regressions.ArchitectureReviewChecklistRegression.test_approval_rejects_completed_rows_without_completion_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_034859_architecture_review/.ralph/runs/2026-07-15_034859_architecture_review/evidence/architecture_review_regressions.py", line 52, in test_approval_rejects_completed_rows_without_completion_actions
+    self.assertEqual(response.status_code, 409, response.json())
+AssertionError: 200 != 409 : {'success': True, 'data': {'checklist_action_id': 'dff91e31-1664-47c7-8bba-d1c9cf9b2f09', 'entity_type': 'document_checklist', 'entity_id': 'feb86a72-ede3-410e-b607-507bdb52774b', 'previous_status': 'in_progress', 'new_status': 'cs_approved', 'workflow_event_id': '2f4cc4c0-75e8-4b41-a692-ab72edcc3627', 'available_actions': []}, 'meta': {'request_id': None, 'timestamp': '2026-07-14T22:31:10.901721Z', 'api_version': 'v1'}}
+
+======================================================================
+FAIL: test_cheque_completion_rejects_unbound_synthetic_ledger (architecture_review_regressions.ArchitectureReviewChecklistRegression.test_cheque_completion_rejects_unbound_synthetic_ledger)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_034859_architecture_review/.ralph/runs/2026-07-15_034859_architecture_review/evidence/architecture_review_regressions.py", line 90, in test_cheque_completion_rejects_unbound_synthetic_ledger
+    self.assertEqual(response.status_code, 409, response.json())
+AssertionError: 200 != 409 : {'success': True, 'data': {'checklist_action_id': 'c67150a5-dbd9-4128-8954-912b46048212', 'entity_type': 'checklist_item', 'entity_id': 'd82f3522-e173-4fe0-b68e-16bc43ea5b4b', 'previous_status': 'pending', 'new_status': 'complete', 'workflow_event_id': 'c018d49c-51cd-4049-8594-045773a82628', 'available_actions': []}, 'meta': {'request_id': None, 'timestamp': '2026-07-14T22:31:10.950747Z', 'api_version': 'v1'}}
+
+======================================================================
+FAIL: test_ciphertext_does_not_embed_recoverable_plaintext_suffix (architecture_review_regressions.ArchitectureReviewEncryptionRegression.test_ciphertext_does_not_embed_recoverable_plaintext_suffix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_034859_architecture_review/.ralph/runs/2026-07-15_034859_architecture_review/evidence/architecture_review_regressions.py", line 33, in test_ciphertext_does_not_embed_recoverable_plaintext_suffix
+    self.assertNotIn("3456", ciphertext)
+AssertionError: '3456' unexpectedly found in 'field:v1:k2:6:3456:bpaBnjMTtdWz2Ghp:svRuUX0ktWUfxCocGWHtWdaAotv-Fw'
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.666s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

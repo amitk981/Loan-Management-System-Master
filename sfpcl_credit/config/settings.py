@@ -1,5 +1,7 @@
 import os
 import sys
+import base64
+import json
 from pathlib import Path
 
 
@@ -21,6 +23,30 @@ def env_csv(name, default):
 
 
 SECRET_KEY = os.environ.get("SFPCL_SECRET_KEY", "local-dev-only-sfpcl-credit")
+# Development-only field keys are intentionally independent from SECRET_KEY. Production secret
+# provisioning/boot enforcement and repository-wide rotation remain owned by 012E3.
+_LOCAL_FIELD_KEY = base64.urlsafe_b64encode(
+    b"local-only-field-encryption-key!"
+).decode("ascii")
+_LOCAL_LOOKUP_KEY = base64.urlsafe_b64encode(
+    b"local-only-field-lookup-hmac-key"
+).decode("ascii")
+FIELD_ENCRYPTION_CURRENT_VERSION = os.environ.get(
+    "SFPCL_FIELD_ENCRYPTION_CURRENT_VERSION", "local-v1"
+)
+FIELD_ENCRYPTION_KEY_REF = os.environ.get(
+    "SFPCL_FIELD_ENCRYPTION_KEY_REF", "local-development-only"
+)
+FIELD_ENCRYPTION_PREVIOUS_VERSIONS = env_csv(
+    "SFPCL_FIELD_ENCRYPTION_PREVIOUS_VERSIONS", []
+)
+FIELD_ENCRYPTION_KEYS = json.loads(
+    os.environ.get(
+        "SFPCL_FIELD_ENCRYPTION_KEYS",
+        json.dumps({"local-v1": _LOCAL_FIELD_KEY}),
+    )
+)
+FIELD_LOOKUP_KEY = os.environ.get("SFPCL_FIELD_LOOKUP_KEY", _LOCAL_LOOKUP_KEY)
 DEBUG = env_bool("SFPCL_DEBUG", True)
 ALLOWED_HOSTS = env_csv("SFPCL_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "testserver"])
 CORS_ALLOWED_ORIGINS = env_csv("SFPCL_CORS_ORIGINS", ["http://localhost:5173"])
@@ -38,6 +64,8 @@ INSTALLED_APPS = [
     "sfpcl_credit.configurations",
     "sfpcl_credit.credit",
     "sfpcl_credit.documents",
+    "sfpcl_credit.legal_documents",
+    "sfpcl_credit.security_instruments",
     "sfpcl_credit.identity",
     "sfpcl_credit.members",
     "sfpcl_credit.scheduler",

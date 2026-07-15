@@ -1,0 +1,11 @@
+Commands and results:
+
+1. `npm run typecheck` — exit 0 (`tsc --noEmit`)
+2. `npm run lint` — exit 0 (`eslint src`)
+3. `npm run build` — exit 0
+
+Build summary:
+- Vite 5.4.21 transformed 1871 modules.
+- Production build completed in 3.22s.
+- Existing informational chunk-size and Vite CJS deprecation warnings remain; neither is a gate
+  failure and this test-only slice adds no production bundle code.

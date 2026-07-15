@@ -1,5 +1,33 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## 008L3 Borrower Resubmission Closure (2026-07-15)
+
+The portal process now resolves active portal-account/member/application scope once, locks the
+returned application and every open response, requires a current immutable response for each item,
+then delegates `incomplete_returned -> submitted` to the application-owned `resubmit` transition.
+That owner invokes the 002H guard and writes the canonical
+`applications.loan_application.resubmitted` audit plus loan-application workflow event while
+resetting completeness to `not_started`. Invalid or repeated resubmission retains one success only.
+
+The staff-owned deficiency remains `open` until 005F authority resolves it. Borrower upload,
+re-upload, and resubmit workflow events instead target the immutable deficiency-response aggregate
+and truthfully state `absent/responded -> responded -> submitted_for_review`; no shadow deficiency
+state is claimed and no Stage-4 evidence changes.
+
+## Architecture Review 2026-07-15 09:11 - Borrower Resubmission Lifecycle Closure
+
+- 008L2 correctly self-scopes deficiency reads and replacement uploads, but its final resubmission
+  directly assigns the application status rather than invoking the application-owned transition
+  guard. The response also advances through `responded` and `submitted_for_review` while the
+  authoritative deficiency row remains `open`, creating a second lifecycle vocabulary.
+- Corrective `008L3` must cross the canonical returned-to-submitted application transition under
+  lock, preserve the source completeness queue semantics, and expose one truthful response/
+  deficiency state model. The regression contract patches the application transition evaluator
+  and proves it is invoked, then verifies audit/workflow and zero-write denial behavior.
+- Existing 005E4 staff completeness permissions and M03 coverage remain unchanged; portal
+  resubmission must re-enter that existing completeness boundary without acquiring Stage-4 legal
+  completion or approval authority.
+
 ## Architecture Review 2026-07-11 23:02 - 005E4 Verified Closure
 
 - 005E4 uses the four source-defined completeness permissions for pass, return, resolve, and
@@ -420,6 +448,23 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
 - Portal responses intentionally omit staff completeness/reference/return/resolve actions, PAN,
   Aadhaar, full bank-account values, encrypted values, token hashes, raw document contents, and
   staff-only document internals.
+
+## Member Portal Deficiency Response And Resubmission
+- 008L2 closes MP11 through active-portal-account scoped deficiency list, strict replacement upload,
+  authenticated current-content download, and atomic resubmission routes. Borrowers see only
+  correction descriptions and current response metadata; staff remarks and identities remain hidden.
+- Replacement PDF/JPEG/PNG evidence is limited to 5 MiB and the server-advertised KYC/legal/finance
+  category plus confidential sensitivity. Central file storage and the next pending
+  `ApplicationDocument` version make evidence visible to staff verification, while immutable response
+  successor rows belong to `ApplicationDeficiency`; `PortalDocumentationSubmission` is never reused.
+- Every open deficiency needs a current response before resubmission. Canonical storage returns
+  `incomplete_returned` to source-defined `submitted` (A-095), resets completeness to `not_started`,
+  and thereby reopens the existing Deputy Manager completeness queue. Portal audit/workflow facts and
+  timeline presentation identify the action as resubmission.
+- Cross-member attempts are nondisclosing and audited; suspended sessions, invalid type/size/category,
+  partial response, and wrong-state attempts create no success evidence. A Stage-4 regression proves
+  checklist status/actions/history, approvals, verifier/signature/remarks, legal/security evidence,
+  readiness, loan-account, and disbursement truth remain untouched.
 
 ## Architecture Review 2026-07-10 01:01 - Portal Session And Audit Contract
 - Reviewed slices 005F2, 005FA, 005FB, and 005G after prior architecture-review commit `49da479`.

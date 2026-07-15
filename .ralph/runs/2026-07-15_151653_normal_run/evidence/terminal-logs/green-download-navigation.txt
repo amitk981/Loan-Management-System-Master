@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx -t keeps the object URL alive
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl-lms
+
+ ✓ src/pages/borrower/portal/documents/PortalDocumentationActions.test.tsx (7 tests | 6 skipped) 82ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 6 skipped (7)
+   Start at  15:32:51
+   Duration  1.14s (transform 153ms, setup 0ms, collect 323ms, tests 82ms, environment 304ms, prepare 39ms)
+

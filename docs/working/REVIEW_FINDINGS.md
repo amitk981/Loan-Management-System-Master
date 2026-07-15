@@ -2,6 +2,1451 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-15 09:11 - Architecture Review 2026-07-15_085859_architecture_review
+
+Reviewed completed work since architecture-review commit `fc8d3380`:
+- `008K2-sensitive-security-contract-closure` (`bcf76e31`)
+- `008K3-final-checklist-evidence-closure` (`f11da14a`)
+- `008L-member-portal-documentation-actions` (`6cc8056d`)
+- `008L2-member-portal-deficiency-response-and-resubmission` (`59099f8e`)
+
+The review checked `git diff fc8d3380...59099f8e`, every production/test/migration hunk, all four
+slice contracts and retained evidence, Epic 005/008 digests/maps, M03/M06 requirement coverage,
+and the cited API, data-model, functional, member-portal, auth, frontend, and codebase-design rules.
+Standards and Spec ran as isolated independent passes. Three executable review probes independently
+failed: legal-document download has no signed capability, resubmission bypasses the transition
+guard, and a portal completion does not revalidate a newer current renderer. No production code
+changed.
+
+### Standards
+
+#### Finding 1 - High - Current checklist truth is not current at the portal or transaction boundary
+
+`checklist_actions.borrower_safe_completed_item_ids` compares item/action fields to retained
+`VersionHistory` and hashes the retained terminal body against itself; it never reruns current
+renderer, signature, stamp/notary, bank, or security evidence. The portal therefore still shows
+`complete` after source evidence changes, despite 008L's K3 sharpening requiring blocked/pending.
+Completion/approval also locks checklist/document rows while generation locks the application, so a
+new same-type document can commit between latest-document selection and the checklist commit. K3's
+PostgreSQL tests race checklist writers only, not generation against completion/approval. `008K4`
+adds current public projection reconciliation and one cross-owner application lock/version order.
+
+#### Finding 2 - High - Deficiency and application workflow events disagree with stored state
+
+`portal_deficiency_response` records `ApplicationDeficiency open -> responded ->
+submitted_for_review`, but leaves `resolution_status=open`; every re-upload repeats the fictional
+`open -> responded` transition. Resubmit then directly assigns `LoanApplication.status=submitted`
+instead of crossing the 002H transition guard required by the slice and codebase-design §21. The
+positive test explicitly asserts the deficiency remains open and checks only the final application
+fields/event. The lifecycle review probe patched the application transition evaluator, received a
+successful resubmit, and proved it was never called. `008L3` moves resubmit to the application owner
+and gives borrower response events an honest aggregate/state without taking staff resolution.
+
+#### Finding 3 - High - Portal POST authority is wider than the server-advertised action
+
+GET suppresses upload/re-upload for a reconciled-complete checklist item, but `upload()` checks only
+the action code plus required/applicable flags. A crafted POST can append borrower evidence after
+the internal item is complete, violating API §44 and the explicit 008L rule that uploads are allowed
+only when returned by the server. Existing tests cover hidden controls and status-only forgery, not
+a direct POST against a genuinely reconciled completion. `008L3` makes one locked predicate own GET
+and POST and adds concurrent completion-versus-upload proof.
+
+#### Finding 4 - Medium/High - Ordinary security reads expose internal evidence and audit context
+
+PoA, SH-4, CDSL, and blank-cheque serializers return entire activation/custody/acceptance evidence
+blobs to all scoped readers. Those bodies contain request ids, IP/user-agent, role/team lists,
+signer-name snapshots, user/action/document ids, and other internal provenance. K2 tests prove BO/
+cheque masking but do not scan actual in-scope instrument DTOs; its finance positive creates no
+instrument and accepts 404 for all four nested routes. Auth §§19.4/21 reserve audit evidence and
+require sensitivity-aware fields. `008K4` separates ordinary masked projections from internal
+terminal selectors and proves real instrument reads across the role/state matrix.
+
+#### Finding 5 - Medium - Central masking accepts mixed plaintext as already redacted
+
+`shared.masking` preserves any sensitive string containing one `*`, so `1234*5678` crosses the
+canonical audit/version redactor unchanged. Tests cover fully masked values and pure plaintext only.
+`008K4` makes partial masks fail closed while retaining the explicit fixed cheque mask and governed
+CDSL last-four projection.
+
+#### Finding 6 - Medium - Portal UI and download seams drift from established owners
+
+MP07 replaced the approved upload modal/drop-zone composition with a raw file input/textarea, while
+the review packet claimed the modal was preserved without a screenshot. Both portal screens revoke
+blob URLs immediately after `window.open`, which can race navigation. Portal download audit actions
+also diverge from central document-download vocabulary/metadata. `008L3` restores the existing
+composition, central audit semantics, safe browser-download lifecycle, and a declared two-run
+trusted-browser contract.
+
+### Spec
+
+#### Finding 1 - High - Portal legal-document download capability is forgeable
+
+`portal_documentation_actions.download` discards the storage descriptor URL and authorises content
+with a caller-supplied `expires_at`, unbound to document, action, application, member, or portal
+account. Any authenticated owner can extend the timestamp arbitrarily. The later deficiency flow
+correctly uses the central signed, scope-bound capability, leaving two security seams. The review
+probe expected `token=` and received only `expires_at=`. This violates 008L's secure descriptor/
+expiry requirement. `008L3` moves both paths onto the central signed capability and tests tamper,
+expiry, replacement, and cross-scope use.
+
+#### Finding 2 - High - K3 still accepts mutable status-only bank verification
+
+The application-owned cancelled-cheque fact accepts mutable `verification_status=verified` and
+active bank fields with no immutable verifier, decision action, timestamp, workflow, or version
+identity. K3's positive terminal helper fabricates those ORM statuses directly, although its slice
+requires exact current verification identities through the immutable cross-owner interface. A fake
+`VersionHistory` no longer works, but a synthetic mutable source row still can. `008K4` adds an
+honest immutable current bank/cancelled-cheque verification decision and leaves legacy status-only
+rows ineligible for new checklist truth.
+
+#### Finding 3 - Medium - K3 approval omits promised audit/workflow reconciliation
+
+Company Secretary reconciliation verifies the item action and one version payload, but does not
+require the matching success `AuditLog` or validate the action's `WorkflowEvent` fields. K3 promised
+the request, actor, workflow, audit, version, and action to bind to the sole winner. Existing race
+tests query loser ledgers but do not prove a missing/changed winner audit/workflow blocks later
+approval. `008K4` reconciles all four durable identities.
+
+#### Finding 4 - Medium - Deficiency and frontend acceptance evidence is partial
+
+MP11 source requires response/resubmission and honest returned-to-review state; the implementation
+keeps staff resolution appropriately open but exposes no canonical borrower-response substate while
+workflow rows claim one. Its retained UI suite has two jsdom tests: it does not click download,
+distinguish 401 from 403 as claimed, exercise re-upload, set a mobile viewport, or produce the
+required screenshots. 008L likewise claimed visual preservation without browser proof. `008L3`
+owns the exact lifecycle semantics and two-run MP07/MP11/MP13 browser acceptance.
+
+No unrelated scope creep was found. K2's opaque v2 encryption, frozen migration reconciliation,
+partial blank-cheque PATCH, state-bounded finance package/checklist reads, and dependency guards are
+substantive. K3 materially closes status-only action approval and synthetic version-ledger truth,
+provides public physical terminal completion, canonical stage roles, and exact checklist-writer
+races. L/L2 materially add self-scope, immutable upload successors, pending application-document
+versions, staff queue return, signed deficiency download, and Stage-4 non-interference.
+
+M03-FR-010-012 remain substantive for completeness return/history; portal resubmission is partial
+until 008L3 crosses the lifecycle owner. M06-FR-005/006/018 remain partial until K4 supplies immutable
+bank verification and fully current checklist evidence. M06-FR-007-012/014-017 retain substantive
+owners. M06-FR-013 remains A-101 configuration-blocked; M06-FR-019 remains incomplete until 009D
+owns canonical disbursement readiness. Epic 008 is not complete because 008K4/L3/M remain queued.
+
+### Corrective queue, state, and context
+
+`008K4-current-evidence-and-security-read-closure` depends on completed 008L2 and closes bank-
+decision, current-evidence, generation-race, ordinary-read, and masking gaps. `008L3-portal-action-
+and-resubmission-contract-closure` depends on K4 and closes action parity, signed download,
+lifecycle, audit, and browser-fidelity gaps. 008M now depends on L3 and is sharpened against the
+corrected projections/download seam. No slice is Blocked, so no stale prerequisite required
+reopening.
+
+`CONTEXT.md`, Epic 005/008 digests, state, progress, handoff, and the architecture-review descriptor
+are refreshed. No ADR was added: source documents already decide workflow-module ownership, signed
+download adapters, current evidence, audit privacy, and prototype fidelity.
+
+Summary: Standards found 3 High, 1 Medium/High, and 2 Medium issues; the worst is stale evidence
+being presented/approved as current. Spec found 2 High and 2 Medium issues; the worst are forgeable
+portal download authority and mutable status-only bank verification.
+
+## 2026-07-15 04:03 - Architecture Review 2026-07-15_034859_architecture_review
+
+Reviewed completed work since architecture-review commit `85f142c2`:
+- `008I2-security-poa-owner-and-read-contract-closure` (`555c148b`)
+- `008I3-security-legal-evidence-seam-and-race-closure` (`11cc0e75`)
+- `008I4-sensitive-field-encryption-and-cdsl-null-contract-closure` (`df0af073`)
+- `008J-blank-dated-cheque-and-cancelled-cheque-custody` (`a3e8c348`)
+- `008K-final-documentation-approval-sequence` (`447e965b`)
+
+The review checked `git diff 85f142c2...447e965b`, every production/test hunk, all five slice
+contracts, the Epic 008 digest/map and M06 traceability matrix, retained completion claims, and the
+cited API, data-model, functional, auth, deployment, roadmap, SOP, and codebase-design sections.
+Standards and Spec ran as isolated independent passes. Three executable review regressions failed
+against the merged code: plaintext suffix confidentiality, synthetic cheque truth, and status-only
+checklist approval. No production code changed.
+
+### Standards
+
+#### Finding 1 - Critical - Versioned ciphertext contains recoverable plaintext
+
+`shared/encryption.py:24-43` embeds `value[-4:]` verbatim in every `field:v1` token. A six-digit
+blank-cheque number therefore exposes four digits from the database value without any key; CDSL BO
+account suffixes are likewise stored outside AES-GCM ciphertext. The shipped encryption test checks
+only that the complete value is absent and depends on the exposed suffix for masking. Data-model
+§§17.4-17.5/29 classify these columns as encrypted, and 008J requires ordinary cheque values to
+remain a fixed mask without recoverable fragments. The independent regression encrypted `123456`,
+expected no `3456`, and failed on a token containing `:6:3456:`. `008K2` makes token metadata opaque,
+migrates retained values, and separates any explicitly authorised display metadata from ciphertext.
+
+#### Finding 2 - High - Finance readers receive every sanctioned Stage-4 security object
+
+`security_package._has_package_read_scope` and `document_checklist_access` treat Stage 4 alone as
+sufficient for Senior Manager Finance and Chief Financial Controller. Auth §19.2 instead limits
+Senior Manager Finance to documentation-approved/pending-disbursement applications and CFC to
+disbursement-ready applications. The PoA test positively expects a pre-approval 200, so permission
+tests fossilise the widened object scope rather than exercise state transitions. `008K2` applies the
+canonical state/object matrix across package, instrument, and checklist reads.
+
+#### Finding 3 - Medium - The blank-cheque PATCH contract is implemented as full replacement
+
+`BlankDatedChequeRequest` requires all seven request fields for both POST and PATCH. API §5.1 defines
+PATCH as partial update; omitted fields should remain unchanged while the locked merged candidate is
+validated. Current tests cover exact full-payload replay but not one-field updates, explicit null,
+empty shape, or stale partial candidates. `008K2` restores partial semantics without weakening
+terminal custody or exact replay.
+
+#### Finding 4 - Medium - Boundary and evidence proof remains narrower than promised
+
+The I3 architecture test scans only security-to-owner imports and its alternate-path check exercises
+only one forged `read_package` callback; it does not prove the promised reverse direction or PoA,
+SH-4, and CDSL public paths. I4 omits its named duplicate-hash regression. In addition, sensitive-key
+redaction policy remains duplicated between the security recorder, checklist actions, and central
+reveal owner. `008K2` adds both-direction fresh-process guards, public forged-callback tests,
+duplicate-hash proof, and one central policy without merging ordinary and reveal ledgers.
+
+No idempotency defect is filed: API §45's enumerated Idempotency-Key actions are financial actions
+and do not include the reviewed §27/§28 routes; their exact-payload replay rules are explicit. The
+Sanction Committee checklist signer remains one eligible director because 008K and the SOP define
+that narrower documentation signature even though CFO is a member of the broader committee.
+
+### Spec
+
+#### Finding 1 - Critical - Synthetic or stale cheque JSON can complete the checklist
+
+008K requires exact application/package/member/bank/blank-cheque/cancelled-cheque identities and the
+current application-owned verified decision. `_terminal_evidence` checks only status, fixed mask,
+verification, preparer/custodian, and workflow fields. Its selector trusts the newest matching
+`VersionHistory.new_value_json`, without resolving a current blank-cheque row or exact ids. The
+shipped test fabricates precisely such a ledger with no cheque row and expects public completion to
+succeed. The independent regression proved the application had no `BlankDatedCheque`, inserted an
+unbound JSON ledger, expected `EVIDENCE_BLOCKED`, and received HTTP 200. `008K3` requires current
+source-owned, exact-id evidence through the immutable cross-owner interface.
+
+#### Finding 2 - High - Checklist approval accepts completion rows with no durable actions
+
+Company Secretary approval checks only that required/applicable item statuses equal `complete`.
+It does not require an `item_completion` action matching each item, document, verifier, cycle, or
+terminal digest. The ordered-success helper bulk-updates every item status/verifier and creates no
+actions, after which all three approvals succeed and freeze an empty `completed_item_action_ids`
+list. That conflicts with 008K's durable-action and strict public-completion contract. The
+independent status-only regression expected a zero-write 409 and received a successful CS action.
+`008K3` reconciles locked item rows to exact retained completion actions before approval.
+
+#### Finding 3 - High - The required terminal completion matrix is largely bypassed by tests
+
+008K promises public completion for every applicable item and adverse PoA/tri-party/SH-4/CDSL/
+cheque/stamp/notary/signature/mismatch matrix. Tests publicly complete only `final_checklist` and the
+synthetic cheque fixture; all other positive approval prerequisites are bulk-updated. Consequently
+threshold Term-Sheet signature routing, source-owned terminal identities, stale links, and multi-role
+canonical-role attribution receive no end-to-end proof. `_create_action` records the first effective
+role rather than the role that authorised the stage. `008K3` replaces bypass fixtures with public
+completion and covers threshold, identity, terminal, role-intersection, and zero-write blockers.
+
+#### Finding 4 - Medium - Winner/loser and bypass assertions do not establish exact identities
+
+008K's changed-payload race helper asserts one winner, four conflicts, and aggregate row counts but
+does not bind retained payload/request/workflow/action evidence to that winner or prove every loser
+absent from success ledgers. I3's one-direction/one-callback gap and I4's missing duplicate-hash case
+similarly fall short of their slice evidence promises. `008K2` owns boundary/hash proof; `008K3`
+owns exact public action and PostgreSQL winner/loser identities.
+
+No unrelated scope creep was found. The real security owner and top-level coordinator, exact ₹500
+PoA activation, nullable pending CDSL evidence, AES-GCM/key separation, masked ordinary reads,
+central reveal audit, blank-cheque custody, §27/§28 routes, strict approval ordering, and honest
+zero-write finance-signature blocker are substantive. M06-FR-007-012/016-017 have real Stage-4
+behavior but confidentiality and terminal provenance remain partial until 008K2/K3. M06-FR-013-015
+remain constrained by A-101's missing governed Term-Sheet path; the review does not claim a false
+end-to-end completion. No epic completed in this five-slice window.
+
+### Corrective queue, state, and context
+
+`008K2-sensitive-security-contract-closure` depends on completed 008K and closes ciphertext, PATCH,
+read-scope, and executable-boundary contracts. `008K3-final-checklist-evidence-closure` depends on
+K2 and closes exact terminal provenance, action-backed approval, public completion matrices, role
+attribution, and races. 008L now depends on K3; 008L and 008M are sharpened so portal/staff clients
+cannot consume raw version JSON, suffix-bearing ciphertext, permission-only finance scope, or
+status-only completion. No slice is Blocked, so no stale prerequisite needed reopening.
+
+`CONTEXT.md`, the Epic 008 digest, state, progress, handoff, and architecture-review descriptor are
+refreshed. No ADR was added: the source already decides encrypted-at-rest fields, PATCH semantics,
+the §19 object matrix, cross-owner evidence direction, and action-backed completion.
+
+Summary: Standards found 1 Critical, 1 High, and 2 Medium issues; the worst is recoverable plaintext
+inside ciphertext. Spec found 1 Critical, 2 High, and 1 Medium issue; the worst is synthetic cheque
+truth completing a legal checklist.
+
+## 2026-07-14 23:49 - Architecture Review 2026-07-14_234031_architecture_review
+
+Reviewed completed work since architecture-review commit `e046a9d3`:
+- `008G2-stage4-maker-and-verification-contract-closure` (`095d846d`)
+- `008F2-security-instrument-boundary-and-poa-lifecycle-closure` (`ef2f5900`)
+- `008H-sh-4-physical-share-security-workflow` (`ad62bdf2`)
+- `008I-cdsl-pledge-workflow` (`bacc285d`)
+
+The review checked `git diff e046a9d3...bacc285d`, every production/test hunk, the four slice
+contracts, retained review/evidence packets, the Epic 008 digest, M06 requirement ids, and cited
+API, data-model, functional, auth, deployment, SOP, and codebase-design sections. Standards and Spec
+ran as isolated independent passes. Two additional public-path regressions failed against the
+merged code. No production code changed.
+
+### Standards
+
+#### Finding 1 - High - The security app dependency direction is reversed and PoA is a forwarding shell
+
+`security_instruments/modules/power_of_attorney.py` is six lines that imports the implementation
+from `legal_documents`, mutates its module globals through `bind_security_owner`, and forwards every
+attribute through `__getattr__`. `security_package.py`, `sh4.py`, and `cdsl_share_pledge.py` likewise
+import approval/legal models or selectors. Codebase-design §36.2 permits `legal_documents` to depend
+on security and limits security to members/applications/documents/audit; §28.1 rejects pass-through
+modules. The F2 boundary test asserts only that legal does not import security, which is the opposite
+of the documented direction, and the F2 review packet therefore overstates the ownership result.
+`008I2` moves the real PoA implementation; `008I3` establishes one top-level cross-owner process/
+fact interface and executable dependency guards for PoA, SH-4, and CDSL.
+
+#### Finding 2 - High - Reversible BO data bypasses the central encryption and reveal modules
+
+`members/protected_identity.py:22-65` adds a repository-local XOR/HMAC counter-mode construction
+derived from Django `SECRET_KEY`; `cdsl_share_pledge.py:41-110` directly checks roles, decrypts, and
+writes reveal audit rows. Codebase-design §§9.4/39 require `shared.encryption` to hide provider/key
+version/rotation and `documents.modules.sensitive_data_access` to own masking, permission, scope,
+reason, timeout, and audit. A-115 honestly admits this is temporary, but 008J would otherwise copy
+the wrong seam for cheque data. `008I4` installs the central independently keyed/versioned adapter,
+migrates CDSL rows, and makes 012E3 extend rather than duplicate it.
+
+#### Finding 3 - High - Package reads reject source-authorised read-only roles
+
+`security_package.require_actor` requires every caller, including GET readers, to be Compliance or
+Company Secretary. Auth §§12.8/14.1/19.2-19.4 grants scoped security reads to Credit Manager, Senior
+Manager Finance, CFC, CFO, Director/approver, and Auditor roles. The catalogue and tests cover only
+Compliance/CS, so a valid read permission does not work for the documented read matrix. `008I2`
+separates canonical masked read authority from mutation/reveal/download/invocation authority.
+
+#### Finding 4 - Medium - Evidence ledgers remain shallow and race assertions are incomplete
+
+PoA, SH-4, CDSL, and legal workflows duplicate audit/version/workflow snapshot writers rather than
+using the deep recorder described by codebase-design §9.3. The concurrency tests mostly count rows:
+CDSL acceptance allows any number of `returned` calls and does not assert one material winner, while
+tri-party does not prove the promised workflow attribution. `008I3` deepens the recorder and requires
+different-payload, exact-winner, zero-success-loser identity assertions twice on PostgreSQL.
+
+No additional transaction, indexing, action-envelope, or financial-idempotency violation was found.
+008G2's latest-maker transfer, strict request contracts, consumed-signature guard, public generation
+tracer, and named mismatch error are substantive. SH-4/CDSL terminal locking, masked projections,
+and invocation/readiness exclusions are also substantive.
+
+### Spec
+
+#### Finding 1 - High - PoA activation does not enforce the mandatory ₹500 stamp
+
+Functional M06-FR-008 and the Epic digest's V10 p.14 §4.3 require a ₹500 stamp plus notarisation.
+`legal_documents/modules/power_of_attorney.py:271-290` checks only `adequate` status and distinct
+stamp maker/checker. Existing tests always supply ₹500 but have no adverse amount assertion. The
+independent public-path regression replaced the adequate amount with ₹1 and still received HTTP
+200/active. `008I2` adds PoA-specific exact amount validation without inventing the unresolved Loan
+Agreement/ad-valorem rule.
+
+#### Finding 2 - High - A valid pending CDSL request with nullable evidence raises an internal error
+
+Data-model §17.4 makes `evidence_document_id` nullable, and 008I requires evidence only before
+acceptance. `cdsl_share_pledge.create_pledge:152` nevertheless calls `.document` on the nullable
+selector result. The independent public POST with pending states and `evidence_document_id: null`
+raised `AttributeError` instead of returning a valid pending row. `008I4` restores null pending
+create/change while keeping submitted/terminal evidence fail-closed.
+
+#### Finding 3 - High - The implemented owner and sensitive-data seams contradict the slice contracts
+
+008F2 requires the security module to own PoA policy, but the dynamic wrapper leaves the
+implementation in legal. 008I explicitly says to reuse the existing masking/reveal/audit module,
+yet it adds direct custom cryptography and local reveal authorization. These are not cosmetic paths:
+tests import the forwarding module and the CDSL public reveal crosses the local helpers. `008I2` and
+`008I4` close the two contracts; `008I3` prevents a new inverse dependency while doing so.
+
+#### Finding 4 - Medium - Promised complete winner/loser race evidence is only partial
+
+008G2/H/I require exact winner/loser audit, version, workflow, and request attribution. SH-4 has a
+genuine distinct-custody winner test, but tri-party omits workflow identity and CDSL acceptance does
+not assert exactly one material returned winner. This could let several replay-like successes pass
+the test without proving the changed-submission contract. `008I3` owns the complete matrix.
+
+No unrelated scope creep was found. M06-FR-009/016/017 now have substantive current-maker,
+tri-party, mismatch, and consumed-evidence behavior. M06-FR-007/008 remain partial until 008I2 closes
+the real owner and ₹500 rule. M06-FR-010/011/012 have substantive SH-4/CDSL/future-share tracking,
+subject to the seam and null correction. M06-FR-015 remains partial and A-101/A-107 continue to
+record the governed-term/signed-copy limits; no epic completed in this four-slice window.
+
+### Corrective queue, state, and context
+
+`008I2-security-poa-owner-and-read-contract-closure` depends on completed 008I. `008I3-security-
+legal-evidence-seam-and-race-closure` depends on I2. `008I4-sensitive-field-encryption-and-cdsl-null-
+contract-closure` depends on I3, and 008J now depends on I4 before adding another protected physical
+instrument. 008J and 008K were sharpened against the corrected seams; 008J now declares its promised
+PostgreSQL capability. 012E3 was sharpened to extend I4's central encryption interface. No slice is
+Blocked, so no stale prerequisite status required reopening.
+
+`CONTEXT.md`, the Epic 008 digest, state, progress, handoff, and architecture-review descriptor are
+refreshed. No ADR was added: source codebase-design, auth, data-model, and functional documents
+already decide module direction, read roles, encryption ownership, nullability, and PoA stamp amount.
+
+Summary: Standards found 3 High and 1 Medium issues; the worst are the reversed security dependency
+and local reversible cryptography. Spec found 3 High and 1 Medium issues; the worst are the missing
+₹500 enforcement and valid nullable CDSL request crashing.
+
+## 2026-07-14 19:20 - Architecture Review 2026-07-14_185927_architecture_review
+
+Reviewed completed work since architecture-review commit `7e119610`:
+- `008D2-stamp-notary-verification-authority-closure` (`08356302`)
+- `008E2-signature-identity-mismatch-lifecycle-closure` (`f3abacc7`)
+- `008F-power-of-attorney-workflow` (`3c6a653c`)
+- `008G-tri-party-agreement-workflow` (`12e2dea4`)
+
+The review checked `git diff 7e119610...12e2dea4`, every production/test hunk, all four slice
+contracts, the Epic 008 digest, retained RED/GREEN/full-gate/PostgreSQL evidence, and cited API,
+data-model, functional, auth, SOP, and codebase-design sections. Standards and Spec ran as isolated
+independent passes. Three additional executable regressions failed against the merged code. No
+production code changed.
+
+### Standards
+
+#### Finding 1 - Critical - Security-instrument ownership is in the legal-documents app
+
+`legal_documents/models.py:662-786` and `modules/power_of_attorney.py` own `SecurityPackage`,
+`PowerOfAttorney`, package authorization, and PoA workflow. Data-model §17 classifies these as
+security tables, while codebase-design §§8.2/36.2 assign PoA/SH-4/CDSL/cheque/custody to the
+`security_instruments` business owner and allow `legal_documents` to consume security truth, not
+own it. Continuing 008H/008I on this seam would deepen a reversed dependency. `008F2` establishes
+the source-defined owner while preserving tables, rows, ids, and v1 routes.
+
+#### Finding 2 - High - Domain modules depend on transport serializers
+
+`stamp_notary.py`, `signatures.py`, and `loan_document_verification.py` import request classes from
+`legal_documents/serializers.py` and parse dicts themselves. Codebase-design §§6.3-6.4/36.1 require
+HTTP serializers/views to call domain modules, while domain interfaces independently enforce
+business validation. `008G2` restores that direction and preserves safe direct callers.
+
+#### Finding 3 - High - Permission and evidence helpers are duplicated instead of deepened
+
+`document_authority.py` centralises some legal action roles, but `power_of_attorney.py:46-58`
+reimplements actor/activity/permission/role logic. Request metadata, audit/version/workflow writes,
+snapshots, and validation adapters are copied across four modules and already retain different
+identity shapes. This conflicts with codebase-design §9.1 and the slice requirement to centralise
+role authority. `008G2` deepens the legal action seam; `008F2` gives security actions their owner.
+
+#### Finding 4 - Medium - Workflow/error responses drift from §§6-7
+
+The §26.6 verification route returns serialized loan-document fields rather than the §6.3 action
+response with previous/new state, workflow event id, and available actions. Ordinary capture of an
+unresolved mismatch returns generic `CONFLICT`/409 instead of the §7.2
+`SIGNATURE_MISMATCH_UNRESOLVED` contract. `008G2` closes both contracts.
+
+#### Judgement calls recorded
+
+PoA tests assert row/version/audit counts but do not race activation/checker authority or assert a
+workflow loser ledger. The over-broad purpose regex rejects any clause containing `not`, `never`, or
+`prohibit` anywhere, even when the required affirmative authority is present elsewhere. `008F2`
+owns both because they affect the substantive lifecycle rather than warranting separate polish.
+
+### Spec
+
+#### Finding 1 - High - A later maker can edit evidence and then check it under the first maker's id
+
+008D2/008E2 require immutable-user maker-checker separation, including multi-role users. Stamp,
+notary, and signature update paths change business facts without changing `prepared_by_user` or
+`captured_by_user`; PoA draft changes likewise retain the creator. Every checker guard compares
+only that stale first maker. User B can therefore materially change facts created by A, then verify,
+resolve, or activate as B while the row falsely attributes A as maker. `008G2` makes the latest
+material editor the current maker, retains all earlier makers in history, and adds database-backed
+positive/adverse integrity; `008F2` applies it at PoA activation.
+
+#### Finding 2 - High - Compliance can erase an active Company-Secretary PoA decision
+
+`power_of_attorney.update_poa` permits a Compliance actor to PATCH an `active/executed` PoA back to
+`draft/pending`, clears `verified_by_user`, and returns 200. It also lets the checker alter
+maker-owned purpose/evidence facts during activation. The independent regression expected a
+zero-write conflict but received 200 with `status=draft`. `008F2` makes activation terminal in this
+slice and binds it to the exact retained maker-owned draft.
+
+#### Finding 3 - High - Post-sanction and consumed-signature truth remain mutable shortcuts
+
+Package refresh checks only mutable `application_status=approved_by_sanction`; it created a package
+with HTTP 200 for a fixture with no canonical final sanction/checklist completion path. Separately,
+after §26.6 verified a tri-party agreement, ordinary signature capture changed its consumed borrower
+row from signed to pending with HTTP 200 while the document remained `verified`. `008F2` consumes
+canonical frozen terminal sanction truth; `008G2` freezes/guards exact execution evidence.
+
+#### Finding 4 - Medium - Required 008G PostgreSQL and public-generation proof is absent
+
+008G's only race is PostgreSQL-only, but the slice declares no runtime capability and its retained
+full run reports the test as an expected skip; there is no twice-run PostgreSQL evidence. Its
+positive fixture manually creates a `DocumentFile`, approved template, and `LoanDocument` with
+claimed renderer provenance rather than crossing the public generator, despite the sharpened slice
+requiring a genuine public tracer. `008G2` declares the gate and supplies real exact/changed races
+and generation-to-verification proof. 008F likewise renders bytes but manually inserts the legal
+document; `008F2` supplies the missing public tracer.
+
+No unrelated product scope was added. D2's positive/adverse role checks, E2's canonical identity and
+nondisclosing resolution lookup, F's package/PoA schema/projections, and G's applicability/signature
+checks contain substantive assertions. The gaps are lifecycle ownership, current attribution, and
+missing promised boundary/race evidence rather than empty coverage.
+
+### Functional coverage, corrective queue, and state
+
+No epic completed in this four-slice window. M06-FR-016/017 are substantive for canonical identity,
+mismatch immutability, and resolution action identity, but current-maker handoff remains partial
+until 008G2. M06-FR-007/008 and M06-FR-009 have initial PoA/tri-party paths, but neither is complete
+while active evidence can be invalidated and the promised public/PostgreSQL proof is absent.
+M06-FR-013 remains A-101 configuration-blocked; later M06 requirements remain with 008H-008M.
+
+Corrective `008G2-stage4-maker-and-verification-contract-closure` depends on completed 008G.
+Corrective `008F2-security-instrument-boundary-and-poa-lifecycle-closure` depends on 008G2, and 008H
+now depends on 008F2 before extending the security owner. 008H/008I declare their PostgreSQL gates
+and are sharpened against the corrected boundary/current-maker semantics. No slice is Blocked, so
+no stale prerequisite status required reopening. `CONTEXT.md`, the Epic 008 digest, state,
+progress, and handoff are refreshed.
+
+No ADR was added: source codebase-design already assigns the security owner, auth already defines
+maker-checker identity, and API/data-model documents already fix the action and integrity rules.
+The corrective slices implement existing decisions rather than introducing durable new ones.
+
+Summary: Standards found 4 hard issues plus 2 judgement calls; the worst is security-instrument
+ownership in `legal_documents`. Spec found 3 High and 1 Medium issues; the worst is stale maker
+attribution allowing the material editor to check their own evidence.
+
+## 2026-07-14 16:10 - Architecture Review 2026-07-14_155832_architecture_review
+
+Reviewed completed work since architecture-review commit `329c3b03`:
+- `008B4-renderer-provenance-and-replay-contract-closure` (`a2e541bf`)
+- `008C2-checklist-lifecycle-authority-and-side-effect-closure` (`b80c7a19`)
+- `008D-stamp-duty-and-notarisation-tracking` (`94b3fd1b`)
+- `008E-signature-mismatch-workflow` (`092faf7a`)
+
+The review checked `git diff 329c3b03...092faf7a`, every production/test hunk, all four slice
+contracts, the Epic 008 digest, retained RED/GREEN/full-gate/PostgreSQL evidence, and cited API,
+data-model, functional, auth, and codebase-design sections. Standards and Spec ran as isolated
+independent passes. No production code changed.
+
+### Standards
+
+#### Finding 1 - High - Stage-4 legal evidence policy drifted into the foundation documents app
+
+`documents/services.py:233-271` decides Compliance/Company Secretary roles, legal category,
+application ownership, and Stage-4 evidence purpose. That is legal workflow policy, but codebase-
+design §§36.1-36.2 make `documents` the lower-level file/provenance owner and place legal policy in
+`legal_documents`. `008D2` moves only generic immutable upload provenance below the seam and returns
+application/category/role decisions to the legal-documents deep module.
+
+#### Finding 2 - Medium - HTTP shape validation and action authority are scattered inside modules
+
+`legal_documents/views.py:123-235` passes raw JSON into modules, while `stamp_notary.py:112-177`
+and `signatures.py:203-264` duplicate exact-field, type, date/UUID/text, and enum parsing. Role
+decisions are likewise split between `document_authority.py` and each workflow module. This violates
+codebase-design §§6.3-6.4/9.1: serializers own simple HTTP shape and the permission module hides
+role lookup, while the deep interface still enforces business invariants. `008D2` and `008E2`
+restore those seams without making direct callers trust a view.
+
+#### Finding 3 - Medium - Mismatch resolution does not return the standard action envelope
+
+API-contracts §6.3 requires workflow actions to return entity, previous/new state, workflow-event
+identity, and available actions. The §26.8 route instead returns only serialized signature metadata
+from `legal_documents/views.py:199-235`. `008E2` adds the action contract and keeps evidence identity
+metadata-only.
+
+#### Judgement calls recorded
+
+`signatures.py:311-322` and `document_checklist.py:389-405` duplicate the same application-wide
+signature projection instead of one selector; `008E2` replaces it before 008F/008G consume signature
+truth. `processes/sanction_completion.py` calls the intentionally private
+`approval_actions._approve_case_with_completion` seam. The latter is shallow interface debt, but
+008C2's public process coordinator is the tested caller and no bypass remains, so this review did
+not create another corrective slice solely to rename it. The three legal modules also repeat
+request/evidence helpers; D2/E2 should replace overlapping shallow HTTP/authority code rather than
+layering another public interface.
+
+### Spec
+
+#### Finding 1 - High - Ordinary capture can erase an unresolved mismatch
+
+008E says only the Company Secretary mismatch-resolution action clears the blocker and prior
+mismatch evidence must survive. `signatures.record` blocks changes only after a resolution exists
+(`signatures.py:86-115`); Compliance can change the same unresolved row from `mismatch` to `signed`,
+which removes the active owner fact without §26.8 evidence. A temporary independent regression
+expected 409 but received 200 with `signature_status=signed`. Existing tests protect a mismatch from
+a different nominee's normal signature, not from same-identity overwrite. `008E2` makes unresolved
+mismatch terminal to capture, validates/fixes canonical party snapshots, and preserves the sole
+checker path.
+
+#### Finding 2 - High - Compliance can record Company-Secretary adverse verification outcomes
+
+008D permits Compliance to prepare pending facts and assigns stamp/notary verification to the
+Company Secretary. The code role-gates only `adequate` and `completed`
+(`stamp_notary.py:132-136,164-169`), so Compliance can create or overwrite `insufficient` and
+`rejected` outcomes without a verifier. The independent regression expected denial but received 200
+for an `insufficient` stamp decision. `008D2` makes every positive/adverse outcome checker-owned,
+prevents preparer downgrade, and enforces distinct maker/checker identity.
+
+#### Finding 3 - High - Signature resolution exposes inaccessible record existence
+
+008E requires unrelated application/document scope to be nondisclosing. `resolve_mismatch` fetches
+`SignatureRecord` by raw id before resolving Stage-4 parent authority (`signatures.py:128-140`);
+`views.py:215-218` therefore distinguishes absent 404 from an existing wrong-stage/inaccessible 403.
+The role matrix has no unknown-versus-inaccessible resolution case. `008E2` resolves accessible
+owner scope first and freezes one error contract before signature existence is exposed.
+
+#### Finding 4 - Medium - Required signature concurrency acceptance is absent
+
+008E explicitly requires concurrent duplicate/change attempts to retain one outcome and complete
+history. `test_signature_mismatch_api.py` contains only an ordinary `TestCase`; there is no threaded
+`TransactionTestCase`, barrier, or race assertion. `008E2` adds twice-run PostgreSQL capture and
+resolution races. 008D's genuine five-worker changed-submission race is substantive.
+
+No scope creep was found. 008B4 genuinely binds new output to renderer/file/checksum provenance and
+labels/excludes legacy rows. 008C2 genuinely removes terminal approval bypass, preserves completion,
+centralises checklist reads, separates applicability/linkage evidence, and runs the real final-
+sanction race. 008D/008E tests contain real state/evidence assertions, but both suites fabricate
+`current_validated` metadata instead of crossing the generator; 008F/008G are sharpened to include
+one genuine public tracer while retaining focused fixtures for isolated rules.
+
+### Functional coverage, corrective queue, and state
+
+No epic completed in this four-slice window, so no completed-epic functional matrix required a new
+closure claim. Within ongoing Epic 008, M06-FR-001 is now substantive through 008C2 and the renderer-
+provenance portion of M06-FR-013/M06-FR-015 is substantive through 008B4. Stamp/notary tracking
+advances M06-FR-008/M06-FR-015 but does not complete PoA/Agreement execution. M06-FR-016/017 remain
+partial until 008E2 closes mismatch authority, identity, nondisclosure, and race gaps; A-107 still
+honestly records the missing signed-copy/bank-attestation aggregate. M06-FR-012/014 remain with later
+CDSL/final-approval owners and were not falsely claimed complete.
+
+Corrective `008D2-stamp-notary-verification-authority-closure` is unblocked after 008D.
+`008E2-signature-identity-mismatch-lifecycle-closure` depends on 008D2 and completed 008E; 008F now
+depends on 008E2, and both 008F/008G consume its canonical signature seam. No slice is Blocked, so no
+stale prerequisite status required reopening. `CONTEXT.md`, the Epic 008 digest, state, progress,
+and handoff are refreshed.
+
+No ADR was added: the required app ownership, serializer/permission seams, action envelope, maker-
+checker separation, and nondisclosure rules already exist in source documents. The corrective
+slices implement those decisions rather than introducing a durable new one.
+
+Summary: Standards found 3 hard actionable issues plus 3 documented judgement calls; the worst is
+Stage-4 legal policy reversing the documents/legal-documents dependency direction. Spec found 3
+High and 1 Medium issues; the worst is ordinary capture erasing a mismatch that only Company
+Secretary resolution is authorised to clear.
+
+## 2026-07-14 12:50 - Architecture Review 2026-07-14_124337_architecture_review
+
+Reviewed completed work since architecture-review commit `7d0106a6`:
+- `007T-register-null-contract-and-action-order-closure` (`a9af7867`)
+- `008B2-legal-document-generation-boundary-closure` (`a1e6c5e9`)
+- `008B3-document-renderer-and-output-proof-closure` (`fdc57ece`)
+- `008C-documentation-checklist-applicability` (`87f2e93b`)
+
+The review checked `git diff 7d0106a6...87f2e93b`, every production/test hunk, the four slice
+contracts, Epic 007/008 digests, retained gate/PostgreSQL/trusted-browser evidence, and the cited
+API/data-model/functional/auth/codebase-design/frontend sections. Standards and Spec ran as
+isolated independent passes. No production code changed and no Blocked slice exists to reopen.
+
+### Standards
+
+#### Finding 1 - High - Checklist refresh owns and rewrites another lifecycle's completion state
+
+`legal_documents/modules/document_checklist.py::_synchronise_items` assigns `pending` or
+`not_applicable` on every refresh, including existing rows. A later completed item is silently
+reopened; a completed item with verifier facts instead fails `full_clean()` after the status is
+changed in memory. Tests replay only all-pending rows. This violates the checklist deep-module
+invariant and the §16.5 separation of applicability from completion. `008C2` makes applicability
+synchronisation completion-preserving and conflicts explicitly rather than deleting later evidence.
+
+#### Finding 2 - High - Checklist facts cross the documented app dependency boundary
+
+`legal_documents` imports and queries `members.CancelledCheque` directly even though codebase-design
+§36.2 permits the legal owner to depend on approvals/applications/documents/security/audit, not on
+the members ORM. The same module locally branches on Compliance, Company Secretary, and Credit
+Manager roles instead of consuming one permission/object-scope decision. `008C2` moves cheque facts
+behind an application/member-owned seam and centralises checklist object authority before queries.
+
+#### Finding 3 - Medium - Checklist audits drop mandatory request and actor context
+
+Checklist creation/change audit records omit request id, IP, user agent, actor role, and actor team;
+the new process coordinator receives request metadata at the approval boundary but does not pass it
+to the checklist hook. Auth-permissions §30.2 requires those facts on every audit entry. `008C2`
+threads them through and asserts exact attributable creation/change/rollback ledgers.
+
+#### Finding 4 - Medium - Authorized unknown parents use the validation error contract
+
+Generation and loan-document list modules turn an absent but authorized application into
+`ValidationError`, which their views expose as HTTP 400. API-contracts §7.5 requires `NOT_FOUND`/404;
+denied callers should remain nondisclosing. `008B4` adds the missing authorized-unknown edge matrix
+without weakening permission ordering.
+
+#### Documented deviations retained
+
+The shared checklist view performs state-based routing and exposes the older intake-checklist shape
+before sanction and §27.1 legal shape after sanction. That would ordinarily violate thin-view/stable-
+shape guidance, but A-104 and 008C explicitly require this backward-compatible route until its UI
+owners migrate, so no duplicate corrective slice was created. Likewise, raw nullable loan/signature
+UUIDs remain source-divergent but database-constrained to null under A-102/A-104 until 009C/008K own
+the real FKs. These are visible staged deferrals, not newly accepted live references.
+
+### Spec
+
+#### Finding 1 - High - Automatic checklist creation remains bypassable
+
+M06-FR-001 and 008C requirement 2 require an atomic checklist whenever final approval creates a
+sanction decision. `approval_actions.approve_case(..., sanction_completion_hook=None)` keeps the
+hook optional, so direct callers still create `SanctionDecision` without a checklist; retained tests
+exercise that path. The PostgreSQL acceptance races five refreshes of an already approved fixture,
+not five final sanction completions. `008C2` makes the terminal coordinator unavoidable and adds the
+real twice-run final-sanction race.
+
+#### Finding 2 - High - Refresh can erase later completion evidence
+
+008C requirement 4 says applicability is independent of completion and assigns completion to
+008D-008K. The refresh implementation nevertheless resets every existing item's completion status.
+No test refreshes a completed/verified item. `008C2` owns the missing lifecycle matrix and requires
+zero-write conflict for a changed applicability decision that contradicts retained completion.
+
+#### Finding 3 - High - Legacy outputs can satisfy current replay and checklist linkage
+
+008B3 validates every newly rendered output, but `LoanDocument` stores no renderer-contract
+provenance. A row created by 008B's former plain-text-DOCX/minimal-PDF path is returned by exact
+replay before the renderer runs and satisfies 008C's selector using only generated/template/file
+metadata. The 008C test manually constructs exactly such an unvalidated row and calls it generated.
+`008B4` versions immutable renderer provenance, makes legacy rows explicit/remediation-only, and
+prevents replay/list/checklist code from claiming current validation based on flags or extensions.
+
+#### Finding 4 - Medium - Pending cheque defaults are treated as authoritative matches
+
+008C requires an authoritative mismatch fact and A-105 says missing facts stay blocked. The
+signature-mismatch helper ignores `CancelledCheque.verification_status` and treats a persisted
+default false flag as `persisted_signature_match`; its positive test leaves the cheque in the
+default pending state and codifies that inference. `008C2` requires a verified owner decision and
+keeps pending/missing/malformed/conflicting facts visibly blocked.
+
+No scope creep was found. 007T's exact legacy-null fixture and action/filter ordering matrices are
+substantive. 008B2's model move, direct authority matrices, selector, retained-table migration, and
+PostgreSQL evidence are substantive. 008B3's genuine new DOCX/PDF extraction, Unicode, bounded input,
+and honest M05 blocker are substantive for new rows; the gap is legacy/current provenance. 008C's
+ordered initial ledger, atomic HTTP final-approval rollback, and basic role/read tests are real, but
+they do not establish the public terminal invariant or safe later refresh lifecycle.
+
+### Functional coverage, corrective queue, and state
+
+007T closes the reviewed historical UI gaps for M05-FR-002/M05-FR-009; the remaining previously
+reviewed M05 requirements stay substantive. M06-FR-001 is partial until 008C2 makes checklist
+creation unavoidable. M06-FR-003/005-011/017-018 now have an initial applicability index, not their
+later collection/execution/security/approval workflows. M06-FR-013 has a genuine renderer for new
+rows but the real 13-term path remains configuration-blocked under A-101 and legacy provenance is
+partial until 008B4. M06-FR-015 still has generation ordering only; stamp/notary/signature execution
+remains with 008D onward. No functional requirement was falsely marked complete.
+
+Corrective slices `008B4-renderer-provenance-and-replay-contract-closure` and
+`008C2-checklist-lifecycle-authority-and-side-effect-closure` were created in dependency order.
+`008D` now depends on 008C2 and is sharpened to consume only completion-preserving checklist and
+current renderer-provenance seams. `CONTEXT.md` is refreshed; there are no stale Blocked slices.
+
+No ADR was added: codebase-design already fixes app/authority ownership, A-104/A-105 already record
+the intentional route/applicability deferrals, and the corrective slices must implement provenance
+and lifecycle invariants without inventing a new business rule.
+
+Summary: Standards found 2 High and 2 Medium actionable issues; the worst is checklist refresh
+owning completion state across module lifecycles. Spec found 3 High and 1 Medium issues; the worst
+are bypassable automatic checklist creation and unproven legacy output satisfying current truth.
+
+## 2026-07-14 09:31 - Architecture Review 2026-07-14_093142_architecture_review
+
+Reviewed completed work since architecture-review commit `220f3038`:
+- `007R-legacy-approval-history-and-frozen-identity-closure` (`59095ada`)
+- `007S-register-pattern-and-pagination-order-closure` (`95709705`)
+- `008A2-template-effective-integrity-and-file-reference-boundary` (`d95d5d53`)
+- `008B-document-generation-shell` (`e1698e87`)
+
+The review checked `git diff 220f3038...e1698e87`, every production/test hunk, the four slice
+contracts, Epic 007/008 digests, retained RED/GREEN/full-gate/PostgreSQL/trusted-browser evidence,
+and the cited API/data-model/functional/codebase-design/frontend sections. Standards and Spec ran
+as isolated independent passes. No production code changed and no Blocked slice exists to reopen.
+
+### Standards
+
+#### Finding 1 - High - Legal-document generation reverses the source app dependency direction
+
+`documents/modules/document_generation.py` imports applications, approvals, identity, and workflow
+business owners, while `documents/models.py::LoanDocument` makes the foundation document-storage
+app depend on the application aggregate. Codebase-design §§14.1/36.2 assign generation to the
+`legal_documents` deep module, which may depend on approvals/applications/documents; foundation
+`documents` may depend only on accounts/RBAC/audit/shared. Thin fact façades avoid private-model
+imports but do not repair app ownership. `008B2` establishes the legal-document owner without
+changing the public v1 route or rewriting retained rows.
+
+#### Finding 2 - High - Public generation modules can bypass permission and object authority
+
+The HTTP view checks `documents.loan_document.generate` and application access, but the public
+`document_generation.generate` interface does neither; it checks only template-reference
+permission. A task or future module caller can therefore generate with an actor who lacks generation
+authority or object scope. The parallel issue exists for template mutation: public create/successor
+modules trust the view's manage check. Codebase-design §§6.3/9.1-9.2 require modules to enforce
+workflow, permission, and object access. `008B2` makes direct and HTTP callers cross the same deep
+authority boundary and adds zero-write direct-call matrices.
+
+#### Finding 3 - Medium - Loan-document list query/pagination logic is in the business module
+
+`document_generation.list_for_application` filters/eager-loads/counts/orders/slices rows and
+duplicates `_positive_int` plus pagination calculation already present in `documents/selectors.py`.
+Codebase-design §7.2 assigns collection shaping to selectors and §26.2 says replace, not layer,
+scattered shallow logic. `008B2` moves the legal collection query behind its selector while keeping
+the public response unchanged.
+
+#### Finding 4 - Medium - `loan_account_id` is an unconstrained UUID instead of the specified FK
+
+The new model/migration persists `loan_account_id` as a nullable UUID even though data-model §16.3
+defines a nullable FK and §34 requires relational integrity. The field is dormant today, but later
+code could retain a nonexistent loan id. `008B2` keeps it database-enforced unusable/null until the
+Epic 009 owner exists or introduces the real protected relation without destructive rewriting.
+
+### Spec
+
+#### Finding 1 - High - The exact backend legacy-null row can crash S23
+
+007R correctly serializes missing legacy `source_review_facts_json` as top-level `purpose: null`
+and `risk: null`, and its backend test asserts those exact values. 007S instead types both as objects,
+dereferences `row.purpose.description`/`row.risk.overall_risk_rating`, and supplies
+`{category:null}`/`{overall_risk_rating:null}` in component/browser tests. The claimed null-safe
+proof therefore never exercises the real contract and a valid historical row can throw during
+render. `007T` aligns the DTO/UI/tests/browser fixture to the exact payload and adds a visible
+legacy-null output.
+
+#### Finding 2 - High source gap - The real M05 path cannot produce the required full Term Sheet
+
+008B requires a 13-fact Term Sheet, but the actual terminal writer deliberately persists null
+numeric interest, repayment date, penal rate, empty charges, and blank conditions under A-079
+because no governed frozen source owns those facts. The positive test directly creates a fully
+populated `SanctionDecision`, bypassing M05, so it proves projection capability rather than an
+end-to-end M05/M06 path. Generation correctly blocks missing declared facts; inventing values would
+be worse. A-101 records the unresolved source/configuration owner, `008B3` labels the real-path
+blocker honestly, and M06-FR-013 remains partial until governance supplies those terms.
+
+#### Finding 3 - Medium - PDF/content evidence checks metadata, not a rendered legal document
+
+The PDF test asserts only response/model metadata and never reads the stored bytes. The DOCX test
+uses UTF-8 text named `.docx`, not a genuine Word package. The implementation's one-page minimal
+PDF path discards DOCX structure, has no Unicode/layout/content extraction proof, and raw XML
+replacement does not cover ordinary split Word runs or bounded archive expansion. A corrupt,
+unreadable, or unmerged legal output can satisfy the current test. `008B3` adds a renderer seam,
+genuine DOCX/PDF fixtures, extracted-content assertions, Unicode and bounded-input proof.
+
+#### Finding 4 - Medium - A post-action refetch is outside S21's stale-response guard
+
+007S generation-guards ordinary queue/detail/decision loads, but `act()` performs its own detail and
+sanction-decision refetch and unconditionally replaces selected/queue state. A user who changes
+filter/page while that refresh is pending can see the older action case overwrite the newer server
+state. Existing ordering tests cover `loadDetail`, not this action path. `007T` places the complete
+post-action refresh behind the same generation authority.
+
+#### Finding 5 - Low - S21 component tests still construct impossible pages
+
+`SanctionWorkbench.test.tsx` supplies one item on page 1/2 with `page_size=20`, `total_count=101`,
+and six pages. Those responses would be rejected by the shared transport 007S just hardened, but
+the mocked feature client bypasses it. `007T` uses exact 20-row non-final pages or internally valid
+smaller page metadata so race tests represent producible states.
+
+### Evidence, functional coverage, and state
+
+007R's exact v2 fixtures, remediation cycle, formal identity snapshots, and backend legacy-null
+assertions are substantive. 007S's shared pagination truth table, ordinary list/detail ordering,
+selector behavior, and two-run trusted outputs are substantive for modern rows. 008A2's first-row
+identity lock, provenance/reference matrices, resolver, and twice-run PostgreSQL races are
+substantive. 008B's authority matrix, retained frozen-fact projection, storage cleanup, exact replay,
+and five-request PostgreSQL race are substantive, but rendered-output evidence and real 13-term
+production readiness are partial.
+
+M05-FR-001/003-008/010-012 remain substantive; M05-FR-002/009's historical UI read fidelity is
+reopened only until 007T. Epic 008 is incomplete: M06-FR-013 has a generation mechanism but lacks a
+governed complete real-flow term source and validated legal renderer; M06-FR-015 has only the
+pre-execution generation guard. `CONTEXT.md` is refreshed and 008C/008D are sharpened behind
+008B2/008B3 so later checklist/stamp work does not deepen the wrong boundary.
+
+No ADR was added: codebase-design already fixes app/selector/authority ownership, while the PDF
+strategy and missing sanction-term source remain explicit choices for 008B3/governance rather than
+decisions this review may invent.
+
+Summary: Standards found 2 High and 2 Medium issues; the worst is generation reversing the legal-
+documents dependency boundary and permitting direct authority bypass. Spec found 2 High, 2 Medium,
+and 1 Low issue; the worst is a real legacy S23 response crashing the supposedly null-safe UI, while
+the source-complete Term Sheet remains unavailable through the real workflow.
+
+## 2026-07-14 06:42 - Architecture Review 2026-07-14_064206_architecture_review
+
+Reviewed completed work since architecture-review commit `4b5b4b1`:
+- `007O-frozen-terminal-decision-and-register-source-closure` (`7d6f873`)
+- `007P-sanction-queue-pagination-and-read-boundary-closure` (`f101562`)
+- `007Q-register-source-fields-and-visual-evidence-closure` (`53fe9f4`)
+- `008A-document-template-model-and-versioning` (`15b8d02`, including repair)
+
+The review checked `git diff 4b5b4b1...HEAD`, every production/test hunk, the four slice contracts,
+Epic 007/008 files and digests, retained RED/GREEN/full-gate/PostgreSQL/two-run browser evidence,
+and cited screen/API/data-model/functional/codebase-design sections. Standards and Spec ran as
+isolated independent passes. The three 007Q screenshots are now complete and visually reviewable;
+no Blocked slice exists to reopen.
+
+### Standards
+
+#### Finding 1 - High - S23/S25 use a new table layout forbidden by the fixed design rules
+
+`ApprovalRegisterPanels.tsx` replaces the established 15/14-column register tables with a new
+four-column grouped layout, widths, and evidence composition. The screenshots are materially more
+reviewable, but FRONTEND_DESIGN_RULES permits labels/data/visibility and reuse of an existing
+row-detail/card pattern—not a new table/queue layout. `007S` restores the existing register table
+and moves complete evidence into an already-approved detail/card composition while retaining the
+four trusted outputs.
+
+#### Finding 2 - High - Template file reference authority bypasses the documents boundary
+
+`documents/modules/document_templates.py::_resolve_template_file` queries `DocumentFile` directly
+and accepts any existing file whenever the manager also has global `documents.file.download`.
+It does not verify immutable upload provenance, related-entity ownership, sensitivity consistency,
+or a template-source reference decision. The test creates a bare file row without upload evidence,
+so it proves the bypass rather than the required “existing permissioned metadata/storage boundary.”
+`008A2` adds one documents-owned, provenance-aware reference seam and keeps reference, manage,
+read, and download authority separate.
+
+#### Finding 3 - Medium - Query/transport ownership drifts into business modules
+
+`approval_case_engine.list_approval_cases` and `document_templates.list_templates` own filtering,
+permission-scoped queryset shaping, ordering, counting, and pagination that codebase-design §7.2
+assigns to selectors. The template module also accepts raw HTTP requests and imports request helper
+functions, contrary to §36.1's view -> module -> selector/model direction. Canonical Python
+validation of every countable approval case remains necessary; the issue is query and transport
+ownership, not a request to trust stored projection flags. `007S` keeps approval collection state
+at the existing public boundary, while `008A2` extracts template reads and request metadata.
+
+#### Finding 4 - Medium - Several tests encode implementation or impossible states
+
+The approval dependency regression still inspects source/import spellings instead of only public
+behavior. `RegistersHub.test.tsx` deliberately renders impossible `Page 2 of 1` metadata even though
+the shared client must reject it, and two browser specs duplicate nearly identical pixel-quality
+analysers. `007R` adds observable legacy/public matrices; `007S` replaces the impossible fixture
+and consolidates the screenshot helper without weakening assertions.
+
+#### Finding 5 - Medium source gap - Approved-template changes have no governed rationale field
+
+API design §3 says sensitive actions capture a reason, while §26.3's exact template request has no
+change-reason field. 008A records attributable status/effective/file old/new facts and generated
+summaries, but no user-supplied rationale. No corrective invents a required request field absent
+from the source contract; governance must reconcile §3 and §26.3 before that contract is widened.
+
+### Spec
+
+#### Finding 1 - Critical - 007O silently invalidates earlier frozen approval packages
+
+007O adds mandatory `sanction_terms`, `member_id`, and `application_reference_number` fields while
+keeping the schema label `approval-review-v2`. Cases created by the immediately preceding v2
+projector lack those fields, and no migration/remediation exists. They therefore fail canonical
+routability, disappear from actor-scoped detail/history/decision/register reads, and cannot reach a
+safe correction cycle. Tests create only the new shape. This contradicts historical-cycle
+immutability and turns “terminal writes fail closed” into “history vanishes.” `007R` versions the
+expanded package, separates historical read validity from terminal completeness, and provides only
+the existing audited return/correct/review/new-cycle remediation—never a live-row backfill.
+
+#### Finding 2 - Critical - 007Q's promised legacy-null register behavior raises instead
+
+Migration 0018 gives older Credit Sanction Register rows an empty `source_review_facts_json`, but
+007Q serialization indexes `borrower`, `purpose`, and `risk` directly. Once such a row reaches the
+serializer it raises rather than returning the digest's explicit legacy nulls; today 007O often
+hides the row first. No test constructs a pre-007O/007Q row. `007R` adds null-safe actor-scoped
+history and explicit migrated-row regressions without live reconstruction.
+
+#### Finding 3 - High - Approved template effective ranges can overlap under a first-row race
+
+008A locks existing approved candidates, but when none exists two concurrent creates with different
+codes/versions both see an empty set and may commit overlapping approved ranges. The migration has
+no identity lock/exclusion constraint, and the PostgreSQL test races only five identical successor
+requests whose predecessor lock serializes them. This fails 008A's database effective-integrity
+requirement. `008A2` serializes the template identity even before its first version and adds the
+missing different-payload PostgreSQL race.
+
+#### Finding 4 - High - Template references are permission-only rather than provenance-safe
+
+008A says missing or inaccessible file references are zero-write and must cross the existing
+document boundary. Global download permission plus row existence is not object/reference access;
+an application KYC/security file can be attached as a legal template and later become generation
+input. `008A2` fails closed on missing/corrupt upload evidence, related-entity files, invalid
+sensitivity, and unrelated actors while preserving metadata-only responses.
+
+#### Finding 5 - Medium - Formal approver names can still change before terminal generation
+
+Terminal register generation reloads each current `User.full_name` through case-authority
+serialization, then freezes that mutable display value. Renaming an earlier approver after routing
+or action but before the last decision changes the formal record, despite 007Q requiring frozen
+case/action facts. Existing tests rename borrower/requester but not approvers. `007R` takes display
+identity only from immutable route/action-time facts and leaves unavailable legacy names null.
+
+#### Finding 6 - Medium - Pagination accepts stale and internally incomplete success
+
+The shared validator accepts an empty or under-filled final page whose `total_count` claims rows
+should exist. S21 also has no request cancellation/generation guard, so a slow older page/filter
+response can overwrite the latest request even though 007P requires atomic replacement. Sequential
+tests miss both cases. `007S` validates the exact final-page remainder and proves out-of-order list/
+detail responses cannot replace current state.
+
+#### Finding 7 - Medium scope/vocabulary mismatch - Template variants admit uncited `fpc`
+
+Data-model §16.2 and 008A name nullable Individual/FPO variants, while the implementation admits
+`fpc` as a third stored value and the repository member model separately uses `fpc` and
+`producer_institution`. Treating any of those labels as equivalent would invent a generation rule.
+`008A2` centralises the resolver and fails unresolved mappings closed; 008B now depends on it.
+
+### Evidence, functional coverage, and state
+
+007O's between-routing mutation and zero-write tests, 007P's cross-page validator measurements,
+007Q's restored fields and two-run screenshots, and 008A's exact-successor PostgreSQL race are real,
+substantive evidence for newly created rows. M05-FR-002..006 and M05-FR-008/010-012 remain
+substantive. M05-FR-001/007/009 are reopened for pre-existing history until 007R; S21/S23/S25
+frontend contract fidelity remains partial until 007S. Epic 008 is not complete; 008A's catalogue
+shape is substantive but effective concurrency/file provenance remain partial until 008A2.
+
+No ADR was added because existing frozen-cycle, document-boundary, selector, standard-envelope,
+and frontend-design rules already decide the corrections. `CONTEXT.md` is refreshed for 008A and
+the new queue. No slice had `Blocked` status, so none required re-parking.
+
+Summary: Standards found 2 High issues, 2 Medium issues, and 1 Medium source gap; the worst is the
+template file-reference boundary bypass. Spec found 2 Critical, 2 High, and 3 Medium issues; the
+worst is schema evolution erasing or crashing earlier approval/register history.
+
+## 2026-07-14 04:00 - Architecture Review 2026-07-14_034706_architecture_review
+
+Reviewed completed work since architecture-review commit `d106e16`:
+- `007K-frozen-review-snapshot-and-selector-boundary-closure` (`234cd52`)
+- `007L-sanction-workbench-contract-and-browser-closure` (`d0481b8`)
+- `007M-exception-supporting-evidence-and-register-closure` (`f52021e`)
+- `007N-register-matrix-settings-contract-and-browser-closure` (`eab8b0d`)
+
+The review checked `git diff d106e16...HEAD`, every production/test hunk, retained RED/GREEN/full-
+gate and two-run browser evidence, the four slice contracts, Epic 007/digest, cited screen/API/
+auth/data-model/functional/codebase-design sections, and M05-FR-001..012. Standards and Spec ran
+as isolated independent passes. `CONTEXT.md` is corrected below; state and slice files contain no
+Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - High - S21 discards the mandatory list envelope and truncates authoritative scope
+
+`sanctionApi.listApprovalCases` asks for `page_size=100` through the data-only request path, drops
+the server pagination object, and `SanctionWorkbench` labels `cases.length` as the service count.
+Cases after the first 100 are unreachable and a server total can never be shown. The trusted spec
+reinforces the defect by returning a non-paginated success envelope. This violates API §§6.2/8.1,
+codebase-design §23.5, and 007L's actor-scoped count/order requirement. `007P` migrates S21 to the
+shared paginated path, retains exact filters on every page, and adds multi-page browser proof.
+
+#### Finding 2 - Medium - Shared pagination fabricates success for malformed list responses
+
+`authenticatedPaginatedRequest` makes pagination optional and substitutes `EMPTY_PAGINATION`.
+A nonempty list without required top-level pagination can therefore display `total_count=0`; no
+test covers missing or malformed pagination. This contradicts API §6.2 and 007N's typed pagination
+boundary. `007P` rejects malformed data/pagination shapes and preserves permission/error clearing.
+
+#### Finding 3 - Medium - The claimed single readable-case boundary still has bypasses
+
+General Meeting availability and mutation independently compose `can_read_approval_case` and
+`is_routable_approval_case` instead of consuming `approval_case_is_readable`. Behavior currently
+matches, but ownership can drift and the static test inspects only registers and ordinary approval
+actions. `007O` sends evidence actions through the same public decision as detail/actions/registers.
+
+#### Finding 4 - Medium - The bounded-work regression measures the wrong thing
+
+The new persisted-scope test compares Django statement counts after adding rows that the stored
+SQL projection already excludes. Statement count remains flat even if canonical Python validation
+materializes arbitrarily more real candidates, so it does not prove 007K/007C3's bounded-work
+claim and conflicts with 007K's instruction to avoid exact ORM-query assertions. `007P` uses real
+candidate/noncandidate pages and validator-call outcomes without pinning SQL.
+
+#### Finding 5 - Medium judgment call - Exception workflow/sensitivity claims exceed persisted facts
+
+The documents boundary proves upload audit, exact application, legal category, matching valid
+sensitivity, download permission, source legal audience, and caller object scope. Its workflow
+scope is a caller constant and it stores no upload-time approval-case/cycle identity; sensitivity
+validation accepts every source-defined value rather than a finer role matrix. The attachment is
+still created inside the exact locked case transaction and audited with case plus document ids.
+Because API §26.1/auth §19.4 define neither upload workflow provenance nor finer role/sensitivity
+pairs, A-094 remains the conservative rule and no invented schema/permission corrective is queued.
+
+### Spec
+
+#### Finding 1 - Critical - Terminal decision/register creation returns to mutable live truth
+
+007K makes the frozen review package mandatory across actions, decisions, and registers, but the
+last approval still creates `SanctionDecision` from live appraisal amount/tenure/security and
+Credit Sanction Register generation reads live application/member/appraisal amounts. Existing
+tests mutate live rows only after terminal generation. An edit after routing but before the final
+approver can therefore change the financial decision/formal register while frozen detail remains
+unchanged. `007O` makes final writes consume only the locked validated case package and adds the
+missing between-routing-and-terminal mutation matrix.
+
+#### Finding 2 - High - S23 is still a reduced register rather than the source record
+
+The S23 DTO/table omit formal entry number, folio, loan type, purpose, per-approver dates,
+rejection reason, conditions, and communication date/status required by screen-spec S23. The
+trusted browser fixture encodes the reduced DTO, so 007N's “S23 contract closure” does not prove
+the source screen. `007Q` projects these facts from the frozen case/decision/action/communication
+owners and renders them without live reconstruction.
+
+#### Finding 3 - High - S25 still omits core source columns
+
+007M added comments and supporting metadata, but S25 still lacks borrower, financial impact,
+requested-by actor, and decision date from screen-spec S25. `007Q` adds those immutable facts while
+retaining distinct description/business reason, read-only scope, and no inferred download action.
+
+#### Finding 4 - High evidence gap - Browser success did not produce reviewable register proof
+
+The orchestrator genuinely ran each declared spec twice, but retained S25 and deferred-settings
+PNGs contain large opaque black regions. Both 007M outputs are byte-identical and the captured
+S25 viewport shows only the left table columns; comments and supporting documents are located in
+off-screen DOM, not visible evidence. DOM assertions plus nonempty-file checks did not catch this.
+`007Q` requires the named evidence inside the 1280x720 viewport and rejects opaque/blank captures.
+
+#### Finding 5 - Medium - S71 configuration is source-partial
+
+Screen-spec S71 also names rule name, abstention rules, special-case handling, and Board approval
+reference. The current §25.1 model/API and UI expose none of these, while 007N's narrower promise
+of complete retained *existing* rule/proposal facts is met. No corrective invents configuration
+semantics absent from API/data-model truth; the gap remains explicit for a source-backed matrix-
+governance expansion.
+
+#### Finding 6 - High - S21 pagination evidence accepts a nonstandard response
+
+007L requires the server's actor-scoped count/order, but its browser fixture omits pagination and
+the UI never exposes pages or total count. This is both a contract and screen-fidelity failure,
+separate from the shared-client standard above. `007P` adds exact multi-page/filter/error behavior.
+
+### Evidence, functional coverage, and state
+
+All 007L/007M/007N trusted browser commands passed twice and every declared file exists; the
+finding is evidence quality/content, not a fabricated or skipped run. No material scope creep was
+found. M05-FR-001..005 and M05-FR-008/010/011/012 remain substantive. M05-FR-007 behavior is
+present but terminal result correctness is affected by mutable-source use. M05-FR-006 is partial
+until S25 source facts/evidence close; M05-FR-009 is partial until terminal source and S23 fields
+close. `007O`-`007Q` are dependency-valid corrective slices. No ADR was added because the existing
+frozen-cycle, standard-envelope, deep-module, and frontend-fidelity rules already decide them.
+
+Summary: Standards found 1 High issue, 3 Medium issues, and 1 Medium judgment call; the worst is
+S21 truncating the authoritative scoped queue. Spec found 1 Critical, 4 High, and 1 Medium issue;
+the worst is mutable live appraisal/application truth changing terminal financial evidence.
+
+## 2026-07-14 01:17 - Architecture Review 2026-07-14_010536_architecture_review
+
+Reviewed completed work since architecture-review commit `82027f7`:
+- `007H3-frozen-case-provenance-and-read-scope-parity-closure` (`e9c330d`)
+- `007I-sanction-workbench-ui` (`63280d4`)
+- `007J-registers-and-approval-matrix-frontend-wiring` (`ee9d365`)
+- `007J2-settings-hub-panels-wiring-or-lockdown` (`0f0968d`)
+
+The review checked `git diff 82027f7...HEAD`, every production/test hunk, retained RED/GREEN and
+full-gate evidence, the four slice contracts, the Epic 007 file/digest, cited screen/API/auth/data-
+model/functional/codebase-design sections, and M05-FR-001..012. Standards and Spec ran as isolated
+independent passes. `CONTEXT.md` was stale after 007I and is corrected by this review; state and
+slice files contain no Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - High - The selector and approval engine now form a circular dependency
+
+`approval_case_engine` imports `approval_case_selector`, while the selector added a function-local
+import back to the engine and now executes routability and authorization business validation. This
+puts deep policy in a query-shaping module and reverses codebase-design §§7.2/36.1's intended
+`module -> selector/models` direction. `007K` makes frozen validity/read scope a single public
+approval-engine boundary and leaves the selector responsible only for actor-scoped query shaping.
+
+#### Finding 2 - High - Authenticated HTTP transport is duplicated across feature services
+
+`approvalRegistersApi.ts` independently loads JWT state, calls `fetch`, parses envelopes/errors,
+and normalizes field errors; `sanctionApi.ts` repeats the same work for multipart upload. This is
+exactly the machinery codebase-design §23.5 assigns to the shared frontend API client. `007L`
+deepens JSON/upload ownership and `007N` adds the paginated envelope path before migrating the
+register/matrix service.
+
+#### Finding 3 - High - React derives approval authority facts
+
+`ApprovalMatrixSettingsPanel` computes authority composition and minimum approvals from roles and
+Director count. Even though the source fields come from the server, the resulting approval fact is
+a backend-owned rule under FRONTEND_DESIGN_RULES' mock-surface ratchet and codebase-design
+§§23.3/28.3. `007N` adds display-ready server projections and removes the React calculation.
+
+#### Finding 4 - High - The policy settings surface changes the approved existing layout
+
+`LoanPolicySettingsPanel` replaces the Settings policy card/field composition with a new ten-column
+table, header treatment, and modal button styling. A-092 explains component extraction but cannot
+override FRONTEND_DESIGN_RULES' no-redesign/no-new-table rule. `007N` retains real API truth and
+authority states while restoring the closest existing card/form composition.
+
+#### Finding 5 - Medium judgment call - Navigation authority has two manifests
+
+Sidebar visibility and direct-route guards independently repeat alternative register/matrix
+permissions. Tests currently align them, but the duplication weakens locality and can drift.
+`007N` gives both consumers one navigation manifest while preserving panel-level canonical checks.
+
+#### Finding 6 - Low judgment call - A regression pins Django's generated SQL
+
+The 007H3 query regression requires exactly three approval-case queries and literal SQL fragments.
+Its public parity assertions are valuable, but codebase-design §§26.1-26.2 prefer observable
+module behavior over ORM internals. `007K` replaces this brittle assertion with public outcome and
+bounded-work evidence.
+
+### Spec
+
+#### Finding 1 - High - Empty frozen review facts still fall back to mutable appraisal truth
+
+`serialize_case_detail` synthesizes `review_facts` from the live appraisal when
+`appraisal_facts_json` is empty, and `_matrix_projection_is_coherent` likewise validates live
+review date/recommended amount in that state. A malformed empty frozen review object can therefore
+remain routable and change with later appraisal edits. This contradicts 007H3 requirements 1-2/4
+and the digest's “freezes all required provenance plus review_facts” claim. `007K` makes the frozen
+object mandatory and fail-closed across detail/action/decision/register boundaries.
+
+#### Finding 2 - High - S24 treats case document ids as currently referenceable
+
+When no new files are chosen, the workbench resubmits the three ids from
+`general_meeting_approval` and describes them as existing referenceable evidence without a current
+document-owned selection decision. This conflicts with 007I's explicit rule that case/register
+metadata grants neither reference nor download authority. The backend does revalidate each file,
+so this is not an authorization bypass, but the frontend claim/affordance is still false. `007L`
+requires a document-owned selector or three new accepted uploads and keeps backend validation
+authoritative; it supersedes the over-broad wording in A-090.
+
+#### Finding 3 - Medium - S22 omits immutable per-approver action history
+
+The UI renders required approver name/role/decision but drops `approval_actions` comments and
+`acted_at`. S22 requires decision, date/time, comment, confirmation, and abstention reason per
+approver, and the epic requires immutable history display. `007L` renders the complete action
+ledger separately from frozen route/effective/excluded authority.
+
+#### Finding 4 - Medium - S21 is only a compact case picker, not the required workbench queue
+
+The pending request omits explicit `approval_type=sanction` and `current_status=pending`; each row
+shows only reference, cycle, amount, action count, and status. S21 also requires borrower/type,
+requested/recommended/eligible amounts, approval path, exception/related flags, risk, submitted
+date, and TAT. `007L` extends the frozen list projection and renders those facts without N+1 live
+reads or client-owned TAT policy.
+
+#### Finding 5 - Medium - S25 drops available decision and supporting-document evidence
+
+The Exception Register API already returns complete `approval_actions`, but S25 does not render
+their comments/time. The source also requires supporting documents, while the current entry/API
+has no immutable document association at all. `007M` adds a document-owned exact-application
+reference seam, freezes accepted metadata on the entry/cycle, and renders both evidence groups
+without granting download from register visibility.
+
+### Evidence, functional coverage, and state
+
+007I added a deterministic Playwright spec and promised external two-run acceptance, but its slice
+does not declare `localhost-e2e-server`; the orchestrator therefore recorded E2E as skipped and no
+trusted screenshots exist. 007J/007J2 likewise retain genuine sandbox-denied server attempts but
+no external browser contract. `007L`, `007M`, and `007N` declare exact specs/screenshots so the
+trusted gate runs twice instead of accepting collection-only/local evidence.
+
+M05-FR-001/003-012 remain substantive at the backend workflow boundary, subject to 007K's frozen-
+truth correction. M05-FR-002 is only partial at the frontend until the complete S21 queue and S22
+history land; M05-FR-006's generated exception decision is substantive but S25 supporting evidence
+is partial until 007M. No material scope creep was found. No ADR was added because the source and
+existing deep-module/API-client rules already decide the corrections.
+
+Summary: Standards found 4 High issues, 1 Medium judgment call, and 1 Low judgment call; the worst
+is the circular selector/approval-engine seam combined with mutable fallback. Spec found 2 High and
+3 Medium issues; the worst is live appraisal truth still authorising a cycle with missing frozen
+review facts.
+
+## 2026-07-13 22:42 - Architecture Review 2026-07-13_222951_architecture_review
+
+Reviewed completed work since architecture-review commit `c843ea8`:
+- `007F2-exception-routing-coherence-and-explicit-projection-closure` (`14bb8d9`)
+- `CR-004-member-governance-container-recurring-ci-timeout` (`241ff25`)
+- `007G2-general-meeting-current-evidence-and-document-scope-closure` (`9f98060`)
+- `007H2-sanction-decision-and-register-object-scope-closure` (`5ea122b`)
+
+The review checked `git diff c843ea8...HEAD`, every production/test hunk, retained RED/GREEN and
+full-gate evidence, the four slice/CR contracts, the Epic 007 digest, cited API/auth/data-model/
+functional/codebase-design sections, and M05-FR-003/006/009/012. Standards and spec fidelity ran
+as independent passes. Two injected public HTTP probes reproduced the significant frozen-
+provenance defect without changing production code. `CONTEXT.md` remains truthful; state and slice
+files contain no Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - High - Frozen case validity still follows the mutable live appraisal
+
+`approval_case_engine._loan_limit_provenance_is_complete` compares the case's immutable
+`loan_limit_provenance_json` to the current `LoanAppraisalNote.loan_limit_snapshot_json`. A later
+appraisal edit therefore changes whether the old case is routable even though 007F2 deliberately
+removed the save signal and leaves its stored coherence/read index untouched. The public probe
+changed only live `policy_name`; case detail changed from 200 to `404 NOT_FOUND`. On a terminal
+case, detail returned 404 while the same actor's sanction decision and register remained 200 with
+one row because 007H2's selector trusted the stored projection. This violates codebase-design
+§13.1's frozen cycle invariant and §27.1's single deep approval boundary. `007H3` owns frozen-only
+validation and detail/action/decision/register parity before counts and pagination.
+
+#### Finding 2 - Low judgment call - Sensitivity well-formedness substitutes for a finer role matrix
+
+The independent Standards pass noted that `documents/services.py` accepts all four valid
+sensitivity values for every actor in the source-named legal audience, while auth §32.1 says
+sensitivity must be allowed for the actor's role. The negative test corrupts a row to
+`unsupported`, so it does not discriminate two valid sensitivities. This review does not classify
+that as an implementable hard defect: source §19.4 names the Legal audience but no finer
+role/sensitivity pairs, and A-085 explicitly records the DECISION_POLICY-compliant choice to accept
+each source-defined value rather than invent compliance policy. Governance must make any narrower
+matrix explicit/configurable; the current legal-category/application/workflow/role checks remain
+substantive.
+
+#### Finding 3 - Low judgment call - The complete exception tracer is too broad for failure locality
+
+The public exception tracer in `test_sanction_submission_api.py` spans enrichment/replay, General
+Meeting supersession, three actions, two registers, decision reads, and cross-case scoping in one
+very long test. Its assertions are real and the end-to-end proof is valuable, but codebase-design
+§26.2 favours focused observable tests. `007H3` requires splitting the scope/parity regressions
+while retaining one full tracer; no separate slice is justified.
+
+### Spec
+
+#### Finding 1 - High - 007F2's frozen-history requirement is false and 007H2 exposes split authority
+
+007F2 requirement 4 says direct appraisal saves cannot silently change read authority and
+historical cycles keep frozen facts. The shipped regression asserts only that the stored Boolean/
+index do not mutate; it never performs a public read after the save. The executable probe proves
+the full canonical validator then rejects the case from live-snapshot mismatch. 007H2 requirement
+5 additionally says its reads use the coherent-case interface rather than treating the stored
+Boolean as authority, yet decision/register remain visible while detail is hidden. `007H3` adds
+pending, returned/new-cycle, terminal, and malformed-frozen-snapshot public matrices.
+
+#### Finding 2 - High evidence gap - CR-004's hosted-CI acceptance remains unproved
+
+CR-004 requires the resulting `staging` push and PR #5 frontend check to be green. Its retained
+review packet explicitly leaves both as post-push follow-up, while the slice is Complete. The
+suite-local 15-second budget, unchanged assertions, one-worker command, ten repeated journeys, and
+full local gates substantively address the code-side failure, but local Vitest evidence cannot
+prove the mandatory hosted-run criterion. This sandbox has no network and the repository contains
+no trusted status artifact, so no additional code slice is invented; the owner/orchestrator must
+confirm and retain the external check before promotion.
+
+#### Finding 3 - Medium judgment call - No valid-but-role-disallowed sensitivity row exists
+
+The independent Spec pass read 007G2 requirement 3 literally and flagged that its
+“disallowed-sensitivity” row uses an invalid database literal rather than a valid sensitivity
+forbidden to one role. A-085 documents why such a row cannot yet be source-derived: no finer
+role/sensitivity matrix exists. The implemented exact application, legal category, matching valid
+sensitivity, legal audience, workflow, case scope, and permission matrix satisfies the available
+source facts; a future narrower policy must replace A-085 explicitly rather than being guessed here.
+
+No material scope creep was found. M05-FR-003 and M05-FR-006 remain substantively exercised by the
+real exception workflow; M05-FR-012 is substantive through current/frozen meeting evidence and the
+document-owned seam; M05-FR-009 generation and actor-scoped reads are substantive. `007H3` is still
+required for frozen-history/read-boundary consistency, not for the functional outcomes themselves.
+
+No ADR was added: data-model §15.3, codebase-design §13.1, and 007F2 already decide frozen-cycle
+ownership. `007I` now depends on `007H3` and carries the old/new-cycle UI contract. `007J` was
+sharpened to remove unsupported borrower use of the internal §25.8 endpoint; MP12 remains on the
+member-owned application status until a separately authorised outcome/terms projection is sliced.
+
+Summary: Standards found 1 High issue and 2 Low judgment calls; the worst is mutable appraisal data
+hiding a frozen case. Spec found 2 High issues and 1 Medium judgment call; the worst shipped defect
+is the false frozen-history/read-parity claim, while CR-004 separately lacks mandatory external
+acceptance evidence.
+
+## 2026-07-13 20:10 - Architecture Review 2026-07-13_200023_architecture_review
+
+Reviewed completed product work since architecture-review commit `b32559c`:
+- `007E2-conflict-authority-projection-and-scope-closure` (`ad2391b`)
+- `007F-exception-approval-workflow` (`910c7c3`)
+- `007G-general-meeting-evidence-for-special-cases` (`aacb9b3`)
+- `007H-credit-sanction-register` (`78d912f`)
+
+The review checked `git diff b32559c...78d912f`, production/test hunks, retained RED/GREEN and
+full-gate evidence, the Epic 007 slice files/digest, cited auth/API/data-model/functional/codebase-
+design sections, and M05-FR-003/006/009/011/012. Standards and spec fidelity ran as independent
+passes. Commit `ac1846c` only queues CR-004 and was excluded from completed product findings.
+`CONTEXT.md` remains truthful; state and slice files contain no Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - Critical - Real exception enrichment persists an unroutable case
+
+007F now stores the Exception Register's distinct `business_reason` as `case.exception_reason`,
+but `approval_case_engine` still declares an exception snapshot coherent only when that value equals
+the separately authored `reason_for_approval`. The public test uses different source-valid values,
+then stops after enrichment. The projection therefore saves `routing_snapshot_is_coherent=false`;
+selectors hide the case and all approval actions return not-found. Later action tests manually attach
+an Exception Register row to the ordinary non-exception fixture, so the required submit -> enrich ->
+read -> decide tracer bullet never runs. This breaks the approval deep-module invariant and makes
+M05-FR-006 unusable despite green coverage. `007F2` owns coherent reason provenance and the complete
+public exception workflow.
+
+#### Finding 2 - High - Sanction reads turn role permission into global object access
+
+The §25.8 sanction-decision view and §25.9 Credit Sanction Register list check only their permission
+codes, then query by application or across all rows. They never call the case/application object-
+access decision. A Director legitimately seeded with `approvals.sanction.read` can retrieve any
+known application's financial decision, and register counts/pages disclose every row to any holder
+of the register permission. Auth §§15.9/19.2/32.1 limit Directors to assigned cases and explicitly
+deny unrelated applications. Tests remove the permission from the negative actor instead of using
+a same-permission, out-of-scope actor. `007H2` applies canonical scope before direct lookup, count,
+filters, and pagination.
+
+#### Finding 3 - High - General Meeting evidence accepts arbitrary existing document ids
+
+The recorder checks the global `documents.file.download` permission and then uses unrestricted
+`DocumentFile.objects.in_bulk`. It does not prove related-application access, file sensitivity,
+category, workflow stage, or same-application attribution as auth §§19.4/32.1 and 007G requirement 1
+require. The negative matrix covers a missing UUID and loss of the global permission only; a user
+can reference a restricted or cross-application file they cannot access. `007G2` moves the decision
+to a document-owned per-file interface and fails closed when relation/sensitivity cannot be proven.
+
+#### Finding 4 - Medium architecture - The explicit projection seam still has a hidden signal
+
+007E2 removed cross-table work from `ApprovalCase.save`, but `LoanAppraisalNote.post_save` still
+calls the approval projection updater and changes case coherence/read-index rows on an ordinary
+credit model save. The only “plain save” test exercises `ApprovalCase.save`, not the remaining
+signal. This contradicts 007E2 requirement 6 and weakens locality across the credit/approval seam.
+`007F2` removes the hidden signal, proves every approval-owned production writer explicitly
+refreshes, and preserves historical cycles from later live-appraisal changes.
+
+A direct private-helper test for forced exception validation also violates codebase-design
+§§26.1-26.2; `007F2` replaces it with public interface acceptance. Repeated pagination helpers are
+a locality judgment call, not yet a corrective slice: the implementations currently share the same
+bounded contract. A dedicated idempotency header for §25.11 was not required because source §45's
+explicit idempotent endpoint list omits General Meeting recording and payload replay is zero-write.
+
+### Spec
+
+#### Finding 1 - Critical - The exception predicate trusts a contradictory flag
+
+007F requirement 1 and M05-FR-006 require the reviewed recommendation to exceed the frozen eligible
+amount unless `force_exception_route` is true. Production trusts `exception_required_flag` without
+checking the two frozen amounts. Its test changes a ₹4,00,000 recommendation's flag to true while
+leaving the frozen eligible amount at ₹5,00,000, then expects an exceeds-limit entry. This blesses
+an impossible snapshot rather than proving the business predicate. `007F2` requires amount/flag
+agreement, zero-write contradictory-snapshot denial, and a distinct explicit forced route.
+
+#### Finding 2 - High - Pending/rejected General Meeting outcomes are absent from case detail
+
+007G requirement 4 says a rejected meeting blocks sanction and is surfaced on §25.4 case detail.
+Recording creates only the application-level evidence row. The case FK is assigned only on return
+or successful final approval, while detail serializes only that FK; pending and rejected current
+outcomes therefore always appear as null until an actor attempts the final action. Tests assert the
+409 error details but never GET detail after pending/rejected recording. `007G2` defines one current-
+while-pending/frozen-when-closed projection for case, action, and error responses.
+
+#### Finding 3 - Medium - 007G's “document the actor may access” acceptance is partial
+
+The same global-permission lookup in Standards Finding 3 does not satisfy 007G requirement 1's
+per-document wording. A-085 recorded the absence of a separate source matrix, but it cannot turn an
+unrelated file into accessible evidence. `007G2` implements the conservative document-owned access
+seam without granting downloads from case/register visibility.
+
+No material scope creep was found. 007E2's distinct effective authority/history and exact reader
+projection, 007F's register lifecycle/read model, 007G's final gate/frozen terminal reference, and
+007H's immutable 15-field generation are otherwise substantive. M05-FR-011 is materially closed by
+007E2. M05-FR-003/006 remain partial until `007F2`; M05-FR-012 remains partial until `007G2`;
+M05-FR-009 generation is substantive but read confidentiality remains partial until `007H2`.
+
+No ADR was added: the slice requirements and source auth/codebase-design rules already decide
+exception truth, explicit projection ownership, current/frozen evidence, and object-level reads.
+`007I` now depends on `007H2`; `007I`/`007J` were sharpened with the corrected evidence and row-
+scope contracts.
+
+Summary: Standards found 1 Critical, 2 High, and 1 Medium architecture issue; the worst is the
+unroutable real exception workflow. Spec found 1 Critical, 1 High, and 1 Medium issue; the worst is
+the contradictory exception predicate accepted as source-valid.
+
 ## 2026-07-13 17:04 - Architecture Review 2026-07-13_164911_architecture_review
 
 Reviewed completed product work since architecture-review commit `48ef331`:

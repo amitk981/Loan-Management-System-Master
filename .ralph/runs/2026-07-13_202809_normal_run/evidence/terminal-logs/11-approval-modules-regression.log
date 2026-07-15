@@ -1,0 +1,32 @@
+Creating test database for alias 'default'...
+Found 128 test(s).
+System check identified no issues (0 silenced).
+.F..................................................................................................................F.......ssss
+======================================================================
+FAIL: test_above_threshold_snapshots_cfo_and_two_directors (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_above_threshold_snapshots_cfo_and_two_directors)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 938, in test_above_threshold_snapshots_cfo_and_two_directors
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "The frozen loan-limit exception flag contradicts the reviewed amount.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-13T15:11:09.919928Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3382, in test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change
+    self.assertEqual(
+AssertionError: Lists differ: [] != ['94b4918d-7f0f-46c8-be48-d01d793b6d90']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'94b4918d-7f0f-46c8-be48-d01d793b6d90'
+
+- []
++ ['94b4918d-7f0f-46c8-be48-d01d793b6d90']
+
+----------------------------------------------------------------------
+Ran 128 tests in 2.943s
+
+FAILED (failures=2, skipped=4)
+Destroying test database for alias 'default'...

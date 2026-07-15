@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 57 test(s).
+System check identified no issues (0 silenced).
+.........................E.............F.......ssssssssss
+======================================================================
+ERROR: test_distinct_company_secretary_accepts_submitted_prf_and_freezes_evidence (sfpcl_credit.tests.test_cdsl_share_pledge_api.CDSLSharePledgeApiTests.test_distinct_company_secretary_accepts_submitted_prf_and_freezes_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_cdsl_share_pledge_api.py", line 287, in test_distinct_company_secretary_accepts_submitted_prf_and_freezes_evidence
+    self.assertNotIn("pledgor_bo_account_hash", frozen)
+                                                ^^^^^^
+NameError: name 'frozen' is not defined
+
+======================================================================
+FAIL: test_stale_cross_member_and_conflicting_bank_facts_block_atomically (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_stale_cross_member_and_conflicting_bank_facts_block_atomically)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 557, in test_stale_cross_member_and_conflicting_bank_facts_block_atomically
+    self.assertEqual(pending.status_code, 400, pending.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"blank_dated_cheque_id": "09676fb0-e4a7-40ac-8fb8-229f906d73a8", "security_package_id": "21a3b8a4-f422-496f-a4db-eed429df79d3", "member_id": "0bc0b904-538d-4d76-a9eb-fb4ed35865b5", "bank_account_id": "a9286508-581d-4982-95ad-faea0dd9ff70", "cancelled_cheque_id": "435e255c-319e-42b8-97b0-7b0207598332", "cancelled_cheque_document_id": "3145f1c8-3398-4e8b-9d67-5b1c3d0899ae", "cancelled_cheque": {"masked_bank_account": "********4321", "ifsc": "HDFC0001234", "branch_name": "Nashik", "verification_status": "verified"}, "cheque_number": "******", "document_id": null, "cheque_status": "collected", "custody_location": null, "collected_at": "2026-07-15", "prepared_by_user_id": "f45b4064-9ab4-4702-b2ad-41cdcad32eed", "custodian_user_id": null, "custody_evidence": null}, "meta": {"request_id": null, "timestamp": "2026-07-15T04:25:26.286933Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 57 tests in 5.480s
+
+FAILED (failures=1, errors=1, skipped=10)
+Destroying test database for alias 'default'...

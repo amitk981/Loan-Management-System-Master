@@ -1,0 +1,9 @@
+Command: focused MP11 Playwright spec with one worker
+Exit code: 1 (sandbox environment; test body did not execute)
+
+The Django ready endpoint returned 200 and one Chromium test was selected. Chromium then exited
+before the test body because macOS denied its Mach port registration:
+
+FATAL: mach_port_rendezvous.cc(399) bootstrap_check_in ... Permission denied (1100)
+
+No screenshot was fabricated. The slice-declared outside-sandbox browser gate remains authoritative.

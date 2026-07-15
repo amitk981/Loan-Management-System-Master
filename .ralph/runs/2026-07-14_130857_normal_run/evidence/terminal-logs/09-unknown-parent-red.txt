@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_unknown_application_is_404_only_after_role_and_permission_authority (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_unknown_application_is_404_only_after_role_and_permission_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 796, in test_unknown_application_is_404_only_after_role_and_permission_authority
+    self.assertEqual(response.status_code, 404, response.content)
+AssertionError: 403 != 404 : b'{"success": false, "error": {"code": "OBJECT_ACCESS_DENIED", "message": "You do not have access to this loan application.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-14T07:47:24.545987Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

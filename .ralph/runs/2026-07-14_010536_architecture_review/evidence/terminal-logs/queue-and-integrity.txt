@@ -1,0 +1,8 @@
+PASS: git diff --check
+PASS: .ralph/state.json parses as JSON
+PASS: 007K runtime capability declaration valid
+PASS: 007L runtime capability declaration valid
+PASS: 007M runtime capability declaration valid
+PASS: 007N runtime capability declaration valid
+PASS: every pending slice has a recognized status and real Depends On ids; dependency graph drains
+PASS: no protected path or docs/source file appears in git status

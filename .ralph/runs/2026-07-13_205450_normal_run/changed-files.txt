@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007G2-general-meeting-current-evidence-and-document-scope-closure.md
+ M docs/slices/007H2-sanction-decision-and-register-object-scope-closure.md
+ M docs/slices/CR-004-member-governance-container-recurring-ci-timeout.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M sfpcl-lms/package.json
+ M sfpcl-lms/src/pages/members/MemberGovernanceForm.container.test.tsx
+?? .ralph/runs/2026-07-13_205450_normal_run/

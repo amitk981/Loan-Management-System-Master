@@ -1,0 +1,22 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_final_documentation_approval_api (unittest.loader._FailedTest.test_final_documentation_approval_api) ... ERROR
+
+======================================================================
+ERROR: test_final_documentation_approval_api (unittest.loader._FailedTest.test_final_documentation_approval_api)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_final_documentation_approval_api
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_030045_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 7, in <module>
+    from sfpcl_credit.legal_documents.models import (
+ImportError: cannot import name 'ChecklistAction' from 'sfpcl_credit.legal_documents.models' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_030045_normal_run/sfpcl_credit/legal_documents/models.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

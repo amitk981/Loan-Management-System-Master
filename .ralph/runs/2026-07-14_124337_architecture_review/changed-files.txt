@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008D-stamp-duty-and-notarisation-tracking.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-14_124337_architecture_review/
+?? docs/slices/008B4-renderer-provenance-and-replay-contract-closure.md
+?? docs/slices/008C2-checklist-lifecycle-authority-and-side-effect-closure.md

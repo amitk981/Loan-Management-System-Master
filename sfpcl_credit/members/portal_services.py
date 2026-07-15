@@ -9,6 +9,7 @@ from django.db.models import Sum
 from sfpcl_credit.members.models import BankAccount, KycProfile, ProduceSupplyRecord
 from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
 from sfpcl_credit.credit.modules.borrower_limit_projection import project_borrower_limit
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 PORTAL_PERMISSION_ERROR = "Borrower portal data is available only to active member portal users."
@@ -310,6 +311,25 @@ def _application_timeline(application):
                 "event": "Deficiency raised",
                 "at": _datetime(application.updated_at),
                 "owner": "SFPCL",
+            }
+        )
+    resubmission = (
+        WorkflowEvent.objects.filter(
+            workflow_name="loan_application",
+            entity_type="loan_application",
+            entity_id=application.pk,
+            from_state=LoanApplication.STATUS_INCOMPLETE_RETURNED,
+            to_state=LoanApplication.STATUS_SUBMITTED,
+        )
+        .order_by("-created_at", "-workflow_event_id")
+        .first()
+    )
+    if resubmission is not None:
+        events.append(
+            {
+                "event": "Application resubmitted",
+                "at": _datetime(resubmission.created_at),
+                "owner": "Borrower",
             }
         )
     return events

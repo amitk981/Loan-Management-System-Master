@@ -1,5 +1,404 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007T Register Null Contract and Action Order Closure
+
+- S23's frontend DTO, component fixture, and trusted-browser route now match the retained backend
+  serializer exactly: legacy `purpose`/`risk` are top-level null, folio/loan type and terminal facts
+  remain nullable, approver arrays remain empty, and the existing detail composition renders the
+  unavailable treatment without reconstruction or live reads.
+- S21 action submission, canonical detail refresh, queue-row replacement, optional sanction-decision
+  refresh, and error projection now share the existing queue/detail generation predicate. A newer
+  success, denial, malformed response, or empty filter state cannot be replaced by a delayed action
+  POST/detail/decision outcome.
+- Component fixtures use exact full non-final pages, all 293 frontend tests pass, and the browser
+  contract retains every 007S output while adding `sanction-action-filter-race.png` and
+  `credit-sanction-register-legacy-null.png` for independent orchestrator execution.
+
+## Architecture Review 2026-07-14 09:31 - Exact Legacy UI and Action Ordering
+
+- 007R correctly emits top-level null `purpose`/`risk` for historical S23 rows, but 007S's frontend
+  types and fixtures replace those values with objects containing null members. The selected detail
+  dereferences both and can crash on the real response. `007T` uses the exact backend payload and
+  preserves the existing unavailable-value composition without reconstruction.
+- Ordinary S21 list/detail/decision reads are generation-guarded, but the action path performs a
+  separate unguarded detail/decision refresh. `007T` makes a newer page/filter/error/empty state
+  authoritative over a delayed post-action response and replaces impossible one-row/non-final-page
+  component fixtures with exact valid pagination.
+- M05 backend history, decision, register, conflict, and communication behavior remains substantive.
+  M05-FR-002/009 historical UI fidelity is reopened only until 007T; no new business rule or durable
+  architecture decision is introduced.
+
+## 007S Register Pattern and Pagination Order Closure
+
+- Shared authenticated pagination now accepts only the exact item count implied by a standard
+  empty, first, middle, or final page. Under-filled/excess pages, zero-total rows, impossible page
+  counts, and contradictory navigation flags fail as malformed success responses.
+- S21 generation-guards list, detail, and sanction-decision reads. Older page/filter/detail success,
+  denial, malformed, and empty results cannot replace the latest queue, total, selection, detail,
+  decision, error, or empty state; current denial/error clears all stale facts atomically.
+- S23/S25 restore their pre-007Q scan-table headers and place complete selected-row evidence in the
+  retained loan-page card/detail composition. All 007Q fields remain visible, legacy nulls use the
+  existing unavailable-value pattern, and supporting-document metadata creates no download action.
+- Approval-case actor/type/status/assignment shaping, stable ordering, counting, page normalization,
+  and slicing now live in the selector. The engine remains the only canonical frozen-schema and
+  actor-scope validator, so malformed stale-true candidates create no totals or page holes.
+- The three trusted browser specs retain the four declared outputs, prove delayed S21 ordering and
+  null-safe selected register evidence, and share one screenshot-quality analyser.
+
+## 007R Legacy Approval History and Frozen Identity Closure
+
+- New credit-owned review packages are honestly versioned `approval-review-v3`. Exact pre-007O
+  v2 packages retain canonical actor-scoped list/detail/history reads, but approve/reject are
+  disabled with a remediation-required blocker and exact zero-write conflict. Return, correction,
+  independent review, and resubmission create a new v3 cycle without rewriting v2 history.
+- Unknown schemas and malformed v3 packages remain nondisclosing. Terminal validation still runs
+  under the locked action transaction, and the existing optimistic-version, audit/workflow,
+  communication, register, and race semantics are unchanged.
+- Formal approver names now come only from the immutable route package or a nullable action-time
+  display snapshot. Legacy unavailable names remain null; user ids remain attributable. No approval
+  history or register generation reloads a live user name.
+- Pre-007O/pre-007Q approved/rejected register rows with empty source, terminal, approver, or
+  communication JSON serialize actor-scoped stored facts plus explicit null/empty unavailable
+  values. They neither raise nor reconstruct data from current member/application/appraisal/users.
+
+## Architecture Review 2026-07-14 06:42 - Schema Evolution and Frontend Contract Closure
+
+- Review range `4b5b4b1..15b8d02` confirms 007O freezes new terminal decisions/registers, 007P
+  preserves server pagination and narrows candidate validation, and 007Q restores the missing
+  S23/S25 facts with reviewable two-run screenshots.
+- The expanded frozen package remained labelled `approval-review-v2`; immediately older v2 cases
+  lack its new terminal keys and become unreadable/unactionable. Older register rows receive `{}`
+  source JSON but the new serializer indexes nested keys. `007R` versions the schema, preserves
+  actor-scoped history/null semantics, provides only return/correct/review/new-cycle remediation,
+  and freezes approver display identity without live user reads.
+- Shared pagination still accepts an under-filled final page, and S21 has no stale-request guard.
+  The new four-column S23/S25 table makes evidence visible but violates the fixed no-new-table/
+  layout rule. `007S` closes response ordering/remainder validation and restores an existing
+  table-plus-detail composition with the same trusted evidence.
+- M05-FR-001/007/009 are reopened only for pre-existing history until 007R. The other M05
+  requirements remain substantive, and no Blocked slice or new durable architectural decision was
+  found.
+
+## 007Q Register Source Fields and Visual Evidence Closure
+
+- New credit review packages freeze folio and requested loan type alongside the existing borrower,
+  amount, purpose, and risk facts. S23 retains a formal `CSR-<UUID>` number, immutable per-approver
+  comments/times, explicit rejection/conditions null semantics, and the terminal communication
+  id/status/sent time; legacy facts are null when they cannot be proven.
+- S25 freezes borrower, routed reviewed amount as financial impact, requesting actor identity/name,
+  and terminal decision date beside the existing reason/risk/action/document metadata. Later live
+  profile/application changes cannot rewrite either register.
+- S23/S25 now use the retained register card/detail composition rather than a horizontally hidden
+  evidence table. Both declared browser specs require the evidence block inside a 1280x720 viewport,
+  emit the three 007Q filenames, and reject a high opaque-dark ratio or low-colour capture.
+- Document ids/file names remain metadata only. Neither register visibility nor global document
+  permission creates a download action; strict 007P pagination remains unchanged.
+
+## 007P Sanction Queue Pagination and Read-Boundary Closure
+
+- The shared authenticated collection interface now rejects non-array data and missing, malformed,
+  negative, or internally inconsistent top-level pagination. It never substitutes an empty page for
+  malformed success.
+- S21 sends `approval_type=sanction`, explicit `page/page_size=20`, and the exact pending assignment
+  or historical status filter on every page. It renders the server total, exposes the retained
+  previous/next button pattern, resets filters to page one, and clears rows/totals on access or
+  response failure.
+- Approval collection rejects unknown type/status values. Coarse actor/type/status/assignment
+  narrowing precedes the canonical frozen/read-scope decision, but every countable candidate still
+  crosses it before totals/pages/serialization. Instrumented cross-page evidence proves stale-true
+  malformed candidates create neither holes nor leaked totals and irrelevant candidates cause no
+  validator calls.
+- The declared S21 browser contract now supplies a standard multi-page envelope, navigates and
+  filters while retaining scope parameters, rejects a malformed envelope, and owns
+  `sanction-paginated-filtered-queue.png` in the orchestrator's two trusted runs.
+
+## Architecture Review 2026-07-14 04:00 - Terminal Truth, Pagination, and Register Fidelity
+
+- Review range `d106e16..eab8b0d` covered completed slices 007K-007N. Frozen review-package reads,
+  authenticated transport consolidation, immutable action/evidence projections, configuration-
+  owned matrix authority, and the declared trusted-browser runs are substantive.
+- Final approval and register generation still consume mutable appraisal/application/member rows
+  after routing. `007O` requires every terminal decision/register value to come from the exact
+  frozen review package, makes malformed packages zero-write, and routes General Meeting reads
+  through the same canonical case-read boundary.
+- S21 sends the right filters but truncates at a fixed first 100 rows and drops pagination metadata;
+  the shared paginated client can also fabricate empty metadata for malformed success responses.
+  `007P` requires typed pagination end-to-end, strict malformed-response failure, full filtered
+  navigation, and safe SQL narrowing backed by public-behavior validation rather than query-count-
+  only proof.
+- S23/S25 omit source-required register facts and retained screenshots can hide the right-side
+  contract behind opaque or off-viewport regions. `007Q` adds the available formal-entry/folio,
+  loan/purpose, approver-date, rejection/condition/communication, borrower, financial-impact,
+  requested-by, and decision-date facts; its trusted screenshots must visibly prove those fields.
+- Source S71 also names rule/abstention/special-case/Board-reference semantics that no current
+  owner model supplies. No business rule was invented; that gap remains an explicit future
+  governance/model concern. M05-FR-007 is reopened pending 007O, while 001-005/008/010-012 remain
+  substantive and 006/009 remain partial.
+
+## 007O Frozen Terminal Decision and Register Source Closure
+
+- The credit-owned `approval-review-v2` package now also freezes member/application identity and
+  the reviewed tenure, interest-type, and security recommendation used by a sanction decision.
+  Numeric rate, repayment, charge, penal-rate, and condition facts remain the honest A-079
+  nullable/empty values because no governed frozen owner supplies them.
+- The locked final action revalidates canonical frozen truth before the immutable action and again
+  immediately before decision/register creation. Approved decisions and both approved/rejected
+  register rows copy only routed facts; the register retains the exact review package so purpose
+  and risk cannot be replaced by later live owner edits.
+- Missing/malformed terminal truth rolls the whole transaction back without action, decision,
+  register, audit, workflow, communication, or notification writes. General Meeting availability
+  and mutation now consume `approval_case_is_readable` rather than independently recomposing
+  routability plus actor scope.
+
+## 007N Register, Matrix, and Settings Contract and Browser Closure
+
+- The shared authenticated frontend client now owns JSON and multipart headers, request ids,
+  standard envelope/error parsing, malformed responses, and typed pagination. The S23/S25/S71
+  feature service retains only exact paths, filters, payloads, and DTOs; each scoped response still
+  atomically replaces rows and pagination.
+- Approval-matrix list rows project configuration-owned `authority_summary` and
+  `minimum_approver_count`. React renders them verbatim and contains no Director/cardinality
+  calculation. Sidebar visibility and direct-route guards consume one navigation permission
+  manifest while every panel keeps its canonical resource permission.
+- S70 policy truth is restored to the approved card/field composition with complete retained API
+  values, read-only/manager authority, complete create-only draft successor behavior, and no
+  fixture or ten-column table. The 008A template and 012EA TAT panels remain explicit and inert.
+- `e2e/approval-register-settings.e2e.spec.ts` owns the six named scoped-register, matrix reader/
+  successor, loan-policy reader, and deferred-panel screenshots. Collection passes; the local
+  servers reached readiness but Chromium hit the expected macOS Mach-port sandbox denial, so no
+  screenshot was fabricated and the declared two-run orchestrator contract remains authoritative.
+
+## 007M Exception Supporting Evidence and Register Closure
+
+- Exception enrichment now accepts an optional bounded ordered list of distinct document ids. The
+  documents-owned boundary proves public upload, exact application, legal category, matching
+  sensitivity, document permission, source audience, workflow context, and canonical object scope;
+  approvals never imports or queries `DocumentFile`.
+- Accepted files freeze only immutable display metadata on the exact Exception Register cycle.
+  Omitted evidence stays empty, exact ordered replay is zero-write, changed replay conflicts, and
+  initial association is attributable in the locked creation audit/workflow evidence.
+- S25 now renders distinct description/business reason, every immutable action actor/decision/
+  comment/time, and supporting metadata in its existing table composition. It exposes no mutation
+  or inferred download authority. `e2e/exception-register-evidence.e2e.spec.ts` owns the two named
+  supporting-evidence and denied-action trusted screenshots.
+
+## 007L Sanction Workbench Contract and Browser Closure
+
+- The credit-owned `approval-review-v2` package now freezes borrower name/type alongside the
+  complete 007K review truth. Approval-owned collection/detail serialization validates that schema
+  and exposes one `workbench_summary` containing all S21 row facts, frozen authority/flags/risk,
+  immutable partial-decision state, submitted time, and an honestly labelled elapsed-pending fact.
+  It never reconstructs missing facts from live appraisal/member/configuration rows and makes no
+  target/breach claim before 012EA.
+- S21 sends `approval_type=sanction` on every collection; the assigned queue also sends
+  `current_status=pending&assigned_to_me=true`. S22 renders immutable actor/role/decision-or-
+  abstention/comment/time history separately from required/effective authority, while actions remain
+  the intersection of server resource availability and `/auth/me` permission.
+- Authenticated JSON and multipart calls now share one frontend transport seam for session,
+  authorization, envelope parsing, and normalized errors. Sanction feature code owns only typed
+  paths/payloads/form fields. Changed General Meeting evidence always requires three fresh accepted
+  application-scoped legal uploads; case/register metadata ids are never described or reused as
+  document authority.
+- `e2e/sanction-workbench.e2e.spec.ts` is the declared trusted contract for the seven named pending,
+  approved, rejected, returned, empty, denied, and error screenshots. It opens the production route
+  inside the app shell, asserts exact collection parameters/history, and rejects live appraisal or
+  policy requests.
+
+## 007K Frozen Review Snapshot and Selector Boundary Closure
+
+- Credit now assembles the complete sanction review package while holding the application,
+  appraisal, review-history, and risk rows used for enrichment. Approvals persists that returned
+  object byte-for-byte and never regenerates detail facts from mutable live records.
+- Canonical validity requires the complete typed review schema, a persisted immutable review link,
+  exact reviewer/provenance consistency, UUID-shaped nested identifiers, a timezone-aware assessed
+  timestamp, exact application references, and amount/provenance agreement. Empty, partial,
+  malformed, unlinked, or inconsistent facts nondisclose before case/register filters, counts,
+  pagination, serialization, or writes even when stored projections remain stale-true.
+- `approval_case_selector` now only shapes coarse actor-scoped queries. The approval engine owns
+  the single frozen-valid/read-scope decision used by collection, detail, actions, sanction
+  decision, Exception Register, and Credit Sanction Register; selector-to-engine imports and
+  literal-SQL tests are gone.
+- New credit-owned packages carry an exact schema version and immutable review-decision provenance.
+  Legacy 0011/0012 reconstructions were populated partly from then-current mutable rows and carry no
+  such proof, so the canonical boundary deliberately leaves them nondisclosing. This isolated
+  worktree has no migrated application database to inspect; no unproven backfill was invented.
+
+## Architecture Review 2026-07-14 01:17 - Frozen Review and Frontend Contract Closure
+
+- 007H3 removed live loan-limit comparison, but an empty `appraisal_facts_json` still makes
+  coherence/detail fall back to mutable appraisal review fields. Its selector also imports the
+  engine that imports it. `007K` makes frozen review facts mandatory, restores one-way
+  engine-to-selector flow, and replaces literal ORM-query assertions with public boundary proof.
+- 007I's action authority and canonical refetch are substantive, but S21 remains a compact picker
+  without its full frozen queue facts or explicit sanction filter, and S22 drops immutable action
+  comments/times. Case meeting ids are also described as referenceable without a current document
+  decision. `007L` closes those contracts, deepens the shared upload client, and declares the seven
+  trusted browser screenshots that 007I never caused the orchestrator to run.
+- 007J's scoped S23/S25 reads and 007J2's real/create-only policy boundary are substantive. The
+  register client duplicates auth/envelope transport, the matrix UI derives approval counts, the
+  policy panel departs from the approved Settings composition, and S25 omits action/supporting-
+  document evidence. `007M` owns immutable exception documents/comments; `007N` owns shared
+  pagination transport, server-projected matrix display facts, navigation locality, Settings
+  fidelity, and trusted register/settings browser evidence.
+- M05-FR-001/003-012 remain substantive at the workflow boundary subject to 007K. M05-FR-002's UI
+  is partial until 007L; M05-FR-006's decision/register lifecycle is substantive but its S25
+  supporting evidence remains partial until 007M.
+
+## 007J2 SettingsHub Remaining Panels
+
+- S70 and M01 make loan product, share/scale, interest, approval threshold, re-KYC, retention, and
+  related policy facts versioned configuration. SettingsHub now reads the retained 003E/006C
+  `LoanPolicyConfig` collection and allows only `config.loan_policy.manage` actors to POST a
+  complete new draft version; it never patches active truth or exposes client-side activation, so
+  stale form state cannot overwrite a retained row. The 003E POST has no expected-version token;
+  007J2 does not fabricate a stale-write response or a single-draft business rule.
+- S71 names approval rules only. Its delivered 007J panel remains independent. The prototype's
+  illustrative workflow TAT rows have no cited configuration boundary and are explicitly inert
+  until 012EA owns authoritative task/due/escalation generation.
+- S72 requires document files, borrower variants, approval/effective facts, and retained history.
+  Those fixtures/actions are inert until 008A; 003F communication content is not treated as an S72
+  document-template substitute. S73's duplicate tab and fixtures are removed in favor of the
+  existing 002G/002G2 Admin User Management authority.
+
+## 007J Registers and Approval Matrix UI
+
+- RegistersHub S23 and S25 now use independent authenticated clients for the actor-scoped 007H and
+  007F collections. Filters reset to page one; every response replaces rows and pagination without
+  cross-endpoint repair, stale totals, live-case reads, or client authority/money calculations.
+- S23 renders all 15 frozen register facts, including distinct sanction reasons and exception
+  business reason, conflict/abstention facts, and General Meeting metadata without creating case or
+  document actions. S25 keeps description and business reason separate. Both fail closed across
+  loading, empty, denied, error, filtered, and normalized-page states.
+- SettingsHub S71 lists retained 007A rule versions. `approvals.matrix.manage` exposes a complete
+  successor form whose PATCH creates a pending maker-checker proposal; it never overwrites the
+  active rule or fabricates activation. Canonical register/matrix permissions now reach the existing
+  navigation gates. Export is visible only with `reports.export` and remains an explicit no-request
+  deferred state until 012B/012C.
+
+## 007I Sanction Workbench UI
+
+- S21/S22/S24 now consume the authenticated approval-case queue/detail/action and sanction-decision
+  boundaries. The workbench renders the frozen ten-point review projection, required/excluded
+  authority, action history, exception and conflict facts, and current-pending versus cycle-frozen
+  General Meeting evidence without live appraisal/register reconstruction.
+- Decision controls follow the existing Approval Panel composition and intersect only enabled
+  resource actions with `/auth/me` permissions. Reject/return reasons, stale writes, conflict/gate
+  denials, server field errors, read-only history, and terminal outcomes retain their canonical
+  server behavior; success refetches instead of fabricating completion.
+- Evidence-required case detail now projects `record_general_meeting_approval` as a backend-owned
+  resource action. The UI can upload three application-scoped legal files through the document
+  boundary and submit their distinct ids, while backend document-reference validation remains
+  authoritative. Deterministic browser coverage is authored for pending/special/conflict, approved,
+  rejected, returned, empty, denied, loading, and error states.
+
+## 007H3 Frozen Case Provenance and Read-Scope Parity Closure
+
+- Credit-owned enrichment remains the only point that validates the locked appraisal and complete
+  loan-limit source. The approval case freezes all required provenance plus `review_facts`; canonical
+  validity no longer compares an existing cycle with the mutable live appraisal snapshot or its
+  assessment-id field.
+- The explicit coherence/reader projection is database narrowing only. Every narrowed candidate now
+  crosses the same approval-owned frozen-validity and actor-scope decision before case/register
+  filters, counts, page normalization, or serialization. Detail, action, sanction decision, and
+  Credit Sanction Register therefore agree even when a stale true projection/index survives a
+  direct malformed save.
+- Direct live appraisal edits leave pending reads/actions and terminal detail/decision/register
+  responses unchanged. Return -> correction -> fresh review preserves cycle 1 provenance and review
+  facts byte-for-byte while cycle 2 exposes only its newly frozen corrected facts. No model-save
+  signal or cross-table side effect was restored.
+
+## Architecture Review 2026-07-13 22:42 - Frozen Provenance and Read Parity
+
+- 007F2 removed the appraisal save signal, but canonical case validity still compares frozen
+  `loan_limit_provenance_json` to the mutable live appraisal snapshot. A public probe changed only
+  live `policy_name` and made case detail return 404 while the stored projection remained coherent.
+- On a terminal cycle after the same live edit, 007H2 still returned the sanction decision and one
+  register row through its stored read projection while canonical case detail returned 404. `007H3`
+  makes frozen case facts the sole validity input and aligns detail/action/decision/register scope
+  before counts and pagination without restoring signals.
+- M05-FR-003/006/009/012 remain functionally substantive; 007H3 closes historical-cycle and
+  cross-endpoint authority consistency. 007I depends on it and must render old/new cycles only from
+  their server-frozen projections.
+- Auth §19.4 names no finer role/sensitivity pairs for Legal documents. A-085 therefore remains the
+  explicit rule: every source-defined sensitivity is eligible only inside the exact legal audience,
+  application provenance, related-party workflow, case scope, and permission boundary. Do not
+  invent a narrower compliance matrix without governed configuration.
+
+## 007H2 Sanction Decision and Register Object-Scope Closure
+
+- Sanction-decision reads now require both `approvals.sanction.read` and the approval-owned
+  coherent-case/read-index decision. Same-permission unused Directors receive nondisclosing
+  `OBJECT_ACCESS_DENIED`; original, effective, conflicted, and acted historical actors retain only
+  their attributable cycle. The pre-approval/post-rejection 404 contract is unchanged.
+- Credit Sanction Register rows are joined to the canonical actor-scoped case selector before FY or
+  decision filters, ordering, counts, page normalization, and serialization. Two unrelated
+  Directors therefore receive independent one-row totals, while an active persisted legal/audit/
+  management grant can expose its defined read-only case scope only alongside the specific register
+  permission.
+- Permission, object scope, and downstream authority remain separate: case scope alone cannot read
+  the decision/register, register visibility grants no case action or document authority, and
+  coherence flags/exception rows/meeting metadata never act as authority. Frozen sanction reasons
+  remain distinct from Exception Register business reasons.
+
+## 007G2 General-Meeting Current Evidence and Document Scope Closure
+
+- An evidence-required pending case now projects the current unsuperseded application outcome in
+  canonical collection, detail, action, and gate-error shapes with `evidence_scope = current_pending`.
+  Reject, return, conflict-blocked abstention, and final approval freeze the then-current row;
+  historical readers expose only that row with `evidence_scope = cycle_frozen`, so later
+  supersession cannot rewrite a cycle.
+- The General Meeting module no longer reads `DocumentFile`. One documents-owned reference
+  interface requires public-upload provenance, exact application attribution, legal category,
+  a matching source-defined sensitivity, global document permission, and a typed attributable
+  related-party-case workflow context for each notice/minutes/resolution id. The source §19.4 legal
+  audience is enforced separately from generic/audit-only case read. Every denial is per-field
+  nondisclosing and zero-write, including no download audit.
+- The real 007F2 above-limit submit/enrich/read/three-approver tracer now records pending, rejected,
+  and approved meeting outcomes through public document and §25.11 endpoints. Supersession preserves
+  the sanction reason, distinct exception business reason/register identity, and queue visibility.
+
+## 007F2 Exception Routing Coherence and Explicit Projection Closure
+
+- Non-forced exception routing now derives from coherent frozen facts: reviewed amount above the
+  frozen final eligible amount and `exception_required_flag = true`. Below/equal-plus-true and
+  above-plus-false snapshots return the stable 409 invalid-state contract with zero enrichment
+  writes. Explicit forced within-limit stage-bypass/waiver routing remains supported.
+- The sanction case's `reason_for_approval` and Exception Register's `business_reason` are distinct
+  source facts. The latter is frozen as case `exception_reason`; coherence requires the same-case
+  entry, matching application/reason, truthful type/risk shape, frozen amount-limit predicate,
+  exception matrix condition, two Directors, and Exception Register requirement—not reason equality.
+- A public above-limit tracer now covers submit, enrich, ordinary/assigned list, detail, CFO plus
+  two Director actions, Exception Register closure, sanction decision, and terminal Credit Sanction
+  Register without manually attaching register evidence. Replay/mismatch cases preserve the first
+  immutable snapshot.
+- Approval coherence and reader indexing have one explicit approval-owned projection interface.
+  The appraisal `post_save` receiver is removed; direct case/appraisal saves cannot mutate another
+  table, and later live appraisal changes cannot rewrite historical-cycle projection authority.
+- M05-FR-003 and M05-FR-006 are now substantive through the public workflow. M05-FR-009 generation
+  remains substantive; its read confidentiality is still owned by 007H2.
+
+## Architecture Review 2026-07-13 20:10 - Exception and Evidence Read Corrections
+
+- 007F persists the distinct Exception Register business reason on the case, but the inherited
+  coherence predicate still requires it to equal `reason_for_approval`. A real public exception
+  enrichment is therefore saved incoherent and disappears from case reads/actions; later tests
+  bypass that route with manually attached register fixtures. `007F2` restores the full public
+  submit/enrich/read/CFO+two-Director/terminal-register tracer and removes the remaining appraisal
+  post-save projection side effect.
+- The non-forced exception path trusts a frozen boolean even when the recommended amount is below
+  the frozen eligible amount. `007F2` requires amount/flag agreement and reserves within-limit
+  routing for explicit `force_exception_route` with a truthful type/reason.
+- 007G freezes the applicable meeting on return/final approval, but pending/rejected current
+  evidence is null on case detail. It also checks only a global document permission plus existence.
+  `007G2` defines current-while-pending/frozen-when-closed projection semantics and delegates each
+  evidence reference to document-owned application/sensitivity scope.
+- 007H generates complete immutable rows, but sanction decision/register reads apply permission
+  without case/application row scope. `007H2` filters direct reads and collection counts/pagination
+  through the canonical original/effective/acted plus persisted legal/audit/management scope.
+- M05-FR-011 is substantive. M05-FR-003/006 remain partial until 007F2; M05-FR-012 remains partial
+  until 007G2; M05-FR-009 generation is substantive but confidential reads remain partial until
+  007H2. The UI slice 007I now depends on those corrections.
+
 ## 007H Credit Sanction Register
 
 - Approved and rejected terminal actions now create exactly one immutable case/cycle register row
@@ -411,3 +810,11 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - VersionHistory now stores nullable generic old/new JSON plus the approval reference/time. Governed
   activations persist the proposal id/type/payload, target id, activated resource, and closed
   predecessor projection; the history timestamp is exactly the proposal decision timestamp.
+
+## Register Date-Time Display Contract
+
+- `deployment-ops.md` §§7.6 and 23.2 require UTC storage and explicitly configured
+  `Asia/Kolkata` display where business timestamps are shown.
+- `test-plan.md` §15.2 requires timezone-display coverage for shared date inputs/formatters.
+- Approval-register UTC instants must therefore render in `Asia/Kolkata` independently of the
+  browser or test runner's host timezone.

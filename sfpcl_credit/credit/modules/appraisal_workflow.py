@@ -33,6 +33,7 @@ from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssess
 from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.members.models import Shareholding
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -195,6 +196,126 @@ class ApprovalCaseEnrichmentFacts:
     recommended_amount: Decimal
     exception_required_flag: bool
     loan_limit_provenance: dict
+    review_facts: dict
+
+
+def project_approval_case_review_facts(*, application, appraisal_note, review):
+    """Project the credit-owned immutable review package consumed by approvals."""
+    eligibility = appraisal_note.eligibility_snapshot_json
+    loan_limit = appraisal_note.loan_limit_snapshot_json
+    frozen_shareholding_mode = (
+        Shareholding.objects.filter(
+            pk=loan_limit.get("shareholding_id"),
+            member_id=application.member_id,
+        )
+        .values_list("holding_mode", flat=True)
+        .first()
+        if loan_limit.get("shareholding_id")
+        else None
+    )
+    risk = appraisal_note.risk_assessment
+    witness = application.witnesses.filter(
+        verification_status="verified", shareholder_verified_flag=True
+    ).order_by("created_at", "witness_id").first()
+    application_id = str(application.pk)
+    return {
+        "snapshot_schema_version": "approval-review-v3",
+        "snapshot_provenance": {
+            "owner": "credit",
+            "review_decision_id": str(review.pk),
+        },
+        "maker_checker": {
+            "application_created_by_user_id": (
+                str(application.created_by_user_id)
+                if application.created_by_user_id else None
+            ),
+            "application_received_by_user_id": str(application.received_by_user_id),
+            "application_submitted_by_user_id": (
+                str(application.submitted_by_user_id)
+                if application.submitted_by_user_id else None
+            ),
+            "appraisal_prepared_by_user_id": str(appraisal_note.prepared_by_user_id),
+            "appraisal_reviewed_by_user_id": str(review.reviewer_user_id),
+        },
+        "borrower": {
+            "member_id": str(application.member_id),
+            "application_reference_number": application.application_reference_number,
+            "name": application.member.display_name or application.member.legal_name,
+            "member_type": application.borrower_type,
+            "folio_number": application.member.folio_number,
+            "loan_type": application.loan_type_requested or "",
+        },
+        "nominee": (
+            {
+                "nominee_id": str(application.nominee_id),
+                "name": application.nominee.nominee_name,
+            }
+            if application.nominee_id
+            else None
+        ),
+        "witness": (
+            {
+                "witness_id": str(witness.pk),
+                "name": witness.witness_name,
+                "version": witness.version,
+            }
+            if witness
+            else None
+        ),
+        "shareholding": {
+            "shareholding_id": loan_limit.get("shareholding_id"),
+            "number_of_shares": loan_limit.get("number_of_shares"),
+            "holding_mode": frozen_shareholding_mode,
+        },
+        "eligibility": eligibility,
+        "loan_amounts": {
+            "requested_amount": (
+                f"{application.required_loan_amount:.2f}"
+                if application.required_loan_amount is not None else None
+            ),
+            "eligible_amount": loan_limit.get("final_eligible_loan_amount"),
+            "recommended_amount": f"{appraisal_note.recommended_amount:.2f}",
+        },
+        "sanction_terms": {
+            "recommended_tenure_months": appraisal_note.recommended_tenure_months,
+            "recommended_interest_type": appraisal_note.recommended_interest_type,
+            "recommended_security_summary": (
+                appraisal_note.recommended_security_summary
+            ),
+        },
+        "purpose": {
+            "category": application.purpose_category or None,
+            "description": application.declared_purpose or None,
+        },
+        "compliance_checks": {
+            key: eligibility.get(key)
+            for key in (
+                "member_active_check",
+                "default_check",
+                "terms_acceptance_check",
+                "purpose_check",
+            )
+        },
+        "borrowing_history": appraisal_note.borrower_summary,
+        "risk": {
+            "risk_assessment_id": str(risk.pk),
+            "market_risk_rating": risk.market_risk_rating,
+            "operational_risk_rating": risk.operational_risk_rating,
+            "borrower_risk_rating": risk.borrower_risk_rating,
+            "overall_risk_rating": risk.overall_risk_rating,
+            "risk_mitigation_notes": risk.risk_mitigation_notes,
+        },
+        "documentation_completeness": {
+            "status": application.completeness_status,
+            "document_check": eligibility.get("document_check"),
+        },
+        "source_references": {
+            "application": f"/api/v1/loan-applications/{application_id}/",
+            "appraisal": f"/api/v1/loan-applications/{application_id}/appraisal-note/",
+            "eligibility": f"/api/v1/loan-applications/{application_id}/eligibility-assessment/",
+            "loan_limit": f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/",
+        },
+    }
 
 
 class AppraisalWorkflow:
@@ -878,8 +999,9 @@ class AppraisalWorkflow:
             permissions,
         )
         note = (
-            LoanAppraisalNote.objects.select_for_update(of=("self",))
-            .select_related(
+            LoanAppraisalNote.objects.select_for_update(
+                of=("self", "risk_assessment")
+            ).select_related(
                 "risk_assessment",
                 "prepared_by_user",
                 "reviewed_by_user",
@@ -960,6 +1082,7 @@ class AppraisalWorkflow:
         required = (
             "loan_limit_assessment_id",
             "loan_application_id",
+            "final_eligible_loan_amount",
             "exception_required_flag",
             "calculation_rule_version",
             "policy_config_id",
@@ -978,12 +1101,25 @@ class AppraisalWorkflow:
             calculated_at = timezone.datetime.fromisoformat(
                 str(snapshot.get("calculated_at", "")).replace("Z", "+00:00")
             )
-            valid = valid and calculated_at <= latest_review.decided_at
-        except (TypeError, ValueError):
+            final_eligible_amount = Decimal(
+                str(snapshot.get("final_eligible_loan_amount", ""))
+            )
+            valid = (
+                valid
+                and calculated_at <= latest_review.decided_at
+                and final_eligible_amount >= Decimal("0.00")
+            )
+        except (InvalidOperation, TypeError, ValueError):
             valid = False
         if not valid:
             raise CreditModuleInvalidStateError(
                 "The stored loan-limit assessment is missing, stale, or lacks policy provenance."
+            )
+        if snapshot["exception_required_flag"] != (
+            note.recommended_amount > final_eligible_amount
+        ):
+            raise CreditModuleInvalidStateError(
+                "The frozen loan-limit exception flag contradicts the reviewed amount."
             )
         return ApprovalCaseEnrichmentFacts(
             application=application,
@@ -993,6 +1129,11 @@ class AppraisalWorkflow:
             recommended_amount=note.recommended_amount,
             exception_required_flag=snapshot["exception_required_flag"],
             loan_limit_provenance={key: snapshot[key] for key in required},
+            review_facts=project_approval_case_review_facts(
+                application=application,
+                appraisal_note=note,
+                review=latest_review,
+            ),
         )
 
 

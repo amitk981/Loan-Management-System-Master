@@ -1,0 +1,5 @@
+Listing tests:
+  [chromium] › approval-register-settings.e2e.spec.ts:10:5 › S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigation
+  [chromium] › exception-register-evidence.e2e.spec.ts:9:5 › S25 renders frozen comments and supporting metadata without granting download authority
+  [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states
+Total: 3 tests in 3 files

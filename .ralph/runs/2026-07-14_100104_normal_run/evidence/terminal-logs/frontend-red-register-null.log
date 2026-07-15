@@ -1,0 +1,43 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/registers/RegistersHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_100104_normal_run/sfpcl-lms
+
+ ❯ src/pages/registers/RegistersHub.test.tsx (8 tests | 1 failed) 439ms
+   ✓ RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change 170ms
+   ✓ RegistersHub owned approval register panels > applies only canonical financial-year values 141ms
+   ✓ RegistersHub owned approval register panels > loads S25 independently with immutable comments and evidence but no inferred download 47ms
+   × RegistersHub owned approval register panels > selects a null-safe legacy S23 row without fabricating unavailable source facts 36ms
+     → Cannot read properties of null (reading 'description')
+   ✓ RegistersHub owned approval register panels > hides export without canonical permission and reports its deferred state when permitted 18ms
+   ✓ RegistersHub owned approval register panels > shows a nondisclosing denied state with no fallback register facts 14ms
+   ✓ RegistersHub owned approval register panels > clears scoped register facts when the actor loses canonical permission 13ms
+   ✓ RegistersHub owned approval register panels > keeps mock-backed variables outside the owned S23/S25 panel source 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > selects a null-safe legacy S23 row without fabricating unavailable source facts
+TypeError: Cannot read properties of null (reading 'description')
+ ❯ SanctionDetail src/pages/registers/ApprovalRegisterPanels.tsx:162:452
+
+ ❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:20
+ ❯ renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:22
+ ❯ updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:19
+ ❯ beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11778:18
+ ❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:874:13
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:22
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:41
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:11
+ ❯ performWorkOnRoot node_modules/react-dom/cjs/react-dom-client.development.js:16583:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  10:04:25
+   Duration  1.43s (transform 240ms, setup 0ms, collect 414ms, tests 439ms, environment 326ms, prepare 42ms)
+

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_mismatch_resolution_requires_a_distinct_immutable_capture_maker (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_mismatch_resolution_requires_a_distinct_immutable_capture_maker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 336, in test_mismatch_resolution_requires_a_distinct_immutable_capture_maker
+    self.assertEqual(signature.captured_by_user_id, self.actor.pk)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SignatureRecord' object has no attribute 'captured_by_user_id'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

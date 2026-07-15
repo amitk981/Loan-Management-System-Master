@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008A-document-template-model-and-versioning.md
+ M docs/slices/008B-document-generation-shell.md
+ M docs/slices/architecture-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+?? .ralph/runs/2026-07-14_034706_architecture_review/
+?? docs/slices/007O-frozen-terminal-decision-and-register-source-closure.md
+?? docs/slices/007P-sanction-queue-pagination-and-read-boundary-closure.md
+?? docs/slices/007Q-register-source-fields-and-visual-evidence-closure.md

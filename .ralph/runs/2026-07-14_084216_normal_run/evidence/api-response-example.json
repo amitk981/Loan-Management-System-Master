@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "data": {
+    "loan_document_id": "00000000-0000-0000-0000-000000000801",
+    "document_type": "term_sheet",
+    "generation_status": "generated",
+    "document_id": "00000000-0000-0000-0000-000000000802",
+    "file_name": "term-sheet-LO00000801.pdf"
+  },
+  "meta": {
+    "request_id": "req-generate-term-sheet",
+    "timestamp": "2026-07-14T03:30:00Z",
+    "api_version": "v1"
+  }
+}

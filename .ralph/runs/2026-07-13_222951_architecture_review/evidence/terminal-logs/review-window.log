@@ -1,0 +1,13 @@
+Architecture review window
+fixed point: c843ea8f6de1aae50a7f665c35daf7f4b755f887
+merge base:  c843ea8f6de1aae50a7f665c35daf7f4b755f887
+head:        5ea122bbc49ac16d5aeaeb41cc528650ab3841f7
+
+14bb8d9d7022ecefd88ec7726922d51ebb36cc15 007F2 exception routing coherence
+241ff25765337e72712e9562cd011a3ca219a0b5 CR-004 member governance CI timeout
+9f9806044a5a7e746b2f6301ede227ac6dbf7df9 007G2 General Meeting evidence/document scope
+5ea122bbc49ac16d5aeaeb41cc528650ab3841f7 007H2 sanction/register object scope
+
+Production/test diff: 16 files changed, 1721 insertions, 118 deletions.
+Diff command: git diff c843ea8...HEAD
+Result: fixed point resolved; merge base matched; diff was non-empty.

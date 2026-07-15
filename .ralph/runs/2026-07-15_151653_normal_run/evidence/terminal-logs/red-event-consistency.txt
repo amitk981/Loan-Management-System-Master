@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 299, in test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit
+    self.assertEqual(audit.new_value_json["document_version"], "1.0")
+                     ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'document_version'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.088s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

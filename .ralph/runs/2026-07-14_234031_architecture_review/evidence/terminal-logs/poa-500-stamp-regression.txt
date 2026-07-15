@@ -1,0 +1,16 @@
+Command:
+PYTHONPATH=<run evidence>:$PWD /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test ArchitectureReviewPoARegression.test_one_rupee_stamp_cannot_activate_poa -v 2
+
+Result: expected review regression failed, proving the merged defect.
+
+System check identified no issues (0 silenced).
+test_one_rupee_stamp_cannot_activate_poa ... FAIL
+
+Traceback (most recent call last):
+  File "review_regressions.py", line 42, in reject_successful_activation
+    self.assertNotEqual(response.status_code, 200, ...)
+AssertionError: 200 == 200 : PoA activation accepted an adequate ₹1 stamp instead of requiring ₹500.
+
+Ran 1 test in 0.129s
+FAILED (failures=1)
+Exit code: 1 (expected for an independently reproduced review finding)

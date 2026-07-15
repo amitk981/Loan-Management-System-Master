@@ -10,7 +10,8 @@ from django.utils.dateparse import parse_date
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCase, GeneralMeetingApproval
 from sfpcl_credit.approvals.modules import approval_case_engine
-from sfpcl_credit.documents.models import DocumentFile
+from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
+from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.domain_errors import (
     DomainInvalidStateError,
     DomainObjectAccessDenied,
@@ -33,6 +34,44 @@ class GeneralMeetingGateConflict(Exception):
 
     def __str__(self):
         return self.message
+
+
+def record_action_availability(*, case, actor, actor_permissions):
+    """Project the §25.11 recorder decision for this exact routed case."""
+    permissions = set(actor_permissions)
+    case_readable = approval_case_engine.approval_case_is_readable(
+        actor=actor, case=case, actor_permissions=permissions
+    )
+    actor_is_case_approver = _is_unconflicted_case_approver(case, actor)
+    legal_audience = (
+        actor_is_case_approver
+        or bool(
+            set(actor.role_codes())
+            & {"compliance_team_member", "company_secretary", "credit_manager"}
+        )
+    )
+    required = {RECORD_PERMISSION, CASE_READ_PERMISSION, DOCUMENT_READ_PERMISSION}
+    enabled = (
+        case.general_meeting_evidence_required
+        and case_readable
+        and legal_audience
+        and required.issubset(permissions)
+    )
+    if not case.general_meeting_evidence_required:
+        reason = "General meeting evidence is not required for this approval case."
+    elif not case_readable or not legal_audience:
+        reason = "The current user is not in the related-party legal audience for this case."
+    elif not required.issubset(permissions):
+        reason = "Required general meeting record, case read, and document access permissions are not granted."
+    else:
+        reason = None
+    return {
+        "action_code": "record_general_meeting_approval",
+        "label": "Record General Meeting Approval",
+        "enabled": enabled,
+        "disabled_reason": reason,
+        "required_permission": RECORD_PERMISSION,
+    }
 
 
 def record_for_application(
@@ -63,16 +102,18 @@ def record_for_application(
             .order_by("-cycle_number")
             .first()
         )
-        if (
-            case is None
-            or not approval_case_engine.is_routable_approval_case(case)
-            or not approval_case_engine.can_read_approval_case(
+        case_readable = (
+            approval_case_engine.approval_case_is_readable(
                 actor=actor,
                 case=case,
                 actor_permissions=permissions,
-            ).allowed
-        ):
+            )
+            if case is not None
+            else False
+        )
+        if case is None or not case_readable:
             raise DomainObjectAccessDenied(None)
+        actor_is_case_approver = _is_unconflicted_case_approver(case, actor)
         if not case.general_meeting_evidence_required:
             raise DomainInvalidStateError(
                 "General meeting evidence is not required for this approval case."
@@ -96,20 +137,26 @@ def record_for_application(
             raise ValidationError(
                 {"document_ids": "Notice, minutes, and resolution must be distinct documents."}
             )
-        documents = DocumentFile.objects.in_bulk(document_ids)
-        missing_fields = {
-            field: "Document file was not found or is inaccessible."
-            for field in (
-                "notice_document_id",
-                "minutes_document_id",
-                "resolution_document_id",
-            )
-            if cleaned[field] not in documents
-        }
-        if missing_fields:
-            raise ValidationError(
-                missing_fields
-            )
+        documents = document_services.resolve_referenceable_documents(
+            actor_permissions=permissions,
+            document_ids_by_field={
+                field: cleaned[field]
+                for field in (
+                    "notice_document_id",
+                    "minutes_document_id",
+                    "resolution_document_id",
+                )
+            },
+            context=document_services.DocumentReferenceContext(
+                related_entity_type="application",
+                related_entity_id=application.pk,
+                related_entity_access_allowed=case_readable,
+                workflow_scope=document_services.GENERAL_MEETING_WORKFLOW_SCOPE,
+                actor_role_codes=frozenset(actor.role_codes()),
+                actor_is_related_case_approver=actor_is_case_approver,
+            ),
+            purpose=document_services.GENERAL_MEETING_REFERENCE_PURPOSE,
+        )
 
         latest = (
             GeneralMeetingApproval.objects.filter(
@@ -128,9 +175,9 @@ def record_for_application(
             related_party_user=related_party_user,
             relationship_description=cleaned["relationship_description"],
             meeting_date=cleaned["meeting_date"],
-            notice_document=documents[cleaned["notice_document_id"]],
-            minutes_document=documents[cleaned["minutes_document_id"]],
-            resolution_document=documents[cleaned["resolution_document_id"]],
+            notice_document=documents["notice_document_id"],
+            minutes_document=documents["minutes_document_id"],
+            resolution_document=documents["resolution_document_id"],
             approval_status=cleaned["approval_status"],
             recorded_by_user=actor,
             supersedes=latest,
@@ -197,16 +244,31 @@ def serialize(meeting):
     }
 
 
+def serialize_for_case(case):
+    """Project current evidence for an open cycle or its immutable frozen evidence."""
+    if not case.general_meeting_evidence_required:
+        return None
+    if case.current_status == ApprovalCase.STATUS_PENDING:
+        meeting = latest_evidence_for_case(case)
+        evidence_scope = "current_pending"
+    else:
+        meeting = case.general_meeting_approval
+        evidence_scope = "cycle_frozen"
+    if meeting is None:
+        return None
+    return {**serialize(meeting), "evidence_scope": evidence_scope}
+
+
 def approved_evidence_for_final_action(case):
     """Return the latest approved application evidence or deny final sanction."""
     if not case.general_meeting_evidence_required:
         return None
     latest = latest_evidence_for_case(case)
+    projection = serialize_for_case(case)
     details = {
         "approval_case_id": str(case.pk),
         "cycle_number": case.cycle_number,
-        "general_meeting_approval_id": str(latest.pk) if latest else None,
-        "approval_status": latest.approval_status if latest else None,
+        "general_meeting_approval": projection,
     }
     if latest is None:
         raise GeneralMeetingGateConflict(
@@ -254,6 +316,18 @@ def _matches(meeting, cleaned):
         and meeting.minutes_document_id == cleaned["minutes_document_id"]
         and meeting.resolution_document_id == cleaned["resolution_document_id"]
         and meeting.approval_status == cleaned["approval_status"]
+    )
+
+
+def _is_unconflicted_case_approver(case, actor):
+    actor_id = str(actor.pk)
+    attributable = any(
+        str(item.get("user_id")) == actor_id
+        for item in ConflictOfInterestModule.effective_approvers(case)
+        if isinstance(item, dict)
+    ) or any(str(action.approver_user_id) == actor_id for action in case.actions.all())
+    return attributable and not ConflictOfInterestModule.conflict_reason(
+        case=case, actor_id=actor_id
     )
 
 

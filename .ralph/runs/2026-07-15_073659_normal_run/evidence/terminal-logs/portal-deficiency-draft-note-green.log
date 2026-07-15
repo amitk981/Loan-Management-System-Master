@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+FF.......
+======================================================================
+FAIL: test_borrower_reads_open_deficiencies_without_internal_staff_notes (sfpcl_credit.tests.test_portal_deficiency_response_api.PortalDeficiencyResponseApiTests.test_borrower_reads_open_deficiencies_without_internal_staff_notes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/sfpcl_credit/tests/test_portal_deficiency_response_api.py", line 149, in test_borrower_reads_open_deficiencies_without_internal_staff_notes
+    self.assertEqual(body["data"]["application_reference_number"], "LA-RETURNED-L2")
+AssertionError: None != 'LA-RETURNED-L2'
+
+======================================================================
+FAIL: test_borrower_saves_response_draft_and_downloads_borrower_safe_deficiency_note (sfpcl_credit.tests.test_portal_deficiency_response_api.PortalDeficiencyResponseApiTests.test_borrower_saves_response_draft_and_downloads_borrower_safe_deficiency_note)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/sfpcl_credit/tests/test_portal_deficiency_response_api.py", line 214, in test_borrower_saves_response_draft_and_downloads_borrower_safe_deficiency_note
+    self.assertIn(b"LA-RETURNED-L2", note.content)
+AssertionError: b'LA-RETURNED-L2' not found in b'SFPCL Application Deficiency Note\nApplication: 826f6bcc-c577-497a-94c3-16acefb4eb1b\n\n- Upload the missing six-month bank statement.\n'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.232s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

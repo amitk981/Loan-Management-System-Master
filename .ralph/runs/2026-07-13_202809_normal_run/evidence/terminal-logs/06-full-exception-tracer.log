@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_above_limit_exception_completes_public_three_approver_and_register_workflow (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_above_limit_exception_completes_public_three_approver_and_register_workflow)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 639, in test_above_limit_exception_completes_public_three_approver_and_register_workflow
+    self.assertEqual(detail.json()["data"]["exception_reason"], register_entry.business_reason)
+                     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'exception_reason'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.089s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

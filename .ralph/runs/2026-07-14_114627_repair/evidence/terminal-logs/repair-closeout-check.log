@@ -1,0 +1,4 @@
+PASS: Ralph artifact files are present and non-empty
+PASS: state and permissions JSON parse
+PASS: git diff has no whitespace errors
+PASS: no protected or forbidden path is modified

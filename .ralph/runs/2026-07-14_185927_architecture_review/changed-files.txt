@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008H-sh-4-physical-share-security-workflow.md
+ M docs/slices/008I-cdsl-pledge-workflow.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-14_185927_architecture_review/
+?? docs/slices/008F2-security-instrument-boundary-and-poa-lifecycle-closure.md
+?? docs/slices/008G2-stage4-maker-and-verification-contract-closure.md

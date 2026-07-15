@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_renderer_provenance_is_immutable_while_lifecycle_fields_remain_updateable (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_renderer_provenance_is_immutable_while_lifecycle_fields_remain_updateable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 538, in test_renderer_provenance_is_immutable_while_lifecycle_fields_remain_updateable
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.025s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

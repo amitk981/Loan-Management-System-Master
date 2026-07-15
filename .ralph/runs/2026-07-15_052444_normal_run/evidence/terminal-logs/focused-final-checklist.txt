@@ -1,0 +1,19 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  sfpcl_credit.tests.test_final_documentation_approval_api --verbosity 1
+
+Found 13 test(s).
+System check identified no issues (0 silenced).
+...........ss
+Ran 13 tests in 1.567s
+OK (skipped=2 PostgreSQL-only race tests)
+
+The ordered success test creates every current required/applicable document and source-owned
+security prerequisite, completes every item through POST /api/v1/checklist-items/{id}/complete/,
+then performs the ordered public approval sequence and exact replay checks.
+
+The adverse reconciliation matrix proves zero-write rejection for status-only completion,
+synthetic cheque history, extra completion history, changed remarks/verifier, stale approval cycle,
+forged terminal workflow, wrong PoA stamp amount, and an extra wrong signer identity.
+The threshold case freezes a coherent ₹600,000 route, proves one frozen eligible director is
+insufficient with zero completion action, then proves the second eligible director permits success.

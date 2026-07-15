@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_stale_status_only_completion_cannot_be_reopened_by_portal_upload (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_stale_status_only_completion_cannot_be_reopened_by_portal_upload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_151653_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 318, in test_stale_status_only_completion_cannot_be_reopened_by_portal_upload
+    self.assertFalse(projected["upload_allowed"])
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.097s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

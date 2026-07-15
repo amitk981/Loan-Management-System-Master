@@ -1,0 +1,8 @@
+Commands:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_sanction_submission_api --noinput -v 1
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_document_templates_api --noinput -v 2
+
+Working directory: sfpcl_credit/
+
+Sanction submission suite: 31 tests passed, 2 expected PostgreSQL-only skips, exit code 0.
+Document template suite: 7 tests passed, 1 expected PostgreSQL-only skip, exit code 0.

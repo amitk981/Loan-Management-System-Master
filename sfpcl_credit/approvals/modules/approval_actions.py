@@ -60,6 +60,21 @@ def approve_case(*, actor, case_id, payload, actor_permissions, request_meta=Non
     )
 
 
+def _approve_case_with_completion(
+    *, actor, case_id, payload, actor_permissions, completion, request_meta=None
+):
+    """Private process seam that binds terminal approval to its required completion."""
+    return _record_action_boundary(
+        actor=actor,
+        case_id=case_id,
+        action_code="approve",
+        payload=payload,
+        actor_permissions=actor_permissions,
+        request_meta=request_meta,
+        sanction_completion=completion,
+    )
+
+
 def reject_case(*, actor, case_id, payload, actor_permissions, request_meta=None):
     return record_action(
         actor=actor, case_id=case_id, action_code="reject", payload=payload,
@@ -81,7 +96,29 @@ def abstain_from_case(*, actor, case_id, payload, actor_permissions, request_met
     )
 
 
-def record_action(*, actor, case_id, action_code, payload, actor_permissions, request_meta=None):
+def record_action(
+    *, actor, case_id, action_code, payload, actor_permissions, request_meta=None
+):
+    return _record_action_boundary(
+        actor=actor,
+        case_id=case_id,
+        action_code=action_code,
+        payload=payload,
+        actor_permissions=actor_permissions,
+        request_meta=request_meta,
+    )
+
+
+def _record_action_boundary(
+    *,
+    actor,
+    case_id,
+    action_code,
+    payload,
+    actor_permissions,
+    request_meta=None,
+    sanction_completion=None,
+):
     try:
         return _record_action(
             actor=actor,
@@ -90,6 +127,7 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
             payload=payload,
             actor_permissions=actor_permissions,
             request_meta=request_meta,
+            sanction_completion=sanction_completion,
         )
     except ApprovalActionConflict as exc:
         if exc.code == "CONFLICTED_APPROVER_NOT_ALLOWED":
@@ -115,7 +153,10 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
 
 
 @transaction.atomic
-def _record_action(*, actor, case_id, action_code, payload, actor_permissions, request_meta=None):
+def _record_action(
+    *, actor, case_id, action_code, payload, actor_permissions, request_meta=None,
+    sanction_completion=None,
+):
     version = _submitted_version(payload)
     comments = _comments(payload, required=action_code in {"reject", "return", "abstain"})
     identifiers = ApprovalCase.objects.filter(pk=case_id).values(
@@ -131,20 +172,21 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         appraisal_id=identifiers["loan_appraisal_note_id"]
     )
     case = (
-        ApprovalCase.objects.select_for_update()
+        ApprovalCase.objects.select_for_update(of=("self",))
         .select_related(
             "loan_application",
             "loan_appraisal_note__risk_assessment",
             "general_meeting_approval",
+            "exception_register_entry",
         )
         .prefetch_related("actions")
         .get(pk=case_id)
     )
-    if not approval_case_engine.is_routable_approval_case(case):
-        raise ApprovalCase.DoesNotExist
-    if not approval_case_engine.can_read_approval_case(
+    if not approval_case_engine.approval_case_is_readable(
         actor=actor, case=case, actor_permissions=actor_permissions
-    ).allowed:
+    ):
+        if not approval_case_engine.is_routable_approval_case(case):
+            raise ApprovalCase.DoesNotExist
         raise ApprovalActionConflict(
             "You cannot access this approval case.",
             code="OBJECT_ACCESS_DENIED",
@@ -174,6 +216,18 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         missing_permission = (
             availability["disabled_reason"] == "Required permission is not granted."
         )
+        terminal_blocker = approval_case_engine.terminal_action_blocker(
+            case,
+            action_code,
+        )
+        if (
+            terminal_blocker
+            and availability["disabled_reason"] == terminal_blocker["message"]
+        ):
+            raise ApprovalActionConflict(
+                terminal_blocker["message"],
+                code=terminal_blocker["code"],
+            )
         raise ApprovalActionConflict(
             availability["disabled_reason"],
             code="FORBIDDEN" if missing_permission else "TRANSITION_CONFLICT",
@@ -191,9 +245,19 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     completes_approval = action_code == "approve" and (
         approved_ids | {str(actor.pk)}
     ) == required_ids
+    if completes_approval and sanction_completion is None:
+        raise ApprovalActionConflict(
+            "Final approval must run through the sanction completion coordinator.",
+            code="SANCTION_COMPLETION_REQUIRED",
+        )
+    terminal_facts = (
+        approval_case_engine.validated_frozen_terminal_facts(case)
+        if completes_approval or action_code == "reject"
+        else None
+    )
     meeting_evidence = (
         general_meeting.latest_evidence_for_case(case)
-        if action_code == "return"
+        if action_code in {"abstain", "reject", "return"}
         else None
     )
     if completes_approval:
@@ -256,8 +320,8 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         actor_permissions=actor_permissions,
     )
 
-    role_code = next(
-        item["role_code"]
+    actor_authority = next(
+        item
         for item in effective_approvers
         if str(item["user_id"]) == str(actor.pk)
     )
@@ -265,7 +329,10 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     action = ApprovalAction.objects.create(
         approval_case=case,
         approver_user=actor,
-        approver_role_code=role_code,
+        approver_role_code=actor_authority["role_code"],
+        approver_display_name=(
+            actor_authority.get("full_name") or actor.full_name
+        ),
         decision={
             "approve": "approved",
             "reject": "rejected",
@@ -293,10 +360,12 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
                 ConflictOfInterestModule.authority_gap_reason(case)
             )
             case.closed_at = timezone.now()
+            case.general_meeting_approval = meeting_evidence
     elif action_code == "reject":
         case.current_status = case_transition.next_state
         case.reason_for_rejection = comments
         case.closed_at = timezone.now()
+        case.general_meeting_approval = meeting_evidence
         application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
     elif action_code == "return":
@@ -313,18 +382,19 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         case.general_meeting_approval = meeting_evidence
         application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
+        terminal_facts = approval_case_engine.validated_frozen_terminal_facts(case)
         decision = SanctionDecision.objects.create(
             loan_application=application,
             approval_case=case,
             decision="sanctioned",
-            sanctioned_amount=note.recommended_amount,
-            sanctioned_tenure_months=note.recommended_tenure_months,
-            interest_rate_type=note.recommended_interest_type,
+            sanctioned_amount=terminal_facts["recommended_amount"],
+            sanctioned_tenure_months=terminal_facts["sanctioned_tenure_months"],
+            interest_rate_type=terminal_facts["interest_rate_type"],
             interest_rate_value=None,
             repayment_date=None,
             penal_interest_rate=None,
             charges_json={},
-            security_required_summary=note.recommended_security_summary,
+            security_required_summary=terminal_facts["security_required_summary"],
             conditions_precedent="",
             decision_reason=case.reason_for_approval,
         )
@@ -366,6 +436,19 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         trigger_reason=f"Approver {actor.pk} recorded {action.decision}.",
         action_code="approval_case.action_recorded",
     )
+    communication = None
+    if case.current_status != ApprovalCase.STATUS_PENDING:
+        communication, _ = communication_services.create_internal_team_communication(
+            sender=actor,
+            team_code="credit_assessment",
+            related_entity_type="approval_case",
+            related_entity_id=case.pk,
+            subject="Sanction approval completed",
+            body=f"Approval case {case.pk} was {case.current_status}.",
+            action_label="Open approval case",
+            action_url=f"/sanctions/{case.pk}",
+            request_meta=request_meta,
+        )
     if case.current_status in {
         ApprovalCase.STATUS_APPROVED,
         ApprovalCase.STATUS_REJECTED,
@@ -375,18 +458,14 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
             case=case,
             sanction_decision=decision,
             workflow_event=workflow_event,
+            communication=communication,
             request_meta=request_meta,
         )
-    if case.current_status != ApprovalCase.STATUS_PENDING:
-        communication_services.create_internal_team_communication(
-            sender=actor,
-            team_code="credit_assessment",
-            related_entity_type="approval_case",
-            related_entity_id=case.pk,
-            subject="Sanction approval completed",
-            body=f"Approval case {case.pk} was {case.current_status}.",
-            action_label="Open approval case",
-            action_url=f"/sanctions/{case.pk}",
+    if decision is not None and sanction_completion is not None:
+        sanction_completion(
+            actor=actor,
+            application_id=application.pk,
+            sanction_decision_id=decision.pk,
             request_meta=request_meta,
         )
     case = (

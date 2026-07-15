@@ -1,0 +1,21 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/.ralph/runs/2026-07-14_074249_normal_run/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/sanction-workbench.e2e.spec.ts e2e/approval-register-settings.e2e.spec.ts e2e/exception-register-evidence.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/sanction-workbench.e2e.spec.ts e2e/approval-register-settings.e2e.spec.ts e2e/exception-register-evidence.e2e.spec.ts
+
+[2m[WebServer] [22m[14/Jul/2026 02:38:37] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › approval-register-settings.e2e.spec.ts:10:5 › S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigation (3.6s)
+  ✓  2 [chromium] › exception-register-evidence.e2e.spec.ts:9:5 › S25 renders frozen comments and supporting metadata without granting download authority (1.6s)
+  ✓  3 [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states (2.6s)
+
+  3 passed (15.0s)
+
+Exit code: 0

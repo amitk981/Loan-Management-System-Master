@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_upload_and_reupload_retain_provenance_without_completing_internal_item (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_upload_and_reupload_retain_provenance_without_completing_internal_item)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 118, in test_upload_and_reupload_retain_provenance_without_completing_internal_item
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 404 != 200 : b'\n<!doctype html>\n<html lang="en">\n<head>\n  <title>Not Found</title>\n</head>\n<body>\n  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>\n</body>\n</html>\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.043s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008J-blank-dated-cheque-and-cancelled-cheque-custody.md
+ M docs/slices/008K-final-documentation-approval-sequence.md
+ M docs/slices/012E3-field-encryption-key-separation.md
+ M docs/slices/architecture-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-14_234031_architecture_review/
+?? docs/slices/008I2-security-poa-owner-and-read-contract-closure.md
+?? docs/slices/008I3-security-legal-evidence-seam-and-race-closure.md
+?? docs/slices/008I4-sensitive-field-encryption-and-cdsl-null-contract-closure.md

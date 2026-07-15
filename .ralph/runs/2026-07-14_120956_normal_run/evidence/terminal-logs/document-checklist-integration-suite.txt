@@ -1,0 +1,89 @@
+Creating test database for alias 'default'...
+Found 208 test(s).
+System check identified no issues (0 silenced).
+...........................E..........F............................................FF..FFF....................................F.............................................................................sss.
+======================================================================
+ERROR: test_conflicted_approval_returns_exact_source_error_and_denial_audit (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_conflicted_approval_returns_exact_source_error_and_denial_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 499, in test_conflicted_approval_returns_exact_source_error_and_denial_audit
+    denial = AuditLog.objects.get(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.identity.models.AuditLog.DoesNotExist: AuditLog matching query does not exist.
+
+======================================================================
+FAIL: test_every_conflicted_write_path_uses_one_exact_denial_contract (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_every_conflicted_write_path_uses_one_exact_denial_contract) (path='approve')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 545, in test_every_conflicted_write_path_uses_one_exact_denial_contract
+    self.assertTrue(
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_public_committee_borrower_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_committee_borrower_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 799, in test_public_committee_borrower_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 5702, in _assert_public_conflict_class
+    self.assertEqual(
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_public_director_relative_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_director_relative_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 807, in test_public_director_relative_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 5702, in _assert_public_conflict_class
+    self.assertEqual(
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_public_maker_checker_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_maker_checker_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 831, in test_public_maker_checker_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 5702, in _assert_public_conflict_class
+    self.assertEqual(
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_public_material_interest_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_material_interest_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 815, in test_public_material_interest_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 5702, in _assert_public_conflict_class
+    self.assertEqual(
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_public_own_application_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_own_application_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 823, in test_public_own_application_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 5702, in _assert_public_conflict_class
+    self.assertEqual(
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_application_document_endpoints_enforce_permissions_scope_and_version_history (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_application_document_endpoints_enforce_permissions_scope_and_version_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 3834, in test_application_document_endpoints_enforce_permissions_scope_and_version_history
+    self.assertEqual(missing_application.status_code, 404)
+AssertionError: 403 != 404
+
+----------------------------------------------------------------------
+Ran 208 tests in 13.319s
+
+FAILED (failures=7, errors=1, skipped=3)
+Destroying test database for alias 'default'...

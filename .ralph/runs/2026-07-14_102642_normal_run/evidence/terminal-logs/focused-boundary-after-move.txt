@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 17 test(s).
+System check identified no issues (0 silenced).
+........F........
+======================================================================
+FAIL: test_generation_requires_008a2_file_provenance_and_reference_permission (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_generation_requires_008a2_file_provenance_and_reference_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_102642_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 396, in test_generation_requires_008a2_file_provenance_and_reference_permission
+    self.assertEqual(denied_without_permission.status_code, 400)
+AssertionError: 403 != 400
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.254s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

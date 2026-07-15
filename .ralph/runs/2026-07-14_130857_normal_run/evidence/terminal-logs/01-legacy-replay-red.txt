@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_legacy_unverified_row_conflicts_on_replay_and_is_labelled_in_list (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_legacy_unverified_row_conflicts_on_replay_and_is_labelled_in_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 464, in test_legacy_unverified_row_conflicts_on_replay_and_is_labelled_in_list
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"loan_document_id": "93fb11e3-8298-4763-bf66-56a537f2239c", "document_type": "term_sheet", "generation_status": "generated", "document_id": "a9a5574a-5a70-46c2-b34a-63a91c01881a", "file_name": "term-sheet-LO00000801.pdf"}, "meta": {"request_id": "req-generate-term-sheet", "timestamp": "2026-07-14T07:42:36.568233Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.024s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

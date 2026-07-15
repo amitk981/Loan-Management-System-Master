@@ -1,0 +1,16 @@
+Backend:
+- Django check: exit 0; no issues.
+- Migration drift: exit 0; no changes detected.
+- Full suite under coverage: 886 tests in 318.264s; OK (44 skipped).
+- Coverage report: 92%; required floor 85%; exit 0.
+
+Frontend:
+- ESLint: exit 0.
+- TypeScript typecheck: exit 0.
+- Vitest: 35 files, 302 tests passed; exit 0.
+- Vite production build: 1879 modules transformed; exit 0.
+
+Repository:
+- `git diff --check`: exit 0.
+- Protected-path scan: no changed protected/source path.
+- Slice queue lint: exit 0; 008L3 and 008M remain concrete and dependency-correct.

@@ -1,5 +1,144 @@
 # API Contracts
 
+## Tri-party agreement verification (008G/008G2)
+
+`POST /api/v1/loan-documents/{loan_document_id}/verify/` implements source §26.6 only for a
+`tri_party_agreement` retained by the current renderer contract. The request contains exactly:
+
+```json
+{
+  "verification_status": "verified",
+  "remarks": "Borrower and nominee execution verified."
+}
+```
+
+Both fields are required; `verification_status` has only the success value `verified`, while
+`remarks` is a nullable, trimmed string of at most 4,000 characters. The action requires
+`documents.loan_document.verify`, active Company Secretary authority, and a sanction-approved
+Stage-4 parent. Permission and role are checked before payload and object lookup. A Compliance
+preparer, read-only actor, permission-only actor, wrong-stage parent, or unrelated scope receives
+403; an otherwise authorised absent or wrong-type id receives the established nondisclosing 404.
+Legacy/mismatched renderer provenance returns zero-write `409 CONFLICT`.
+
+Verification consumes only the approval owner's canonical frozen subsidiary-route fact. The fact
+must be complete and unanimously true; false is not applicable, while missing, malformed, or
+conflicting truth remains a zero-write conflict. It also consumes exactly one borrower and one
+selected-nominee row from the legal owner's exact-document signature selector. Both must retain the
+canonical captured party id/name, `signed` state, signed time, non-null Compliance capture maker,
+and no mismatch/resolution; the Company Secretary checker must differ from each capture maker.
+Cross-document, wrong-party, duplicate, pending, mismatch, resolved, or legacy null-maker rows do
+not satisfy execution.
+
+Success returns the standard §6.3 action response. Exact replay returns the same retained workflow
+identity; a changed remark returns a new verified-to-verified action identity:
+
+```json
+{
+  "entity_type": "loan_document",
+  "entity_id": "uuid",
+  "previous_status": "pending",
+  "new_status": "verified",
+  "workflow_event_id": "uuid",
+  "available_actions": []
+}
+```
+
+An exact replay is zero-write. A changed retained remark is a new attributable checker correction
+with complete old/new audit, version, and workflow evidence. Verification freezes each consumed
+borrower/nominee signature id, party id/type, canonical name, current capture maker, and signing
+time. Ordinary capture cannot mutate a consumed signature while the agreement remains verified.
+Loan-document list and legal checklist
+reads project the current verification status/verifier/time/remarks, but the action does not change
+execution, generation, stamp/notary, file/download, checklist completion/verifier/remarks/signature,
+package, security, repayment, or disbursement-readiness truth. A missing, inapplicable, or differently
+linked tri-party checklist projection rolls the document mutation and all success ledgers back.
+
+Pending stamp/notary preparation and signature capture now transfer maker identity on every
+material change; replay does not. A later editor therefore cannot verify/resolve their own facts by
+switching roles. New positive/adverse stamp/notary outcomes and mismatch resolutions are also
+database-constrained to non-null, distinct maker/checker ids. Pre-008G2 null-maker rows are marked as
+legacy during migration, remain readable/replayable history, and cannot be changed or supply new
+downstream truth. Unresolved mismatch overwrite returns HTTP 400 with
+`SIGNATURE_MISMATCH_UNRESOLVED`, not generic conflict.
+
+## Post-sanction documentation checklist (008C/008C2)
+
+`GET /api/v1/loan-applications/{loan_application_id}/document-checklist/` returns the persisted
+source §27.1 legal checklist once the application is sanction-approved. Before sanction, the same
+route retains the 005D application-intake checklist response under A-104 so the existing completeness
+workbench remains compatible. The existing `/document-checklist/refresh/` POST remains a read-derived
+005D compatibility endpoint only; 008C adds no public legal refresh, completion, or approval action.
+
+The legal GET requires `documents.checklist.read` plus source-authorised application scope. Compliance
+Team and Company Secretary can read sanction-approved documentation applications; Credit Manager uses
+canonical application scope; a sanction approver can read only an attributable approval cycle; an
+auditor requires the retained audit-read scope grant. Permission-only or unrelated actors receive
+`403 OBJECT_ACCESS_DENIED`; missing global permission receives `403 FORBIDDEN`. Reads never write.
+That authority decision now runs before checklist existence, item counts, metadata, or serialization.
+Only a Compliance Team actor holding the legal read permission receives `404 NOT_FOUND` for an
+unknown application; other legal-read roles remain nondisclosing. A-104's pre-sanction compatibility
+continues through the application-owned read boundary.
+
+Success uses the standard envelope and this metadata-only data shape:
+
+```json
+{
+  "document_checklist_id": "uuid",
+  "loan_application_id": "uuid",
+  "checklist_status": "in_progress",
+  "items": [
+    {
+      "checklist_item_id": "uuid",
+      "item_code": "term_sheet",
+      "item_label": "Term Sheet",
+      "required_flag": true,
+      "applicable_flag": true,
+      "completion_status": "pending",
+      "applicability_source": "source_always_required",
+      "applicability_blocker": null,
+      "loan_document_id": "uuid-or-null"
+    }
+  ],
+  "signature_status": {
+    "company_secretary": "pending",
+    "credit_manager": "pending",
+    "sanction_committee": "pending",
+    "senior_manager_finance": "not_applicable_until_disbursement"
+  }
+}
+```
+
+Items are ordered as witness PAN/Aadhaar, cancelled cheque, blank-dated cheque, PoA, conditional
+tri-party, conditional SH-4, conditional CDSL pledge, Term Sheet, Loan Agreement, conditional Bank
+Verification Letter, and final checklist. Applicable requirements start `pending`; inapplicable
+conditionals start `not_applicable`. Missing/conflicting source facts carry explicit blockers and are
+never guessed. A retained 008B generated-document id may be linked through legal metadata only and
+never changes completion, execution, verification, stamp, notary, signature, or approval state.
+Current renderer-provenance linkage writes `document_checklist.linkage_changed`, not
+`document_checklist.applicability_changed`; legacy-unverified output remains unlinked.
+
+The public sanction-approval route atomically creates one checklist and one row per item through a
+top-level process coordinator. A terminal approval attempted through the lower-level domain interface
+without that coordinator raises `409 SANCTION_COMPLETION_REQUIRED` and writes nothing. Exact replay/unchanged internal
+refresh writes nothing. Real creation writes attributable `document_checklist.created` audit plus
+`documentation_checklist` workflow evidence; a real applicability change retains old/new item facts
+and its source reason. Request id, IP address, user agent, actor role, and actor team are retained in
+checklist audit evidence. Refresh preserves completion/verifier/time/remarks, checklist status, and
+signature facts. An applicability reversal that contradicts completed evidence returns an internal
+atomic conflict until the owning correction workflow resolves it. PostgreSQL application locking and
+database uniqueness preserve one sanction decision/checklist/item ledger under five final-sanction
+attempts.
+
+## Credit Sanction Register legacy-null frontend contract (007T)
+
+The retained `GET /api/v1/credit-sanction-register/` backend contract is now represented exactly by
+the frontend DTO and S23 detail. Historical rows created without frozen source/terminal JSON return
+top-level `purpose: null` and `risk: null`, nullable `folio_number`/`loan_type`, empty approver arrays,
+and nullable rejection/condition/communication facts. The frontend renders those values as
+unavailable without reconstructing them from current member, application, appraisal, user, or
+communication state. Modern non-null row fields, actor/object scope, strict standard pagination,
+and the read-only register interface are unchanged.
+
 ## Shared authenticated permission denial (002J2)
 
 Authenticated users who lack a required global permission receive HTTP `403` with error code
@@ -55,7 +194,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
 | Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register persistence in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D; completeness workbench/pass implemented in 005E; deficiency return/list/resolve implemented in 005F; rejection-note create/send shell implemented in 005H; staff list/register UI wiring reads implemented in 005I; staff detail rejection-note summary hardening implemented in 005I2; eligibility assessment through default/document/terms/purpose/nominee checks implemented in 006A-006B; loan-limit calculation and snapshots implemented in 006C-006D; cultivated-acreage source hardening implemented in 006C2 | Applications, completeness, rejection note shell, Loan Request Register, eligibility assessment, loan-limit assessment | `api-contracts.md` §8, §19.1-§23; `screen-spec.md` S13/S15; `data-model.md` §13.1, application-document/deficiency/rejection-note/register tables, and §14.1-§14.2; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | Existing loan-application, register, document, checklist, completeness, deficiency, rejection-note, and eligibility endpoints retain their documented contracts. `POST /api/v1/loan-applications/{id}/loan-limit-assessment/calculate/` requires a stored normally eligible assessment, same-member verified source facts, an application-linked verified crop plan, agreement among applicable cultivated-acreage evidence, an active Board-referenced policy version, `credit.loan_limit.calculate`, and existing application object access; it atomically snapshots the lower of shareholding/land limits with audit and workflow evidence. Staff detail reads include nullable `rejection_note` summary metadata when a staff rejection note exists; `application_status` remains backend-owned and unchanged by the summary. Staff list reads support standard `search`, `application_status`/`status`, `current_stage`, `member_id`, `ordering`, `page`, and `page_size` with `page_size` capped at 100. Register reads support `search`, `register_status`/`status`, `current_stage`, `member_type`, `ordering`, `page`, and `page_size`. Appraisal, sanction, document generation, real communication delivery, and disbursement remain future slices. |
 | Appraisal and loan limit | Eligibility/loan limit implemented through 006D2C; appraisal preparation, frozen provenance, Credit Manager review/return/rejection, immutable review history, and legacy remediation implemented through 006E4 | Appraisal workbench | `functional-spec.md` §9.8/M04; `api-contracts.md` §22-§24 | Appraisals freeze canonical redacted eligibility and loan-limit projections, block unproven legacy provenance until explicit scoped revalidation, enforce both `credit.appraisal.review` and active `credit_manager` role authority, retain every review reason in appraisal-owned append-only history, and create the existing rejection-note draft for terminal rejection. Legacy draft and review-pending rows can pin current projections without inheriting review authority; a legacy reviewed row reopens to draft and requires maker resubmission plus fresh Credit Manager review. Rejected/submitted terminal rows remain quarantined for governed repair. |
-| Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
+| Sanction and approvals | Approval workflow, workbench, registers, settings, frozen legacy history, strict pagination, and action-order closure implemented through 007T | Sanction workbench, registers, approval settings | `auth-permissions.md`, `api-contracts.md` §25/§44, `screen-spec.md` S21-S25 | Approval matrix is high-control; case reads/actions use frozen actor-scoped projections. Historical S23 `purpose`/`risk` are top-level nullable, and S21 queue/detail/action/decision refreshes share newest-request authority. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
 | Communication templates and communication history | Content-template metadata shell implemented in 003F; communication send/list shell implemented in 003I; real delivery and notification-center UI remain draft | None directly | `api-contracts.md` §39.1-§39.3; `data-model.md` §24.1-§24.2; `functional-spec.md` M16-FR-001-M16-FR-007/M18-FR-006 | `content_templates` and `communications` are persisted. `GET/POST/PATCH /api/v1/content-templates/` is protected by narrow A-022 content-template permissions. `POST /api/v1/communications/send/` renders approved/effective template snapshots, persists a pending communication record, and audits metadata only; `GET /api/v1/communications/` lists records for a supplied related entity with standard pagination. No real email/SMS/courier/phone provider is called yet. |
@@ -2442,7 +2581,10 @@ committee, pending-proposal, or losing-proposal changes never rewrite the stored
 
 `GET /api/v1/approval-cases/` requires `approvals.case.read` and accepts only `current_status`,
 `approval_type`, `assigned_to_me`, `page`, and `page_size`. It returns the standard top-level
-pagination envelope. `assigned_to_me=true` includes only complete version-2-or-later 007B routing
+pagination envelope. `approval_type`, when present, is exactly `sanction`; `current_status`, when
+present, is exactly `pending`, `approved`, `rejected`, `returned_for_clarification`, or
+`blocked_by_conflict`. Unknown values return `400 VALIDATION_ERROR` rather than an empty successful
+page. `assigned_to_me=true` includes only complete version-2-or-later 007B routing
 snapshots where the caller remains in `required_approvers`, is absent from `excluded_approvers`,
 has no immutable `approval_actions` row, and the case is still pending. Missing/default snapshot
 facts never fall back to amount, the current matrix, or the current committee.
@@ -2471,39 +2613,85 @@ or Credit Manager ownership before the remaining JSON coherence validation runs.
 
 The selector's indexed `routing_snapshot_is_coherent` and attributable-reader projection are
 updated only through the explicit approval-owned projection interface. Case creation, workflow
-linkage, enrichment, actions/abstention, and owning-appraisal refresh invoke it atomically; an
-ordinary model save has no hidden cross-table side effect. The reader projection contains only
+linkage, enrichment, and actions/abstention invoke it atomically; an ordinary approval-case or
+appraisal save has no hidden cross-table side effect. A later live appraisal mutation cannot rewrite
+the coherence or reader index of a frozen historical cycle. The reader projection contains only
 original routed actors, current effective replacements, and actors with an immutable action. It
-permits exact database count and `LIMIT/OFFSET` before collection serialization; detail and action
-requests still execute the full canonical snapshot-coherence check and never trust the projection
-as action authority.
+narrows the database scan, but the approval-owned frozen-validity and actor-scope decision runs
+over every narrowed candidate before collection/register filters, counts, page normalization,
+`LIMIT/OFFSET`, or serialization. Detail, action, sanction-decision, and register reads execute the
+same decision and never trust the projection as read or action authority.
+
+For the approval-case collection, coarse actor scope plus valid approval type, status, and
+assignment/index filters run before canonical Python validation. Every remaining candidate still
+passes through the single frozen-validity/read-scope decision before totals, pages, or rows are
+produced. A stale true projection can therefore add validator work but cannot create a page hole or
+inflate `total_count`; unrelated actors, types, and statuses are not materialized for validation.
 
 Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
 `sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
-matrix/committee/loan-limit snapshots, and case `version`). Per-approver `decision`/`acted_at` are
+matrix/committee/loan-limit snapshots, distinct `reason_for_approval` and `exception_reason`, and
+case `version`). Per-approver `decision`/`acted_at` are
 read from the immutable source §15.4 `approval_actions` ledger; 007C creates no action records.
 
-The nested `review_facts` object is frozen into each enriched approval cycle (007D3). Legacy
-pre-007D3 rows are deterministically backfilled from their owning records during migration:
+The nested `review_facts` object is frozen into each enriched approval cycle. New cycles use
+`approval-review-v3`, which includes credit-owned snapshot provenance; borrower member id,
+application reference, name, and type; and reviewed sanction terms (tenure, interest type, and
+security summary) in addition to the review sections below. The exact pre-007O
+`approval-review-v2` shape remains actor-scoped/readable under its original immutable validation
+rules, but it is historical-only: it is never reinterpreted as carrying v3 terminal facts.
+Unknown schemas and malformed v3 packages remain nondisclosing. Reads and terminal writes never
+reconstruct missing facts from current owning rows:
 
 - `eligibility` and eligible amount come from the appraisal-owned frozen eligibility/loan-limit
   snapshots.
 - requested amount, purpose, and documentation/completeness status come from the owning loan
   application.
-- borrowing history and recommendation amount come from the owning appraisal note.
+- borrowing history, recommendation amount, and sanction terms come from the owning appraisal
+  note at review-package creation.
 - risk ratings/mitigation come from the owning risk assessment.
 - `source_references` links the application, appraisal, eligibility, and loan-limit owner APIs.
 
 Changing current matrix/committee rows cannot change queue membership, stored provenance, or
 action assignment for an existing case.
 
-Routability is one approval-owned validation contract shared by list, detail, and later action
+Authority history returns formal display names only from the routed immutable approver snapshot or
+the action's immutable action-time display name. User ids remain the attribution identity. A later
+user-profile rename cannot change case history or a generated register; a legacy action whose name
+is unavailable from both immutable owners returns `full_name: null` rather than reading the current
+user profile.
+
+Every list/detail item also returns `workbench_summary`, derived only from the frozen review package,
+frozen matrix/case flags, immutable action ledger, and approval-case timestamps. It contains
+`borrower_name`, `member_type`, requested/recommended/eligible amounts, `approval_path`, exception
+and related-party booleans, `risk_rating`, `submitted_at`, `current_decision_status`, and nullable
+`pending_age`. A pending case with an immutable approval reports `partially_approved`; otherwise the
+decision status matches the case. `pending_age` is labelled `Elapsed pending time` and includes
+server-projected elapsed seconds/display only while pending. It does not claim a target or breach
+before the later workflow-TAT policy boundary exists.
+
+The S21 frontend sends `approval_type=sanction` on every collection request. The assigned pending
+queue additionally sends `current_status=pending&assigned_to_me=true`; historical filters send their
+exact status without assignment. Every request also sends explicit `page` and `page_size=20`; S21
+renders `pagination.total_count`, exposes the existing previous/next pattern, resets to page one on
+filter changes, and replaces rows plus pagination from the same response. Collection failure clears
+both. The shared authenticated paginated client accepts success only when `data` is an array and all
+six top-level pagination fields are present, non-negative/in-range, and internally consistent; it
+returns `MALFORMED_RESPONSE` rather than fabricating empty pagination. S22 renders every immutable `approval_actions` actor, role,
+decision/abstention, comment/reason, and acted-at confirmation separately from required/effective
+authority.
+
+Routability is one approval-owned validation contract shared by list, detail, action,
+sanction-decision, and register
 seams. Case/application/type/amount/decision/exception facts must agree with the stored matrix;
 rule and committee ids, versions, and dates must match; the snapshot must contain exactly the
 stored CFO and required distinct Directors with unique ids; required roles/director count and
 joint/register facts must be complete; and the loan-limit assessment/application/exception/policy
-provenance must equal the reviewed credit snapshot. Invalid or contradictory snapshots are hidden
-and non-actionable without writes; live rule, committee, or user membership is never queried to
+provenance must be internally complete. The credit-owned enrichment interface validates the locked
+appraisal and loan-limit source once, then freezes the complete provenance and `review_facts` on
+the case. Existing-cycle validation never compares those facts with the mutable live appraisal or
+a later revision. Invalid or contradictory frozen snapshots are hidden and non-actionable without
+writes or count leakage; live appraisal, rule, committee, or user membership is never queried to
 repair them.
 
 The §25.2 enrichment success projection now includes source-required `current_status`. Enrichment,
@@ -2511,6 +2699,14 @@ list, and detail compose the same canonical immutable routing projection (status
 decision date, required/excluded authority, and loan-limit provenance). Detail adds immutable
 decision history, review read-throughs, and caller-specific actions; existing submission fields
 remain backward-compatible additions.
+
+For a case whose frozen projection requires General Meeting evidence, detail also includes the
+resource action `record_general_meeting_approval`. The backend enables it only when the actor has
+canonical case scope, belongs to the §19.4 legal audience, and holds
+`approvals.general_meeting.record`, `approvals.case.read`, and `documents.file.download`; otherwise
+the same action is returned disabled with a reason. Ordinary cases omit this inapplicable action.
+The frontend may intersect the enabled resource action with `/auth/me` permissions for usability,
+but a global permission never creates or enables the action.
 
 An enrichment replay is exact only when the locked reviewed decision date and recommended amount,
 assessment/application ids, exception flag, calculation rule, policy id/name, and calculation time
@@ -2529,6 +2725,13 @@ version is `409 STALE_VERSION`, and acted/closed/excluded state is `409 TRANSITI
 The submitted `version` must be a positive JSON integer; booleans, zero, negative values, strings,
 missing values, and unknown request fields return `400 VALIDATION_ERROR` without writes. Approve
 permits omitted/blank comments; reject and return require a non-blank string.
+
+For a readable v2 historical case, approve and reject are returned disabled with the reason
+`Frozen terminal facts are unavailable. Return for clarification and complete a new independent
+review cycle.` A direct approve/reject attempt returns
+`409 TERMINAL_FACTS_REMEDIATION_REQUIRED` with exact zero-write semantics. Return remains available
+to an otherwise eligible actor; correction, a fresh independent Credit Manager review, and normal
+resubmission create a new v3 cycle without rewriting the v2 cycle.
 
 Success returns the §25.5 action identifiers/status/sanction flags merged with the canonical 007C2
 case detail projection. Collection, detail, and action responses now compose the same history-aware
@@ -2559,6 +2762,15 @@ unknown type is rejected. The entry copies the request's distinct `business_reas
 `risk_assessment`, links the loan application and approval case, and begins `pending`. An ordinary
 within-limit route creates no entry. Exact enrichment replay creates no duplicate or evidence.
 
+The same request may include optional `supporting_document_ids` as an ordered list of at most 20
+distinct UUIDs. The documents owner validates every supplied id through public-upload provenance,
+exact application attribution, legal category, matching sensitivity, document permission, role,
+workflow, and object scope before the locked enrichment writes. Approvals stores only the returned
+immutable display projection (`document_id`, file name, MIME type, size, sensitivity, upload time)
+on the exact register entry/cycle and never queries `DocumentFile`. Empty/omitted evidence freezes
+an empty list. Exact ordered-id replay is zero-write; any changed ordered list after routing returns
+the existing immutable-snapshot `409` conflict.
+
 Inside the locked approval-action transaction, partial approval leaves the entry pending. Final
 approval changes it to `approved`; rejection changes it to `rejected`; both copy the case
 `closed_at`. Return-for-clarification and `blocked_by_conflict` also copy the case closure time but
@@ -2573,11 +2785,39 @@ Object scope delegates to the canonical approval-case selector before count and 
 row includes register/application/case ids, `cycle_number`, type, description, business/risk facts,
 entry/case statuses, conflict reason, timestamps, `authority_applied_summary`, and canonical
 `route_approvers`, `required_approvers`, and complete `approval_actions`. Reads never re-run
-conflict replacement or consult live committee membership.
+conflict replacement or consult live committee membership. Each row also includes
+`supporting_documents` with the frozen metadata above. Register visibility and metadata never grant
+download; S25 exposes no download control unless a separate document resource independently
+authorises an action.
+
+As of 007Q each new row also freezes `borrower_name`, the routed reviewed amount as nullable
+`financial_impact` (A-096), and `requested_by = {user_id, full_name}` at exception creation.
+`decision_date` is the immutable terminal case closure date or null while pending. Later member,
+application, or requester-profile edits cannot change those response facts. Legacy rows whose
+pre-007Q evidence cannot be proven expose the unavailable fact as null rather than reconstructing
+it from a live owner.
 
 The nullable `loan_account_id` is currently a UUID reference, not a foreign key to the tracer app's
 synthetic demo account. A protected FK is deferred to the production finance loan-account owner
 (A-084); exception entries created before sanction naturally carry no loan account.
+
+## Exception predicate and coherence closure (007F2)
+
+For a non-forced route, the reviewed `recommended_amount` must exceed the frozen
+`final_eligible_loan_amount` exactly when the frozen `exception_required_flag` is true. Either
+contradiction returns `409 INVALID_STATE_TRANSITION` before matrix/committee resolution and leaves
+the existing submission shell, routing, register, audit, workflow, and communication ledgers
+unchanged. `force_exception_route = true` is the only within-limit exception path and still requires
+truthful `stage_bypass` or `waiver` type plus a non-blank business reason.
+
+`reason_for_approval` belongs to the sanction case and becomes the sanction decision reason.
+`business_reason` belongs to the generated Exception Register; the case freezes it separately as
+`exception_reason`. These independently authored reasons are not required to be equal. An
+exception-conditioned routing snapshot is coherent only when the same-case register row matches
+the case/application, `exception_reason`, truthful exception type, optional risk shape, frozen
+amount/limit predicate, the `exceeds_permissible_limit` matrix condition, two-Director authority,
+and `register_required = exception_register`. Exact replay is zero-write; changed reason, risk,
+type, amount, or frozen provenance conflicts without rewriting or hiding the original case.
 
 # Returned approval cycles and resubmission (007D3)
 
@@ -2701,10 +2941,21 @@ routed approval cycle, and `documents.file.download`. The case's immutable
 
 `related_party_type` is exactly `director`, `director_relative`, or `committee_member`.
 Description and ISO date are mandatory. Notice, minutes, and resolution must be three distinct,
-existing document files accessible under the recorder's document authority. Missing files return
-`400 VALIDATION_ERROR` on their exact request fields; missing record/document permission returns
+existing document files resolved through the documents module's reference-authorization interface.
+Each file must have immutable `documents.file.uploaded` provenance from the public upload path,
+`related_entity_type = application`, the exact loan-application id, category `legal`, and sensitivity
+matching one of the document model's source-defined levels (`public`, `internal`, `confidential`, or
+`restricted`). The approval owner supplies a typed reference context only after the latest routed
+case has canonical object access and its immutable related-party evidence flag proves the
+`related_party_sanction_case` workflow scope; the documents owner combines that decision with each
+file's provenance and the source §19.4 legal audience (Compliance Team, Company Secretary, Credit
+Manager, or an attributable case approver). Audit-only or generic case read scope is not legal-file
+reference authority even if the global permissions are granted. Missing, cross-application,
+unattributed, wrong-category, unsupported/mismatched-sensitivity, and otherwise inaccessible files all return the same nondisclosing
+`400 VALIDATION_ERROR` text on each denied request field. Missing record/document permission returns
 `403 FORBIDDEN`; missing case scope returns `403 OBJECT_ACCESS_DENIED`; a non-related-party cycle
-returns `409 INVALID_STATE`.
+returns `409 INVALID_STATE`. Denial creates no meeting/audit/workflow/case/exception mutation and
+never emits a `documents.file.downloaded` audit.
 
 Success returns the standard envelope with the request fields plus
 `general_meeting_approval_id`, `recorded_by_user_id`, `recorded_at`, and nullable
@@ -2720,20 +2971,24 @@ The locked approval action transaction evaluates this gate only after object sco
 conflict, assignment/action permission, and distinct effective authority establish that an
 `approve` action would be final. Missing, pending, and rejected current evidence return 409 with
 codes `GENERAL_MEETING_EVIDENCE_REQUIRED`, `GENERAL_MEETING_APPROVAL_PENDING`, and
-`GENERAL_MEETING_APPROVAL_REJECTED`. Details contain `approval_case_id`, `cycle_number`, nullable
-`general_meeting_approval_id`, and nullable `approval_status`. These denials insert no action or
-sanction and do not close/project an Exception Register entry. A conflict still returns the earlier
-canonical `CONFLICTED_APPROVER_NOT_ALLOWED` contract.
+`GENERAL_MEETING_APPROVAL_REJECTED`. Details contain `approval_case_id`, `cycle_number`, and the
+same nullable `general_meeting_approval` object used by case readers. These denials insert no action
+or sanction and do not close/project an Exception Register entry. A conflict still returns the
+earlier canonical `CONFLICTED_APPROVER_NOT_ALLOWED` contract.
 
-Successful final approval freezes the current approved record on that case cycle. Return for
-clarification also freezes whichever current record exists without requiring it to be approved;
-no evidence is needed to return. Collection, detail, and action success expose that immutable
-record as nullable `general_meeting_approval`, beside unchanged `route_approvers`,
-`required_approvers`, and `approval_actions`. Later application-level supersession cannot change a
-returned or completed cycle's reference. A later cycle resolves the then-current unsuperseded
-application record independently.
+While an evidence-required cycle is `pending`, collection, detail, action success, and final-gate
+details expose the application's current unsuperseded record as nullable `general_meeting_approval`;
+the object has `evidence_scope = current_pending`. Successful final approval, rejection, return for
+clarification, and an abstention that closes the case as `blocked_by_conflict` freeze whichever
+current record exists on that exact cycle (final approval still requires `approved`; other terminal
+outcomes do not). Returned and terminal readers expose only that frozen
+record with `evidence_scope = cycle_frozen`, beside unchanged `route_approvers`,
+`required_approvers`, and `approval_actions`. Later application-level supersession cannot change
+historical case or register references. A later pending cycle resolves the then-current
+unsuperseded application record independently. §25.11 success remains the source record shape
+without `evidence_scope`; the scope discriminator belongs to case/gate projections.
 
-# Sanction decision and Credit Sanction Register reads (007H)
+# Sanction decision and Credit Sanction Register reads (007H/007O)
 
 `GET /api/v1/loan-applications/{loan_application_id}/sanction-decision/` requires
 `approvals.sanction.read`. It returns the source §25.8 decision shape: id, decision, sanctioned
@@ -2741,7 +2996,20 @@ amount/tenure, interest type/value, repayment date, penal rate, `charges`, secur
 conditions precedent, and decision reason. It returns `404 NOT_FOUND` when no sanctioned decision
 exists, including before terminal approval and after rejection. A-079 remains binding: numeric
 rates, repayment date, and penal rate are nullable, charges are `{}`, and the blank conditions
-snapshot is projected as `null` until an approved owner supplies those facts.
+snapshot is projected as `null` until an approved owner supplies those facts. Sanctioned amount,
+tenure, interest type, and security summary are copied exclusively from the canonically validated
+routed `review_facts`; terminal creation never reads their mutable appraisal-note counterparts.
+
+Permission and row scope are independent. The endpoint first delegates to the approval-owned
+coherent-case/read-index selector and revalidates the canonical case decision, then looks up the
+immutable approved-cycle decision. Original, effective, conflicted, or acted historical approvers can read
+their attributable cycle. An actor with only `approvals.sanction.read`, including an unused
+committee Director, receives nondisclosing `403 OBJECT_ACCESS_DENIED` for an unrelated approved
+application. A caller with case object scope but without the endpoint permission receives
+`403 FORBIDDEN`. Persisted `legal_readonly`, `audit_readonly`, or `management_readonly` grants can
+provide case scope only when the caller separately holds the sanction permission; they never grant
+approval actions or document access. The deliberate `404 NOT_FOUND` contract still applies when no
+sanction decision exists, including before approval and after rejection.
 
 `GET /api/v1/credit-sanction-register/?financial_year=FY2026-27&decision=sanctioned&page=1&page_size=20`
 requires `approvals.sanction_register.read` and returns the standard list/pagination envelope.
@@ -2753,36 +3021,736 @@ no row detail/update/delete route. The slice's named readers—CFO and Director 
 Company Secretary, and Internal Auditor—receive this read grant in the canonical role seed;
 possession of other approval/case permissions does not imply register access.
 
+The collection delegates to the same approval-owned coherent-case/read-index selector before
+financial-year or decision filters, ordering, `total_count`, page-bound normalization, and row
+serialization. Consequently an original/effective/conflicted/acted Director sees only attributable
+cycles and cannot infer unrelated decisions from empty pages, totals, total pages, or filter
+results. Persisted legal/audit/management readers see exactly the sanction cases covered by their
+active role grant, but only when they also hold `approvals.sanction_register.read`. Register
+permission does not become global object authority and grants neither case actions, sanction
+decision permission, document-reference authority, nor document download. The selector—not
+`routing_snapshot_is_coherent`, register permission, Exception Register presence, or evidence
+metadata—is the object-authority source.
+
+A later direct appraisal save or public return/correction/re-review changes only the new credit
+owner state. It cannot hide, rewrite, or reattribute an earlier enriched cycle. Pending case
+detail/queue/actions, returned-cycle history, terminal case detail, the immutable sanction
+decision, and the generated register row continue to use that cycle's byte-for-byte
+`loan_limit_provenance` and `review_facts`. A new approval cycle freezes its newly reviewed facts
+independently. Conversely, a malformed frozen case is removed before every count/page and returns
+nondisclosing detail/action/decision results even when its stale projection flag/index remains true.
+
 Every approved or rejected terminal case creates exactly one immutable
 `credit_sanction_register_entries` row in the locked approval action transaction. Approved rows
 link the §15.5 sanction decision; rejected rows deliberately keep that link/amount null rather than
 inventing a sanction decision. The row also stores the exact terminal `sanction_approval` workflow
-event and writes one attributable `credit_sanction_register.created` audit. Stale/closed retries
-cannot duplicate the one-to-one case row. Partial approvals, returns, conflict-blocked cycles, and
-general-meeting gate denials create no row.
+event, a byte-for-byte `source_review_facts_json` copy of the validated routed package (including
+purpose and risk), and one attributable `credit_sanction_register.created` audit. Stale/closed
+retries cannot duplicate the one-to-one case row. Partial approvals, returns, conflict-blocked
+cycles, malformed frozen packages, and general-meeting gate denials create no row.
 
-The 15 functional-spec fields and their frozen sources are:
+The source register fields and their frozen sources are:
 
 | Response field | Frozen source |
 |---|---|
-| `application_number` | terminal case's loan application reference |
-| `borrower_name` | terminal application's member display/legal name |
-| `borrower_type` | terminal application's borrower type |
-| `requested_amount` | terminal application's required loan amount |
-| `eligible_amount` | case appraisal's verified loan-limit snapshot |
-| `recommended_amount` | case appraisal's reviewed recommendation |
+| `entry_number` | immutable system-generated `CSR-<UUID>` formal number (A-096) |
+| `application_number` | routed review package's application reference |
+| `borrower_name` | routed review package's borrower name |
+| `borrower_type` | routed review package's borrower type |
+| `folio_number` | routed review package's member folio; null only for unproven legacy packages |
+| `loan_type` | routed review package's requested loan type; null when honestly unavailable |
+| `purpose` / `risk` | byte-for-byte values in the row's immutable `source_review_facts_json` |
+| `requested_amount` | routed review package's requested amount |
+| `eligible_amount` | routed review package's verified eligible amount |
+| `recommended_amount` | routed review package's reviewed recommendation |
 | `sanctioned_amount` | linked sanction decision; null for rejection |
 | `approval_authority` | case's canonical effective required-authority/action snapshot |
-| `approver_names` | ordered immutable actions for that case/cycle |
+| `approver_names` | ordered routed/action-time immutable display identities for that case/cycle |
+| `approver_decisions` | each immutable action's user id, frozen display identity, role, decision, comment, and time |
 | `approval_date` | terminal case closure date |
 | `decision` | terminal case outcome mapped to `sanctioned`/`rejected` |
 | `reasons` | case approval or rejection reason |
+| `rejection_reason` | rejected terminal reason; null for sanctioned rows |
+| `conditions` | immutable sanction-decision conditions; null under A-079 when unavailable |
+| `communication` | exact terminal team communication id/status/sent time; pending with null sent time until delivered |
 | `exception_reference` | that case's one-to-one 007F row: id/type/business reason/status/cycle |
 | `conflict_abstention_details` | that case's frozen exclusions plus attributable abstention action |
 | `general_meeting_approval_reference` | that case's frozen 007G row: id/outcome/date/party/user/document metadata ids |
 
-The response additionally includes register/case/application/sanction/workflow ids and
+The terminal communication is created first inside the same locked transaction and copied into the
+register before commit; an adapter or register failure rolls both back. The response additionally includes register/case/application/sanction/workflow ids and
 `recorded_at`. Register permission never grants document download: the three general-meeting
 document values are metadata ids only, and the document module retains its own permission and
 sensitivity checks. No template/Annexure code is stored or projected because OC-002 still leaves
 the Annexure K label conflicted (A-087).
+
+Pre-007O/pre-007Q register rows remain actor-scoped and readable even when
+`source_review_facts_json`, `terminal_facts_json`, approver arrays, or communication facts are
+empty. Unavailable folio, loan type, purpose, risk, rejection, conditions, and communication values
+are explicit `null`; unavailable approver collections are `[]`. Stored borrower/application/
+amount/reason values remain as recorded. Serialization never repairs an old row from live
+application, member, appraisal, user, or communication records.
+
+# Approval registers and matrix frontend consumption (007J)
+
+`RegistersHub` consumes S23 only from `GET /api/v1/credit-sanction-register/` and S25 only from
+`GET /api/v1/exception-register/`. Each filter or page change replaces the rows and pagination
+object with that endpoint's latest actor-scoped response. The client does not combine the two
+collections, recover hidden rows from case/detail APIs, retain an earlier total, calculate approval
+authority or money, or turn case/application/document metadata ids into actions or downloads.
+
+The S71 matrix panel consumes `GET /api/v1/approval-matrix-rules/?page=1&page_size=100` and renders
+active, inactive, and retained superseded versions as returned. Each rule additionally projects
+display-ready `authority_summary` and numeric `minimum_approver_count` from the approvals
+configuration owner; React renders these facts verbatim and does not recompute role or Director
+cardinality. A holder of
+`approvals.matrix.manage` may submit a complete successor through
+`PATCH /api/v1/approval-matrix-rules/{approval_matrix_rule_id}/`; success is a pending governed
+configuration proposal, not an immediate edit. The active rule remains unchanged until a distinct
+active CFO or Company Secretary approves the proposal through the existing 007A3 boundary.
+
+Register export remains deferred to 012B/012C. The existing `Export Register` action is visible
+only with canonical `reports.export`; in 007J it displays an explicit deferred-state notice and
+makes no network request, creates no file, and does not imply broader register visibility. This
+interim behavior must be replaced, not extended, when the export-job contract lands.
+
+As of 007N, the register/matrix feature service delegates bearer/session headers, request ids,
+standard envelope and field-error parsing, malformed-response handling, and pagination extraction
+to the shared authenticated frontend client. The feature boundary owns only its exact endpoints,
+query filters, successor payload, and typed DTOs.
+
+As of 007Q S23 and S25 render each result as the existing register card/detail composition so the
+complete source facts, approver comments/times, and supporting-file metadata are reviewable without
+horizontal off-screen evidence. Both still use the same strict paginated transport and atomic
+row/pagination replacement. Metadata ids never create a download control.
+
+# Document-template catalogue and immutable successors (008A)
+
+`GET /api/v1/document-templates/` requires `documents.template.read` and returns the standard
+list envelope. It accepts only `document_type`, `borrower_type`, `approval_status`, `page`, and
+`page_size`; unknown parameters return `400 VALIDATION_ERROR`. `borrower_type` is nullable and
+accepts the repository/source variants `individual_farmer`, `fpc`, or `fpo`; the literal `null`
+filters the generic variant. `approval_status` is exactly `draft`, `approved`, or `retired`. Page
+defaults to 1, page size defaults to 20 and is capped at 100.
+
+`POST /api/v1/document-templates/` and
+`PATCH /api/v1/document-templates/{document_template_id}/` require
+`documents.template.manage`. Both accept a complete object:
+
+```json
+{
+  "template_code": "annexure_e_term_sheet_v1",
+  "template_name": "Term Sheet",
+  "document_type": "term_sheet",
+  "borrower_type": "individual_farmer",
+  "template_version": "1.0",
+  "template_file_id": "uuid-or-null",
+  "merge_fields": ["borrower_name", "loan_amount"],
+  "approval_status": "approved",
+  "effective_from": "2026-04-01",
+  "effective_to": null
+}
+```
+
+Required values are code, name, document type, version, approval status, and effective-from.
+Merge fields must be a list of unique nonblank names. Effective-to cannot precede effective-from.
+Template code is globally unique; document type, borrower variant, and version are unique together;
+approved effective ranges for the same document type/borrower variant cannot overlap. As of 008A2,
+every create/successor locks a unique non-null document-type/borrower-variant identity row before
+checking replay, uniqueness, and effective intervals, including when no template row exists yet.
+Thus concurrent overlapping first versions persist one winner/evidence set; valid non-overlapping
+identities and variants remain independent.
+
+A non-null template file crosses the documents-owned template-source reference decision. The upload
+ledger must be singular and exactly match the immutable file metadata, carry
+`document_category=template_source`, `related_entity_type=global`, no related entity id, and one of
+the source-defined sensitivity values. The actor must independently hold
+`documents.template.file_reference`. Missing rows/ledgers, corrupt or duplicate ledgers,
+application/loan ownership, invalid sensitivity, unrelated actors, manage/read permission, and
+download permission alone all return the same nondisclosing zero-write validation error. Reference,
+template read/manage, upload, and file download remain separate authorities; reference checks emit
+no download audit and responses expose no storage descriptor.
+
+PATCH never updates the addressed row. It locks that row and creates its sole immutable successor;
+the complete payload must carry a new code/version. Exact POST or PATCH replay returns the original
+result with no additional template, audit, or version-history write. Each real creation writes one
+attributable `documents.template.created` or `documents.template.successor_created` audit plus one
+`document_template` version-history row containing old/new version, status, effective dates,
+template-file id/name, actor, and request metadata.
+
+Success data contains `document_template_id`, the request fields, nullable
+`template_file_name`, and `created_at`. It deliberately contains no storage key, download URL,
+enabled/available action, generated document, or Annexure routing fact. The unresolved J/K/L
+lettering remains descriptive source metadata and does not affect identity, selection, or routing.
+
+008A2 also exposes one backend resolver for 008B: repository member type `individual_farmer`
+resolves to the Individual template variant, while `fpc`, `producer_institution`, and unknown member
+types return a configuration-required validation result. No implicit FPO mapping or cross-variant
+selection is permitted until governance confirms it. Catalogue filtering/pagination now lives in
+the documents selector, and write modules receive transport-neutral request metadata rather than a
+raw HTTP request; the public routes, envelopes, fields, strict filters, and page bounds are unchanged.
+
+## Loan document generation and metadata list (008B, authority/provenance closed by 008B2/008B4)
+
+`POST /api/v1/loan-applications/{loan_application_id}/loan-documents/generate/` accepts exactly
+`document_type`, `template_id`, and `output_format` (`pdf` or `docx`). It requires
+`documents.loan_document.generate`, `documents.template.file_reference`, and canonical application
+object access. The application must be sanction-approved and have one retained sanctioned decision.
+The exact template id must be approved, effective today, match the requested type and the canonical
+borrower variant, retain a non-null 008A2-referenceable source file, and retain local source bytes
+whose size/checksum match metadata. Template read/manage and file upload/download do not imply
+generation. Unresolved `fpc`/`producer_institution` variants fail configuration-required without
+cross-variant fallback.
+
+008B2 makes this legal-document module—not the HTTP view—the authoritative call boundary. Direct
+task/test/orchestration callers and HTTP callers therefore receive the same permission, active-actor,
+object-scope, state, template-reference, replay, and evidence decisions. Missing generation or
+template-reference authority returns nondisclosing `403 FORBIDDEN`; an out-of-scope application
+returns `403 OBJECT_ACCESS_DENIED`; all such denials occur before template/frozen-fact/file reads and
+write no bytes, metadata, audit, or workflow rows. The unchanged v1 route is now transported by the
+`legal_documents` app; the foundation `documents` app retains only file/template/storage ownership.
+
+Declared merge fields are unique 008A facts and must appear in the retained template body as
+`{{ field_name }}` placeholders. 008B supports the Term Sheet vocabulary recorded in A-100 plus
+`witness_name`; every declared field must resolve from the approval-owned frozen review package and
+sanctioned terms. Generation never rereads mutable nominee, witness, or shareholding rows. Unknown,
+missing, or absent-placeholder facts return `400 VALIDATION_ERROR` field errors before generated
+bytes, metadata, audit, or workflow evidence. Loan Agreement generation additionally returns
+`409 INVALID_STATE_TRANSITION` until the same application has an executed Term Sheet.
+
+Success uses the exact §26.4 object:
+
+```json
+{
+  "loan_document_id": "uuid",
+  "document_type": "term_sheet",
+  "generation_status": "generated",
+  "document_id": "uuid",
+  "file_name": "term-sheet-LO00000801.pdf"
+}
+```
+
+The generated file name contains only the normalized document type and application reference. The
+retained generated file is confidential and the response grants no download. Exact
+application/template/output-format replay returns the retained result with no additional file,
+loan-document, audit, or workflow row. PostgreSQL application-row locking plus the database replay
+constraint retains one winner under five concurrent identical requests. A real generation writes
+one `documents.loan_document.generated` audit and one `loan_document_generation` workflow event
+containing actor/request/template/version/type/format/file metadata only—never rendered content.
+Storage/metadata failure removes generated bytes and rolls back every success row.
+
+008B4 binds every new success to renderer contract `legal-renderer-v1`, the exact generated
+`document_id`, and the SHA-256 recorded only after structural/content validation and storage. Exact
+replay succeeds only while all three retained facts still match the current generated-file metadata.
+A pre-provenance or mismatched retained row returns `409 CONFLICT` with
+`renderer_validation_status=legacy_unverified` and a governed-successor remediation message; it is
+never overwritten and creates no replacement bytes or evidence. This provenance proves renderer
+output only—not execution, verification, stamping, notarisation, checklist completion, or A-101's
+still-missing governed Term Sheet facts.
+
+`GET /api/v1/loan-applications/{loan_application_id}/loan-documents/` requires
+`documents.loan_document.read` plus the same object scope. It accepts only `page` and `page_size`
+(defaults 1/20, capped at 100), applies application scope before count/pagination, and returns
+metadata-only generated facts: the §26.4 fields plus category, required party, template id/version,
+format, execution/verification/stamp/notary states, creation time, and
+`renderer_validation_status` (`current_validated` or `legacy_unverified`). Legacy rows remain
+visible for honest history but are excluded from current checklist-link selectors. It exposes no rendered merge
+values, borrower facts, storage key, download descriptor, or mutation authority.
+
+For both routes, a Compliance Team caller holding the route's permission receives standard
+`404 NOT_FOUND` for an absent application. Missing-permission and unrelated-role callers receive
+nondisclosing 403 first, before request validation or document queries.
+
+008B2 moves eager loading, exact count, deterministic `-created_at/-loan_document_id` ordering,
+bounded page normalization, and slicing into the legal-document selector after module-enforced actor
+and application scope. The retained `loan_documents` table and rows have one Django owner in
+`legal_documents`. Its nullable `loan_account_id` is database-constrained to `NULL` under A-102 until
+009C can replace that transition with the source-required protected nullable FK.
+
+## Stamp duty and notarisation records (008D/008D2)
+
+`POST /api/v1/loan-documents/{loan_document_id}/stamp-duty-record/` requires
+`documents.stamp.record`, an active Compliance Team or Company Secretary role, an approved Stage 4
+application, and an 008B4 current-renderer-provenance loan document. It accepts exactly:
+
+```json
+{
+  "stamp_paper_amount": "500.00",
+  "stamp_type": "physical",
+  "stamp_number": "MH-STAMP-123",
+  "stamp_purchase_date": "2026-06-22",
+  "executed_date": "2026-06-22",
+  "status": "adequate",
+  "remarks": "Verified by Company Secretary."
+}
+```
+
+Amount is a required non-negative two-decimal string; type is `physical` or `electronic`; status is
+`pending`, `adequate`, or `insufficient`; nullable dates use ISO `YYYY-MM-DD`, and purchase cannot
+follow execution. Only Compliance Team authority may create or change `pending` preparation facts.
+Both `adequate` and `insufficient` are Company Secretary verification outcomes; `adequate`
+additionally requires an execution date. A checker outcome requires a retained pending preparation
+by a different user. The platform persists the supplied amount and verification outcome but
+performs no hard-coded ₹500 or ad-valorem adequacy calculation.
+
+`POST /api/v1/loan-documents/{loan_document_id}/notarisation-record/` similarly requires
+`documents.notary.record` and accepts exactly nullable notary name/registration/date, bounded
+`pending`/`completed`/`rejected` status, nullable `evidence_document_id`, and nullable remarks.
+Only Compliance Team authority may create or change `pending` preparation facts. Both `completed`
+and `rejected` are Company Secretary verification outcomes, require a retained preparation by a
+different user, and cannot be erased or replaced by a preparer; completed additionally requires
+every notary identity, date, and evidence field. Non-null evidence must have one exact retained `documents.file.uploaded`
+provenance ledger matching the current file metadata, `legal` category, and the same application.
+The response returns evidence id/name metadata only and never grants download. The documents-owned
+interface returns only generic immutable upload provenance. The legal-documents module owns legal
+category, Stage-4 role, notary purpose, and same-application decisions.
+
+Both routes cross one legal-documents-owned authority interface for action permission, sanctioned
+Stage 4 queue scope, and current renderer provenance, then lock only the owning `LoanDocument`.
+Request shape and simple decimal/date/UUID/enum parsing live at the legal HTTP serializer seam; raw
+direct-module callers cross the same parser and business interface. Exact replay returns the current response with zero
+writes; a changed POST updates the one-to-one current record and appends attributable audit,
+version-history, and workflow evidence. The existing loan-document/checklist reads project only
+current stamp/notary statuses. Current responses and every real history snapshot include nullable
+`prepared_by_user_id` and `verified_by_user_id`; new checker outcomes require both and require them
+to differ. Execution/verification states, renderer/template/file provenance,
+checklist applicability/linkage/completion/verifier/remarks/signatures/status, and disbursement
+readiness remain untouched. A changed status conflicting with completed checklist evidence returns
+atomic `409 CONFLICT`; legacy/mismatched renderer provenance also returns zero-write `409 CONFLICT`.
+Unknown/malformed fields return `400 VALIDATION_ERROR`; missing role/permission or non-Stage-4 scope
+returns nondisclosing 403; an authorised missing loan-document id returns 404.
+
+## Signature records and mismatch resolution (008E/008E2)
+
+`POST /api/v1/loan-documents/{loan_document_id}/signatures/` requires
+`documents.signature.record`, an active Compliance Team role, an approved Stage 4 application, and
+an 008B4 current-renderer loan document. It accepts exactly the §26.7 fields:
+
+```json
+{
+  "signer_party_type": "borrower",
+  "signer_party_id": "uuid",
+  "signer_name_snapshot": "Ramesh Patil",
+  "signature_method": "wet_ink",
+  "signature_status": "signed",
+  "signed_at": "2026-06-22T10:30:00Z",
+  "signature_mismatch_flag": false
+}
+```
+
+Party type is `borrower`, `nominee`, `witness`, or `user`; method is `wet_ink`, `digital`, or
+`scanned`; status is `pending`, `signed`, or `mismatch`. Pending carries neither signed time nor a
+mismatch; signed requires a timezone-bearing signed time and forbids mismatch; mismatch requires a
+true mismatch flag. New captures resolve borrower, selected nominee, application witness, or active
+user identity through its canonical owner and reject null, arbitrary, wrong-party,
+cross-application, or changed-name input. The canonical id/name and immutable Compliance capture
+maker are frozen on first capture; nullable ids/makers remain legacy-schema history only. Exact
+replay uses the frozen snapshot and is zero-write even if mutable display data later changes.
+Pending/signed facts may progress normally, but an unresolved mismatch cannot be replaced or
+cleared through capture, and a resolved row cannot be reopened.
+
+`POST /api/v1/signature-records/{signature_record_id}/resolve-mismatch/` requires
+`documents.signature.resolve_mismatch` and active Company Secretary authority. It accepts exactly:
+
+```json
+{
+  "mismatch_resolution_type": "bank_verification_letter",
+  "mismatch_resolution_document_id": "uuid",
+  "remarks": "Signed and stamped bank verification received."
+}
+```
+
+Resolution type is only `bank_verification_letter` or `borrower_declaration`. The evidence id must
+be the retained file of an 008B4 current-renderer legal loan document of the corresponding type for
+the same application. Borrower declaration additionally requires its exact 008D stamp-duty record
+to be `adequate`; file existence or a cross-application/wrong-type/legacy reference is insufficient.
+Only a current unresolved mismatch with a retained capture maker can be resolved, and the Company
+Secretary resolver must be a different immutable user even after a role change. Exact replay
+returns the retained §6.3 action response with zero writes; a different attempt to replace retained
+resolution history returns `409 CONFLICT`:
+
+```json
+{
+  "entity_type": "signature_record",
+  "entity_id": "uuid",
+  "previous_status": "mismatch",
+  "new_status": "resolved",
+  "workflow_event_id": "uuid",
+  "available_actions": []
+}
+```
+
+Both responses are metadata-only and expose no storage key/download action or file, checklist,
+approval, or disbursement authority. Resolution evidence identity remains in the immutable
+signature row/audit history rather than becoming download authority. Verified signature truth
+crosses the application-owned fact interface through the single legal-owned application selector
+and atomically changes only Bank Verification Letter applicability. Checklist status,
+completion/verifier/time/remarks, display facts, approval signatures, and readiness stay unchanged;
+a reversal against completed evidence returns zero-write `409 CONFLICT`. Missing action
+permission/role returns 403 before owner queries. For an otherwise authorized resolver, unknown,
+wrong-stage, unrelated, and non-current-renderer signature ids share the same nondisclosing 404
+contract. Malformed fields return `400 VALIDATION_ERROR`; HTTP and direct module callers cross the
+same typed legal serializer and business boundary.
+
+## Security package and Power of Attorney (008F/008F2)
+
+`GET /api/v1/loan-applications/{loan_application_id}/security-package/` requires
+`security.package.read`; `POST .../security-package/refresh/` requires
+`security.package.create` and accepts only an empty JSON object. GET permits active, explicitly
+granted Credit Manager, Compliance, Company Secretary, scoped CFO/Director approvers, and persisted
+audit-readonly actors against canonical latest-cycle frozen terminal sanction and matching Stage-4
+checklist scope. Senior Manager Finance additionally requires the current checklist's
+`sanction_approved` documentation truth (the pending-disbursement state). CFC remains denied until
+Epic 009 supplies a canonical disbursement-ready relation; its role or permission alone is not
+readiness. The same finance-state rule applies to package, PoA, SH-4, CDSL, blank-cheque, and
+post-sanction checklist reads. Assigned approvers may read only their
+case; an unrelated approver remains `403 OBJECT_ACCESS_DENIED`. Read authority returns masked
+metadata only and never grants refresh, mutation, reveal, download, invocation, or release.
+Refresh remains limited to active Compliance Team or Company Secretary actors. Mutable approved
+status is insufficient. Refresh locks the application,
+creates at most one package, and replays zero-write; unknown resources return 404 after authority,
+while wrong-stage/stale-cycle resources remain nondisclosing. The narrow package is
+always `pending`, returns `poa_required_flag=true` and `security_ready_flag=false`. Since 008J,
+refresh sets both cheque flags true only when the application-owned selector proves one exact active
+verified borrower bank account and its matching verified cancelled-cheque fact; missing, stale,
+conflicting, or mismatched facts keep both false. Since 008H, refresh sets the SH-4/CDSL
+applicability pair from
+the canonical frozen sanction share mode: `physical` is `(true,false)`, `demat` is `(false,true)`,
+and missing/`mixed` is `(false,false)` with the existing checklist blocker retained. It includes
+metadata-only current PoA/SH-4 projections and never grants document download, invocation, release,
+checklist completion, or disbursement readiness.
+
+`POST/GET /api/v1/security-packages/{security_package_id}/power-of-attorney/` and
+`PATCH /api/v1/power-of-attorneys/{power_of_attorney_id}/` implement §28.3. GET requires package-read
+authority. POST/PATCH require `security.poa.manage`; only Compliance prepares/changes drafts and
+material edits transfer current-maker identity. An active-role Company Secretary may activate only
+as the retained attorney distinct from the current preparer. Requests contain borrower, nominee, attorney
+user, retained purpose, PoA loan-document, stamp record, notary record, execution status,
+effective-from date, and status fields. Status is only `draft`/`active`; execution is only
+`pending`/`executed`. `invoked` and `released` are rejected with zero writes.
+
+The borrower and nominee must be the sanctioned application's current retained parties. The
+attorney must be an active Company Secretary. The retained purpose must explicitly authorise the
+Company Secretary to initiate share sale on default; only a bounded negation of that authority is
+rejected, so unrelated lawful negative clauses remain valid. Creation accepts only a pending draft tied to
+the same application's current-renderer `power_of_attorney` document and that exact document's stamp
+and notary rows. Activation additionally requires executed/effective facts, an adequate stamp
+retaining exactly `₹500.00`, and completed notarisation rows with non-null distinct preparer/verifier identities, plus exactly one
+current `signed` borrower row and one current `signed` selected-nominee row from the 008E2 legal
+selector. Signature ids/names must match canonical frozen parties, mismatch/resolution facts must be
+absent, signed time and capture maker must be retained, and A-108/A-109 legacy rows are ineligible.
+Missing/null stamp references and adequate amounts below or above `₹500.00` fail atomically with
+`400 VALIDATION_ERROR`; the generic stamp recorder and unresolved Loan Agreement duty rule do not
+change.
+
+Package/PoA/checklist rows are locked in one transaction. One current PoA is database-enforced per
+package. Terminal activation replays the durable §6.3 action (`entity_type`, `entity_id`, prior/new
+status, workflow id, no actions); changed activation, downgrade, `invoked`, and `released` write
+nothing. It freezes renderer/file/checksum, stamp/notary/signature/PoA maker-checkers, and request
+facts. The consumed legal document blocks later signature/stamp/notary changes atomically. Real
+draft changes append audit/version/workflow evidence. Checklist projection changes only PoA metadata and
+preserves item/package completion, verifier, remarks, approval signatures, status, file access, and
+readiness. Projection conflict rolls back the PoA write and success evidence. Twice-run five-worker
+PostgreSQL changed-activation and downgrade races retain one terminal activation ledger.
+
+Pre-008F2 active PoAs retain `legacy_activation_evidence=true`, null workflow id, and no fabricated
+snapshot under A-112. They are readable/terminal; PATCH replay conflicts because no action id exists.
+
+## SH-4 physical-share security (008H)
+
+`POST/GET /api/v1/security-packages/{security_package_id}/sh4-share-transfer-form/` and
+`PATCH /api/v1/sh4-share-transfer-forms/{sh4_share_transfer_form_id}/` implement §28.4. The request
+contains exactly `member_id`, `witness_id`, `shareholding_id`, nullable positive `share_count`,
+`loan_document_id`, `form_status`, nullable bounded `custody_location`, and nullable ISO
+`signed_at`. GET requires `security.package.read`; POST/PATCH require `security.sh4.manage` and the
+same canonical latest-cycle Stage-4 package scope. Compliance creates/changes preparation facts;
+only a distinct active Company Secretary records terminal custody. Other document, signature,
+download, PoA, or security permissions imply no SH-4 mutation or file access.
+
+Only frozen `physical` share mode is applicable. The member must be the sanctioned borrower; the
+witness must be that application's verified existing-shareholder witness backed by active
+shareholding; the selected shareholding must be the borrower's active physical row. `share_count`
+cannot exceed its retained available shares and does not reserve/decrement them. The document must
+be the same application's current-renderer `sh4` output. `signed`/`held_in_custody` require its exact
+non-legacy borrower and witness signatures (canonical ids/names, signed time, capture makers, no
+mismatch) and current adequate non-legacy maker/checker stamp evidence. No nominal amount is
+hard-coded. The custody checker must differ from the retained SH-4 preparer and every current
+material stamp/signature maker.
+
+Statuses are only `pending`, `signed`, and `held_in_custody`; invocation/return fields remain
+database-null and `invoked`/`returned` requests fail zero-write. One row per package is database
+enforced under the package lock. Exact replay is zero-write; real preparation changes retain full
+old/new audit/version/workflow facts. Terminal custody returns the retained §6.3 action identity and
+freezes exact renderer/file/checksum, stamp, signature, maker, custodian, and request context.
+Consumed signature/stamp evidence cannot later be changed. Checklist/security reads project only
+existence, document/signature/custody metadata and preserve completion, verifier, remarks, approval
+signatures, PoA/package state, file access, and readiness. Twice-run PostgreSQL five-worker create
+and changed-custody races retain one current/terminal SH-4 and zero loser success evidence.
+
+## CDSL demat-share pledge (008I)
+
+`POST/GET /api/v1/security-packages/{security_package_id}/cdsl-share-pledge/` and
+`PATCH /api/v1/cdsl-share-pledges/{cdsl_share_pledge_id}/` implement §28.5. The main request accepts
+exactly pledgor member, the canonical SFPCL pledgee name, write-only 16-digit pledgor/pledgee BO
+accounts, both DP names, `prepared`/`submitted` PRF status, nullable unique PSN, bounded
+`pending`/`accepted`/`rejected` acceptance, nullable positive share count, nullable agreement
+reference, bounded `pending`/`created` pledge status, and nullable evidence-document id. Invocation,
+unpledge, and their timestamps are neither accepted nor persisted; 011I owns those actions.
+Pending POST/PATCH may retain and return `evidence_document_id: null` and project a null checklist
+loan-document link. Accepted/rejected terminal verification still requires the exact current
+same-application evidence and returns `400 VALIDATION_ERROR` with no terminal write when it is null.
+
+GET requires `security.package.read`. POST/PATCH require `security.cdsl_pledge.manage` and the same
+canonical latest-cycle Stage-4 package scope. Only frozen `demat` mode is applicable; `physical`,
+`mixed`, or missing mode cannot create a pledge. The pledgor must be the sanctioned borrower with
+active demat shareholding, the pledged count cannot exceed retained available demat shares, and the
+pledgee must be `Sahyadri Farmers Producer Company Limited`. The evidence id must be the retained
+file of the same application's current-renderer `cdsl_pledge_evidence` legal document; reference
+never grants download. The future-shares obligation is a non-client-editable,
+database-constrained `true` fact under A-113.
+
+Compliance creates/changes pending preparation. `submitted` requires a PSN, every real preparation
+edit transfers current-maker attribution, and an exact replay is zero-write. A distinct active
+Company Secretary may accept or reject only the exact retained submitted facts. Acceptance requires
+both BO/DP facts, PSN, positive in-bounds count, loan-agreement reference, current evidence, and
+`created` status; rejection remains uncreated. Accepted/rejected outcomes are terminal, return the
+retained §6.3 action, and freeze masked BO values plus PSN/agreement/count/future-shares,
+renderer/file/checksum, maker/checker, request/network/role/team facts. A role change cannot collapse
+maker/checker identity, and database constraints enforce terminal evidence coherence.
+
+Ordinary pledge, package, checklist, audit, version, and workflow responses show only last-four
+masked BO values. `POST /api/v1/cdsl-share-pledges/{cdsl_share_pledge_id}/reveal-bo-accounts/`
+accepts exactly `{ "reason": "..." }`, requires the dedicated
+`security.cdsl_pledge.reveal` permission, package-read/object scope, and active Company Secretary
+authority, and returns both full values with a five-minute expiry under A-114. Each permitted reveal
+and denial is separately audited without plaintext. The response is `Cache-Control: no-store` and
+`Pragma: no-cache`; one success per actor/pledge in that five-minute window is allowed, with repeated
+requests returning `429 RATE_LIMITED` under A-116. BO sensitivity does not require re-authentication,
+and that policy decision is retained in the central sensitive-access audit. New BO values use the
+independently keyed/versioned AES-GCM `shared.encryption` convention in A-115. Since 008K2,
+`field:v2` tokens contain only format/key identifiers, random nonce, and authenticated ciphertext;
+field name and plaintext byte length are authenticated as associated data but no length or display
+suffix is stored in cleartext. CDSL ordinary masking reads a separately retained, migration-
+reconciled four-digit display projection; it never decrypts the ciphertext. Only the central,
+reason-bearing reveal boundary decrypts. Field-specific lookup
+hashes support equality/replay checks but are never returned. Retained `seal:v1` rows migrate with
+row-count/hash/last-four reconciliation, and retained suffix-bearing `field:v1` CDSL/cheque rows
+then migrate through a frozen decrypt/re-encrypt implementation with row-count/hash/plaintext-
+absence reconciliation and no plaintext response or ledger exposure.
+
+Package/checklist reads project only masked pledge existence, PRF/PSN/acceptance/created milestones,
+share count, maker, checker, and current legal-document linkage. They preserve PoA/SH-4 facts,
+completion/verifier/remarks/signatures, package status, file authority, share balances,
+loan-account state, and `security_ready_flag=false`. Projection conflict rolls back the pledge and
+all success evidence. Twice-run PostgreSQL five-worker different-PSN create and changed-acceptance
+races retain one current row, one terminal winner ledger, replay-safe same-payload returns, unique
+PSN integrity, masked history, and no loser success evidence.
+
+## Blank-dated cheque and cancelled-cheque custody (008J)
+
+`POST/GET /api/v1/security-packages/{security_package_id}/blank-dated-cheque/` and
+`PATCH /api/v1/blank-dated-cheques/{blank_dated_cheque_id}/` implement §28.6. POST accepts exactly
+`member_id`, `bank_account_id`, write-only six-digit `cheque_number`, nullable `document_id`,
+`cheque_status`, nullable `custody_location`, and non-future ISO `collected_at`. PATCH accepts any
+non-empty subset of those fields, merges it against the locked current row, and revalidates the
+complete candidate. Omitted fields remain unchanged; explicit null is accepted only for
+`document_id` and `custody_location`. Empty, unknown, and later-owner immutable shapes are rejected.
+Status is only
+`collected` or `held`; invocation approval, presentation date/amount, return date, `invoked`, and
+`returned` are rejected and database-constrained to later owners.
+
+GET requires `security.package.read`; mutation requires `security.blank_cheque.manage` and canonical
+terminal-sanction/package scope. Active Compliance authority creates or changes collected facts. A
+distinct active Company Secretary may record `held` only with a bounded custody location and the
+exact retained Compliance member, bank, cancelled-cheque, cheque, scan, and collection-date facts.
+Held custody is terminal here. One row per package and one field-specific cheque lookup hash are
+database-enforced. Exact replay is zero-write; real changes append attributable audit/version/
+workflow evidence, while held custody freezes maker, custodian, workflow, request/network, role,
+and team facts.
+
+The member must be the sanctioned borrower. The bank must be the exact application-retained active
+verified member account linked to the exact single same-application verified cancelled cheque with
+matching protected account hash, IFSC, and last-four metadata. Caller text, account numbers,
+cross-member rows, missing/pending/rejected rows, multiple/conflicting rows, and stale ids cannot
+establish authority. A scan requires one exact immutable `documents.file.uploaded` ledger matching
+current file metadata, `legal` or `security` category, and the same application; reference grants no
+download.
+
+New numbers use `shared.encryption.FieldEncryption` AES-GCM and field-specific lookup HMAC.
+Ordinary cheque, package, checklist, audit, version, and workflow data always returns fixed
+`******`; no recoverable fragments or plaintext are logged. Reads also project canonical
+cancelled-cheque id, masked bank, IFSC/branch, status, custody, maker, and custodian metadata while
+preserving checklist completion/linkage/verifier/remarks/signatures, package status,
+`security_ready_flag=false`, and null loan account.
+
+Security mutation and checklist evidence use one shared recursive sensitive-key redaction policy.
+This ordinary evidence policy preserves already-masked display values but cannot authorize reveal;
+reveal success/denial remains a separate central sensitive-access ledger.
+
+`POST /api/v1/blank-dated-cheques/{blank_dated_cheque_id}/reveal-cheque-number/` accepts exactly
+`{ "reason": "..." }`. It requires `security.blank_cheque.reveal`, package-read/object scope, and
+active Company Secretary authority. The central sensitive-access owner serialises reveal under the
+retained cheque lock, returns the full value with a five-minute expiry and no-store/no-cache headers,
+and permits one success per actor/cheque per five-minute window. Every success and denial is audited
+without plaintext; tampered ciphertext or unavailable keys return `409 CONFLICT`, repeated success
+returns `429 RATE_LIMITED`, and missing authority returns `403 SENSITIVE_FIELD_ACCESS_DENIED`.
+
+Capture/custody never completes the checklist, mutates bank/cancelled-cheque truth, presents or
+returns the cheque, creates a loan account, changes package status/readiness, or grants scan
+download. Twice-run PostgreSQL five-worker changed-create and changed-custody races retain one
+current row, one terminal custodian/workflow, exact winner request/actor evidence, and zero loser
+success evidence.
+
+## Final documentation checklist actions (008K)
+
+The exact §27.3-§27.7 routes are now available:
+
+- `POST /api/v1/checklist-items/{checklist_item_id}/complete/` accepts exactly
+  `loan_document_id` and nullable `remarks` (maximum 4,000 characters).
+- `POST /api/v1/document-checklists/{document_checklist_id}/approve-as-company-secretary/`,
+  `/approve-as-credit-manager/`, `/approve-as-sanction-committee/`, and
+  `/sign-disbursement-complete/` each accept exactly one non-empty `comments` value (maximum
+  4,000 characters).
+
+Successful completion and the first three approvals return the durable §6.3 action shape plus
+`checklist_action_id`. Exact same-actor/same-fact replay returns that identity without writes;
+changed repeats return `409 CHECKLIST_ACTION_CONFLICT`. Wrong approval order returns
+`409 CHECKLIST_APPROVAL_OUT_OF_ORDER`, incomplete terminal evidence returns
+`409 CHECKLIST_EVIDENCE_INCOMPLETE`, and unrelated objects remain nondisclosing.
+
+Completion accepts only the latest current-renderer same-application document of the canonical
+item type and consumes owner-held terminal legal/security evidence. Masked CDSL/cheque ledgers are
+never revealed or decrypted. CS approval requires every applicable required item complete; Credit
+Manager approval requires the canonical frozen limit package; one active non-excluded director from
+the frozen committee may give the final documentation approval. The Senior Manager Finance route is
+intentionally present but returns `409 DISBURSEMENT_EVIDENCE_UNAVAILABLE` with zero writes until an
+Epic 009 owner supplies a real successful-disbursement relation. No route creates a loan account or
+changes package/security readiness.
+
+008K3 hardening: the completion route now receives security facts only through the public
+cross-owner process coordinator and resolves current source-owned rows rather than accepting
+`VersionHistory` JSON as truth. Cheque evidence must reconcile the exact application, package,
+member, bank account, cancelled cheque/file, blank cheque/scan, maker, custodian, and custody
+workflow while retaining only the fixed `******` mask. PoA, SH-4, and CDSL likewise reconcile their
+current terminal owner rows; PoA requires an exact ₹500 adequate stamp. Term Sheet completion
+requires borrower/nominee/frozen CFO signatures and, above ₹5,00,000, two eligible frozen-director
+signatures. Company Secretary approval now revalidates every current item and requires exactly one
+matching public completion action/history identity, current renderer checksum, verifier/time/
+remarks, applicability flags/cycle, and terminal-evidence digest. Status-only, missing/extra,
+stale, cross-object, or changed evidence returns `409 CHECKLIST_EVIDENCE_INCOMPLETE` with zero
+approval writes. Retained actions freeze the role that authorised the requested stage, even for a
+ multi-role user.
+
+008K4 current-evidence and read closure adds:
+
+- `POST /api/v1/loan-applications/{loan_application_id}/bank-verification-decision/`
+
+The request requires `X-Request-ID` and exactly `bank_account_id`, `cancelled_cheque_id`, and
+`decision_status` (`verified` or `rejected`). Authority is the existing Stage-4 checklist-update
+permission held by Compliance Team or Company Secretary; no new verifier role is introduced. A
+success binds the exact application/member/bank/cancelled-cheque file and checksum, verifier role
+and time, request, workflow, audit, version, and evidence digest. Status-only legacy bank rows are
+readable but cannot complete a new checklist item. Changed bank/file/ledger facts make the decision
+non-current and return the existing `409 CHECKLIST_EVIDENCE_INCOMPLETE` at completion/approval.
+
+Checklist completion, borrower-safe projection, and Company Secretary reconciliation now rerun the
+current renderer, signature, stamp/notary, security, bank-decision, applicability/case, action,
+workflow, audit, single-version, request, and digest checks through the top-level coordinator. Loan
+document generation shares the application-first lock order and refuses a new generation after a
+terminal item or checklist approval has consumed that boundary, so concurrent generation and
+completion/approval retain one coherent winner.
+
+Ordinary package, PoA, SH-4, CDSL, blank-cheque, and checklist GET projections expose only
+source-documented business state and governed masks. They omit retained evidence blobs, maker/
+checker ids, request/network context, role/team lists, signer snapshots, internal legal/audit/action
+ids, hashes, ciphertext, and storage keys. Internal terminal selectors retain exact evidence without
+granting it to readers. Canonical recursive redaction preserves only full fixed masks or a governed
+last-four mask; mixed plaintext such as `1234*5678` is replaced with `[REDACTED]`.
+
+## Member portal documentation actions (008L)
+
+Authenticated borrower portal sessions use these application-scoped routes:
+
+- `GET /api/v1/portal/applications/{loan_application_id}/documentation-actions/`
+- `POST /api/v1/portal/applications/{loan_application_id}/documentation-actions/{action_code}/upload/`
+- `GET /api/v1/portal/applications/{loan_application_id}/documentation-actions/{action_code}/download/`
+
+Scope is derived only from the active `PortalAccount.member_id`. Missing applications, another
+member's application, and internal-user tokens are nondisclosing `404 NOT_FOUND`; an inactive or
+expired portal session is rejected by shared authentication. GET returns the application id,
+reference, status, availability/blocker, and checklist-ordered borrower-safe actions: stable
+checklist action code, label/section, required/applicable flags, reconciled status, updated date,
+instruction/note, upload/re-upload flags, and nullable safe download metadata. It never returns
+checklist/security ids, evidence identities, makers/checkers, comments, storage keys, BO/bank/cheque
+values or fragments, ciphertext/hashes, workflow/version JSON, or internal action URLs. A complete
+label requires the current checklist item, its exact completion action, and its one matching durable
+completion history/evidence digest; status-only or stale/ambiguous evidence is shown pending.
+
+Upload is `multipart/form-data` with exactly one non-empty `file` and optional trimmed `notes`
+(maximum 4,000 characters). Under A-119 the file must be matching PDF/JPEG/PNG MIME plus extension
+and at most 5 MiB. Accepted action codes are `cancelled_cheque`, `poa`,
+`tri_party_agreement`, `sh4`, `term_sheet`, `loan_agreement`, and
+`bank_verification_letter`, only while the current canonical checklist advertises that applicable
+pending borrower action. CDSL and blank cheque are status/instruction only. Every accepted upload
+creates a new central `DocumentFile`, immutable upload provenance, and append-only portal submission
+successor row attributed to the portal account/member/application/action; the response contains only
+safe file metadata. Re-upload retains every prior row. Upload never writes checklist completion,
+signature, stamp/notary, security terminal/custody, bank verification, package/readiness,
+loan-account, or disbursement facts. Unknown fields/action codes, crafted evidence fields, stale or
+inapplicable actions, empty/oversize/type-mismatched files, and cross-member references fail before
+any success evidence.
+
+Only current renderer-validated `term_sheet` and `loan_agreement` checklist outputs receive a safe
+download action. It returns a short-lived portal-scoped content URL; authenticated retrieval verifies
+the retained bytes and writes the central `documents.file.downloaded` event with portal account,
+member, application, action, document/version/category/sensitivity/checksum, reason,
+request/network, capability verification, and accepted outcome—never a key.
+
+008L3 closure: projection and upload now consume one locked action-authority decision. A pending
+required/applicable item is mutable only when it has no applicability blocker and no retained
+completion status; a stale/status-only completion remains honestly non-complete but advertises
+neither upload flag and cannot be reopened by a crafted POST. Accepted upload/re-upload uses only
+the central `documents.file.uploaded` vocabulary with portal attribution and immutable version/
+predecessor facts. Downloads use the central signed capability: the content URL contains a token,
+not caller-editable expiry authority, and the signature binds portal account, member, application,
+action, current loan document, and current file. Tamper, expiry, replacement, cross-action, and
+cross-scope reads are nondisclosing and write no success event. Responses remain `no-store` at the
+HTTP content boundary.
+
+## Member portal deficiency response and resubmission (008L2)
+
+Authenticated active borrower sessions use only the `PortalAccount.member_id` scope:
+
+- `GET /api/v1/portal/applications/{loan_application_id}/deficiencies/`
+- `POST /api/v1/portal/applications/{loan_application_id}/deficiencies/{deficiency_id}/upload/`
+- `GET /api/v1/portal/applications/{loan_application_id}/deficiencies/{deficiency_id}/download/`
+- `POST /api/v1/portal/applications/{loan_application_id}/deficiencies/resubmit/`
+
+GET returns the canonical application status, whether resubmission is currently allowed, and open
+deficiencies with borrower-facing description, current response, and a server-owned upload contract
+(category, sensitivity, extensions, and 5 MiB limit). Staff remarks, raiser/resolver identity,
+storage keys, protected member data, and internal completeness actions are omitted. Cross-member
+reads/actions are nondisclosing `404 NOT_FOUND` and write a denied portal audit; staff tokens are
+`403 FORBIDDEN`, while expired/suspended portal sessions remain shared `401` errors.
+
+Upload is strict `multipart/form-data`: one non-empty PDF/JPG/JPEG/PNG whose extension matches MIME,
+at most 5 MiB, required server-advertised `document_category` (`kyc`, `legal`, or `finance`) and
+`sensitivity_level` (`confidential`), plus optional trimmed `response_remark` up to 4,000 characters.
+Every accepted upload creates a central `DocumentFile`, the next pending `ApplicationDocument`
+version for staff verification, and an immutable deficiency-owned successor row attributed to the
+exact portal account/member/application/deficiency. Re-upload retains history; only the current
+successor is projected. Content download returns a short-lived portal-scoped URL,
+requires a second authenticated request, verifies checksum/size, and audits the accepted read.
+
+Resubmit accepts an empty JSON object and atomically requires a current response document for every
+open deficiency. It retains those deficiency rows as open for staff verification/resolution under
+the existing 005F permission, resets completeness to `not_started`, and moves canonical application
+status from `incomplete_returned` to `submitted`, reopening the existing staff completeness queue.
+008L3 places that transition behind the application-owned `resubmit` transition guard and canonical
+`applications.loan_application.resubmitted` audit/workflow writer. Upload/re-upload and resubmit
+workflow facts target the immutable deficiency-response aggregate (`absent/responded -> responded ->
+submitted_for_review`); they never claim that the staff-owned open deficiency changed state. The
+borrower timeline shows `Application resubmitted` (A-095). Empty, partially responded, or
+non-returned applications fail before any transition. Deficiency actions never create or change
+Stage-4 checklist items/actions/history, approvals, verifier/role/remarks, legal/security evidence,
+readiness, loan-account, or disbursement truth.

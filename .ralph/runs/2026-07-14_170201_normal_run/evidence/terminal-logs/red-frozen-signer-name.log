@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exact_replay_uses_frozen_name_after_canonical_owner_changes (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_exact_replay_uses_frozen_name_after_canonical_owner_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 394, in test_exact_replay_uses_frozen_name_after_canonical_owner_changes
+    self.assertEqual(replay.status_code, 200, replay.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Signature record failed validation.", "details": {}, "field_errors": {"signer_name_snapshot": "Must match the canonical signer name."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:46:37.372224Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

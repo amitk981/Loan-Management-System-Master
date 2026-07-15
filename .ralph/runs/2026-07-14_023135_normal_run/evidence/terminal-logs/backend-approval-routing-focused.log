@@ -1,0 +1,1529 @@
+Creating test database for alias 'default'...
+Found 111 test(s).
+System check identified no issues (0 silenced).
+E...E..EE............EE.........E.......EEE.E.....E.EE.E.......E.E..E............E.E......E....E.....EE.E..E...
+======================================================================
+ERROR: test_acted_actor_post_matches_disabled_detail_reason_without_writes (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_acted_actor_post_matches_disabled_detail_reason_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3893, in test_acted_actor_post_matches_disabled_detail_reason_without_writes
+    self._assert_disabled_action_post_parity(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4894, in _assert_disabled_action_post_parity
+    detail = self.client.get(
+             ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 217, in approval_case_detail
+    data = approval_case_engine.get_approval_case(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 147, in get_approval_case
+    return serialize_case_detail(case, actor, set(actor_permissions))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_alternate_action_is_canonical_without_rewriting_route_provenance (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_alternate_action_is_canonical_without_rewriting_route_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 636, in test_alternate_action_is_canonical_without_rewriting_route_provenance
+    first = self.client.post(
+            ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_assigned_approver_can_record_partial_approval_through_canonical_case_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_approver_can_record_partial_approval_through_canonical_case_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1323, in test_assigned_approver_can_record_partial_approval_through_canonical_case_projection
+    response = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_assigned_approver_can_retrieve_own_acted_history (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_approver_can_retrieve_own_acted_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4297, in test_assigned_approver_can_retrieve_own_acted_history
+    ordinary_list = self.client.get(
+                    ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 48, in approval_case_collection
+    data, pagination = approval_case_engine.list_approval_cases(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 107, in list_approval_cases
+    return [
+           ^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 108, in <listcomp>
+    serialize_case_detail(case, actor, actor_permissions) for case in cases
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_communication_adapter_failure_rolls_back_final_action_and_outcome (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_communication_adapter_failure_rolls_back_final_action_and_outcome)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3867, in test_communication_adapter_failure_rolls_back_final_action_and_outcome
+    cfo_response = self.client.post(
+                   ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 926, in test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate
+    abstention = self.client.post(
+                 ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 251, in approval_case_abstain
+    return _approval_case_action(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 78, in abstain_from_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_detail_projects_acted_decisions_without_changing_the_required_snapshot (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_detail_projects_acted_decisions_without_changing_the_required_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4360, in test_detail_projects_acted_decisions_without_changing_the_required_snapshot
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 217, in approval_case_detail
+    data = approval_case_engine.get_approval_case(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 147, in get_approval_case
+    return serialize_case_detail(case, actor, set(actor_permissions))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_final_action_collection_detail_and_action_share_history_aware_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_final_action_collection_detail_and_action_share_history_aware_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3299, in test_final_action_collection_detail_and_action_share_history_aware_projection
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_final_approval_publishes_immutable_register_and_sanction_decision_reads (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_final_approval_publishes_immutable_register_and_sanction_decision_reads)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2242, in test_final_approval_publishes_immutable_register_and_sanction_decision_reads
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2140, in test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_frozen_alternate_director_satisfies_original_role_count_after_exclusion (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_frozen_alternate_director_satisfies_original_role_count_after_exclusion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 552, in test_frozen_alternate_director_satisfies_original_role_count_after_exclusion
+    cfo = self.client.post(
+          ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_latest_general_meeting_outcome_gates_and_is_frozen_on_the_case_cycle (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_latest_general_meeting_outcome_gates_and_is_frozen_on_the_case_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1562, in test_latest_general_meeting_outcome_gates_and_is_frozen_on_the_case_cycle
+    partial = self.client.post(
+              ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_live_appraisal_change_preserves_terminal_detail_decision_and_register (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_live_appraisal_change_preserves_terminal_detail_decision_and_register)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2914, in test_live_appraisal_change_preserves_terminal_detail_decision_and_register
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_live_appraisal_policy_change_preserves_pending_case_reads_and_action (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_live_appraisal_policy_change_preserves_pending_case_reads_and_action)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 895, in test_live_appraisal_policy_change_preserves_pending_case_reads_and_action
+    approved = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_malformed_frozen_terminal_case_fails_closed_at_every_read_boundary (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_malformed_frozen_terminal_case_fails_closed_at_every_read_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2645, in test_malformed_frozen_terminal_case_fails_closed_at_every_read_boundary
+    first = self.client.post(
+            ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_missing_terminal_review_snapshot_is_hidden_from_every_public_boundary (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_missing_terminal_review_snapshot_is_hidden_from_every_public_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2775, in test_missing_terminal_review_snapshot_is_hidden_from_every_public_boundary
+    first = self.client.post(
+            ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_partial_action_collection_detail_and_action_share_history_aware_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_partial_action_collection_detail_and_action_share_history_aware_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2086, in test_partial_action_collection_detail_and_action_share_history_aware_projection
+    action_response = self.client.post(
+                      ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_pending_general_meeting_outcome_blocks_final_sanction (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_pending_general_meeting_outcome_blocks_final_sanction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1657, in test_pending_general_meeting_outcome_blocks_final_sanction
+    partial = self.client.post(
+              ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_register_filters_counts_and_page_bounds_inside_director_object_scope (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_register_filters_counts_and_page_bounds_inside_director_object_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2444, in test_register_filters_counts_and_page_bounds_inside_director_object_scope
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_register_freezes_same_case_exception_abstention_and_meeting_references (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_register_freezes_same_case_exception_abstention_and_meeting_references)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3123, in test_register_freezes_same_case_exception_abstention_and_meeting_references
+    abstained = self.client.post(
+                ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 251, in approval_case_abstain
+    return _approval_case_action(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 78, in abstain_from_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_related_party_final_approval_requires_general_meeting_evidence (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_related_party_final_approval_requires_general_meeting_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1501, in test_related_party_final_approval_requires_general_meeting_evidence
+    partial = self.client.post(
+              ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_return_correction_fresh_review_creates_immutable_second_cycle (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_return_correction_fresh_review_creates_immutable_second_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3567, in test_return_correction_fresh_review_creates_immutable_second_cycle
+    first_approval = approval_actions.approve_case(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_same_permission_unassigned_director_cannot_read_sanction_decision (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_same_permission_unassigned_director_cannot_read_sanction_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2334, in test_same_permission_unassigned_director_cannot_read_sanction_decision
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2365, in test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_stale_and_duplicate_actions_preserve_the_complete_ledger (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_stale_and_duplicate_actions_preserve_the_complete_ledger)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3800, in test_stale_and_duplicate_actions_preserve_the_complete_ledger
+    first = self.client.post(
+            ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+======================================================================
+ERROR: test_two_terminal_cases_keep_director_and_persisted_reader_scopes_distinct (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_two_terminal_cases_keep_director_and_persisted_reader_scopes_distinct)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2511, in test_two_terminal_cases_keep_director_and_persisted_reader_scopes_distinct
+    cfo_action = self.client.post(
+                 ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 236, in approval_case_approve
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/views.py", line 261, in _approval_case_action
+    data = handler(
+           ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 57, in approve_case
+    return record_action(
+           ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 86, in record_action
+    return _record_action(
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_actions.py", line 405, in _record_action
+    **approval_case_engine.serialize_case_detail(case, actor, set(actor_permissions)),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 202, in serialize_case_detail
+    "workbench_summary": _workbench_summary(case),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 250, in _workbench_summary
+    "current_decision_status": _current_decision_status(case),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 276, in _current_decision_status
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+                                                              ^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 277, in <genexpr>
+    action.decision == ApprovalAction.DECISION_APPROVED
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApprovalAction' has no attribute 'DECISION_APPROVED'
+
+----------------------------------------------------------------------
+Ran 111 tests in 2.946s
+
+FAILED (errors=26)
+Destroying test database for alias 'default'...

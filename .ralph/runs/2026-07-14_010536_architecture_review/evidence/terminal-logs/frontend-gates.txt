@@ -1,0 +1,9 @@
+Working directory: sfpcl-lms/
+Command: npm run build && npm run typecheck && npm run lint && npm test -- --run
+
+PASS build: Vite 5.4.21 transformed 1877 modules and produced the production bundle.
+PASS typecheck: tsc --noEmit exited 0.
+PASS lint: eslint src exited 0.
+PASS tests: 33 files, 251 tests passed; duration 7.15s.
+
+Non-failing build note: the existing main JS chunk is above Vite's 500 kB advisory threshold.

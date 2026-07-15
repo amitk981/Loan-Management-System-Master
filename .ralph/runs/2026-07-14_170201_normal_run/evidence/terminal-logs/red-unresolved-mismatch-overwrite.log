@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_unresolved_mismatch_cannot_be_cleared_by_same_signer_capture (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_unresolved_mismatch_cannot_be_cleared_by_same_signer_capture)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_170201_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 220, in test_unresolved_mismatch_cannot_be_cleared_by_same_signer_capture
+    self.assertEqual(changed.status_code, 409, changed.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"signature_record_id": "d7eda277-ddc7-4032-ae2c-e876c96435cf", "loan_document_id": "8b60d8e4-213f-40aa-b7e9-bd394411e4bf", "signer_party_type": "borrower", "signer_party_id": "54b9227a-ac9b-4785-90b0-da82ea895a7f", "signer_name_snapshot": "Signature Test Borrower", "signature_method": "wet_ink", "signature_status": "signed", "signed_at": "2026-06-22T11:00:00Z", "signature_mismatch_flag": false, "mismatch_resolution_type": null, "mismatch_resolution_document_id": null, "mismatch_resolution_document_name": null, "remarks": null}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:35:09.594505Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.037s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

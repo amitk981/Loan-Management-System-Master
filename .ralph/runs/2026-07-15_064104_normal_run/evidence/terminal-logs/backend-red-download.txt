@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 313, in test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit
+    self.assertEqual(
+AssertionError: None != {'file_name': 'current-term-sheet.pdf', '[150 chars]ad/'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.054s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
