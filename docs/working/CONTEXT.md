@@ -85,8 +85,13 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   contracts. Corrective 008K3 now binds every completion/approval to current source-owned evidence,
   reconciles exact durable action identities before Company Secretary approval, freezes the role
   that actually authorises each action, and proves the full public terminal matrix plus twice-run
-  PostgreSQL winner/loser races. 008L now provides self-scoped borrower-safe checklist actions,
-  immutable upload/re-upload provenance, and authenticated current-document retrieval; 008L2 follows.
+  PostgreSQL winner/loser races. 008L and 008L2 add self-scoped borrower documentation actions,
+  immutable upload/re-upload provenance, current-document retrieval, deficiency responses, and
+  completeness resubmission. Independent review found remaining current-truth and boundary drift:
+  mutable status-only bank evidence, stale checklist completion after renderer regeneration, a
+  completion/generation lock gap, ordinary security evidence leakage, read/write upload-policy
+  divergence, caller-forgeable download expiry, and direct application lifecycle assignment.
+  Corrective 008K4 then 008L3 close those contracts before the 008M staff documentation hub.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

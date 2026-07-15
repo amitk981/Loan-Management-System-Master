@@ -2,6 +2,150 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-15 09:11 - Architecture Review 2026-07-15_085859_architecture_review
+
+Reviewed completed work since architecture-review commit `fc8d3380`:
+- `008K2-sensitive-security-contract-closure` (`bcf76e31`)
+- `008K3-final-checklist-evidence-closure` (`f11da14a`)
+- `008L-member-portal-documentation-actions` (`6cc8056d`)
+- `008L2-member-portal-deficiency-response-and-resubmission` (`59099f8e`)
+
+The review checked `git diff fc8d3380...59099f8e`, every production/test/migration hunk, all four
+slice contracts and retained evidence, Epic 005/008 digests/maps, M03/M06 requirement coverage,
+and the cited API, data-model, functional, member-portal, auth, frontend, and codebase-design rules.
+Standards and Spec ran as isolated independent passes. Three executable review probes independently
+failed: legal-document download has no signed capability, resubmission bypasses the transition
+guard, and a portal completion does not revalidate a newer current renderer. No production code
+changed.
+
+### Standards
+
+#### Finding 1 - High - Current checklist truth is not current at the portal or transaction boundary
+
+`checklist_actions.borrower_safe_completed_item_ids` compares item/action fields to retained
+`VersionHistory` and hashes the retained terminal body against itself; it never reruns current
+renderer, signature, stamp/notary, bank, or security evidence. The portal therefore still shows
+`complete` after source evidence changes, despite 008L's K3 sharpening requiring blocked/pending.
+Completion/approval also locks checklist/document rows while generation locks the application, so a
+new same-type document can commit between latest-document selection and the checklist commit. K3's
+PostgreSQL tests race checklist writers only, not generation against completion/approval. `008K4`
+adds current public projection reconciliation and one cross-owner application lock/version order.
+
+#### Finding 2 - High - Deficiency and application workflow events disagree with stored state
+
+`portal_deficiency_response` records `ApplicationDeficiency open -> responded ->
+submitted_for_review`, but leaves `resolution_status=open`; every re-upload repeats the fictional
+`open -> responded` transition. Resubmit then directly assigns `LoanApplication.status=submitted`
+instead of crossing the 002H transition guard required by the slice and codebase-design §21. The
+positive test explicitly asserts the deficiency remains open and checks only the final application
+fields/event. The lifecycle review probe patched the application transition evaluator, received a
+successful resubmit, and proved it was never called. `008L3` moves resubmit to the application owner
+and gives borrower response events an honest aggregate/state without taking staff resolution.
+
+#### Finding 3 - High - Portal POST authority is wider than the server-advertised action
+
+GET suppresses upload/re-upload for a reconciled-complete checklist item, but `upload()` checks only
+the action code plus required/applicable flags. A crafted POST can append borrower evidence after
+the internal item is complete, violating API §44 and the explicit 008L rule that uploads are allowed
+only when returned by the server. Existing tests cover hidden controls and status-only forgery, not
+a direct POST against a genuinely reconciled completion. `008L3` makes one locked predicate own GET
+and POST and adds concurrent completion-versus-upload proof.
+
+#### Finding 4 - Medium/High - Ordinary security reads expose internal evidence and audit context
+
+PoA, SH-4, CDSL, and blank-cheque serializers return entire activation/custody/acceptance evidence
+blobs to all scoped readers. Those bodies contain request ids, IP/user-agent, role/team lists,
+signer-name snapshots, user/action/document ids, and other internal provenance. K2 tests prove BO/
+cheque masking but do not scan actual in-scope instrument DTOs; its finance positive creates no
+instrument and accepts 404 for all four nested routes. Auth §§19.4/21 reserve audit evidence and
+require sensitivity-aware fields. `008K4` separates ordinary masked projections from internal
+terminal selectors and proves real instrument reads across the role/state matrix.
+
+#### Finding 5 - Medium - Central masking accepts mixed plaintext as already redacted
+
+`shared.masking` preserves any sensitive string containing one `*`, so `1234*5678` crosses the
+canonical audit/version redactor unchanged. Tests cover fully masked values and pure plaintext only.
+`008K4` makes partial masks fail closed while retaining the explicit fixed cheque mask and governed
+CDSL last-four projection.
+
+#### Finding 6 - Medium - Portal UI and download seams drift from established owners
+
+MP07 replaced the approved upload modal/drop-zone composition with a raw file input/textarea, while
+the review packet claimed the modal was preserved without a screenshot. Both portal screens revoke
+blob URLs immediately after `window.open`, which can race navigation. Portal download audit actions
+also diverge from central document-download vocabulary/metadata. `008L3` restores the existing
+composition, central audit semantics, safe browser-download lifecycle, and a declared two-run
+trusted-browser contract.
+
+### Spec
+
+#### Finding 1 - High - Portal legal-document download capability is forgeable
+
+`portal_documentation_actions.download` discards the storage descriptor URL and authorises content
+with a caller-supplied `expires_at`, unbound to document, action, application, member, or portal
+account. Any authenticated owner can extend the timestamp arbitrarily. The later deficiency flow
+correctly uses the central signed, scope-bound capability, leaving two security seams. The review
+probe expected `token=` and received only `expires_at=`. This violates 008L's secure descriptor/
+expiry requirement. `008L3` moves both paths onto the central signed capability and tests tamper,
+expiry, replacement, and cross-scope use.
+
+#### Finding 2 - High - K3 still accepts mutable status-only bank verification
+
+The application-owned cancelled-cheque fact accepts mutable `verification_status=verified` and
+active bank fields with no immutable verifier, decision action, timestamp, workflow, or version
+identity. K3's positive terminal helper fabricates those ORM statuses directly, although its slice
+requires exact current verification identities through the immutable cross-owner interface. A fake
+`VersionHistory` no longer works, but a synthetic mutable source row still can. `008K4` adds an
+honest immutable current bank/cancelled-cheque verification decision and leaves legacy status-only
+rows ineligible for new checklist truth.
+
+#### Finding 3 - Medium - K3 approval omits promised audit/workflow reconciliation
+
+Company Secretary reconciliation verifies the item action and one version payload, but does not
+require the matching success `AuditLog` or validate the action's `WorkflowEvent` fields. K3 promised
+the request, actor, workflow, audit, version, and action to bind to the sole winner. Existing race
+tests query loser ledgers but do not prove a missing/changed winner audit/workflow blocks later
+approval. `008K4` reconciles all four durable identities.
+
+#### Finding 4 - Medium - Deficiency and frontend acceptance evidence is partial
+
+MP11 source requires response/resubmission and honest returned-to-review state; the implementation
+keeps staff resolution appropriately open but exposes no canonical borrower-response substate while
+workflow rows claim one. Its retained UI suite has two jsdom tests: it does not click download,
+distinguish 401 from 403 as claimed, exercise re-upload, set a mobile viewport, or produce the
+required screenshots. 008L likewise claimed visual preservation without browser proof. `008L3`
+owns the exact lifecycle semantics and two-run MP07/MP11/MP13 browser acceptance.
+
+No unrelated scope creep was found. K2's opaque v2 encryption, frozen migration reconciliation,
+partial blank-cheque PATCH, state-bounded finance package/checklist reads, and dependency guards are
+substantive. K3 materially closes status-only action approval and synthetic version-ledger truth,
+provides public physical terminal completion, canonical stage roles, and exact checklist-writer
+races. L/L2 materially add self-scope, immutable upload successors, pending application-document
+versions, staff queue return, signed deficiency download, and Stage-4 non-interference.
+
+M03-FR-010-012 remain substantive for completeness return/history; portal resubmission is partial
+until 008L3 crosses the lifecycle owner. M06-FR-005/006/018 remain partial until K4 supplies immutable
+bank verification and fully current checklist evidence. M06-FR-007-012/014-017 retain substantive
+owners. M06-FR-013 remains A-101 configuration-blocked; M06-FR-019 remains incomplete until 009D
+owns canonical disbursement readiness. Epic 008 is not complete because 008K4/L3/M remain queued.
+
+### Corrective queue, state, and context
+
+`008K4-current-evidence-and-security-read-closure` depends on completed 008L2 and closes bank-
+decision, current-evidence, generation-race, ordinary-read, and masking gaps. `008L3-portal-action-
+and-resubmission-contract-closure` depends on K4 and closes action parity, signed download,
+lifecycle, audit, and browser-fidelity gaps. 008M now depends on L3 and is sharpened against the
+corrected projections/download seam. No slice is Blocked, so no stale prerequisite required
+reopening.
+
+`CONTEXT.md`, Epic 005/008 digests, state, progress, handoff, and the architecture-review descriptor
+are refreshed. No ADR was added: source documents already decide workflow-module ownership, signed
+download adapters, current evidence, audit privacy, and prototype fidelity.
+
+Summary: Standards found 3 High, 1 Medium/High, and 2 Medium issues; the worst is stale evidence
+being presented/approved as current. Spec found 2 High and 2 Medium issues; the worst are forgeable
+portal download authority and mutable status-only bank verification.
+
 ## 2026-07-15 04:03 - Architecture Review 2026-07-15_034859_architecture_review
 
 Reviewed completed work since architecture-review commit `85f142c2`:

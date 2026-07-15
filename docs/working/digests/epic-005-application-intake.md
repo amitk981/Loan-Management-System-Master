@@ -1,5 +1,19 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## Architecture Review 2026-07-15 09:11 - Borrower Resubmission Lifecycle Closure
+
+- 008L2 correctly self-scopes deficiency reads and replacement uploads, but its final resubmission
+  directly assigns the application status rather than invoking the application-owned transition
+  guard. The response also advances through `responded` and `submitted_for_review` while the
+  authoritative deficiency row remains `open`, creating a second lifecycle vocabulary.
+- Corrective `008L3` must cross the canonical returned-to-submitted application transition under
+  lock, preserve the source completeness queue semantics, and expose one truthful response/
+  deficiency state model. The regression contract patches the application transition evaluator
+  and proves it is invoked, then verifies audit/workflow and zero-write denial behavior.
+- Existing 005E4 staff completeness permissions and M03 coverage remain unchanged; portal
+  resubmission must re-enter that existing completeness boundary without acquiring Stage-4 legal
+  completion or approval authority.
+
 ## Architecture Review 2026-07-11 23:02 - 005E4 Verified Closure
 
 - 005E4 uses the four source-defined completeness permissions for pass, return, resolve, and

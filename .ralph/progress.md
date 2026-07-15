@@ -7190,3 +7190,31 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_085859_architecture_review
+
+- Agent tool used: codex with separate Standards and Spec review passes.
+- Slice attempted: architecture-review.
+- Summary: Independently reviewed 008K2, 008K3, 008L, and 008L2 from fixed point `fc8d3380`.
+  Reproduced unsigned portal download expiry, stale checklist completion after a newer renderer
+  document, and application-transition-guard bypass without modifying production code. Also found
+  current bank-evidence, lock-ordering, ordinary-read redaction, upload-policy parity, deficiency
+  lifecycle, test-depth, and prototype-fidelity gaps.
+- Tests run: three-test expected-failure review probe; all 882 backend tests at 92% coverage; all
+  302 frontend tests; lint, typecheck, build, Django check, migration drift, queue, diff, and
+  protected-path checks recorded in the run evidence packet.
+- Evidence saved: `.ralph/runs/2026-07-15_085859_architecture_review/evidence/`.
+- Result: Review complete; findings recorded and corrective slices 008K4/008L3 queued before 008M.
+- Risk level: Low execution risk (review-only); findings include High legal-evidence, access-
+  control, and application-lifecycle integrity risk.
+- Next action: Run 008K4, then 008L3, then sharpened 008M.
+
+## 2026-07-15 09:32:37 - 2026-07-15_085859_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_085859_architecture_review/.ralph/runs/2026-07-15_085859_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_085859_architecture_review/.ralph/runs/2026-07-15_085859_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

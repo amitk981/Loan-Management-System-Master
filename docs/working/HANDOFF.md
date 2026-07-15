@@ -2,29 +2,29 @@
 
 ## Last Run
 
-2026-07-15_083105_repair
+2026-07-15_085859_architecture_review
 
 ## Current Status
 
-008L2 is complete and its quarantined validation failure is repaired. A returned borrower
-application exposes only its own borrower-safe open deficiencies, accepts validated immutable
-replacement-document versions, permits authenticated downloads, and resubmits to the canonical
-completeness queue only after every open deficiency has a current response. The repair aligned two
-tests with the source-defined pre-reference returned state and reduced repeated test scaffolding
-without changing production behavior. The portal MP11 flow remains inside MP10 without granting
-Stage-4 authority.
+The independent architecture review of 008K2, 008K3, 008L, and 008L2 is complete. The slices add
+substantive security, checklist, portal-document, and deficiency behavior, but three executable
+probes reproduce unsigned caller-editable download expiry, stale checklist completion after a newer
+renderer document, and deficiency resubmission bypassing the application transition guard. Review
+also found mutable status-only bank evidence, a generation/completion lock gap, ordinary security
+evidence overexposure, upload read/write policy divergence, and a shadow deficiency lifecycle.
+No production code changed. Corrective slices 008K4 and 008L3 are sharpened in dependency order;
+008M is sharpened to consume their corrected boundaries.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-15_083105_repair/evidence/`; original slice evidence is
-in `.ralph/runs/2026-07-15_073659_normal_run/evidence/`. Nine focused backend tests, the focused
-frontend tests, all 882 backend tests at 92% coverage, all 302 frontend tests, lint, typecheck,
-build, Django check, and migration sync are green. The final diff is 1,997 lines against the 2,000-
-line limit. Local browser capture was attempted in the original run, but both Django and Vite binds
-were denied by the sandbox; the launch logs are retained.
+Review evidence is in `.ralph/runs/2026-07-15_085859_architecture_review/evidence/`. The final
+review probe log contains three clean expected failures with no setup errors. Standards and Spec
+passes, source citations, validation logs, changed-file inventory, risk assessment, and review
+packet are retained with the run. All 882 backend tests pass at 92% coverage, all 302 frontend tests
+pass, and lint, typecheck, build, Django check, migration drift, and queue lint are green.
 
 ## Next Run
 
-Run the architecture review now due after four completed slices, then run sharpened
-`008M-documentation-hub-frontend-wiring` without treating portal deficiency evidence as Stage-4
-completion or approval truth.
+Run `008K4-current-evidence-and-security-read-closure`, then
+`008L3-portal-action-and-resubmission-contract-closure`, then the sharpened
+`008M-documentation-hub-frontend-wiring`.

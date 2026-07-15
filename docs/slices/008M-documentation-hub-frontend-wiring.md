@@ -14,7 +14,7 @@ Wire the staff documentation surface to the backend built in 008A-008K: Document
 Compliance and CS staff work the real legal/security package — blockers, checklist state, and approval sequence come from the backend, so disbursement readiness reflects the truth.
 
 ## Depends On
-- 008L
+- 008L3
 
 ## Source References
 - docs/source/screen-spec.md screens S26-S35 and section 9.5 (documentation rules)
@@ -77,6 +77,19 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
   Stage-4 checklist completion, approval, signature, custody, or documentation-ready state.
 - If the hub displays the application timeline, label the portal event as an application
   resubmission for completeness review; do not present it as documentation-checklist success.
+
+## Architecture Review Sharpening (2026-07-15 09:00)
+
+- Consume 008K4's public staff projection only. Never render raw PoA/SH-4/CDSL/cheque terminal
+  evidence, request/IP/user-agent context, role/team lists, internal signer snapshots, ciphertext,
+  hashes, storage keys, or evidence action ids from ordinary security GET responses.
+- Completion and approval controls must consume the current renderer/evidence projection that is
+  locked against concurrent generation. A retained action/status whose current document, bank
+  decision, audit, workflow, version, or terminal evidence no longer reconciles renders the existing
+  blocked state and cannot be retried optimistically.
+- Reuse 008L3's central signed-download client and safe object-URL lifecycle for staff-authorised
+  published files. Portal submission rows, unsigned `expires_at` values, or internal file metadata
+  never create a staff download action.
 
 ## Risk Level
 Medium

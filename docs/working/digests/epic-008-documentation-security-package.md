@@ -14,6 +14,26 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-15 09:11 - Current Evidence and Portal Contract Closure
+
+- Review of 008K2, 008K3, 008L, and 008L2 found that checklist evidence can remain projected
+  complete after a newer renderer document exists, and generation does not share the application
+  lock used by completion/approval. Ordinary security DTOs also retain internal evidence blobs,
+  bank/cancelled-cheque completion still accepts mutable status-only rows, and mixed strings
+  containing `*` can bypass masking. Corrective `008K4` makes current immutable source evidence,
+  lock ordering, redaction, and actual instrument-backed tests part of one closure.
+- Portal documentation GET hides upload after reconciliation, but POST independently accepts it;
+  issued-document URLs trust a caller-editable expiry; and ordinary DTOs disclose more evidence
+  than the borrower contract requires. Corrective `008L3` establishes one read/write action-scope
+  resolver and signed scope-bound download capability.
+- Deficiency resubmission assigns the application status directly instead of crossing the
+  application-owned lifecycle guard, while the deficiency row stays open behind shadow workflow
+  states. `008L3` restores the guarded transition, an honest response state model, central audit,
+  and the fixed MP07 modal composition with routed browser proof.
+- The staff documentation hub remains `008M`, now dependent on `008L3`; it must consume the
+  corrected current-evidence/redacted DTOs and signed download boundary rather than duplicating
+  either policy.
+
 ## 008K3 Final Checklist Evidence Closure (2026-07-15)
 
 The §27.3 public completion boundary now consumes locked current security rows through a top-level

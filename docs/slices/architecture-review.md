@@ -26,7 +26,8 @@ Low
 
 ## Last Review
 
-Run `2026-07-15_034859_architecture_review` independently reviewed completed slices 008I2, 008I3,
-008I4, 008J, and 008K across separate Standards and Spec passes. Findings are recorded newest-first
-in `docs/working/REVIEW_FINDINGS.md`; corrective slices 008K2 and 008K3 are queued in dependency
-order before 008L. No production code changed.
+Run `2026-07-15_085859_architecture_review` independently reviewed completed slices 008K2, 008K3,
+008L, and 008L2 from fixed point `fc8d3380` across separate Standards and Spec passes. Findings and
+three executable failing probes are recorded newest-first in `docs/working/REVIEW_FINDINGS.md` and
+the run evidence; corrective slices 008K4 and 008L3 are queued in dependency order before sharpened
+008M. No production code changed.
