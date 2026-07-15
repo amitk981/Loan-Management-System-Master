@@ -3678,3 +3678,38 @@ Only current renderer-validated `term_sheet` and `loan_agreement` checklist outp
 download action. It returns a short-lived portal-scoped content URL; authenticated retrieval verifies
 the retained bytes and writes `portal.documentation.downloaded` with portal account, member,
 application, action, document, checksum, request/network, expiry, and accepted outcome—never a key.
+
+## Member portal deficiency response and resubmission (008L2)
+
+Authenticated active borrower sessions use only the `PortalAccount.member_id` scope:
+
+- `GET /api/v1/portal/applications/{loan_application_id}/deficiencies/`
+- `POST /api/v1/portal/applications/{loan_application_id}/deficiencies/{deficiency_id}/upload/`
+- `GET /api/v1/portal/applications/{loan_application_id}/deficiencies/{deficiency_id}/download/`
+- `POST /api/v1/portal/applications/{loan_application_id}/deficiencies/resubmit/`
+
+GET returns the canonical application status, whether resubmission is currently allowed, and open
+deficiencies with borrower-facing description, current response, and a server-owned upload contract
+(category, sensitivity, extensions, and 5 MiB limit). Staff remarks, raiser/resolver identity,
+storage keys, protected member data, and internal completeness actions are omitted. Cross-member
+reads/actions are nondisclosing `404 NOT_FOUND` and write a denied portal audit; staff tokens are
+`403 FORBIDDEN`, while expired/suspended portal sessions remain shared `401` errors.
+
+Upload is strict `multipart/form-data`: one non-empty PDF/JPG/JPEG/PNG whose extension matches MIME,
+at most 5 MiB, required server-advertised `document_category` (`kyc`, `legal`, or `finance`) and
+`sensitivity_level` (`confidential`), plus optional trimmed `response_remark` up to 4,000 characters.
+Every accepted upload creates a central `DocumentFile`, the next pending `ApplicationDocument`
+version for staff verification, and an immutable deficiency-owned successor row attributed to the
+exact portal account/member/application/deficiency. Re-upload retains history; only the current
+successor is projected. Content download returns a short-lived portal-scoped URL,
+requires a second authenticated request, verifies checksum/size, and audits the accepted read.
+
+Resubmit accepts an empty JSON object and atomically requires a current response document for every
+open deficiency. It retains those deficiency rows as open for staff verification/resolution under
+the existing 005F permission, resets completeness to `not_started`, and moves canonical application
+status from `incomplete_returned` to `submitted`, reopening the existing staff completeness queue.
+Audit/workflow facts explicitly label the borrower action as responded/submitted for review and the
+borrower timeline shows `Application resubmitted` (A-095). Empty, partially responded, or
+non-returned applications fail before any transition. Deficiency actions never create or change
+Stage-4 checklist items/actions/history, approvals, verifier/role/remarks, legal/security evidence,
+readiness, loan-account, or disbursement truth.

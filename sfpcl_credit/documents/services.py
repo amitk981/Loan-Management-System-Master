@@ -1,9 +1,12 @@
 import uuid
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 
+from django.core import signing
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.documents.models import DocumentFile
@@ -25,6 +28,8 @@ GENERAL_MEETING_WORKFLOW_SCOPE = "related_party_sanction_case"
 EXCEPTION_REFERENCE_PURPOSE = "exception_supporting_evidence"
 EXCEPTION_WORKFLOW_SCOPE = "approval_case_exception"
 _INACCESSIBLE_REFERENCE_MESSAGE = "Document file was not found or is inaccessible."
+_DOWNLOAD_CAPABILITY_SALT = "sfpcl.document-download-capability.v1"
+_DOWNLOAD_CAPABILITY_TTL_SECONDS = 15 * 60
 
 
 @dataclass(frozen=True)
@@ -125,6 +130,36 @@ def store_document_upload(
             user_agent=request_user_agent(request),
         )
     return document
+
+
+def issue_download_capability(*, document, scope):
+    """Issue a signed, short-lived capability bound to one document and caller-owned scope."""
+    expires_at = timezone.now() + timedelta(seconds=_DOWNLOAD_CAPABILITY_TTL_SECONDS)
+    token = signing.dumps(
+        {"document_id": str(document.pk), "scope": scope},
+        salt=_DOWNLOAD_CAPABILITY_SALT,
+        compress=True,
+    )
+    return {
+        "token": token,
+        "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def read_with_download_capability(*, document, scope, token, storage=None):
+    """Verify the signed capability before reading checksum-verified retained bytes."""
+    try:
+        payload = signing.loads(
+            token,
+            salt=_DOWNLOAD_CAPABILITY_SALT,
+            max_age=_DOWNLOAD_CAPABILITY_TTL_SECONDS,
+        )
+    except (signing.BadSignature, signing.SignatureExpired) as exc:
+        raise ValidationError("Document download capability is invalid or expired.") from exc
+    if payload != {"document_id": str(document.pk), "scope": scope}:
+        raise ValidationError("Document download capability is invalid or expired.")
+    storage = storage or LocalDocumentStorage()
+    return storage.read_verified(document)
 
 
 def download_document_file(user, request, document_id, storage=None):

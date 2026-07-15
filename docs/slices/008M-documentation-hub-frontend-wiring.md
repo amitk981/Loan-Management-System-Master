@@ -69,6 +69,15 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
 - Keep staff checklist reconciliation in `legal_documents.modules.checklist_actions`; do not consume
   portal submission rows as verification/completion truth or expose portal content URLs internally.
 
+## 008L2 Completion Sharpening (2026-07-15)
+
+- Treat `ApplicationDeficiencyResponse` and its linked pending `ApplicationDocument` version only as
+  intake/completeness-review evidence. The documentation hub must not translate a portal deficiency
+  response, its resolved deficiency row, or the application's canonical resubmission event into a
+  Stage-4 checklist completion, approval, signature, custody, or documentation-ready state.
+- If the hub displays the application timeline, label the portal event as an application
+  resubmission for completeness review; do not present it as documentation-checklist success.
+
 ## Risk Level
 Medium
 

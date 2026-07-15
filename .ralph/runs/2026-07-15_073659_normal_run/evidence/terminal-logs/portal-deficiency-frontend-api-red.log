@@ -1,0 +1,34 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/portalApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/sfpcl-lms
+
+(node:16034) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/services/portalApi.test.ts (6 tests | 1 failed) 28ms
+   ✓ portal member API client > loads dashboard, profile, and produce supply using the stored portal bearer token 3ms
+   ✓ portal member API client > surfaces portal permission errors without substituting mock member data 0ms
+   ✓ portal member API client > surfaces backend nominee field errors for portal forms 0ms
+   ✓ portal member API client > creates, updates, submits, lists, and reads portal applications with the stored bearer token 1ms
+   × portal member API client > loads deficiencies, uploads the exact server-owned multipart contract, and resubmits 3ms
+     → fetchPortalApplicationDeficiencies is not a function
+   ✓ portal member API client > loads documentation actions, uploads exact multipart data, and follows the safe download action 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/portalApi.test.ts > portal member API client > loads deficiencies, uploads the exact server-owned multipart contract, and resubmits
+TypeError: fetchPortalApplicationDeficiencies is not a function
+ ❯ src/services/portalApi.test.ts:133:30
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  07:56:34
+   Duration  509ms (transform 95ms, setup 0ms, collect 96ms, tests 28ms, environment 0ms, prepare 41ms)
+

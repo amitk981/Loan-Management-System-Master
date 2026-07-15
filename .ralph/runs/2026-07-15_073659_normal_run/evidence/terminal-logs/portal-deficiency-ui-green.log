@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/applications/MP11_DeficiencyResponse.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/sfpcl-lms
+
+ ✓ src/pages/borrower/portal/applications/MP11_DeficiencyResponse.test.tsx (2 tests) 250ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  08:00:07
+   Duration  1.03s (transform 104ms, setup 0ms, collect 258ms, tests 250ms, environment 201ms, prepare 43ms)
+

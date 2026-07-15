@@ -1,0 +1,11 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_portal_deficiency_response_api.PortalDeficiencyResponseApiTests.test_borrower_reads_open_deficiencies_without_internal_staff_notes sfpcl_credit.tests.test_portal_deficiency_response_api.PortalDeficiencyResponseApiTests.test_borrower_saves_response_draft_and_downloads_borrower_safe_deficiency_note --verbosity 1
+
+Result: FAILED (2 failures)
+
+- API projection assertion: expected `LA-RETURNED-L2`, received `None`.
+- Safe-note assertion: expected `LA-RETURNED-L2`, received the application UUID fallback.
+- Ran 2 tests in 0.042s; exit code 1.
+
+Diagnosis: the fixture never stores a reference, which is correct for an application returned before
+completeness/reference generation. Both independent output paths read the same canonical null fact.

@@ -1,0 +1,25 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008L2-member-portal-deficiency-response-and-resubmission.md
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/src/pages/borrower/portal/applications/MP10_ApplicationStatus.tsx
+ M sfpcl-lms/src/services/portalApi.test.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl_credit/applications/models.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/documents/services.py
+ M sfpcl_credit/members/portal_services.py
+ M sfpcl_credit/members/portal_views.py
+?? .ralph/runs/2026-07-15_073659_normal_run/
+?? .ralph/runs/2026-07-15_083105_repair/
+?? sfpcl-lms/src/pages/borrower/portal/applications/MP11_DeficiencyResponse.test.tsx
+?? sfpcl-lms/src/pages/borrower/portal/applications/MP11_DeficiencyResponse.tsx
+?? sfpcl_credit/applications/migrations/0015_applicationdeficiencyresponse.py
+?? sfpcl_credit/processes/portal_deficiency_response.py
+?? sfpcl_credit/tests/test_portal_deficiency_response_api.py

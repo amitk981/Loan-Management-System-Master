@@ -210,6 +210,36 @@ urlpatterns = [
         name="portal-application-submit",
     ),
     path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/",
+        portal_views.portal_application_deficiencies,
+        name="portal-application-deficiencies",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/note/",
+        portal_views.portal_application_deficiency_note,
+        name="portal-application-deficiency-note",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/<uuid:deficiency_id>/draft/",
+        portal_views.portal_application_deficiency_draft,
+        name="portal-application-deficiency-draft",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/<uuid:deficiency_id>/upload/",
+        portal_views.portal_application_deficiency_upload,
+        name="portal-application-deficiency-upload",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/resubmit/",
+        portal_views.portal_application_deficiency_resubmit,
+        name="portal-application-deficiency-resubmit",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/deficiencies/<uuid:deficiency_id>/download/",
+        portal_views.portal_application_deficiency_download,
+        name="portal-application-deficiency-download",
+    ),
+    path(
         "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/",
         portal_views.portal_documentation_actions,
         name="portal-documentation-actions",

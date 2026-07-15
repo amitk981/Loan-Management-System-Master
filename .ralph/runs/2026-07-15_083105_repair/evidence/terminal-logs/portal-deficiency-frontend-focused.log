@@ -1,0 +1,6 @@
+Command:
+npm test -- --run src/pages/borrower/portal/applications/MP11_DeficiencyResponse.test.tsx src/services/portalApi.test.ts
+
+- `src/services/portalApi.test.ts`: 6 passed.
+- `MP11_DeficiencyResponse.test.tsx`: 2 passed.
+- Test files: 2 passed; tests: 8 passed; exit code 0.

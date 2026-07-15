@@ -545,6 +545,134 @@ class ApplicationDeficiency(models.Model):
         return super().save(*args, **kwargs)
 
 
+class ApplicationDeficiencyResponseQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+    def delete(self):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+
+class ApplicationDeficiencyResponse(models.Model):
+    application_deficiency_response_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    deficiency = models.ForeignKey(
+        ApplicationDeficiency,
+        on_delete=models.PROTECT,
+        related_name="portal_responses",
+    )
+    document = models.OneToOneField(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="application_deficiency_response",
+    )
+    portal_account = models.ForeignKey(
+        "identity.PortalAccount",
+        on_delete=models.PROTECT,
+        related_name="deficiency_responses",
+    )
+    uploader_member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="portal_deficiency_responses",
+    )
+    response_remark = models.TextField(blank=True, null=True)
+    supersedes = models.OneToOneField(
+        "self",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="successor",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    objects = ApplicationDeficiencyResponseQuerySet.as_manager()
+
+    class Meta:
+        db_table = "application_deficiency_responses"
+        ordering = ["created_at", "application_deficiency_response_id"]
+        indexes = [
+            models.Index(
+                fields=["deficiency", "created_at"],
+                name="idx_def_response_history",
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.deficiency_id and self.uploader_member_id:
+            if self.deficiency.loan_application.member_id != self.uploader_member_id:
+                errors["uploader_member"] = "Uploader member must own the deficient application."
+        if self.portal_account_id and self.uploader_member_id:
+            if self.portal_account.member_id != self.uploader_member_id:
+                errors["portal_account"] = "Portal account must belong to the uploader member."
+        if self.supersedes_id and (
+            self.supersedes.deficiency_id != self.deficiency_id
+            or type(self).objects.filter(supersedes_id=self.supersedes_id).exists()
+        ):
+            errors["supersedes"] = "A successor must extend the current deficiency response chain."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"deficiency_response": "Deficiency response evidence is immutable."})
+
+
+class ApplicationDeficiencyResponseDraft(models.Model):
+    application_deficiency_response_draft_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    deficiency = models.OneToOneField(
+        ApplicationDeficiency,
+        on_delete=models.CASCADE,
+        related_name="portal_response_draft",
+    )
+    portal_account = models.ForeignKey(
+        "identity.PortalAccount",
+        on_delete=models.PROTECT,
+        related_name="deficiency_response_drafts",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="portal_deficiency_response_drafts",
+    )
+    response_remark = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "application_deficiency_response_drafts"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.deficiency_id and self.member_id:
+            if self.deficiency.loan_application.member_id != self.member_id:
+                errors["member"] = "Draft member must own the deficient application."
+        if self.portal_account_id and self.member_id:
+            if self.portal_account.member_id != self.member_id:
+                errors["portal_account"] = "Portal account must belong to the draft member."
+        if len(self.response_remark or "") > 4000:
+            errors["response_remark"] = "Must not exceed 4000 characters."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 class RejectionNote(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_SENT = "sent"

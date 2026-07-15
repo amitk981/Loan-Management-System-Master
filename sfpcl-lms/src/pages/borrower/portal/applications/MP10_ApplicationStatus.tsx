@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, History, ClipboardList, 
 import StatusBadge from '../../../../components/ui/StatusBadge';
 import { AuthSessionError } from '../../../../services/authSession';
 import { fetchPortalApplication, type PortalApplication } from '../../../../services/portalApi';
+import MP11_DeficiencyResponse from './MP11_DeficiencyResponse';
 
 interface MP10_ApplicationStatusProps {
   applicationId: string | null;
@@ -14,6 +15,7 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
   const [application, setApplication] = useState<PortalApplication | null>(null);
   const [loading, setLoading] = useState(Boolean(applicationId));
   const [error, setError] = useState<string | null>(null);
+  const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     if (!applicationId) {
@@ -39,7 +41,7 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
     return () => {
       mounted = false;
     };
-  }, [applicationId]);
+  }, [applicationId, reloadVersion]);
 
   const loanStages = buildStages(application);
 
@@ -223,7 +225,7 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
                 <div className="text-sm font-medium text-slate-700">Borrower action</div>
                 <p className="mt-1 text-sm text-slate-500">
                   {application?.application_status === 'incomplete_returned'
-                    ? 'Review the returned deficiencies. Upload and resubmission workflow will be available in the deficiency response slice.'
+                    ? 'Review every returned deficiency, upload a current response, and resubmit for completeness review.'
                     : 'No action is required from you right now.'}
                 </p>
               </div>
@@ -266,6 +268,13 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
               );
             })}
           </div>
+
+          {application?.application_status === 'incomplete_returned' && (
+            <MP11_DeficiencyResponse
+              applicationId={application.loan_application_id}
+              onResubmitted={() => setReloadVersion(version => version + 1)}
+            />
+          )}
 
         </div>
       )}

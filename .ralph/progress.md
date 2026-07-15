@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-15 - 2026-07-15_073659_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008L2-member-portal-deficiency-response-and-resubmission
+- Summary: Added own-member deficiency projection, immutable replacement-document response chains,
+  authenticated downloads, canonical completeness resubmission, and MP11 interaction states inside
+  MP10 while preserving the Stage-4 zero-write boundary.
+- Tests run: staged backend/frontend RED-GREEN; 8 focused backend tests; Django check and migration
+  sync; all 881 backend tests with 40 expected skips at 92% coverage; frontend lint, typecheck,
+  build, and all 302 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_073659_normal_run/evidence/`
+- Result: Complete pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; portal document access, immutable evidence, deficiency resolution, and
+  application lifecycle changed fail-closed without creating Stage-4 completion authority.
+- Next action: Run the due architecture review, then sharpened 008M.
+
 ## 2026-07-15 - 2026-07-15_042336_normal_run
 
 - Agent tool used: codex
@@ -7145,6 +7161,32 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/.ralph/runs/2026-07-15_064104_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/.ralph/runs/2026-07-15_064104_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_083105_repair
+
+- Agent tool used: codex
+- Slice repaired: 008L2-member-portal-deficiency-response-and-resubmission
+- Summary: Repaired the quarantined run by aligning two test assertions with the canonical null
+  pre-completeness application reference, compacting repeated test/UI scaffolding to bring the diff
+  within limits, and filling the missing Ralph risk/review/evidence artifacts. Production behavior
+  remains unchanged by the repair.
+- Tests run: 9 focused backend tests; 8 focused frontend tests; all 882 backend tests at 92%
+  coverage; all 302 frontend tests; lint, typecheck, build, Django check, and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-15_083105_repair/evidence/`
+- Result: Repair complete pending independent orchestrator validation and commit.
+- Risk level: High; authenticated borrower evidence and lifecycle behavior remain guarded by the
+  original slice's scope, validation, immutability, audit, and Stage-4 non-interference tests.
+- Next action: Run the due architecture review, then sharpened 008M.
+
+## 2026-07-15 08:58:31 - 2026-07-15_083105_repair
+- Agent tool used: codex
+- Slice attempted: 008L2-member-portal-deficiency-response-and-resubmission
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/.ralph/runs/2026-07-15_083105_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_073659_normal_run/.ralph/runs/2026-07-15_083105_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

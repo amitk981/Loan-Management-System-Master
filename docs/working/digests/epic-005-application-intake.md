@@ -421,6 +421,23 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   Aadhaar, full bank-account values, encrypted values, token hashes, raw document contents, and
   staff-only document internals.
 
+## Member Portal Deficiency Response And Resubmission
+- 008L2 closes MP11 through active-portal-account scoped deficiency list, strict replacement upload,
+  authenticated current-content download, and atomic resubmission routes. Borrowers see only
+  correction descriptions and current response metadata; staff remarks and identities remain hidden.
+- Replacement PDF/JPEG/PNG evidence is limited to 5 MiB and the server-advertised KYC/legal/finance
+  category plus confidential sensitivity. Central file storage and the next pending
+  `ApplicationDocument` version make evidence visible to staff verification, while immutable response
+  successor rows belong to `ApplicationDeficiency`; `PortalDocumentationSubmission` is never reused.
+- Every open deficiency needs a current response before resubmission. Canonical storage returns
+  `incomplete_returned` to source-defined `submitted` (A-095), resets completeness to `not_started`,
+  and thereby reopens the existing Deputy Manager completeness queue. Portal audit/workflow facts and
+  timeline presentation identify the action as resubmission.
+- Cross-member attempts are nondisclosing and audited; suspended sessions, invalid type/size/category,
+  partial response, and wrong-state attempts create no success evidence. A Stage-4 regression proves
+  checklist status/actions/history, approvals, verifier/signature/remarks, legal/security evidence,
+  readiness, loan-account, and disbursement truth remain untouched.
+
 ## Architecture Review 2026-07-10 01:01 - Portal Session And Audit Contract
 - Reviewed slices 005F2, 005FA, 005FB, and 005G after prior architecture-review commit `49da479`.
 
