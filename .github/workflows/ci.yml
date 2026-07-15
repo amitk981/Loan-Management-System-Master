@@ -35,6 +35,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install legal PDF Unicode fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fonts-noto-core
+          test -f /usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf
       - run: pip install -r sfpcl_credit/requirements-dev.txt
       - run: python sfpcl_credit/manage.py check
       - run: python sfpcl_credit/manage.py makemigrations --check --dry-run
