@@ -173,6 +173,125 @@ class LoanApplication(models.Model):
         return super().save(*args, **kwargs)
 
 
+class BankVerificationDecisionQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+    def delete(self):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+
+class BankVerificationDecision(models.Model):
+    STATUS_VERIFIED = "verified"
+    STATUS_REJECTED = "rejected"
+    STATUSES = {STATUS_VERIFIED, STATUS_REJECTED}
+
+    bank_verification_decision_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_application = models.ForeignKey(
+        LoanApplication, on_delete=models.PROTECT, related_name="bank_verification_decisions"
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="bank_verification_decisions"
+    )
+    bank_account = models.ForeignKey(
+        "members.BankAccount", on_delete=models.PROTECT,
+        related_name="verification_decisions",
+    )
+    cancelled_cheque = models.ForeignKey(
+        "members.CancelledCheque", on_delete=models.PROTECT,
+        related_name="verification_decisions",
+    )
+    cancelled_cheque_document = models.ForeignKey(
+        "documents.DocumentFile", on_delete=models.PROTECT,
+        related_name="bank_verification_decisions",
+    )
+    cancelled_cheque_checksum_sha256 = models.CharField(max_length=128)
+    bank_account_hash_snapshot = models.CharField(max_length=128)
+    ifsc_snapshot = models.CharField(max_length=20)
+    branch_name_snapshot = models.CharField(max_length=150, blank=True)
+    decision_status = models.CharField(max_length=60, db_index=True)
+    verifier_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT,
+        related_name="bank_verification_decisions",
+    )
+    verifier_role_code = models.CharField(max_length=80)
+    verified_at = models.DateTimeField(default=timezone.now, db_index=True)
+    request_id = models.CharField(max_length=255)
+    decision_version = models.PositiveIntegerField()
+    workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent", on_delete=models.PROTECT,
+        related_name="bank_verification_decision",
+    )
+    audit_log = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT,
+        related_name="bank_verification_decision",
+    )
+    version_history = models.OneToOneField(
+        "configurations.VersionHistory", on_delete=models.PROTECT,
+        related_name="bank_verification_decision",
+    )
+    evidence_digest = models.CharField(max_length=64)
+
+    objects = BankVerificationDecisionQuerySet.as_manager()
+
+    class Meta:
+        db_table = "bank_verification_decisions"
+        ordering = ["decision_version", "bank_verification_decision_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "decision_status", "verified_at"],
+                name="idx_bank_verify_app_status",
+            )
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["loan_application", "decision_version"],
+                name="unique_bank_verify_app_version",
+            ),
+            models.CheckConstraint(
+                check=models.Q(decision_status__in=["verified", "rejected"]),
+                name="bank_verify_status_bounded",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.decision_status not in self.STATUSES:
+            errors["decision_status"] = "Unsupported bank verification decision."
+        if self.member_id and self.loan_application_id:
+            if self.loan_application.member_id != self.member_id:
+                errors["member"] = "Decision member must own the application."
+        if not (self.request_id or "").strip():
+            errors["request_id"] = "A request identity is required."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"bank_verification_decision": "Bank verification evidence is immutable."}
+            )
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"bank_verification_decision": "Bank verification evidence is immutable."}
+        )
+
+
 class Witness(models.Model):
     VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
 

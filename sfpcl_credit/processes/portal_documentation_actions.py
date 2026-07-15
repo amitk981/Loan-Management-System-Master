@@ -10,7 +10,7 @@ from sfpcl_credit.approvals.modules import document_checklist_facts
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog, PortalAccount
-from sfpcl_credit.legal_documents.modules import checklist_actions
+from sfpcl_credit.processes import document_checklist_actions
 from sfpcl_credit.legal_documents.models import (
     ChecklistItem,
     DocumentChecklist,
@@ -104,7 +104,9 @@ def get_projection(*, actor, application_id):
             "unavailable_reason": "The post-sanction documentation checklist is not available yet.",
             "actions": [],
         }
-    completion_action_item_ids = checklist_actions.borrower_safe_completed_item_ids(checklist)
+    completion_action_item_ids = document_checklist_actions.borrower_safe_completed_item_ids(
+        checklist
+    )
     current_submissions = {
         row.action_code: row
         for row in PortalDocumentationSubmission.objects.filter(

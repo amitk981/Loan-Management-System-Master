@@ -31,7 +31,7 @@ def read_pledge(*, actor, security_package_id, evidence_access):
     pledge = CDSLSharePledge.objects.filter(security_package=package).first()
     if pledge is None:
         raise NotFound
-    return serialize_pledge(pledge, evidence_access)
+    return ordinary_pledge_projection(pledge, evidence_access)
 
 
 def checklist_terminal_evidence(*, application_id, document, evidence_access):
@@ -507,6 +507,11 @@ def serialize_pledge(pledge, evidence_access):
         ),
         "acceptance_evidence": pledge.acceptance_evidence_json or None,
     }
+def ordinary_pledge_projection(pledge, evidence_access):
+    projection = serialize_pledge(pledge, evidence_access)
+    for key in ("prepared_by_user_id", "verified_by_user_id", "acceptance_evidence"):
+        projection.pop(key, None)
+    return projection
 def _matches(pledge, values):
     evidence = values["evidence_loan_document"]
     return (

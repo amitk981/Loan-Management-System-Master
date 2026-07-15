@@ -32,7 +32,7 @@ def read_cheque(*, actor, security_package_id, evidence_access):
     cheque = BlankDatedCheque.objects.filter(security_package=package).first()
     if cheque is None:
         raise NotFound
-    return serialize_cheque(cheque)
+    return ordinary_cheque_projection(cheque)
 
 
 def checklist_terminal_evidence(
@@ -80,7 +80,6 @@ def checklist_terminal_evidence(
         or cheque.member_id != bank_fact.member_id
         or cheque.bank_account_id != bank_fact.bank_account_id
         or cheque.cancelled_cheque_id != bank_fact.cancelled_cheque_id
-        or cheque.cancelled_cheque.verification_status != "verified"
         or expected_file_id != document.document_id
         or not cheque.prepared_by_user_id
         or not cheque.custodian_user_id
@@ -98,7 +97,14 @@ def checklist_terminal_evidence(
         "prepared_by_user_id": str(cheque.prepared_by_user_id),
         "custodian_user_id": str(cheque.custodian_user_id),
         "custody_workflow_event_id": str(cheque.custody_workflow_event_id),
-        "cancelled_cheque_verification_status": cheque.cancelled_cheque.verification_status,
+        "bank_verification_status": "verified",
+        "bank_verification_decision_id": str(bank_fact.bank_verification_decision_id),
+        "bank_verification_verifier_user_id": str(bank_fact.verifier_user_id),
+        "bank_verification_request_id": bank_fact.request_id,
+        "bank_verification_workflow_event_id": str(bank_fact.workflow_event_id),
+        "bank_verification_audit_log_id": str(bank_fact.audit_log_id),
+        "bank_verification_version_history_id": str(bank_fact.version_history_id),
+        "cancelled_cheque_checksum_sha256": bank_fact.cancelled_cheque_checksum_sha256,
     }
 
 
@@ -282,6 +288,13 @@ def serialize_cheque(cheque):
         ),
         "custody_evidence": cheque.custody_evidence_json or None,
     }
+
+
+def ordinary_cheque_projection(cheque):
+    projection = serialize_cheque(cheque)
+    for key in ("prepared_by_user_id", "custodian_user_id", "custody_evidence"):
+        projection.pop(key, None)
+    return projection
 
 
 def _resolve_values(package, values, evidence_access):

@@ -62,7 +62,7 @@ def read_package(*, actor, application_id, evidence_access):
     package = SecurityPackage.objects.filter(loan_application=application).first()
     if package is None:
         raise NotFound
-    return serialize_package(package, evidence_access)
+    return serialize_package(package, evidence_access, ordinary=True)
 
 
 def refresh_package(*, actor, application_id, metadata, evidence_access):
@@ -190,11 +190,17 @@ def has_canonical_stage4_scope(application_id, evidence_access):
     return require_coordinated(evidence_access).canonical_stage4_scope(application_id)
 
 
-def serialize_package(package, evidence_access):
-    from sfpcl_credit.security_instruments.modules.cdsl_share_pledge import serialize_pledge
-    from sfpcl_credit.security_instruments.modules.power_of_attorney import serialize_poa
-    from sfpcl_credit.security_instruments.modules.sh4 import serialize_sh4
-    from sfpcl_credit.security_instruments.modules.blank_dated_cheque import serialize_cheque
+def serialize_package(package, evidence_access, ordinary=False):
+    from sfpcl_credit.security_instruments.modules.cdsl_share_pledge import (
+        ordinary_pledge_projection, serialize_pledge,
+    )
+    from sfpcl_credit.security_instruments.modules.power_of_attorney import (
+        ordinary_poa_projection, serialize_poa,
+    )
+    from sfpcl_credit.security_instruments.modules.sh4 import ordinary_sh4_projection, serialize_sh4
+    from sfpcl_credit.security_instruments.modules.blank_dated_cheque import (
+        ordinary_cheque_projection, serialize_cheque,
+    )
 
     poa = getattr(package, "power_of_attorney", None)
     sh4 = getattr(package, "sh4_share_transfer_form", None)
@@ -211,12 +217,20 @@ def serialize_package(package, evidence_access):
         "blank_cheque_required_flag": package.blank_cheque_required_flag,
         "cancelled_cheque_required_flag": package.cancelled_cheque_required_flag,
         "security_ready_flag": False,
-        "power_of_attorney": serialize_poa(poa) if poa else None,
-        "sh4_share_transfer_form": serialize_sh4(sh4) if sh4 else None,
-        "cdsl_share_pledge": (
-            serialize_pledge(cdsl, evidence_access) if cdsl else None
+        "power_of_attorney": (
+            ordinary_poa_projection(poa) if ordinary and poa else serialize_poa(poa) if poa else None
         ),
-        "blank_dated_cheque": serialize_cheque(cheque) if cheque else None,
+        "sh4_share_transfer_form": (
+            ordinary_sh4_projection(sh4) if ordinary and sh4 else serialize_sh4(sh4) if sh4 else None
+        ),
+        "cdsl_share_pledge": (
+            ordinary_pledge_projection(cdsl, evidence_access)
+            if ordinary and cdsl else serialize_pledge(cdsl, evidence_access) if cdsl else None
+        ),
+        "blank_dated_cheque": (
+            ordinary_cheque_projection(cheque)
+            if ordinary and cheque else serialize_cheque(cheque) if cheque else None
+        ),
     }
 
 

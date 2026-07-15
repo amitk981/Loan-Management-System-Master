@@ -13,6 +13,12 @@ def complete_item(**kwargs):
     )
 
 
+def borrower_safe_completed_item_ids(checklist):
+    return checklist_actions.borrower_safe_completed_item_ids(
+        checklist, terminal_security_evidence=_terminal_security_evidence
+    )
+
+
 def approve_company_secretary(**kwargs):
     return checklist_actions.approve_company_secretary(
         terminal_security_evidence=_terminal_security_evidence, **kwargs

@@ -148,12 +148,18 @@ class SH4ApiTests(TestCase):
 
         read = self.client.get(url, **self.fixture._auth(self.compliance))
         self.assertEqual(read.status_code, 200, read.content)
-        self.assertEqual(read.json()["data"], data)
+        public = read.json()["data"]
+        for key in ("sh4_share_transfer_form_id", "share_count", "form_status"):
+            self.assertEqual(public[key], data[key])
+        self.assertFalse(
+            {"prepared_by_user_id", "custodian_user_id", "custody_evidence"}
+            .intersection(public)
+        )
         package_read = self.client.get(
             f"/api/v1/loan-applications/{self.application.pk}/security-package/",
             **self.fixture._auth(self.compliance),
         )
-        self.assertEqual(package_read.json()["data"]["sh4_share_transfer_form"], data)
+        self.assertEqual(package_read.json()["data"]["sh4_share_transfer_form"], public)
         self.assertEqual(package_read.json()["data"]["security_status"], "pending")
         self.assertFalse(package_read.json()["data"]["security_ready_flag"])
         self.assertEqual(SecurityPackage.objects.count(), 1)
@@ -267,9 +273,10 @@ class SH4ApiTests(TestCase):
         ).json()["data"]
         retained = package_read["sh4_share_transfer_form"]
         self.assertEqual(retained["form_status"], "held_in_custody")
-        self.assertEqual(retained["custodian_user_id"], str(custodian.pk))
-        self.assertEqual(retained["custody_evidence"]["stamp_duty_record_id"], str(stamp.pk))
-        self.assertEqual(len(retained["custody_evidence"]["signatures"]), 2)
+        self.assertFalse(
+            {"custodian_user_id", "prepared_by_user_id", "custody_evidence"}
+            .intersection(retained)
+        )
         self.assertEqual(package_read["security_status"], "pending")
         self.assertFalse(package_read["security_ready_flag"])
 
@@ -283,7 +290,7 @@ class SH4ApiTests(TestCase):
         )
         self.assertEqual(sh4_item["completion_status"], "pending")
         self.assertEqual(sh4_item["sh4_form_status"], "held_in_custody")
-        self.assertEqual(sh4_item["sh4_custodian_user_id"], str(custodian.pk))
+        self.assertNotIn("sh4_custodian_user_id", sh4_item)
         self.assertEqual(sh4_item["sh4_signature_status"], "signed")
 
         with self.assertRaises(signatures.InvalidState):

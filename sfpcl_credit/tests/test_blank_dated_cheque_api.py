@@ -10,6 +10,7 @@ from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import VersionHistory
+from sfpcl_credit.applications.modules import bank_verification
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission
 from sfpcl_credit.members.models import BankAccount, CancelledCheque
@@ -46,10 +47,24 @@ class BlankDatedChequeApiTests(TestCase):
         RolePermission.objects.get_or_create(
             role=self.compliance.primary_role, permission=permission
         )
+        checklist_permission, _ = Permission.objects.get_or_create(
+            permission_code="documents.checklist.update",
+            defaults={"permission_name": "Update checklist", "risk_level": "critical"},
+        )
+        RolePermission.objects.get_or_create(
+            role=self.compliance.primary_role, permission=checklist_permission
+        )
+        cancelled_cheque_file = DocumentFile.objects.create(
+            file_name="cancelled-cheque.pdf",
+            storage_provider="local",
+            storage_key="tests/cancelled-cheque.pdf",
+            checksum_sha256="c" * 64,
+            sensitivity_level="restricted",
+        )
         self.cancelled_cheque = CancelledCheque.objects.create(
             loan_application_id=self.application.pk,
             member=self.member,
-            document_id=uuid.uuid4(),
+            document_id=cancelled_cheque_file.pk,
             account_number_encrypted="protected-cancelled-account",
             account_number_hash="retained-bank-hash",
             account_number_last4="4321",
@@ -76,6 +91,16 @@ class BlankDatedChequeApiTests(TestCase):
         self.application.bank_account = self.bank_account
         self.application.cancelled_cheque = self.cancelled_cheque
         self.application.save(update_fields=["bank_account", "cancelled_cheque"])
+        bank_verification.record_decision(
+            actor=self.compliance,
+            application_id=self.application.pk,
+            payload={
+                "bank_account_id": str(self.bank_account.pk),
+                "cancelled_cheque_id": str(self.cancelled_cheque.pk),
+                "decision_status": "verified",
+            },
+            metadata=bank_verification.RequestMetadata("blank-cheque-bank-decision"),
+        )
 
     def test_compliance_collects_one_encrypted_masked_cheque_from_canonical_bank_facts(self):
         package = self.fixture._refresh_package()
@@ -347,7 +372,8 @@ class BlankDatedChequeApiTests(TestCase):
         self.assertEqual(held_action["new_status"], "held")
         self.assertEqual(held_action["available_actions"], [])
         held_read = self.client.get(collection_url, **self.fixture._auth(secretary))
-        self.assertEqual(held_read.json()["data"]["custodian_user_id"], str(secretary.pk))
+        self.assertNotIn("custodian_user_id", held_read.json()["data"])
+        self.assertNotIn("custody_evidence", held_read.json()["data"])
         self.assertEqual(held_read.json()["data"]["cheque_number"], "******")
 
         stale_change = self.client.patch(
@@ -456,9 +482,17 @@ class BlankDatedChequeApiTests(TestCase):
             content_type="application/json",
             **self.fixture._auth(self.compliance),
         )
-        for response in (replay, read, detail_replay):
+        for response in (replay, detail_replay):
             self.assertEqual(response.status_code, 200, response.content)
             self.assertEqual(response.json()["data"], data)
+        self.assertEqual(read.status_code, 200, read.content)
+        public = read.json()["data"]
+        for key in ("blank_dated_cheque_id", "cheque_number", "cheque_status"):
+            self.assertEqual(public[key], data[key])
+        self.assertFalse(
+            {"prepared_by_user_id", "custodian_user_id", "custody_evidence"}
+            .intersection(public)
+        )
         self.assertEqual(
             AuditLog.objects.filter(entity_type="blank_dated_cheque").count(), 1
         )
@@ -490,7 +524,7 @@ class BlankDatedChequeApiTests(TestCase):
             f"/api/v1/loan-applications/{self.application.pk}/security-package/",
             **self.fixture._auth(self.compliance),
         ).json()["data"]
-        self.assertEqual(package_read["blank_dated_cheque"], data)
+        self.assertEqual(package_read["blank_dated_cheque"], public)
         self.assertEqual(package_read["security_status"], "pending")
         self.assertFalse(package_read["security_ready_flag"])
         self.assertIsNone(package_read["loan_account_id"])
@@ -514,15 +548,16 @@ class BlankDatedChequeApiTests(TestCase):
     def test_stale_cross_member_and_conflicting_bank_facts_block_atomically(self):
         package = self.fixture._refresh_package()
         url = f"/api/v1/security-packages/{package['security_package_id']}/blank-dated-cheque/"
-        self.bank_account.verification_status = "pending"
-        self.bank_account.save(update_fields=["verification_status"])
+        original_hash = self.bank_account.account_number_hash
+        self.bank_account.account_number_hash = "changed-after-bank-decision"
+        self.bank_account.save(update_fields=["account_number_hash"])
         pending = self.client.post(
             url, self._payload(), content_type="application/json",
             **self.fixture._auth(self.compliance),
         )
         self.assertEqual(pending.status_code, 400, pending.content)
-        self.bank_account.verification_status = "verified"
-        self.bank_account.save(update_fields=["verification_status"])
+        self.bank_account.account_number_hash = original_hash
+        self.bank_account.save(update_fields=["account_number_hash"])
         conflicting = CancelledCheque.objects.create(
             loan_application_id=self.application.pk,
             member=self.member,

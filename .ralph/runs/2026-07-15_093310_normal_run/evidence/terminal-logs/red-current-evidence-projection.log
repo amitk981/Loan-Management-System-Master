@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 791, in test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque
+    checklist_actions.borrower_safe_completed_item_ids(
+TypeError: borrower_safe_completed_item_ids() got an unexpected keyword argument 'terminal_security_evidence'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.097s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

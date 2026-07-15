@@ -1,0 +1,33 @@
+Command: "/Users/amitkallapa/LMS/.ralph/venv/bin/python" sfpcl_credit/manage.py makemigrations --check --dry-run
+Working directory: repository root
+Exit code: 1
+
+Traceback (most recent call last):
+  File "sfpcl_credit/manage.py", line 17, in <module>
+    main()
+  File "sfpcl_credit/manage.py", line 13, in main
+    execute_from_command_line(sys.argv)
+  File "django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "django/core/management/base.py", line 413, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+  File "django/core/management/commands/makemigrations.py", line 213, in handle
+    loader.project_state()
+  File "django/db/migrations/loader.py", line 361, in project_state
+    return self.graph.make_state(
+  File "django/db/migrations/graph.py", line 329, in make_state
+    project_state = self.nodes[node].mutate_state(project_state, preserve=False)
+  File "django/db/migrations/migration.py", line 91, in mutate_state
+    operation.state_forwards(self.app_label, new_state)
+  File "django/db/migrations/operations/fields.py", line 93, in state_forwards
+    state.add_field(
+  File "django/db/migrations/state.py", line 248, in add_field
+    self.models[model_key].fields[name] = field
+KeyError: ('applications', 'checklistaction')
+
+This is the same failure recorded by both the original SQLite coverage/migration gates and the
+independent PostgreSQL acceptance database setup.

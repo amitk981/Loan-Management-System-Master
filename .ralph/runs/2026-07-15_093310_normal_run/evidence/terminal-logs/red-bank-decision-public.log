@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 744, in test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque
+    self.assertEqual(decision_response.status_code, 200, decision_response.json())
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 882, in _parse_json
+    raise ValueError(
+ValueError: Content-Type header is "text/html; charset=utf-8", not "application/json"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.074s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -35,7 +35,7 @@ def read_poa(*, actor, security_package_id, evidence_access):
     poa = PowerOfAttorney.objects.filter(security_package=package).first()
     if poa is None:
         raise NotFound
-    return serialize_poa(poa)
+    return ordinary_poa_projection(poa)
 
 
 def checklist_terminal_evidence(*, application_id, document, evidence_access):
@@ -461,6 +461,20 @@ def serialize_poa(poa):
         "verified_by_user_id": str(poa.verified_by_user_id) if poa.verified_by_user_id else None,
         "activation_evidence": poa.activation_evidence_json or None,
         "legacy_activation_evidence": poa.legacy_activation_evidence,
+    }
+
+
+def ordinary_poa_projection(poa):
+    return {
+        "power_of_attorney_id": str(poa.pk),
+        "security_package_id": str(poa.security_package_id),
+        "borrower_member_id": str(poa.borrower_member_id),
+        "nominee_id": str(poa.nominee_id),
+        "attorney_user_id": str(poa.attorney_user_id),
+        "purpose_summary": poa.purpose_summary,
+        "execution_status": poa.execution_status,
+        "effective_from": poa.effective_from.isoformat() if poa.effective_from else None,
+        "status": poa.status,
     }
 
 

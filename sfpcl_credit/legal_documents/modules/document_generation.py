@@ -16,7 +16,7 @@ from sfpcl_credit.documents.modules import document_templates
 from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.legal_documents.models import LoanDocument
+from sfpcl_credit.legal_documents.models import ChecklistAction, LoanDocument
 from sfpcl_credit.legal_documents import selectors as legal_document_selector
 from sfpcl_credit.legal_documents.modules import document_renderer
 from sfpcl_credit.workflows.events import record_workflow_event
@@ -129,6 +129,11 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
                 ):
                     raise RendererProvenanceConflict()
                 return serialize_generation(replay)
+
+            _require_generation_not_terminal(
+                application_id=application.application_id,
+                document_type=cleaned["document_type"],
+            )
 
             try:
                 template_source = storage.read_verified(template.template_file)
@@ -337,6 +342,31 @@ def _require_document_prerequisites(*, application_id, document_type):
     if not term_sheet_executed:
         raise InvalidGenerationState(
             "Loan Agreement generation requires an executed Term Sheet for this application."
+        )
+
+
+def _require_generation_not_terminal(*, application_id, document_type):
+    item_code = {
+        "power_of_attorney": "poa",
+        "cdsl_pledge_evidence": "cdsl_pledge",
+        "document_checklist": "final_checklist",
+    }.get(document_type, document_type)
+    completed = ChecklistAction.objects.filter(
+        document_checklist__loan_application_id=application_id,
+        checklist_item__item_code=item_code,
+        action_type=ChecklistAction.TYPE_ITEM_COMPLETION,
+    ).exists()
+    approved = ChecklistAction.objects.filter(
+        document_checklist__loan_application_id=application_id,
+        action_type__in={
+            ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL,
+            ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL,
+            ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL,
+        },
+    ).exists()
+    if completed or approved:
+        raise InvalidGenerationState(
+            "A terminal checklist action already consumes this document generation boundary."
         )
 
 

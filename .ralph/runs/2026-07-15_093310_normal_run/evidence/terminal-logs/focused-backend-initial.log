@@ -1,0 +1,121 @@
+Creating test database for alias 'default'...
+Found 57 test(s).
+System check identified no issues (0 silenced).
+............F......E.F..FE.....FFFEEFEF........ssssssssss
+======================================================================
+ERROR: test_distinct_company_secretary_records_terminal_custody_from_exact_legal_evidence (sfpcl_credit.tests.test_sh4_api.SH4ApiTests.test_distinct_company_secretary_records_terminal_custody_from_exact_legal_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_sh4_api.py", line 270, in test_distinct_company_secretary_records_terminal_custody_from_exact_legal_evidence
+    self.assertEqual(retained["custodian_user_id"], str(custodian.pk))
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'custodian_user_id'
+
+======================================================================
+ERROR: test_distinct_company_secretary_accepts_submitted_prf_and_freezes_evidence (sfpcl_credit.tests.test_cdsl_share_pledge_api.CDSLSharePledgeApiTests.test_distinct_company_secretary_accepts_submitted_prf_and_freezes_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_cdsl_share_pledge_api.py", line 277, in test_distinct_company_secretary_accepts_submitted_prf_and_freezes_evidence
+    self.assertEqual(retained["verified_by_user_id"], str(checker.pk))
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'verified_by_user_id'
+
+======================================================================
+ERROR: test_patch_rejects_empty_unknown_immutable_null_and_incomplete_terminal_shapes (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_patch_rejects_empty_unknown_immutable_null_and_incomplete_terminal_shapes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 220, in test_patch_rejects_empty_unknown_immutable_null_and_incomplete_terminal_shapes
+    cheque_id = created.json()["data"]["blank_dated_cheque_id"]
+                ~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'data'
+
+======================================================================
+ERROR: test_patch_rejects_existing_member_and_bank_from_another_application (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_patch_rejects_existing_member_and_bank_from_another_application)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 257, in test_patch_rejects_existing_member_and_bank_from_another_application
+    cheque_id = created.json()["data"]["blank_dated_cheque_id"]
+                ~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'data'
+
+======================================================================
+ERROR: test_reveal_fails_closed_and_audits_when_field_key_is_unavailable (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_reveal_fails_closed_and_audits_when_field_key_is_unavailable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 403, in test_reveal_fails_closed_and_audits_when_field_key_is_unavailable
+    cheque_id = created.json()["data"]["blank_dated_cheque_id"]
+                ~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'data'
+
+======================================================================
+FAIL: test_compliance_prepares_one_replay_safe_draft_from_canonical_facts (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_compliance_prepares_one_replay_safe_draft_from_canonical_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 472, in test_compliance_prepares_one_replay_safe_draft_from_canonical_facts
+    self.assertEqual(read.json()["data"], data)
+AssertionError: {'pow[437 chars].', 'execution_status': 'pending', 'effective_[26 chars]aft'} != {'pow[437 chars].', 'loan_document_id': '05ab65f0-2525-4f62-91[374 chars]alse}
+Diff is 1106 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_physical_package_supports_one_replay_safe_pending_sh4_through_public_api (sfpcl_credit.tests.test_sh4_api.SH4ApiTests.test_physical_package_supports_one_replay_safe_pending_sh4_through_public_api)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_sh4_api.py", line 151, in test_physical_package_supports_one_replay_safe_pending_sh4_through_public_api
+    self.assertEqual(read.json()["data"], data)
+AssertionError: {'sh4[310 chars]75, 'form_status': 'pending', 'custody_locatio[23 chars]None} != {'sh4[310 chars]75, 'loan_document_id': 'fc9dee7f-5664-43e8-af[199 chars]None}
+Diff is 643 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_demat_package_supports_one_masked_replay_safe_prepared_pledge (sfpcl_credit.tests.test_cdsl_share_pledge_api.CDSLSharePledgeApiTests.test_demat_package_supports_one_masked_replay_safe_prepared_pledge)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_cdsl_share_pledge_api.py", line 110, in test_demat_package_supports_one_masked_replay_safe_prepared_pledge
+    self.assertEqual(read.json()["data"], data)
+AssertionError: {'cds[700 chars] None} != {'cds[700 chars] None, 'prepared_by_user_id': '26fff2fa-46ed-4[76 chars]None}
+Diff is 1131 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_compliance_collects_one_encrypted_masked_cheque_from_canonical_bank_facts (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_compliance_collects_one_encrypted_masked_cheque_from_canonical_bank_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 82, in test_compliance_collects_one_encrypted_masked_cheque_from_canonical_bank_facts
+    self.assertTrue(package["blank_cheque_required_flag"])
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_distinct_company_secretary_holds_then_reveals_with_central_audit (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_distinct_company_secretary_holds_then_reveals_with_central_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 329, in test_distinct_company_secretary_holds_then_reveals_with_central_audit
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Blank-dated cheque failed validation.", "details": {}, "field_errors": {"bank_account_id": "Refresh canonical cheque requirements before capture."}}, "meta": {"request_id": null, "timestamp": "2026-07-15T04:23:23.916382Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_patch_merges_one_mutable_field_and_preserves_omitted_values (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_patch_merges_one_mutable_field_and_preserves_omitted_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 170, in test_patch_merges_one_mutable_field_and_preserves_omitted_values
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Blank-dated cheque failed validation.", "details": {}, "field_errors": {"bank_account_id": "Refresh canonical cheque requirements before capture."}}, "meta": {"request_id": null, "timestamp": "2026-07-15T04:23:23.974668Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_reads_and_projection_preserve_checklist_and_package_truth (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_replay_reads_and_projection_preserve_checklist_and_package_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 446, in test_replay_reads_and_projection_preserve_checklist_and_package_truth
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Blank-dated cheque failed validation.", "details": {}, "field_errors": {"bank_account_id": "Refresh canonical cheque requirements before capture."}}, "meta": {"request_id": null, "timestamp": "2026-07-15T04:23:24.154070Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_scan_requires_exact_upload_provenance_and_read_does_not_grant_mutation (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_scan_requires_exact_upload_provenance_and_read_does_not_grant_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 602, in test_scan_requires_exact_upload_provenance_and_read_does_not_grant_mutation
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Blank-dated cheque failed validation.", "details": {}, "field_errors": {"bank_account_id": "Refresh canonical cheque requirements before capture."}}, "meta": {"request_id": null, "timestamp": "2026-07-15T04:23:24.281504Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 57 tests in 5.189s
+
+FAILED (failures=8, errors=5, skipped=10)
+Destroying test database for alias 'default'...

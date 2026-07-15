@@ -290,6 +290,11 @@ urlpatterns = [
         name="loan-application-document-checklist",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/bank-verification-decision/",
+        application_views.bank_verification_decision,
+        name="loan-application-bank-verification-decision",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/refresh/",
         application_views.loan_application_document_checklist,
         name="loan-application-document-checklist-refresh",

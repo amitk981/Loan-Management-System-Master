@@ -12,7 +12,7 @@ from django.utils import timezone
 from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules import document_checklist_facts
-from sfpcl_credit.applications.models import Witness
+from sfpcl_credit.applications.models import LoanApplication, Witness
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
@@ -147,6 +147,14 @@ def complete_item(
         else ChecklistItemCompletionRequest.parse(payload)
     )
     values = request.as_values()
+    application_id = (
+        ChecklistItem.objects.filter(pk=checklist_item_id)
+        .values_list("document_checklist__loan_application_id", flat=True)
+        .first()
+    )
+    if application_id is None:
+        raise NotFound
+    LoanApplication.objects.select_for_update().get(pk=application_id)
     item = (
         ChecklistItem.objects.select_for_update()
         .select_related("document_checklist", "document_checklist__loan_application")
@@ -266,6 +274,14 @@ def _approve(
         else ChecklistApprovalRequest.parse(payload)
     )
     stage = _STAGE[action_type]
+    application_id = (
+        DocumentChecklist.objects.filter(pk=document_checklist_id)
+        .values_list("loan_application_id", flat=True)
+        .first()
+    )
+    if application_id is None:
+        raise NotFound
+    LoanApplication.objects.select_for_update().get(pk=application_id)
     checklist = (
         DocumentChecklist.objects.select_for_update()
         .select_related("loan_application")
@@ -619,10 +635,33 @@ def _evidence_digest(evidence):
     return hashlib.sha256(canonical).hexdigest()
 
 
-def borrower_safe_completed_item_ids(checklist):
+@transaction.atomic
+def borrower_safe_completed_item_ids(checklist, *, terminal_security_evidence=None):
     """Project only completion evidence reconciled by the checklist owner."""
-    items = list(checklist.items.select_related("loan_document"))
-    actions = ChecklistAction.objects.filter(
+    if terminal_security_evidence is None:
+        return set()
+    application = (
+        LoanApplication.objects.select_for_update()
+        .filter(pk=checklist.loan_application_id)
+        .first()
+    )
+    checklist = (
+        DocumentChecklist.objects.select_for_update()
+        .filter(pk=checklist.pk, loan_application=application)
+        .first()
+    )
+    if application is None or checklist is None:
+        return set()
+    try:
+        case = _require_stage4_scope(checklist)
+    except (EvidenceBlocked, Conflict, ValidationError):
+        return set()
+    items = list(
+        checklist.items.select_for_update(of=("self",)).select_related("loan_document")
+    )
+    actions = ChecklistAction.objects.select_related(
+        "workflow_event", "audit_log", "version_history"
+    ).filter(
         document_checklist=checklist, action_type=ChecklistAction.TYPE_ITEM_COMPLETION)
     by_item = {}
     for action in actions:
@@ -632,13 +671,14 @@ def borrower_safe_completed_item_ids(checklist):
         versioned_entity_id__in=[item.pk for item in items])
     by_history = {}
     for history in histories:
-        by_history.setdefault(history.versioned_entity_id, []).append(history.new_value_json or {})
+        by_history.setdefault(history.versioned_entity_id, []).append(history)
     completed = set()
     for item in items:
         item_actions, item_histories = by_item.get(item.pk, []), by_history.get(item.pk, [])
         if len(item_actions) != 1 or len(item_histories) != 1:
             continue
-        action, retained = item_actions[0], item_histories[0]
+        action, history = item_actions[0], item_histories[0]
+        retained = history.new_value_json or {}
         terminal = retained.get("consumed_terminal_evidence")
         expected = {
             "checklist_action_id": str(action.pk),
@@ -651,14 +691,48 @@ def borrower_safe_completed_item_ids(checklist):
             "required_flag": item.required_flag, "applicable_flag": item.applicable_flag,
             "actor_user_id": str(action.actor_user_id),
             "canonical_role_code": action.canonical_role_code,
+            "approval_case_id": str(case.pk),
+            "request_id": action.request_id,
         }
-        if (item.completion_status == ChecklistItem.STATUS_COMPLETE and item.loan_document_id
-                and item.verified_by_user_id and action.loan_document_id == item.loan_document_id
+        workflow = action.workflow_event
+        audits = list(AuditLog.objects.filter(
+            action="document_checklist.item_completion",
+            entity_type="checklist_item", entity_id=item.pk)[:2])
+        try:
+            document = _current_document(
+                application_id=checklist.loan_application_id,
+                item=item,
+                loan_document_id=item.loan_document_id,
+            )
+            current_terminal = _terminal_evidence(
+                item=item,
+                document=document,
+                terminal_security_evidence=terminal_security_evidence,
+            )
+        except (EvidenceBlocked, ValidationError):
+            continue
+        if (item.required_flag and item.applicable_flag
+                and item.completion_status == ChecklistItem.STATUS_COMPLETE
+                and item.loan_document_id and item.verified_by_user_id
+                and action.loan_document_id == item.loan_document_id
                 and action.actor_user_id == item.verified_by_user_id
                 and action.signed_at == item.verified_at
+                and workflow.entity_type == "checklist_item"
+                and workflow.entity_id == item.pk
+                and workflow.from_state == ChecklistItem.STATUS_PENDING
+                and workflow.to_state == ChecklistItem.STATUS_COMPLETE
+                and workflow.triggered_by_user_id == action.actor_user_id
+                and workflow.trigger_reason == ChecklistAction.TYPE_ITEM_COMPLETION
+                and action.audit_log_id == audits[0].pk if len(audits) == 1 else False
+                and action.version_history_id == history.pk
+                and audits[0].actor_user_id == action.actor_user_id
+                and (audits[0].new_value_json or {}) == retained
+                and history.author_user_id == action.actor_user_id
+                and history.change_summary == "document_checklist.item_completion"
+                and history.version_number == "1"
                 and all(retained.get(key) == value for key, value in expected.items())
-                and terminal is not None
-                and retained.get("terminal_evidence_digest") == _evidence_digest(terminal)):
+                and terminal == current_terminal
+                and retained.get("terminal_evidence_digest") == _evidence_digest(current_terminal)):
             completed.add(item.pk)
     return completed
 
@@ -695,6 +769,8 @@ def _reconcile_completion_actions(*, checklist, case, terminal_security_evidence
             or action.actor_user_id != item.verified_by_user_id
             or (action.comments or "") != (item.remarks or "")
             or action.signed_at != item.verified_at
+            or not action.audit_log_id
+            or not action.version_history_id
             or action.canonical_role_code
             not in {"compliance_team_member", "company_secretary"}
         ):
@@ -713,14 +789,17 @@ def _reconcile_completion_actions(*, checklist, case, terminal_security_evidence
             VersionHistory.objects.filter(
                 versioned_entity_type="checklist_item_completion",
                 versioned_entity_id=item.pk,
-            ).values_list("new_value_json", flat=True)[:2]
+            )[:2]
         )
         if (
             len(histories) != 1
-            or (histories[0] or {}).get("checklist_action_id") != str(action.pk)
+            or action.version_history_id != histories[0].pk
+            or (histories[0].new_value_json or {}).get("checklist_action_id")
+            != str(action.pk)
         ):
             raise EvidenceBlocked("Completion action history is missing or ambiguous.")
-        retained = histories[0] or {}
+        history = histories[0]
+        retained = history.new_value_json or {}
         expected = {
             "loan_application_id": str(checklist.loan_application_id),
             "document_checklist_id": str(checklist.pk),
@@ -741,6 +820,36 @@ def _reconcile_completion_actions(*, checklist, case, terminal_security_evidence
         }
         if any(retained.get(key) != value for key, value in expected.items()):
             raise EvidenceBlocked("Completion action does not match current terminal evidence.")
+        audits = list(
+            AuditLog.objects.filter(
+                action="document_checklist.item_completion",
+                entity_type="checklist_item",
+                entity_id=item.pk,
+            )[:2]
+        )
+        workflow = action.workflow_event
+        if (
+            len(audits) != 1
+            or action.audit_log_id != audits[0].pk
+            or audits[0].actor_user_id != action.actor_user_id
+            or (audits[0].old_value_json or {})
+            != {"status": ChecklistItem.STATUS_PENDING}
+            or (audits[0].new_value_json or {}) != retained
+            or history.author_user_id != action.actor_user_id
+            or history.version_number != "1"
+            or history.change_summary != "document_checklist.item_completion"
+            or (history.old_value_json or {})
+            != {"status": ChecklistItem.STATUS_PENDING}
+            or workflow.entity_type != "checklist_item"
+            or workflow.entity_id != item.pk
+            or workflow.from_state != ChecklistItem.STATUS_PENDING
+            or workflow.to_state != ChecklistItem.STATUS_COMPLETE
+            or workflow.triggered_by_user_id != action.actor_user_id
+            or workflow.trigger_reason != ChecklistAction.TYPE_ITEM_COMPLETION
+        ):
+            raise EvidenceBlocked(
+                "Completion action audit, workflow, and version evidence do not match."
+            )
         retained_terminal = retained.get("consumed_terminal_evidence")
         if (
             retained_terminal != terminal
@@ -754,10 +863,27 @@ def _create_action(
     previous_status, new_status, context, metadata, canonical_role_code,
 ):
     action_id = uuid.uuid4()
+    audit_id = uuid.uuid4()
+    version_id = uuid.uuid4()
+    entity_type = "checklist_item" if item else "document_checklist"
+    entity_id = item.pk if item else checklist.pk
+    workflow = record_workflow_event(
+        actor=actor,
+        workflow_name="documentation_checklist",
+        entity_type=entity_type,
+        entity_id=entity_id,
+        from_state=previous_status,
+        to_state=new_status,
+        trigger_reason=action_type,
+        action_code=action_type,
+    )
     evidence = _redact(
         {
             **context,
             "checklist_action_id": str(action_id),
+            "workflow_event_id": str(workflow.pk),
+            "audit_log_id": str(audit_id),
+            "version_history_id": str(version_id),
             "action_type": action_type,
             "meaning": meaning,
             "actor_user_id": str(actor.pk),
@@ -770,35 +896,8 @@ def _create_action(
             "user_agent": metadata.user_agent,
         }
     )
-    entity_type = "checklist_item" if item else "document_checklist"
-    entity_id = item.pk if item else checklist.pk
-    workflow = record_workflow_event(
-        actor=actor,
-        workflow_name="documentation_checklist",
-        entity_type=entity_type,
-        entity_id=entity_id,
-        from_state=previous_status,
-        to_state=new_status,
-        trigger_reason=action_type,
-        action_code=action_type,
-        metadata=evidence,
-    )
-    action = ChecklistAction.objects.create(
-        checklist_action_id=action_id,
-        document_checklist=checklist,
-        checklist_item=item,
-        loan_document=document,
-        action_type=action_type,
-        meaning=meaning,
-        comments=comments,
-        actor_user=actor,
-        actor_user_name_snapshot=actor.full_name,
-        canonical_role_code=canonical_role_code,
-        request_id=metadata.request_id,
-        workflow_event=workflow,
-        signed_at=item.verified_at if item else timezone.now(),
-    )
-    AuditLog.objects.create(
+    audit = AuditLog.objects.create(
+        audit_log_id=audit_id,
         actor_user=actor,
         actor_type="user",
         action=f"document_checklist.{action_type}",
@@ -809,7 +908,8 @@ def _create_action(
         ip_address=metadata.ip_address,
         user_agent=metadata.user_agent,
     )
-    VersionHistory.objects.create(
+    history = VersionHistory.objects.create(
+        version_history_id=version_id,
         versioned_entity_type=(
             "checklist_item_completion" if item else "document_checklist_approval"
         ),
@@ -830,6 +930,23 @@ def _create_action(
         old_value_json={"status": previous_status},
         new_value_json=evidence,
         effective_from=timezone.localdate(),
+    )
+    action = ChecklistAction.objects.create(
+        checklist_action_id=action_id,
+        document_checklist=checklist,
+        checklist_item=item,
+        loan_document=document,
+        action_type=action_type,
+        meaning=meaning,
+        comments=comments,
+        actor_user=actor,
+        actor_user_name_snapshot=actor.full_name,
+        canonical_role_code=canonical_role_code,
+        request_id=metadata.request_id,
+        workflow_event=workflow,
+        audit_log=audit,
+        version_history=history,
+        signed_at=item.verified_at if item else timezone.now(),
     )
     return action
 

@@ -1,0 +1,9 @@
+Migration feedback command:
+  "/Users/amitkallapa/LMS/.ralph/venv/bin/python" sfpcl_credit/manage.py makemigrations --check --dry-run
+Exit code: 0
+Output: No changes detected
+
+Focused fresh-database command:
+  "/Users/amitkallapa/LMS/.ralph/venv/bin/python" manage.py test sfpcl_credit.tests.test_final_documentation_approval_api sfpcl_credit.tests.test_power_of_attorney_api sfpcl_credit.tests.test_sh4_api sfpcl_credit.tests.test_cdsl_share_pledge_api sfpcl_credit.tests.test_blank_dated_cheque_api sfpcl_credit.tests.test_portal_documentation_actions_api
+Exit code: 0
+Result: Ran 61 tests in 5.490s; OK (skipped=14).

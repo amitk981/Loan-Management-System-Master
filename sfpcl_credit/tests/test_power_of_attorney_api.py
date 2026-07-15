@@ -469,7 +469,13 @@ class PowerOfAttorneyApiTests(TestCase):
 
         read = self.client.get(url, **self._auth(self.compliance))
         self.assertEqual(read.status_code, 200, read.content)
-        self.assertEqual(read.json()["data"], data)
+        public = read.json()["data"]
+        for key in ("power_of_attorney_id", "purpose_summary", "execution_status", "status"):
+            self.assertEqual(public[key], data[key])
+        self.assertFalse(
+            {"prepared_by_user_id", "verified_by_user_id", "activation_evidence"}
+            .intersection(public)
+        )
         self.poa_item.refresh_from_db()
         self.assertEqual(self.poa_item.completion_status, "pending")
         self.assertEqual(self.poa_item.poa_execution_status, "pending")
@@ -641,12 +647,19 @@ class PowerOfAttorneyApiTests(TestCase):
         retained = package_read.json()["data"]["power_of_attorney"]
         self.assertEqual(retained["status"], "active")
         self.assertEqual(retained["execution_status"], "executed")
-        self.assertEqual(retained["verified_by_user_id"], str(attorney.pk))
-        self.assertEqual(retained["prepared_by_user_id"], str(self.compliance.pk))
-        evidence = retained["activation_evidence"]
-        self.assertEqual(evidence["poa_prepared_by_user_id"], str(self.compliance.pk))
-        self.assertEqual(evidence["poa_verified_by_user_id"], str(attorney.pk))
-        self.assertEqual(len(evidence["signatures"]), 2)
+        forbidden = {
+            "prepared_by_user_id",
+            "verified_by_user_id",
+            "activation_evidence",
+            "legacy_activation_evidence",
+            "loan_document_id",
+            "stamp_duty_record_id",
+            "notarisation_record_id",
+        }
+        self.assertFalse(forbidden.intersection(retained))
+        serialized = str(retained)
+        for secret in ("request_id", "ip_address", "user_agent", "signer_name_snapshot"):
+            self.assertNotIn(secret, serialized)
 
         consumed_signature = signature_rows[0]
         with self.assertRaises(signatures.InvalidState):

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_company_secretary_activates_only_with_current_maker_checker_and_signatures (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_company_secretary_activates_only_with_current_maker_checker_and_signatures)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 653, in test_company_secretary_activates_only_with_current_maker_checker_and_signatures
+    self.assertFalse(forbidden.intersection(retained))
+AssertionError: {'verified_by_user_id', 'loan_document_id', 'notarisation_record_id', 'stamp_duty_record_id', 'activation_evidence', 'legacy_activation_evidence', 'prepared_by_user_id'} is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.183s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

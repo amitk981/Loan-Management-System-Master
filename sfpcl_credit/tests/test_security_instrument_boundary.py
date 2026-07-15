@@ -19,13 +19,15 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
             {
                 "pledgor_bo_account": "1234567890123456",
                 "nested": {"bank_account_number": "1234567890", "request_id": "req-1"},
-                "already_masked": "************3456",
+                "masked_bank_account_number": "************3456",
+                "mixed_bank_account_number": "1234*5678",
             }
         )
         self.assertEqual(redacted["pledgor_bo_account"], "[REDACTED]")
         self.assertEqual(redacted["nested"]["bank_account_number"], "[REDACTED]")
         self.assertEqual(redacted["nested"]["request_id"], "req-1")
-        self.assertEqual(redacted["already_masked"], "************3456")
+        self.assertEqual(redacted["masked_bank_account_number"], "************3456")
+        self.assertEqual(redacted["mixed_bank_account_number"], "[REDACTED]")
         self.assertIs(redact_security_evidence, redact_sensitive_mapping)
         self.assertIs(checklist_actions._redact, redact_sensitive_mapping)
 

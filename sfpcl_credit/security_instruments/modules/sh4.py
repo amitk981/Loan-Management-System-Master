@@ -35,7 +35,7 @@ def read_sh4(*, actor, security_package_id, evidence_access):
     form = SH4ShareTransferForm.objects.filter(security_package=package).first()
     if form is None:
         raise NotFound
-    return serialize_sh4(form)
+    return ordinary_sh4_projection(form)
 
 
 def checklist_terminal_evidence(*, application_id, document, evidence_access):
@@ -383,6 +383,20 @@ def serialize_sh4(form):
         "prepared_by_user_id": str(form.prepared_by_user_id),
         "custodian_user_id": str(form.custodian_user_id) if form.custodian_user_id else None,
         "custody_evidence": form.custody_evidence_json or None,
+    }
+
+
+def ordinary_sh4_projection(form):
+    return {
+        "sh4_share_transfer_form_id": str(form.pk),
+        "security_package_id": str(form.security_package_id),
+        "member_id": str(form.member_id),
+        "witness_id": str(form.witness_id),
+        "shareholding_id": str(form.shareholding_id),
+        "share_count": form.share_count,
+        "form_status": form.form_status,
+        "custody_location": form.custody_location,
+        "signed_at": form.signed_at.isoformat() if form.signed_at else None,
     }
 
 

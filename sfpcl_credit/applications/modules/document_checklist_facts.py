@@ -2,7 +2,11 @@
 
 from dataclasses import dataclass
 
-from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.applications.models import BankVerificationDecision, LoanApplication
+from sfpcl_credit.applications.modules.bank_verification import (
+    decision_evidence,
+    evidence_digest,
+)
 from sfpcl_credit.members.models import BankAccount, CancelledCheque
 
 
@@ -24,6 +28,13 @@ class BlankChequeBankFact:
     bank_account_masked: str | None = None
     ifsc: str | None = None
     branch_name: str | None = None
+    bank_verification_decision_id: object | None = None
+    verifier_user_id: object | None = None
+    request_id: str | None = None
+    workflow_event_id: object | None = None
+    audit_log_id: object | None = None
+    version_history_id: object | None = None
+    cancelled_cheque_checksum_sha256: str | None = None
 
 
 def resolve_blank_cheque_bank_fact(*, application_id):
@@ -43,6 +54,17 @@ def resolve_blank_cheque_bank_fact(*, application_id):
     )
     if bank is None or cheque is None:
         return BlankChequeBankFact(False, "bank_cancelled_cheque_source_missing")
+    decision = (
+        BankVerificationDecision.objects.select_for_update()
+        .select_related(
+            "cancelled_cheque_document", "workflow_event", "audit_log", "version_history"
+        )
+        .filter(loan_application=application)
+        .order_by("-decision_version", "-bank_verification_decision_id")
+        .first()
+    )
+    if decision is None:
+        return BlankChequeBankFact(False, "bank_verification_decision_missing")
     related_cheques = list(
         CancelledCheque.objects.select_for_update()
         .filter(loan_application_id=application.pk, member_id=application.member_id)
@@ -62,15 +84,44 @@ def resolve_blank_cheque_bank_fact(*, application_id):
         and bank.ifsc == cheque.ifsc
         and bank.account_number_last4 == cheque.account_number_last4
     )
-    verified = (
-        bank.verification_status == "verified"
-        and bank.status == "active"
-        and cheque.verification_status == "verified"
-        and cheque.loan_application_id == application.pk
+    retained = decision_evidence(decision)
+    ledger = decision.audit_log.new_value_json or {}
+    history = decision.version_history.new_value_json or {}
+    workflow = decision.workflow_event
+    decision_current = (
+        decision.member_id == application.member_id
+        and decision.bank_account_id == bank.pk
+        and decision.cancelled_cheque_id == cheque.pk
+        and decision.cancelled_cheque_document_id == cheque.document_id
+        and decision.cancelled_cheque_checksum_sha256
+        == decision.cancelled_cheque_document.checksum_sha256
+        and decision.bank_account_hash_snapshot == bank.account_number_hash
+        and decision.ifsc_snapshot == bank.ifsc
+        and decision.branch_name_snapshot == (bank.branch_name or cheque.branch_name or "")
+        and decision.decision_status == BankVerificationDecision.STATUS_VERIFIED
+        and decision.evidence_digest == evidence_digest(retained)
+        and ledger == {**retained, "evidence_digest": decision.evidence_digest}
+        and history == ledger
+        and decision.audit_log.actor_user_id == decision.verifier_user_id
+        and decision.audit_log.action == "bank_verification.decision_recorded"
+        and decision.audit_log.entity_type == "bank_verification_decision"
+        and decision.audit_log.entity_id == decision.pk
+        and decision.version_history.versioned_entity_type
+        == "bank_verification_decision"
+        and decision.version_history.versioned_entity_id == decision.pk
+        and decision.version_history.version_number == str(decision.decision_version)
+        and decision.version_history.author_user_id == decision.verifier_user_id
+        and workflow.workflow_name == "bank_verification"
+        and workflow.entity_type == "bank_verification_decision"
+        and workflow.entity_id == decision.pk
+        and workflow.to_state == decision.decision_status
+        and workflow.triggered_by_user_id == decision.verifier_user_id
+        and workflow.trigger_reason == "bank_verification.decision_recorded"
     )
+    verified = bank.status == "active" and cheque.loan_application_id == application.pk
     if not same_member or not exact_link or not account_matches:
         return BlankChequeBankFact(False, "bank_cancelled_cheque_source_conflicting")
-    if not verified:
+    if not verified or not decision_current:
         return BlankChequeBankFact(False, "bank_cancelled_cheque_source_unverified")
     return BlankChequeBankFact(
         True,
@@ -84,6 +135,13 @@ def resolve_blank_cheque_bank_fact(*, application_id):
         ),
         ifsc=bank.ifsc,
         branch_name=bank.branch_name or cheque.branch_name or None,
+        bank_verification_decision_id=decision.pk,
+        verifier_user_id=decision.verifier_user_id,
+        request_id=decision.request_id,
+        workflow_event_id=decision.workflow_event_id,
+        audit_log_id=decision.audit_log_id,
+        version_history_id=decision.version_history_id,
+        cancelled_cheque_checksum_sha256=decision.cancelled_cheque_checksum_sha256,
     )
 
 

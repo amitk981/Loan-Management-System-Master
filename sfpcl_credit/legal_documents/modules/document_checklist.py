@@ -321,11 +321,6 @@ def serialize(checklist):
                     and sh4_projection.get("signed_at")
                     else "pending" if item.item_code == "sh4" else None
                 ),
-                "sh4_custodian_user_id": (
-                    sh4_projection.get("custodian_user_id")
-                    if item.item_code == "sh4" and sh4_projection
-                    else None
-                ),
                 "cdsl_prf_status": (
                     cdsl_projection.get("prf_status")
                     if item.item_code == "cdsl_pledge" and cdsl_projection
@@ -351,16 +346,6 @@ def serialize(checklist):
                     if item.item_code == "cdsl_pledge" and cdsl_projection
                     else None
                 ),
-                "cdsl_prepared_by_user_id": (
-                    cdsl_projection.get("prepared_by_user_id")
-                    if item.item_code == "cdsl_pledge" and cdsl_projection
-                    else None
-                ),
-                "cdsl_verified_by_user_id": (
-                    cdsl_projection.get("verified_by_user_id")
-                    if item.item_code == "cdsl_pledge" and cdsl_projection
-                    else None
-                ),
                 "blank_cheque_status": (
                     blank_cheque_projection.get("cheque_status")
                     if item.item_code == "blank_dated_cheque" and blank_cheque_projection
@@ -373,11 +358,6 @@ def serialize(checklist):
                 ),
                 "blank_cheque_custody_location": (
                     blank_cheque_projection.get("custody_location")
-                    if item.item_code == "blank_dated_cheque" and blank_cheque_projection
-                    else None
-                ),
-                "blank_cheque_custodian_user_id": (
-                    blank_cheque_projection.get("custodian_user_id")
                     if item.item_code == "blank_dated_cheque" and blank_cheque_projection
                     else None
                 ),

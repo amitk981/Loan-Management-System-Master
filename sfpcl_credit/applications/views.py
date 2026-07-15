@@ -14,6 +14,7 @@ from sfpcl_credit.approvals.modules.approval_matrix import ApprovalMatrixResolut
 from sfpcl_credit.approvals.modules.sanction_committee import SanctionCommitteeResolutionError
 from sfpcl_credit.applications import services
 from sfpcl_credit.applications.modules import application_authority
+from sfpcl_credit.applications.modules import bank_verification
 from sfpcl_credit.applications.modules.witness_corrections import WitnessCorrectionError, correct_witness
 from sfpcl_credit.credit.modules.common import (
     CreditModuleInvalidStateError,
@@ -27,6 +28,61 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
 from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.workflows.guard import InvalidStateTransition
+
+
+@require_http_methods(["POST"])
+def bank_verification_decision(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        decision = bank_verification.record_decision(
+            actor=user,
+            application_id=loan_application_id,
+            payload=parse_json_body(request),
+            metadata=bank_verification.RequestMetadata(
+                request_id=request.headers.get("X-Request-ID"),
+                ip_address=request_ip(request),
+                user_agent=request_user_agent(request),
+            ),
+        )
+    except bank_verification.AccessDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "You cannot record bank verification evidence."
+        )
+    except bank_verification.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    except bank_verification.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank verification decision failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(
+        {
+            "bank_verification_decision_id": str(decision.pk),
+            "loan_application_id": str(decision.loan_application_id),
+            "member_id": str(decision.member_id),
+            "bank_account_id": str(decision.bank_account_id),
+            "cancelled_cheque_id": str(decision.cancelled_cheque_id),
+            "cancelled_cheque_document_id": str(
+                decision.cancelled_cheque_document_id
+            ),
+            "decision_status": decision.decision_status,
+            "verifier_user_id": str(decision.verifier_user_id),
+            "verified_at": decision.verified_at.isoformat(),
+            "request_id": decision.request_id,
+            "decision_version": decision.decision_version,
+            "workflow_event_id": str(decision.workflow_event_id),
+            "audit_log_id": str(decision.audit_log_id),
+            "version_history_id": str(decision.version_history_id),
+        },
+        request,
+    )
 
 
 @require_http_methods(["GET", "POST"])

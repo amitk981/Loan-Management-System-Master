@@ -7218,3 +7218,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_101427_repair
+
+- Agent tool used: codex
+- Slice repaired: 008K4-current-evidence-and-security-read-closure
+- Summary: Preserved the quarantined 008K4 implementation and repaired its migration graph by
+  targeting checklist-action audit/version fields at the owning `legal_documents` model through a
+  reusable cross-app migration operation. Completed the missing risk/review/final artifacts.
+- Tests run: 61 focused backend tests; standard PostgreSQL five-race acceptance twice; four 008K4
+  generation/completion/CS PostgreSQL races; all 886 backend tests at 92% coverage; all 302 frontend
+  tests; lint, typecheck, build, Django check, migration sync, queue, diff, and protected-path checks.
+- Evidence saved: `.ralph/runs/2026-07-15_101427_repair/evidence/`
+- Result: Repair complete pending independent orchestrator validation and commit.
+- Risk level: High; legal/security access, checklist authority, immutable evidence, and concurrent
+  generation paths are fail-closed and regression-tested.
+- Next action: Run 008L3, then the already-sharpened 008M.
+
+## 2026-07-15 10:42:29 - 2026-07-15_101427_repair
+- Agent tool used: codex
+- Slice attempted: 008K4-current-evidence-and-security-read-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/.ralph/runs/2026-07-15_101427_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_093310_normal_run/.ralph/runs/2026-07-15_101427_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -3641,6 +3641,32 @@ stale, cross-object, or changed evidence returns `409 CHECKLIST_EVIDENCE_INCOMPL
 approval writes. Retained actions freeze the role that authorised the requested stage, even for a
  multi-role user.
 
+008K4 current-evidence and read closure adds:
+
+- `POST /api/v1/loan-applications/{loan_application_id}/bank-verification-decision/`
+
+The request requires `X-Request-ID` and exactly `bank_account_id`, `cancelled_cheque_id`, and
+`decision_status` (`verified` or `rejected`). Authority is the existing Stage-4 checklist-update
+permission held by Compliance Team or Company Secretary; no new verifier role is introduced. A
+success binds the exact application/member/bank/cancelled-cheque file and checksum, verifier role
+and time, request, workflow, audit, version, and evidence digest. Status-only legacy bank rows are
+readable but cannot complete a new checklist item. Changed bank/file/ledger facts make the decision
+non-current and return the existing `409 CHECKLIST_EVIDENCE_INCOMPLETE` at completion/approval.
+
+Checklist completion, borrower-safe projection, and Company Secretary reconciliation now rerun the
+current renderer, signature, stamp/notary, security, bank-decision, applicability/case, action,
+workflow, audit, single-version, request, and digest checks through the top-level coordinator. Loan
+document generation shares the application-first lock order and refuses a new generation after a
+terminal item or checklist approval has consumed that boundary, so concurrent generation and
+completion/approval retain one coherent winner.
+
+Ordinary package, PoA, SH-4, CDSL, blank-cheque, and checklist GET projections expose only
+source-documented business state and governed masks. They omit retained evidence blobs, maker/
+checker ids, request/network context, role/team lists, signer snapshots, internal legal/audit/action
+ids, hashes, ciphertext, and storage keys. Internal terminal selectors retain exact evidence without
+granting it to readers. Canonical recursive redaction preserves only full fixed masks or a governed
+last-four mask; mixed plaintext such as `1234*5678` is replaced with `[REDACTED]`.
+
 ## Member portal documentation actions (008L)
 
 Authenticated borrower portal sessions use these application-scoped routes:

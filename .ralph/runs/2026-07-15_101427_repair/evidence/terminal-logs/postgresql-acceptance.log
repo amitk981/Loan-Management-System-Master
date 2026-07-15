@@ -1,0 +1,15 @@
+Environment: Django PostgreSQL test settings with explicit isolated database names.
+
+Standard acceptance command used LoanLimitConcurrencyTests, AppraisalConcurrencyTests, and
+SanctionSubmissionConcurrencyTests with `--settings=sfpcl_credit.config.postgres_test_settings`.
+- Fresh database `test_sfpcl_credit_repair_101427_1`: all migrations, including
+  applications.0016, applied; 5 tests passed.
+- Fresh database `test_sfpcl_credit_repair_101427_2`: all migrations, including
+  applications.0016, applied; 5 tests passed.
+
+008K4 acceptance used FinalDocumentationApprovalConcurrencyTests generation-versus-completion and
+generation-versus-CS methods plus each named repeat variant with PostgreSQL settings.
+- Fresh database `test_sfpcl_credit_repair_101427_k4`: all migrations applied; 4 tests passed in
+  6.583s.
+
+All commands exited 0 and destroyed their isolated test databases.

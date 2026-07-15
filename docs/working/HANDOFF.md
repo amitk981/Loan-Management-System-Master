@@ -2,29 +2,27 @@
 
 ## Last Run
 
-2026-07-15_085859_architecture_review
+2026-07-15_101427_repair
 
 ## Current Status
 
-The independent architecture review of 008K2, 008K3, 008L, and 008L2 is complete. The slices add
-substantive security, checklist, portal-document, and deficiency behavior, but three executable
-probes reproduce unsigned caller-editable download expiry, stale checklist completion after a newer
-renderer document, and deficiency resubmission bypassing the application transition guard. Review
-also found mutable status-only bank evidence, a generation/completion lock gap, ordinary security
-evidence overexposure, upload read/write policy divergence, and a shadow deficiency lifecycle.
-No production code changed. Corrective slices 008K4 and 008L3 are sharpened in dependency order;
-008M is sharpened to consume their corrected boundaries.
+Corrective slice 008K4 is complete after repair. It adds immutable application/member-owned bank
+verification decisions, exact checklist action/audit/workflow/version reconciliation, one
+application-first generation/completion lock order, fail-closed mixed-mask handling, and explicit
+ordinary security projections that omit retained internal evidence. The quarantined normal run's
+implementation was preserved; repair corrected its single migration so two checklist-action fields
+target the owning `legal_documents` migration state and table while retaining the one-migration
+limit. The original artifact templates were also completed.
 
 ## Validation
 
-Review evidence is in `.ralph/runs/2026-07-15_085859_architecture_review/evidence/`. The final
-review probe log contains three clean expected failures with no setup errors. Standards and Spec
-passes, source citations, validation logs, changed-file inventory, risk assessment, and review
-packet are retained with the run. All 882 backend tests pass at 92% coverage, all 302 frontend tests
-pass, and lint, typecheck, build, Django check, migration drift, and queue lint are green.
+Repair evidence is in `.ralph/runs/2026-07-15_101427_repair/evidence/`. The migration graph is green
+and the complete chain applies on fresh SQLite and PostgreSQL databases. The standard five-race
+PostgreSQL acceptance passed twice; all four 008K4 generation/completion/CS race tests passed. All
+886 backend tests pass at 92% coverage, all 302 frontend tests pass, and lint, typecheck, build,
+Django check, migration drift, diff/protected-path checks, and queue lint are green.
 
 ## Next Run
 
-Run `008K4-current-evidence-and-security-read-closure`, then
-`008L3-portal-action-and-resubmission-contract-closure`, then the sharpened
+Run `008L3-portal-action-and-resubmission-contract-closure`, then the already-sharpened
 `008M-documentation-hub-frontend-wiring`.

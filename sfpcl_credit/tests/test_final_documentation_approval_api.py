@@ -1,10 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
+import hashlib
+from pathlib import Path
+import tempfile
 from threading import Barrier
 from unittest import skipUnless
 
 from django.db import close_old_connections, connection, connections
 from django.test import TestCase
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import VersionHistory
@@ -21,7 +25,9 @@ from sfpcl_credit.legal_documents.models import (
 )
 from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.legal_documents.modules import checklist_actions
+from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.processes import document_checklist_actions as checklist_action_process
+from sfpcl_credit.applications.modules import bank_verification
 from sfpcl_credit.applications.models import Witness
 from sfpcl_credit.members.models import (
     BankAccount,
@@ -42,6 +48,7 @@ from sfpcl_credit.tests.api_contracts import (
     assert_success_envelope,
 )
 from sfpcl_credit.tests import test_document_checklist_api as checklist_fixture
+from sfpcl_credit.tests import test_loan_document_generation_api as generation_fixture
 from sfpcl_credit.workflows.models import WorkflowEvent
 
 
@@ -374,6 +381,26 @@ class FinalDocumentationApprovalApiTests(TestCase):
         history.new_value_json = retained
         history.save(update_fields=["new_value_json"])
 
+        completion_audit = AuditLog.objects.get(
+            action="document_checklist.item_completion",
+            entity_type="checklist_item",
+            entity_id=item.pk,
+        )
+        original_audit = dict(completion_audit.new_value_json)
+        completion_audit.new_value_json = {**original_audit, "request_id": "forged"}
+        completion_audit.save(update_fields=["new_value_json"])
+        assert_blocked("changed completion audit")
+        completion_audit.new_value_json = original_audit
+        completion_audit.save(update_fields=["new_value_json"])
+
+        completion_workflow = action.workflow_event
+        original_reason = completion_workflow.trigger_reason
+        completion_workflow.trigger_reason = "forged.completion.workflow"
+        completion_workflow.save(update_fields=["trigger_reason"])
+        assert_blocked("changed completion workflow")
+        completion_workflow.trigger_reason = original_reason
+        completion_workflow.save(update_fields=["trigger_reason"])
+
         poa = PowerOfAttorney.objects.get(security_package__loan_application=self.application)
         workflow = WorkflowEvent.objects.get(pk=poa.activation_workflow_event_id)
         workflow.trigger_reason = "forged.workflow"
@@ -628,7 +655,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertNotIn(secret_bo, retained)
         self.assertNotIn(secret_cheque, retained)
 
-    def test_public_blank_cheque_completion_freezes_exact_source_owned_ids(self):
+    def test_status_only_bank_and_cancelled_cheque_cannot_complete_blank_cheque(self):
         document = self._current_document("blank_dated_cheque")
         cancelled = CancelledCheque.objects.create(
             loan_application_id=self.application.pk,
@@ -716,19 +743,84 @@ class FinalDocumentationApprovalApiTests(TestCase):
             **self.fixture._auth(self.compliance),
         )
 
-        self.assertEqual(response.status_code, 200, response.json())
-        action = ChecklistAction.objects.get(pk=response.json()["data"]["checklist_action_id"])
+        self.assertEqual(response.status_code, 409, response.json())
+        self.assertEqual(
+            response.json()["error"]["code"], "CHECKLIST_EVIDENCE_INCOMPLETE"
+        )
+        item.refresh_from_db()
+        self.assertEqual(item.completion_status, ChecklistItem.STATUS_PENDING)
+        self.assertFalse(item.completion_actions.exists())
+        self.assertFalse(
+            VersionHistory.objects.filter(
+                versioned_entity_type="checklist_item_completion",
+                versioned_entity_id=item.pk,
+            ).exists()
+        )
+
+        decision_response = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(bank.pk),
+                "cancelled_cheque_id": str(cancelled.pk),
+                "decision_status": "verified",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008k4-bank-decision",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(decision_response.status_code, 200, decision_response.json())
+        decision = decision_response.json()["data"]
+        self.assertEqual(decision["decision_status"], "verified")
+        self.assertEqual(decision["bank_account_id"], str(bank.pk))
+        self.assertEqual(decision["cancelled_cheque_id"], str(cancelled.pk))
+        self.assertTrue(decision["workflow_event_id"])
+        self.assertTrue(decision["audit_log_id"])
+        self.assertTrue(decision["version_history_id"])
+
+        completed = self.client.post(
+            f"/api/v1/checklist-items/{item.pk}/complete/",
+            {
+                "loan_document_id": str(document.pk),
+                "remarks": "Exact physical cheque custody verified.",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008k4-source-cheque-complete",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(completed.status_code, 200, completed.json())
         retained = VersionHistory.objects.get(
             versioned_entity_type="checklist_item_completion",
-            new_value_json__checklist_action_id=str(action.pk),
+            versioned_entity_id=item.pk,
         ).new_value_json
         ledger = retained["consumed_terminal_evidence"]["security_ledger"]
-        self.assertEqual(ledger["blank_dated_cheque_id"], str(cheque.pk))
-        self.assertEqual(ledger["security_package_id"], str(package.pk))
-        self.assertEqual(ledger["bank_account_id"], "[REDACTED]")
-        self.assertEqual(ledger["cancelled_cheque_id"], str(cancelled.pk))
-        self.assertEqual(ledger["cheque_number"], "******")
+        self.assertEqual(
+            ledger["bank_verification_decision_id"],
+            decision["bank_verification_decision_id"],
+        )
+        self.assertEqual(
+            ledger["bank_verification_workflow_event_id"], decision["workflow_event_id"]
+        )
+        self.assertEqual(
+            ledger["bank_verification_audit_log_id"], decision["audit_log_id"]
+        )
+        self.assertEqual(
+            ledger["bank_verification_version_history_id"],
+            decision["version_history_id"],
+        )
         self.assertNotIn("123456", str(retained))
+
+        DocumentFile.objects.filter(pk=document.document_id).update(
+            checksum_sha256="changed-after-completion"
+        )
+        self.assertNotIn(
+            item.pk,
+            checklist_actions.borrower_safe_completed_item_ids(
+                self.checklist,
+                terminal_security_evidence=(
+                    checklist_action_process._terminal_security_evidence
+                ),
+            ),
+        )
 
     def _post_stage(self, suffix, actor, payload):
         return self.client.post(
@@ -972,6 +1064,18 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.application.bank_account = bank
         self.application.cancelled_cheque = cancelled
         self.application.save(update_fields=["bank_account", "cancelled_cheque"])
+        bank_verification.record_decision(
+            actor=self.compliance,
+            application_id=self.application.pk,
+            payload={
+                "bank_account_id": str(bank.pk),
+                "cancelled_cheque_id": str(cancelled.pk),
+                "decision_status": "verified",
+            },
+            metadata=bank_verification.RequestMetadata(
+                request_id=f"008k4-fixture-bank-{self.application.pk}"
+            ),
+        )
         exact = {
             "loan_application_id": str(self.application.pk),
             "security_package_id": str(package.pk),
@@ -1109,6 +1213,170 @@ class FinalDocumentationApprovalConcurrencyTests(TransactionTestCase):
 
     def test_five_changed_requests_retain_one_winner_for_item_and_each_stage_repeat(self):
         self._exercise_full_race_matrix()
+
+    def test_generation_versus_completion_retain_one_current_winner(self):
+        self._exercise_generation_race("completion")
+
+    def test_generation_versus_completion_retain_one_current_winner_repeat(self):
+        self._exercise_generation_race("completion")
+
+    def test_generation_versus_cs_approval_retain_one_current_winner(self):
+        self._exercise_generation_race("approval")
+
+    def test_generation_versus_cs_approval_retain_one_current_winner_repeat(self):
+        self._exercise_generation_race("approval")
+
+    def _exercise_generation_race(self, mode):
+        helper = FinalDocumentationApprovalApiTests(
+            methodName="test_ordered_approval_sequence_retains_meanings_and_exact_replay"
+        )
+        helper.setUp()
+        if mode == "completion":
+            helper._complete_all_applicable_items(exclude_item_code="final_checklist")
+        else:
+            helper._complete_all_applicable_items()
+        item = helper.checklist.items.get(item_code="final_checklist")
+        current = LoanDocument.objects.get(
+            loan_application=helper.application, document_type="document_checklist"
+        )
+        helper._grant(
+            helper.compliance,
+            "documents.loan_document.generate",
+            "documents.template.file_reference",
+        )
+        old_template = current.document_template
+        old_template.approval_status = DocumentTemplate.STATUS_RETIRED
+        old_template.effective_from = timezone.localdate() - timedelta(days=2)
+        old_template.effective_to = timezone.localdate() - timedelta(days=1)
+        old_template.save(
+            update_fields=["approval_status", "effective_from", "effective_to"]
+        )
+        source = generation_fixture.LoanDocumentGenerationApiTests._genuine_docx_fixture([])
+        source_file = DocumentFile.objects.create(
+            file_name="008k4-race-checklist.docx",
+            file_extension=".docx",
+            mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            file_size_bytes=len(source),
+            storage_provider="local",
+            storage_key=f"race/{mode}/checklist.docx",
+            checksum_sha256=hashlib.sha256(source).hexdigest(),
+            uploaded_by_user=helper.compliance,
+            sensitivity_level="internal",
+        )
+        AuditLog.objects.create(
+            actor_user=helper.compliance,
+            action="documents.file.uploaded",
+            entity_type="document_file",
+            entity_id=source_file.pk,
+            new_value_json={
+                "document_id": str(source_file.pk),
+                "file_name": source_file.file_name,
+                "file_extension": source_file.file_extension,
+                "mime_type": source_file.mime_type,
+                "file_size_bytes": source_file.file_size_bytes,
+                "storage_provider": source_file.storage_provider,
+                "storage_key": source_file.storage_key,
+                "checksum_sha256": source_file.checksum_sha256,
+                "sensitivity_level": source_file.sensitivity_level,
+                "document_category": "template_source",
+                "related_entity_type": "global",
+                "related_entity_id": None,
+            },
+        )
+        successor = DocumentTemplate.objects.create(
+            template_code=f"008k4-{mode}-checklist-v2",
+            template_name="008K4 Current Checklist",
+            document_type="document_checklist",
+            borrower_type="individual_farmer",
+            template_version="2.0",
+            template_file=source_file,
+            merge_fields_json=[],
+            approval_status=DocumentTemplate.STATUS_APPROVED,
+            effective_from=timezone.localdate(),
+        )
+        gate = Barrier(5)
+        root = tempfile.TemporaryDirectory(prefix=f"008k4-{mode}-race-")
+        self.addCleanup(root.cleanup)
+        source_path = Path(root.name, source_file.storage_key)
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_bytes(source)
+
+        def attempt(index):
+            close_old_connections()
+            try:
+                from sfpcl_credit.identity.models import User
+                actor = User.objects.get(
+                    pk=helper.compliance.pk if index == 0 or mode == "completion" else helper.cs.pk
+                )
+                gate.wait(timeout=10)
+                try:
+                    if index == 0:
+                        document_generation.generate(
+                            actor=actor,
+                            application_id=helper.application.pk,
+                            payload={
+                                "document_type": "document_checklist",
+                                "template_id": str(successor.pk),
+                                "output_format": "pdf",
+                            },
+                            metadata=document_generation.RequestMetadata(
+                                f"008k4-{mode}-generation", "203.0.113.1", "race"
+                            ),
+                            storage=document_generation.LocalDocumentStorage(root=root.name),
+                        )
+                        return "generated", index
+                    if mode == "completion":
+                        checklist_action_process.complete_item(
+                            actor=actor,
+                            checklist_item_id=item.pk,
+                            payload={
+                                "loan_document_id": str(current.pk),
+                                "remarks": f"Concurrent current completion {index}.",
+                            },
+                            metadata=self._metadata("generation-item", index),
+                        )
+                        return "completed", index
+                    checklist_action_process.approve_company_secretary(
+                        actor=actor,
+                        document_checklist_id=helper.checklist.pk,
+                        payload={"comments": f"Concurrent current approval {index}."},
+                        metadata=self._metadata("generation-cs", index),
+                    )
+                    return "approved", index
+                except (
+                    checklist_actions.Conflict,
+                    checklist_actions.EvidenceBlocked,
+                    document_generation.InvalidGenerationState,
+                ):
+                    return "blocked", index
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            results = [future.result(timeout=30) for future in [
+                pool.submit(attempt, index) for index in range(5)
+            ]]
+        winners = [row for row in results if row[0] != "blocked"]
+        self.assertEqual(len(winners), 1, results)
+        generated = winners[0][0] == "generated"
+        action_type = (
+            ChecklistAction.TYPE_ITEM_COMPLETION
+            if mode == "completion"
+            else ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL
+        )
+        self.assertEqual(
+            ChecklistAction.objects.filter(
+                document_checklist=helper.checklist, action_type=action_type
+            ).exists(),
+            not generated,
+        )
+        self.assertEqual(
+            LoanDocument.objects.filter(
+                loan_application=helper.application,
+                document_template=successor,
+            ).exists(),
+            generated,
+        )
 
     def _exercise_full_race_matrix(self):
         helper = FinalDocumentationApprovalApiTests(

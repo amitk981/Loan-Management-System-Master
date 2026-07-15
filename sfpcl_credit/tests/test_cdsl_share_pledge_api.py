@@ -107,12 +107,18 @@ class CDSLSharePledgeApiTests(TestCase):
         self.assertEqual(replay.json()["data"], data)
         read = self.client.get(url, **self.fixture._auth(self.compliance))
         self.assertEqual(read.status_code, 200, read.content)
-        self.assertEqual(read.json()["data"], data)
+        public = read.json()["data"]
+        for key in ("cdsl_share_pledge_id", "pledgor_bo_account", "prf_status", "pledge_status"):
+            self.assertEqual(public[key], data[key])
+        self.assertFalse(
+            {"prepared_by_user_id", "verified_by_user_id", "acceptance_evidence"}
+            .intersection(public)
+        )
         package_read = self.client.get(
             f"/api/v1/loan-applications/{self.application.pk}/security-package/",
             **self.fixture._auth(self.compliance),
         ).json()["data"]
-        self.assertEqual(package_read["cdsl_share_pledge"], data)
+        self.assertEqual(package_read["cdsl_share_pledge"], public)
         self.assertEqual(package_read["security_status"], "pending")
         self.assertFalse(package_read["security_ready_flag"])
         self.assertEqual(AuditLog.objects.filter(action="security.cdsl_pledge.created").count(), 1)
@@ -274,15 +280,11 @@ class CDSLSharePledgeApiTests(TestCase):
         retained = read.json()["data"]
         self.assertEqual(retained["pledge_status"], "created")
         self.assertEqual(retained["pledge_acceptance_status"], "accepted")
-        self.assertEqual(retained["verified_by_user_id"], str(checker.pk))
-        self.assertEqual(retained["prepared_by_user_id"], str(second_compliance.pk))
-        frozen = retained["acceptance_evidence"]
-        self.assertEqual(frozen["pledge_sequence_number"], "PSN-CDSL-0001")
-        self.assertEqual(frozen["agreement_number"], "LA-CDSL-0001")
-        self.assertEqual(frozen["pledged_share_count"], 100)
-        self.assertEqual(frozen["document_file_id"], str(evidence.document_id))
-        self.assertEqual(frozen["cdsl_prepared_by_user_id"], str(second_compliance.pk))
-        self.assertEqual(frozen["cdsl_verified_by_user_id"], str(checker.pk))
+        self.assertFalse(
+            {"verified_by_user_id", "prepared_by_user_id", "acceptance_evidence"}
+            .intersection(retained)
+        )
+        frozen = CDSLSharePledge.objects.get(pk=pledge_id).acceptance_evidence_json
         self.assertNotIn("pledgor_bo_account_hash", frozen)
         self.assertNotIn("pledgor_bo_account_encrypted", frozen)
         self.shareholding.refresh_from_db()
@@ -306,10 +308,10 @@ class CDSLSharePledgeApiTests(TestCase):
             "cdsl_pledge_sequence_number": "PSN-CDSL-0001",
             "cdsl_acceptance_status": "accepted", "cdsl_pledge_status": "created",
             "cdsl_pledged_share_count": 100,
-            "cdsl_prepared_by_user_id": str(second_compliance.pk),
-            "cdsl_verified_by_user_id": str(checker.pk),
         }
         self.assertEqual({key: item[key] for key in expected}, expected)
+        self.assertNotIn("cdsl_prepared_by_user_id", item)
+        self.assertNotIn("cdsl_verified_by_user_id", item)
 
     def test_invalid_scope_shape_state_and_projection_conflict_write_no_pledge(self):
         package = self._refresh_package()

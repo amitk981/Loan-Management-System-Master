@@ -910,6 +910,20 @@ class ChecklistAction(models.Model):
         on_delete=models.PROTECT,
         related_name="checklist_action",
     )
+    audit_log = models.OneToOneField(
+        "identity.AuditLog",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="checklist_action",
+    )
+    version_history = models.OneToOneField(
+        "configurations.VersionHistory",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="checklist_action",
+    )
     signed_at = models.DateTimeField(default=timezone.now)
 
     objects = ChecklistActionQuerySet.as_manager()
