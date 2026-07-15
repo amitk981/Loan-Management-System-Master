@@ -70,15 +70,7 @@ select_slice() {
     found="$(find docs/slices -maxdepth 1 -type f -name "${selected_slice}*.md" | sort | head -n 1)"
     [[ -n "$found" ]] && basename "$found" && return
   fi
-  local file unmet
-  for file in $(find docs/slices -maxdepth 1 -type f -name '*.md' | sort); do
-    [[ "$(ralph_slice_status "$file")" == "Not Started" ]] || continue
-    if unmet="$(ralph_slice_unmet_dependencies "$file")"; then
-      basename "$file"
-      return
-    fi
-    echo "Skipping $(basename "$file" .md): waiting on $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')" >&2
-  done
+  ralph_first_grabbable_slice docs/slices
 }
 
 slice_file=""

@@ -655,6 +655,34 @@ make_fixture_slice 001E "Not Started" 009Z
 make_fixture_slice 001F Superseded
 make_fixture_slice 001G "Not Started" 001F
 
+priority_fixture="$fixture_dir/priority-slices"
+mkdir -p "$priority_fixture"
+cat > "$priority_fixture/008M-ordinary.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+cat > "$priority_fixture/CR-900-emergency.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+[[ "$(ralph_first_grabbable_slice "$priority_fixture")" == "CR-900-emergency.md" ]] \
+  || fail "accepted emergency CR was not selected before ordinary backlog work"
+cat > "$priority_fixture/CR-900-emergency.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- 999Z
+EOF
+[[ "$(ralph_first_grabbable_slice "$priority_fixture" 2>/dev/null)" == "008M-ordinary.md" ]] \
+  || fail "dependency-blocked emergency CR froze unrelated ordinary work"
+
 [[ "$(ralph_slice_status "$slices_fixture/001A-fixture.md")" == "Complete" ]] \
   || fail "slice status helper misread a Complete slice"
 [[ "$(ralph_slice_dependencies "$slices_fixture/001B-fixture.md")" == "001A" ]] \
