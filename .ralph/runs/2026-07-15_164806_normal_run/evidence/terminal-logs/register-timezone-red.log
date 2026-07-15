@@ -1,0 +1,66 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/registers/RegistersHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_164806_normal_run/sfpcl-lms
+
+ ❯ src/pages/registers/RegistersHub.test.tsx (8 tests | 2 failed) 451ms
+   × RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change 138ms
+     → expected 'Approver decisions: Director One · ap…' to match /13 Jul 2026, 14:30/i
+   ✓ RegistersHub owned approval register panels > applies only canonical financial-year values 204ms
+   × RegistersHub owned approval register panels > loads S25 independently with immutable comments and evidence but no inferred download 32ms
+     → expected 'Exception register entry detailsexcep…' to match /13 Jul 2026, 17:00/i
+   ✓ RegistersHub owned approval register panels > selects a null-safe legacy S23 row without fabricating unavailable source facts 29ms
+   ✓ RegistersHub owned approval register panels > hides export without canonical permission and reports its deferred state when permitted 21ms
+   ✓ RegistersHub owned approval register panels > shows a nondisclosing denied state with no fallback register facts 14ms
+   ✓ RegistersHub owned approval register panels > clears scoped register facts when the actor loses canonical permission 12ms
+   ✓ RegistersHub owned approval register panels > keeps mock-backed variables outside the owned S23/S25 panel source 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change
+AssertionError: expected 'Approver decisions: Director One · ap…' to match /13 Jul 2026, 14:30/i
+
+- Expected: 
+/13 Jul 2026, 14:30/i
+
++ Received: 
+"Approver decisions: Director One · approved · 13 Jul 2026, 09:00 · Director approved with conditions."
+
+ ❯ src/pages/registers/RegistersHub.test.tsx:53:75
+     51|     expect(sanctionEvidence).toMatch(/pending · not sent/i);
+     52|     expect(sanctionEvidence).toContain('Frozen sanction reason');
+     53|     expect(screen.getByTestId('sanction-approver-decisions').textConte…
+       |                                                                           ^
+     54|     expect(sanctionEvidence).toContain('Frozen exception business reas…
+     55|     expect(sanctionEvidence).toMatch(/approved · cycle 1/i);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > loads S25 independently with immutable comments and evidence but no inferred download
+AssertionError: expected 'Exception register entry detailsexcep…' to match /13 Jul 2026, 17:00/i
+
+- Expected: 
+/13 Jul 2026, 17:00/i
+
++ Received: 
+"Exception register entry detailsexception-1 · cycle 1PendingApplication / loan: application-validBorrower: Frozen BorrowerFinancial impact: ₹4,40,000.00Requested by: Case Preparer · preparer-1Decision date: 13 Jul 2026Type: stage bypassDescription: Frozen exception descriptionBusiness reason: Frozen exception business reasonRisk: MediumRequired authority: CFO: CFO One (pending)Case status: pendingApprover comments: CFO One · approved · 13 Jul 2026, 11:30 · CFO approved with monitoring.Supporting documents: cash-flow-evidence.pdf · restricted · 13 Jul 2026 · document-1 · application/pdf · 2048 bytesCreated: 13 Jul 2026 · Closed: —"
+
+ ❯ src/pages/registers/RegistersHub.test.tsx:113:31
+    111|     expect(exceptionEvidence).toContain('Frozen exception business rea…
+    112|     expect(exceptionEvidence).toContain('CFO approved with monitoring.…
+    113|     expect(exceptionEvidence).toMatch(/13 Jul 2026, 17:00/i);
+       |                               ^
+    114|     expect(exceptionEvidence).toContain('cash-flow-evidence.pdf');
+    115|     expect(exceptionEvidence).toMatch(/restricted/i);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 6 passed (8)
+   Start at  11:20:55
+   Duration  1.80s (transform 259ms, setup 0ms, collect 452ms, tests 451ms, environment 391ms, prepare 40ms)
+

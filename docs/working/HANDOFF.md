@@ -2,31 +2,25 @@
 
 ## Last Run
 
-2026-07-15_162349_repair
+2026-07-15_164806_normal_run
 
 ## Current Status
 
-008L3 is complete and its quarantined browser assertion has been repaired. MP07/MP13 projection and mutation now share one locked action-authority decision,
-so stale/status-only or reconciled completion cannot be reopened through a crafted upload. Portal
-documentation and deficiency downloads use the central signed, current-file/scope-bound capability
-with no-store content responses, central audit vocabulary, and delayed browser object-URL cleanup.
-MP11 resubmission now delegates to the application-owned guarded lifecycle writer while response
-events truthfully target immutable response rows and leave staff deficiencies open. The MP11
-trusted spec now scopes the canonical `Submitted - Pending Completeness Check` label to the
-application header and preserves the exact absence proof for the returned deficiency screen.
+CR-006 is complete. The shared approval-register decision timestamp formatter now explicitly uses
+`Asia/Kolkata`, so the Credit Sanction and Exception register details render stored UTC instants
+identically on UTC and India-time hosts. No backend, API, persistence, authority, layout, or styling
+contract changed. The next SAP request slice, 009A, was sharpened from the cited Epic 009 sources;
+008M was already concrete.
 
 ## Validation
 
-Original implementation evidence is in `.ralph/runs/2026-07-15_151653_normal_run/evidence/`; repair
-evidence is in `.ralph/runs/2026-07-15_162349_repair/evidence/`. Focused upload-policy,
-signed-capability, lifecycle, audit, no-store, modal, and browser-navigation RED/GREEN logs are
-preserved. Frontend lint/typecheck/build and all 304 tests pass. Django check and migration drift
-pass; all 887 backend tests pass at 92% coverage. The repaired MP11 spec collects. The local browser
-run was blocked before test execution by the sandbox's macOS Mach-port policy, so no screenshot was
-fabricated; the orchestrator still owns the exact four screenshots and twice-run acceptance.
+Evidence is in `.ralph/runs/2026-07-15_164806_normal_run/evidence/`. The focused UTC run saved the
+expected two-test RED (`09:00`/`11:30` host times), followed by 8/8 GREEN under both `TZ=UTC` and
+`TZ=Asia/Kolkata`. Frontend lint, typecheck, build, and all 304 tests pass. Django check and migration
+drift pass; all 887 backend tests pass with 92% coverage against the 85% floor.
 
 ## Next Run
 
-Run the sharpened `008M-documentation-hub-frontend-wiring`. It must reuse 008L3's signed capability,
-delayed object-URL cleanup, independent status/action projection, and central document audit
-vocabulary without treating portal submissions as staff verification truth.
+Run the due architecture review, then the already-sharpened
+`008M-documentation-hub-frontend-wiring`. After 008M, 009A now has concrete SAP request, restricted
+Excel, permission, idempotency, and PostgreSQL race requirements.

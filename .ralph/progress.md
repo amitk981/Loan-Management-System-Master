@@ -7310,3 +7310,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_164806_normal_run
+
+- Agent tool used: codex with the implement, TDD, and two-axis review skills.
+- Slice completed: CR-006-register-date-time-timezone-determinism.
+- Summary: Made the shared approval-register decision timestamp formatter explicitly render in
+  `Asia/Kolkata`; added Exception Register coverage alongside the existing Credit Sanction
+  regression. No backend/API/storage/UI-design behavior changed. Sharpened 009A and added its Epic
+  009 digest after confirming 008M was already executable.
+- Tests run: focused register RED under `TZ=UTC`; focused GREEN under both `TZ=UTC` and
+  `TZ=Asia/Kolkata`; frontend lint, typecheck, build, and all 304 tests; Django check, migration
+  drift, all 887 backend tests, and 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_164806_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: Medium by CR declaration; low implementation blast radius because the delta is one
+  presentation formatter option plus rendered-interface coverage.
+- Next action: Run the due architecture review, then 008M.
+
+## 2026-07-15 17:12:03 - 2026-07-15_164806_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-006-register-date-time-timezone-determinism
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_164806_normal_run/.ralph/runs/2026-07-15_164806_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_164806_normal_run/.ralph/runs/2026-07-15_164806_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

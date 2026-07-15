@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009A-sap-customer-code-request.md
+ M docs/slices/CR-006-register-date-time-timezone-determinism.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M sfpcl-lms/src/pages/registers/ApprovalRegisterPanels.tsx
+ M sfpcl-lms/src/pages/registers/RegistersHub.test.tsx
+?? .ralph/runs/2026-07-15_164806_normal_run/
+?? docs/working/digests/epic-009-sap-loan-account-disbursement.md

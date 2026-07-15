@@ -1,7 +1,7 @@
 # Slice CR-006: Register decision timestamps depend on the runner timezone
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-15 from docs/change-requests/accepted/CR-006-register-date-time-timezone-determinism.md.

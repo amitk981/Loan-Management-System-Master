@@ -810,3 +810,11 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - VersionHistory now stores nullable generic old/new JSON plus the approval reference/time. Governed
   activations persist the proposal id/type/payload, target id, activated resource, and closed
   predecessor projection; the history timestamp is exactly the proposal decision timestamp.
+
+## Register Date-Time Display Contract
+
+- `deployment-ops.md` §§7.6 and 23.2 require UTC storage and explicitly configured
+  `Asia/Kolkata` display where business timestamps are shown.
+- `test-plan.md` §15.2 requires timezone-display coverage for shared date inputs/formatters.
+- Approval-register UTC instants must therefore render in `Asia/Kolkata` independently of the
+  browser or test runner's host timezone.

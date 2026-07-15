@@ -110,6 +110,7 @@ describe('RegistersHub owned approval register panels', () => {
     expect(exceptionEvidence).toContain('13 Jul 2026');
     expect(exceptionEvidence).toContain('Frozen exception business reason');
     expect(exceptionEvidence).toContain('CFO approved with monitoring.');
+    expect(exceptionEvidence).toMatch(/13 Jul 2026, 17:00/i);
     expect(exceptionEvidence).toContain('cash-flow-evidence.pdf');
     expect(exceptionEvidence).toMatch(/restricted/i);
     expect(screen.queryByRole('button', { name: /download/i })).toBeNull();
