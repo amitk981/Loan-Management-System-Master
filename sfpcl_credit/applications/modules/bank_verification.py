@@ -61,7 +61,12 @@ def record_decision(*, actor, application_id, payload, metadata):
         .first()
     )
     if application is None:
-        raise NotFound
+        raise AccessDenied
+    if application.application_status != LoanApplication.STATUS_APPROVED_BY_SANCTION:
+        # Documentation actors have source-defined global access only to approved
+        # applications requiring Stage-4 work. Treat every other parent as absent
+        # before resolving evidence so no immutable ledger can escape that scope.
+        raise AccessDenied
     bank = BankAccount.objects.select_for_update().filter(pk=values["bank_account_id"]).first()
     cheque = (
         CancelledCheque.objects.select_for_update()
@@ -202,6 +207,18 @@ def decision_evidence(decision):
         "workflow_event_id": str(decision.workflow_event_id),
         "audit_log_id": str(decision.audit_log_id),
         "version_history_id": str(decision.version_history_id),
+    }
+
+
+def action_response(decision):
+    workflow = decision.workflow_event
+    return {
+        **decision_evidence(decision),
+        "entity_type": workflow.entity_type,
+        "entity_id": str(workflow.entity_id),
+        "previous_status": workflow.from_state,
+        "new_status": workflow.to_state,
+        "available_actions": [],
     }
 
 

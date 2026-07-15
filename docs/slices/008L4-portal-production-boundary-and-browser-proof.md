@@ -85,6 +85,16 @@ Failing-first real-boundary/browser, lock-parity, current-generation, audit-voca
 state probes; focused/full gates; real API examples; Playwright collection; twice-run trusted logs;
 and all four genuine non-empty screenshots.
 
+## 008K5 Completion Sharpening (2026-07-15)
+
+- The shared borrower-safe action decision must consume K5's singular exact completion action,
+  audit, workflow, version body, current terminal body, and digest. Any missing, extra, changed,
+  cross-object, or newer bank/current-renderer fact must make both locked GET and POST deny the
+  portal mutation with no upload artifact.
+- Real-browser fixtures must create bank decisions only through the sanctioned Stage-4 HTTP path
+  and assert the complete §6.3 response; they may not insert or reuse pre-sanction immutable bank
+  evidence as checklist truth.
+
 ## Risk Level
 High
 

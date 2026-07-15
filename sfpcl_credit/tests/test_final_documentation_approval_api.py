@@ -12,6 +12,7 @@ from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import VersionHistory
+from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission
 from sfpcl_credit.legal_documents.models import (
@@ -554,6 +555,110 @@ class FinalDocumentationApprovalApiTests(TestCase):
             action.actor_user_name_snapshot, "Multi Role Checklist Secretary"
         )
 
+    def test_real_instrument_reader_matrix_returns_only_ordinary_dtos(self):
+        self._complete_all_applicable_items()
+        package = SecurityPackage.objects.get(loan_application=self.application)
+        auditor = self.fixture._user("internal_auditor", "Checklist Auditor")
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=auditor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+        )
+        cfc = self.fixture._user(
+            "chief_financial_controller", "Checklist Controller"
+        )
+        readers = (
+            self.compliance,
+            self.cs,
+            self.credit,
+            self.fixture.cfo,
+            self.director,
+            self.second_director,
+            auditor,
+            self.finance,
+            cfc,
+        )
+        for reader in readers:
+            self._grant(reader, "security.package.read", "documents.checklist.read")
+
+        allowed_before = {
+            self.compliance.pk,
+            self.cs.pk,
+            self.credit.pk,
+            self.fixture.cfo.pk,
+            self.director.pk,
+            auditor.pk,
+        }
+        responses = []
+        for reader in readers:
+            with self.subTest(state="in_progress", role=reader.primary_role.role_code):
+                response = self.client.get(
+                    f"/api/v1/loan-applications/{self.application.pk}/security-package/",
+                    **self.fixture._auth(reader),
+                )
+                self.assertEqual(
+                    response.status_code,
+                    200 if reader.pk in allowed_before else 403,
+                    response.content,
+                )
+                if response.status_code == 200:
+                    data = response.json()["data"]
+                    self.assertEqual(data["security_package_id"], str(package.pk))
+                    self.assertIsNotNone(data["power_of_attorney"])
+                    self.assertIsNotNone(data["sh4_share_transfer_form"])
+                    self.assertIsNotNone(data["blank_dated_cheque"])
+                    responses.append(data)
+
+        for suffix, actor, comments in (
+            ("approve-as-company-secretary", self.cs, "CS reader matrix approval."),
+            ("approve-as-credit-manager", self.credit, "Credit reader matrix approval."),
+            (
+                "approve-as-sanction-committee",
+                self.second_director,
+                "Director reader matrix approval.",
+            ),
+        ):
+            response = self._post_stage(suffix, actor, {"comments": comments})
+            self.assertEqual(response.status_code, 200, response.json())
+
+        finance = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/security-package/",
+            **self.fixture._auth(self.finance),
+        )
+        controller = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/security-package/",
+            **self.fixture._auth(cfc),
+        )
+        self.assertEqual(finance.status_code, 200, finance.content)
+        self.assertEqual(controller.status_code, 403, controller.content)
+        responses.append(finance.json()["data"])
+
+        forbidden_keys = {
+            "activation_evidence",
+            "custody_evidence",
+            "acceptance_evidence",
+            "request_id",
+            "storage_key",
+            "checksum_sha256",
+            "actor_user_name_snapshot",
+            "signer_name_snapshot",
+            "checklist_action_id",
+        }
+
+        def scan(value):
+            if isinstance(value, dict):
+                self.assertFalse(forbidden_keys.intersection(value))
+                for nested in value.values():
+                    scan(nested)
+            elif isinstance(value, list):
+                for nested in value:
+                    scan(nested)
+            elif isinstance(value, str):
+                self.assertNotIn("123456", value)
+                self.assertNotIn("field:v2", value)
+
+        for data in responses:
+            scan(data)
+
     def test_multi_role_completion_freezes_primary_authorising_role(self):
         multi_role = self.fixture._user(
             "company_secretary", "Multi Role Completion Secretary"
@@ -773,6 +878,13 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertEqual(decision["decision_status"], "verified")
         self.assertEqual(decision["bank_account_id"], str(bank.pk))
         self.assertEqual(decision["cancelled_cheque_id"], str(cancelled.pk))
+        self.assertEqual(decision["entity_type"], "bank_verification_decision")
+        self.assertEqual(
+            decision["entity_id"], decision["bank_verification_decision_id"]
+        )
+        self.assertEqual(decision["previous_status"], "pending")
+        self.assertEqual(decision["new_status"], "verified")
+        self.assertEqual(decision["available_actions"], [])
         self.assertTrue(decision["workflow_event_id"])
         self.assertTrue(decision["audit_log_id"])
         self.assertTrue(decision["version_history_id"])
@@ -821,6 +933,83 @@ class FinalDocumentationApprovalApiTests(TestCase):
                 ),
             ),
         )
+
+    def test_bank_decision_is_zero_write_outside_canonical_stage4_scope(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        for status in (
+            self.application.STATUS_DRAFT,
+            self.application.STATUS_INCOMPLETE_RETURNED,
+            self.application.STATUS_SUBMITTED,
+            self.application.STATUS_REJECTED_BY_SANCTION,
+        ):
+            with self.subTest(status=status):
+                type(self.application).objects.filter(pk=self.application.pk).update(
+                    application_status=status
+                )
+                self.application.refresh_from_db()
+                response = self.client.post(
+                    f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+                    {
+                        "bank_account_id": str(prior.bank_account_id),
+                        "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                        "decision_status": "rejected",
+                    },
+                    content_type="application/json",
+                    HTTP_X_REQUEST_ID=f"008k5-outside-stage4-{status}",
+                    **self.fixture._auth(self.compliance),
+                )
+                self.assertEqual(response.status_code, 403, response.json())
+                self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+    def test_borrower_safe_projection_rejects_changed_completion_version_body(self):
+        self._complete_all_applicable_items()
+        item = self.checklist.items.get(item_code="final_checklist")
+        history = VersionHistory.objects.get(
+            versioned_entity_type="checklist_item_completion",
+            versioned_entity_id=item.pk,
+        )
+        changed = dict(history.new_value_json)
+        changed["request_id"] = "008k5-tampered-request"
+        VersionHistory.objects.filter(pk=history.pk).update(new_value_json=changed)
+
+        completed = checklist_actions.borrower_safe_completed_item_ids(
+            self.checklist,
+            terminal_security_evidence=(
+                checklist_action_process._terminal_security_evidence
+            ),
+        )
+
+        self.assertNotIn(item.pk, completed)
 
     def _post_stage(self, suffix, actor, payload):
         return self.client.post(
@@ -1377,6 +1566,78 @@ class FinalDocumentationApprovalConcurrencyTests(TransactionTestCase):
             ).exists(),
             generated,
         )
+        successor_documents = LoanDocument.objects.filter(
+            loan_application=helper.application,
+            document_template=successor,
+        )
+        if generated:
+            winner_document = successor_documents.get()
+            generation_audit = AuditLog.objects.get(
+                action="documents.loan_document.generated",
+                entity_id=winner_document.pk,
+            )
+            generation_workflow = WorkflowEvent.objects.get(
+                workflow_name="loan_document_generation",
+                entity_id=winner_document.pk,
+            )
+            self.assertEqual(
+                generation_audit.new_value_json["request_id"],
+                f"008k4-{mode}-generation",
+            )
+            self.assertEqual(
+                generation_audit.new_value_json["document_id"],
+                str(winner_document.document_id),
+            )
+            self.assertEqual(
+                generation_audit.new_value_json[
+                    "renderer_validated_checksum_sha256"
+                ],
+                winner_document.renderer_validated_checksum_sha256,
+            )
+            self.assertEqual(generation_workflow.entity_id, winner_document.pk)
+            self.assertFalse(
+                VersionHistory.objects.filter(
+                    versioned_entity_type__in={
+                        "checklist_item_completion",
+                        "document_checklist_approval",
+                    },
+                    versioned_entity_id=(
+                        item.pk if mode == "completion" else helper.checklist.pk
+                    ),
+                ).exists()
+            )
+        else:
+            action = ChecklistAction.objects.get(
+                document_checklist=helper.checklist,
+                action_type=action_type,
+                **({"checklist_item": item} if mode == "completion" else {}),
+            )
+            self.assertEqual(action.loan_document_id, current.pk if mode == "completion" else None)
+            self.assertEqual(action.request_id, f"008k-generation-{'item' if mode == 'completion' else 'cs'}-race-{winners[0][1]}")
+            audit = AuditLog.objects.get(pk=action.audit_log_id)
+            history = VersionHistory.objects.get(pk=action.version_history_id)
+            self.assertEqual(audit.new_value_json, history.new_value_json)
+            self.assertEqual(audit.new_value_json["request_id"], action.request_id)
+            self.assertEqual(
+                audit.new_value_json["workflow_event_id"],
+                str(action.workflow_event_id),
+            )
+            if mode == "completion":
+                retained_terminal = audit.new_value_json[
+                    "consumed_terminal_evidence"
+                ]
+                self.assertEqual(
+                    audit.new_value_json["terminal_evidence_digest"],
+                    checklist_actions._evidence_digest(retained_terminal),
+                )
+            retained = str(audit.new_value_json) + str(history.new_value_json)
+            self.assertNotIn(f"008k4-{mode}-generation", retained)
+            for outcome, index in results:
+                if outcome == "blocked" and index != 0:
+                    self.assertNotIn(
+                        f"008k-generation-{'item' if mode == 'completion' else 'cs'}-race-{index}",
+                        retained,
+                    )
 
     def _exercise_full_race_matrix(self):
         helper = FinalDocumentationApprovalApiTests(

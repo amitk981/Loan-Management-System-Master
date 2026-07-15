@@ -3667,6 +3667,17 @@ ids, hashes, ciphertext, and storage keys. Internal terminal selectors retain ex
 granting it to readers. Canonical recursive redaction preserves only full fixed masks or a governed
 last-four mask; mixed plaintext such as `1234*5678` is replaced with `[REDACTED]`.
 
+008K5 authority closure: the bank-decision endpoint now resolves authority before any bank,
+cheque, or document evidence and accepts writes only while the canonical application status is
+`approved_by_sanction_committee`. Missing and every non-documentation state are zero-write scope
+denials; unrelated or changed source identities remain zero-write conflicts. Success and exact
+replay return the complete §6.3 action body (`entity_type`, `entity_id`, `previous_status`,
+`new_status`, `workflow_event_id`, and `available_actions`) alongside the immutable decision and
+source identities. Borrower-safe completion now requires singular exact workflow/audit/version
+rows, their action linkages and full retained body, the current renderer/terminal body, and its
+digest; any missing, extra, changed, cross-object, or newer source fact removes completion without
+exposing the evidence.
+
 ## Member portal documentation actions (008L)
 
 Authenticated borrower portal sessions use these application-scoped routes:

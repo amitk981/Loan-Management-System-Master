@@ -14,6 +14,20 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008K5 Final Evidence Authority Closure (2026-07-15)
+
+Immutable bank decisions now fail before evidence lookup unless the authenticated Compliance/CS
+actor has checklist-update authority and the canonical application is sanctioned for Stage 4. The
+HTTP success/replay shape includes the full §6.3 action fields beside immutable source identities.
+Borrower-safe completion unconditionally reconciles singular action/audit/workflow/version rows,
+their exact retained body, current renderer/terminal evidence, and digest; changed or extra facts
+project pending without evidence disclosure. Legal migration `0013` is a no-op graph anchor over
+`applications.0016`, so future legal state owns the two checklist evidence relations without
+replaying columns. Real-row reader DTO scans and the two generation race families (twice on
+PostgreSQL) now prove allowlisted projections and exact winner/zero-loser ledgers. 008L4 must use
+this exact locked truth at the real portal/browser boundary; 008M must consume only the ordinary
+staff DTOs.
+
 ## Architecture Review 2026-07-15 18:15 - Final Evidence and Real Portal Boundary
 
 - K4 materially adds immutable bank decisions, current terminal recomputation, shared application

@@ -125,6 +125,14 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
 - Consume only the source-defined single file audit vocabulary delivered by 008L4; the staff hub
   must not add a hub-specific duplicate event for the same upload or download.
 
+## 008K5 Completion Sharpening (2026-07-15)
+
+- Render the bank-verification action only from sanctioned Stage-4 server authority and consume its
+  §6.3 `available_actions`; role or permission strings alone must never expose a writer.
+- Treat the ordinary package/checklist DTO allowlist as closed. The hub must not request or retain
+  terminal evidence bodies, request/network facts, signer snapshots, internal action identities,
+  hashes, ciphertext, checksums, or storage keys in component state or error output.
+
 ## Risk Level
 Medium
 

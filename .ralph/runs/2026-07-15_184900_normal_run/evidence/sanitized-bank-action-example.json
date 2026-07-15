@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "data": {
+    "bank_verification_decision_id": "00000000-0000-0000-0000-000000000101",
+    "loan_application_id": "00000000-0000-0000-0000-000000000102",
+    "bank_account_id": "00000000-0000-0000-0000-000000000103",
+    "cancelled_cheque_id": "00000000-0000-0000-0000-000000000104",
+    "decision_status": "verified",
+    "entity_type": "bank_verification_decision",
+    "entity_id": "00000000-0000-0000-0000-000000000101",
+    "previous_status": "pending",
+    "new_status": "verified",
+    "workflow_event_id": "00000000-0000-0000-0000-000000000105",
+    "available_actions": []
+  },
+  "meta": {
+    "request_id": "sanitized-008k5",
+    "api_version": "v1"
+  }
+}

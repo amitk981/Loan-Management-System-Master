@@ -7381,3 +7381,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_184900_normal_run
+
+- Agent tool used: codex.
+- Slice completed: 008K5-final-evidence-authority-and-migration-closure.
+- Summary: Closed sanctioned Stage-4 bank authority, §6.3 action projection, unconditional
+  borrower-safe evidence reconciliation, legal migration ownership, real-row reader DTO proof, and
+  exact generation race ledgers.
+- Tests run: architecture-review probes green unchanged; focused contract/migration/reader suites;
+  four PostgreSQL race tests; all 892 backend tests at 92% coverage; frontend lint, typecheck, all
+  304 tests, and build.
+- Evidence saved: `.ralph/runs/2026-07-15_184900_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; immutable compliance evidence, permissions, migrations, and concurrency.
+- Next action: Run 008L4, then 008M.
+
+## 2026-07-15 19:31:08 - 2026-07-15_184900_normal_run
+- Agent tool used: codex
+- Slice attempted: 008K5-final-evidence-authority-and-migration-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_184900_normal_run/.ralph/runs/2026-07-15_184900_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_184900_normal_run/.ralph/runs/2026-07-15_184900_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
