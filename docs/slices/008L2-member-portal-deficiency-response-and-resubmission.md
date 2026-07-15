@@ -58,6 +58,11 @@ Staff deficiency creation/resolution (005F), portal documentation-package action
 ## Risk Level
 High
 
+## 008L Completion Sharpening (2026-07-15)
+- Reuse 008L's central upload/storage helper and immutable portal-account/member/application
+  attribution, but create a deficiency-owned relation; never reuse `PortalDocumentationSubmission`.
+- Deficiency content downloads must remain authenticated portal reads, not internal download URLs.
+
 ## Acceptance Criteria
 - The full returned → rectified → resubmitted loop works end to end for a real borrower account.
 - All gates pass; mobile portal screenshots of deficiency list, upload, and resubmission saved.

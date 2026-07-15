@@ -750,6 +750,107 @@ class ChecklistItem(models.Model):
         return super().save(*args, **kwargs)
 
 
+class PortalDocumentationSubmissionQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError({"portal_submission": "Portal submission evidence is immutable."})
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError({"portal_submission": "Portal submission evidence is immutable."})
+
+    def delete(self):
+        raise ValidationError({"portal_submission": "Portal submission evidence is immutable."})
+
+
+class PortalDocumentationSubmission(models.Model):
+    portal_documentation_submission_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication",
+        on_delete=models.PROTECT,
+        related_name="portal_documentation_submissions",
+    )
+    action_code = models.CharField(max_length=120)
+    document = models.OneToOneField(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="portal_documentation_submission",
+    )
+    portal_account = models.ForeignKey(
+        "identity.PortalAccount",
+        on_delete=models.PROTECT,
+        related_name="documentation_submissions",
+    )
+    uploader_member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="portal_documentation_submissions",
+    )
+    notes = models.TextField(blank=True, null=True)
+    supersedes = models.OneToOneField(
+        "self",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="successor",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    objects = PortalDocumentationSubmissionQuerySet.as_manager()
+
+    class Meta:
+        db_table = "portal_documentation_submissions"
+        ordering = ["created_at", "portal_documentation_submission_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "action_code", "created_at"],
+                name="idx_portal_doc_app_action",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    action_code__in=[
+                        "cancelled_cheque",
+                        "poa",
+                        "tri_party_agreement",
+                        "sh4",
+                        "term_sheet",
+                        "loan_agreement",
+                        "bank_verification_letter",
+                    ]
+                ),
+                name="portal_doc_action_code_bounded",
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.loan_application_id and self.uploader_member_id:
+            if self.loan_application.member_id != self.uploader_member_id:
+                errors["uploader_member"] = "Uploader member must own the application."
+        if self.portal_account_id and self.uploader_member_id:
+            if self.portal_account.member_id != self.uploader_member_id:
+                errors["portal_account"] = "Portal account must belong to the uploader member."
+        if self.supersedes_id and (
+            self.supersedes.loan_application_id != self.loan_application_id
+            or self.supersedes.action_code != self.action_code
+            or type(self).objects.filter(supersedes_id=self.supersedes_id).exists()
+        ):
+            errors["supersedes"] = "A successor must extend the current same-action chain."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"portal_submission": "Portal submission evidence is immutable."})
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"portal_submission": "Portal submission evidence is immutable."})
+
+
 class ChecklistActionQuerySet(models.QuerySet):
     def update(self, **kwargs):
         raise ValidationError({"checklist_action": "Checklist evidence is immutable."})

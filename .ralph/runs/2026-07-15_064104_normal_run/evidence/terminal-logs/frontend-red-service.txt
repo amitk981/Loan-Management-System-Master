@@ -1,0 +1,36 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/portalApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/sfpcl-lms
+
+ ❯ src/services/portalApi.test.ts (5 tests | 1 failed) 9ms
+   ✓ portal member API client > loads dashboard, profile, and produce supply using the stored portal bearer token 3ms
+   ✓ portal member API client > surfaces portal permission errors without substituting mock member data 1ms
+   ✓ portal member API client > surfaces backend nominee field errors for portal forms 0ms
+   ✓ portal member API client > creates, updates, submits, lists, and reads portal applications with the stored bearer token 1ms
+   × portal member API client > loads documentation actions, uploads exact multipart data, and follows the safe download action 3ms
+     → fetchPortalDocumentationActions is not a function
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/portalApi.test.ts > portal member API client > loads documentation actions, uploads exact multipart data, and follows the safe download action
+TypeError: fetchPortalDocumentationActions is not a function
+ ❯ src/services/portalApi.test.ts:147:18
+    145|     }) as File;
+    146| 
+    147|     await expect(fetchPortalDocumentationActions('app-1')).resolves.to…
+       |                  ^
+    148|     await expect(uploadPortalDocumentationAction('app-1', 'term_sheet'…
+    149|     await expect(downloadPortalDocumentationAction('/api/v1/portal/app…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  06:55:31
+   Duration  571ms (transform 82ms, setup 0ms, collect 84ms, tests 9ms, environment 0ms, prepare 36ms)
+

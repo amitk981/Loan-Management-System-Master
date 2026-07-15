@@ -55,8 +55,33 @@ def user_can_download_documents(user):
 
 def upload_document_file(user, request, storage=None):
     cleaned = validate_upload_request(request)
+    document = store_document_upload(
+        user=user,
+        request=request,
+        uploaded_file=cleaned["file"],
+        document_category=cleaned["document_category"],
+        sensitivity_level=cleaned["sensitivity_level"],
+        related_entity_type=cleaned.get("related_entity_type"),
+        related_entity_id=cleaned.get("related_entity_id"),
+        storage=storage,
+    )
+    return serialize_document_file(document)
+
+
+def store_document_upload(
+    *,
+    user,
+    request,
+    uploaded_file,
+    document_category,
+    sensitivity_level,
+    related_entity_type=None,
+    related_entity_id=None,
+    provenance_metadata=None,
+    storage=None,
+):
+    """Store bytes and retain exact immutable provenance supplied by a trusted owner."""
     storage = storage or LocalDocumentStorage()
-    uploaded_file = cleaned["file"]
     stored = storage.store(uploaded_file)
     file_name = uploaded_file.name
     file_extension = Path(file_name).suffix or None
@@ -71,8 +96,23 @@ def upload_document_file(user, request, storage=None):
             storage_key=stored.storage_key,
             checksum_sha256=stored.checksum_sha256,
             uploaded_by_user=user,
-            sensitivity_level=cleaned["sensitivity_level"],
+            sensitivity_level=sensitivity_level,
         )
+        metadata = {
+            "document_id": str(document.document_id),
+            "file_name": document.file_name,
+            "file_extension": document.file_extension,
+            "mime_type": document.mime_type,
+            "file_size_bytes": document.file_size_bytes,
+            "storage_provider": document.storage_provider,
+            "storage_key": document.storage_key,
+            "checksum_sha256": document.checksum_sha256,
+            "sensitivity_level": document.sensitivity_level,
+            "document_category": document_category,
+            "related_entity_type": related_entity_type,
+            "related_entity_id": str(related_entity_id) if related_entity_id else None,
+        }
+        metadata.update(provenance_metadata or {})
         AuditLog.objects.create(
             actor_user=user,
             actor_type="user",
@@ -80,26 +120,11 @@ def upload_document_file(user, request, storage=None):
             entity_type="document_file",
             entity_id=document.document_id,
             old_value_json=None,
-            new_value_json={
-                "document_id": str(document.document_id),
-                "file_name": document.file_name,
-                "file_extension": document.file_extension,
-                "mime_type": document.mime_type,
-                "file_size_bytes": document.file_size_bytes,
-                "storage_provider": document.storage_provider,
-                "storage_key": document.storage_key,
-                "checksum_sha256": document.checksum_sha256,
-                "sensitivity_level": document.sensitivity_level,
-                "document_category": cleaned["document_category"],
-                "related_entity_type": cleaned.get("related_entity_type"),
-                "related_entity_id": str(cleaned["related_entity_id"])
-                if cleaned.get("related_entity_id")
-                else None,
-            },
+            new_value_json=metadata,
             ip_address=request_ip(request),
             user_agent=request_user_agent(request),
         )
-    return serialize_document_file(document)
+    return document
 
 
 def download_document_file(user, request, document_id, storage=None):
@@ -369,6 +394,7 @@ __all__ = [
     "ImmutableUploadProvenance",
     "resolve_immutable_upload_provenance",
     "resolve_template_source_reference",
+    "store_document_upload",
     "TEMPLATE_FILE_REFERENCE_PERMISSION",
     "TEMPLATE_SOURCE_CATEGORY",
     "TEMPLATE_SOURCE_ENTITY_TYPE",

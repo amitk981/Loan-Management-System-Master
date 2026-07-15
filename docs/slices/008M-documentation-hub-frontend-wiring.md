@@ -65,6 +65,10 @@ This slice is the final owner of these files' mock surface — after it, none of
 ## Out of Scope
 Member portal documentation actions (008L done), disbursement readiness consumption (009D), template admin CRUD beyond what 008A/008B expose.
 
+## 008L Completion Sharpening (2026-07-15)
+- Keep staff checklist reconciliation in `legal_documents.modules.checklist_actions`; do not consume
+  portal submission rows as verification/completion truth or expose portal content URLs internally.
+
 ## Risk Level
 Medium
 

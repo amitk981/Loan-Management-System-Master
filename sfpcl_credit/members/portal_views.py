@@ -1,10 +1,12 @@
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from django.views.decorators.http import require_GET, require_http_methods
 
 from sfpcl_credit.api import error_response, parse_json_body, request_ip, request_user_agent, success_response
 from sfpcl_credit.applications import services as application_services
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import portal_services
+from sfpcl_credit.processes import portal_documentation_actions as portal_documentation_process
 from sfpcl_credit.workflows.guard import InvalidStateTransition
 
 
@@ -148,6 +150,74 @@ def portal_application_submit(request, loan_application_id):
         return _portal_application_validation_error(request, exc)
     except (application_services.LoanApplicationInvalidStateError, InvalidStateTransition) as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    return success_response(data, request)
+
+
+@require_GET
+def portal_documentation_actions(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = portal_documentation_process.get_projection(
+            actor=user,
+            application_id=loan_application_id,
+        )
+    except portal_documentation_process.PortalDocumentationNotFound:
+        return error_response(
+            request,
+            404,
+            "NOT_FOUND",
+            "Loan application was not found.",
+        )
+    return success_response(data, request)
+
+
+@require_http_methods(["POST"])
+def portal_documentation_action_upload(request, loan_application_id, action_code):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = portal_documentation_process.upload(
+            actor=user,
+            application_id=loan_application_id,
+            action_code=action_code,
+            request=request,
+        )
+    except portal_documentation_process.PortalDocumentationNotFound:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    except portal_documentation_process.PortalDocumentationUnavailable as exc:
+        return error_response(request, 409, "ACTION_UNAVAILABLE", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Portal documentation upload failed validation.",
+            application_services.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_GET
+def portal_documentation_action_download(request, loan_application_id, action_code):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = portal_documentation_process.download(
+            actor=user,
+            application_id=loan_application_id,
+            action_code=action_code,
+            request=request,
+        )
+    except portal_documentation_process.PortalDocumentationNotFound:
+        return error_response(request, 404, "NOT_FOUND", "Document was not found.")
+    if isinstance(data, portal_documentation_process.PortalDocumentContent):
+        response = HttpResponse(data.body, content_type=data.mime_type)
+        response["Content-Disposition"] = f'attachment; filename="{data.file_name}"'
+        return response
     return success_response(data, request)
 
 

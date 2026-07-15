@@ -85,7 +85,8 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   contracts. Corrective 008K3 now binds every completion/approval to current source-owned evidence,
   reconciles exact durable action identities before Company Secretary approval, freezes the role
   that actually authorises each action, and proves the full public terminal matrix plus twice-run
-  PostgreSQL winner/loser races. 008L follows K3 for borrower-scoped portal documentation actions.
+  PostgreSQL winner/loser races. 008L now provides self-scoped borrower-safe checklist actions,
+  immutable upload/re-upload provenance, and authenticated current-document retrieval; 008L2 follows.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

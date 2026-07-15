@@ -619,6 +619,50 @@ def _evidence_digest(evidence):
     return hashlib.sha256(canonical).hexdigest()
 
 
+def borrower_safe_completed_item_ids(checklist):
+    """Project only completion evidence reconciled by the checklist owner."""
+    items = list(checklist.items.select_related("loan_document"))
+    actions = ChecklistAction.objects.filter(
+        document_checklist=checklist, action_type=ChecklistAction.TYPE_ITEM_COMPLETION)
+    by_item = {}
+    for action in actions:
+        by_item.setdefault(action.checklist_item_id, []).append(action)
+    histories = VersionHistory.objects.filter(
+        versioned_entity_type="checklist_item_completion",
+        versioned_entity_id__in=[item.pk for item in items])
+    by_history = {}
+    for history in histories:
+        by_history.setdefault(history.versioned_entity_id, []).append(history.new_value_json or {})
+    completed = set()
+    for item in items:
+        item_actions, item_histories = by_item.get(item.pk, []), by_history.get(item.pk, [])
+        if len(item_actions) != 1 or len(item_histories) != 1:
+            continue
+        action, retained = item_actions[0], item_histories[0]
+        terminal = retained.get("consumed_terminal_evidence")
+        expected = {
+            "checklist_action_id": str(action.pk),
+            "loan_application_id": str(checklist.loan_application_id),
+            "document_checklist_id": str(checklist.pk),
+            "checklist_item_id": str(item.pk), "item_code": item.item_code,
+            "loan_document_id": str(item.loan_document_id), "remarks": item.remarks or None,
+            "verified_by_user_id": str(item.verified_by_user_id),
+            "verified_at": item.verified_at.isoformat() if item.verified_at else None,
+            "required_flag": item.required_flag, "applicable_flag": item.applicable_flag,
+            "actor_user_id": str(action.actor_user_id),
+            "canonical_role_code": action.canonical_role_code,
+        }
+        if (item.completion_status == ChecklistItem.STATUS_COMPLETE and item.loan_document_id
+                and item.verified_by_user_id and action.loan_document_id == item.loan_document_id
+                and action.actor_user_id == item.verified_by_user_id
+                and action.signed_at == item.verified_at
+                and all(retained.get(key) == value for key, value in expected.items())
+                and terminal is not None
+                and retained.get("terminal_evidence_digest") == _evidence_digest(terminal)):
+            completed.add(item.pk)
+    return completed
+
+
 def _reconcile_completion_actions(*, checklist, case, terminal_security_evidence):
     items = list(
         checklist.items.select_for_update(of=("self",))

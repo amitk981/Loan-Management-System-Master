@@ -610,6 +610,10 @@ CDSL status only, and blank-cheque physical custody status without cheque detail
 labels, not authority or completion truth; 008L must derive action visibility from the server and
 keep internal verification/approval separate.
 
+008L closure (2026-07-15): MP07/MP13 now consume one checklist-owner projection. Portal uploads
+retain immutable central-file successor provenance without mutating legal/security completion, and
+current Term Sheet/Loan Agreement bytes remain behind the authenticated member scope and audit.
+
 ### 008M Documentation Hub Frontend Wiring
 Blockers that must be visible before disbursement: unstamped/unnotarised instruments (V10 p.24),
 signature mismatch unresolved (§4.11), missing witness (p.32 #4), incomplete checklist

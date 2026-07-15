@@ -210,6 +210,21 @@ urlpatterns = [
         name="portal-application-submit",
     ),
     path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/",
+        portal_views.portal_documentation_actions,
+        name="portal-documentation-actions",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/<slug:action_code>/upload/",
+        portal_views.portal_documentation_action_upload,
+        name="portal-documentation-action-upload",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/<slug:action_code>/download/",
+        portal_views.portal_documentation_action_download,
+        name="portal-documentation-action-download",
+    ),
+    path(
         "api/v1/loan-applications/",
         application_views.loan_application_collection,
         name="loan-application-list-create",

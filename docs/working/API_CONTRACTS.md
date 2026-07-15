@@ -3639,4 +3639,42 @@ matching public completion action/history identity, current renderer checksum, v
 remarks, applicability flags/cycle, and terminal-evidence digest. Status-only, missing/extra,
 stale, cross-object, or changed evidence returns `409 CHECKLIST_EVIDENCE_INCOMPLETE` with zero
 approval writes. Retained actions freeze the role that authorised the requested stage, even for a
-multi-role user.
+ multi-role user.
+
+## Member portal documentation actions (008L)
+
+Authenticated borrower portal sessions use these application-scoped routes:
+
+- `GET /api/v1/portal/applications/{loan_application_id}/documentation-actions/`
+- `POST /api/v1/portal/applications/{loan_application_id}/documentation-actions/{action_code}/upload/`
+- `GET /api/v1/portal/applications/{loan_application_id}/documentation-actions/{action_code}/download/`
+
+Scope is derived only from the active `PortalAccount.member_id`. Missing applications, another
+member's application, and internal-user tokens are nondisclosing `404 NOT_FOUND`; an inactive or
+expired portal session is rejected by shared authentication. GET returns the application id,
+reference, status, availability/blocker, and checklist-ordered borrower-safe actions: stable
+checklist action code, label/section, required/applicable flags, reconciled status, updated date,
+instruction/note, upload/re-upload flags, and nullable safe download metadata. It never returns
+checklist/security ids, evidence identities, makers/checkers, comments, storage keys, BO/bank/cheque
+values or fragments, ciphertext/hashes, workflow/version JSON, or internal action URLs. A complete
+label requires the current checklist item, its exact completion action, and its one matching durable
+completion history/evidence digest; status-only or stale/ambiguous evidence is shown pending.
+
+Upload is `multipart/form-data` with exactly one non-empty `file` and optional trimmed `notes`
+(maximum 4,000 characters). Under A-119 the file must be matching PDF/JPEG/PNG MIME plus extension
+and at most 5 MiB. Accepted action codes are `cancelled_cheque`, `poa`,
+`tri_party_agreement`, `sh4`, `term_sheet`, `loan_agreement`, and
+`bank_verification_letter`, only while the current canonical checklist advertises that applicable
+pending borrower action. CDSL and blank cheque are status/instruction only. Every accepted upload
+creates a new central `DocumentFile`, immutable upload provenance, and append-only portal submission
+successor row attributed to the portal account/member/application/action; the response contains only
+safe file metadata. Re-upload retains every prior row. Upload never writes checklist completion,
+signature, stamp/notary, security terminal/custody, bank verification, package/readiness,
+loan-account, or disbursement facts. Unknown fields/action codes, crafted evidence fields, stale or
+inapplicable actions, empty/oversize/type-mismatched files, and cross-member references fail before
+any success evidence.
+
+Only current renderer-validated `term_sheet` and `loan_agreement` checklist outputs receive a safe
+download action. It returns a short-lived portal-scoped content URL; authenticated retrieval verifies
+the retained bytes and writes `portal.documentation.downloaded` with portal account, member,
+application, action, document, checksum, request/network, expiry, and accepted outcome—never a key.

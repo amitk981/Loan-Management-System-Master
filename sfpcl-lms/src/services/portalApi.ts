@@ -137,6 +137,54 @@ export interface PortalApplicationLimitProjection {
   calculation_rule_version: string | null;
 }
 
+export interface PortalDocumentationDownload {
+  file_name: string;
+  mime_type: string | null;
+  action_url: string;
+}
+
+export interface PortalDocumentationAction {
+  action_code: string;
+  label: string;
+  section: string;
+  required: boolean;
+  applicable: boolean;
+  status: string;
+  updated_date: string | null;
+  instruction: string;
+  note: string | null;
+  upload_allowed: boolean;
+  reupload_allowed: boolean;
+  download: PortalDocumentationDownload | null;
+}
+
+export interface PortalDocumentationProjection {
+  loan_application_id: string;
+  application_reference_number: string | null;
+  application_status: string;
+  availability: 'available' | 'blocked';
+  unavailable_reason: string | null;
+  actions: PortalDocumentationAction[];
+}
+
+export interface PortalDocumentationUploadResult {
+  action_code: string;
+  status: string;
+  document: {
+    document_id: string;
+    file_name: string;
+    mime_type: string | null;
+    file_size_bytes: number;
+    checksum_sha256: string;
+    uploaded_at: string;
+  };
+}
+
+export interface PortalDownloadDescriptor {
+  download_url: string;
+  expires_at: string;
+}
+
 export interface PortalApplicationDraftPayload {
   nominee_id?: string | null;
   required_loan_amount?: string;
@@ -159,8 +207,37 @@ export const fetchPortalApplication = (applicationId: string) => request<PortalA
 export const createPortalApplicationDraft = (payload: PortalApplicationDraftPayload) => request<PortalApplication>('/api/v1/portal/applications/', { method: 'POST', body: payload });
 export const updatePortalApplicationDraft = (applicationId: string, payload: PortalApplicationDraftPayload) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/`, { method: 'PATCH', body: payload });
 export const submitPortalApplication = (applicationId: string) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/submit/`, { method: 'POST', body: {} });
+export const fetchPortalDocumentationActions = (applicationId: string) => request<PortalDocumentationProjection>(`/api/v1/portal/applications/${applicationId}/documentation-actions/`);
+export const uploadPortalDocumentationAction = (applicationId: string, actionCode: string, file: File, notes?: string) => {
+  const formData = new FormData();
+  formData.append('file', file, file.name);
+  if (notes?.trim()) formData.append('notes', notes.trim());
+  return request<PortalDocumentationUploadResult>(
+    `/api/v1/portal/applications/${applicationId}/documentation-actions/${actionCode}/upload/`,
+    { method: 'POST', formData },
+  );
+};
+export const downloadPortalDocumentationAction = (actionUrl: string) => {
+  if (!actionUrl.startsWith('/api/v1/portal/applications/')) {
+    throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Document download action is invalid.', 400);
+  }
+  return request<PortalDownloadDescriptor>(actionUrl);
+};
 
-async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown } = {}): Promise<T> {
+export const fetchPortalDocumentContent = async (downloadUrl: string) => {
+  if (!downloadUrl.startsWith('/api/v1/portal/applications/')) {
+    throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Document download URL is invalid.', 400);
+  }
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
+  const response = await fetch(`${API_BASE_URL}${downloadUrl}`, {
+    headers: { Authorization: `Bearer ${session.accessToken}` },
+  });
+  if (!response.ok) throw new AuthSessionError('DOWNLOAD_FAILED', 'Document download failed.', response.status);
+  return response.blob();
+};
+
+async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; formData?: FormData } = {}): Promise<T> {
   const session = loadStoredAuthSession();
   if (!session) {
     throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
@@ -171,9 +248,11 @@ async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PA
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${session.accessToken}`,
-      ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
+      ...(method === 'GET' || options.formData ? {} : { 'Content-Type': 'application/json' }),
     },
-    ...(method === 'GET' ? {} : { body: JSON.stringify(options.body ?? {}) }),
+    ...(method === 'GET' ? {} : {
+      body: options.formData ?? JSON.stringify(options.body ?? {}),
+    }),
   });
   const envelope = await response.json() as ApiEnvelope<T>;
   if (!response.ok || !envelope.success || !envelope.data) {

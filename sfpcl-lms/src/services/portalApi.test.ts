@@ -2,12 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from './authSession';
 import {
   createPortalApplicationDraft,
+  downloadPortalDocumentationAction,
+  fetchPortalDocumentContent,
   fetchPortalApplication,
   fetchPortalApplications,
+  fetchPortalDocumentationActions,
   fetchPortalDashboard,
   fetchPortalProduceSupply,
   fetchPortalProfile,
   submitPortalApplication,
+  uploadPortalDocumentationAction,
   updatePortalApplicationDraft,
 } from './portalApi';
 
@@ -105,6 +109,60 @@ describe('portal member API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/submit/', request('POST', {}));
     expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://127.0.0.1:8000/api/v1/portal/applications/', request());
     expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/', request());
+  });
+
+  it('loads documentation actions, uploads exact multipart data, and follows the safe download action', async () => {
+    const projection = {
+      loan_application_id: 'app-1',
+      application_reference_number: 'LO-1',
+      application_status: 'approved_by_sanction_committee',
+      availability: 'available',
+      unavailable_reason: null,
+      actions: [{
+        action_code: 'term_sheet',
+        label: 'Term Sheet',
+        section: 'Sanction',
+        required: true,
+        applicable: true,
+        status: 'pending_borrower',
+        updated_date: '2026-07-15',
+        instruction: 'Sign and upload.',
+        note: null,
+        upload_allowed: true,
+        reupload_allowed: false,
+        download: { file_name: 'term-sheet.pdf', mime_type: 'application/pdf', action_url: '/api/v1/portal/applications/app-1/documentation-actions/term_sheet/download/' },
+      }],
+    };
+    const uploadResult = { action_code: 'term_sheet', status: 'submitted', document: { document_id: 'doc-1', file_name: 'signed.pdf', mime_type: 'application/pdf', file_size_bytes: 128, checksum_sha256: 'abc', uploaded_at: '2026-07-15T10:00:00Z' } };
+    const descriptor = { download_url: '/api/v1/portal/applications/app-1/documentation-actions/term_sheet/download/?content=1&expires_at=soon', expires_at: '2026-07-15T10:15:00Z' };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(projection))
+      .mockResolvedValueOnce(ok(uploadResult))
+      .mockResolvedValueOnce(ok(descriptor))
+      .mockResolvedValueOnce({ ok: true, status: 200, blob: async () => new Blob(['term sheet']) });
+    vi.stubGlobal('fetch', fetchMock);
+    const file = Object.assign(new Blob(['signed bytes'], { type: 'application/pdf' }), {
+      name: 'signed.pdf',
+      lastModified: 0,
+    }) as File;
+
+    await expect(fetchPortalDocumentationActions('app-1')).resolves.toMatchObject({ actions: [{ action_code: 'term_sheet' }] });
+    await expect(uploadPortalDocumentationAction('app-1', 'term_sheet', file, 'Signed by borrower.')).resolves.toMatchObject({ status: 'submitted' });
+    await expect(downloadPortalDocumentationAction('/api/v1/portal/applications/app-1/documentation-actions/term_sheet/download/')).resolves.toEqual(descriptor);
+    await expect(fetchPortalDocumentContent(descriptor.download_url)).resolves.toBeInstanceOf(Blob);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/documentation-actions/', request());
+    const uploadCall = fetchMock.mock.calls[1];
+    expect(uploadCall[0]).toBe('http://127.0.0.1:8000/api/v1/portal/applications/app-1/documentation-actions/term_sheet/upload/');
+    expect(uploadCall[1]).toMatchObject({ method: 'POST', headers: { Accept: 'application/json', Authorization: 'Bearer portal-access-token' } });
+    expect(uploadCall[1].headers).not.toHaveProperty('Content-Type');
+    expect(uploadCall[1].body).toBeInstanceOf(FormData);
+    expect(uploadCall[1].body.get('file')).toMatchObject({ name: 'signed.pdf', type: 'application/pdf', size: 12 });
+    expect(uploadCall[1].body.get('notes')).toBe('Signed by borrower.');
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/documentation-actions/term_sheet/download/', request());
+    expect(fetchMock).toHaveBeenNthCalledWith(4, `http://127.0.0.1:8000${descriptor.download_url}`, {
+      headers: { Authorization: 'Bearer portal-access-token' },
+    });
   });
 });
 

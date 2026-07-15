@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_status_only_or_action_without_completion_history_is_never_shown_complete (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_status_only_or_action_without_completion_history_is_never_shown_complete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_064104_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 424, in test_status_only_or_action_without_completion_history_is_never_shown_complete
+    self.assertEqual(projected["status"], "pending_borrower")
+AssertionError: 'complete' != 'pending_borrower'
+- complete
++ pending_borrower
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.053s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
