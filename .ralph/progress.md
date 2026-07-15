@@ -7337,3 +7337,18 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - CR-007 owner-authorized protected-path repair
+
+- Repair completed: CR-007-github-ci-missing-legal-pdf-unicode-font.
+- Summary: With explicit owner authorization, added Ubuntu `fonts-noto-core` provisioning and an
+  exact Noto Devanagari path assertion to the protected GitHub backend workflow. Application code,
+  renderer behavior, glyph validation, tests, and quality thresholds were unchanged.
+- Local validation: workflow YAML parsed successfully; the deterministic CI font contract passed;
+  `git diff --check` passed. The complete 887-test backend suite had already passed under `TZ=UTC`.
+- Remote validation: GitHub Actions run 29414744868 completed successfully. Frontend CI passed;
+  backend font provisioning, all 887 tests, and the 85% coverage threshold passed.
+- Result: Complete at commit `615c1876`.
+- Risk level: High by CR declaration; low implementation blast radius because only CI runtime
+  provisioning changed.
+- Next action: Run the due architecture review, then 008M.

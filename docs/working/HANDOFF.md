@@ -6,18 +6,20 @@
 
 ## Current Status
 
-CR-006 is complete. The shared approval-register decision timestamp formatter now explicitly uses
-`Asia/Kolkata`, so the Credit Sanction and Exception register details render stored UTC instants
-identically on UTC and India-time hosts. No backend, API, persistence, authority, layout, or styling
-contract changed. The next SAP request slice, 009A, was sharpened from the cited Epic 009 sources;
-008M was already concrete.
+CR-006 and CR-007 are complete. Register decision timestamps render deterministically in
+`Asia/Kolkata`, and GitHub's Ubuntu backend job now provisions the Noto Devanagari font required by
+the fail-closed retained legal-PDF renderer. The application renderer, stored/API instants, glyph
+validation, permissions, persistence, layout, and styling contracts were not weakened or changed.
+The next SAP request slice, 009A, is sharpened from the cited Epic 009 sources; 008M was already
+concrete.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-15_164806_normal_run/evidence/`. The focused UTC run saved the
-expected two-test RED (`09:00`/`11:30` host times), followed by 8/8 GREEN under both `TZ=UTC` and
-`TZ=Asia/Kolkata`. Frontend lint, typecheck, build, and all 304 tests pass. Django check and migration
-drift pass; all 887 backend tests pass with 92% coverage against the 85% floor.
+CR-006 evidence is in `.ralph/runs/2026-07-15_164806_normal_run/evidence/`: 8/8 focused register
+tests pass under both `TZ=UTC` and `TZ=Asia/Kolkata`, and all local gates passed. For CR-007, the
+workflow YAML and deterministic font-provisioning contract passed locally. GitHub Actions run
+`29414744868` is fully green: frontend CI passed, the Ubuntu font install/path assertion passed, and
+backend CI passed all 887 tests plus the 85% coverage threshold.
 
 ## Next Run
 
