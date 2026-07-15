@@ -2,28 +2,27 @@
 
 ## Last Run
 
-2026-07-15_204059_repair
+2026-07-15_213859_repair
 
 ## Current Status
 
-008L4 is complete after manual recovery of the stopped repair run. The guarded E2E seed consumes
-the canonical active `borrower_portal_user` role, real portal login and `/auth/me` select the
-borrower shell, MP07/MP13 keep documentation status visible independently of allowed actions, and
-the deficiency response exposes stable accessible browser boundaries. Django CORS explicitly
-allows the canonical `X-Request-ID` header required by the real audit/download probe. Nominee, bank,
-subsidiary, and external-auditor identities remain inactive; the borrower role receives no staff
-permission links and portal sessions retain the existing own-data allowlist.
+CR-008 is complete. Both migration-facing `DocumentTemplate` constraints now use deterministic
+ordered tuples in current model state. Historical migration `documents.0002` remains untouched;
+forward migration `0005` removes and recreates the same two named constraints with the same exact
+approval-status and borrower-type values. No endpoint, service, permission, frontend, or business
+behavior changed.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-15_204059_repair/evidence/`; the original implementation
-evidence remains in the prior run. Machine-readable Playwright reports prove both real-boundary
-specs passed twice, 2/2 on each fresh database, and all four declared screenshots are non-empty.
-Frontend lint, typecheck, all 305 tests, and build pass; Django check and migration drift pass; all
-898 backend tests pass with 46 expected capability skips at 92% coverage.
+Evidence is in `.ralph/runs/2026-07-15_213859_repair/evidence/`. The focused migration-state test
+captured RED for both unordered model and terminal migration values, then GREEN after the forward
+migration. Migration checks report `No changes detected` for hash seeds 0, 1, 42, 123456, and
+random. Frontend lint, typecheck, all 305 tests, and build pass; Django check and migration drift
+pass; all 900 backend tests pass with 46 expected capability skips at 91% coverage.
 
 ## Next Run
 
-Run the sharpened `008M-documentation-hub-frontend-wiring`; it must reuse L4's latest-current selector/
-signed capability and server snapshot without reading portal submission rows or duplicating document
-audit events. After 008M, 009A remains concrete.
+Run the sharpened `008M-documentation-hub-frontend-wiring`; it must reuse L4's latest-current
+selector/signed capability and one server snapshot without reading portal submission rows or
+duplicating document audit events. CR-008 adds no frontend work: the existing template statuses and
+borrower variants remain unchanged. After 008M, 009A remains concrete.

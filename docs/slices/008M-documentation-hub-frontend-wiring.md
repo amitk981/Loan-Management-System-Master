@@ -147,6 +147,14 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
   `portal.document.uploaded`/`portal.document.downloaded` events exactly once. The hub must not write
   either family or duplicate a retained backend event.
 
+## CR-008 Completion Sharpening (2026-07-15)
+
+- CR-008 changes migration serialization only. Keep the existing template status vocabulary
+  (`draft`, `approved`, `retired`) and nullable borrower variants (`individual_farmer`, `fpc`,
+  `fpo`) unchanged; do not add client-side aliases, sorting, or variant mappings.
+- Generation controls must continue to consume the server-selected approved/effective template and
+  returned version. Constraint ordering is not presentation order and grants no client authority.
+
 ## Risk Level
 Medium
 

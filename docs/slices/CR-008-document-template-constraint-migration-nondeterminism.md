@@ -1,7 +1,7 @@
 # Slice CR-008: Make document-template constraint migrations deterministic
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-15 from docs/change-requests/accepted/CR-008-document-template-constraint-migration-nondeterminism.md.

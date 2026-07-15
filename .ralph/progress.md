@@ -7461,3 +7461,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_213859_repair
+
+- Agent tool used: codex with diagnosing-bugs, TDD, and codebase-design guidance.
+- Slice completed: CR-008-document-template-constraint-migration-nondeterminism.
+- Summary: Replaced unordered migration-facing document-template constraint values with ordered
+  tuples and added a forward migration preserving the same names, values, null handling, and
+  database enforcement without rewriting historical migration `0002`.
+- Tests run: focused RED/GREEN migration-state regression; 12 targeted document-template tests;
+  migration drift under hash seeds 0, 1, 42, 123456, and random; frontend lint/typecheck/305
+  tests/build; Django check, all 900 backend tests, migration sync, and 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_213859_repair/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High by CR declaration; deployment briefly removes/re-adds two same-definition check
+  constraints inside one migration while application behavior remains unchanged.
+- Next action: Run 008M-documentation-hub-frontend-wiring.
+
+## 2026-07-15 22:04:27 - 2026-07-15_213859_repair
+- Agent tool used: codex
+- Slice attempted: CR-008-document-template-constraint-migration-nondeterminism
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/.ralph/runs/2026-07-15_213859_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/.ralph/runs/2026-07-15_213859_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

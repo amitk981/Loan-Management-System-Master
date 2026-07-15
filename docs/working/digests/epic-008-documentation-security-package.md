@@ -14,6 +14,15 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## CR-008 Deterministic Template Constraint State (2026-07-15)
+
+The `DocumentTemplate` approval-status and borrower-type check constraints retain the exact 008A
+catalogues (`draft`/`approved`/`retired` and nullable `individual_farmer`/`fpc`/`fpo`) and their
+existing names. Migration-facing `__in` values are now ordered tuples; historical migration `0002`
+remains immutable and forward migration `0005` aligns terminal state deterministically. This is a
+schema-serialization repair only: template APIs, selection, generation, permissions, and frontend
+behavior do not change.
+
 ## 008L4 Real Portal Boundary Closure (2026-07-15)
 
 Repair closure: the canonical role catalogue now provisions `borrower_portal_user` as active because
