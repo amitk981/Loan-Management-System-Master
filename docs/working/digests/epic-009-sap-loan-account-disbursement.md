@@ -47,3 +47,22 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - Confirmation evidence is optional but recommended and must be a restricted request/application-
   scoped file. Send/complete/read responses and all audit/workflow/communication facts exclude the
   frozen Aadhaar, PAN, address, bank, storage, and signed-capability values.
+
+## 009C Loan Account Creation
+
+- API §30.1 fixes `POST /api/v1/loan-applications/{id}/create-loan-account/` with exactly
+  `sanction_decision_id` and `loan_account_number`. Data-model §18.1 makes application and account
+  number unique and requires the exact sanction link, positive amount, member, status, balances,
+  loan type, rate type, and optional active SAP-code link.
+- Initial `loan_account_status` is source vocabulary `sanctioned`; activation belongs only to
+  successful disbursement (M08-FR-008). Before transfer, disbursed amount and all outstanding
+  balances remain zero so account creation cannot claim a funded receivable.
+- Create `loan_terms` atomically from the current terminal sanction/frozen review package: safe
+  borrower/nominee/shareholding snapshots, short/long facility type, amount, purpose, governed
+  interest/repayment/penalty/charge/security/dispute facts, and current Term Sheet/Loan Agreement
+  links where their owner proves them. Missing required governed terms fail closed; do not fill the
+  known terminal-sanction nulls with guessed rates or dates.
+- `finance.loan_account.create` is source-defined Critical authority but no source role is granted
+  it (A-121). Implement exact permission/object checks and explicit-grant tests without seeding a
+  role grant. Replay is application + exact sanction + exact normalized account number; changed
+  repeats conflict and PostgreSQL races retain one account/terms/status/audit/workflow winner.

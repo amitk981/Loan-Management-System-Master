@@ -3797,3 +3797,31 @@ one exact borrower-attributed `absent/responded -> responded` workflow fact, and
 reversed, contradictory, or extra terminal facts project `response_status = evidence_invalid`,
 set `resubmission_allowed = false`, and make resubmit return `400 VALIDATION_ERROR`. The open staff
 deficiency remains unchanged and internal workflow evidence ids are never returned.
+
+## SAP customer profile request (009A)
+
+- `POST /api/v1/loan-applications/{loan_application_id}/sap-customer-profile-request/`
+
+The authenticated actor must be an active persisted Credit Manager with
+`finance.sap_request.create` and canonical application object access. The JSON request accepts
+exactly `assigned_to_user_id`, which must resolve to one active persisted Senior Manager Finance
+user. Borrower, application, sanction, and optional current verified-bank facts are server-derived;
+unknown client fields return `400 VALIDATION_ERROR`.
+
+Creation requires the application owner's latest approval case to be approved and its exact
+`SanctionDecision` to be `sanctioned` with a positive amount/date. It locks that evidence and the
+member before freezing name/type, folio, full registered address, optional contacts, application
+number, sanction facts, encrypted PAN, individual-only encrypted Aadhaar, and current verified bank
+last-four/IFSC when available. An active member SAP code returns `409 SAP_REQUEST_CONFLICT`; a
+missing/current-state failure returns stable validation, `INVALID_STATE`, `FORBIDDEN`, or
+`OBJECT_ACCESS_DENIED` envelopes without creating a row/file/event.
+
+Success returns only `sap_customer_profile_request_id`, `request_status: draft`, `excel_file_id`,
+and canonical `assigned_to_user {user_id, full_name}`. The linked file is a checksum-retained,
+restricted genuine `.xlsx` Annexure I whose physical storage bytes are authenticated ciphertext;
+Finance's Annexure storage boundary verifies, decrypts, and returns the readable workbook. The
+response and audit/workflow evidence omit PAN, Aadhaar, address, and bank secrets. The active-request
+identity is application plus status `draft`/`sent`: sequential or concurrent retry returns the
+retained projection and creates no duplicate file, audit, or workflow event, unless an active
+member SAP code now exists, which remains a conflict. Send, correction, completion, SAP-code
+confirmation/reuse, loan-account, readiness, and disbursement changes are not part of this route.

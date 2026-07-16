@@ -6,6 +6,7 @@ from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
+from sfpcl_credit.finance import views as finance_views
 from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import (
     login,
@@ -28,6 +29,11 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/sap-customer-profile-request/",
+        finance_views.sap_customer_profile_request,
+        name="loan-application-sap-customer-profile-request",
+    ),
     path(
         "api/v1/loan-documents/<uuid:loan_document_id>/verify/",
         legal_document_views.verify_loan_document,

@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009A-sap-customer-code-request.md
+ M docs/slices/009C-loan-account-creation-from-sanctioned-application.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/tests/test_witness_evidence_migration.py
+?? .ralph/runs/2026-07-16_052448_repair/
+?? sfpcl_credit/finance/
+?? sfpcl_credit/tests/test_sap_customer_profile_request_api.py

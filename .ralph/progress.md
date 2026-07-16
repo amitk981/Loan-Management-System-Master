@@ -7622,3 +7622,33 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_052448_repair
+
+- Agent tool used: codex with diagnosing-bugs, implement, TDD, codebase-design, and independent
+  two-axis review skills.
+- Slice repaired/completed: 009A-sap-customer-code-request.
+- Summary: Added the terminal-sanction manual SAP request boundary, immutable canonical borrower and
+  sanction snapshots, encrypted restricted Annexure-I storage, persisted requester/assignee
+  authority, active-code conflict, replay safety, and atomic audit/workflow evidence. The prior
+  normal run had failed preflight before implementation.
+- Tests run: initial/review RED/GREEN; focused 13-test API/service suite; PostgreSQL five-caller race
+  twice after final changes; Django check/migration drift; all 928 backend tests at 91% coverage;
+  frontend build/typecheck/lint and all 319 tests.
+- Evidence saved: `.ralph/runs/2026-07-16_052448_repair/evidence/`.
+- Review: Standards and Spec critics found eight issues; fixes were independently rechecked and all
+  implementation/spec findings closed, with the bounded OOXML decision recorded as A-123.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; regulated identity values, encrypted artifacts, financial workflow authority,
+  schema constraints, and PostgreSQL concurrency.
+- Next action: Run 009B, then sharpened 009C.
+
+## 2026-07-16 06:22:42 - 2026-07-16_052448_repair
+- Agent tool used: codex
+- Slice attempted: 009A-sap-customer-code-request
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_052448_repair/.ralph/runs/2026-07-16_052448_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_052448_repair/.ralph/runs/2026-07-16_052448_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
