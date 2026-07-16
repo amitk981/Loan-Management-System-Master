@@ -114,7 +114,6 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({
               </h4>
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white">
                 {section.rows.map(item => {
-                  const action = item.available_actions[0];
                   return (
                   <div key={item.item_code} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -133,12 +132,12 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({
                             {getActionIcon('Download')} Download
                           </button>
                         )}
-                        {action && (
-                          <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors disabled:opacity-50" onClick={() => onAction(action)} disabled={!action.enabled} title={action.disabled_reason ?? undefined}>
-                            {action.action_code === 'generate_document' ? <Upload size={14} /> : <Check size={14} />}
+                        {item.available_actions.map(action => (
+                          <button key={action.action_key} className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors disabled:opacity-50" onClick={() => onAction(action)} disabled={!action.enabled} title={action.disabled_reason ?? undefined}>
+                            {action.action_code === 'generate_document' || action.action_code === 'upload_signed_copy' ? <Upload size={14} /> : <Check size={14} />}
                             {action.label}
                           </button>
-                        )}
+                        ))}
                       </div>
                     </div>
                   </div>

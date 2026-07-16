@@ -45,6 +45,12 @@ class RequestMetadata:
     user_agent: str
 
 
+@dataclass(frozen=True)
+class ActionDecision:
+    enabled: bool
+    disabled_reason: str | None = None
+
+
 class AccessDenied(Exception):
     def __init__(self, error_code="FORBIDDEN"):
         self.error_code = error_code
@@ -126,6 +132,53 @@ def require_finance_actor(actor):
         permission="documents.checklist.sign_disbursement_complete",
         roles={"senior_manager_finance"},
     )
+
+
+@transaction.atomic
+def item_completion_decision(
+    *, actor, checklist_item_id, loan_document_id, terminal_security_evidence=None
+):
+    """Evaluate the locked facts consumed by ``complete_item`` without writing."""
+    try:
+        require_item_completion_actor(actor)
+        item = (
+            ChecklistItem.objects.select_for_update()
+            .select_related("document_checklist", "document_checklist__loan_application")
+            .filter(pk=checklist_item_id)
+            .first()
+        )
+        if item is None:
+            return ActionDecision(False, "Checklist item is unavailable.")
+        checklist = item.document_checklist
+        _require_stage4_scope(checklist)
+        if ChecklistAction.objects.filter(
+            checklist_item=item,
+            action_type=ChecklistAction.TYPE_ITEM_COMPLETION,
+        ).exists():
+            return ActionDecision(False, "Completion has already been recorded.")
+        if checklist.checklist_status != DocumentChecklist.STATUS_IN_PROGRESS:
+            return ActionDecision(False, "The checklist is already in approval.")
+        if not item.required_flag or not item.applicable_flag:
+            return ActionDecision(False, "This item is not currently required.")
+        if item.completion_status != ChecklistItem.STATUS_PENDING:
+            return ActionDecision(False, "The item is not pending completion.")
+        document = _current_document(
+            application_id=checklist.loan_application_id,
+            item=item,
+            loan_document_id=loan_document_id,
+        )
+        _terminal_evidence(
+            item=item,
+            document=document,
+            terminal_security_evidence=terminal_security_evidence,
+        )
+    except AccessDenied:
+        return ActionDecision(False, "You are not authorised to complete this item.")
+    except NotFound:
+        return ActionDecision(False, "Current sanctioned evidence is unavailable.")
+    except Conflict:
+        return ActionDecision(False, "Current terminal evidence is incomplete.")
+    return ActionDecision(True)
 
 
 def available_approval_action(*, actor, checklist, completed_item_ids):

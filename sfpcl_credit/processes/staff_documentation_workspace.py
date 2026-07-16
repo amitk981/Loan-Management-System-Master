@@ -1,11 +1,13 @@
 """Locked, redacted staff projection for the S26-S35 documentation workspace."""
 
 from dataclasses import dataclass
+import json
 from urllib.parse import urlencode
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.crypto import salted_hmac
 
 from sfpcl_credit.applications.models import LoanApplication, Witness
 from sfpcl_credit.applications.modules import bank_verification, document_checklist_facts
@@ -34,7 +36,7 @@ from sfpcl_credit.legal_documents.modules import (
     stamp_notary,
 )
 from sfpcl_credit.members.models import Shareholding
-from sfpcl_credit.processes import document_checklist_actions
+from sfpcl_credit.processes import document_checklist_actions, security_instrument_evidence
 from sfpcl_credit.security_instruments.models import SecurityPackage
 from sfpcl_credit.security_instruments.modules import (
     blank_dated_cheque,
@@ -42,6 +44,14 @@ from sfpcl_credit.security_instruments.modules import (
     power_of_attorney,
     sh4,
 )
+from sfpcl_credit.security_instruments.request_contracts import (
+    BlankDatedChequeRequest,
+    CDSLSharePledgeRequest,
+    PowerOfAttorneyRequest,
+    SH4ShareTransferFormRequest,
+)
+from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 DOCUMENT_TYPES = {
@@ -73,6 +83,7 @@ APPROVALS = {
 }
 WORKSPACE = "/api/v1/loan-applications/{}/documentation-workspace/"
 QUEUE_PAGE_SIZE = 20
+ACTION_SALT = "sfpcl.staff-documentation-action.v1"
 
 
 class AccessDenied(Exception):
@@ -83,6 +94,12 @@ class AccessDenied(Exception):
 
 class NotFound(Exception):
     pass
+
+
+class ActionConflict(Exception):
+    def __init__(self, message, error_code="CONFLICT"):
+        self.error_code = error_code
+        super().__init__(message)
 
 
 @dataclass(frozen=True)
@@ -168,7 +185,7 @@ def list_queue(*, actor, query_params):
 
 
 @transaction.atomic
-def read(*, actor, application_id):
+def read(*, actor, application_id, _include_private_commands=False):
     scope = document_checklist_access.resolve_read_access(
         actor=actor,
         application_id=application_id,
@@ -200,10 +217,15 @@ def read(*, actor, application_id):
         .filter(loan_application=application)
         .first()
     )
-    return _serialize(actor, application, checklist, items, package)
+    return _serialize(
+        actor, application, checklist, items, package,
+        include_private_commands=_include_private_commands,
+    )
 
 
-def _serialize(actor, application, checklist, items, package):
+def _serialize(
+    actor, application, checklist, items, package, *, include_private_commands=False
+):
     completed = frozenset(document_checklist_actions.borrower_safe_completed_item_ids(checklist))
     latest_ids = selectors.latest_generated_metadata_by_type(
         application_id=application.pk,
@@ -220,6 +242,7 @@ def _serialize(actor, application, checklist, items, package):
         for item in items
     ]
     actions = _approval_actions(actor, checklist, completed)
+    actions.extend(_s35_record_actions(actor, checklist))
     applicable = [row for row in rows if row["applicable"]]
     bank_fact = document_checklist_facts.resolve_blank_cheque_bank_fact(
         application_id=application.pk
@@ -232,7 +255,7 @@ def _serialize(actor, application, checklist, items, package):
         ("credit_manager", checklist.credit_manager_signature_id),
         ("sanction_committee", checklist.sanction_committee_signature_id),
     ]
-    return {
+    workspace = {
         "snapshot_id": f"{checklist.pk}:{checklist.updated_at.isoformat()}",
         "loan_application_id": str(application.pk),
         "application_reference_number": application.application_reference_number,
@@ -266,6 +289,11 @@ def _serialize(actor, application, checklist, items, package):
         "timeline": _timeline(checklist),
         "available_actions": actions,
     }
+    _finalize_workspace_actions(
+        actor, application, workspace,
+        include_private_commands=include_private_commands,
+    )
+    return workspace
 
 
 def _serialize_item(actor, application, item, document, reconciled):
@@ -316,9 +344,12 @@ def _item_actions(actor, application, item, document, status):
         generation = _generation_action(actor, application, item.item_code)
         return [generation] if generation else []
     actions = []
-    if status == ChecklistItem.STATUS_PENDING and _owner_allows(
-        checklist_actions.require_item_completion_actor, actor
-    ):
+    completion = document_checklist_actions.item_completion_decision(
+        actor=actor,
+        checklist_item_id=item.pk,
+        loan_document_id=document.pk,
+    )
+    if status == ChecklistItem.STATUS_PENDING and completion.enabled:
         actions.append(
             _action(
                 "complete_item",
@@ -342,38 +373,93 @@ def _item_actions(actor, application, item, document, status):
                 "documents.loan_document.verify",
                 f"/api/v1/loan-documents/{document.pk}/verify/",
                 required_role="company_secretary",
-                fixed_payload={"verification_status": "verified"},
+                fixed_payload={"loan_document_id": str(document.pk), "verification_status": "verified"},
                 fields=[{"name": "remarks", "label": "Remarks", "type": "textarea", "required": True}],
             )
         )
     if status == ChecklistItem.STATUS_PENDING:
         actions.extend(_legal_evidence_actions(actor, application, document))
+        actions.extend(_workspace_document_actions(actor, document))
+    return actions
+
+
+def _workspace_document_actions(actor, document):
+    actions = []
+    if document_services.user_can_upload_documents(actor):
+        actions.append(
+            _action(
+                "upload_signed_copy",
+                "Upload / re-upload signed copy",
+                document_services.DOCUMENT_UPLOAD_PERMISSION,
+                "workspace:upload_signed_copy",
+                fields=[
+                    {"name": "file", "label": "Signed document", "type": "file", "required": True},
+                    {"name": "remarks", "label": "Remarks", "type": "textarea", "required": True},
+                ],
+                fixed_payload={"loan_document_id": str(document.pk)},
+            )
+        )
+    if _owner_allows(checklist_actions.require_item_completion_actor, actor):
+        actions.append(
+            _action(
+                "request_correction",
+                "Request correction",
+                checklist_actions.ITEM_COMPLETE_PERMISSION,
+                "workspace:request_correction",
+                fields=[{"name": "remarks", "label": "Correction required", "type": "textarea", "required": True}],
+                fixed_payload={"loan_document_id": str(document.pk)},
+            )
+        )
     return actions
 
 
 def _legal_evidence_actions(actor, application, document):
     actions = []
     if _owner_allows(signatures.require_record_actor, actor):
-        actions.append(
-            _action(
-                "record_signature",
-                "Record signature",
-                signatures.RECORD_PERMISSION,
-                f"/api/v1/loan-documents/{document.pk}/signatures/",
-                required_role="compliance_team_member",
-                fixed_payload={
-                    "signer_party_type": "borrower",
-                    "signer_party_id": str(application.member_id),
-                    "signer_name_snapshot": application.member.display_name,
-                    "signature_status": "signed",
-                    "signature_mismatch_flag": False,
-                },
-                fields=[
-                    {"name": "signature_method", "label": "Method", "type": "select", "required": True, "options": ["wet_ink", "digital", "scanned"]},
-                    {"name": "signed_at", "label": "Signed at", "type": "datetime-local", "required": True},
-                ],
+        required_parties = {
+            "power_of_attorney": ("borrower", "nominee"),
+            "tri_party_agreement": ("borrower", "nominee"),
+            "sh4": ("borrower", "witness"),
+            "term_sheet": ("borrower", "nominee"),
+            "loan_agreement": ("borrower", "witness"),
+        }.get(document.document_type, ())
+        blocked_capture = {
+            (row.signer_party_type, str(row.signer_party_id))
+            for row in SignatureRecord.objects.filter(loan_document=document)
+            if (
+                (row.signature_status == "signed" and not row.signature_mismatch_flag)
+                or (
+                    row.signature_status == "mismatch"
+                    and row.signature_mismatch_flag
+                    and row.mismatch_resolution_type is None
+                )
             )
-        )
+        }
+        for party in required_parties:
+            identity = _canonical_signature_identity(application, party)
+            if identity is None or (party, identity[0]) in blocked_capture:
+                continue
+            party_id, party_name = identity
+            actions.append(
+                _action(
+                    f"record_{party}_signature",
+                    f"Record {party} signature",
+                    signatures.RECORD_PERMISSION,
+                    f"/api/v1/loan-documents/{document.pk}/signatures/",
+                    required_role="compliance_team_member",
+                    fixed_payload={
+                        "loan_document_id": str(document.pk),
+                        "signer_party_type": party,
+                        "signer_party_id": party_id,
+                        "signer_name_snapshot": party_name,
+                    },
+                    fields=[
+                        {"name": "signature_method", "label": "Method", "type": "select", "required": True, "options": ["wet_ink", "digital", "scanned"]},
+                        {"name": "signature_status", "label": "Status", "type": "select", "required": True, "options": ["signed", "mismatch"]},
+                        {"name": "signed_at", "label": "Signed at", "type": "datetime-local", "required": True},
+                    ],
+                )
+            )
     if _owner_allows(stamp_notary.require_stamp_actor, actor):
         actions.append(
             _action(
@@ -382,6 +468,7 @@ def _legal_evidence_actions(actor, application, document):
                 stamp_notary.STAMP_PERMISSION,
                 f"/api/v1/loan-documents/{document.pk}/stamp-duty-record/",
                 fixed_payload={
+                    "loan_document_id": str(document.pk),
                     "stamp_number": None,
                     "stamp_purchase_date": None,
                     "executed_date": None,
@@ -403,6 +490,7 @@ def _legal_evidence_actions(actor, application, document):
                 stamp_notary.NOTARY_PERMISSION,
                 f"/api/v1/loan-documents/{document.pk}/notarisation-record/",
                 fixed_payload={
+                    "loan_document_id": str(document.pk),
                     "notary_name": None,
                     "notary_registration_number": None,
                     "notarised_date": None,
@@ -414,6 +502,7 @@ def _legal_evidence_actions(actor, application, document):
                     {"name": "notary_registration_number", "label": "Registration number", "type": "text", "required": False},
                     {"name": "notarised_date", "label": "Notarised date", "type": "date", "required": False},
                     {"name": "status", "label": "Status", "type": "select", "required": True, "options": ["pending", "completed", "rejected"]},
+                    {"name": "evidence_document_id", "label": "Evidence document", "type": "text", "required": False},
                 ],
             )
         )
@@ -431,6 +520,7 @@ def _legal_evidence_actions(actor, application, document):
                 signatures.RESOLVE_PERMISSION,
                 f"/api/v1/signature-records/{unresolved.pk}/resolve-mismatch/",
                 required_role="company_secretary",
+                fixed_payload={"signature_record_id": str(unresolved.pk)},
                 fields=[
                     {"name": "mismatch_resolution_type", "label": "Resolution", "type": "select", "required": True, "options": ["bank_verification_letter", "borrower_declaration"]},
                     {"name": "mismatch_resolution_document_id", "label": "Evidence document", "type": "text", "required": True},
@@ -439,6 +529,22 @@ def _legal_evidence_actions(actor, application, document):
             )
         )
     return actions
+
+
+def _canonical_signature_identity(application, party):
+    if party == "borrower":
+        return str(application.member_id), application.member.legal_name
+    if party == "nominee" and application.nominee_id:
+        return str(application.nominee_id), application.nominee.nominee_name
+    if party == "witness":
+        witness = Witness.objects.filter(
+            loan_application=application,
+            verification_status="verified",
+            shareholder_verified_flag=True,
+        ).order_by("created_at", "witness_id").first()
+        if witness:
+            return str(witness.pk), witness.witness_name
+    return None
 
 
 def _generation_action(actor, application, item_code):
@@ -464,6 +570,14 @@ def _generation_action(actor, application, item_code):
     )
     if template is None:
         return None
+    output_formats = document_generation.executable_output_formats(
+        actor=actor,
+        application_id=application.pk,
+        document_type=document_type,
+        template_id=template.pk,
+    )
+    if not output_formats:
+        return None
     return _action(
         "generate_document",
         "Generate document",
@@ -471,7 +585,7 @@ def _generation_action(actor, application, item_code):
         f"/api/v1/loan-applications/{application.pk}/loan-documents/generate/",
         required_role="compliance_team_member",
         fixed_payload={"document_type": document_type, "template_id": str(template.pk)},
-        fields=[{"name": "output_format", "label": "Output format", "type": "select", "required": True, "options": ["pdf", "docx"]}],
+        fields=[{"name": "output_format", "label": "Output format", "type": "select", "required": True, "options": list(output_formats)}],
         template_version=template.template_version,
     )
 
@@ -492,9 +606,87 @@ def _approval_actions(actor, checklist, completed):
             permission,
             f"/api/v1/document-checklists/{checklist.pk}/{suffix}/",
             required_role=role,
+            fixed_payload={"document_checklist_id": str(checklist.pk)},
             fields=[{"name": "comments", "label": "Comments", "type": "textarea", "required": True}],
         )
     ]
+
+
+def _s35_record_actions(actor, checklist):
+    by_status = {
+        DocumentChecklist.STATUS_IN_PROGRESS: ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL,
+        DocumentChecklist.STATUS_CS_APPROVED: ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL,
+        DocumentChecklist.STATUS_CREDIT_APPROVED: ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL,
+    }
+    action_type = by_status.get(checklist.checklist_status)
+    if action_type is None:
+        return []
+    try:
+        checklist_actions.require_stage_actor(actor, action_type)
+    except checklist_actions.AccessDenied:
+        return []
+    if action_type == ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL:
+        completed = document_checklist_actions.borrower_safe_completed_item_ids(checklist)
+        if checklist_actions.available_approval_action(
+            actor=actor, checklist=checklist, completed_item_ids=completed,
+        ) is None:
+            return []
+    permission = APPROVALS[action_type][2]
+    return [
+        _action(
+            "return_for_correction",
+            "Return for correction",
+            permission,
+            "workspace:return_for_correction",
+            fields=[{"name": "remarks", "label": "Correction required", "type": "textarea", "required": True}],
+            fixed_payload={"document_checklist_id": str(checklist.pk)},
+        ),
+        _action(
+            "add_condition",
+            "Add condition",
+            permission,
+            "workspace:add_condition",
+            fields=[{"name": "condition", "label": "Condition", "type": "textarea", "required": True}],
+            fixed_payload={"document_checklist_id": str(checklist.pk)},
+        ),
+    ]
+
+
+def _finalize_workspace_actions(
+    actor, application, workspace, *, include_private_commands=False
+):
+    groups = [
+        (f"item:{item['item_code']}", item["available_actions"])
+        for item in workspace["items"]
+    ]
+    groups.extend(
+        (f"security:{code}", workflow["available_actions"])
+        for code, workflow in workspace["security_workflows"].items()
+    )
+    groups.append(("workspace", workspace["available_actions"]))
+    for scope, actions in groups:
+        for index, action in enumerate(actions):
+            action_key = f"{scope}:{action['action_code']}:{index}"
+            command = {
+                "actor_id": str(actor.pk),
+                "application_id": str(application.pk),
+                "snapshot_id": workspace["snapshot_id"],
+                "action_key": action_key,
+                "action_code": action["action_code"],
+                "owner_url": action["action_url"],
+                "fixed_payload": action.get("fixed_payload", {}),
+            }
+            canonical = json.dumps(command, sort_keys=True, separators=(",", ":"))
+            action_id = salted_hmac(ACTION_SALT, canonical).hexdigest()
+            action["action_id"] = action_id
+            action["action_key"] = action_key
+            action["action_url"] = (
+                WORKSPACE.format(application.pk) + f"actions/{action_id}/"
+            )
+            action["method"] = "POST"
+            action.pop("fixed_payload", None)
+            if include_private_commands:
+                action["_command"] = command
 
 
 def _bank_verification_action(actor, application, fact):
@@ -635,6 +827,7 @@ def _security_create_action(package, code, permission, endpoint):
             ]
     if fixed is None:
         return None
+    fixed["security_package_id"] = str(package.pk)
     return _action(
         f"manage_{code}", f"Manage {code.replace('_', ' ').title()}", permission,
         endpoint, fixed_payload=fixed, fields=fields,
@@ -723,6 +916,275 @@ def _current_owner(checklist, complete, required):
     if checklist.checklist_status in {DocumentChecklist.STATUS_SANCTION_APPROVED, DocumentChecklist.STATUS_READY}:
         return "Senior Manager Finance"
     return "Company Secretary" if len(complete) == len(required) else "Compliance Team"
+
+
+@transaction.atomic
+def execute_action(*, actor, application_id, action_id, payload, uploaded_file, request):
+    """Execute one current opaque workspace command through its owning module."""
+    workspace = read(
+        actor=actor,
+        application_id=application_id,
+        _include_private_commands=True,
+    )
+    current = next(
+        (action for action in _all_actions(workspace) if action["action_id"] == action_id),
+        None,
+    )
+    if current is None or not current["enabled"]:
+        raise NotFound
+    command = current["_command"]
+    allowed = {field["name"] for field in current.get("fields", [])}
+    unknown = set(payload) - (allowed - {"file"})
+    if unknown:
+        raise ValidationError({field: "Unknown action field." for field in sorted(unknown)})
+    if uploaded_file is not None and "file" not in allowed:
+        raise ValidationError({"file": "This action does not accept a file."})
+    missing = {
+        field["name"]: "This field is required."
+        for field in current.get("fields", [])
+        if field.get("required")
+        and (
+            uploaded_file is None
+            if field["name"] == "file"
+            else not str(payload.get(field["name"], "")).strip()
+        )
+    }
+    if missing:
+        raise ValidationError(missing)
+    values = {**command.get("fixed_payload", {}), **payload}
+    try:
+        return _dispatch_action(
+            actor=actor,
+            application_id=application_id,
+            command=command,
+            values=values,
+            uploaded_file=uploaded_file,
+            request=request,
+        )
+    except ValidationError:
+        raise
+    except checklist_actions.AccessDenied as exc:
+        raise AccessDenied(exc.error_code) from exc
+    except checklist_actions.NotFound as exc:
+        raise NotFound from exc
+    except checklist_actions.Conflict as exc:
+        raise ActionConflict(str(exc), exc.error_code) from exc
+    except (
+        document_generation.LegalDocumentAccessDenied,
+        loan_document_verification.AccessDenied,
+        signatures.AccessDenied,
+        stamp_notary.AccessDenied,
+        bank_verification.AccessDenied,
+        power_of_attorney.AccessDenied,
+        sh4.AccessDenied,
+        cdsl_share_pledge.AccessDenied,
+        blank_dated_cheque.AccessDenied,
+    ) as exc:
+        raise NotFound from exc
+    except (
+        document_generation.LegalDocumentNotFound,
+        loan_document_verification.NotFound,
+        signatures.NotFound,
+        stamp_notary.NotFound,
+        bank_verification.NotFound,
+        power_of_attorney.NotFound,
+        sh4.NotFound,
+        cdsl_share_pledge.NotFound,
+        blank_dated_cheque.NotFound,
+    ) as exc:
+        raise NotFound from exc
+    except Exception as exc:
+        if exc.__class__.__name__ in {
+            "Conflict", "InvalidState", "ProjectionConflict", "EvidenceConflict",
+            "SignatureMismatchUnresolved", "RendererProvenanceConflict",
+        }:
+            raise ActionConflict(str(exc)) from exc
+        raise
+
+
+def _all_actions(workspace):
+    actions = list(workspace["available_actions"])
+    for item in workspace["items"]:
+        actions.extend(item["available_actions"])
+    for workflow in workspace["security_workflows"].values():
+        actions.extend(workflow["available_actions"])
+    return actions
+
+
+def _metadata(module, request):
+    return module.RequestMetadata(
+        request_id=request.headers.get("X-Request-ID"),
+        ip_address=request.META.get("REMOTE_ADDR", ""),
+        user_agent=request.headers.get("User-Agent", ""),
+    )
+
+
+def _dispatch_action(*, actor, application_id, command, values, uploaded_file, request):
+    code = command["action_code"]
+    if code == "complete_item":
+        return document_checklist_actions.complete_item(
+            actor=actor,
+            checklist_item_id=_uuid_from_owner_url(command["owner_url"], "checklist-items"),
+            payload={"loan_document_id": values["loan_document_id"], "remarks": values.get("remarks")},
+            metadata=_metadata(checklist_actions, request),
+        )
+    approval_recorders = {
+        "approve_as_company_secretary": document_checklist_actions.approve_company_secretary,
+        "approve_as_credit_manager": document_checklist_actions.approve_credit_manager,
+        "approve_as_sanction_committee": document_checklist_actions.approve_sanction_committee,
+    }
+    if code in approval_recorders:
+        return approval_recorders[code](
+            actor=actor,
+            document_checklist_id=values["document_checklist_id"],
+            payload={"comments": values.get("comments")},
+            metadata=_metadata(checklist_actions, request),
+        )
+    if code == "generate_document":
+        return document_generation.generate(
+            actor=actor,
+            application_id=application_id,
+            payload={
+                "document_type": values["document_type"],
+                "template_id": values["template_id"],
+                "output_format": values.get("output_format"),
+            },
+            metadata=_metadata(document_generation, request),
+        )
+    if code == "verify_document":
+        return loan_document_verification.verify(
+            actor=actor,
+            loan_document_id=values.pop("loan_document_id"),
+            payload=values,
+            metadata=_metadata(loan_document_verification, request),
+        )
+    if code.startswith("record_") and code.endswith("_signature"):
+        values["signature_mismatch_flag"] = values.get("signature_status") == "mismatch"
+        return signatures.record(
+            actor=actor,
+            loan_document_id=values.pop("loan_document_id"),
+            payload=values,
+            metadata=_metadata(signatures, request),
+        )
+    if code == "record_stamp":
+        return stamp_notary.record_stamp(
+            actor=actor,
+            loan_document_id=values.pop("loan_document_id"),
+            payload=values,
+            metadata=_metadata(stamp_notary, request),
+        )
+    if code == "record_notarisation":
+        return stamp_notary.record_notary(
+            actor=actor,
+            loan_document_id=values.pop("loan_document_id"),
+            payload=values,
+            metadata=_metadata(stamp_notary, request),
+        )
+    if code == "resolve_signature_mismatch":
+        return signatures.resolve_mismatch(
+            actor=actor,
+            signature_record_id=values.pop("signature_record_id"),
+            payload=values,
+            metadata=_metadata(signatures, request),
+        )
+    if code == "verify_bank_sources":
+        decision = bank_verification.record_decision(
+            actor=actor,
+            application_id=application_id,
+            payload=values,
+            metadata=_metadata(bank_verification, request),
+        )
+        return bank_verification.action_response(decision)
+    if code == "upload_signed_copy":
+        if uploaded_file is None:
+            raise ValidationError({"file": "A signed document file is required."})
+        document = document_services.store_document_upload(
+            user=actor,
+            request=request,
+            uploaded_file=uploaded_file,
+            document_category="legal",
+            sensitivity_level="confidential",
+            related_entity_type="loan_document",
+            related_entity_id=values["loan_document_id"],
+            provenance_metadata={
+                "loan_application_id": str(application_id),
+                "loan_document_id": values["loan_document_id"],
+                "remarks": values.get("remarks"),
+            },
+        )
+        return {
+            "action_code": code,
+            "document_id": str(document.pk),
+            "entity_type": "loan_document",
+            "entity_id": values["loan_document_id"],
+            "previous_status": "signed_copy_pending",
+            "new_status": "signed_copy_uploaded",
+            "available_actions": [],
+        }
+    if code in {"request_correction", "return_for_correction", "add_condition"}:
+        reason = values.get("remarks") or values.get("condition")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValidationError({"remarks": "A reason is required."})
+        to_state = "condition_added" if code == "add_condition" else "correction_requested"
+        event = record_workflow_event(
+            actor=actor,
+            workflow_name="staff_documentation_action",
+            entity_type="loan_application",
+            entity_id=application_id,
+            from_state="documentation_review",
+            to_state=to_state,
+            trigger_reason=reason.strip(),
+            action_code=code,
+        )
+        return {
+            "action_code": code,
+            "entity_type": "loan_application",
+            "entity_id": str(application_id),
+            "previous_status": "documentation_review",
+            "new_status": to_state,
+            "workflow_event_id": str(event.pk),
+            "available_actions": [],
+        }
+    if code.startswith("manage_"):
+        return _dispatch_security_create(actor, code, values, request)
+    raise NotFound
+
+
+def _uuid_from_owner_url(owner_url, collection):
+    marker = f"/{collection}/"
+    if marker not in owner_url:
+        raise NotFound
+    return owner_url.split(marker, 1)[1].split("/", 1)[0]
+
+
+def _dispatch_security_create(actor, code, values, request):
+    package_id = values.pop("security_package_id")
+    metadata = _metadata(power_of_attorney, request)
+    if code == "manage_power_of_attorney":
+        parsed = PowerOfAttorneyRequest.parse(values)
+        return security_instrument_evidence.create_poa(
+            actor=actor, security_package_id=package_id,
+            values=parsed.as_values(), metadata=metadata,
+        )
+    if code == "manage_sh4":
+        parsed = SH4ShareTransferFormRequest.parse(values)
+        return security_instrument_evidence.create_sh4(
+            actor=actor, security_package_id=package_id,
+            values=parsed.as_values(), metadata=metadata,
+        )
+    if code == "manage_cdsl_pledge":
+        parsed = CDSLSharePledgeRequest.parse(values)
+        return security_instrument_evidence.create_pledge(
+            actor=actor, security_package_id=package_id,
+            values=parsed.as_values(), metadata=metadata,
+        )
+    if code == "manage_blank_dated_cheque":
+        parsed = BlankDatedChequeRequest.parse(values)
+        return security_instrument_evidence.create_blank_cheque(
+            actor=actor, security_package_id=package_id,
+            values=parsed.as_values(), metadata=metadata,
+        )
+    raise NotFound
 
 
 @transaction.atomic

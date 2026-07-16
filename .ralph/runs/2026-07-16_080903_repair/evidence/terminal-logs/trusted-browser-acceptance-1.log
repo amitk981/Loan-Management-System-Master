@@ -1,0 +1,56 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_080903_repair/.ralph/runs/2026-07-16_080903_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/staff-documentation-workspace.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/staff-documentation-workspace.e2e.spec.ts
+
+[2m[WebServer] [22m[16/Jul/2026 03:43:23] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "POST /api/v1/auth/login/ HTTP/1.1" 200 1317
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "GET /api/v1/auth/me/ HTTP/1.1" 200 1901
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 863
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 863
+[2m[WebServer] [22m[16/Jul/2026 03:43:26] "OPTIONS /api/v1/loan-applications/dfd6ed68-6665-44cb-b776-481cefae75e3/documentation-workspace/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 03:43:27] "GET /api/v1/loan-applications/dfd6ed68-6665-44cb-b776-481cefae75e3/documentation-workspace/ HTTP/1.1" 200 6529
+  ✘  1 [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M3 executes every staff documentation action through real Django (7.6s)
+
+
+  1) [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M3 executes every staff documentation action through real Django 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: locator('tr').filter({ hasText: 'Term Sheet' }).getByRole('button', { name: 'Record borrower signature' })
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for locator('tr').filter({ hasText: 'Term Sheet' }).getByRole('button', { name: 'Record borrower signature' })[22m
+
+
+      21 |
+      22 |   const termSheet = page.locator('tr').filter({ hasText: 'Term Sheet' });
+    > 23 |   await expect(termSheet.getByRole('button', { name: 'Record borrower signature' })).toBeVisible();
+         |                                                                                      ^
+      24 |   await expect(termSheet.getByRole('button', { name: 'Record nominee signature' })).toBeVisible();
+      25 |   await expect(termSheet.getByRole('button', { name: 'Record stamp' })).toBeVisible();
+      26 |   await expect(termSheet.getByRole('button', { name: 'Record notarisation' })).toBeVisible();
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_080903_repair/sfpcl-lms/e2e/staff-documentation-workspace.e2e.spec.ts:23:86
+
+  1 failed
+    [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M3 executes every staff documentation action through real Django 
+
+Exit code: 1

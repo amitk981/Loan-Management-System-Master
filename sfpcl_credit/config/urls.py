@@ -151,6 +151,11 @@ urlpatterns = [
     ),
     path("api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/", legal_document_views.documentation_workspace, name="loan-application-documentation-workspace"),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/actions/<str:action_id>/",
+        legal_document_views.documentation_workspace_action,
+        name="loan-application-documentation-workspace-action",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/<slug:item_code>/download/",
         legal_document_views.documentation_workspace_download,
         name="loan-application-documentation-workspace-download",

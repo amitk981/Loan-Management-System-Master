@@ -32,7 +32,10 @@ the shared frontend transport, and the approved prototype layout without changin
 1. Decompose the broad `staff_documentation_workspace` implementation behind one stable public read
    interface and narrow owner projections. Legal, security, bank, approval, template, and identity
    decisions remain in their existing deep modules; the workspace must not infer authority by
-   exception-class name or query their tables to recreate policy.
+   exception-class name or query their tables to recreate policy. In particular, move 008M3's
+   action-code dispatch and private canonical command payloads behind owner-issued decision/execute
+   pairs; the coordinator may bind the opaque HMAC action identity and compose DTOs, but must not
+   know each owner's URL, request reconstruction, prerequisite query, or exception vocabulary.
 2. Move queue filtering/counting/pagination into a bounded selector. Do not lock/serialize every
    checklist merely to return one page, do not serialize a full detail workspace per queue row, and
    add a query ceiling that remains stable as inaccessible/off-page rows grow.
@@ -44,7 +47,8 @@ the shared frontend transport, and the approved prototype layout without changin
    facts in the already-approved queue/card/table patterns without changing colours, typography,
    spacing, card, badge, table, or responsive layout vocabulary.
 6. Preserve 008M3 action behavior, download capabilities, exact pagination, truthful states,
-   redaction, and screenshots. This slice is structural/design correction, not new workflow scope.
+   redaction, multipart upload, stable sibling ordering, one-refetch success, rejected-action
+   persistence, and screenshots. This slice is structural/design correction, not new workflow scope.
 
 ## Trusted Browser Acceptance
 
@@ -58,7 +62,8 @@ the shared frontend transport, and the approved prototype layout without changin
 ## Test Cases
 
 - Dependency/AST guards prove the coordinator calls owner interfaces and does not query forbidden
-  owner models or catch authorisation by class-name string.
+  owner models, reconstruct owner requests by action code, or catch authorisation by class-name
+  string. Owner contract tests prove each decision and execute method consume the same locked facts.
 - Query-count tests cover large mixed-scope queues, off-page rows, exact final pages, and detail read.
 - Frontend source tests prove use of the shared authenticated transport and absence of a local
   envelope/auth implementation.

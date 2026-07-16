@@ -12,6 +12,7 @@ from sfpcl_credit.legal_documents.models import LoanDocument
 
 PORTAL_EMAIL = "e2e.portal@sfpcl.example"
 PORTAL_PASSWORD = "E2eTracer123!"
+COMPLIANCE_EMAIL = "e2e.portal.compliance@sfpcl.example"
 
 
 @override_settings(
@@ -105,3 +106,34 @@ class SeedPortalE2eFixtureTests(TestCase):
         self.assertIsNotNone(term_sheet["download"])
         self.assertFalse(term_sheet["upload_allowed"])
         self.assertFalse(term_sheet["reupload_allowed"])
+
+        staff_login = client.post(
+            "/api/v1/auth/login/",
+            data={"email": COMPLIANCE_EMAIL, "password": PORTAL_PASSWORD},
+            content_type="application/json",
+        )
+        self.assertEqual(staff_login.status_code, 200, staff_login.content)
+        staff_headers = {
+            "Authorization": f"Bearer {staff_login.json()['data']['access_token']}"
+        }
+        workspace = client.get(
+            f"/api/v1/loan-applications/{approved.pk}/documentation-workspace/",
+            headers=staff_headers,
+        )
+        self.assertEqual(workspace.status_code, 200, workspace.content)
+        power_of_attorney = next(
+            item
+            for item in workspace.json()["data"]["items"]
+            if item["item_code"] == "poa"
+        )
+        self.assertEqual(
+            {action["label"] for action in power_of_attorney["available_actions"]},
+            {
+                "Record borrower signature",
+                "Record nominee signature",
+                "Record stamp",
+                "Record notarisation",
+                "Upload / re-upload signed copy",
+                "Request correction",
+            },
+        )

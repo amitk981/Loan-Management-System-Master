@@ -28,7 +28,8 @@ const action = (
   options: Partial<DocumentationAction> = {},
 ): DocumentationAction => ({
   action_code: actionCode, label, enabled: true, disabled_reason: null,
-  required_permission: `documents.${actionCode}`, action_url: actionUrl, method: 'POST', ...options,
+  required_permission: `documents.${actionCode}`, action_id: `opaque-${actionCode}`,
+  action_key: `item:test:${actionCode}`, action_url: actionUrl, method: 'POST', ...options,
 });
 
 const approvalAction = action(
@@ -60,7 +61,6 @@ const generationAction = action(
   'Generate document',
   '/api/v1/loan-applications/application-1/loan-documents/generate/',
   {
-    fixed_payload: { document_type: 'power_of_attorney', template_id: 'template-1' },
     fields: [{
       name: 'output_format', label: 'Output format', type: 'select',
       required: true, options: ['pdf', 'docx'],
@@ -195,6 +195,47 @@ describe('008M2 documentation workspace contract', () => {
     await userEvent.click(screen.getByRole('button', { name: 'View Document Pack' }));
     const dialog = screen.getByRole('heading', { name: 'Document Pack — LO000001' }).parentElement?.parentElement?.parentElement as HTMLElement;
     expect(within(dialog).getByRole('button', { name: 'Download' })).toBeTruthy(); expect(within(dialog).getByRole('button', { name: 'Verify document' })).toBeTruthy();
+  });
+
+  it('renders every sibling mutation beside independent Download in source order', async () => {
+    const siblings = [
+      action('record_signature', 'Record signature', '/api/v1/actions/signature/'),
+      action('record_stamp', 'Record stamp', '/api/v1/actions/stamp/'),
+      action('record_notarisation', 'Record notarisation', '/api/v1/actions/notary/'),
+    ];
+    vi.mocked(fetchDocumentationWorkspace).mockResolvedValueOnce({
+      ...workspace,
+      items: [{ ...workspace.items[0], status: 'pending', available_actions: siblings }],
+    });
+    await renderHub();
+    await userEvent.click(screen.getByRole('button', { name: 'View Document Pack' }));
+    const dialog = screen.getByRole('heading', { name: 'Document Pack — LO000001' }).parentElement?.parentElement?.parentElement as HTMLElement;
+    expect(within(dialog).getAllByRole('button').map(button => button.textContent?.trim()))
+      .toEqual(expect.arrayContaining(['Download', 'Record signature', 'Record stamp', 'Record notarisation', 'Close']));
+  });
+
+  it('submits a signed-copy upload through the opaque action and refetches once', async () => {
+    const upload = action('upload_signed_copy', 'Upload / re-upload signed copy', '/api/v1/actions/opaque-upload/', {
+      fields: [
+        { name: 'file', label: 'Signed document', type: 'file', required: true },
+        { name: 'remarks', label: 'Remarks', type: 'textarea', required: true },
+      ],
+    });
+    vi.mocked(fetchDocumentationWorkspace).mockResolvedValueOnce({
+      ...workspace,
+      items: [{ ...workspace.items[0], available_actions: [upload] }],
+    });
+    await renderHub();
+    await userEvent.click(screen.getByRole('button', { name: 'Upload / re-upload signed copy' }));
+    const file = new File(['signed'], 'signed.pdf', { type: 'application/pdf' });
+    await userEvent.upload(screen.getByLabelText('Signed document'), file);
+    await userEvent.type(screen.getByLabelText('Remarks'), 'Signed copy received.');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm action' }));
+    expect(submitDocumentationAction).toHaveBeenCalledWith(upload, {
+      file,
+      remarks: 'Signed copy received.',
+    });
+    expect(fetchDocumentationWorkspace).toHaveBeenCalledTimes(2);
   });
 
   it('executes a returned security action instead of navigating away', async () => {

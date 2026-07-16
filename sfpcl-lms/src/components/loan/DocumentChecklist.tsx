@@ -65,7 +65,7 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({
                       </button>
                     )}
                     {onAction && item.available_actions.map(action => (
-                      <button key={action.action_code} className="text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 disabled:opacity-50" onClick={() => onAction(action)} disabled={busy || !action.enabled} title={action.disabled_reason ?? undefined}>
+                      <button key={action.action_key} className="text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 disabled:opacity-50" onClick={() => onAction(action)} disabled={busy || !action.enabled} title={action.disabled_reason ?? undefined}>
                         {action.action_code === 'generate_document' ? <Upload size={12} className="inline mr-1" /> : <Check size={12} className="inline mr-1" />}
                         {action.label}
                       </button>

@@ -112,7 +112,8 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   review nevertheless reproduced an enabled action rejected by its owning workflow, while upload/
   correction actions remain absent and Document Pack drops sibling mutations; its coordinator also
   duplicates cross-domain policy/query logic and adds a non-prototype facts grid. Corrective 008M3
-  closes executable action reachability, then 008M4 restores deep owner/query/transport/design seams.
+  has now closed executable action reachability with owner-backed decisions and opaque current
+  action identities; 008M4 remains to restore deep owner/query/transport/design seams.
   Epic 009 has started: 009A generates the encrypted retained Annexure-I from current sanctioned
   facts, and 009B adds send, assigned Finance confirmation, normalized member-code uniqueness/reuse,
   and PostgreSQL races. Review found that `sent` does not actually deliver the Excel, reuse replay

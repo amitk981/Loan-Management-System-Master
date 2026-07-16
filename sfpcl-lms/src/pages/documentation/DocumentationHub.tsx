@@ -54,6 +54,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
   const [packOpen, setPackOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<DocumentationAction | null>(null);
   const [actionValues, setActionValues] = useState<Record<string, string>>({});
+  const [actionFiles, setActionFiles] = useState<Record<string, File>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [actionAccepted, setActionAccepted] = useState(false);
   const workspaceSequence = useRef(0);
@@ -120,7 +121,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
 
   const runAction = async (
     action: DocumentationAction,
-    payload: Record<string, unknown>,
+    payload: Record<string, string | File>,
   ) => {
     if (!selectedId) return;
     setBusy(true);
@@ -131,6 +132,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
       await submitDocumentationAction(action, payload);
       setPendingAction(null);
       setActionValues({});
+      setActionFiles({});
       setActionAccepted(true);
       await loadWorkspace(selectedId);
     } catch (reason) {
@@ -149,6 +151,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
       return;
     }
     setActionValues(Object.fromEntries(fields.map(field => [field.name, field.options?.[0] ?? ''])));
+    setActionFiles({});
     setFieldErrors({});
     setPendingAction(action);
   };
@@ -157,14 +160,16 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
     if (!pendingAction) return;
     const missing = Object.fromEntries(
       (pendingAction.fields ?? [])
-        .filter(field => field.required && !actionValues[field.name]?.trim())
+        .filter(field => field.required && (
+          field.type === 'file' ? !actionFiles[field.name] : !actionValues[field.name]?.trim()
+        ))
         .map(field => [field.name, `${field.label} is required.`]),
     );
     if (Object.keys(missing).length > 0) {
       setFieldErrors(missing);
       return;
     }
-    const payload = Object.fromEntries(Object.entries(actionValues)
+    const payload: Record<string, string | File> = Object.fromEntries(Object.entries(actionValues)
       .filter(([, value]) => value !== '')
       .map(([name, value]) => [
         name,
@@ -172,6 +177,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
           ? new Date(value).toISOString()
           : value,
       ]));
+    Object.assign(payload, actionFiles);
     void runAction(pendingAction, payload);
   };
 
@@ -329,7 +335,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
                               <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><Shield size={14} className="text-slate-500" /></div>
                               <div className="flex-1"><div className="text-sm font-medium text-slate-900">{workflowLabel(code)}</div><div className="text-xs text-slate-500 mt-0.5">{workflow.required ? 'Required for this sanctioned package' : 'Not applicable'}</div></div>
                               <StatusBadge label={workflow.status} size="sm" />
-                              {workflow.available_actions.map(action => <button key={action.action_code} className="btn-secondary text-xs" onClick={() => startAction(action)} disabled={!action.enabled || busy} title={action.disabled_reason ?? undefined}>{action.label}</button>)}
+                              {workflow.available_actions.map(action => <button key={action.action_key} className="btn-secondary text-xs" onClick={() => startAction(action)} disabled={!action.enabled || busy} title={action.disabled_reason ?? undefined}>{action.label}</button>)}
                             </div>
                           </div>
                         ))}
@@ -338,7 +344,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
 
                     <div className="p-5 space-y-4">
                       <div className="border border-slate-200 rounded-xl p-4 bg-slate-50"><StageStepper steps={approvalSteps} /></div>
-                      {workspace.available_actions.map(action => <button key={action.action_code} className="btn-primary text-xs" onClick={() => startAction(action)} disabled={!action.enabled || busy} title={action.disabled_reason ?? undefined}>{action.label}</button>)}
+                      {workspace.available_actions.map(action => <button key={action.action_key} className="btn-primary text-xs" onClick={() => startAction(action)} disabled={!action.enabled || busy} title={action.disabled_reason ?? undefined}>{action.label}</button>)}
                     </div>
 
                     <div className="p-5"><AuditTimeline events={workspace.timeline} /></div>
@@ -368,6 +374,14 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
                 <textarea aria-label={field.label} className="input-field mt-2 min-h-24" value={actionValues[field.name] ?? ''} onChange={event => setActionValues(values => ({ ...values, [field.name]: event.target.value }))} />
               ) : field.type === 'select' ? (
                 <select aria-label={field.label} className="input-field mt-2" value={actionValues[field.name] ?? ''} onChange={event => setActionValues(values => ({ ...values, [field.name]: event.target.value }))}>{(field.options ?? []).map(option => <option key={option} value={option}>{display(option)}</option>)}</select>
+              ) : field.type === 'file' ? (
+                <input aria-label={field.label} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="mt-1.5 block w-full text-sm text-slate-500" onChange={event => {
+                  const file = event.target.files?.[0];
+                  setActionFiles(files => {
+                    if (file) return { ...files, [field.name]: file };
+                    const next = { ...files }; delete next[field.name]; return next;
+                  });
+                }} />
               ) : (
                 <input aria-label={field.label} type={field.type} className="input-field mt-2" value={actionValues[field.name] ?? ''} onChange={event => setActionValues(values => ({ ...values, [field.name]: event.target.value }))} />
               )}

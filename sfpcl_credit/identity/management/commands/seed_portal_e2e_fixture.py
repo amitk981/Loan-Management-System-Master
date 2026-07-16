@@ -56,7 +56,14 @@ class Command(BaseCommand):
 
         portal_role = Role.objects.get(role_code="borrower_portal_user")
         compliance_role = self._role_with_permissions(
-            "compliance_team_member", ["documents.checklist.update"]
+            "compliance_team_member",
+            [
+                "documents.checklist.update",
+                "documents.file.upload",
+                "documents.signature.record",
+                "documents.stamp.record",
+                "documents.notary.record",
+            ],
         )
         cfo_role = Role.objects.get(role_code="cfo")
         director_role = Role.objects.get(role_code="director")
@@ -115,6 +122,7 @@ class Command(BaseCommand):
             source_reason="portal_e2e_fixture",
         )
         term_sheet = self._term_sheet(approved, compliance)
+        self._power_of_attorney(approved, compliance)
         signed_at = timezone.now()
         for party_type, party_id, name in (
             ("borrower", member.pk, member.display_name),
@@ -431,6 +439,49 @@ class Command(BaseCommand):
             generation_status="generated",
             execution_status="pending",
             verification_status="verified",
+            renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+            renderer_validated_document_id=output.pk,
+            renderer_validated_checksum_sha256=hashlib.sha256(body).hexdigest(),
+        )
+
+    @staticmethod
+    def _power_of_attorney(application, actor):
+        body = b"%PDF-1.4\nE2E pending Power of Attorney\n%%EOF\n"
+        stored = LocalDocumentStorage().store(
+            ContentFile(body, name="power-of-attorney-LO000008L4.pdf")
+        )
+        output = DocumentFile.objects.create(
+            file_name="power-of-attorney-LO000008L4.pdf",
+            file_extension=".pdf",
+            mime_type="application/pdf",
+            file_size_bytes=stored.file_size_bytes,
+            storage_provider=stored.storage_provider,
+            storage_key=stored.storage_key,
+            checksum_sha256=stored.checksum_sha256,
+            uploaded_by_user=actor,
+            sensitivity_level="confidential",
+        )
+        template = DocumentTemplate.objects.create(
+            template_code="portal-e2e-power-of-attorney-v1",
+            template_name="Portal E2E Power of Attorney",
+            document_type="power_of_attorney",
+            borrower_type="individual_farmer",
+            template_version="1.0",
+            merge_fields_json=[],
+            approval_status="approved",
+            effective_from=timezone.localdate(),
+        )
+        return LoanDocument.objects.create(
+            loan_application=application,
+            document_type="power_of_attorney",
+            document_category="legal",
+            party_required="borrower",
+            document_template=template,
+            document=output,
+            output_format="pdf",
+            generation_status="generated",
+            execution_status="pending",
+            verification_status="pending",
             renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
             renderer_validated_document_id=output.pk,
             renderer_validated_checksum_sha256=hashlib.sha256(body).hexdigest(),

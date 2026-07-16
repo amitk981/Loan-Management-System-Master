@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-16 - 2026-07-16_091335_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M3-documentation-workspace-executable-action-closure.
+- Summary: Preserved the quarantined implementation and repaired only the demonstrated trusted-
+  browser fixture/spec mismatch. The shared fixture intentionally completed the Term Sheet and
+  retained all signatures, so its missing signature buttons were correct. A pending source-correct
+  PoA fixture now supplies the borrower/nominee signature, stamp, notary, upload, correction, and
+  multi-action Document Pack path used by the browser contract.
+- Tests run: focused seed HTTP RED/GREEN; 39 affected backend tests; 16 focused frontend tests;
+  Playwright collection; frontend build/typecheck/lint and all 321 tests; Django check/migration
+  drift; all 944 backend tests with 51 expected skips at 91% coverage. Local Chromium remained
+  sandbox-denied before page creation.
+- Evidence: `.ralph/runs/2026-07-16_091335_repair/evidence/`. Next: independent twice-run browser
+  acceptance and four genuine screenshots, then run sharpened 008M4.
+
 ## 2026-07-16 - 2026-07-16_062256_repair
 
 - Agent tool used: codex with the diagnosing-bugs skill.
@@ -7700,6 +7716,50 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_072819_architecture_review/.ralph/runs/2026-07-16_072819_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_072819_architecture_review/.ralph/runs/2026-07-16_072819_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_080903_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow and backend/frontend TDD.
+- Slice repaired/completed: 008M3-documentation-workspace-executable-action-closure.
+- Summary: Replaced shallow action projection with owner-backed current decisions, HMAC-bound opaque
+  action identities, server-side command reconstruction, and executable upload/correction,
+  required-party signature, stamp/notary, S35, generation, bank, security, mismatch, verification,
+  and completion actions. Rendered every sibling mutation in both staff workspace surfaces.
+- Tests run: retained architecture-review RED probe; backend and frontend RED/GREEN regressions;
+  focused action/seed suites; Playwright collection; frontend build/typecheck/lint and all 321 tests;
+  Django check/migration drift and all 944 backend tests with 51 skips at 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_080903_repair/evidence/`.
+- Result: Complete pending independent orchestrator validation and twice-run trusted-browser gate;
+  local Chromium was sandbox-blocked before page creation and no screenshots were fabricated.
+- Risk level: High; regulated document workflow authority, opaque capability binding, uploads,
+  signatures, approvals, audit/workflow evidence, and cross-object nondisclosure.
+- Next action: Run sharpened 008M4, then 009B2.
+
+## 2026-07-16 - 2026-07-16_093846_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow.
+- Slice repaired: 008M3-documentation-workspace-executable-action-closure.
+- Summary: Diagnosed the independent real-Django browser failure as one stale undeclared
+  `termSheet` locator left after the action scenario moved to the pending Power of Attorney row.
+  Reused the declared lazy Power of Attorney locator; no production or fixture behavior changed.
+- Tests run: authoritative preceding browser RED; exact focused TypeScript RED/GREEN; Playwright
+  collection; frontend build/typecheck/lint and all 321 tests; Django check/migration drift and all
+  944 backend tests with 51 expected skips at 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_093846_repair/evidence/`.
+- Result: Repair complete pending independent twice-run trusted-browser validation; local Chromium
+  was sandbox-blocked before page creation and no screenshots were fabricated.
+- Risk level: Parent slice High; repair delta Low and limited to one trusted-browser locator.
+- Next action: Independently run the browser contract twice, then run sharpened 008M4 and 009B2.
+
+## 2026-07-16 10:03:58 - 2026-07-16_093846_repair
+- Agent tool used: codex
+- Slice attempted: 008M3-documentation-workspace-executable-action-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_080903_repair/.ralph/runs/2026-07-16_093846_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_080903_repair/.ralph/runs/2026-07-16_093846_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

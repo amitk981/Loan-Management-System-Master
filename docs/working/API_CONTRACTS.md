@@ -3691,6 +3691,8 @@ retained ids and fails closed when they are no longer the current terminal cycle
 
 - `GET /api/v1/documentation-workspaces/` returns the strictly paginated S26 queue; `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/` returns one locked, redacted S26-S35 snapshot whose executable owner-authorized actions use the shared §44 shape and whose timeline omits internal evidence identities.
 - `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/{item_code}/download/` issues an actor/application/item/current-renderer-bound capability; content re-resolves current truth, records the generic staff download audit, and returns `404` after replacement/tamper.
+- 008M3 replaces caller-controlled `fixed_payload` with `action_id` plus a stable unique `action_key`. Every mutation posts only its declared user fields to `POST /api/v1/loan-applications/{loan_application_id}/documentation-workspace/actions/{action_id}/`; the server re-resolves the locked actor/application/snapshot and all canonical object identities before calling the existing legal, checklist, security, bank, document-upload, or workflow owner.
+- The command boundary accepts JSON for ordinary actions and multipart `file` plus `remarks` for signed-copy upload/re-upload. Unknown, stale, tampered, cross-user, cross-application, or no-longer-advertised action identities return nondisclosing `404` with zero writes; field validation returns `400`, owner conflicts return `409`, success returns the owner's §6.3 action data, and the client refetches the workspace once.
 
 ## Member portal documentation actions (008L)
 

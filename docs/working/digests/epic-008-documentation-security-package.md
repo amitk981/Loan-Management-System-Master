@@ -27,6 +27,19 @@ Sources:
   008M4 restores page-bounded selectors, governed identity, deep legal/security owners, shared
   frontend transport, and the fixed prototype composition without changing 008M3 behavior.
 
+## 008M3 Executable Workspace Action Closure (2026-07-16)
+
+The S26-S35 workspace now issues actor/application/current-snapshot-bound opaque commands instead
+of caller-controlled canonical ids. Checklist completion is projected only after the checklist
+owner re-evaluates the exact current renderer, signatures, stamp/notary, bank, security, sanction,
+and durable completion facts; stale/tampered/cross-scope commands are nondisclosing and zero-write.
+Signed-copy upload/re-upload, item correction, S35 return/condition, every required party signature,
+stamp, notary, generation, verification, security creation, bank verification, and ordered approval
+use the same generic command boundary while retaining their existing owner modules and ledgers.
+Checklist and Document Pack render every stable sibling action beside independent Download, support
+multipart uploads, retain rejected actions without optimism, and refetch exactly once after success.
+008M4 still owns the already-recorded deep selector/coordinator/shared-transport/fixed-layout cleanup.
+
 ## 008L5 Current Stage-4 and Response Evidence Closure (2026-07-16)
 
 Application status no longer substitutes for approval-owned terminal sanction truth. Bank decision

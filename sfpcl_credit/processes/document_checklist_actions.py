@@ -13,6 +13,12 @@ def complete_item(**kwargs):
     )
 
 
+def item_completion_decision(**kwargs):
+    return checklist_actions.item_completion_decision(
+        terminal_security_evidence=_terminal_security_evidence, **kwargs
+    )
+
+
 def borrower_safe_completed_item_ids(checklist):
     return checklist_actions.borrower_safe_completed_item_ids(
         checklist, terminal_security_evidence=_terminal_security_evidence

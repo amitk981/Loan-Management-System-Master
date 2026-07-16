@@ -2,31 +2,41 @@
 
 ## Last Run
 
-2026-07-16_072819_architecture_review
+2026-07-16_093846_repair
 
 ## Current Status
 
-The due independent review of 008L5, 008M2, 009A, and 009B is complete from fixed point `ad590fb7`.
-008L5's terminal bank and deficiency-chain corrections are substantive. 008M2 and 009A/B also add
-substantial real behavior, but executable probes reproduced three remaining contract defects: an
-enabled workspace completion receives 409 from its owner, a SAP request becomes `sent` without an
-assignee-reachable Excel, and a changed reuse-completion payload receives replay 200.
+Corrective slice 008M3 is complete. This bounded repair fixed the independent trusted-browser spec's
+stale `termSheet` locator: after the scenario was moved to the pending Power of Attorney fixture,
+the restricted-state assertion still referenced the removed locator and crashed with a JavaScript
+`ReferenceError` after two screenshots. It now reuses the declared lazy Power of Attorney row
+locator. No production, fixture, workflow, authority, API, or visual behavior changed.
 
-Corrective slices 008M3 (complete/executable actions), 008M4 (deep owner/query/shared-client/fixed-
-layout seams), and 009B2 (SAP delivery/exact replay/audit/source owner) are queued in dependency
-order. No production code changed during the review.
+The staff documentation workspace continues to project only actions
+that their owner decision would permit from the same current locked facts. The public action
+boundary accepts an HMAC-bound opaque action identity plus source-required user input, reconstructs
+the current private command server-side, and returns nondisclosing 404 with zero writes for stale,
+tampered, cross-user, and cross-application identities.
+
+Every projected mutation is rendered in the checklist and Document Pack. Required-party signature,
+stamp/notary, upload/re-upload, correction/return, ordered S35 approval/condition/return, generation,
+bank, security, mismatch, verification, and completion actions dispatch through existing owners.
+Success refetches once; rejected actions remain non-optimistic and visible.
 
 ## Validation
 
-Review evidence is in `.ralph/runs/2026-07-16_072819_architecture_review/evidence/terminal-logs/`.
-The three focused review probes pass while preserving the reproduced observations. Standards and
-Spec reports are consolidated newest-first in `REVIEW_FINDINGS.md`; full configured validation is
-recorded in the run folder.
+Repair evidence is in `.ralph/runs/2026-07-16_093846_repair/evidence/`. The exact undeclared-locator
+TypeScript regression is green and Playwright collects the real-Django spec. Frontend validation
+passed 321 tests, typecheck, lint, and build. Backend validation passed 944 tests with 51 expected
+skips at 91% coverage, plus check and migration drift. Local Chromium was denied macOS bootstrap
+services before page creation, so no screenshots were fabricated; the independent twice-run browser
+gate must produce the four declared PNGs and is the remaining authoritative acceptance step.
 
 ## Important Continuation Notes
 
-- 008M3 must start from the retained review probe and make owner action decisions executable before
-  008M4 performs structural/design cleanup; do not merge these contracts into one diff-limit repair.
+- 008M4 is sharpened to move the broad workspace dispatch/private-command construction behind deep
+  owner decision/execute pairs without changing 008M3's opaque-ID, multipart, sibling-order, or
+  rejected-action behavior.
 - 009B2 retains A-124's conservative same-member reuse rule while adding exact payload replay. It
   must not invent outstanding-loan state or call real email/SAP services.
 - 009C now depends on 009B2 and is owned by `loans.modules.loan_account_lifecycle`; A-121 still
@@ -36,5 +46,5 @@ recorded in the run folder.
 
 ## Next Run
 
-Run 008M3, then 008M4, then 009B2. Continue with sharpened 009C and 009D only after those corrective
-dependencies complete.
+Run 008M4, then 009B2. Continue with sharpened 009C and 009D only after those corrective dependencies
+complete.

@@ -3,16 +3,17 @@ import { API_BASE_URL, AuthSessionError, loadStoredAuthSession } from './authSes
 
 export interface DocumentationActionField {
   name: string; label: string;
-  type: 'text' | 'textarea' | 'select' | 'date' | 'datetime-local';
+  type: 'text' | 'textarea' | 'select' | 'date' | 'datetime-local' | 'file';
   required: boolean; options?: string[];
 }
 
 export interface DocumentationAction {
   action_code: string; label: string; enabled: boolean;
   disabled_reason: string | null; required_permission: string; required_role?: string;
+  action_id: string; action_key: string;
   action_url: string;
   method: 'POST' | 'PATCH';
-  fixed_payload?: Record<string, unknown>; fields?: DocumentationActionField[];
+  fields?: DocumentationActionField[];
   template_version?: string;
 }
 
@@ -106,10 +107,16 @@ export async function fetchDocumentationWorkspace(applicationId: string): Promis
   };
 }
 
-export function submitDocumentationAction(action: DocumentationAction, payload: Record<string, unknown>) {
-  return request<Record<string, unknown>>(action.action_url, action.method, {
-    ...action.fixed_payload, ...payload,
-  });
+export function submitDocumentationAction(
+  action: DocumentationAction,
+  payload: Record<string, string | File>,
+) {
+  if (Object.values(payload).some(value => value instanceof File)) {
+    const body = new FormData();
+    Object.entries(payload).forEach(([name, value]) => body.append(name, value));
+    return request<Record<string, unknown>>(action.action_url, action.method, body);
+  }
+  return request<Record<string, unknown>>(action.action_url, action.method, payload);
 }
 
 export async function downloadStaffDocument(download: DocumentationDownload) {
@@ -145,13 +152,14 @@ async function requestEnvelope<T>(path: string, method = 'GET', body?: unknown) 
   if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
+    // The browser owns multipart boundaries; JSON actions retain the standard envelope.
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${session.accessToken}`,
       'X-Request-ID': crypto.randomUUID(),
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(body && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
     },
-    ...(body ? { body: JSON.stringify(body) } : {}),
+    ...(body ? { body: body instanceof FormData ? body : JSON.stringify(body) } : {}),
   });
   const envelope = await response.json() as Envelope<T>;
   if (!response.ok || !envelope.success || envelope.data === undefined) {

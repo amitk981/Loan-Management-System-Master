@@ -9,6 +9,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import close_old_connections, connection, connections, transaction
 from django.test import TestCase
 from django.test import TransactionTestCase, override_settings
@@ -63,6 +64,13 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 
 class FinalDocumentationApprovalApiTests(TestCase):
     def setUp(self):
+        self.storage_directory = tempfile.TemporaryDirectory(prefix="sfpcl-final-doc-tests-")
+        self.addCleanup(self.storage_directory.cleanup)
+        storage_override = override_settings(
+            DOCUMENT_STORAGE_ROOT=self.storage_directory.name
+        )
+        storage_override.enable()
+        self.addCleanup(storage_override.disable)
         self.fixture = checklist_fixture.DocumentChecklistApiTests(
             methodName="test_approved_sanction_creates_ordered_applicability_once_with_evidence"
         )
@@ -315,20 +323,64 @@ class FinalDocumentationApprovalApiTests(TestCase):
             self.assertNotIn(forbidden, serialized)
 
     def test_staff_workspace_advances_only_to_the_exact_role_turn(self):
-        self._complete_all_applicable_items(); approved = self._post_stage("approve-as-company-secretary", self.cs, {"comments": "All documents verified and attached."})
+        self._complete_all_applicable_items()
+        cs_action = next(
+            action for action in self._workspace(self.cs).json()["data"]["available_actions"]
+            if action["action_code"] == "approve_as_company_secretary"
+        )
+        approved = self.client.post(
+            cs_action["action_url"],
+            {"comments": "All documents verified and attached."},
+            content_type="application/json",
+            **self.fixture._auth(self.cs),
+        )
         self.assertEqual(approved.status_code, 200, approved.json())
         cs_view, credit_view = self._workspace(self.cs), self._workspace(self.credit)
         self.assertEqual((cs_view.status_code, cs_view.json()["data"]["available_actions"], credit_view.json()["data"]["available_actions"][0]["action_code"]), (200, [], "approve_as_credit_manager"))
 
     def test_staff_workspace_projects_generation_verification_and_security_actions(self):
         self._grant(self.compliance, "documents.checklist.read", "documents.loan_document.generate", "documents.template.file_reference", "documents.loan_document.verify", "documents.signature.record", "documents.stamp.record", "documents.notary.record", "security.poa.manage", "security.sh4.manage", "security.cdsl_pledge.manage", "security.blank_cheque.manage")
-        term_sheet = self._current_document("term_sheet"); template = term_sheet.document_template; term_sheet.delete()
+        term_sheet = self._current_document("term_sheet"); template = term_sheet.document_template
+        stored = document_generation.LocalDocumentStorage().store(
+            ContentFile(
+                generation_fixture.LoanDocumentGenerationApiTests._genuine_docx_fixture([]),
+                name="workspace-term-sheet.docx",
+            )
+        )
+        source = DocumentFile.objects.create(
+            file_name="workspace-term-sheet.docx", file_extension=".docx",
+            mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            file_size_bytes=stored.file_size_bytes, storage_provider=stored.storage_provider,
+            storage_key=stored.storage_key, checksum_sha256=stored.checksum_sha256,
+            uploaded_by_user=self.compliance, sensitivity_level="internal",
+        )
+        AuditLog.objects.create(
+            actor_user=self.compliance, actor_type="user", action="documents.file.uploaded",
+            entity_type="document_file", entity_id=source.pk,
+            new_value_json={
+                "document_id": str(source.pk), "file_name": source.file_name,
+                "file_extension": source.file_extension, "mime_type": source.mime_type,
+                "file_size_bytes": source.file_size_bytes, "storage_provider": source.storage_provider,
+                "storage_key": source.storage_key, "checksum_sha256": source.checksum_sha256,
+                "sensitivity_level": source.sensitivity_level, "document_category": "template_source",
+                "related_entity_type": "global", "related_entity_id": None,
+            },
+        )
+        template.template_file = source; template.save(update_fields=["template_file"]); term_sheet.delete()
         generation_view = self._workspace(self.compliance); generation_item = next(item for item in generation_view.json()["data"]["items"] if item["item_code"] == "term_sheet"); generation = generation_item["available_actions"][0]
-        self.assertEqual((generation["action_code"], generation["fixed_payload"]["document_type"], generation["fixed_payload"]["template_id"], generation["fields"][0]["options"]), ("generate_document", "term_sheet", str(template.pk), ["pdf", "docx"]))
+        self.assertEqual(
+            (
+                generation["action_code"],
+                generation["template_version"],
+                generation["fields"][0]["options"],
+            ),
+            ("generate_document", template.template_version, ["pdf", "docx"]),
+        )
+        self.assertNotIn("fixed_payload", generation)
         current = self._current_document("loan_agreement"); current.verification_status = LoanDocument.VERIFICATION_PENDING; current.verified_by_user = None; current.verified_at = None
         current.save(update_fields=["verification_status", "verified_by_user", "verified_at"])
         SecurityPackage.objects.create(loan_application=self.application, physical_share_security_required_flag=True, demat_pledge_required_flag=False, poa_required_flag=True, blank_cheque_required_flag=True, cancelled_cheque_required_flag=True)
-        data = self._workspace(self.compliance).json()["data"]; agreement = next(item for item in data["items"] if item["item_code"] == "loan_agreement"); self.assertEqual({action["action_code"] for action in agreement["available_actions"]}, {"complete_item", "record_signature", "record_stamp", "record_notarisation"})
+        data = self._workspace(self.compliance).json()["data"]; agreement = next(item for item in data["items"] if item["item_code"] == "loan_agreement"); self.assertEqual({action["action_code"] for action in agreement["available_actions"]}, {"record_borrower_signature", "record_witness_signature", "record_stamp", "record_notarisation", "request_correction"})
         self.assertTrue(all(not workflow["available_actions"] for workflow in data["security_workflows"].values()), "Create actions stay hidden until every server-selected prerequisite exists.")
 
     def test_staff_workspace_denies_unscoped_reader_without_security_disclosure(self):
@@ -370,6 +422,213 @@ class FinalDocumentationApprovalApiTests(TestCase):
             {action["action_code"] for action in actions},
             "Compliance has the permission string but the verification owner requires CS.",
         )
+
+    def test_staff_workspace_does_not_advertise_owner_rejected_completion(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.signature.record",
+            "documents.stamp.record",
+            "documents.notary.record",
+        )
+        document = self._current_document("loan_agreement")
+        document.verification_status = LoanDocument.VERIFICATION_PENDING
+        document.verified_by_user = None
+        document.verified_at = None
+        document.save(
+            update_fields=["verification_status", "verified_by_user", "verified_at"]
+        )
+
+        item = next(
+            row
+            for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "loan_agreement"
+        )
+
+        self.assertNotIn(
+            "complete_item",
+            {action["action_code"] for action in item["available_actions"]},
+        )
+        self.assertGreaterEqual(len(item["available_actions"]), 3)
+        self.assertEqual(
+            len({action["action_key"] for action in item["available_actions"]}),
+            len(item["available_actions"]),
+        )
+        for action in item["available_actions"]:
+            self.assertIn("action_id", action)
+            self.assertNotIn("fixed_payload", action)
+            self.assertNotIn(str(document.pk), str(action))
+            self.assertRegex(
+                action["action_url"],
+                rf"^/api/v1/loan-applications/{self.application.pk}/documentation-workspace/actions/",
+            )
+        borrower_signature = next(
+            action for action in item["available_actions"]
+            if action["action_code"] == "record_borrower_signature"
+        )
+        recorded = self.client.post(
+            borrower_signature["action_url"],
+            {
+                "signature_method": "wet_ink",
+                "signature_status": "signed",
+                "signed_at": timezone.now().isoformat(),
+            },
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(recorded.status_code, 200, recorded.content)
+
+    def test_staff_workspace_opaque_completion_executes_and_stale_identity_is_zero_write(self):
+        self._grant(self.compliance, "documents.checklist.read")
+        self._current_document("document_checklist")
+        workspace = self._workspace(self.compliance).json()["data"]
+        item = next(row for row in workspace["items"] if row["item_code"] == "final_checklist")
+        action = next(row for row in item["available_actions"] if row["action_code"] == "complete_item")
+        before = self._evidence_counts()
+
+        token_tail = action["action_url"][-2]
+        tampered = action["action_url"][:-2] + ("a" if token_tail != "a" else "b") + "/"
+        denied = self.client.post(
+            tampered,
+            {"remarks": "Tampered command must not write."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(denied.status_code, 404, denied.content)
+        self.assertEqual(self._evidence_counts(), before)
+
+        other_compliance = self.fixture._user(
+            "compliance_team_member", "Other Documentation Compliance"
+        )
+        self._grant(
+            other_compliance, "documents.checklist.read", "documents.checklist.update"
+        )
+        cross_user = self.client.post(
+            action["action_url"],
+            {"remarks": "Cross-user command must not write."},
+            content_type="application/json",
+            **self.fixture._auth(other_compliance),
+        )
+        cross_application = self.client.post(
+            action["action_url"].replace(str(self.application.pk), str(uuid4())),
+            {"remarks": "Cross-application command must not write."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual((cross_user.status_code, cross_application.status_code), (404, 404))
+        self.assertEqual(self._evidence_counts(), before)
+
+        accepted = self.client.post(
+            action["action_url"],
+            {"remarks": "Current checklist file verified."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008m3-opaque-complete",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        self.assertEqual(accepted.json()["data"]["new_status"], "complete")
+
+        replay = self.client.post(
+            action["action_url"],
+            {"remarks": "Current checklist file verified."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(replay.status_code, 404, replay.content)
+
+    def test_staff_workspace_upload_and_correction_actions_are_reachable(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.file.upload",
+        )
+        self._current_document("term_sheet")
+        item = next(
+            row
+            for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        actions = {row["action_code"]: row for row in item["available_actions"]}
+        self.assertTrue({"upload_signed_copy", "request_correction"} <= set(actions))
+
+        upload = self.client.post(
+            actions["upload_signed_copy"]["action_url"],
+            {
+                "file": SimpleUploadedFile(
+                    "signed-term-sheet.pdf", b"signed staff evidence", "application/pdf"
+                ),
+                "remarks": "Borrower signed copy received.",
+            },
+            HTTP_X_REQUEST_ID="008m3-staff-upload",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(upload.status_code, 200, upload.content)
+        self.assertEqual(upload.json()["data"]["action_code"], "upload_signed_copy")
+        uploaded_id = upload.json()["data"]["document_id"]
+        self.assertTrue(DocumentFile.objects.filter(pk=uploaded_id).exists())
+
+        refreshed = next(
+            row
+            for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        correction = next(
+            row for row in refreshed["available_actions"]
+            if row["action_code"] == "request_correction"
+        )
+        returned = self.client.post(
+            correction["action_url"],
+            {"remarks": "Nominee signature is missing."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008m3-correction",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(returned.status_code, 200, returned.content)
+        self.assertEqual(returned.json()["data"]["new_status"], "correction_requested")
+        self.assertTrue(
+            WorkflowEvent.objects.filter(
+                workflow_name="staff_documentation_action",
+                entity_id=self.application.pk,
+                to_state="correction_requested",
+            ).exists()
+        )
+
+    def test_staff_workspace_executes_every_loan_agreement_sibling_mutation(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.signature.record",
+            "documents.stamp.record",
+            "documents.notary.record",
+        )
+        self._current_document("loan_agreement")
+        payloads = {
+            "record_borrower_signature": {
+                "signature_method": "wet_ink", "signature_status": "signed",
+                "signed_at": timezone.now().isoformat(),
+            },
+            "record_witness_signature": {
+                "signature_method": "wet_ink", "signature_status": "signed",
+                "signed_at": timezone.now().isoformat(),
+            },
+            "record_stamp": {
+                "stamp_paper_amount": "500.00", "stamp_type": "physical",
+                "status": "pending", "remarks": "Prepared for CS verification.",
+            },
+            "record_notarisation": {"status": "pending"},
+            "request_correction": {"remarks": "Retain a corrected executed copy."},
+        }
+        for code, payload in payloads.items():
+            item = next(
+                row for row in self._workspace(self.compliance).json()["data"]["items"]
+                if row["item_code"] == "loan_agreement"
+            )
+            action = next(row for row in item["available_actions"] if row["action_code"] == code)
+            response = self.client.post(
+                action["action_url"], payload, content_type="application/json",
+                **self.fixture._auth(self.compliance),
+            )
+            self.assertEqual(response.status_code, 200, (code, response.content))
 
     def test_staff_workspace_projects_s26_queue_and_redacted_s35_timeline(self):
         self._complete_all_applicable_items()
