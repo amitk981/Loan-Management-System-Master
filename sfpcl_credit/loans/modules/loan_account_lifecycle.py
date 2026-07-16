@@ -10,7 +10,11 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.applications.modules.application_authority import (
     evaluate_application_object_access,
 )
-from sfpcl_credit.approvals.models import ApprovalCase, SanctionDecision
+from sfpcl_credit.approvals.models import (
+    ApprovalCase,
+    ApprovalCaseReadScopeGrant,
+    SanctionDecision,
+)
 from sfpcl_credit.domain_errors import (
     DomainInvalidStateError,
     DomainObjectAccessDenied,
@@ -32,6 +36,17 @@ from sfpcl_credit.workflows.events import record_workflow_event
 
 CREATE_PERMISSION = "finance.loan_account.create"
 CREATED_ACTION = "finance.loan_account.created"
+_CREDIT_MONITORING_STATUSES = {
+    "sanctioned",
+    "ready_for_disbursement",
+    "disbursement_in_progress",
+    "active",
+    "partially_repaid",
+    "overdue",
+    "grace_period",
+    "extended",
+    "non_recoverable_under_review",
+}
 
 
 class LoanAccountConflict(Exception):
@@ -64,8 +79,15 @@ def resolve_readiness_account(*, actor, loan_account_id):
     actor = _locked_actor(actor)
     permissions = set(auth_service.effective_permission_codes(actor))
     permission = "finance.disbursement.readiness"
+    readiness_roles = {
+        "senior_manager_finance",
+        "chief_financial_controller",
+        "credit_manager",
+        "cfo",
+        "internal_auditor",
+    }
     if permission not in permissions or not set(actor.role_codes()).intersection(
-        {"senior_manager_finance", "chief_financial_controller"}
+        readiness_roles
     ):
         raise DomainPermissionDenied("Disbursement readiness permission is required.")
     account = (
@@ -88,10 +110,25 @@ def resolve_readiness_account(*, actor, loan_account_id):
             member_id=account.member_id,
             actor_id=actor.pk,
         )
-    else:
+    elif "chief_financial_controller" in roles:
         # A CFC obtains loan scope from the canonical initiated-disbursement
         # relation owned by 009E. No such relation exists in this slice.
         scoped = False
+    elif "credit_manager" in roles:
+        # Credit owns the loan/monitoring domain, but an archived loan is no
+        # longer part of its operational queue.
+        scoped = account.loan_account_status in _CREDIT_MONITORING_STATUSES
+    elif "cfo" in roles:
+        # CFO has the source-defined portfolio detail scope.
+        scoped = True
+    else:
+        # Auditor scope is an explicit persisted read-only grant, not a role or
+        # application-assignment shortcut.
+        scoped = ApprovalCaseReadScopeGrant.objects.filter(
+            role=actor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+            status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+        ).exists()
     if not scoped:
         raise DomainObjectAccessDenied(None)
     if (

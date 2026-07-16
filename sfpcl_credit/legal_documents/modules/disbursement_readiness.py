@@ -6,6 +6,7 @@ from sfpcl_credit.legal_documents.models import (
     DocumentChecklist,
 )
 from sfpcl_credit.legal_documents.modules import checklist_actions
+from sfpcl_credit.legal_documents.modules import documentation_actions
 from sfpcl_credit.legal_documents.modules import signatures
 from sfpcl_credit.legal_documents.selectors import (
     current_loan_term_document_for_update,
@@ -21,6 +22,7 @@ class LegalReadinessFacts:
     term_sheet_complete: bool
     loan_agreement_complete: bool
     signature_mismatch_resolved: bool
+    completed_item_codes: frozenset[str]
 
 
 def resolve_legal_readiness(*, application_id, terminal_security_evidence=None):
@@ -61,21 +63,32 @@ def resolve_legal_readiness(*, application_id, terminal_security_evidence=None):
     signature_resolved = signatures.all_current_signatures_resolved(
         application_id=application_id
     )
-    approvals = checklist_actions.approval_readiness(checklist)
+    owner_actions_current = bool(
+        checklist and not documentation_actions.has_open_blocker(checklist)
+    )
+    approvals = checklist_actions.approval_readiness(
+        checklist,
+        terminal_security_evidence=terminal_security_evidence,
+        completed_item_ids=completed_ids,
+    )
+    completed_codes = frozenset(
+        item.item_code for item in items if item.pk in completed_ids
+    )
     return LegalReadinessFacts(
-        documentation_complete=terminal and item_truth,
-        company_secretary_approval=approvals[
+        documentation_complete=terminal and item_truth and owner_actions_current,
+        company_secretary_approval=owner_actions_current and approvals[
             ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL
         ],
-        credit_manager_approval=approvals[
+        credit_manager_approval=owner_actions_current and approvals[
             ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL
         ],
-        sanction_committee_approval=approvals[
+        sanction_committee_approval=owner_actions_current and approvals[
             ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL
         ],
         term_sheet_complete=term_sheet is not None,
         loan_agreement_complete=loan_agreement is not None,
         signature_mismatch_resolved=signature_resolved,
+        completed_item_codes=completed_codes,
     )
 
 

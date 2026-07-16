@@ -10,11 +10,11 @@ from sfpcl_credit.applications.modules.document_checklist_facts import (
 from sfpcl_credit.approvals.modules.disbursement_readiness import (
     resolve_approval_readiness,
 )
+from sfpcl_credit.legal_documents.modules.disbursement_readiness import (
+    resolve_legal_readiness,
+)
 from sfpcl_credit.configurations.modules.configuration_resolver import (
     resolve_source_bank_account,
-)
-from sfpcl_credit.processes.document_checklist_actions import (
-    resolve_disbursement_readiness as resolve_legal_readiness,
 )
 from sfpcl_credit.loans.modules.loan_account_lifecycle import (
     resolve_readiness_account,
@@ -22,8 +22,11 @@ from sfpcl_credit.loans.modules.loan_account_lifecycle import (
 from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
     get_customer_code_for_member as resolve_sap_code,
 )
-from sfpcl_credit.processes.document_checklist_actions import (
-    resolve_security_disbursement_readiness as resolve_security_readiness,
+from sfpcl_credit.processes.security_instrument_evidence import (
+    terminal_checklist_evidence,
+)
+from sfpcl_credit.security_instruments.modules.disbursement_readiness import (
+    resolve_security_readiness,
 )
 
 
@@ -75,8 +78,15 @@ def evaluate(*, actor, loan_account_id):
             application_id=account.loan_application_id,
             sanction_decision_id=account.sanction_decision_id,
         )
-        legal = resolve_legal_readiness(application_id=account.loan_application_id)
-        security = resolve_security_readiness(application_id=account.loan_application_id)
+        legal = resolve_legal_readiness(
+            application_id=account.loan_application_id,
+            terminal_security_evidence=terminal_checklist_evidence,
+        )
+        completed_codes = legal.completed_item_codes
+        security = resolve_security_readiness(
+            application_id=account.loan_application_id,
+            terminal_item_completed=completed_codes.__contains__,
+        )
         bank = resolve_blank_cheque_bank_fact(
             application_id=account.loan_application_id
         )

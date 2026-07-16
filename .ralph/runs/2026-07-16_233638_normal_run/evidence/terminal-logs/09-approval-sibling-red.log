@@ -1,0 +1,41 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFF
+======================================================================
+FAIL: test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers) (relation='audit_log')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 2979, in test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers
+    self.assertFalse(readiness.company_secretary_approval)
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers) (relation='workflow_event')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 2979, in test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers
+    self.assertFalse(readiness.company_secretary_approval)
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers) (relation='version_history')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 2979, in test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers
+    self.assertFalse(readiness.company_secretary_approval)
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 2984, in test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers
+    self.assertFalse(security.poa_complete)
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.560s
+
+FAILED (failures=4)
+Destroying test database for alias 'default'...

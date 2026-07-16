@@ -36,6 +36,7 @@ from sfpcl_credit.legal_documents.modules import checklist_actions
 from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.legal_documents.modules import documentation_actions
 from sfpcl_credit.processes import document_checklist_actions as checklist_action_process
+from sfpcl_credit.processes import security_instrument_evidence
 from sfpcl_credit.processes import staff_documentation_workspace
 from sfpcl_credit.applications.modules import bank_verification
 from sfpcl_credit.applications.modules import document_checklist_facts
@@ -2487,7 +2488,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
             checklist_actions.borrower_safe_completed_item_ids(
                 self.checklist,
                 terminal_security_evidence=(
-                    checklist_action_process._terminal_security_evidence
+                    security_instrument_evidence.terminal_checklist_evidence
                 ),
             ),
         )
@@ -2815,24 +2816,17 @@ class FinalDocumentationApprovalApiTests(TestCase):
         completed = checklist_actions.borrower_safe_completed_item_ids(
             self.checklist,
             terminal_security_evidence=(
-                checklist_action_process._terminal_security_evidence
+                security_instrument_evidence.terminal_checklist_evidence
             ),
         )
 
         self.assertNotIn(item.pk, completed)
 
     def test_disbursement_readiness_reconciles_real_owner_evidence(self):
-        from sfpcl_credit.processes.document_checklist_actions import (
-            resolve_disbursement_readiness,
-            resolve_security_disbursement_readiness,
-        )
-
         self._complete_readiness_documentation()
 
-        legal = resolve_disbursement_readiness(application_id=self.application.pk)
-        security = resolve_security_disbursement_readiness(
-            application_id=self.application.pk
-        )
+        legal = self._legal_readiness()
+        security = self._security_readiness()
         self.assertTrue(legal.documentation_complete)
         self.assertTrue(legal.company_secretary_approval)
         self.assertTrue(legal.credit_manager_approval)
@@ -2845,10 +2839,6 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertTrue(security.blank_dated_cheque_received)
 
     def test_disbursement_readiness_rejects_wrong_signer_and_rolled_back_chain(self):
-        from sfpcl_credit.processes.document_checklist_actions import (
-            resolve_disbursement_readiness,
-        )
-
         self._complete_readiness_documentation()
         poa = self.checklist.items.get(item_code="poa").loan_document
         SignatureRecord.objects.create(
@@ -2862,9 +2852,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
             signed_at=timezone.now(),
             captured_by_user=self.compliance,
         )
-        self.assertFalse(resolve_disbursement_readiness(
-            application_id=self.application.pk
-        ).signature_mismatch_resolved)
+        self.assertFalse(self._legal_readiness().signature_mismatch_resolved)
         SignatureRecord.objects.filter(
             loan_document=poa, signer_party_type="witness"
         ).delete()
@@ -2884,27 +2872,50 @@ class FinalDocumentationApprovalApiTests(TestCase):
             signed_at=timezone.now(),
             captured_by_user=self.compliance,
         )
-        self.assertFalse(resolve_disbursement_readiness(
-            application_id=self.application.pk
-        ).signature_mismatch_resolved)
+        self.assertFalse(self._legal_readiness().signature_mismatch_resolved)
         SignatureRecord.objects.filter(
             loan_document=term_sheet, signer_party_id=unrelated_director.pk
         ).delete()
 
+        self._user_signature(term_sheet, self.director)
+        self.assertFalse(self._legal_readiness().signature_mismatch_resolved)
+        SignatureRecord.objects.filter(
+            loan_document=term_sheet, signer_party_id=self.director.pk
+        ).delete()
+
+        frozen_review = self.case.appraisal_facts_json
+        ApprovalCase.objects.filter(pk=self.case.pk).update(appraisal_facts_json={})
+        self.assertFalse(self._legal_readiness().signature_mismatch_resolved)
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            appraisal_facts_json=frozen_review
+        )
+
         DocumentChecklist.objects.filter(pk=self.checklist.pk).update(
             checklist_status=DocumentChecklist.STATUS_IN_PROGRESS
         )
-        readiness = resolve_disbursement_readiness(application_id=self.application.pk)
+        readiness = self._legal_readiness()
+        self.assertFalse(readiness.company_secretary_approval)
+        self.assertFalse(readiness.credit_manager_approval)
+        self.assertFalse(readiness.sanction_committee_approval)
+
+    def test_disbursement_readiness_requires_nonempty_exact_current_signer_set(self):
+        self._complete_readiness_documentation()
+        poa = self.checklist.items.get(item_code="poa").loan_document
+        SignatureRecord.objects.filter(
+            loan_document=poa,
+            signer_party_type="borrower",
+            signer_party_id=self.application.member_id,
+        ).delete()
+
+        readiness = self._legal_readiness()
+
+        self.assertFalse(readiness.signature_mismatch_resolved)
+        self.assertFalse(readiness.documentation_complete)
         self.assertFalse(readiness.company_secretary_approval)
         self.assertFalse(readiness.credit_manager_approval)
         self.assertFalse(readiness.sanction_committee_approval)
 
     def test_disbursement_readiness_owner_evidence_mutations_fail_independently(self):
-        from sfpcl_credit.processes.document_checklist_actions import (
-            resolve_disbursement_readiness,
-            resolve_security_disbursement_readiness,
-        )
-
         self._complete_readiness_documentation()
         item = self.checklist.items.get(item_code="final_checklist")
         history = VersionHistory.objects.get(
@@ -2916,9 +2927,11 @@ class FinalDocumentationApprovalApiTests(TestCase):
         VersionHistory.objects.filter(pk=history.pk).update(
             new_value_json=changed_history
         )
-        self.assertFalse(resolve_disbursement_readiness(
-            application_id=self.application.pk
-        ).documentation_complete)
+        changed = self._legal_readiness()
+        self.assertFalse(changed.documentation_complete)
+        self.assertFalse(changed.company_secretary_approval)
+        self.assertFalse(changed.credit_manager_approval)
+        self.assertFalse(changed.sanction_committee_approval)
         VersionHistory.objects.filter(pk=history.pk).update(
             new_value_json=retained_history
         )
@@ -2931,9 +2944,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
         AuditLog.objects.filter(pk=cs_action.audit_log_id).update(
             new_value_json={"forged": True}
         )
-        self.assertFalse(resolve_disbursement_readiness(
-            application_id=self.application.pk
-        ).company_secretary_approval)
+        self.assertFalse(self._legal_readiness().company_secretary_approval)
         AuditLog.objects.filter(pk=cs_action.audit_log_id).update(
             new_value_json=retained_audit
         )
@@ -2949,9 +2960,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
             signature_mismatch_flag=True,
             captured_by_user=self.compliance,
         )
-        self.assertFalse(resolve_disbursement_readiness(
-            application_id=self.application.pk
-        ).signature_mismatch_resolved)
+        self.assertFalse(self._legal_readiness().signature_mismatch_resolved)
         mismatch.delete()
 
         poa = PowerOfAttorney.objects.get(
@@ -2963,15 +2972,35 @@ class FinalDocumentationApprovalApiTests(TestCase):
         PowerOfAttorney.objects.filter(pk=poa.pk).update(
             activation_evidence_json=activation
         )
-        security = resolve_security_disbursement_readiness(
-            application_id=self.application.pk
-        )
+        security = self._security_readiness()
         self.assertFalse(security.poa_complete)
         self.assertFalse(security.security_package_complete)
         activation["document_checksum_sha256"] = retained_checksum
         PowerOfAttorney.objects.filter(pk=poa.pk).update(
             activation_evidence_json=activation
         )
+
+    def test_disbursement_readiness_rejects_duplicate_approval_sibling_ledgers(self):
+        import copy
+
+        self._complete_readiness_documentation()
+        action = ChecklistAction.objects.get(
+            document_checklist=self.checklist,
+            action_type=ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL,
+        )
+        for relation in ("audit_log", "workflow_event", "version_history"):
+            with self.subTest(relation=relation):
+                duplicate = copy.copy(getattr(action, relation))
+                duplicate.pk = uuid4()
+                duplicate._state.adding = True
+                duplicate.save(force_insert=True)
+
+                readiness = self._legal_readiness()
+
+                self.assertFalse(readiness.company_secretary_approval)
+                self.assertFalse(readiness.credit_manager_approval)
+                self.assertFalse(readiness.sanction_committee_approval)
+                duplicate.delete()
 
     def test_disbursement_readiness_real_owners_reach_a126_then_all_pass(self):
         from types import SimpleNamespace
@@ -3060,10 +3089,16 @@ class FinalDocumentationApprovalApiTests(TestCase):
             dispute_resolution_text="Governed clause.",
         )
         auth = self.fixture._auth(self.finance)
-        blocked = self.client.get(
-            f"/api/v1/loan-accounts/{account.pk}/disbursement-readiness/", **auth
-        )
+        with CaptureQueriesContext(connection) as queries:
+            blocked = self.client.get(
+                f"/api/v1/loan-accounts/{account.pk}/disbursement-readiness/", **auth
+            )
         self.assertEqual(blocked.status_code, 200, blocked.content)
+        self.assertLessEqual(len(queries), 250)
+        self.assertFalse([
+            query["sql"] for query in queries
+            if query["sql"].lstrip().upper().startswith(("INSERT", "UPDATE", "DELETE"))
+        ])
         self.assertEqual(
             [row["code"] for row in blocked.json()["data"]["checks"]
              if row["status"] == "fail"],
@@ -3096,6 +3131,34 @@ class FinalDocumentationApprovalApiTests(TestCase):
             loan_application=self.application,
             document_type__in=("term_sheet", "loan_agreement"),
         ).update(execution_status="executed")
+
+    def _legal_readiness(self):
+        from sfpcl_credit.legal_documents.modules.disbursement_readiness import (
+            resolve_legal_readiness,
+        )
+
+        return resolve_legal_readiness(
+            application_id=self.application.pk,
+            terminal_security_evidence=(
+                security_instrument_evidence.terminal_checklist_evidence
+            ),
+        )
+
+    def _security_readiness(self):
+        from sfpcl_credit.security_instruments.modules.disbursement_readiness import (
+            resolve_security_readiness,
+        )
+
+        completed_codes = checklist_actions.reconciled_completed_item_codes(
+            application_id=self.application.pk,
+            terminal_security_evidence=(
+                security_instrument_evidence.terminal_checklist_evidence
+            ),
+        )
+        return resolve_security_readiness(
+            application_id=self.application.pk,
+            terminal_item_completed=completed_codes.__contains__,
+        )
 
     def _post_stage(self, suffix, actor, payload):
         return self.client.post(

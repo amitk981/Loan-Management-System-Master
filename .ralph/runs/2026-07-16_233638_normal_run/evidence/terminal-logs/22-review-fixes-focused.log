@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+E...
+======================================================================
+ERROR: test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 740, in test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata
+    witness = Witness.objects.create(
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/sfpcl_credit/applications/models.py", line 371, in save
+    self.full_clean()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 1556, in full_clean
+    raise ValidationError(errors)
+django.core.exceptions.ValidationError: {'verification_status': ['Verified status requires complete verification metadata.']}
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.986s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

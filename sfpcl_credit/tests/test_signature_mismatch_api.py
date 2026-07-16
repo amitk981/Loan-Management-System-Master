@@ -620,6 +620,16 @@ class SignatureMismatchApiTests(TestCase):
 
     def test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata(self):
         checklist = DocumentChecklist.objects.create(loan_application=self.application)
+        ChecklistItem.objects.create(
+            document_checklist=checklist,
+            item_code="loan_agreement",
+            item_label="Loan Agreement",
+            display_order=1,
+            required_flag=True,
+            applicable_flag=True,
+            completion_status=ChecklistItem.STATUS_PENDING,
+            applicability_source="sanction_documentation",
+        )
         bank_item = ChecklistItem.objects.create(
             document_checklist=checklist,
             item_code="bank_verification_letter",
@@ -727,6 +737,45 @@ class SignatureMismatchApiTests(TestCase):
             ).count(),
             1,
         )
+        witness = Witness.objects.create(
+            loan_application=self.application,
+            member=self.application.member,
+            witness_name="Readiness Resolution Witness",
+            pan_encrypted="encrypted-pan",
+            pan_hash="readiness-resolution-pan",
+            aadhaar_encrypted="encrypted-aadhaar",
+            aadhaar_hash="readiness-resolution-aadhaar",
+        )
+        Witness.objects.filter(pk=witness.pk).update(
+            verification_status="verified",
+            shareholder_verified_flag=True,
+        )
+        witness.refresh_from_db()
+        witness_signature = self.client.post(
+            f"/api/v1/loan-documents/{self.loan_document.pk}/signatures/",
+            {
+                "signer_party_type": "witness",
+                "signer_party_id": str(witness.pk),
+                "signer_name_snapshot": witness.witness_name,
+                "signature_method": "wet_ink",
+                "signature_status": "signed",
+                "signed_at": "2026-06-22T11:00:00Z",
+                "signature_mismatch_flag": False,
+            },
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(witness_signature.status_code, 200, witness_signature.content)
+        self.assertTrue(signatures.all_current_signatures_resolved(
+            application_id=self.application.pk
+        ))
+
+        SignatureRecord.objects.filter(pk=signature.pk).update(
+            mismatch_resolution_remarks="Changed after resolution."
+        )
+        self.assertFalse(signatures.all_current_signatures_resolved(
+            application_id=self.application.pk
+        ))
 
     def test_resolution_rolls_back_when_completed_bank_letter_would_be_reversed(self):
         checklist = DocumentChecklist.objects.create(loan_application=self.application)

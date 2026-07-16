@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
+
+from django.core.exceptions import ValidationError
 
 from sfpcl_credit.approvals.models import (
     ApprovalCase,
@@ -12,6 +15,47 @@ class ApprovalReadinessFacts:
     exception_approval_complete: bool
     general_meeting_approval_complete: bool
     appraisal_complete: bool
+
+
+@dataclass(frozen=True)
+class TermSheetSignerRequirement:
+    required_user_ids: frozenset[str]
+
+
+def resolve_term_sheet_signer_requirement(*, application_id):
+    """Return the approval-owned exact S32 user signer set."""
+    from sfpcl_credit.approvals.modules import approval_case_engine
+
+    case = (
+        ApprovalCase.objects.filter(loan_application_id=application_id)
+        .order_by("-cycle_number", "-submitted_at", "-approval_case_id")
+        .first()
+    )
+    if case is None:
+        return None
+    try:
+        frozen = approval_case_engine.validated_frozen_terminal_facts(case)
+        above_threshold = Decimal(str(frozen["recommended_amount"])) > Decimal(
+            "500000.00"
+        )
+    except (InvalidOperation, KeyError, TypeError, ValidationError):
+        return None
+    projection = case.committee_projection_json or {}
+    cfo_id = str(projection.get("cfo_user_id") or "")
+    excluded_ids = {
+        str(row.get("user_id"))
+        for row in (case.excluded_approvers_json or [])
+        if isinstance(row, dict) and row.get("user_id")
+    }
+    directors = [
+        str(value)
+        for value in projection.get("director_user_ids", [])
+        if value and str(value) not in excluded_ids
+    ]
+    if not cfo_id or (above_threshold and len(directors) < 2):
+        return None
+    required = {cfo_id, *(directors[:2] if above_threshold else [])}
+    return TermSheetSignerRequirement(frozenset(required))
 
 
 def resolve_approval_readiness(*, application_id, sanction_decision_id):
@@ -74,4 +118,9 @@ def resolve_approval_readiness(*, application_id, sanction_decision_id):
     )
 
 
-__all__ = ["ApprovalReadinessFacts", "resolve_approval_readiness"]
+__all__ = [
+    "ApprovalReadinessFacts",
+    "TermSheetSignerRequirement",
+    "resolve_approval_readiness",
+    "resolve_term_sheet_signer_requirement",
+]

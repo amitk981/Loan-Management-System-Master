@@ -18,6 +18,10 @@ CFC queue while the platform preserves the exact beneficiary, amount, readiness,
 ## Depends On
 - 009D3
 
+## Runtime Capabilities
+
+postgresql-five-race-acceptance
+
 ## Source References
 - docs/source/implementation-roadmap.md section 14
 - docs/source/api-contracts.md sections 29-31
@@ -97,6 +101,10 @@ or legal/security evidence payloads in those ledgers. Replay writes nothing.
 - Freeze the exact 009B3C SAP decision identity consumed by the passing 009D3 result. A missing,
   changed, duplicate, or stale SAP send/completion ledger fails initiation through readiness; the
   initiation owner must not import SAP adapter/storage internals or re-query Finance.
+- Invoke only `DisbursementReadinessModule.evaluate(actor, loan_account_id)` for payment-gate truth;
+  do not import or reimplement legal, security, approval, SAP, or checklist predicates. Require all
+  23 checks in the canonical 009D3 order to pass, and freeze a canonical digest of their codes and
+  statuses that excludes the response-only `evaluated_at` timestamp.
 
 ## Test Cases
 - Public service/API success proves exact passing readiness and bank/source evidence, canonical
@@ -108,6 +116,8 @@ or legal/security evidence payloads in those ledgers. Replay writes nothing.
   conflicts. Twice-run PostgreSQL races retain one complete initiation/evidence winner.
 - Before the initiated row exists, a CFC readiness read remains nondisclosing; after the exact row
   exists, its active assigned CFC path can consume readiness without any origination assignment.
+- Prove the initiation owner calls the one readiness interface, rejects missing/reordered/extra
+  checks, and treats a changed canonical check digest as stale without depending on `evaluated_at`.
 
 ## Visual Acceptance Criteria
 None.

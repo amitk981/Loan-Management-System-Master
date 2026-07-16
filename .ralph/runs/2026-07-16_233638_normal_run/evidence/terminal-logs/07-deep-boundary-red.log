@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_named_readiness_module_is_the_only_public_composition_interface (sfpcl_credit.tests.test_disbursement_readiness_api.DisbursementReadinessApiTests.test_named_readiness_module_is_the_only_public_composition_interface)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/sfpcl_credit/tests/test_disbursement_readiness_api.py", line 132, in test_named_readiness_module_is_the_only_public_composition_interface
+    self.assertFalse(
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.027s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

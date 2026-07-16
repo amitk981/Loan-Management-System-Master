@@ -19,6 +19,10 @@ with execution in the external RBL portal.
 ## Depends On
 - 009E
 
+## Runtime Capabilities
+
+postgresql-five-race-acceptance
+
 ## Source References
 - docs/source/implementation-roadmap.md section 14
 - docs/source/api-contracts.md sections 29-31
@@ -89,6 +93,8 @@ Exact replay writes nothing; denied and concurrent losers create no success evid
   application, member, sanctioned amount, borrower/source bank, maker, and frozen readiness facts.
 - Approval/rejection must not re-evaluate readiness into a different evidence set or accept caller-
   supplied amount/bank/readiness/maker/time. Replaced or incoherent initiation evidence conflicts.
+- Reconcile the exact 009E frozen 23-check readiness digest and initiation action/audit/workflow/task
+  identities; do not call legal, security, approval, SAP, or checklist owners from authorisation.
 - Enforce distinct maker/checker transactionally. A second CFC or simultaneous opposite decision
   has one winner; every loser returns the retained exact replay or a zero-write conflict.
 - CFC approval authorises the instruction only. 009G owns bank transfer success, UTR/evidence,

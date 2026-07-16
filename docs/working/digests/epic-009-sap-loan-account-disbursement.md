@@ -1,5 +1,26 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009D3 Readiness Approval, Reader, and Boundary Closure
+
+- Each ordered checklist approval now consumes the exact current ordered item-completion action
+  identities. Current item decisions reconcile singular action/audit/workflow/version evidence,
+  renderer/security/corrected-copy truth, and retained bodies; changed, reordered, duplicate, stale,
+  or missing evidence invalidates that stage and every downstream stage.
+- Signature readiness requires a non-empty exact current signer set for each applicable Term Sheet,
+  Loan Agreement, PoA, tri-party, and SH-4 path. The approval owner supplies the exact S32 CFO/two-
+  Director requirement; the legal owner reconciles mismatch resolution row, renderer, audit,
+  version, and workflow truth and fails closed on malformed frozen approval facts.
+- Read scope now admits active persisted Senior Finance, Credit Manager, CFO, and explicitly
+  audit-scoped Auditor users only with the readiness permission and their canonical loan scope.
+  Pre-009E CFC remains absent, Credit excludes recovery/closed/archive states, and origination
+  assignment, role, permission, missing ids, or cross-object facts alone remain nondisclosing.
+- `disbursements.modules.disbursement_readiness.evaluate` is again the sole readiness composition
+  interface. It consumes the established typed security-evidence coordinator directly, retains 23
+  ordered safe checks and exact 009B3C SAP truth, reaches only A-126 with genuine owners, and is
+  zero-write with a complete-path bound of 250 queries. 009E/009F now declare their required
+  PostgreSQL race capability and must consume/freeze this one canonical decision rather than
+  reimplement owner predicates.
+
 ## 009B3C Current SAP Evidence and Adapter Contract Closure
 
 - Repair `2026-07-16_231945_repair` restored the pre-existing genuine readiness integration fixture

@@ -8116,3 +8116,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_233638_normal_run
+
+- Agent tool used: codex with TDD, deep-module design, and independent Standards/Spec review.
+- Slice completed: 009D3-readiness-approval-reader-and-boundary-closure.
+- Summary: Bound all ordered checklist approvals and required signers to exact current owner
+  evidence, restored canonical Senior Finance/Credit Manager/CFO/Auditor loan reads while keeping
+  pre-009E CFC absent, and returned all readiness composition to the named deep module.
+- Tests run: five retained RED/GREEN cycles; 97 impacted backend tests; genuine owner A-126/all-pass
+  query and zero-write proof; Django check/migration sync; frontend typecheck, lint, 327 tests, and
+  build.
+- Evidence saved: `.ralph/runs/2026-07-16_233638_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High; mitigated by singular current ledgers, exact signer sets, fail-closed scope,
+  read-only evidence, owner interfaces, and independent two-axis review.
+- Next action: Run 009E payment initiation, then 009F CFC authorisation.
+
+## 2026-07-17 00:15:23 - 2026-07-16_233638_normal_run
+- Agent tool used: codex
+- Slice attempted: 009D3-readiness-approval-reader-and-boundary-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/.ralph/runs/2026-07-16_233638_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_233638_normal_run/.ralph/runs/2026-07-16_233638_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -420,6 +420,8 @@ def _approve(
         "completed_item_action_ids": list(
             checklist.actions.filter(
                 action_type=ChecklistAction.TYPE_ITEM_COMPLETION
+            ).order_by(
+                "checklist_item__display_order", "checklist_item_id"
             ).values_list("checklist_action_id", flat=True)
         ),
     }
@@ -980,7 +982,40 @@ def _reconcile_completion_actions(*, checklist, case, terminal_security_evidence
             raise EvidenceBlocked("Retained completion evidence body and digest do not match.")
 
 
-def approval_readiness(checklist):
+def _current_ordered_completion_action_ids(
+    *, checklist, terminal_security_evidence, completed_item_ids=None
+):
+    required_items = list(
+        checklist.items.filter(required_flag=True, applicable_flag=True)
+        .order_by("display_order", "checklist_item_id")
+    )
+    completed_ids = (
+        borrower_safe_completed_item_ids(
+            checklist, terminal_security_evidence=terminal_security_evidence
+        )
+        if completed_item_ids is None
+        else set(completed_item_ids)
+    )
+    if not required_items or completed_ids != {item.pk for item in required_items}:
+        return None
+    actions = list(
+        ChecklistAction.objects.filter(
+            document_checklist=checklist,
+            checklist_item_id__in=completed_ids,
+            action_type=ChecklistAction.TYPE_ITEM_COMPLETION,
+        )
+    )
+    by_item = {}
+    for action in actions:
+        by_item.setdefault(action.checklist_item_id, []).append(action)
+    if any(len(by_item.get(item.pk, ())) != 1 for item in required_items):
+        return None
+    return [str(by_item[item.pk][0].pk) for item in required_items]
+
+
+def approval_readiness(
+    checklist, *, terminal_security_evidence=None, completed_item_ids=None
+):
     """Reconcile the exact current ordered checklist-approval ledger."""
     result = {action_type: False for action_type in _STAGE}
     if checklist is None:
@@ -1009,11 +1044,13 @@ def approval_readiness(checklist):
         ] != [row.pk for row in actions]
     ):
         return result
-    completion_ids = {
-        str(value) for value in checklist.actions.filter(
-            action_type=ChecklistAction.TYPE_ITEM_COMPLETION
-        ).values_list("checklist_action_id", flat=True)
-    }
+    completion_ids = _current_ordered_completion_action_ids(
+        checklist=checklist,
+        terminal_security_evidence=terminal_security_evidence,
+        completed_item_ids=completed_item_ids,
+    )
+    if completion_ids is None:
+        return result
     prior_ids = []
     chain_valid = True
     for action in actions:
@@ -1022,12 +1059,34 @@ def approval_readiness(checklist):
             action.workflow_event, action.audit_log, action.version_history
         )
         retained = history.new_value_json if history else {}
+        sibling_audits = list(AuditLog.objects.filter(
+            action=f"document_checklist.{action.action_type}",
+            entity_type="document_checklist",
+            entity_id=checklist.pk,
+        )[:2])
+        sibling_workflows = list(WorkflowEvent.objects.filter(
+            workflow_name="documentation_checklist",
+            entity_type="document_checklist",
+            entity_id=checklist.pk,
+            trigger_reason=action.action_type,
+        )[:2])
+        sibling_histories = list(VersionHistory.objects.filter(
+            versioned_entity_type="document_checklist_approval",
+            versioned_entity_id=checklist.pk,
+            change_summary=f"document_checklist.{action.action_type}",
+        )[:2])
         valid = bool(
             action.checklist_item_id is None
             and action.loan_document_id is None
             and action.canonical_role_code == stage["role"]
             and action.meaning == stage["meaning"]
             and workflow and audit and history
+            and len(sibling_audits) == 1
+            and sibling_audits[0].pk == audit.pk
+            and len(sibling_workflows) == 1
+            and sibling_workflows[0].pk == workflow.pk
+            and len(sibling_histories) == 1
+            and sibling_histories[0].pk == history.pk
             and workflow.workflow_name == "documentation_checklist"
             and workflow.entity_type == "document_checklist"
             and workflow.entity_id == checklist.pk
@@ -1036,13 +1095,20 @@ def approval_readiness(checklist):
             and workflow.triggered_by_user_id == action.actor_user_id
             and workflow.trigger_reason == action.action_type
             and audit.action == f"document_checklist.{action.action_type}"
+            and audit.entity_type == "document_checklist"
+            and audit.entity_id == checklist.pk
             and audit.actor_user_id == action.actor_user_id
+            and (audit.old_value_json or {}) == {"status": stage["from_status"]}
             and audit.new_value_json == retained
+            and history.versioned_entity_type == "document_checklist_approval"
+            and history.versioned_entity_id == checklist.pk
             and history.author_user_id == action.actor_user_id
             and history.change_summary == f"document_checklist.{action.action_type}"
+            and (history.old_value_json or {}) == {"status": stage["from_status"]}
+            and history.version_number == str(len(prior_ids) + 1)
             and retained.get("approval_case_id") == str(case.pk)
             and retained.get("prior_approval_action_ids") == prior_ids
-            and set(retained.get("completed_item_action_ids") or []) == completion_ids
+            and retained.get("completed_item_action_ids") == completion_ids
             and retained.get("checklist_action_id") == str(action.pk)
             and retained.get("workflow_event_id") == str(workflow.pk)
             and retained.get("audit_log_id") == str(audit.pk)

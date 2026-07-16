@@ -124,6 +124,21 @@ class DisbursementReadinessApiTests(TestCase):
         ):
             self.assertNotIn(forbidden, secret_surface)
 
+    def test_named_readiness_module_is_the_only_public_composition_interface(self):
+        from sfpcl_credit.disbursements.modules import disbursement_readiness
+        from sfpcl_credit.processes import document_checklist_actions
+
+        self.assertTrue(callable(disbursement_readiness.evaluate))
+        self.assertFalse(
+            hasattr(document_checklist_actions, "resolve_disbursement_readiness")
+        )
+        self.assertFalse(
+            hasattr(
+                document_checklist_actions,
+                "resolve_security_disbursement_readiness",
+            )
+        )
+
     def test_all_current_owner_decisions_return_ready(self):
         from sfpcl_credit.sap_workflow.models import SapCustomerCode
         from sfpcl_credit.loans.models import LoanAccount
@@ -150,6 +165,7 @@ class DisbursementReadinessApiTests(TestCase):
             term_sheet_complete=True,
             loan_agreement_complete=True,
             signature_mismatch_resolved=True,
+            completed_item_codes=frozenset(),
         )
         security = SimpleNamespace(
             security_package_complete=True,
@@ -250,6 +266,7 @@ class DisbursementReadinessApiTests(TestCase):
                 term_sheet_complete=True,
                 loan_agreement_complete=True,
                 signature_mismatch_resolved=True,
+                completed_item_codes=frozenset(),
             ),
             "security": SimpleNamespace(
                 security_package_complete=True,
@@ -333,7 +350,7 @@ class DisbursementReadinessApiTests(TestCase):
                 self.assertEqual(failed, [expected_code])
 
     def test_permission_role_scope_inactive_and_missing_ids_are_nondisclosing(self):
-        wrong_role = self.fixture._user("credit_manager", "Wrong Role")
+        wrong_role = self.fixture._user("field_officer", "Wrong Role")
         self.fixture._grant(wrong_role, "finance.disbursement.readiness")
         missing_permission = self.fixture._user(
             "chief_financial_controller", "Missing Permission"
@@ -406,6 +423,53 @@ class DisbursementReadinessApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200, response.content)
+
+    def test_source_read_roles_receive_only_their_canonical_loan_scope(self):
+        from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
+
+        readers = [
+            self.fixture._user("credit_manager", "Readiness Credit Manager"),
+            self.fixture._user("cfo", "Readiness CFO"),
+            self.fixture._user("internal_auditor", "Readiness Auditor"),
+        ]
+        for reader in readers:
+            self.fixture._grant(reader, "finance.disbursement.readiness")
+        ApprovalCaseReadScopeGrant.objects.get_or_create(
+            role=readers[-1].primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+            defaults={"status": ApprovalCaseReadScopeGrant.STATUS_ACTIVE},
+        )
+        intake_owner = self.fixture._user("field_officer", "Intake Only Reader")
+        self.fixture._grant(intake_owner, "finance.disbursement.readiness")
+        self.application.received_by_user = intake_owner
+        self.application.save(update_fields=["received_by_user"])
+
+        for reader in readers:
+            with self.subTest(role=reader.primary_role.role_code):
+                response = self.client.get(
+                    f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+                    **self._auth_for(reader),
+                )
+                self.assertEqual(response.status_code, 200, response.content)
+
+        account = self._account()
+        account.loan_account_status = "under_recovery"
+        account.save(update_fields=["loan_account_status"])
+        out_of_domain = self.client.get(
+            f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+            **self._auth_for(readers[0]),
+        )
+        self.assertEqual(out_of_domain.status_code, 403, out_of_domain.content)
+        self.assertEqual(
+            out_of_domain.json()["error"]["code"], "OBJECT_ACCESS_DENIED"
+        )
+
+        denied = self.client.get(
+            f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+            **self._auth_for(intake_owner),
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "FORBIDDEN")
 
     def test_cross_member_account_and_sap_scope_fail_nondisclosing(self):
         from sfpcl_credit.members.models import Member
