@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_terminal_sanction_creates_unfunded_account_terms_and_evidence (sfpcl_credit.tests.test_loan_account_creation_api.LoanAccountCreationApiTests.test_terminal_sanction_creates_unfunded_account_terms_and_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/sfpcl_credit/tests/test_loan_account_creation_api.py", line 41, in test_terminal_sanction_creates_unfunded_account_terms_and_evidence
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan account creation failed validation.", "details": {}, "field_errors": {"borrower": "Current facts do not match the frozen sanction review."}}, "meta": {"request_id": "req-loan-account-001", "timestamp": "2026-07-16T06:41:34.589261Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

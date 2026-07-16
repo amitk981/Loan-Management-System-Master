@@ -69,10 +69,13 @@ class SapCustomerCodeDecision:
     status: str
 
 
-def get_customer_code_for_member(member_id):
+def get_customer_code_for_member(member_id, *, for_update=False):
     """Return only coherent SAP-owned linkage for trusted downstream modules."""
+    code_queryset = SapCustomerCode.objects
+    if for_update:
+        code_queryset = code_queryset.select_for_update()
     code = (
-        SapCustomerCode.objects.filter(
+        code_queryset.filter(
             member_id=member_id, status=SapCustomerCode.STATUS_ACTIVE
         )
         .only("sap_customer_code_id", "member_id", "status")
@@ -80,8 +83,11 @@ def get_customer_code_for_member(member_id):
     )
     if code is None:
         return None
+    request_queryset = SapCustomerProfileRequest.objects
+    if for_update:
+        request_queryset = request_queryset.select_for_update()
     request = (
-        SapCustomerProfileRequest.objects.filter(
+        request_queryset.filter(
             member_id=member_id,
             request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
             sap_customer_code_id=code.pk,

@@ -1,7 +1,7 @@
 # Slice 009C: Loan Account Creation from Sanctioned Application
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -131,6 +131,9 @@ None.
 RED/GREEN logs, focused API/service output, sanitized response/evidence examples, migration/check
 output, full gates, and twice-run PostgreSQL five-caller race evidence. No screenshot is required.
 
+## Runtime Capabilities
+- postgresql-five-race-acceptance
+
 ## Risk Level
 High
 
@@ -143,16 +146,16 @@ High
 - The Critical permission remains ungranted until governance resolves A-121; all configured gates pass.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend (not applicable; backend/API-only slice)
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit delegated to the orchestrator after its independent gates pass

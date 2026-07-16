@@ -7797,3 +7797,31 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_120256_normal_run
+
+- Agent tool used: codex with TDD, deep-module design, independent Standards/Spec review, and
+  diagnosing-bugs workflows.
+- Slice completed: 009C-loan-account-creation-from-sanctioned-application.
+- Summary: Added the public loan-account lifecycle, immutable loan terms, append-only initial status
+  history, exact create/replay API, locked legal/SAP prerequisite selectors, safe evidence, and a
+  single initial migration. Creation retains `sanctioned` and zero funded/outstanding balances.
+- Tests run: staged RED/GREEN contract tests; independent-review RED/GREEN regressions; historical
+  migration repro/repair; Django check/migration drift; 994 backend tests with 52 expected skips at
+  91% coverage; frontend build/typecheck/lint and all 322 tests.
+- Evidence saved: `.ralph/runs/2026-07-16_120256_normal_run/evidence/`.
+- Result: Complete pending orchestrator twice-run PostgreSQL five-caller acceptance and commit; local
+  socket access was sandbox-denied and no pass was fabricated.
+- Risk level: High; durable financial account identity, immutable sanction terms, authorization,
+  privacy, uniqueness, concurrency, and audit/workflow truth.
+- Next action: Run the due architecture review, then 009D.
+
+## 2026-07-16 13:04:27 - 2026-07-16_120256_normal_run
+- Agent tool used: codex
+- Slice attempted: 009C-loan-account-creation-from-sanctioned-application
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/.ralph/runs/2026-07-16_120256_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/.ralph/runs/2026-07-16_120256_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

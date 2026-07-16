@@ -20,7 +20,9 @@ class CreditAssessmentModelOwnershipMigrationTests(TransactionTestCase):
         pre_move_state_targets = [
             node
             for node in self.executor.loader.graph.leaf_nodes()
-            if node[0] not in {"credit", "approvals"}
+            # Downstream loan-account ownership anchors current approval/application
+            # state and must not outrun this historical pre-move projection.
+            if node[0] not in {"credit", "approvals", "loans"}
         ]
         old_apps = self.executor.loader.project_state(pre_move_state_targets).apps
         self.identifiers = self._create_pre_move_rows(old_apps)

@@ -105,6 +105,25 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
   role grant. Replay is application + exact sanction + exact normalized account number; changed
   repeats conflict and PostgreSQL races retain one account/terms/status/audit/workflow winner.
 
+### 009C retained implementation truth
+
+- `loans.modules.loan_account_lifecycle` owns one atomic create/replay interface and the exact
+  §30.1 HTTP route. Its initial migration creates protected account, nullable legal/SAP links,
+  immutable one-to-one terms, append-only status history, positive/non-negative constraints,
+  globally canonicalized account-number uniqueness, and future-compatible balance/status columns.
+- Creation freezes safe borrower/nominee/active-shareholding facts only when they equal the current
+  latest approved case snapshot. Governed dispute text comes from the frozen approval facts, never
+  from unrelated sanction conditions precedent. The legal owner locks the newest Term Sheet and
+  Loan Agreement first and rejects it if that current row is not executed, verified, and renderer-
+  valid; it never falls back to an older eligible document.
+- The public SAP owner now accepts a trusted `for_update` read so account creation locks the active
+  code and completed-request decision without importing Finance models or adapter/storage details.
+  Missing/inactive/cross-member/cross-application decisions retain an honest nullable account link.
+- Success retains one `sanctioned` account with all balances zero, one terms row, one status-history
+  row freezing application/member/sanction/SAP/terms/outcome provenance, one safe audit, and one
+  workflow event. Exact replay writes nothing; changed application replay and globally equivalent
+  case/whitespace account numbers conflict with no partial evidence.
+
 ## 009D Disbursement Readiness
 
 - API §31.1 fixes a read-only
@@ -121,3 +140,18 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - Fail closed when current relationships/evidence are absent, stale, cross-object, or incoherent.
   If no governed active source-bank configuration owner exists yet, return an honest failed
   `source_bank_account_configured` check rather than inventing an account.
+
+## 009E Payment Initiation
+
+- API §31.2 fixes `POST /api/v1/loan-accounts/{id}/disbursements/initiate/`, required
+  `Idempotency-Key`, amount, borrower-bank id, source-bank id, and final-verification comments. The
+  response is only the disbursement id plus `initiated`/`pending`/`pending` initiation,
+  authorisation, and bank-transfer statuses.
+- Integrations §§9.1-9.6 define MVP as a manual RBL bank-portal record: Senior Manager Finance
+  performs final verification and initiates; CFC authorisation, transfer success, UTR/evidence,
+  register update, and borrower advice remain later actions. Initiation must consume the full 009D
+  readiness pass, not reimplement or trust caller-supplied readiness.
+- Data-model §19.3 retains account/application, amount, borrower/source bank, maker, later nullable
+  checker/UTR/time/advice, initial statuses, and register flag. The amount cannot exceed sanction;
+  success cannot occur before CFC authorisation. Auth-permissions assigns
+  `finance.disbursement.initiate` to Senior Manager Finance and keeps CFC authorisation separate.

@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.finance",
     "sfpcl_credit.sap_workflow",
     "sfpcl_credit.legal_documents",
+    "sfpcl_credit.loans",
     "sfpcl_credit.security_instruments",
     "sfpcl_credit.identity",
     "sfpcl_credit.members",

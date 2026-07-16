@@ -2,44 +2,43 @@
 
 ## Last Run
 
-2026-07-16_111411_repair
+2026-07-16_120256_normal_run
 
 ## Current Status
 
-Corrective slice 009B2 is complete. A SAP request becomes `sent` only after the installed public
-`sap_workflow.modules.sap_customer_profile` owner decrypts/verifies the retained Annexure-I and the
-manual `SapAdapter` accepts its exact plaintext checksum. The frozen assignee receives a governed
-task path, can issue/replace a short-lived one-use capability, and downloads the exact workbook
-through a nondisclosing audited boundary. No real email or SAP call occurs.
+High-risk slice 009C is complete pending the orchestrator's independent PostgreSQL capability gate
+and commit. The new `loans.modules.loan_account_lifecycle` owner creates one replay-safe
+pre-disbursement account from the exact current terminal sanction. It freezes the governed safe
+terms, starts in `sanctioned` with zero balances, writes one initial history/audit/workflow tuple,
+and creates no readiness, activation, schedule, or disbursement truth.
 
-Completed requests now retain a canonical supplied-versus-omitted-aware input digest. New code uses
-mandatory `sap.customer_code_created`; reuse uses `sap.customer_code_reused`; create/send/read/
-capability/download/denial events freeze safe actor role/team/request/network context without raw
-identity, bank, workbook, token, or SAP-code values. Existing normalized global uniqueness, one
-active member code, terminal-sanction scope, assignee authority, and zero downstream financial
-side effects remain intact.
-
-009C/009D must consume only the immutable public `SapCustomerCodeDecision` containing coherent code,
-member, completed request, application, and active-status facts. They must not import Finance SAP
-models/modules, adapter/storage internals, delivery capabilities, or SAP exception vocabulary.
+Authority, application scope, exact sanction identity, approval snapshot coherence, newest legal
+evidence, optional public SAP-code coherence, unique normalized account number, and immutable terms
+are enforced transactionally. Exact retries return retained ids with no writes; changed retries and
+stale/incomplete sources fail closed. A-121 still leaves the Critical permission ungranted to every
+production role, and A-122 preserves zero pre-disbursement balances.
 
 ## Validation
 
-Run evidence is in `.ralph/runs/2026-07-16_111411_repair/evidence/`. Both exact architecture-review
-probes are retained red then green. Django check and migration drift are green; the full backend
-suite passed 980 tests with 51 expected skips at 91% coverage. All three PostgreSQL SAP race classes
-passed twice. Frontend build, typecheck, lint, and all 322 tests passed. This backend/API slice has no
-trusted-browser or screenshot contract.
+Evidence is in `.ralph/runs/2026-07-16_120256_normal_run/evidence/`. Django check and migration drift
+pass. The full backend suite passes 994 tests with 52 expected skips at 91% coverage. Frontend build,
+typecheck, lint, and all 322 tests pass. Independent Standards and Spec reviews were completed; the
+Spec findings were reproduced red and corrected green.
+
+The sandbox denied `/tmp/.s.PGSQL.5432`, so the collected five-caller PostgreSQL race is honestly
+skipped locally. The slice declares `postgresql-five-race-acceptance`; the orchestrator must pass
+that class twice before committing or merging. No frontend or screenshot contract applies.
 
 ## Important Continuation Notes
 
-- 009C is sharpened and unblocked. It owns one replay-safe pre-disbursement account under
-  `loans.modules.loan_account_lifecycle`; A-121 keeps its Critical permission ungranted and A-122
-  keeps all pre-disbursement balances zero. Its optional SAP link must use only the new public
-  immutable decision and require exact member/application coherence.
-- 009D is sharpened and remains read-only behind 009C. It must consume the 009B2/009C public owner
-  seams. Finance initiation and CFC authorization are later actions, not readiness checks.
+- Downstream consumers must use the public loan lifecycle/models and must not reinterpret
+  `sanctioned` or zero balances as readiness or funding.
+- 009D remains read-only and must consume the 009B2 SAP and 009C loan owner seams. Finance payment
+  initiation and CFC authorization remain later actions.
+- 009E is now sharpened from the already-open Epic 009 source; no 009D/009E production code was
+  implemented during 009C.
 
 ## Next Run
 
-Run 009C, then 009D.
+An architecture review is due after four completed slices. Run that review after independent 009C
+validation, then proceed to sharpened 009D.

@@ -3890,3 +3890,38 @@ Trusted downstream modules use `SapCustomerProfileModule.get_customer_code_for_m
 It returns an immutable coherent decision containing only customer-code, member, completed-profile-
 request, and loan-application ids plus active status, or `None`. Consumers must not import Finance
 SAP models, adapter internals, retained workbook storage, or SAP exception vocabulary.
+
+## Loan account creation from terminal sanction (009C)
+
+- `POST /api/v1/loan-applications/{loan_application_id}/create-loan-account/` accepts a JSON object
+  containing exactly required `sanction_decision_id` (UUID) and `loan_account_number`. The account
+  number is trimmed, internal whitespace is collapsed, and the retained value is limited to 80
+  characters. Global uniqueness uses the collapsed case-folded form, so case/whitespace-equivalent
+  identifiers conflict.
+- The actor must be an active persisted user with the Critical
+  `finance.loan_account.create` permission and canonical application object scope. The permission
+  remains in the catalogue with no production role grant (A-121); missing permission returns
+  `403 FORBIDDEN`, while missing or inaccessible parents return nondisclosing
+  `403 OBJECT_ACCESS_DENIED`.
+- Creation locks the application/member/current nominee/shareholding, latest approval case, supplied
+  sanction decision, current executed/verified renderer-valid Term Sheet and Loan Agreement, and
+  the SAP owner's public active-code decision. The application must remain terminal-approved and
+  the supplied decision must be the latest approved case's positive `sanctioned` decision. Frozen
+  review identities must still match the current safe borrower, nominee, and active-shareholding
+  facts. Missing governed purpose, amount/date, loan type, rate, tenure, repayment, penalty,
+  charges, security, dispute, or current legal evidence returns field-specific
+  `400 VALIDATION_ERROR`; replaced/non-terminal source truth returns `409 STALE_STATE`.
+- A coherent SAP decision links only when its active code, member, and originating application all
+  match. `None`, inactive, or mismatched decisions retain a nullable link; creation never reads raw
+  code values, Annexure-I delivery/capability facts, adapter state, or Finance exception details.
+- Success atomically creates one `sanctioned` account, one immutable terms package, one append-only
+  null-to-sanctioned history row, one safe `finance.loan_account.created` audit, and one
+  `LoanAccountCreated` workflow event. `disbursed_amount` and every outstanding balance are zero;
+  no readiness, schedule, payment, activation, register, communication, or borrower-visible truth
+  is created. The response contains only account/application/member/sanction ids, nullable SAP-code
+  id, canonical account number/status, amount/type/rate/repayment projection, and terms id.
+- Exact application + sanction id + normalized account-number retry returns the retained projection
+  with no ledger writes. A changed retry or globally duplicate normalized number returns
+  `409 LOAN_ACCOUNT_CONFLICT`. Database uniqueness and transaction locks retain one complete tuple
+  under concurrent first create; integrity losers receive the same conflict without partial terms,
+  status, audit, or workflow evidence.

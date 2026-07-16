@@ -1,0 +1,57 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+EFFFF
+======================================================================
+ERROR: test_terminal_sanction_creates_unfunded_account_terms_and_evidence (sfpcl_credit.tests.test_loan_account_creation_api.LoanAccountCreationApiTests.test_terminal_sanction_creates_unfunded_account_terms_and_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/sfpcl_credit/tests/test_loan_account_creation_api.py", line 114, in test_terminal_sanction_creates_unfunded_account_terms_and_evidence
+    self.assertEqual(history.loan_application_id_snapshot, self.application.pk)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LoanStatusHistory' object has no attribute 'loan_application_id_snapshot'
+
+======================================================================
+FAIL: test_missing_governed_dispute_term_fails_closed (sfpcl_credit.tests.test_loan_account_creation_api.LoanAccountCreationApiTests.test_missing_governed_dispute_term_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/sfpcl_credit/tests/test_loan_account_creation_api.py", line 383, in test_missing_governed_dispute_term_fails_closed
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"loan_account_id": "2149e52b-327e-40d2-bcf3-14ce3f9f2e70", "loan_application_id": "85ebb5f9-dbf4-4cb4-ac69-27d2aaf5d005", "member_id": "e3fba144-6a45-424d-ac66-a005508c224e", "sanction_decision_id": "bc935746-cb34-434a-b4e0-fcd82736aef7", "sap_customer_code_id": null, "loan_account_number": "LN-MISSING-DISPUTE-001", "loan_account_status": "sanctioned", "sanctioned_amount": "400000.00", "loan_type": "short_term", "interest_rate_type": "floating", "current_interest_rate": "9.2500", "repayment_date": "2027-06-22", "loan_terms_id": "5952869d-0a0c-4431-b59e-a3ef2d211cb5"}, "meta": {"request_id": "req-loan-account-001", "timestamp": "2026-07-16T07:01:07.865889Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_newer_nonterminal_legal_document_blocks_stale_eligible_fallback (sfpcl_credit.tests.test_loan_account_creation_api.LoanAccountCreationApiTests.test_newer_nonterminal_legal_document_blocks_stale_eligible_fallback)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/sfpcl_credit/tests/test_loan_account_creation_api.py", line 400, in test_newer_nonterminal_legal_document_blocks_stale_eligible_fallback
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"loan_account_id": "72c8cace-0007-4408-b986-c31ab4c242d9", "loan_application_id": "9d051346-4585-411e-af40-9caa1e405863", "member_id": "599e1a23-1bb4-4c2d-981f-9235558644ae", "sanction_decision_id": "1821f12b-c5a7-45a8-99ad-fb8a6d8d910a", "sap_customer_code_id": null, "loan_account_number": "LN-STALE-TERM-SHEET-001", "loan_account_status": "sanctioned", "sanctioned_amount": "400000.00", "loan_type": "short_term", "interest_rate_type": "floating", "current_interest_rate": "9.2500", "repayment_date": "2027-06-22", "loan_terms_id": "89d46996-6059-40a1-b06a-240cbd952592"}, "meta": {"request_id": "req-loan-account-001", "timestamp": "2026-07-16T07:01:07.884519Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_public_sap_decision_links_only_exact_active_member_application (sfpcl_credit.tests.test_loan_account_creation_api.LoanAccountCreationApiTests.test_public_sap_decision_links_only_exact_active_member_application)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/sfpcl_credit/tests/test_loan_account_creation_api.py", line 323, in test_public_sap_decision_links_only_exact_active_member_application
+    selector.assert_called_once_with(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 945, in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 933, in assert_called_with
+    raise AssertionError(_error_message()) from cause
+AssertionError: expected call not found.
+Expected: get_customer_code_for_member(UUID('b1de7924-cb81-406f-916b-d462a00ae2ee'), for_update=True)
+Actual: get_customer_code_for_member(UUID('b1de7924-cb81-406f-916b-d462a00ae2ee'))
+
+======================================================================
+FAIL: test_terms_and_status_history_are_immutable_and_links_are_nullable (sfpcl_credit.tests.test_loan_account_creation_api.LoanAccountCreationApiTests.test_terms_and_status_history_are_immutable_and_links_are_nullable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_120256_normal_run/sfpcl_credit/tests/test_loan_account_creation_api.py", line 425, in test_terms_and_status_history_are_immutable_and_links_are_nullable
+    self.assertTrue(LoanTerms._meta.get_field("term_sheet_document").null)
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.108s
+
+FAILED (failures=4, errors=1)
+Destroying test database for alias 'default'...

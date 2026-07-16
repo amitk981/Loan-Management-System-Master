@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from math import ceil
 
 from django.core.exceptions import ValidationError
@@ -14,6 +15,13 @@ from sfpcl_credit.legal_documents.models import (
 _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 100
 _LIST_PARAMS = {"page", "page_size"}
+
+
+@dataclass(frozen=True)
+class CurrentLoanTermDocumentDecision:
+    loan_document_id: object
+    document_id: object
+    document_type: str
 
 
 def list_for_application(*, application_id, query_params):
@@ -67,6 +75,36 @@ def latest_generated_metadata_by_type(*, application_id, document_types):
     for document_type, loan_document_id in rows:
         latest.setdefault(document_type, loan_document_id)
     return latest
+
+
+def current_loan_term_document_for_update(*, application_id, document_type):
+    """Lock and project current executed legal evidence for loan-term consumers."""
+    row = (
+        LoanDocument.objects.select_for_update(of=("self",))
+        .select_related("document")
+        .filter(
+            loan_application_id=application_id,
+            document_type=document_type,
+        )
+        .order_by("-created_at", "-loan_document_id")
+        .first()
+    )
+    if (
+        row is None
+        or row.generation_status != LoanDocument.GENERATION_GENERATED
+        or row.execution_status != "executed"
+        or row.verification_status != "verified"
+        or row.document_id is None
+        or row.renderer_contract_version != LoanDocument.RENDERER_CONTRACT_V1
+        or row.renderer_validated_document_id != row.document_id
+        or row.renderer_validated_checksum_sha256 != row.document.checksum_sha256
+    ):
+        return None
+    return CurrentLoanTermDocumentDecision(
+        loan_document_id=row.pk,
+        document_id=row.document_id,
+        document_type=row.document_type,
+    )
 
 
 def signature_facts_for_application(*, application_id):

@@ -21,6 +21,7 @@ from sfpcl_credit.identity.views import (
     refresh,
 )
 from sfpcl_credit.legal_documents import views as legal_document_views
+from sfpcl_credit.loans import views as loan_views
 from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
@@ -29,6 +30,11 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/create-loan-account/",
+        loan_views.create_from_sanction,
+        name="loan-application-create-loan-account",
+    ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/sap-customer-profile-request/",
         finance_views.sap_customer_profile_request,

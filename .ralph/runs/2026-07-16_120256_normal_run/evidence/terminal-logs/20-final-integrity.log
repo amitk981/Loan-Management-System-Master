@@ -1,0 +1,17 @@
+009C final integrity checks
+
+PASS  /Users/amitkallapa/LMS/.ralph/venv/bin/python -m json.tool .ralph/state.json
+PASS  git diff --check
+PASS  ralph_slice_queue_lint docs/slices (bash)
+PASS  ralph_validate_slice_capabilities selected 009C slice (bash)
+PASS  scripts/tests/ralph-workflow-regression.sh (exit 0)
+PASS  protected/source diff scan returned no paths
+
+Diff-limit accounting (run artifacts excluded):
+- 22 changed work files (limit 30)
+- 1,976 added/deleted lines (limit 2,000)
+- 1 migration (limit 1)
+
+The first queue-lint attempt used zsh and stopped before lint execution because `status` is a zsh
+read-only variable. The exact same checks were rerun under bash, the helper's native shell, and
+passed.
