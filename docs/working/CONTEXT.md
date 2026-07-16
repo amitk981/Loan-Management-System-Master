@@ -115,14 +115,25 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   has now closed executable action reachability with owner-backed decisions and opaque current
   action identities. 008M4 now supplies the page-bounded queue selector, approval-owned read scope,
   shallow public coordinator, governed-identity blocker, shared frontend transport, and restored
-  prototype composition while preserving those behaviors.
+  prototype composition while preserving those behaviors. The next independent review found that
+  signed-copy uploads and correction/return/condition actions still end in workspace-local generic
+  records that no later owner decision consumes, and that the honest absent-attorney path silently
+  removes PoA creation without projecting its blocker. Corrective 008M5 now owns durable signed-copy
+  succession, legal correction/condition truth, downstream blocking, and the explicit A-125
+  `governed_attorney_unconfigured` result.
   Epic 009 has started: 009A generates the encrypted retained Annexure-I from current sanctioned
   facts, and 009B adds send, assigned Finance confirmation, normalized member-code uniqueness/reuse,
   and PostgreSQL races. Review found that `sent` did not actually deliver the Excel, reuse replay
   accepted changed optional payload, mandatory SAP audit context was incomplete, and policy lived
   outside the source-defined SAP adapter owner. Corrective 009B2 now closes those contracts with
   exact retained-workbook delivery, one-use assignee capabilities, supplied/omitted-aware replay,
-  mandatory create/reuse audit truth, and the public SAP decision/adapter owner before 009C.
+  mandatory create/reuse audit truth, and a public SAP decision/adapter facade. 009C creates the
+  sanctioned zero-balance loan account and immutable terms; 009D projects the 23 ordered readiness
+  checks. Independent review found that the SAP facade still imports and delegates Finance policy,
+  while readiness trusts mutable checklist/security labels, excludes open unverified signature
+  mismatches, and authorises loan reads through origination assignment. Corrective 009B3 performs
+  the non-destructive SAP owner transfer, and 009D2 reconciles exact owner evidence plus canonical
+  loan scope before 009E can initiate payment.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

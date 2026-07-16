@@ -1,0 +1,31 @@
+Backend interpreter: /Users/amitkallapa/LMS/.ralph/venv/bin/python
+
+PASS: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py check
+Output: System check identified no issues (0 silenced).
+
+PASS: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py makemigrations --check --dry-run
+Output: No changes detected.
+
+PASS: COVERAGE_FILE=/private/tmp/ralph-architecture-review.coverage
+      /Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage run
+      --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests
+Output: Ran 1001 tests in 529.733s; OK (skipped=52).
+
+PASS: COVERAGE_FILE=/private/tmp/ralph-architecture-review.coverage
+      /Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85
+Output: TOTAL 40,749 statements; 3,565 missed; 91% coverage.
+
+PASS: npm run build
+Output: Vite built 1,880 modules successfully. Existing large-chunk warning only.
+
+PASS: npm run typecheck --if-present
+Output: tsc --noEmit completed successfully.
+
+PASS: npm run lint --if-present
+Output: eslint src completed successfully.
+
+PASS: npm test --if-present
+Output: 36 files passed; 322 tests passed.
+
+PASS: git diff --check
+PASS: protected/source production-path inspection (no production, protected, or docs/source edits)

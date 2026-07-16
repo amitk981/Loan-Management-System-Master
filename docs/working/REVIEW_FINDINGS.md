@@ -2,6 +2,122 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-16 14:37 - Architecture Review 2026-07-16_143718_architecture_review
+
+Reviewed completed work since architecture-review commit `1601a903`:
+- `008M3-documentation-workspace-executable-action-closure` (`9986985e`)
+- `008M4-documentation-workspace-deep-module-and-design-closure` (`13d2ff10`)
+- `009B2-sap-delivery-replay-audit-and-owner-seam-closure` (`968a31b9`)
+- `009C-loan-account-creation-from-sanctioned-application` (`3178d9bd`)
+- `009D-disbursement-readiness-service` (`d519dc53`)
+
+The review checked `git diff 1601a903...d519dc53`, all 75 changed non-run files, the five slice
+contracts, Epic 008/009 digests, and their cited source sections. Standards and Spec ran as isolated
+parallel passes. Seven review-only executable probes now fail on the retained implementation, as
+expected: workspace actions lack durable consumed owner state, required PoA has neither an action nor
+an explicit blocker, the SAP owner imports Finance policy/models, readiness uses origination scope,
+and legal/security readiness trusts shallow statuses or filters open mismatches. Probe source and
+output are retained under this run's `evidence/`; no production code changed.
+
+### Standards
+
+#### Finding 1 - Critical - Readiness authorises loan-account reads through origination assignment
+
+`loans/modules/loan_account_lifecycle.py` lines 62-91 calls
+`evaluate_application_object_access` for a loan-account readiness read. Its test makes a CFC pass by
+assigning that CFC as `application.received_by_user`. Auth-permissions §§19.2-19.3 and 26.5 separate
+origination/application scope from loan-account/disbursement scope, so reassignment of an intake fact
+can currently grant a payment-gate read. `009D2` introduces and tests the canonical loan-owner scope.
+
+#### Finding 2 - Critical - The public SAP owner remains a forwarding shell with a dependency cycle
+
+`sap_workflow/modules/sap_customer_profile.py` lines 23-30 imports Finance models, storage, request,
+send, completion, and read implementations. Finance's HTTP surface then imports the SAP adapter,
+leaving policy in Finance and a Finance↔SAP dependency rather than the deep owner promised by 009B2
+and codebase-design §§20/28/36.2. `009B3` performs a non-destructive owner transfer, removes the cycle,
+and preserves every applied table and retained row.
+
+#### Finding 3 - High - Architecture tests freeze source text instead of public behavior
+
+New workspace, loan, SAP, and readiness tests inspect imports or source substrings for architectural
+claims. Those assertions can pass while the public owner still delegates policy or the real flow is
+unusable, contrary to codebase-design §§26.1-26.2. The same tests leave the PoA path unreachable and
+build the readiness all-pass case by mocking every owner projection. `008M5`, `009B3`, and `009D2`
+require public behavior, dependency-graph, real-owner, and durable-ledger assertions.
+
+#### Finding 4 - High - Cross-owner action code and error translation are duplicated
+
+The staff workspace repeats action dictionaries, authority-exception translation, and dispatch
+rules across legal/security/approval modules, while the SAP delivery path writes integration-shaped
+events directly rather than through the established integration vocabulary seam. This raises drift
+risk at exactly the shared server-authority boundaries. `008M5` consolidates durable action ownership;
+`009B3` keeps adapter and event policy inside the SAP owner.
+
+#### Finding 5 - Medium - New finance endpoints introduce a parallel conflict vocabulary
+
+The reviewed loan/SAP views return `STALE_STATE`, `LOAN_ACCOUNT_CONFLICT`, `INVALID_STATE`,
+`SAP_REQUEST_CONFLICT`, and `SAP_DELIVERY_CONFLICT`, while API §7 standardises state conflicts as
+`INVALID_STATE_TRANSITION` or `CONFLICT`. The touched APIs therefore make clients understand a
+second taxonomy. `009B3` aligns touched SAP responses; `009D2` preserves the standard readiness
+contract, and a later loan mutation must not copy 009C's private codes.
+
+### Spec
+
+#### Finding 1 - Critical - 009D can pass mutable checklist and approval labels without exact evidence
+
+`legal_documents/modules/disbursement_readiness.py` lines 37-50 trusts item `completion_status` and
+the checklist terminal label, while lines 63-71 accept approval actions whose ledger ids are merely
+non-null. It neither reconciles the canonical completion actions nor their exact current renderer,
+audit, workflow, version, actor, and approval-cycle content. Its applicability expression also makes
+a required-but-inapplicable pending item block. This violates M06-FR-019 and 009D's own exact-current-
+evidence contract. `009D2` replaces every shallow pass with owner reconciliation.
+
+#### Finding 2 - Critical - An unresolved open signature mismatch can produce a readiness pass
+
+`legal_documents/modules/disbursement_readiness.py` lines 57-62 filters out any mismatch lacking a
+verifier and timestamp before calling `all`; one unresolved row therefore becomes `all([]) == True`.
+S34 requires every open mismatch to block. `009D2` evaluates all current signature rows and adds the
+open/stale/contradictory/duplicate matrix.
+
+#### Finding 3 - Critical - Security readiness bypasses terminal evidence contracts
+
+`security_instruments/modules/disbursement_readiness.py` lines 21-78 checks status labels plus a few
+non-null user/event ids. It bypasses the existing terminal-evidence seams that validate current
+documents, checksums, exact ₹500 PoA stamp/notary/signatures, maker-checker identity, evidence JSON,
+custody, bank linkage, and event content. Forged or stale rows can therefore clear a payment blocker.
+`009D2` consumes the coordinated security evidence contract used by checklist completion.
+
+#### Finding 4 - High - Advertised workspace mutations are durable only as generic local records
+
+`legal_documents/modules/staff_workspace_actions.py`'s signed-copy action stores a generic
+`DocumentFile`; correction, return, and condition actions write only generic workflow events. No
+current signed-copy successor, checklist correction/condition aggregate, blocker, or later approval
+decision consumes those writes. Tests assert HTTP success and row existence rather than post-refetch
+owner truth. `008M5` gives those mutations durable legal-owner state and requires the UI and approval
+decisions to consume it.
+
+#### Finding 5 - High - Required PoA is silently actionless under the honest attorney assumption
+
+`security_instruments/modules/staff_workspace_actions.py` lines 59-69 hardcodes `attorney = None` and
+returns no action, but it also projects no stable reason explaining that A-125 deliberately forbids
+inventing an attorney. S28 users see a pending workflow with no truthful next step. `008M5` preserves
+the legal-authority constraint and projects `governed_attorney_unconfigured` until a future governed
+selector exists.
+
+### Corrective Queue
+
+- `008M5-documentation-durable-actions-and-blocker-closure` closes the two workspace findings and
+  provides a real-Django browser contract for durable refetch truth.
+- `009B3-sap-policy-owner-and-dependency-closure` closes SAP ownership, dependency, adapter/event,
+  migration-preservation, and touched error-vocabulary findings.
+- `009D2-readiness-evidence-and-loan-scope-closure` closes all readiness evidence, scope, and genuine
+  real-owner test gaps. `009E` now depends on `009D2`, so payment initiation cannot consume the
+  reviewed shallow gate.
+
+Worst severity is Critical on both axes. Standards: 2 Critical, 2 High, 1 Medium. Spec: 3 Critical,
+2 High. No scope creep or owner decision requiring an ADR was found; source documents already define
+the correct owners, evidence, and authority seams.
+
 ## 2026-07-16 07:41 - Architecture Review 2026-07-16_072819_architecture_review
 
 Reviewed completed work since architecture-review commit `ad590fb7`:

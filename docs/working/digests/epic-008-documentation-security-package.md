@@ -14,6 +14,20 @@ Sources:
 `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-16 14:37 — Durable Workspace Action Closure
+
+- 008M3's signed-copy action retains a generic uploaded file, but no signed-copy successor/current
+  owner projection consumes it after refetch. Its correction, return, and condition actions retain
+  only generic workflow events, so checklist blockers and ordered approval decisions never observe
+  the advertised mutations. S26/S27/S35 and M06-FR-018/019 require durable current legal truth.
+- 008M4 correctly refused to invent an attorney under A-125, but the required PoA row becomes
+  silently actionless. S28 needs an honest stable `governed_attorney_unconfigured` blocker until a
+  governed application-scoped attorney owner exists; the corrective must not add an arbitrary
+  selector or grant authority.
+- `008M5` replaces both workspace-local paths with consumed legal-owner state, immutable signed-copy
+  succession and correction/condition ledgers, exact replay/conflict behavior, downstream blocking,
+  and a real-Django refetch/browser contract using the established S26-S35 composition.
+
 ## Architecture Review 2026-07-16 07:41 — Workspace Action and Deep-Module Closure
 
 - S26/S27/S35 require upload/re-upload and correction/return actions in addition to generation,

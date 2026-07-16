@@ -1,5 +1,23 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-16 14:37 — Owner, Evidence, and Loan-Scope Closure
+
+- 009B2's public `sap_workflow` module still imports Finance models, encrypted storage, and the
+  request/send/complete/read implementations. That facade leaves Finance as policy owner and creates
+  a Finance↔SAP dependency. `009B3` must perform a state-only/non-destructive owner migration,
+  preserve all tables/ids/ciphertext/digests/history, keep Manual/Fake/Future adapters in the SAP
+  owner, and remove executable SAP→Finance edges.
+- 009D legal readiness trusts mutable item/checklist statuses and non-null approval ledger ids rather
+  than exact current completion/approval identities. It also filters unverified signature rows, so
+  one open mismatch can become `all([]) == true`, contrary to S34 and M06-FR-019.
+- 009D security readiness checks shallow statuses and event-id presence instead of the coordinated
+  terminal contracts for exact PoA ₹500 evidence, SH-4/CDSL facts, cheque custody/bank linkage,
+  checksums, maker-checker identity, and event content. It authorises through application intake
+  assignment rather than the separate loan/disbursement scope in auth §§19.3/26.5.
+- `009D2` must reconcile all current source-owner evidence, ignore pending items only when the owner
+  says they are inapplicable, evaluate every mismatch, use canonical loan scope, and prove a genuine
+  all-pass public response without mocking owner projections. `009E` now depends on this closure.
+
 Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.md` §14,
 `integrations.md` §8/§33.1, `data-model.md` §19.1-19.2, `api-contracts.md` §29.1, and
 `functional-spec.md` BR-047-BR-050/M07-FR-001-M07-FR-010.

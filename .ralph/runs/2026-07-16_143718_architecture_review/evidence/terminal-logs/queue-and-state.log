@@ -1,0 +1,13 @@
+Command: source scripts/lib/ralph-slice-selection.sh; ralph_slice_queue_lint docs/slices
+Shell: bash
+Result: PASS (exit 0; no problems reported)
+
+Command: ralph_validate_slice_capabilities for 008M5, 009B3, and 009D2
+Shell: bash
+Result: PASS
+
+Command: jq empty .ralph/state.json
+Result: PASS
+
+Note: An initial invocation under zsh stopped because `status` is a zsh read-only variable. The
+repository helper is Bash-native; the authoritative rerun used Bash and passed.
