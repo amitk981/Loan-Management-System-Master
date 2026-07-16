@@ -14,6 +14,17 @@ Sources:
 `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-16 21:37 — Corrected-Copy and Stage Evidence
+
+- 008M5 materially adds immutable signed-copy succession, durable correction/return/condition rows,
+  consumed blockers, and the honest A-125 attorney blocker. Independent execution nevertheless
+  changed the accepted corrected copy's `DocumentFile` checksum and found the correction remained
+  resolved because current truth checks only the reverse one-to-one relation.
+- Conditions and returns derive their retained stage from a fixed effective-role order rather than
+  the approval stage that issued the opaque action, so multi-role actors can misattribute later-stage
+  evidence. `008M6` reconciles exact file/action/audit/workflow/version truth and freezes the actual
+  authorising stage before readiness can consume corrected documentation.
+
 ## Architecture Review 2026-07-16 14:37 — Durable Workspace Action Closure
 
 - 008M3's signed-copy action retains a generic uploaded file, but no signed-copy successor/current

@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009B3B-sap-policy-adapter-and-dependency-closure.md
+ M docs/slices/009E-payment-initiation-by-senior-manager-finance.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-16_213746_architecture_review/
+?? docs/slices/008M6-documentation-corrected-copy-and-stage-evidence-closure.md
+?? docs/slices/009B3C-sap-current-evidence-and-adapter-contract-closure.md
+?? docs/slices/009D3-readiness-approval-reader-and-boundary-closure.md

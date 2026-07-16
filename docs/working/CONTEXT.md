@@ -133,7 +133,11 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   while readiness trusts mutable checklist/security labels, excludes open unverified signature
   mismatches, and authorises loan reads through origination assignment. Corrective 009B3 performs
   the non-destructive SAP owner transfer, and 009D2 reconciles exact owner evidence plus canonical
-  loan scope before 009E can initiate payment.
+  loan scope. The next independent review found that changed corrected-copy and SAP send evidence
+  can still remain current, ordered approvals survive a changed completion, source-authorised
+  Credit Manager/CFO/Auditor readiness reads are rejected, and adapter/signature edge contracts are
+  under-tested. Corrective 008M6, 009B3C, and 009D3 now precede 009E and close those evidence,
+  reader-scope, signer, adapter, and deep-boundary gaps before payment initiation.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

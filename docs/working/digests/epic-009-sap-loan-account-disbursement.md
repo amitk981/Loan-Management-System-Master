@@ -1,5 +1,19 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-16 21:37 — Current SAP, Approval, and Reader Closure
+
+- 009B3A/B substantively establish canonical SAP model/policy/adapter ownership without a Finance
+  cycle. The shared adapter contract remains happy-path only, and a changed send-audit assignee still
+  yields a current SAP code because the decision reconciles only part of the delivery evidence.
+  `009B3C` requires one singular complete send/completion ledger and shared Manual/Fake/Future
+  negative contracts.
+- 009D2 substantively replaces shallow legal/security labels and origination assignment with owner
+  decisions. Independent probes found all three approvals survive a changed current completion
+  version, while Credit Manager, CFO, and Auditor are hard-rejected despite auth §26.5 read grants.
+  Approval completion ids also lose order and sibling-ledger singularity. `009D3` restores exact
+  current ordered approvals/signers, the full §19.3/§26.5 reader matrix, and the named deep readiness
+  boundary. `009E` now waits for 009D3.
+
 ## 009B3B SAP Policy Owner Closure
 
 Executable SAP policy and Manual/Fake/Future adapters now live only in `sap_workflow`; Finance keeps

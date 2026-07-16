@@ -2,6 +2,122 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-16 21:37 - Architecture Review 2026-07-16_213746_architecture_review
+
+Reviewed completed work since architecture-review commit `0d90bc19`:
+- `008M5-documentation-durable-actions-and-blocker-closure` (`b1ff3529`)
+- `009B3A-sap-model-owner-and-state-migration` (`8e3d2c0c`)
+- `009B3B-sap-policy-adapter-and-dependency-closure` (`d1361396`)
+- `009D2-readiness-evidence-and-loan-scope-closure` (`9d8fb0a7`)
+
+The review checked `git diff 0d90bc19...9d8fb0a7`, the four slice contracts, Epic 008/009
+digests, cited source requirements, production/test/migration diffs, and retained run evidence.
+Standards and Spec ran as isolated parallel passes. Four focused current-contract tests pass, while
+four review-only probes fail in six assertions: corrected-copy checksum integrity, approval/current-
+completion coupling, three source read roles, and full SAP send-evidence reconciliation. Probe source
+and output are retained in this run; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - Readiness removes source-authorised read roles
+
+`loans/modules/loan_account_lifecycle.py` lines 64-94 hardcodes readiness to Senior Manager Finance
+or CFC, then grants only the newest SAP assignee; pre-009E CFC is deliberately denied. Credit Manager,
+CFO, and Internal Auditor are rejected before any object-scope decision even when they hold
+`finance.disbursement.readiness`. Auth-permissions §§19.3/26.5 explicitly grants each read access
+under a distinct loan scope. The executable probe reproduced all three hard rejections. `009D3`
+restores the complete source reader matrix without reviving application-intake assignment.
+
+#### Finding 2 - High - Corrected-copy resolution is a relation check, not current evidence
+
+`legal_documents/modules/documentation_actions.py` lines 289-333 treats the existence of
+`resolved_by_signed_copy` as resolution. It does not reconcile the successor's retained file
+checksum or singular action/audit/workflow/version bodies. After a real correction and upload, the
+probe changed the accepted `DocumentFile` checksum; `has_open_blocker` still returned false, so
+completion/approval can consume a changed correction. This conflicts with codebase-design §§14/27/
+42 and the project's current-evidence pattern. `008M6` adds one legal-owner reconciliation decision.
+
+#### Finding 3 - Medium - Readiness composition leaks into a pass-through process API
+
+`disbursements/modules/disbursement_readiness.py` now imports two readiness-specific wrappers from
+`processes/document_checklist_actions.py`. The established `processes` coordinator legitimately
+breaks the security/legal reverse dependency, but the new wrappers merely forward readiness calls
+and split the public composition seam. Codebase-design §§16.3/27.1/28.1 assigns the deep public
+decision to `disbursements.modules.disbursement_readiness`. `009D3` keeps the typed cross-owner
+callback while returning readiness-specific composition to its named owner.
+
+#### Finding 4 - Medium - Edge tests omit negative adapter and empty-signature contracts
+
+009B3B's shared adapter test covers deterministic successful Manual/Fake/Future delivery but not bad
+checksum/bytes, changed assignee/key, or Future bypass attempts required by its slice. 009D2's
+signature tests add bad rows to a fully signed fixture but never remove a required signature;
+`all_current_signatures_resolved` still returns `all([]) == True`. Codebase-design §§26/42 requires
+behavioral boundary and edge assertions. `009B3C` adds the shared negative adapter contract and
+`009D3` adds the exact required-signer matrix.
+
+#### Finding 5 - Low - Completed SAP slice bookkeeping and migration-slice scope drifted
+
+009B3B was marked Complete with every Done Checklist item left unchecked; this review aligned the
+record with its independently gated run. Separately, 009B3A's state-only migration commit included
+Playwright environment/type fixes. Those compile repairs are harmless and tested, but outside the
+slice's explicitly migration-only scope; future repair/infrastructure work should remain separately
+attributable.
+
+### Spec
+
+#### Finding 1 - High - Approval readiness survives changed current completion evidence
+
+009D2 requirement 2 says every approval consumes full current ordered checklist facts. In
+`checklist_actions.approval_readiness`, approvals reconcile their retained list against all stored
+completion action ids, not the currently valid completion decisions. The probe changed the final-
+checklist completion version: `documentation_complete` correctly failed, but all three approval
+flags remained true. The function also converts retained completion ids to a set and does not count
+sibling audit/workflow/version rows, so reordered or duplicate evidence can pass. This violates
+M06-FR-019 and M08-FR-003. `009D3` makes each stage consume the exact ordered current decisions.
+
+#### Finding 2 - High - Changed SAP send evidence still authorises a current code decision
+
+009D2 requirements 7-8 require the canonical SAP owner to decide current request/code coherence.
+`sap_customer_profile._current_completed_code_evidence` checks the send audit's checksum but not its
+full safe body or singular linked send workflow/task/communication evidence. The probe replaced its
+frozen assignee id and still received an active `SapCustomerCodeDecision`. `009B3C` makes current
+SAP truth depend on one complete exact delivery/completion ledger before readiness consumes it.
+
+#### Finding 3 - Medium - Returns and conditions can be attributed to the wrong approval stage
+
+008M5 requirements 2-3 require the exact actor role and approval target. `_canonical_role` selects
+the first effective role in fixed Company Secretary/Credit Manager/Director order, independent of
+the stage whose owner issued the command. A multi-role actor can therefore attach a later-stage
+return or condition to Company Secretary history. Single-role tests do not cover this. `008M6`
+binds stage and authorising role in the opaque command and retained evidence.
+
+#### Finding 4 - Medium - 009B3B's promised adapter substitutability is only partially proved
+
+The slice requires Manual/Fake to share one contract and Future not to bypass workbook acceptance,
+assignment, or exact replay. The implementation has the intended local validation seam, but its
+test exercises only success/replay. `009B3C` parameterises positive and negative cases across all
+three adapters so a later transport cannot silently weaken file-first guarantees.
+
+#### Finding 5 - Low - 009B3A carried unrelated browser compile repair
+
+The state-only ownership slice explicitly forbids moving executable behavior, yet its repair added
+`playwright.browser.ts` environment resolution and `src/node-fs.d.ts`. This did not alter business
+behavior or migration truth, but it is unrelated scope creep and complicates slice-level review.
+
+### Corrective Queue
+
+- `008M6-documentation-corrected-copy-and-stage-evidence-closure` restores corrected-copy/current-
+  ledger integrity and exact stage attribution.
+- `009B3C-sap-current-evidence-and-adapter-contract-closure` restores complete SAP decision evidence
+  and the shared negative adapter contract.
+- `009D3-readiness-approval-reader-and-boundary-closure` restores current approval/signature truth,
+  the full loan reader matrix, and the deep readiness boundary. It depends on 008M6/009B3C/009D2;
+  `009E` now depends on 009D3.
+
+Worst severity is High on both axes. Standards: 2 High, 2 Medium, 1 Low. Spec: 2 High, 2 Medium,
+1 Low. No owner decision requires an ADR: cited source documents already define the evidence,
+authority, adapter, and module boundaries.
+
 ## 2026-07-16 14:37 - Architecture Review 2026-07-16_143718_architecture_review
 
 Reviewed completed work since architecture-review commit `1601a903`:

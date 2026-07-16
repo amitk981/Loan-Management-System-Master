@@ -86,15 +86,15 @@ High
 - Epic 009 downstream code depends on one deep replaceable SAP seam with no dependency cycle.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Policy and adapters moved to SAP owner
-- [ ] API contracts preserved
-- [ ] Database/concurrency rules preserved
-- [ ] Permissions and denials tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit delegated to the orchestrator only after passing configured gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Policy and adapters moved to SAP owner
+- [x] API contracts preserved
+- [x] Database/concurrency rules preserved
+- [x] Permissions and denials tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit delegated to the orchestrator only after passing configured gates

@@ -1,0 +1,16 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_213746_architecture_review/.ralph/runs/2026-07-16_213746_architecture_review/evidence/probes --pattern 'test_review_contracts.py' --verbosity 2
+
+Result:
+Found 4 test(s).
+Ran 4 tests in 0.846s.
+FAILED (failures=6)
+
+Expected review-probe failures:
+- Changed accepted signed-copy checksum did not reopen the documentation blocker.
+- Changed completion VersionHistory invalidated documentation but not the first downstream approval;
+  that assertion stops the test before the remaining two approval assertions execute.
+- Credit Manager, CFO, and Internal Auditor reader subtests produced three rejection failures.
+- Changed SAP send-audit assignee still returned a current customer-code decision.
+
+This is intentionally retained red evidence for queued corrective slices, not a production test file.

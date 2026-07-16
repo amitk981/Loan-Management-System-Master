@@ -16,7 +16,7 @@ Senior Manager Finance can record the verified RBL-portal payment instruction an
 CFC queue while the platform preserves the exact beneficiary, amount, readiness, and maker facts.
 
 ## Depends On
-- 009D2
+- 009D3
 
 ## Source References
 - docs/source/implementation-roadmap.md section 14
