@@ -1,5 +1,19 @@
 # Ralph Progress Log
 
+## 2026-07-16 - 2026-07-16_111411_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice completed: 009B2-sap-delivery-replay-audit-and-owner-seam-closure.
+- Summary: Reproduced both architecture-review SAP defects, then established the public SAP
+  workflow/manual-adapter owner, exact checksum-verified retained-Annexure delivery, frozen-assignee
+  one-use capabilities, supplied/omitted-aware completion replay, mandatory create/reuse audit
+  vocabulary, and a safe downstream customer-code decision without financial side effects.
+- Tests run: two exact RED probes; 51 focused SAP tests; Django check and migration drift; PostgreSQL
+  request/code/member races twice; all 980 backend tests with 51 expected skips at 91% coverage;
+  frontend build/typecheck/lint and all 322 tests.
+- Evidence: `.ralph/runs/2026-07-16_111411_repair/evidence/`. Next: run sharpened 009C using only
+  `SapCustomerProfileModule.get_customer_code_for_member`, then 009D.
+
 ## 2026-07-16 - 2026-07-16_091335_repair
 
 - Agent tool used: codex with the diagnosing-bugs skill.
@@ -7770,6 +7784,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_100439_normal_run/.ralph/runs/2026-07-16_100439_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_100439_normal_run/.ralph/runs/2026-07-16_100439_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 12:00:58 - 2026-07-16_111411_repair
+- Agent tool used: codex
+- Slice attempted: 009B2-sap-delivery-replay-audit-and-owner-seam-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_111411_repair/.ralph/runs/2026-07-16_111411_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_111411_repair/.ralph/runs/2026-07-16_111411_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -54,6 +54,15 @@ None for this slice, except updating frontend documentation or fixtures if requi
 4. Keep the service read-only: no checklist refresh/completion, evidence repair, loan activation,
    payment/disbursement, balance, SAP posting, task, communication, or borrower-status side effects.
 
+## 009B2 Owner Contract Sharpening
+
+- Compare the account's nullable SAP link only with
+  `SapCustomerProfileModule.get_customer_code_for_member(member_id)`. A missing decision, non-active
+  status, or member/application/code mismatch fails the named SAP readiness check.
+- Readiness must not import SAP/Finance models, request delivery capabilities, decrypt Annexure-I,
+  call adapter status, or infer a pass from a masked/raw code. The owner decision is the complete
+  SAP prerequisite boundary and the GET remains zero-write.
+
 ## Database/Model Impact
 None expected. Consume source-owned current evidence and the 009C account/SAP links; do not add a
 parallel readiness table, cached boolean, copied checklist/security status, or migration unless a

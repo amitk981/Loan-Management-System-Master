@@ -22,6 +22,26 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - 009C now uses `loans.modules.loan_account_lifecycle` and the public SAP selector; 009D uses
   `disbursements.modules.disbursement_readiness`, matching codebase-design §§16.2-16.3.
 
+## 009B2 Closed Contract and M07 Traceability
+
+- `sap_workflow.modules.sap_customer_profile` is the public workflow owner. Its manual/fake adapter
+  contract accepts exact decrypted Annexure-I bytes plus plaintext checksum and returns an
+  idempotent delivery identity; retained Finance tables remain a compatibility/data-history seam.
+- The frozen assignee obtains a short-lived, replaceable, one-use capability and reads the exact
+  retained workbook through an audited nondisclosing route. The manual task contains neither file
+  ids nor token material, and no real SAP/email service is called.
+- Completion retains a canonical supplied/omitted-aware digest. New code emits
+  `sap.customer_code_created`; reuse emits `sap.customer_code_reused`; create/send/read/download/
+  denial evidence freezes safe actor role/team/request/network facts.
+
+| Requirement | Retained implementation truth after 009B2 |
+|---|---|
+| M07-FR-001/002 | Public owner resolves one coherent active exact-member code; database uniqueness and reuse/race locks prevent duplicate customer identities. |
+| M07-FR-003/004/005 | 009A retains the post-sanction request and encrypted genuine Annexure-I from canonical source facts. |
+| M07-FR-006 | `sent` requires manual-adapter acceptance, a frozen delivery identity, and an assignee task/capability path for the exact workbook. |
+| M07-FR-007 | Only the frozen active Senior Manager Finance assignee can complete the sent request; exact canonical replay is enforced. |
+| M07-FR-008 | The completed request binds the active member code and originating application; downstream modules receive only the public immutable decision. |
+
 ## 009A SAP Customer Profile Request
 
 - MVP is manual/file-first. After terminal sanction, a Credit Manager creates the request and a

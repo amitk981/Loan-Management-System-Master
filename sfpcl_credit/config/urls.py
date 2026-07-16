@@ -45,6 +45,18 @@ urlpatterns = [
         name="sap-customer-profile-request-complete",
     ),
     path(
+        "api/v1/sap-customer-profile-requests/"
+        "<uuid:sap_customer_profile_request_id>/annexure-i-delivery-capability/",
+        finance_views.sap_annexure_delivery_capability,
+        name="sap-customer-profile-annexure-delivery-capability",
+    ),
+    path(
+        "api/v1/sap-customer-profile-requests/"
+        "<uuid:sap_customer_profile_request_id>/annexure-i/",
+        finance_views.sap_annexure_download,
+        name="sap-customer-profile-annexure-download",
+    ),
+    path(
         "api/v1/members/<uuid:member_id>/sap-customer-code/",
         finance_views.member_sap_customer_code,
         name="member-sap-customer-code",

@@ -168,7 +168,9 @@ class SapCustomerProfileRequestApiTests(TestCase):
             AuditLog.objects.filter(action="finance.sap_customer_code.sent").count(), 1
         )
         self.assertEqual(
-            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 1
+            AuditLog.objects.filter(
+                action__in=("sap.customer_code_created", "sap.customer_code_reused")
+            ).count(), 1
         )
         self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeSent").count(), 1
@@ -181,7 +183,8 @@ class SapCustomerProfileRequestApiTests(TestCase):
             AuditLog.objects.filter(
                 action__in=(
                     "finance.sap_customer_code.sent",
-                    "finance.sap_customer_code.completed",
+                    "sap.customer_code_created",
+                    "sap.customer_code_reused",
                 )
             ).values_list("new_value_json", flat=True)
         )) + str(list(Communication.objects.values_list("body_snapshot", flat=True)))
@@ -259,7 +262,9 @@ class SapCustomerProfileRequestApiTests(TestCase):
         assert_error_envelope(self, changed.json(), "SAP_REQUEST_CONFLICT")
         self.assertEqual(SapCustomerCode.objects.count(), 1)
         self.assertEqual(
-            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 1
+            AuditLog.objects.filter(
+                action__in=("sap.customer_code_created", "sap.customer_code_reused")
+            ).count(), 1
         )
         self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeCompleted").count(), 1
@@ -458,7 +463,9 @@ class SapCustomerProfileRequestApiTests(TestCase):
         assert_error_envelope(self, nonterminal_denied.json(), "OBJECT_ACCESS_DENIED")
         self.assertEqual(SapCustomerCode.objects.count(), 0)
         self.assertEqual(
-            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 0
+            AuditLog.objects.filter(
+                action__in=("sap.customer_code_created", "sap.customer_code_reused")
+            ).count(), 0
         )
 
     def test_restricted_confirmation_evidence_must_match_actor_and_scope(self):
@@ -521,7 +528,9 @@ class SapCustomerProfileRequestApiTests(TestCase):
             )
         self.assertEqual(SapCustomerCode.objects.count(), 1)
         self.assertEqual(
-            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 1
+            AuditLog.objects.filter(
+                action__in=("sap.customer_code_created", "sap.customer_code_reused")
+            ).count(), 1
         )
 
     def test_member_read_is_masked_assignee_scoped_and_nondisclosing(self):
@@ -1134,7 +1143,7 @@ class SapCustomerProfileRequestRaceTests(TransactionTestCase):
             )
             self.assertEqual(
                 AuditLog.objects.filter(
-                    action="finance.sap_customer_code.completed"
+                    action__in=("sap.customer_code_created", "sap.customer_code_reused")
                 ).count(),
                 round_number + 1,
             )
@@ -1208,7 +1217,7 @@ class SapCustomerProfileRequestRaceTests(TransactionTestCase):
             )
             self.assertEqual(
                 AuditLog.objects.filter(
-                    action="finance.sap_customer_code.completed"
+                    action__in=("sap.customer_code_created", "sap.customer_code_reused")
                 ).count(),
                 round_number + 1,
             )

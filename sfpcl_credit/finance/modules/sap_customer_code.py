@@ -1,3 +1,5 @@
+import hashlib
+import json
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -24,6 +26,7 @@ from sfpcl_credit.finance.modules.sap_customer_request import (
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.models import Member
+from sfpcl_credit.sap_workflow.adapters import ManualSapAdapter, SapCustomerProfilePayload
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -33,8 +36,9 @@ READ_PERMISSION = "finance.sap_code.read"
 _INACCESSIBLE_DOCUMENT = "Document file was not found or is inaccessible."
 
 
-def send_request(*, actor, request_id, payload, request, storage=None):
+def send_request(*, actor, request_id, payload, request, storage=None, adapter=None):
     values = _parse_send_payload(payload)
+    adapter = adapter or ManualSapAdapter()
     with transaction.atomic():
         actor = _locked_actor(actor, SEND_PERMISSION, "credit_manager")
         row, application, member, assignee = _locked_request_scope(
@@ -43,7 +47,16 @@ def send_request(*, actor, request_id, payload, request, storage=None):
         _require_current_scope(row, application, member, assignee)
 
         if row.request_status == SapCustomerProfileRequest.STATUS_SENT:
-            if row.sent_remarks != values["remarks"]:
+            workbook = EncryptedAnnexureStorage(storage).read_verified(row.excel_file)
+            checksum = hashlib.sha256(workbook).hexdigest()
+            if (
+                row.sent_remarks != values["remarks"]
+                or row.delivery_checksum_sha256 != checksum
+                or row.delivery_file_id_snapshot != row.excel_file_id
+                or row.delivery_assignee_id_snapshot != row.assigned_to_user_id
+                or adapter.get_customer_status(row.delivery_reference).delivery_status
+                != "delivered"
+            ):
                 raise SapRequestConflict("The sent SAP request facts cannot be changed.")
             return serialize_sent_request(row)
         if row.request_status != SapCustomerProfileRequest.STATUS_DRAFT:
@@ -52,6 +65,21 @@ def send_request(*, actor, request_id, payload, request, storage=None):
         workbook = EncryptedAnnexureStorage(storage).read_verified(row.excel_file)
         if not workbook.startswith(b"PK"):
             raise DomainInvalidStateError("The retained SAP Annexure-I file is invalid.")
+        checksum = hashlib.sha256(workbook).hexdigest()
+        delivery = adapter.create_customer_profile_request(
+            SapCustomerProfilePayload(
+                request_id=row.pk,
+                assignee_user_id=assignee.pk,
+                document_id=row.excel_file_id,
+                file_name=row.excel_file.file_name,
+                mime_type=row.excel_file.mime_type or "",
+                workbook_bytes=workbook,
+                checksum_sha256=checksum,
+            ),
+            idempotency_key=f"sap-customer-profile:{row.pk}",
+        )
+        if delivery.delivery_status != "delivered" or delivery.checksum_sha256 != checksum:
+            raise SapRequestConflict("The manual SAP adapter did not accept Annexure-I delivery.")
 
         communication, task = create_internal_user_task(
             sender=actor,
@@ -59,12 +87,12 @@ def send_request(*, actor, request_id, payload, request, storage=None):
             related_entity_type="sap_customer_profile_request",
             related_entity_id=row.pk,
             subject="SAP customer profile creation request",
-            body=(
-                f"SAP request {row.pk} is ready with retained Annexure-I file "
-                f"{row.excel_file_id}."
+            body="A checksum-verified Annexure-I is ready in the governed SAP workspace.",
+            action_label="Open SAP delivery",
+            action_url=(
+                f"/api/v1/sap-customer-profile-requests/{row.pk}/"
+                "annexure-i-delivery-capability/"
             ),
-            action_label="Review SAP request",
-            action_url=f"/api/v1/sap-customer-profile-requests/{row.pk}/complete/",
             notification_type="sap_customer_profile_request",
             category="Finance",
         )
@@ -74,16 +102,26 @@ def send_request(*, actor, request_id, payload, request, storage=None):
         row.sent_remarks = values["remarks"]
         row.sent_communication = communication
         row.sent_task = task
+        row.delivery_reference = delivery.external_reference
+        row.delivery_checksum_sha256 = delivery.checksum_sha256
+        row.delivery_file_id_snapshot = row.excel_file_id
+        row.delivery_assignee_id_snapshot = row.assigned_to_user_id
         row.save(update_fields=[
             "request_status", "sent_at", "sent_remarks",
             "sent_communication", "sent_task",
+            "delivery_reference", "delivery_checksum_sha256",
+            "delivery_file_id_snapshot", "delivery_assignee_id_snapshot",
         ])
+        communication.delivery_status = delivery.delivery_status
+        communication.external_message_id = delivery.external_reference
+        communication.save(update_fields=["delivery_status", "external_message_id"])
         evidence = _safe_evidence(row, actor, outcome="sent")
         evidence.update({
             "communication_id": str(communication.pk),
             "task_id": str(task.pk),
             "excel_file_id": str(row.excel_file_id),
-            "annexure_checksum_sha256": row.excel_file.checksum_sha256,
+            "annexure_checksum_sha256": delivery.checksum_sha256,
+            "delivery_reference": delivery.external_reference,
             "provenance": "manual_file_annexure_i",
             "request_id": request.headers.get("X-Request-ID"),
         })
@@ -107,6 +145,7 @@ def send_request(*, actor, request_id, payload, request, storage=None):
 
 def complete_request(*, actor, request_id, payload, request):
     values = _parse_complete_payload(payload)
+    completion_digest = _completion_input_digest(values)
     with transaction.atomic():
         actor = _locked_actor(actor, COMPLETE_PERMISSION, "senior_manager_finance")
         row, application, member, assignee = _locked_request_scope(
@@ -114,7 +153,7 @@ def complete_request(*, actor, request_id, payload, request):
         )
         _require_current_scope(row, application, member, assignee)
         if row.request_status == SapCustomerProfileRequest.STATUS_COMPLETED:
-            _require_exact_completion_replay(row, values)
+            _require_exact_completion_replay(row, values, completion_digest)
             return serialize_completed_request(row)
         if row.request_status != SapCustomerProfileRequest.STATUS_SENT:
             raise DomainInvalidStateError("Only a sent SAP request can be completed.")
@@ -187,9 +226,10 @@ def complete_request(*, actor, request_id, payload, request):
         row.completed_at = timezone.now()
         row.sap_customer_code = code
         row.completion_reused_existing_code = reused
+        row.completion_input_digest = completion_digest
         row.save(update_fields=[
             "request_status", "completed_at", "sap_customer_code",
-            "completion_reused_existing_code",
+            "completion_reused_existing_code", "completion_input_digest",
         ])
         evidence = _safe_evidence(
             row, actor, outcome="reused" if reused else "created"
@@ -204,9 +244,12 @@ def complete_request(*, actor, request_id, payload, request):
             "provenance": "manual_sap_confirmation",
             "request_id": request.headers.get("X-Request-ID"),
         })
+        completion_action = (
+            "sap.customer_code_reused" if reused else "sap.customer_code_created"
+        )
         _record_audit(
             actor=actor, request=request, row=row,
-            action="finance.sap_customer_code.completed", evidence=evidence,
+            action=completion_action, evidence=evidence,
         )
         record_workflow_event(
             actor=actor,
@@ -215,17 +258,14 @@ def complete_request(*, actor, request_id, payload, request):
             entity_id=row.pk,
             from_state=SapCustomerProfileRequest.STATUS_SENT,
             to_state=SapCustomerProfileRequest.STATUS_COMPLETED,
-            trigger_reason=(
-                "finance.sap_customer_code.reused"
-                if reused else "finance.sap_customer_code.completed"
-            ),
-            action_code="finance.sap_customer_code.completed",
+            trigger_reason=completion_action,
+            action_code=completion_action,
             metadata=evidence,
         )
         return serialize_completed_request(row)
 
 
-def read_member_code(*, actor, member_id):
+def read_member_code(*, actor, member_id, request):
     with transaction.atomic():
         actor = _locked_actor(actor, READ_PERMISSION, "senior_manager_finance")
         member = (
@@ -255,6 +295,13 @@ def read_member_code(*, actor, member_id):
         )
         if code is None or scoped_request.sap_customer_code_id != code.pk:
             raise DomainInvalidStateError("An active SAP customer code is unavailable.")
+        _record_audit(
+            actor=actor,
+            request=request,
+            row=scoped_request,
+            action="sap.customer_code_read",
+            evidence=_safe_evidence(scoped_request, actor, outcome="read"),
+        )
         return serialize_member_code(code)
 
 
@@ -269,6 +316,15 @@ def serialize_sent_request(row):
         },
         "communication_id": str(row.sent_communication_id),
         "task_id": str(row.sent_task_id),
+        "delivery": {
+            "delivery_reference": row.delivery_reference,
+            "checksum_sha256": row.delivery_checksum_sha256,
+            "document_id": str(row.delivery_file_id_snapshot),
+            "capability_path": (
+                f"/api/v1/sap-customer-profile-requests/{row.pk}/"
+                "annexure-i-delivery-capability/"
+            ),
+        },
     }
 
 
@@ -424,22 +480,13 @@ def _require_reuse_facts(code, values, document):
             raise SapRequestConflict("Existing SAP customer code facts cannot be changed.")
 
 
-def _require_exact_completion_replay(row, values):
+def _require_exact_completion_replay(row, values, completion_digest):
+    if not row.completion_input_digest or row.completion_input_digest != completion_digest:
+        raise SapRequestConflict("The completed SAP request facts cannot be changed.")
     code = row.sap_customer_code
     if code is None or code.sap_customer_code != values["sap_customer_code"]:
         raise SapRequestConflict("The completed SAP request facts cannot be changed.")
     if row.completion_reused_existing_code:
-        comparisons = (
-            (values["sap_vendor_code"], code.sap_vendor_code),
-            (values["created_at_sap"], code.created_at_sap),
-            (values["confirmation_document_id"], code.confirmation_document_id),
-            (values["confirmation_notes"], code.confirmation_notes),
-        )
-        if any(
-            supplied not in (None, "") and supplied != retained
-            for supplied, retained in comparisons
-        ):
-            raise SapRequestConflict("The completed SAP request facts cannot be changed.")
         return
     if (
         code.sap_vendor_code != values["sap_vendor_code"]
@@ -507,7 +554,30 @@ def _parse_complete_payload(payload):
         "created_at_sap": created_at_sap,
         "confirmation_document_id": document_id,
         "confirmation_notes": notes.strip(),
+        "provided_fields": frozenset(payload),
     }
+
+
+def _completion_input_digest(values):
+    canonical = {}
+    for field in (
+        "sap_customer_code",
+        "sap_vendor_code",
+        "created_at_sap",
+        "confirmation_document_id",
+        "confirmation_notes",
+    ):
+        value = values[field]
+        if hasattr(value, "isoformat"):
+            value = value.isoformat()
+        elif value is not None:
+            value = str(value)
+        canonical[field] = {
+            "provided": field in values["provided_fields"],
+            "value": value,
+        }
+    encoded = json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _code_value(raw, field, *, required, errors):
@@ -525,6 +595,33 @@ def _code_value(raw, field, *, required, errors):
 
 
 def _record_audit(*, actor, request, row, action, evidence):
+    read_only = action == "sap.customer_code_read"
+    evidence = {
+        **evidence,
+        "actor_type": "user",
+        "actor_role_codes": sorted(auth_service.effective_role_codes(actor)),
+        "actor_team_codes": sorted(actor.team_codes()),
+        "action": action,
+        "entity_type": "sap_customer_profile_request",
+        "entity_id": str(row.pk),
+        "old_state": (
+            row.request_status
+            if read_only
+            else SapCustomerProfileRequest.STATUS_DRAFT
+            if row.request_status == SapCustomerProfileRequest.STATUS_SENT
+            else SapCustomerProfileRequest.STATUS_SENT
+        ),
+        "new_state": row.request_status,
+        "request_id": request.headers.get("X-Request-ID"),
+        "ip_address": request_ip(request),
+        "user_agent": request_user_agent(request),
+        "timestamp": _iso(timezone.now()),
+        "reason": (
+            "Authorised masked SAP customer code read."
+            if read_only
+            else "SAP customer profile workflow action accepted."
+        ),
+    }
     AuditLog.objects.create(
         actor_user=actor,
         actor_type="user",

@@ -118,9 +118,11 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   prototype composition while preserving those behaviors.
   Epic 009 has started: 009A generates the encrypted retained Annexure-I from current sanctioned
   facts, and 009B adds send, assigned Finance confirmation, normalized member-code uniqueness/reuse,
-  and PostgreSQL races. Review found that `sent` does not actually deliver the Excel, reuse replay
-  accepts changed optional payload, mandatory SAP audit context is incomplete, and policy lives
-  outside the source-defined SAP adapter owner. Corrective 009B2 closes those contracts before 009C.
+  and PostgreSQL races. Review found that `sent` did not actually deliver the Excel, reuse replay
+  accepted changed optional payload, mandatory SAP audit context was incomplete, and policy lived
+  outside the source-defined SAP adapter owner. Corrective 009B2 now closes those contracts with
+  exact retained-workbook delivery, one-use assignee capabilities, supplied/omitted-aware replay,
+  mandatory create/reuse audit truth, and the public SAP decision/adapter owner before 009C.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

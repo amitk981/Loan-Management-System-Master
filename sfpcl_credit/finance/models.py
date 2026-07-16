@@ -57,11 +57,19 @@ class SapCustomerProfileRequest(models.Model):
         "communications.Notification", null=True, blank=True, on_delete=models.PROTECT,
         related_name="sap_customer_profile_requests",
     )
+    delivery_reference = models.CharField(max_length=160, blank=True)
+    delivery_checksum_sha256 = models.CharField(max_length=64, blank=True)
+    delivery_file_id_snapshot = models.UUIDField(null=True, blank=True)
+    delivery_assignee_id_snapshot = models.UUIDField(null=True, blank=True)
+    delivery_capability_version = models.PositiveIntegerField(default=0)
+    delivery_capability_expires_at = models.DateTimeField(null=True, blank=True)
+    delivery_capability_consumed_at = models.DateTimeField(null=True, blank=True)
     sap_customer_code = models.ForeignKey(
         "SapCustomerCode", null=True, blank=True, on_delete=models.PROTECT,
         related_name="completed_profile_requests",
     )
     completion_reused_existing_code = models.BooleanField(null=True, blank=True)
+    completion_input_digest = models.CharField(max_length=64, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)

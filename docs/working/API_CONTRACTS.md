@@ -3828,16 +3828,33 @@ retained projection and creates no duplicate file, audit, or workflow event, unl
 member SAP code now exists, in which case a new request may be retained for explicit governed reuse.
 Correction, loan-account, readiness, and disbursement changes are not part of this route.
 
-## SAP request send, completion, reuse, and masked read (009B)
+## SAP request delivery, completion, reuse, and masked read (009B/009B2)
 
 - `POST /api/v1/sap-customer-profile-requests/{request_id}/send/` accepts exactly optional string
   `remarks`. The active persisted Credit Manager with `finance.sap_request.send` must be the frozen
   requester. The application/member/current sanction cycle, active frozen Senior Manager Finance
   assignee, request row, and active member code are locked before the restricted Annexure-I is
-  checksum-verified and decrypted. Success moves only `draft -> sent` and returns request id,
-  `sent`, sent time, assignee, `communication_id`, and in-app `task_id`. Exact sent replay is
-  zero-write; changed remarks, completed/stale requests, wrong owner/role/object, and invalid retained
-  files fail without another communication, task, audit, or workflow row.
+  checksum-verified and decrypted. The public `sap_workflow.modules.sap_customer_profile` owner
+  sends those exact plaintext workbook bytes through the manual `SapAdapter`; the adapter makes no
+  real email/SAP call and must return one accepted delivery reference and the same plaintext SHA-256
+  before the request can become `sent`. Success returns request id, status/time, assignee,
+  `communication_id`, in-app `task_id`, and `delivery {delivery_reference, checksum_sha256,
+  document_id, capability_path}`. The task body contains no file id or capability. Exact sent replay
+  returns the retained delivery identity with no writes; changed remarks, workbook/checksum/file,
+  assignee, completed/stale requests, wrong owner/role/object, invalid retained files, or adapter
+  rejection conflict without another success artifact.
+- `POST /api/v1/sap-customer-profile-requests/{request_id}/annexure-i-delivery-capability/` accepts
+  exactly `{}` and is restricted to the frozen active Senior Manager Finance assignee holding
+  `finance.sap_request.complete`. It issues or replaces one signed 15-minute, assignee/request/file/
+  delivery/checksum/version-bound capability. Success returns only delivery reference, plaintext
+  checksum, capability, and expiry; replacement invalidates the previous capability.
+- `GET /api/v1/sap-customer-profile-requests/{request_id}/annexure-i/?capability=...` accepts exactly
+  one capability query parameter. A current unconsumed capability returns the checksum-verified,
+  decrypted retained `.xlsx` bytes with attachment and `nosniff` headers, atomically consumes the
+  capability, and creates exactly one safe `sap.annexure_i_downloaded` audit. Expired, replaced,
+  tampered, consumed, cross-user, cross-request/application/file, or incoherent delivery attempts
+  fail nondisclosingly and retain a safe denial audit; tokens and workbook/identity/bank plaintext
+  never enter audit, communication, workflow, or response metadata.
 - `POST /api/v1/sap-customer-profile-requests/{request_id}/complete/` accepts exactly required
   `sap_customer_code` plus optional `sap_vendor_code`, `created_at_sap`,
   `confirmation_document_id`, and `confirmation_notes`. Codes and notes are trimmed; codes are
@@ -3848,7 +3865,10 @@ Correction, loan-account, readiness, and disbursement changes are not part of th
   member's retained active code. It never infers reuse from identity text, reactivates inactive
   history, overwrites retained code evidence, or accepts another member's code. A request pending
   before another request completed for that member loses with `409`; a later request may explicitly
-  reuse the retained code. Exact completion replay is zero-write and changed replay conflicts.
+  reuse the retained code. The first accepted request freezes a canonical digest containing each
+  field's supplied-versus-omitted marker plus its normalized value. Replay is HTTP 200 only when all
+  five canonical fields match that digest; adding, omitting, or changing any retained optional value
+  returns `409 SAP_REQUEST_CONFLICT` with no success artifacts.
 - Optional confirmation evidence must have one immutable upload-provenance row, sensitivity
   `restricted`, category `sap_confirmation`, uploader equal to the assignee, and scope equal to the
   request or its loan application. Missing, cross-object, public, template/portal, other-uploader,
@@ -3856,10 +3876,17 @@ Correction, loan-account, readiness, and disbursement changes are not part of th
 - Completion returns request/code/member/application ids, `completed`, completion time, `reuse`,
   masked customer/vendor codes, and safe confirmation-file metadata. It never returns frozen
   identity/bank values, storage keys, signed capabilities, or raw code values. It creates one safe
-  audit and workflow ledger only; it creates no loan account, readiness, payment, disbursement, or
-  borrower communication truth.
+  audit and workflow ledger only: new confirmation uses mandatory `sap.customer_code_created`, reuse
+  uses `sap.customer_code_reused`, and both freeze actor role/team/request/network context without
+  raw codes. It creates no loan account, readiness, payment, disbursement, or borrower communication
+  truth.
 - `GET /api/v1/members/{member_id}/sap-customer-code/` requires an active persisted Senior Manager
   Finance user with `finance.sap_code.read` who is the assignee on a completed request bound to the
   member's current active code. Success returns only code id, member id, masked customer/vendor code,
   and active status. Missing and out-of-scope member identifiers share `403 OBJECT_ACCESS_DENIED`
   and the response never exposes SAP request or borrower identity fields.
+
+Trusted downstream modules use `SapCustomerProfileModule.get_customer_code_for_member(member_id)`.
+It returns an immutable coherent decision containing only customer-code, member, completed-profile-
+request, and loan-application ids plus active status, or `None`. Consumers must not import Finance
+SAP models, adapter internals, retained workbook storage, or SAP exception vocabulary.

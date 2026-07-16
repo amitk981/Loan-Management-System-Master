@@ -63,6 +63,15 @@ None for this slice, except updating frontend documentation or fixtures if requi
 - Keep any future account list projection page-bounded; account creation may lock only the one
   supplied application and its exact current owner-issued prerequisite facts.
 
+## 009B2 Owner Contract Sharpening
+
+- Consume `SapCustomerProfileModule.get_customer_code_for_member(member_id)` only. Its immutable
+  decision contains `customer_code_id`, `member_id`, `profile_request_id`, `loan_application_id`,
+  and active `status`; require exact member/application coherence before linking the nullable code.
+- `None` or a mismatched/inactive decision means no link. Do not fall back to Finance SAP tables,
+  masked/raw code text, delivery references, Annexure-I capabilities, adapter status, or exception
+  inspection, and do not issue/read a workbook capability during account creation.
+
 ## Database/Model Impact
 - Add source §18.1 `loan_accounts` under the `loans` owner with unique application and account number, protected member,
   sanction, and nullable active SAP-code links; positive/non-negative balance constraints; indexed

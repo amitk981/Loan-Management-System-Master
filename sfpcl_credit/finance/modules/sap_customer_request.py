@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.applications.models import LoanApplication
@@ -26,16 +27,13 @@ from sfpcl_credit.finance.modules.annexure_storage import EncryptedAnnexureStora
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
+from sfpcl_credit.sap_workflow.errors import SapRequestConflict
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
 CREATE_PERMISSION = "finance.sap_request.create"
 _PAN = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
 _AADHAAR = re.compile(r"^[0-9]{12}$")
-
-
-class SapRequestConflict(Exception):
-    pass
 
 
 def create_request(*, actor, application_id, payload, request, storage=None):
@@ -143,6 +141,19 @@ def create_request(*, actor, application_id, payload, request, storage=None):
                 "request_provenance": "manual_file_annexure_i",
                 "outcome": "created",
                 "request_id": request.headers.get("X-Request-ID"),
+                "actor_user_id": str(actor.pk),
+                "actor_type": "user",
+                "actor_role_codes": sorted(auth_service.effective_role_codes(actor)),
+                "actor_team_codes": sorted(actor.team_codes()),
+                "action": "finance.sap_customer_code.requested",
+                "entity_type": "sap_customer_profile_request",
+                "entity_id": str(row.pk),
+                "old_state": None,
+                "new_state": SapCustomerProfileRequest.STATUS_DRAFT,
+                "ip_address": request_ip(request),
+                "user_agent": request_user_agent(request),
+                "timestamp": timezone.now().isoformat().replace("+00:00", "Z"),
+                "reason": "Current terminal sanction request accepted.",
             }
             AuditLog.objects.create(
                 actor_user=actor,
