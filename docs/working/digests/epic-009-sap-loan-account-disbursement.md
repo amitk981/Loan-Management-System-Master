@@ -1,5 +1,26 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009B3C Current SAP Evidence and Adapter Contract Closure
+
+- Repair `2026-07-16_231945_repair` restored the pre-existing genuine readiness integration fixture
+  by supplying distinct request ids to its SAP send and completion actions. The new current-evidence
+  contract intentionally requires that traceable audit context; no production predicate or public
+  behavior was relaxed.
+- `sap_workflow` now emits its immutable code decision only for one singular exact send tuple
+  (audit/workflow/communication/task/delivery/workbook) and one singular exact completion tuple
+  (audit/workflow/code/reuse/input digest). Every safe audit-body field is sealed and reconciled;
+  file bytes are a genuine retained XLSX whose plaintext checksum matches delivery truth.
+- Missing, extra, duplicate, changed, cross-linked, or rehashed semantically wrong evidence fails
+  closed. The masked-code read, delivery capability, and workbook download all consume the same
+  owner evidence, preserving existing 403/409 taxonomy without exposing code/capability/workbook.
+- Manual, Fake, and Future share one local validation/idempotency contract. Exact replay returns the
+  original reference; changed key/request/file/assignee/name/MIME/bytes/checksum, malformed status/
+  reference/result, and Future bypass attempts are rejected before a second transport invocation.
+  Denied public sends retain the draft and create no communication/task/audit/workflow/code truth.
+- No schema, response shape, real SAP/email transport, Finance policy import, or parallel selector
+  was introduced. Pre-closure ledgers without the complete sealed evidence remain honestly absent
+  from downstream current truth.
+
 ## Architecture Review 2026-07-16 21:37 — Current SAP, Approval, and Reader Closure
 
 - 009B3A/B substantively establish canonical SAP model/policy/adapter ownership without a Finance

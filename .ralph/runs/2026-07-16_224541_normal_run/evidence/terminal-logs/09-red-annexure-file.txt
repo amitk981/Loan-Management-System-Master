@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_current_decision_rejects_changed_annexure_file_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_current_decision_rejects_changed_annexure_file_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 305, in test_current_decision_rejects_changed_annexure_file_contract
+    self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+AssertionError: SapCustomerCodeDecision(customer_code_id=UUID('7a1168d8-17c2-44eb-8511-0aaccedabde1'), member_id=UUID('d395a44b-6cc0-4939-b6f2-af01e82c76dd'), profile_request_id=UUID('f757223c-3101-4eff-92db-48c77e001dbb'), loan_application_id=UUID('1818937f-6253-4a59-9ac0-e94ffa88886e'), status='active') is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

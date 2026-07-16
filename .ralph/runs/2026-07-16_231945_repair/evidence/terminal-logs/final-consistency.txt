@@ -1,0 +1,29 @@
+.ralph/progress.md
+.ralph/state.json
+docs/slices/009B3C-sap-current-evidence-and-adapter-contract-closure.md
+docs/slices/009E-payment-initiation-by-senior-manager-finance.md
+docs/working/CONTEXT.md
+docs/working/HANDOFF.md
+docs/working/digests/epic-009-sap-loan-account-disbursement.md
+sfpcl_credit/sap_workflow/adapters.py
+sfpcl_credit/sap_workflow/modules/sap_customer_code.py
+sfpcl_credit/sap_workflow/modules/sap_customer_profile.py
+sfpcl_credit/tests/test_final_documentation_approval_api.py
+sfpcl_credit/tests/test_sap_customer_profile_repair.py
+tracked_lines_added=922
+tracked_lines_removed=85
+tracked_lines_changed=1007
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009B3C-sap-current-evidence-and-adapter-contract-closure.md
+ M docs/slices/009E-payment-initiation-by-senior-manager-finance.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/sap_workflow/adapters.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_code.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_profile.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+ M sfpcl_credit/tests/test_sap_customer_profile_repair.py
+?? .ralph/runs/2026-07-16_224541_normal_run/
+?? .ralph/runs/2026-07-16_231945_repair/

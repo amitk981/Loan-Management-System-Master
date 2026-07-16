@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_current_decision_rejects_changed_send_communication_recipient (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_current_decision_rejects_changed_send_communication_recipient)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 249, in test_current_decision_rejects_changed_send_communication_recipient
+    self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+AssertionError: SapCustomerCodeDecision(customer_code_id=UUID('eb800a50-432d-4231-8c2e-5e37603603aa'), member_id=UUID('bf5de1e1-bed5-4fa2-bcff-f0f671374f22'), profile_request_id=UUID('8aa7e415-e732-4646-a269-2f72db5fb56b'), loan_application_id=UUID('7dcfb100-f914-4dc1-ae86-267f2904a7b5'), status='active') is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.055s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

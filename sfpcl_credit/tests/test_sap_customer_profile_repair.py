@@ -1,6 +1,7 @@
 """009B2 failing-first probes for SAP delivery and exact completion replay."""
 
 import ast
+from dataclasses import replace
 from datetime import timedelta
 import hashlib
 import json
@@ -12,7 +13,9 @@ from django.utils import timezone
 
 from sfpcl_credit.communications.models import Communication, Notification
 from sfpcl_credit.sap_workflow.models import SapCustomerCode, SapCustomerProfileRequest
+from sfpcl_credit.sap_workflow.errors import SapRequestConflict
 from sfpcl_credit.sap_workflow.modules.annexure_storage import EncryptedAnnexureStorage
+from sfpcl_credit.sap_workflow.modules.annexure_i import render_annexure_i
 from sfpcl_credit.identity.models import AuditLog, Team, UserTeamMembership
 from sfpcl_credit.sap_workflow.adapters import (
     ManualSapAdapter,
@@ -213,39 +216,388 @@ class SapCustomerProfileRepairTests(SapCustomerProfileRequestApiTests):
         for secret in ("ABCDE1234F", "123412341234", "Village Road", "AUDIT-CODE-009B2"):
             self.assertNotIn(secret, secret_surface)
 
-    def test_manual_and_fake_adapters_share_the_public_contract(self):
-        from sfpcl_credit.sap_workflow.adapters import FakeSapAdapter, FutureSapAdapter
+    def test_current_decision_rejects_changed_send_audit_assignee(self):
+        request_id = self._create_and_send("009b3c-send-assignee")
+        completed = self._complete(
+            request_id, sap_customer_code="CURRENT-EVIDENCE-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+        self.assertIsNotNone(get_customer_code_for_member(self.application.member_id))
 
+        send_audit = AuditLog.objects.get(
+            action="finance.sap_customer_code.sent",
+            entity_type="sap_customer_profile_request",
+            entity_id=request_id,
+        )
+        changed = dict(send_audit.new_value_json)
+        changed["assigned_to_user_id"] = str(uuid4())
+        send_audit.new_value_json = changed
+        send_audit.save(update_fields=["new_value_json"])
+
+        self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+
+    def test_current_decision_rejects_changed_send_communication_recipient(self):
+        request_id = self._create_and_send("009b3c-send-communication")
+        completed = self._complete(
+            request_id, sap_customer_code="SEND-COMMUNICATION-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+        self.assertIsNotNone(get_customer_code_for_member(self.application.member_id))
+
+        row = SapCustomerProfileRequest.objects.get(pk=request_id)
+        Communication.objects.filter(pk=row.sent_communication_id).update(
+            recipient_party_id=uuid4()
+        )
+
+        self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+
+    def test_current_decision_rejects_changed_send_audit_request_context(self):
+        request_id = self._create_and_send("009b3c-send-context")
+        completed = self._complete(request_id, sap_customer_code="SEND-CONTEXT-009B3C")
+        self.assertEqual(completed.status_code, 200, completed.content)
+
+        send_audit = AuditLog.objects.get(
+            action="finance.sap_customer_code.sent",
+            entity_type="sap_customer_profile_request",
+            entity_id=request_id,
+        )
+        changed = dict(send_audit.new_value_json)
+        changed["request_id"] = "changed-request-context"
+        send_audit.new_value_json = changed
+        send_audit.save(update_fields=["new_value_json"])
+
+        self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+
+    def test_current_decision_rejects_rehashed_wrong_completion_role(self):
+        request_id = self._create_and_send("009b3c-completion-role")
+        completed = self._complete(
+            request_id, sap_customer_code="COMPLETION-ROLE-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+
+        completion_audit = AuditLog.objects.get(
+            action="sap.customer_code_created",
+            entity_type="sap_customer_profile_request",
+            entity_id=request_id,
+        )
+        changed = dict(completion_audit.new_value_json)
+        changed["actor_role_codes"] = ["credit_manager"]
+        completion_audit.new_value_json = changed
+        completion_audit.old_value_json = {
+            "request_status": changed["old_state"],
+            "evidence_sha256": hashlib.sha256(
+                json.dumps(changed, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest(),
+            "request_id": changed["request_id"],
+            "timestamp": changed["timestamp"],
+        }
+        completion_audit.save(update_fields=["new_value_json", "old_value_json"])
+
+        self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+
+    def test_current_decision_rejects_changed_annexure_file_contract(self):
+        request_id = self._create_and_send("009b3c-annexure-file")
+        completed = self._complete(
+            request_id, sap_customer_code="ANNEXURE-FILE-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+
+        row = SapCustomerProfileRequest.objects.get(pk=request_id)
+        row.excel_file.mime_type = "application/pdf"
+        row.excel_file.save(update_fields=["mime_type"])
+
+        self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+
+    def test_current_decision_rejects_changed_created_code_identity(self):
+        request_id = self._create_and_send("009b3c-code-identity")
+        completed = self._complete(
+            request_id, sap_customer_code="CODE-IDENTITY-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+
+        code = SapCustomerCode.objects.get(
+            pk=completed.json()["data"]["sap_customer_code_id"]
+        )
+        code.created_by_user = self.credit_manager
+        code.save(update_fields=["created_by_user"])
+
+        self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+
+    def test_each_safe_send_and_completion_audit_field_is_current_evidence(self):
+        request_id = self._create_and_send("009b3c-each-safe-field")
+        completed = self._complete(
+            request_id, sap_customer_code="EACH-SAFE-FIELD-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+
+        for action in ("finance.sap_customer_code.sent", "sap.customer_code_created"):
+            audit = AuditLog.objects.get(
+                action=action,
+                entity_type="sap_customer_profile_request",
+                entity_id=request_id,
+            )
+            original = dict(audit.new_value_json)
+            for field, value in original.items():
+                with self.subTest(action=action, field=field):
+                    changed = dict(original)
+                    changed[field] = self._different_safe_value(value)
+                    audit.new_value_json = changed
+                    audit.save(update_fields=["new_value_json"])
+                    self.assertIsNone(
+                        get_customer_code_for_member(self.application.member_id)
+                    )
+                    audit.new_value_json = original
+                    audit.save(update_fields=["new_value_json"])
+                    self.assertIsNotNone(
+                        get_customer_code_for_member(self.application.member_id)
+                    )
+
+    def test_current_decision_requires_singular_linked_send_and_completion_ledgers(self):
+        request_id = self._create_and_send("009b3c-singular-ledgers")
+        completed = self._complete(
+            request_id, sap_customer_code="SINGULAR-LEDGERS-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+        decision = lambda: get_customer_code_for_member(self.application.member_id)
+        self.assertIsNotNone(decision())
+
+        duplicate_workflow = WorkflowEvent.objects.create(
+            workflow_name="SAPCustomerCodeCompleted",
+            entity_type="sap_customer_profile_request",
+            entity_id=request_id,
+            from_state="sent",
+            to_state="completed",
+            triggered_by_user=self.assignee,
+            trigger_reason="sap.customer_code_created",
+        )
+        self.assertIsNone(decision())
+        duplicate_workflow.delete()
+        self.assertIsNotNone(decision())
+
+        duplicate_communication = Communication.objects.create(
+            related_entity_type="sap_customer_profile_request",
+            related_entity_id=request_id,
+            recipient_party_type="user",
+            channel=Communication.CHANNEL_EMAIL,
+            body_snapshot="unrelated sibling",
+        )
+        self.assertIsNone(decision())
+        duplicate_communication.delete()
+        self.assertIsNotNone(decision())
+
+        duplicate_task = Notification.objects.create(
+            notification_type="sap_customer_profile_request",
+            category="Finance",
+            title="unrelated sibling",
+            related_entity_type="sap_customer_profile_request",
+            related_entity_id=request_id,
+        )
+        self.assertIsNone(decision())
+        duplicate_task.delete()
+        self.assertIsNotNone(decision())
+
+        row = SapCustomerProfileRequest.objects.get(pk=request_id)
+        Notification.objects.filter(pk=row.sent_task_id).update(related_entity_id=uuid4())
+        self.assertIsNone(decision())
+
+    def test_adapter_denial_leaves_draft_and_all_send_ledgers_unchanged(self):
+        from sfpcl_credit.sap_workflow.adapters import (
+            FutureSapAdapter,
+            SapCustomerResult,
+        )
+
+        class RejectingTransport:
+            calls = 0
+
+            def create_customer_profile_request(self, payload, idempotency_key):
+                self.calls += 1
+                return SapCustomerResult(
+                    external_reference="future:rejected",
+                    delivery_status="rejected",
+                    checksum_sha256=payload.checksum_sha256,
+                )
+
+            def get_customer_status(self, external_reference):
+                raise AssertionError("status must not be read after rejected delivery")
+
+        created = self._post_request("009b3c-adapter-denial").json()["data"]
+        request_id = created["sap_customer_profile_request_id"]
+        before = self._sap_ledger_counts()
+        transport = RejectingTransport()
+        with self.assertRaises(SapRequestConflict):
+            send_request(
+                actor=self.credit_manager,
+                request_id=request_id,
+                payload={"remarks": "must roll back"},
+                request=RequestFactory().post(
+                    "/sap/send/", HTTP_X_REQUEST_ID="009b3c-adapter-denial"
+                ),
+                adapter=FutureSapAdapter(transport=transport),
+            )
+        self.assertEqual(transport.calls, 1)
+        self.assertEqual(self._sap_ledger_counts(), before)
+        row = SapCustomerProfileRequest.objects.get(pk=request_id)
+        self.assertEqual(row.request_status, SapCustomerProfileRequest.STATUS_DRAFT)
+        self.assertFalse(row.delivery_reference)
+
+    def test_invalid_current_evidence_exposes_no_code_capability_or_workbook(self):
+        request_id = self._create_and_send("009b3c-no-exposure")
+        issued = self._issue(request_id)
+        completed = self._complete(
+            request_id, sap_customer_code="NO-EXPOSURE-009B3C"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+
+        send_audit = AuditLog.objects.get(
+            action="finance.sap_customer_code.sent",
+            entity_type="sap_customer_profile_request",
+            entity_id=request_id,
+        )
+        changed = dict(send_audit.new_value_json)
+        changed["assigned_to_user_id"] = str(uuid4())
+        send_audit.new_value_json = changed
+        send_audit.save(update_fields=["new_value_json"])
+
+        code_read = self.client.get(
+            f"/api/v1/members/{self.application.member_id}/sap-customer-code/",
+            **self._auth(self.assignee),
+        )
+        capability = self.client.post(
+            f"/api/v1/sap-customer-profile-requests/{request_id}/"
+            "annexure-i-delivery-capability/",
+            {},
+            content_type="application/json",
+            **self._auth(self.assignee),
+        )
+        workbook = self._download(request_id, issued["capability"])
+
+        self.assertEqual(code_read.status_code, 409, code_read.content)
+        self.assertEqual(capability.status_code, 409, capability.content)
+        self.assertEqual(workbook.status_code, 409, workbook.content)
+        exposed = code_read.content + capability.content + workbook.content
+        for value in (
+            b"009B3C",
+            completed.json()["data"]["sap_customer_code_id"].encode(),
+            issued["capability"].encode(),
+        ):
+            self.assertNotIn(value, exposed)
+
+    def test_manual_fake_and_future_adapters_share_the_public_contract(self):
+        from sfpcl_credit.sap_workflow.adapters import (
+            FakeSapAdapter,
+            FutureSapAdapter,
+            SapCustomerResult,
+        )
+
+        workbook = render_annexure_i(["contract"] * 13)
         payload = SapCustomerProfilePayload(
             request_id=uuid4(),
             assignee_user_id=uuid4(),
             document_id=uuid4(),
             file_name="annexure.xlsx",
             mime_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            workbook_bytes=b"PK-valid-test-workbook",
-            checksum_sha256=hashlib.sha256(b"PK-valid-test-workbook").hexdigest(),
+            workbook_bytes=workbook,
+            checksum_sha256=hashlib.sha256(workbook).hexdigest(),
         )
-        manual = ManualSapAdapter()
-        first = manual.create_customer_profile_request(payload, "same-key")
-        replay = manual.create_customer_profile_request(payload, "same-key")
-        self.assertEqual(first, replay)
-        self.assertEqual(
-            manual.get_customer_status(first.external_reference).delivery_status,
-            "delivered",
+        for name, adapter in (
+            ("manual", ManualSapAdapter()),
+            ("fake", FakeSapAdapter()),
+            ("future", FutureSapAdapter(transport=FakeSapAdapter())),
+        ):
+            with self.subTest(adapter=name, behavior="exact replay"):
+                first = adapter.create_customer_profile_request(payload, "same-key")
+                self.assertEqual(
+                    first,
+                    adapter.create_customer_profile_request(payload, "same-key"),
+                )
+                self.assertEqual(
+                    adapter.get_customer_status(first.external_reference).delivery_status,
+                    "delivered",
+                )
+            invalid_payloads = {
+                "checksum": replace(payload, checksum_sha256="f" * 64),
+                "bytes": replace(
+                    payload,
+                    workbook_bytes=b"PK-not-an-xlsx",
+                    checksum_sha256=hashlib.sha256(b"PK-not-an-xlsx").hexdigest(),
+                ),
+                "assignee": replace(payload, assignee_user_id=uuid4()),
+                "file": replace(payload, document_id=uuid4()),
+                "name": replace(payload, file_name="annexure.pdf"),
+                "mime": replace(payload, mime_type="application/pdf"),
+            }
+            for behavior, changed in invalid_payloads.items():
+                with self.subTest(adapter=name, behavior=behavior):
+                    with self.assertRaises(ValueError):
+                        adapter.create_customer_profile_request(changed, "same-key")
+            with self.subTest(adapter=name, behavior="changed key"):
+                with self.assertRaises(ValueError):
+                    adapter.create_customer_profile_request(payload, "changed-key")
+            with self.subTest(adapter=name, behavior="bad reference"):
+                with self.assertRaises(ValueError):
+                    adapter.get_customer_status("malformed reference")
+
+        class CountingTransport(FakeSapAdapter):
+            def __init__(self):
+                super().__init__()
+                self.calls = 0
+
+            def create_customer_profile_request(self, payload, idempotency_key):
+                self.calls += 1
+                return super().create_customer_profile_request(payload, idempotency_key)
+
+        transport = CountingTransport()
+        future = FutureSapAdapter(transport=transport)
+        future.create_customer_profile_request(payload, "future-key")
+        future.create_customer_profile_request(payload, "future-key")
+        self.assertEqual(transport.calls, 1)
+        with self.assertRaises(ValueError):
+            future.create_customer_profile_request(
+                replace(payload, workbook_bytes=b"not-an-xlsx"), "future-key"
+            )
+        with self.assertRaises(ValueError):
+            future.create_customer_profile_request(
+                replace(payload, assignee_user_id=uuid4()), "future-key"
+            )
+        with self.assertRaises(ValueError):
+            future.create_customer_profile_request(payload, "changed-future-key")
+        self.assertEqual(transport.calls, 1)
+
+        class InvalidResultTransport:
+            def __init__(self, result):
+                self.result = result
+
+            def create_customer_profile_request(self, payload, idempotency_key):
+                return self.result
+
+            def get_customer_status(self, external_reference):
+                raise AssertionError("invalid create result must fail first")
+
+        invalid_results = (
+            SapCustomerResult(
+                external_reference="malformed reference",
+                delivery_status="delivered",
+                checksum_sha256=payload.checksum_sha256,
+            ),
+            SapCustomerResult(
+                external_reference="future:delivery",
+                delivery_status="rejected",
+                checksum_sha256=payload.checksum_sha256,
+            ),
+            SapCustomerResult(
+                external_reference="future:delivery",
+                delivery_status="delivered",
+                checksum_sha256="f" * 64,
+            ),
         )
+        for result in invalid_results:
+            with self.subTest(invalid_result=result):
+                with self.assertRaises(ValueError):
+                    FutureSapAdapter(
+                        transport=InvalidResultTransport(result)
+                    ).create_customer_profile_request(payload, "invalid-result-key")
 
         fake = FakeSapAdapter()
-        fake_first = fake.create_customer_profile_request(payload, "same-key")
-        self.assertEqual(fake_first, fake.create_customer_profile_request(payload, "same-key"))
-        self.assertEqual(
-            fake.get_customer_status(fake_first.external_reference).delivery_status,
-            "delivered",
-        )
-        future = FutureSapAdapter(transport=fake)
-        self.assertEqual(
-            future.create_customer_profile_request(payload, "same-key"), fake_first
-        )
-
         created = self._post_request("009b2-fake-adapter").json()["data"]
         result = send_request(
             actor=self.credit_manager,
@@ -310,4 +662,25 @@ class SapCustomerProfileRepairTests(SapCustomerProfileRequestApiTests):
             HTTP_USER_AGENT="009B2 capability matrix",
             REMOTE_ADDR="203.0.113.42",
             **self._auth(actor or self.assignee),
+        )
+
+    @staticmethod
+    def _different_safe_value(value):
+        if isinstance(value, bool):
+            return not value
+        if isinstance(value, list):
+            return [*value, "changed"]
+        if value is None:
+            return "changed"
+        return f"changed:{value}"
+
+    @staticmethod
+    def _sap_ledger_counts():
+        return (
+            SapCustomerProfileRequest.objects.count(),
+            SapCustomerCode.objects.count(),
+            Communication.objects.count(),
+            Notification.objects.count(),
+            AuditLog.objects.count(),
+            WorkflowEvent.objects.count(),
         )

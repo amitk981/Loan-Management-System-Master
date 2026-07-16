@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 89 test(s).
+System check identified no issues (0 silenced).
+............F....................................F.........................F..........sss
+======================================================================
+FAIL: test_member_read_is_masked_assignee_scoped_and_nondisclosing (tests.test_sap_customer_profile_request_api.SapCustomerProfileRequestApiTests.test_member_read_is_masked_assignee_scoped_and_nondisclosing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 556, in test_member_read_is_masked_assignee_scoped_and_nondisclosing
+    self.assertEqual(missing.status_code, 403, missing.content)
+AssertionError: 409 != 403 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "An active SAP customer code is unavailable.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-16T17:32:33.222112Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_member_read_is_masked_assignee_scoped_and_nondisclosing (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_member_read_is_masked_assignee_scoped_and_nondisclosing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 556, in test_member_read_is_masked_assignee_scoped_and_nondisclosing
+    self.assertEqual(missing.status_code, 403, missing.content)
+AssertionError: 409 != 403 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "An active SAP customer code is unavailable.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-16T17:32:35.148814Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_member_read_is_masked_assignee_scoped_and_nondisclosing (sfpcl_credit.tests.test_sap_customer_profile_request_api.SapCustomerProfileRequestApiTests.test_member_read_is_masked_assignee_scoped_and_nondisclosing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 556, in test_member_read_is_masked_assignee_scoped_and_nondisclosing
+    self.assertEqual(missing.status_code, 403, missing.content)
+AssertionError: 409 != 403 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "An active SAP customer code is unavailable.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-16T17:32:36.086466Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 89 tests in 3.709s
+
+FAILED (failures=3, skipped=3)
+Destroying test database for alias 'default'...

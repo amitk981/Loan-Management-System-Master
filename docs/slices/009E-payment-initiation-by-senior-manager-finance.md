@@ -50,7 +50,7 @@ None for this slice, except updating frontend documentation or fixtures if requi
 4. Produce one safe CFC task/action projection after persistence. Do not call a bank API, mark the
    bank portal transfer successful, create a UTR, alter loan balances/status, update the Loan
    Register, or notify the borrower.
-5. Consume 009D2 loan scope exactly: the initiating Senior Manager Finance must remain the active
+5. Consume the 009D3 loan scope exactly: the initiating Senior Manager Finance must remain the active
    assignee of the application's newest SAP request. The newly persisted initiated-disbursement
    relation becomes the first canonical CFC loan/readiness scope; application `received_by_user`,
    role strings, or permission alone never create either scope.
@@ -94,7 +94,9 @@ or legal/security evidence payloads in those ledgers. Replay writes nothing.
   invalid amount, or any replaced evidence is zero-write.
 - MVP mode records a manual bank-portal instruction only; bank APIs/file exchange/webhooks remain
   future adapters.
-- Freeze the exact 009B3B SAP decision identity consumed by the passing 009D2 result; never re-query Finance.
+- Freeze the exact 009B3C SAP decision identity consumed by the passing 009D3 result. A missing,
+  changed, duplicate, or stale SAP send/completion ledger fails initiation through readiness; the
+  initiation owner must not import SAP adapter/storage internals or re-query Finance.
 
 ## Test Cases
 - Public service/API success proves exact passing readiness and bank/source evidence, canonical

@@ -1,0 +1,89 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFFFFFFF
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='manual', behavior='assignee')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 364, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='manual', behavior='file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 364, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='manual', behavior='changed key')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 367, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='fake', behavior='assignee')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 364, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='fake', behavior='file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 364, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='fake', behavior='changed key')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 367, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='future', behavior='assignee')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 364, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='future', behavior='file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 364, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract) (adapter='future', behavior='changed key')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 367, in test_manual_and_fake_adapters_share_the_public_contract
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_manual_and_fake_adapters_share_the_public_contract (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_and_fake_adapters_share_the_public_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 386, in test_manual_and_fake_adapters_share_the_public_contract
+    self.assertEqual(transport.calls, 1)
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (failures=10)
+Destroying test database for alias 'default'...

@@ -335,7 +335,25 @@ def _record_audit(*, actor, request, row, action, evidence):
         "timestamp": _iso(timezone.now()),
         "reason": ("Authorised masked SAP customer code read." if read_only else "SAP customer profile workflow action accepted."),
     }
-    AuditLog.objects.create(actor_user=actor, actor_type="user", action=action, entity_type="sap_customer_profile_request", entity_id=row.pk, old_value_json=None, new_value_json=evidence, ip_address=request_ip(request), user_agent=request_user_agent(request))
+    evidence_digest = hashlib.sha256(
+        json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action=action,
+        entity_type="sap_customer_profile_request",
+        entity_id=row.pk,
+        old_value_json={
+            "request_status": evidence["old_state"],
+            "evidence_sha256": evidence_digest,
+            "request_id": evidence["request_id"],
+            "timestamp": evidence["timestamp"],
+        },
+        new_value_json=evidence,
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )
 def _safe_evidence(row, actor, *, outcome):
     return {
         "sap_customer_profile_request_id": str(row.pk),

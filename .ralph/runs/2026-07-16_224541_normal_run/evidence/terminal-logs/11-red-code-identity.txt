@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_current_decision_rejects_changed_created_code_identity (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_current_decision_rejects_changed_created_code_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 320, in test_current_decision_rejects_changed_created_code_identity
+    self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+AssertionError: SapCustomerCodeDecision(customer_code_id=UUID('17743fd0-673b-4485-904d-dcf231f07132'), member_id=UUID('15aa2e6b-7aa7-4020-aa1a-51aff869d457'), profile_request_id=UUID('3313f188-3b70-4e01-a371-a9bf9dc407be'), loan_application_id=UUID('72d8a9f5-3d50-40f9-9a20-36eedf1949e9'), status='active') is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.050s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

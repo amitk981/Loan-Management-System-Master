@@ -3017,6 +3017,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
             f"/api/v1/sap-customer-profile-requests/{request_id}/send/",
             {"remarks": "Readiness owner handoff."},
             content_type="application/json",
+            HTTP_X_REQUEST_ID="readiness-real-owner-sap-send",
             **self.fixture._auth(self.credit),
         )
         self.assertEqual(sent.status_code, 200, sent.content)
@@ -3024,6 +3025,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
             f"/api/v1/sap-customer-profile-requests/{request_id}/complete/",
             {"sap_customer_code": "READY-REAL-OWNER-001"},
             content_type="application/json",
+            HTTP_X_REQUEST_ID="readiness-real-owner-sap-complete",
             **self.fixture._auth(self.finance),
         )
         self.assertEqual(completed.status_code, 200, completed.content)

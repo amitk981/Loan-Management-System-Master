@@ -8076,3 +8076,43 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_224541_normal_run
+
+- Agent tool used: codex with TDD and deep-module design workflows.
+- Slice completed: 009B3C-sap-current-evidence-and-adapter-contract-closure.
+- Summary: Bound every public SAP code/workbook/capability projection to singular complete send and
+  completion evidence, and established one substitutable positive/negative Manual/Fake/Future
+  adapter contract with exact replay and Future call-count guarantees.
+- Tests run: staged RED/GREEN probes; 89 focused SAP tests; Django check and migration sync;
+  frontend lint, typecheck, 327 tests, and build.
+- Evidence saved: `.ralph/runs/2026-07-16_224541_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High; mitigated by fail-closed current evidence, sealed safe audit manifests,
+  zero-write adapter denials, unchanged schema/routes, and dependency assertions.
+- Next action: Run 009D3, then 009E.
+
+## 2026-07-16 - 2026-07-16_231945_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow and a focused RED/GREEN loop.
+- Slice repaired: 009B3C-sap-current-evidence-and-adapter-contract-closure.
+- Summary: The independent readiness fixture omitted request ids on SAP send and completion, making
+  its sealed action evidence intentionally non-current. Added distinct trace ids to those two
+  existing fixture calls without changing production reconciliation or public behavior.
+- Tests run: exact readiness regression RED then GREEN; 64 impacted SAP/readiness tests; Django
+  check; migration sync.
+- Evidence saved: `.ralph/runs/2026-07-16_231945_repair/evidence/terminal-logs/`.
+- Result: Repair complete pending independent full coverage validation and orchestrator commit.
+- Risk level: High inherited slice risk; Low repair mutation risk because only test audit context
+  and Ralph bookkeeping changed.
+- Next action: Independently revalidate 009B3C, then run 009D3 before 009E.
+
+## 2026-07-16 23:35:58 - 2026-07-16_231945_repair
+- Agent tool used: codex
+- Slice attempted: 009B3C-sap-current-evidence-and-adapter-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/.ralph/runs/2026-07-16_231945_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/.ralph/runs/2026-07-16_231945_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

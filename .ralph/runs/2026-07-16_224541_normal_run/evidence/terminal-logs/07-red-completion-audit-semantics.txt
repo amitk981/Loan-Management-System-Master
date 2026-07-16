@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_current_decision_rejects_rehashed_wrong_completion_role (tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_current_decision_rejects_rehashed_wrong_completion_role)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_224541_normal_run/sfpcl_credit/tests/test_sap_customer_profile_repair.py", line 290, in test_current_decision_rejects_rehashed_wrong_completion_role
+    self.assertIsNone(get_customer_code_for_member(self.application.member_id))
+AssertionError: SapCustomerCodeDecision(customer_code_id=UUID('210235e4-154c-44bd-9f0d-b02f08fca823'), member_id=UUID('b107e1a7-5ce1-4325-81a3-3f6d08f07546'), profile_request_id=UUID('b3023856-30bf-4088-ab22-4e48cb8ec9c4'), loan_application_id=UUID('54a43f8b-a1a1-44df-bf5b-1532f7633790'), status='active') is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.049s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
