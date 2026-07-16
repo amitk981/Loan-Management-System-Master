@@ -1,6 +1,7 @@
 import tempfile
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from io import BytesIO
 from pathlib import Path
 from threading import Barrier
@@ -10,7 +11,8 @@ from unittest.mock import patch
 from uuid import uuid4
 from xml.etree import ElementTree
 
-from django.db import close_old_connections, connection
+from django.db import IntegrityError, close_old_connections, connection, transaction
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import (
     Client, RequestFactory, TestCase, TransactionTestCase, override_settings,
 )
@@ -18,12 +20,17 @@ from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCase, SanctionDecision
-from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
+from sfpcl_credit.communications.models import Communication, Notification
+from sfpcl_credit.credit.models import (
+    AppraisalReviewDecision, LoanAppraisalNote, RiskAssessment,
+)
 from sfpcl_credit.documents.models import DocumentFile
+from sfpcl_credit.documents.services import store_document_upload
 from sfpcl_credit.domain_errors import DomainPermissionDenied
 from sfpcl_credit.finance.models import SapCustomerCode, SapCustomerProfileRequest
 from sfpcl_credit.finance.modules.annexure_storage import EncryptedAnnexureStorage
-from sfpcl_credit.finance.modules.sap_customer_request import create_request
+from sfpcl_credit.finance.modules.sap_customer_code import complete_request, send_request
+from sfpcl_credit.finance.modules.sap_customer_request import SapRequestConflict, create_request
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.shared.encryption import FieldEncryption
@@ -41,10 +48,12 @@ class SapCustomerProfileRequestApiTests(TestCase):
         self.settings.enable()
         self.client = Client()
         self.credit_manager = self._user(
-            "credit_manager", "SAP Request Credit Manager", "finance.sap_request.create"
+            "credit_manager", "SAP Request Credit Manager",
+            "finance.sap_request.create", "finance.sap_request.send",
         )
         self.assignee = self._user(
-            "senior_manager_finance", "SAP Senior Manager Finance"
+            "senior_manager_finance", "SAP Senior Manager Finance",
+            "finance.sap_request.complete", "finance.sap_code.read",
         )
         self.application = self._terminal_application()
 
@@ -82,6 +91,460 @@ class SapCustomerProfileRequestApiTests(TestCase):
             WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeRequested").count(),
             1,
         )
+
+    def test_public_send_complete_and_masked_member_read_happy_path(self):
+        created = self._post_request("req-sap-profile-009b-create").json()["data"]
+        request_id = created["sap_customer_profile_request_id"]
+
+        sent = self.client.post(
+            f"/api/v1/sap-customer-profile-requests/{request_id}/send/",
+            {"remarks": "  Exact Annexure I sent to Finance.  "},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-sap-profile-009b-send",
+            **self._auth(self.credit_manager),
+        )
+
+        self.assertEqual(sent.status_code, 200, sent.content)
+        assert_success_envelope(self, sent.json())
+        sent_data = sent.json()["data"]
+        self.assertEqual(sent_data["sap_customer_profile_request_id"], request_id)
+        self.assertEqual(sent_data["request_status"], "sent")
+        self.assertEqual(
+            sent_data["assigned_to_user"],
+            {"user_id": str(self.assignee.pk), "full_name": self.assignee.full_name},
+        )
+        self.assertTrue(sent_data["sent_at"])
+        self.assertTrue(sent_data["communication_id"])
+        self.assertTrue(sent_data["task_id"])
+        self.assertEqual(Communication.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+
+        completed = self.client.post(
+            f"/api/v1/sap-customer-profile-requests/{request_id}/complete/",
+            {
+                "sap_customer_code": "  cust000123  ",
+                "sap_vendor_code": "  vend0009  ",
+                "created_at_sap": timezone.now().isoformat(),
+                "confirmation_document_id": None,
+                "confirmation_notes": "  Confirmed in SAP.  ",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-sap-profile-009b-complete",
+            **self._auth(self.assignee),
+        )
+
+        self.assertEqual(completed.status_code, 200, completed.content)
+        assert_success_envelope(self, completed.json())
+        completed_data = completed.json()["data"]
+        self.assertEqual(completed_data["sap_customer_profile_request_id"], request_id)
+        self.assertEqual(completed_data["member_id"], str(self.application.member_id))
+        self.assertEqual(completed_data["loan_application_id"], str(self.application.pk))
+        self.assertEqual(completed_data["request_status"], "completed")
+        self.assertFalse(completed_data["reuse"])
+        self.assertEqual(completed_data["sap_customer_code_masked"], "******0123")
+        self.assertEqual(completed_data["sap_vendor_code_masked"], "****0009")
+        code = SapCustomerCode.objects.get(pk=completed_data["sap_customer_code_id"])
+        self.assertEqual(code.sap_customer_code, "CUST000123")
+        self.assertEqual(code.sap_vendor_code, "VEND0009")
+
+        read = self.client.get(
+            f"/api/v1/members/{self.application.member_id}/sap-customer-code/",
+            **self._auth(self.assignee),
+        )
+        self.assertEqual(read.status_code, 200, read.content)
+        assert_success_envelope(self, read.json())
+        self.assertEqual(
+            read.json()["data"],
+            {
+                "sap_customer_code_id": str(code.pk),
+                "member_id": str(self.application.member_id),
+                "sap_customer_code_masked": "******0123",
+                "sap_vendor_code_masked": "****0009",
+                "status": "active",
+            },
+        )
+        self.assertNotIn(request_id, str(read.content))
+        self.assertEqual(
+            AuditLog.objects.filter(action="finance.sap_customer_code.sent").count(), 1
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 1
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeSent").count(), 1
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeCompleted").count(), 1
+        )
+
+        secret_surface = str(list(
+            AuditLog.objects.filter(
+                action__in=(
+                    "finance.sap_customer_code.sent",
+                    "finance.sap_customer_code.completed",
+                )
+            ).values_list("new_value_json", flat=True)
+        )) + str(list(Communication.objects.values_list("body_snapshot", flat=True)))
+        for secret in (
+            "ABCDE1234F", "123412341234", "Village Road", "HDFC0001234",
+        ):
+            self.assertNotIn(secret, secret_surface)
+
+    def test_send_replay_change_owner_and_terminal_state_are_zero_write(self):
+        request_id = self._post_request("send-matrix-create").json()["data"][
+            "sap_customer_profile_request_id"
+        ]
+        first = self._send(request_id, remarks="  send once  ")
+        replay = self._send(request_id, remarks="send once")
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(first.json()["data"], replay.json()["data"])
+
+        changed = self._send(request_id, remarks="changed")
+        self.assertEqual(changed.status_code, 409, changed.content)
+        assert_error_envelope(self, changed.json(), "SAP_REQUEST_CONFLICT")
+        other_owner = self._user(
+            "credit_manager", "Other SAP Credit Manager",
+            "finance.sap_request.create", "finance.sap_request.send",
+        )
+        denied = self._send(request_id, actor=other_owner, remarks="send once")
+        self.assertEqual(denied.status_code, 403, denied.content)
+        assert_error_envelope(self, denied.json(), "OBJECT_ACCESS_DENIED")
+        wrong_role = self._user(
+            "sap_sender_outsider", "Wrong SAP Sender", "finance.sap_request.send"
+        )
+        forbidden = self._send(request_id, actor=wrong_role, remarks="send once")
+        self.assertEqual(forbidden.status_code, 403, forbidden.content)
+        assert_error_envelope(self, forbidden.json(), "FORBIDDEN")
+        missing = self._send(uuid4(), remarks="send once")
+        self.assertEqual(missing.status_code, 403, missing.content)
+        self.assertEqual(Communication.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="finance.sap_customer_code.sent").count(), 1
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeSent").count(), 1
+        )
+
+        completed = self._complete(request_id, sap_customer_code="SEND-TERMINAL-001")
+        self.assertEqual(completed.status_code, 200, completed.content)
+        terminal_send = self._send(request_id, remarks="send once")
+        self.assertEqual(terminal_send.status_code, 409, terminal_send.content)
+        self.assertEqual(Communication.objects.count(), 1)
+
+    def test_completion_replay_changed_facts_and_global_duplicate_are_zero_write(self):
+        request_id = self._create_and_send("completion-replay")
+        instant = timezone.now().replace(microsecond=0)
+        first = self._complete(
+            request_id,
+            sap_customer_code=" replay-code-001 ",
+            sap_vendor_code="vendor-001",
+            created_at_sap=instant.isoformat(),
+            confirmation_notes="retained facts",
+        )
+        replay = self._complete(
+            request_id,
+            sap_customer_code="REPLAY-CODE-001",
+            sap_vendor_code="VENDOR-001",
+            created_at_sap=instant.isoformat(),
+            confirmation_notes="retained facts",
+        )
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(first.json()["data"], replay.json()["data"])
+
+        changed = self._complete(request_id, sap_customer_code="REPLAY-CODE-002")
+        self.assertEqual(changed.status_code, 409, changed.content)
+        assert_error_envelope(self, changed.json(), "SAP_REQUEST_CONFLICT")
+        self.assertEqual(SapCustomerCode.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 1
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeCompleted").count(), 1
+        )
+
+        other_application = self._terminal_application(suffix="DUP-OWNER")
+        SapCustomerCode.objects.create(
+            member=other_application.member,
+            sap_customer_code="OTHER-MEMBER-CODE",
+            created_for_loan_application=other_application,
+            created_by_user=self.assignee,
+        )
+        duplicate_request = self._create_and_send("other-member-duplicate", self.application)
+        duplicate = self._complete(
+            duplicate_request, sap_customer_code=" other-member-code "
+        )
+        self.assertEqual(duplicate.status_code, 409, duplicate.content)
+        duplicate_row = SapCustomerProfileRequest.objects.get(pk=duplicate_request)
+        self.assertEqual(duplicate_row.request_status, "sent")
+        self.assertIsNone(duplicate_row.completed_at)
+
+    def test_existing_same_member_code_reuses_without_overwriting_history(self):
+        retained = SapCustomerCode.objects.create(
+            member=self.application.member,
+            sap_customer_code="RETAINED-MEMBER-CODE",
+            sap_vendor_code="RETAINED-VENDOR",
+            created_for_loan_application=self.application,
+            created_by_user=self.assignee,
+            created_at_sap=timezone.now() - timedelta(days=2),
+            confirmation_notes="Original retained evidence",
+        )
+        request_id = self._create_and_send("reuse-existing")
+        response = self._complete(
+            request_id, sap_customer_code=" retained-member-code "
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertTrue(response.json()["data"]["reuse"])
+        self.assertEqual(response.json()["data"]["sap_customer_code_id"], str(retained.pk))
+        self.assertEqual(SapCustomerCode.objects.count(), 1)
+        retained.refresh_from_db()
+        self.assertEqual(retained.sap_vendor_code, "RETAINED-VENDOR")
+        self.assertEqual(retained.confirmation_notes, "Original retained evidence")
+
+        replay = self._complete(request_id, sap_customer_code="RETAINED-MEMBER-CODE")
+        self.assertEqual(replay.status_code, 200, replay.content)
+        changed = self._complete(
+            request_id,
+            sap_customer_code="RETAINED-MEMBER-CODE",
+            sap_vendor_code="DIFFERENT",
+        )
+        self.assertEqual(changed.status_code, 409, changed.content)
+
+    def test_database_blocks_case_and_padding_variants_of_global_code(self):
+        SapCustomerCode.objects.create(
+            member=self.application.member,
+            sap_customer_code="CANONICAL-CODE",
+            created_for_loan_application=self.application,
+            created_by_user=self.assignee,
+        )
+        other_application = self._terminal_application(suffix="CODE-NORMALIZATION")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                SapCustomerCode.objects.create(
+                    member=other_application.member,
+                    sap_customer_code="  canonical-code  ",
+                    created_for_loan_application=other_application,
+                    created_by_user=self.assignee,
+                )
+        self.assertEqual(SapCustomerCode.objects.count(), 1)
+
+    def test_inactive_member_code_history_is_not_reactivated_or_overwritten(self):
+        historical = SapCustomerCode.objects.create(
+            member=self.application.member,
+            sap_customer_code="INACTIVE-HISTORICAL-CODE",
+            created_for_loan_application=self.application,
+            created_by_user=self.assignee,
+            status=SapCustomerCode.STATUS_INACTIVE,
+        )
+        request_id = self._create_and_send("inactive-history")
+        response = self._complete(request_id, sap_customer_code="NEW-ACTIVE-CODE")
+        self.assertEqual(response.status_code, 409, response.content)
+        assert_error_envelope(self, response.json(), "SAP_REQUEST_CONFLICT")
+        historical.refresh_from_db()
+        self.assertEqual(historical.status, SapCustomerCode.STATUS_INACTIVE)
+        self.assertEqual(SapCustomerCode.objects.count(), 1)
+        self.assertEqual(
+            SapCustomerProfileRequest.objects.get(pk=request_id).request_status, "sent"
+        )
+
+    def test_pending_same_member_request_loses_but_later_request_can_reuse(self):
+        second_application = self._terminal_application(suffix="SAME-MEMBER-PENDING")
+        second_application.member = self.application.member
+        second_application.save(update_fields=["member"])
+        first_id = self._create_and_send("same-member-first", self.application)
+        second_id = self._create_and_send("same-member-second", second_application)
+
+        winner = self._complete(first_id, sap_customer_code="ONE-MEMBER-ONE-CODE")
+        loser = self._complete(second_id, sap_customer_code="ONE-MEMBER-ONE-CODE")
+        self.assertEqual(winner.status_code, 200, winner.content)
+        self.assertEqual(loser.status_code, 409, loser.content)
+        self.assertEqual(SapCustomerCode.objects.count(), 1)
+        self.assertEqual(
+            SapCustomerProfileRequest.objects.filter(request_status="completed").count(), 1
+        )
+        self.assertEqual(
+            SapCustomerProfileRequest.objects.filter(request_status="sent").count(), 1
+        )
+
+        later_application = self._terminal_application(suffix="SAME-MEMBER-LATER")
+        later_application.member = self.application.member
+        later_application.save(update_fields=["member"])
+        later_id = self._create_and_send("same-member-later", later_application)
+        later = self._complete(later_id, sap_customer_code="ONE-MEMBER-ONE-CODE")
+        self.assertEqual(later.status_code, 200, later.content)
+        self.assertTrue(later.json()["data"]["reuse"])
+        self.assertEqual(SapCustomerCode.objects.count(), 1)
+
+    def test_completion_rejects_invalid_payload_state_assignee_and_stale_cycle(self):
+        draft_id = self._post_request("invalid-draft").json()["data"][
+            "sap_customer_profile_request_id"
+        ]
+        draft = self._complete(draft_id, sap_customer_code="DRAFT-CODE")
+        self.assertEqual(draft.status_code, 409, draft.content)
+
+        self._send(draft_id)
+        invalid_payloads = (
+            {"sap_customer_code": "   "},
+            {"sap_customer_code": "X" * 121},
+            {
+                "sap_customer_code": "FUTURE-CODE",
+                "created_at_sap": (timezone.now() + timedelta(days=1)).isoformat(),
+            },
+            {"sap_customer_code": "VALID-CODE", "forged": "value"},
+        )
+        for payload in invalid_payloads:
+            response = self._complete_raw(draft_id, payload)
+            self.assertEqual(response.status_code, 400, response.content)
+            assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+
+        other_assignee = self._user(
+            "senior_manager_finance", "Other Senior Finance",
+            "finance.sap_request.complete", "finance.sap_code.read",
+        )
+        denied = self._complete(
+            draft_id, actor=other_assignee, sap_customer_code="DENIED-CODE"
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        wrong_role = self._user(
+            "sap_completer_outsider", "Wrong SAP Completer",
+            "finance.sap_request.complete",
+        )
+        forbidden = self._complete(
+            draft_id, actor=wrong_role, sap_customer_code="DENIED-CODE"
+        )
+        self.assertEqual(forbidden.status_code, 403, forbidden.content)
+        assert_error_envelope(self, forbidden.json(), "FORBIDDEN")
+        missing = self._complete(uuid4(), sap_customer_code="MISSING-CODE")
+        self.assertEqual(missing.status_code, 403, missing.content)
+
+        decision = SanctionDecision.objects.get(loan_application=self.application)
+        review_decision = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=decision.approval_case.loan_appraisal_note,
+            decision="reviewed",
+            review_comments="Current approval cycle changed.",
+            reviewer_user=self.credit_manager,
+            from_state="submitted_to_sanction",
+            to_state="reviewed",
+        )
+        replacement_case = ApprovalCase.objects.create(
+            loan_application=self.application,
+            loan_appraisal_note=decision.approval_case.loan_appraisal_note,
+            appraisal_review_decision=review_decision,
+            cycle_number=2,
+            submitted_by_user=self.credit_manager,
+            current_status=ApprovalCase.STATUS_APPROVED,
+            amount="400000.00",
+            related_entity_type="loan_application",
+            related_entity_id=self.application.pk,
+            closed_at=timezone.now(),
+        )
+        decision.approval_case = replacement_case
+        decision.save(update_fields=["approval_case"])
+        stale = self._complete(draft_id, sap_customer_code="STALE-CODE")
+        self.assertEqual(stale.status_code, 409, stale.content)
+        stale_denied = self._complete(
+            draft_id, actor=other_assignee, sap_customer_code="STALE-CODE"
+        )
+        self.assertEqual(stale_denied.status_code, 403, stale_denied.content)
+        assert_error_envelope(self, stale_denied.json(), "OBJECT_ACCESS_DENIED")
+        self.application.application_status = LoanApplication.STATUS_SUBMITTED_TO_SANCTION
+        self.application.save(update_fields=["application_status"])
+        nonterminal_denied = self._complete(
+            draft_id, actor=other_assignee, sap_customer_code="STALE-CODE"
+        )
+        self.assertEqual(nonterminal_denied.status_code, 403, nonterminal_denied.content)
+        assert_error_envelope(self, nonterminal_denied.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(SapCustomerCode.objects.count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 0
+        )
+
+    def test_restricted_confirmation_evidence_must_match_actor_and_scope(self):
+        request_id = self._create_and_send("evidence")
+        evidence = self._upload_confirmation(
+            related_entity_type="loan_application",
+            related_entity_id=self.application.pk,
+        )
+        completed = self._complete(
+            request_id,
+            sap_customer_code="EVIDENCE-CODE",
+            confirmation_document_id=str(evidence.pk),
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+        self.assertEqual(
+            completed.json()["data"]["confirmation_document"],
+            {
+                "document_id": str(evidence.pk),
+                "file_name": "sap-confirmation.pdf",
+                "mime_type": "application/pdf",
+                "sensitivity_level": "restricted",
+            },
+        )
+
+        other_application = self._terminal_application(suffix="BAD-EVIDENCE")
+        other_id = self._create_and_send("bad-evidence", other_application)
+        wrong_scope = self._upload_confirmation(
+            related_entity_type="loan_application",
+            related_entity_id=self.application.pk,
+        )
+        invalid_evidence = (
+            wrong_scope,
+            self._upload_confirmation(
+                related_entity_type="loan_application",
+                related_entity_id=other_application.pk,
+                sensitivity_level=DocumentFile.SENSITIVITY_PUBLIC,
+            ),
+            self._upload_confirmation(
+                related_entity_type="loan_application",
+                related_entity_id=other_application.pk,
+                document_category="template_source",
+            ),
+            self._upload_confirmation(
+                related_entity_type="loan_application",
+                related_entity_id=other_application.pk,
+                actor=self.credit_manager,
+            ),
+        )
+        for document in invalid_evidence:
+            denied = self._complete(
+                other_id,
+                sap_customer_code="BAD-EVIDENCE-CODE",
+                confirmation_document_id=str(document.pk),
+            )
+            self.assertEqual(denied.status_code, 400, denied.content)
+            assert_error_envelope(self, denied.json(), "VALIDATION_ERROR")
+            self.assertEqual(
+                denied.json()["error"]["field_errors"]["confirmation_document_id"],
+                "Document file was not found or is inaccessible.",
+            )
+        self.assertEqual(SapCustomerCode.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="finance.sap_customer_code.completed").count(), 1
+        )
+
+    def test_member_read_is_masked_assignee_scoped_and_nondisclosing(self):
+        request_id = self._create_and_send("read-scope")
+        self._complete(request_id, sap_customer_code="MASKED-READ-001")
+        other_assignee = self._user(
+            "senior_manager_finance", "Unassigned Finance Reader",
+            "finance.sap_request.complete", "finance.sap_code.read",
+        )
+        denied = self.client.get(
+            f"/api/v1/members/{self.application.member_id}/sap-customer-code/",
+            **self._auth(other_assignee),
+        )
+        missing = self.client.get(
+            f"/api/v1/members/{uuid4()}/sap-customer-code/",
+            **self._auth(self.assignee),
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(missing.status_code, 403, missing.content)
+        self.assertEqual(denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+        self.assertEqual(missing.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+        for response in (denied, missing):
+            self.assertNotIn("MASKED-READ-001", str(response.content))
 
     def test_service_freezes_canonical_sensitive_facts_in_restricted_annexure(self):
         request = RequestFactory().post(
@@ -162,7 +625,7 @@ class SapCustomerProfileRequestApiTests(TestCase):
             WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeRequested").count(), 1
         )
 
-    def test_replay_rejects_a_newly_active_customer_code(self):
+    def test_request_replay_remains_zero_write_when_code_appears_later(self):
         first = self._post_request("req-sap-before-code")
         self.assertEqual(first.status_code, 200, first.content)
         SapCustomerCode.objects.create(
@@ -174,8 +637,8 @@ class SapCustomerProfileRequestApiTests(TestCase):
 
         replay = self._post_request("req-sap-after-code")
 
-        self.assertEqual(replay.status_code, 409, replay.content)
-        assert_error_envelope(self, replay.json(), "SAP_REQUEST_CONFLICT")
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(replay.json()["data"], first.json()["data"])
         self.assertEqual(SapCustomerProfileRequest.objects.count(), 1)
         self.assertEqual(DocumentFile.objects.count(), 1)
         self.assertEqual(
@@ -247,7 +710,7 @@ class SapCustomerProfileRequestApiTests(TestCase):
         assert_error_envelope(self, response.json(), "INVALID_STATE")
         self._assert_no_sap_artifacts()
 
-    def test_active_customer_code_and_missing_source_fact_roll_back_cleanly(self):
+    def test_active_customer_code_can_start_reuse_request_and_missing_fact_rolls_back(self):
         SapCustomerCode.objects.create(
             member=self.application.member,
             sap_customer_code="SAP-CUST-RETAINED-001",
@@ -256,11 +719,16 @@ class SapCustomerProfileRequestApiTests(TestCase):
             status="active",
         )
         response = self._post_request("req-sap-existing-code")
-        self.assertEqual(response.status_code, 409, response.content)
-        assert_error_envelope(self, response.json(), "SAP_REQUEST_CONFLICT")
-        self._assert_no_sap_artifacts()
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["data"]["request_status"], "draft")
+        self.assertEqual(SapCustomerProfileRequest.objects.count(), 1)
+        self.assertEqual(DocumentFile.objects.count(), 1)
 
+        SapCustomerProfileRequest.objects.all().delete()
+        DocumentFile.objects.all().delete()
         SapCustomerCode.objects.all().delete()
+        AuditLog.objects.filter(action="finance.sap_customer_code.requested").delete()
+        WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeRequested").delete()
         self.application.member.registered_pincode = ""
         self.application.member.save(update_fields=["registered_pincode"])
         response = self._post_request("req-sap-missing-fact")
@@ -444,6 +912,60 @@ class SapCustomerProfileRequestApiTests(TestCase):
             **self._auth(actor or self.credit_manager),
         )
 
+    def _create_and_send(self, label, application=None):
+        created = self._post_request(
+            f"{label}-create", application=application or self.application
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        request_id = created.json()["data"]["sap_customer_profile_request_id"]
+        sent = self._send(request_id, remarks=f"{label} send")
+        self.assertEqual(sent.status_code, 200, sent.content)
+        return request_id
+
+    def _send(self, request_id, *, actor=None, remarks=""):
+        return self.client.post(
+            f"/api/v1/sap-customer-profile-requests/{request_id}/send/",
+            {"remarks": remarks},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID=f"send-{request_id}",
+            **self._auth(actor or self.credit_manager),
+        )
+
+    def _complete(self, request_id, *, sap_customer_code, actor=None, **optional):
+        return self._complete_raw(
+            request_id,
+            {"sap_customer_code": sap_customer_code, **optional},
+            actor=actor,
+        )
+
+    def _complete_raw(self, request_id, payload, *, actor=None):
+        return self.client.post(
+            f"/api/v1/sap-customer-profile-requests/{request_id}/complete/",
+            payload,
+            content_type="application/json",
+            HTTP_X_REQUEST_ID=f"complete-{request_id}",
+            **self._auth(actor or self.assignee),
+        )
+
+    def _upload_confirmation(
+        self, *, related_entity_type, related_entity_id, actor=None,
+        sensitivity_level=DocumentFile.SENSITIVITY_RESTRICTED,
+        document_category="sap_confirmation",
+    ):
+        actor = actor or self.assignee
+        return store_document_upload(
+            user=actor,
+            request=RequestFactory().post("/documents/"),
+            uploaded_file=SimpleUploadedFile(
+                "sap-confirmation.pdf", b"safe SAP confirmation evidence",
+                content_type="application/pdf",
+            ),
+            document_category=document_category,
+            sensitivity_level=sensitivity_level,
+            related_entity_type=related_entity_type,
+            related_entity_id=related_entity_id,
+        )
+
     def _assert_no_sap_artifacts(self):
         self.assertEqual(SapCustomerProfileRequest.objects.count(), 0)
         self.assertEqual(DocumentFile.objects.count(), 0)
@@ -511,10 +1033,12 @@ class SapCustomerProfileRequestRaceTests(TransactionTestCase):
         self.settings = override_settings(DOCUMENT_STORAGE_ROOT=self.storage.name)
         self.settings.enable()
         self.credit_manager = SapCustomerProfileRequestApiTests._user(
-            self, "credit_manager", "SAP Race Credit Manager", "finance.sap_request.create"
+            self, "credit_manager", "SAP Race Credit Manager",
+            "finance.sap_request.create", "finance.sap_request.send",
         )
         self.assignee = SapCustomerProfileRequestApiTests._user(
-            self, "senior_manager_finance", "SAP Race Senior Manager Finance"
+            self, "senior_manager_finance", "SAP Race Senior Manager Finance",
+            "finance.sap_request.complete", "finance.sap_code.read",
         )
 
     def tearDown(self):
@@ -560,3 +1084,152 @@ class SapCustomerProfileRequestRaceTests(TransactionTestCase):
                 WorkflowEvent.objects.filter(workflow_name="SAPCustomerCodeRequested").count(),
                 round_number + 1,
             )
+
+    def test_five_conflicting_code_confirmations_have_one_exact_winner_twice(self):
+        for round_number in range(2):
+            application = SapCustomerProfileRequestApiTests._terminal_application(
+                self, suffix=f"CODE-RACE-{round_number}"
+            )
+            request_id = self._create_and_send(application, f"code-race-{round_number}")
+            barrier = Barrier(5)
+
+            def complete(index):
+                close_old_connections()
+                try:
+                    actor = User.objects.get(pk=self.assignee.pk)
+                    request = RequestFactory().post(
+                        "/sap-complete/",
+                        HTTP_X_REQUEST_ID=f"code-race-{round_number}-{index}",
+                    )
+                    barrier.wait(timeout=10)
+                    try:
+                        result = complete_request(
+                            actor=actor,
+                            request_id=request_id,
+                            payload={
+                                "sap_customer_code": (
+                                    f"CONCURRENT-CODE-{round_number}-{index}"
+                                )
+                            },
+                            request=request,
+                        )
+                        return ("winner", result["sap_customer_code_id"])
+                    except SapRequestConflict:
+                        return ("conflict", None)
+                finally:
+                    close_old_connections()
+
+            with ThreadPoolExecutor(max_workers=5) as pool:
+                results = list(pool.map(complete, range(5)))
+            self.assertEqual([status for status, _ in results].count("winner"), 1)
+            self.assertEqual([status for status, _ in results].count("conflict"), 4)
+            winner_ids = {code_id for status, code_id in results if status == "winner"}
+            self.assertEqual(len(winner_ids), 1)
+            self.assertEqual(SapCustomerCode.objects.count(), round_number + 1)
+            self.assertEqual(
+                SapCustomerProfileRequest.objects.filter(
+                    request_status=SapCustomerProfileRequest.STATUS_COMPLETED
+                ).count(),
+                round_number + 1,
+            )
+            self.assertEqual(
+                AuditLog.objects.filter(
+                    action="finance.sap_customer_code.completed"
+                ).count(),
+                round_number + 1,
+            )
+            self.assertEqual(
+                WorkflowEvent.objects.filter(
+                    workflow_name="SAPCustomerCodeCompleted"
+                ).count(),
+                round_number + 1,
+            )
+
+    def test_two_pending_same_member_requests_have_one_terminal_winner_twice(self):
+        for round_number in range(2):
+            first_application = SapCustomerProfileRequestApiTests._terminal_application(
+                self, suffix=f"MEMBER-RACE-{round_number}-A"
+            )
+            second_application = SapCustomerProfileRequestApiTests._terminal_application(
+                self, suffix=f"MEMBER-RACE-{round_number}-B"
+            )
+            second_application.member = first_application.member
+            second_application.save(update_fields=["member"])
+            first_id = self._create_and_send(
+                first_application, f"member-race-{round_number}-a"
+            )
+            second_id = self._create_and_send(
+                second_application, f"member-race-{round_number}-b"
+            )
+            barrier = Barrier(2)
+
+            def complete(request_id):
+                close_old_connections()
+                try:
+                    actor = User.objects.get(pk=self.assignee.pk)
+                    request = RequestFactory().post(
+                        "/sap-complete/",
+                        HTTP_X_REQUEST_ID=f"member-race-{round_number}-{request_id}",
+                    )
+                    barrier.wait(timeout=10)
+                    try:
+                        result = complete_request(
+                            actor=actor,
+                            request_id=request_id,
+                            payload={
+                                "sap_customer_code": f"ONE-MEMBER-{round_number}"
+                            },
+                            request=request,
+                        )
+                        return ("winner", result["sap_customer_profile_request_id"])
+                    except SapRequestConflict:
+                        return ("conflict", None)
+                finally:
+                    close_old_connections()
+
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                results = list(pool.map(complete, (first_id, second_id)))
+            self.assertEqual([status for status, _ in results].count("winner"), 1)
+            self.assertEqual([status for status, _ in results].count("conflict"), 1)
+            winner_ids = {request_id for status, request_id in results if status == "winner"}
+            self.assertEqual(len(winner_ids), 1)
+            self.assertEqual(SapCustomerCode.objects.count(), round_number + 1)
+            self.assertEqual(
+                SapCustomerProfileRequest.objects.filter(
+                    request_status=SapCustomerProfileRequest.STATUS_COMPLETED
+                ).count(),
+                round_number + 1,
+            )
+            self.assertEqual(
+                SapCustomerProfileRequest.objects.filter(
+                    request_status=SapCustomerProfileRequest.STATUS_SENT
+                ).count(),
+                round_number + 1,
+            )
+            self.assertEqual(
+                AuditLog.objects.filter(
+                    action="finance.sap_customer_code.completed"
+                ).count(),
+                round_number + 1,
+            )
+
+    def _create_and_send(self, application, label):
+        create_http_request = RequestFactory().post(
+            "/sap-request/", HTTP_X_REQUEST_ID=f"{label}-create"
+        )
+        created = create_request(
+            actor=self.credit_manager,
+            application_id=application.pk,
+            payload={"assigned_to_user_id": str(self.assignee.pk)},
+            request=create_http_request,
+        )
+        send_http_request = RequestFactory().post(
+            "/sap-send/", HTTP_X_REQUEST_ID=f"{label}-send"
+        )
+        send_request(
+            actor=self.credit_manager,
+            request_id=created["sap_customer_profile_request_id"],
+            payload={"remarks": label},
+            request=send_http_request,
+        )
+        return created["sap_customer_profile_request_id"]

@@ -1,5 +1,19 @@
 # Ralph Progress Log
 
+## 2026-07-16 - 2026-07-16_062256_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice completed: 009B-sap-customer-code-confirmation-and-reuse.
+- Summary: Added the governed retained-Annexure send boundary, direct Finance communication/task,
+  exact Senior Manager Finance confirmation, one normalized active member SAP code, conservative
+  same-member reuse, immutable safe evidence, and masked scoped read without downstream finance truth.
+- Tests run: focused RED/GREEN and 25-test SAP module; migration-graph RED/GREEN; PostgreSQL request,
+  five-conflicting-code, and two-same-member-request races twice; Django check/migration drift; all
+  940 backend tests with 51 expected skips at 91% coverage; frontend build/typecheck/lint and all
+  319 tests.
+- Evidence: `.ralph/runs/2026-07-16_062256_repair/evidence/`. Next: architecture review is due,
+  then run sharpened 009C followed by sharpened 009D.
+
 ## 2026-07-16 - 2026-07-16_042513_repair
 
 - Agent tool used: codex with the diagnosing-bugs skill.
@@ -7649,6 +7663,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_052448_repair/.ralph/runs/2026-07-16_052448_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_052448_repair/.ralph/runs/2026-07-16_052448_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 07:28:04 - 2026-07-16_062256_repair
+- Agent tool used: codex
+- Slice attempted: 009B-sap-customer-code-confirmation-and-reuse
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_062256_repair/.ralph/runs/2026-07-16_062256_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_062256_repair/.ralph/runs/2026-07-16_062256_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

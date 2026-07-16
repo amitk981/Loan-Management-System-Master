@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.db.models.functions import Lower, Trim
 from django.utils import timezone
 
 
@@ -45,6 +46,22 @@ class SapCustomerProfileRequest(models.Model):
         "documents.DocumentFile", on_delete=models.PROTECT,
         related_name="sap_customer_profile_requests",
     )
+    sanction_decision_id_snapshot = models.UUIDField(null=True, blank=True)
+    sanction_approval_case_id_snapshot = models.UUIDField(null=True, blank=True)
+    sent_remarks = models.TextField(blank=True)
+    sent_communication = models.ForeignKey(
+        "communications.Communication", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="sap_customer_profile_requests",
+    )
+    sent_task = models.ForeignKey(
+        "communications.Notification", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="sap_customer_profile_requests",
+    )
+    sap_customer_code = models.ForeignKey(
+        "SapCustomerCode", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="completed_profile_requests",
+    )
+    completion_reused_existing_code = models.BooleanField(null=True, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -69,6 +86,29 @@ class SapCustomerProfileRequest(models.Model):
             models.CheckConstraint(
                 check=models.Q(sanctioned_amount__gt=0),
                 name="sap_request_amount_positive",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        request_status="draft", sent_at__isnull=True,
+                        sent_communication__isnull=True, sent_task__isnull=True,
+                        completed_at__isnull=True, sap_customer_code__isnull=True,
+                        completion_reused_existing_code__isnull=True,
+                    )
+                    | models.Q(
+                        request_status="sent", sent_at__isnull=False,
+                        sent_communication__isnull=False, sent_task__isnull=False,
+                        completed_at__isnull=True, sap_customer_code__isnull=True,
+                        completion_reused_existing_code__isnull=True,
+                    )
+                    | models.Q(
+                        request_status="completed", sent_at__isnull=False,
+                        sent_communication__isnull=False, sent_task__isnull=False,
+                        completed_at__isnull=False, sap_customer_code__isnull=False,
+                        completion_reused_existing_code__isnull=False,
+                    )
+                ),
+                name="sap_request_lifecycle_evidence",
             ),
         ]
 
@@ -97,6 +137,7 @@ class SapCustomerCode(models.Model):
         "documents.DocumentFile", null=True, blank=True, on_delete=models.PROTECT,
         related_name="confirmed_sap_customer_codes",
     )
+    confirmation_notes = models.TextField(blank=True)
     status = models.CharField(max_length=40, default=STATUS_ACTIVE, db_index=True)
 
     class Meta:
@@ -110,5 +151,12 @@ class SapCustomerCode(models.Model):
             models.CheckConstraint(
                 check=models.Q(status__in=("active", "inactive")),
                 name="sap_customer_code_status_valid",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(sap_customer_code=""),
+                name="sap_customer_code_not_blank",
+            ),
+            models.UniqueConstraint(
+                Lower(Trim("sap_customer_code")), name="uniq_sap_customer_code_ci",
             ),
         ]

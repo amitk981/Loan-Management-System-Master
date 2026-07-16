@@ -2,40 +2,42 @@
 
 ## Last Run
 
-2026-07-16_052448_repair
+2026-07-16_062256_repair
 
 ## Current Status
 
-009A is complete pending Ralph's independent validation and commit. It adds the Finance-owned
-manual SAP customer-profile request boundary after exact terminal sanction, freezes canonical
-borrower/sanction/current verified-bank facts, retains an authenticated-encrypted restricted
-Annexure-I workbook, and creates one replay-safe request with atomic audit/workflow evidence.
+009B is complete pending Ralph's independent validation and commit. Credit Manager can send the
+exact checksum-verified/decrypted retained Annexure-I once to the frozen active Senior Manager
+Finance assignee through one direct communication/task ledger. That assignee can confirm a new
+globally normalized active member SAP code or explicitly reuse the retained same-member code; exact
+replay is zero-write and changed/stale/cross-object actions fail closed.
 
-The run began as a repair because `2026-07-16_052447_normal_run` stopped at preflight with
-`No slice files found`; it had no worktree or implementation to salvage. Independent Standards and
-Spec reviewers found and then reverified closure of physical workbook encryption, active-code
-replay, persisted-actor locking, verified-bank coverage, canonical workflow recording, and Ralph
-evidence/bookkeeping issues.
+Completion binds request/application/member/current sanction-cycle snapshots to the code, accepts
+only exact restricted immutable confirmation evidence, writes safe audit/workflow ledgers, and
+exposes only a masked assignee-scoped member read. It creates no loan account, readiness, payment,
+disbursement, balance, SAP posting, or borrower communication truth.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-16_052448_repair/evidence/`. Focused 009A has 13 green tests
-(one PostgreSQL-only skip under SQLite). The PostgreSQL five-caller race ran twice after the final
-changes and passed both times; each test contains two race rounds. The final backend suite passes
-928 tests with 49 skips at 91% coverage; Django check and migration drift are clean. Unchanged
-frontend gates pass build, typecheck, lint, and all 319 tests. RED/GREEN logs include the initial
-route tracer, migration-graph regression, and review-discovered security/authority defects.
+Evidence is in `.ralph/runs/2026-07-16_062256_repair/evidence/`. The focused SAP module passes 25
+tests with three PostgreSQL-only skips under SQLite. All three PostgreSQL race families pass in two
+final runs and each test contains two internal rounds. The final backend suite passes 940 tests with
+51 skips at 91% coverage; Django check and migration drift are clean. Unchanged frontend gates pass
+build, typecheck, lint, and all 319 tests. RED/GREEN evidence includes the missing public send route,
+PostgreSQL nullable-join lock correction, and cross-module migration-graph correction.
 
 ## Important Continuation Notes
 
-- 009B must decrypt retained workbooks only through
-  `finance.modules.annexure_storage.EncryptedAnnexureStorage` before governed send/download.
-- Historical one-way `enc:v1` member identity values remain ineligible for full Annexure export;
-  see A-120. The fixed single-sheet renderer decision and replacement seam are in A-123.
-- 009B is already concrete. 009C was sharpened in this run from already-opened Epic 009 sources;
-  A-121 forbids inventing a default role grant for its Critical create permission, and A-122 records
-  its conservative pre-disbursement zero-balance default.
+- A-124 records the temporary conservative reuse authority: exact member plus retained active code,
+  never identity text or invented outstanding-loan truth. 009C+ may add governed outstanding-state
+  evidence prospectively without rewriting code/request history.
+- 009C remains concrete. A-121 forbids inventing a default role grant for its Critical create
+  permission, and A-122 requires truthful zero pre-disbursement balances.
+- 009D was sharpened from already-opened §31.1/M08/integration readiness sources. It must remain a
+  read-only, source-owned complete blocker projection; Finance initiation and CFC authorization are
+  downstream actions, not synthetic readiness passes.
 
 ## Next Run
 
-Run 009B-sap-request-send-and-code-confirmation, then 009C-loan-account-creation-from-sanctioned-application.
+Run the due architecture review, then 009C-loan-account-creation-from-sanctioned-application and
+009D-disbursement-readiness-service.

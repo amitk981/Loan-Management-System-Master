@@ -3823,5 +3823,41 @@ Finance's Annexure storage boundary verifies, decrypts, and returns the readable
 response and audit/workflow evidence omit PAN, Aadhaar, address, and bank secrets. The active-request
 identity is application plus status `draft`/`sent`: sequential or concurrent retry returns the
 retained projection and creates no duplicate file, audit, or workflow event, unless an active
-member SAP code now exists, which remains a conflict. Send, correction, completion, SAP-code
-confirmation/reuse, loan-account, readiness, and disbursement changes are not part of this route.
+member SAP code now exists, in which case a new request may be retained for explicit governed reuse.
+Correction, loan-account, readiness, and disbursement changes are not part of this route.
+
+## SAP request send, completion, reuse, and masked read (009B)
+
+- `POST /api/v1/sap-customer-profile-requests/{request_id}/send/` accepts exactly optional string
+  `remarks`. The active persisted Credit Manager with `finance.sap_request.send` must be the frozen
+  requester. The application/member/current sanction cycle, active frozen Senior Manager Finance
+  assignee, request row, and active member code are locked before the restricted Annexure-I is
+  checksum-verified and decrypted. Success moves only `draft -> sent` and returns request id,
+  `sent`, sent time, assignee, `communication_id`, and in-app `task_id`. Exact sent replay is
+  zero-write; changed remarks, completed/stale requests, wrong owner/role/object, and invalid retained
+  files fail without another communication, task, audit, or workflow row.
+- `POST /api/v1/sap-customer-profile-requests/{request_id}/complete/` accepts exactly required
+  `sap_customer_code` plus optional `sap_vendor_code`, `created_at_sap`,
+  `confirmation_document_id`, and `confirmation_notes`. Codes and notes are trimmed; codes are
+  canonical uppercase, nonblank, and at most 120 characters. SAP timestamps must be timezone-aware
+  and not future. Only the active persisted frozen Senior Manager Finance assignee with
+  `finance.sap_request.complete` may complete the exact current sent request.
+- Completion creates one globally case/padding-insensitive unique active member code or reuses that
+  member's retained active code. It never infers reuse from identity text, reactivates inactive
+  history, overwrites retained code evidence, or accepts another member's code. A request pending
+  before another request completed for that member loses with `409`; a later request may explicitly
+  reuse the retained code. Exact completion replay is zero-write and changed replay conflicts.
+- Optional confirmation evidence must have one immutable upload-provenance row, sensitivity
+  `restricted`, category `sap_confirmation`, uploader equal to the assignee, and scope equal to the
+  request or its loan application. Missing, cross-object, public, template/portal, other-uploader,
+  or ambiguous evidence returns the same nondisclosing field error.
+- Completion returns request/code/member/application ids, `completed`, completion time, `reuse`,
+  masked customer/vendor codes, and safe confirmation-file metadata. It never returns frozen
+  identity/bank values, storage keys, signed capabilities, or raw code values. It creates one safe
+  audit and workflow ledger only; it creates no loan account, readiness, payment, disbursement, or
+  borrower communication truth.
+- `GET /api/v1/members/{member_id}/sap-customer-code/` requires an active persisted Senior Manager
+  Finance user with `finance.sap_code.read` who is the assignee on a completed request bound to the
+  member's current active code. Success returns only code id, member id, masked customer/vendor code,
+  and active status. Missing and out-of-scope member identifiers share `403 OBJECT_ACCESS_DENIED`
+  and the response never exposes SAP request or borrower identity fields.

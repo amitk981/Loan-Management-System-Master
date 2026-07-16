@@ -66,3 +66,20 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
   it (A-121). Implement exact permission/object checks and explicit-grant tests without seeding a
   role grant. Replay is application + exact sanction + exact normalized account number; changed
   repeats conflict and PostgreSQL races retain one account/terms/status/audit/workflow winner.
+
+## 009D Disbursement Readiness
+
+- API §31.1 fixes a read-only
+  `GET /api/v1/loan-accounts/{loan_account_id}/disbursement-readiness/` projection with one aggregate
+  flag and ordered pass/fail checks. The API example names sanction, documentation, security, SAP,
+  and verified bank; integrations §9.4 and M08 expand those into the complete pre-initiation gate.
+- Consume current facts through the approval, legal/checklist, security, application-bank, SAP,
+  loan-account, and configuration owners. Conditional exception/general-meeting, SH-4/CDSL, and
+  signature checks must never disappear from the response or be inferred from copied status JSON.
+- The source workflow orders readiness before Senior Manager Finance initiation and CFC
+  authorisation. Those are 009E/009F actions, not readiness rows or synthetic pass conditions; the
+  readiness GET creates no payment, approval, balance, account-state, task, communication, audit, or
+  borrower truth.
+- Fail closed when current relationships/evidence are absent, stale, cross-object, or incoherent.
+  If no governed active source-bank configuration owner exists yet, return an honest failed
+  `source_bank_account_configured` check rather than inventing an account.

@@ -20,7 +20,7 @@ from sfpcl_credit.domain_errors import (
     DomainObjectAccessDenied,
     DomainPermissionDenied,
 )
-from sfpcl_credit.finance.models import SapCustomerCode, SapCustomerProfileRequest
+from sfpcl_credit.finance.models import SapCustomerProfileRequest
 from sfpcl_credit.finance.modules.annexure_i import render_annexure_i
 from sfpcl_credit.finance.modules.annexure_storage import EncryptedAnnexureStorage
 from sfpcl_credit.identity.models import AuditLog, User
@@ -80,12 +80,6 @@ def create_request(*, actor, application_id, payload, request, storage=None):
                 .get(pk=application.pk)
             )
             member = application.member
-            if SapCustomerCode.objects.select_for_update().filter(
-                member=member, status=SapCustomerCode.STATUS_ACTIVE
-            ).exists():
-                raise SapRequestConflict(
-                    "An active SAP customer code already exists for this member."
-                )
             replay = (
                 SapCustomerProfileRequest.objects.select_for_update()
                 .select_related("assigned_to_user")
@@ -99,7 +93,7 @@ def create_request(*, actor, application_id, payload, request, storage=None):
                 return serialize_request(replay)
 
             assignee = _active_assignee(values["assigned_to_user_id"])
-            decision = _terminal_decision(application)
+            decision = current_terminal_sanction(application)
             facts = _canonical_facts(application, member, decision)
             bank = resolve_blank_cheque_bank_fact(application_id=application.pk)
             if bank.valid:
@@ -133,6 +127,8 @@ def create_request(*, actor, application_id, payload, request, storage=None):
                 member=member,
                 requested_by_user=actor,
                 assigned_to_user=assignee,
+                sanction_decision_id_snapshot=decision.pk,
+                sanction_approval_case_id_snapshot=decision.approval_case_id,
                 excel_file=document,
                 **facts,
             )
@@ -221,7 +217,7 @@ def _active_assignee(user_id):
     return assignee
 
 
-def _terminal_decision(application):
+def current_terminal_sanction(application):
     latest_case = (
         ApprovalCase.objects.select_for_update()
         .filter(loan_application=application)

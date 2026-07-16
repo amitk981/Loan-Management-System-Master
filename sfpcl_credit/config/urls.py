@@ -35,6 +35,21 @@ urlpatterns = [
         name="loan-application-sap-customer-profile-request",
     ),
     path(
+        "api/v1/sap-customer-profile-requests/<uuid:sap_customer_profile_request_id>/send/",
+        finance_views.sap_customer_profile_request_send,
+        name="sap-customer-profile-request-send",
+    ),
+    path(
+        "api/v1/sap-customer-profile-requests/<uuid:sap_customer_profile_request_id>/complete/",
+        finance_views.sap_customer_profile_request_complete,
+        name="sap-customer-profile-request-complete",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/sap-customer-code/",
+        finance_views.member_sap_customer_code,
+        name="member-sap-customer-code",
+    ),
+    path(
         "api/v1/loan-documents/<uuid:loan_document_id>/verify/",
         legal_document_views.verify_loan_document,
         name="loan-document-verify",
