@@ -2,43 +2,41 @@
 
 ## Last Run
 
-2026-07-16_120256_normal_run
+2026-07-16_130451_normal_run
 
 ## Current Status
 
-High-risk slice 009C is complete pending the orchestrator's independent PostgreSQL capability gate
-and commit. The new `loans.modules.loan_account_lifecycle` owner creates one replay-safe
-pre-disbursement account from the exact current terminal sanction. It freezes the governed safe
-terms, starts in `sanctioned` with zero balances, writes one initial history/audit/workflow tuple,
-and creates no readiness, activation, schedule, or disbursement truth.
+High-risk slice 009D is complete pending independent orchestrator validation and commit. The exact
+§31.1 GET now returns one read-only, deterministic 23-check readiness projection from the current
+loan, approval, legal/checklist, security, application-bank, SAP, and configuration owner seams.
+Every missing/stale/mixed fact fails its named check; no blocker disappears.
 
-Authority, application scope, exact sanction identity, approval snapshot coherence, newest legal
-evidence, optional public SAP-code coherence, unique normalized account number, and immutable terms
-are enforced transactionally. Exact retries return retained ids with no writes; changed retries and
-stale/incomplete sources fail closed. A-121 still leaves the Critical permission ungranted to every
-production role, and A-122 preserves zero pre-disbursement balances.
+Authority requires an active persisted Senior Manager Finance or CFC user, the explicit readiness
+permission, and exact application/account object scope. Responses and errors are nondisclosing and
+secret-free. Evaluation creates no audit, workflow, task, payment, account-state/balance, checklist,
+security, communication, register, or borrower truth.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-16_120256_normal_run/evidence/`. Django check and migration drift
-pass. The full backend suite passes 994 tests with 52 expected skips at 91% coverage. Frontend build,
-typecheck, lint, and all 322 tests pass. Independent Standards and Spec reviews were completed; the
-Spec findings were reproduced red and corrected green.
+Evidence is in `.ralph/runs/2026-07-16_130451_normal_run/evidence/`. The final backend run passes
+1,001 tests with 52 expected skips at 91% coverage; Django check and migration drift pass. Frontend
+build/typecheck/lint and all 322 tests pass. Focused RED/GREEN evidence covers missing route,
+all-ready/all-blocked projections, every independent source blocker, authority/nondisclosure,
+zero-write behavior, owner boundaries, strict queries, and a 30-query cap. No frontend/browser
+contract applies.
 
-The sandbox denied `/tmp/.s.PGSQL.5432`, so the collected five-caller PostgreSQL race is honestly
-skipped locally. The slice declares `postgresql-five-race-acceptance`; the orchestrator must pass
-that class twice before committing or merging. No frontend or screenshot contract applies.
+The first full backend run exposed an approvals-to-credit reverse import. It was removed and both
+the architecture regression and final full suite pass.
 
 ## Important Continuation Notes
 
-- Downstream consumers must use the public loan lifecycle/models and must not reinterpret
-  `sanctioned` or zero balances as readiness or funding.
-- 009D remains read-only and must consume the 009B2 SAP and 009C loan owner seams. Finance payment
-  initiation and CFC authorization remain later actions.
-- 009E is now sharpened from the already-open Epic 009 source; no 009D/009E production code was
-  implemented during 009C.
+- A-126 records the absent governed active SFPCL source-bank owner. Production 009D truth therefore
+  honestly fails `source_bank_account_configured`; no RBL account was invented.
+- 009E must consume the exact 009D decision and add or depend on the governed source-bank owner
+  before real payment initiation can pass. It must not reimplement readiness.
+- 009F was sharpened from already-open API/integration/data/auth source sections. It owns only CFC
+  approval/rejection, not bank success, UTR, funding, activation, advice, or registers.
 
 ## Next Run
 
-An architecture review is due after four completed slices. Run that review after independent 009C
-validation, then proceed to sharpened 009D.
+An architecture review remains due. Run it after independent 009D validation, then proceed to 009E.

@@ -56,3 +56,8 @@ def resolve_effective_loan_policy(*, calculation_date, for_update=False):
             }
         )
     return policy
+
+
+def resolve_source_bank_account():
+    """Return no decision until a governed source-bank owner is introduced."""
+    return None

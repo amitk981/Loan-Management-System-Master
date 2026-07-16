@@ -141,6 +141,22 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
   If no governed active source-bank configuration owner exists yet, return an honest failed
   `source_bank_account_configured` check rather than inventing an account.
 
+### 009D retained implementation truth
+
+- `disbursements.modules.disbursement_readiness.evaluate(actor, loan_account_id)` owns the shallow
+  read-only coordinator and §31.1 route. The account resolver enforces active persisted Senior
+  Manager Finance/CFC authority, exact application object scope, and a sanctioned account/terms
+  projection; approval, legal, security, application-bank, SAP, and configuration owners retain
+  their policy decisions behind bounded selectors in one transaction.
+- The response always emits 23 stable source-ordered checks. Conditional exception/general-meeting
+  and SH-4/CDSL paths pass only when inapplicable or their exact current owner evidence is terminal;
+  current legal documents, ordered checklist signatures, bank decision, SAP linkage, and amount are
+  independently fail-closed. Failed reasons are safe and no source evidence payload is returned.
+- A-126 records the missing governed source-bank owner. Production truth therefore remains honestly
+  blocked on that named check until 009E or a prerequisite supplies the source account lifecycle;
+  tests prove the complete public passing contract through the owner decision seam without seeding
+  or inventing an RBL account.
+
 ## 009E Payment Initiation
 
 - API §31.2 fixes `POST /api/v1/loan-accounts/{id}/disbursements/initiate/`, required
@@ -155,3 +171,15 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
   checker/UTR/time/advice, initial statuses, and register flag. The amount cannot exceed sanction;
   success cannot occur before CFC authorisation. Auth-permissions assigns
   `finance.disbursement.initiate` to Senior Manager Finance and keeps CFC authorisation separate.
+
+## 009F CFC Authorisation/Rejection
+
+- API §31.3 fixes `POST /api/v1/disbursements/{id}/authorise/` with only decision and comments.
+  Integrations §§9.1/9.2/9.6 make this the CFC's independent manual-bank approval/rejection record;
+  it is not transfer execution and cannot create a UTR or activate/fund the account.
+- Auth §§15.7/16.3/26.5 require active CFC authority with
+  `finance.disbursement.authorise`; 009E's Senior Manager Finance maker must be a distinct user.
+  The exact pending initiation/readiness/bank evidence is frozen and checked transactionally.
+- §45 does not list authorisation as an idempotency-header endpoint. Exact terminal replay may return
+  the retained result with no writes; changed/opposite decisions conflict. PostgreSQL races must
+  retain one complete CFC decision/audit/workflow/task winner and no loser success evidence.

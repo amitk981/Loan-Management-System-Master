@@ -45,6 +45,67 @@ class RequestMetadata:
     user_agent: str
 
 
+@dataclass(frozen=True)
+class ReadinessAccountFacts:
+    loan_account_id: uuid.UUID
+    loan_application_id: uuid.UUID
+    member_id: uuid.UUID
+    sanction_decision_id: uuid.UUID
+    sap_customer_code_id: uuid.UUID | None
+    loan_account_status: str
+    sanctioned_amount: Decimal
+    disbursement_amount: Decimal
+    member_kyc_status: str
+    relationships_coherent: bool
+
+
+def resolve_readiness_account(*, actor, loan_account_id):
+    """Resolve a readiness-scoped account without disclosing denied identifiers."""
+    actor = _locked_actor(actor)
+    permissions = set(auth_service.effective_permission_codes(actor))
+    permission = "finance.disbursement.readiness"
+    if permission not in permissions or not set(actor.role_codes()).intersection(
+        {"senior_manager_finance", "chief_financial_controller"}
+    ):
+        raise DomainPermissionDenied("Disbursement readiness permission is required.")
+    account = (
+        LoanAccount.objects.select_for_update()
+        .select_related(
+            "loan_application__created_by_user",
+            "loan_application__received_by_user",
+            "member",
+            "terms",
+        )
+        .filter(pk=loan_account_id)
+        .first()
+    )
+    if account is None:
+        raise DomainObjectAccessDenied(None)
+    access = evaluate_application_object_access(
+        application=account.loan_application,
+        actor=actor,
+        required_permission=permission,
+        actor_permissions=permissions,
+    )
+    if not access.allowed:
+        raise DomainObjectAccessDenied(access)
+    return ReadinessAccountFacts(
+        loan_account_id=account.pk,
+        loan_application_id=account.loan_application_id,
+        member_id=account.member_id,
+        sanction_decision_id=account.sanction_decision_id,
+        sap_customer_code_id=account.sap_customer_code_id,
+        loan_account_status=account.loan_account_status,
+        sanctioned_amount=account.sanctioned_amount,
+        disbursement_amount=account.terms.loan_amount,
+        member_kyc_status=account.member.kyc_status,
+        relationships_coherent=(
+            account.loan_application.member_id == account.member_id
+            and account.terms.loan_account_id == account.pk
+        ),
+    )
+
+
 def create_loan_account(*, actor, application_id, payload, request=None, metadata=None):
     cleaned = _validate_payload(payload)
     metadata = metadata or RequestMetadata(
@@ -406,6 +467,8 @@ __all__ = [
     "CREATE_PERMISSION",
     "LoanAccountConflict",
     "RequestMetadata",
+    "ReadinessAccountFacts",
     "create_loan_account",
+    "resolve_readiness_account",
     "serialize_loan_account",
 ]

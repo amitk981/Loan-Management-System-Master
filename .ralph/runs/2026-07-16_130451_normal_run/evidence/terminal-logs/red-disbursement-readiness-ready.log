@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_all_current_owner_decisions_return_ready (sfpcl_credit.tests.test_disbursement_readiness_api.DisbursementReadinessApiTests.test_all_current_owner_decisions_return_ready)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_130451_normal_run/sfpcl_credit/tests/test_disbursement_readiness_api.py", line 142, in test_all_current_owner_decisions_return_ready
+    with (
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1437, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1410, in get_original
+    raise AttributeError(
+AttributeError: <module 'sfpcl_credit.disbursements.modules.disbursement_readiness' from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_130451_normal_run/sfpcl_credit/disbursements/modules/disbursement_readiness.py'> does not have the attribute 'resolve_approval_readiness'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

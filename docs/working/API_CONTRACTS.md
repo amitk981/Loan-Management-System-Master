@@ -3925,3 +3925,30 @@ SAP models, adapter internals, retained workbook storage, or SAP exception vocab
   `409 LOAN_ACCOUNT_CONFLICT`. Database uniqueness and transaction locks retain one complete tuple
   under concurrent first create; integrity losers receive the same conflict without partial terms,
   status, audit, or workflow evidence.
+
+## Disbursement readiness (009D)
+
+- `GET /api/v1/loan-accounts/{loan_account_id}/disbursement-readiness/` accepts no query
+  parameters. Unknown parameters return `400 VALIDATION_ERROR`. The actor must be active and
+  persisted, hold `finance.disbursement.readiness`, have canonical loan-account/application object
+  scope, and be Senior Manager Finance or Chief Financial Controller. Missing and inaccessible ids
+  share `403 OBJECT_ACCESS_DENIED`; a grant or role string alone is insufficient.
+- Success returns `loan_account_id`, `loan_application_id`, `ready_for_disbursement`, UTC
+  `evaluated_at`, and all ordered checks. Each check contains only stable `code`, `label`, `status`
+  (`pass`/`fail`), plus a safe `reason` only when failed. The fixed order is sanction, sanctioned
+  account state, conditional exception/general-meeting approvals, KYC, appraisal, checklist,
+  Company Secretary/Credit Manager/Sanction Committee approvals, security package, PoA, Term Sheet,
+  Loan Agreement, explicit SH-4 and CDSL paths, blank cheque, cancelled cheque, borrower bank,
+  signature resolution, SAP code, source bank, and amount within sanction.
+- The loan owner locks the exact account/application/member/terms source and enforces authority.
+  Approval, legal/checklist, security, application-bank, SAP, and configuration owners return their
+  own bounded immutable decisions inside the same transaction. Missing, stale, replaced,
+  cross-object, inactive, non-terminal, or mixed relationships fail their named checks; no check is
+  omitted. The SAP check compares the account link only to
+  `SapCustomerProfileModule.get_customer_code_for_member(member_id)` and never reads raw/masked
+  codes, Annexure-I, adapter, delivery, or Finance model state.
+- `ready_for_disbursement` is true only when every check passes. Senior Manager Finance final
+  verification/initiation and CFC authorisation are later actions and are not readiness checks.
+  Under A-126 the source-bank check fails honestly until a governed owner exists. Evaluation writes
+  no audit, workflow, checklist, approval, security, account, balance, payment, task, communication,
+  register, or borrower truth and exposes no identity/bank/document/cheque/BO/capability secrets.
