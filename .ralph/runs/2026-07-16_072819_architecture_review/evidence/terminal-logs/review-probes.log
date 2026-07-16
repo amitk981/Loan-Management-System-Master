@@ -1,0 +1,37 @@
+Architecture review executable probes
+Run: 2026-07-16_072819_architecture_review
+Backend interpreter: /Users/amitkallapa/LMS/.ralph/venv/bin/python
+
+Command:
+PYTHONPATH=<run evidence/terminal-logs> python manage.py test \
+  review_action_parity_probe.ReviewActionParityProbe.test_advertised_completion_is_not_executable \
+  --verbosity 2
+
+Result: PASS (1 test)
+Observed:
+{'advertised_action': 'complete_item', 'advertised_enabled': True,
+ 'execution_status': 409, 'execution_error': 'CHECKLIST_EVIDENCE_INCOMPLETE'}
+
+Command:
+PYTHONPATH=<run evidence/terminal-logs> python manage.py test \
+  review_sap_contract_probes.ReviewSapContractProbes.test_sent_request_does_not_deliver_the_retained_workbook \
+  review_sap_contract_probes.ReviewSapContractProbes.test_reuse_changed_optional_payload_is_accepted_as_replay \
+  --verbosity 1
+
+Result: PASS (2 tests)
+Observed:
+{'request_status': 'sent', 'communication_delivery_status': 'pending',
+ 'communication_has_attachment_field': False,
+ 'task_action_url': '/api/v1/sap-customer-profile-requests/<request-id>/complete/',
+ 'assignee_workbook_download_status': 403}
+{'first_status': 200, 'changed_payload_status': 200, 'same_response': True}
+
+Interpretation:
+- The S26-S35 projection advertises an enabled mutation that the owning public workflow rejects
+  in the identical state.
+- The SAP request becomes `sent` without an attachment/capability path that lets the frozen
+  assignee receive the retained workbook.
+- A materially changed reuse-completion payload is accepted as an exact replay.
+
+An initial probe invocation used the wrong PYTHONPATH and failed module discovery before any test
+database or product behavior executed. The corrected commands above are the authoritative runs.

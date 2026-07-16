@@ -16,7 +16,7 @@ Finance receives a governed account identity and terms snapshot that later readi
 steps can reference without re-copying mutable application or sanction facts.
 
 ## Depends On
-- 009B
+- 009B2
 
 ## Source References
 - docs/source/implementation-roadmap.md section 14
@@ -37,9 +37,11 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-1. Add a finance-owned create service accepting actor, application id, exact sanction-decision id,
-   and normalized loan-account number. Lock application/member/latest approval case/sanction, any
-   current member SAP code, and current legal term evidence before one atomic create.
+1. Implement the source-defined `loans.modules.loan_account_lifecycle` create interface accepting
+   actor, application id, exact sanction-decision id, and normalized loan-account number. Lock
+   application/member/latest approval case/sanction, the current code through 009B2's public SAP
+   owner selector, and current legal term evidence before one atomic create; do not extend the SAP
+   owner or make a generic `finance` module the loan-account policy owner.
 2. Require the exact latest approved case and its positive `sanctioned` decision. The supplied
    decision id must match that source; rejected/returned/replaced/non-terminal applications and
    caller-supplied term facts are zero-write failures.
@@ -55,7 +57,7 @@ None for this slice, except updating frontend documentation or fixtures if requi
    terms, status-history, audit, and workflow winner with zero loser evidence.
 
 ## Database/Model Impact
-- Add source §18.1 `loan_accounts` with unique application and account number, protected member,
+- Add source §18.1 `loan_accounts` under the `loans` owner with unique application and account number, protected member,
   sanction, and nullable active SAP-code links; positive/non-negative balance constraints; indexed
   member/status/type/repayment fields; and initial `sanctioned` status.
 - Add source §18.2 one-to-one `loan_terms` with the frozen JSON/detail fields and protected nullable

@@ -11,8 +11,21 @@ Sources:
   **Deck p.N** (12-page board deck; Stage 4 list p. 7, checklist signatures p. 8, statutory
   framework p. 10, top-10 errors p. 11)
 - `docs/source/api-contracts.md` §26-§28, `docs/source/data-model.md` §16,
-  `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
+`docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
+
+## Architecture Review 2026-07-16 07:41 — Workspace Action and Deep-Module Closure
+
+- S26/S27/S35 require upload/re-upload and correction/return actions in addition to generation,
+  verification, evidence, and approvals. 008M2 omits those families, and its Document Pack renders
+  only `available_actions[0]`; 008M3 restores every independent mutation beside Download.
+- API §44 action truth must match the owning public workflow. The review probe received an enabled
+  Loan Agreement `complete_item` and then HTTP 409 `CHECKLIST_EVIDENCE_INCOMPLETE` in the same state.
+  008M3 makes owner-issued executable decisions and server-owned canonical action identities the seam.
+- The S26 coordinator currently scans/locks all checklists, serializes full detail for queue rows,
+  queries owner tables, catches authority by exception name, and chooses the first Company Secretary.
+  008M4 restores page-bounded selectors, governed identity, deep legal/security owners, shared
+  frontend transport, and the fixed prototype composition without changing 008M3 behavior.
 
 ## 008L5 Current Stage-4 and Response Evidence Closure (2026-07-16)
 

@@ -4,6 +4,24 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 `integrations.md` §8/§33.1, `data-model.md` §19.1-19.2, `api-contracts.md` §29.1, and
 `functional-spec.md` BR-047-BR-050/M07-FR-001-M07-FR-010.
 
+## Architecture Review 2026-07-16 07:41 — SAP Delivery, Replay, Audit, and Owner
+
+- Source codebase-design §§16.1/20.3-20.4/36.2 assigns SAP policy to
+  `sap_workflow.modules.sap_customer_profile` behind one Manual/Fake/Future adapter contract. 009A/B
+  currently implement it directly in `finance`; 009B2 restores the source owner before loan-account
+  and readiness code consume SAP truth.
+- Integrations §8.1 says the official Finance handoff includes the Excel details. An executable probe
+  found a row marked `sent` while the communication remained pending, had no attachment/capability,
+  linked only to completion, and the frozen assignee received 403 for the workbook. 009B2 makes exact
+  checksum-verified Annexure delivery/assignee read prerequisite to `sent`.
+- 009B reuse completion retains only the code link, so optional values omitted on first completion
+  can be added later and still receive replay 200. 009B2 freezes the canonical accepted input/digest
+  and makes any later supplied/omitted difference a zero-write 409.
+- Auth-permissions §30 requires `sap.customer_code_created` plus role/team at action time. 009B2
+  aligns create/send/confirm/reuse audit truth without exposing identity/bank/workbook plaintext.
+- 009C now uses `loans.modules.loan_account_lifecycle` and the public SAP selector; 009D uses
+  `disbursements.modules.disbursement_readiness`, matching codebase-design §§16.2-16.3.
+
 ## 009A SAP Customer Profile Request
 
 - MVP is manual/file-first. After terminal sanction, a Credit Manager creates the request and a

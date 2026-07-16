@@ -2,6 +2,143 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-16 07:41 - Architecture Review 2026-07-16_072819_architecture_review
+
+Reviewed completed work since architecture-review commit `ad590fb7`:
+- `008L5-current-stage4-and-response-evidence-closure` (`7cb7b5d6`)
+- `008M2-documentation-workspace-contract-and-visual-closure` (`8de3658c`)
+- `009A-sap-customer-code-request` (`3a5d3b09`)
+- `009B-sap-customer-code-confirmation-and-reuse` (`14e68a6f`)
+
+The review checked `git diff ad590fb7...14e68a6f` after excluding Ralph run logs, all 48 changed
+production/test/migration/documentation files, the four completed slice contracts, Epic 008/009
+digests, and the cited functional, screen, integration, API, auth, data-model, frontend, and
+codebase-design sources. Standards and Spec ran as isolated parallel passes. Three review-only
+executable probes passed while reproducing contract defects: an enabled Loan Agreement completion
+action executes as HTTP 409, a `sent` SAP request leaves its assignee with HTTP 403 and no attachment
+path to the Excel, and a changed reuse-completion payload returns HTTP 200 as replay. Probe source
+and output are retained under this run's `evidence/terminal-logs/`; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - SAP audit truth omits mandatory vocabulary and actor context
+
+`finance/modules/sap_customer_request.py` lines 135-167 and `sap_customer_code.py` lines 194-223
+write safe ids, but completion uses `finance.sap_customer_code.completed` rather than the mandatory
+`sap.customer_code_created` event in auth-permissions §30.1. Create/send/complete evidence also
+omits role and team at action time required by §30.2. This weakens a Critical financial audit even
+though request/IP/user-agent and secret redaction are substantive. `009B2` restores the exact event
+and complete actor/action context without duplicating ledgers.
+
+#### Finding 2 - High - The workspace has become a second cross-domain policy and query owner
+
+`processes/staff_documentation_workspace.py` lines 136-715 locks every checklist, serializes full
+workspaces to build queue rows, queries legal/security/member/approval tables directly, infers
+authorisation by exception class name, and selects the first active Company Secretary. This drifts
+from codebase-design §§14-15/27/36-37/42: those decisions belong behind deep legal/security/selectors,
+and list work must stay bounded. `008M4` restores narrow owner projections, deterministic governed
+identity, and page-bounded queue reads after `008M3` closes behavior.
+
+#### Finding 3 - High - SAP is implemented outside its source-defined owner and adapter seam
+
+Codebase-design §§16.1/20.3-20.4/36.2 define `sap_workflow.modules.sap_customer_profile` and one
+replaceable Manual/Fake/Future `SapAdapter`. The new `finance` modules instead own policy, storage,
+communication dispatch, and SAP state directly, so downstream loan/disbursement work would bind to
+private Finance implementation details. `009B2` establishes the public SAP owner and manual adapter
+while preserving applied table/data history.
+
+#### Finding 4 - Medium - Finance HTTP adapters also own domain request parsing
+
+`finance/views.py` forwards raw dictionaries while `sap_customer_request.py` lines 188-203 and
+`sap_customer_code.py` lines 453-524 own transport shape/type/time parsing. Codebase-design §§6.3-
+6.4 assign HTTP validation to thin serializer/adapters and domain invariants to the module. `009B2`
+must leave one strict shared contract without creating view/domain parsing drift.
+
+#### Finding 5 - Medium - 008M2 introduced a new facts layout despite the frozen prototype
+
+`DocumentationHub.tsx` lines 285-291 adds a four-column responsive facts grid. The values are
+source-required, but FRONTEND_DESIGN_RULES permits label/data/action wiring only and forbids a new
+layout. `008M4` moves those facts into the existing queue/card/table composition and recaptures the
+declared visual contract.
+
+#### Finding 6 - Low - The documentation client duplicates the shared authenticated transport
+
+`documentationWorkspaceApi.ts` lines 138-161 reimplements session loading, auth/request-id headers,
+fetch, envelope parsing, and error mapping already owned by `authSession.ts`'s
+`authenticatedRequest`/`authenticatedPaginatedRequest`. `008M4` keeps only workspace DTO mapping at
+this feature seam.
+
+### Spec
+
+#### Finding 1 - High - Required upload and correction action families remain absent
+
+008M2 requirement 3 and screen S26/S27/S35 require reachable signed-document upload/re-upload and
+request/return-for-correction actions. `staff_documentation_workspace.py` lines 312-497 projects
+generation/completion/verification/signature/stamp/notary/mismatch/approval only; backend and
+frontend tests freeze that reduced list. `008M3` adds owner-derived upload/correction/condition paths
+without generic navigation or parallel state.
+
+#### Finding 2 - High - Document Pack silently drops all but the first mutation
+
+008M2 requirement 7 says Download and every independently authorised mutation remain visible.
+`DocumentPackModal.tsx` lines 116-141 selects `available_actions[0]` and renders one button, while
+its test supplies exactly one action. A row with Complete, Signature, Stamp, and Notary therefore
+loses three actions. `008M3` renders/tests the full ordered list beside independent Download.
+
+#### Finding 3 - High - Advertised actions are not executable in the same current state
+
+The workspace advertises `complete_item` from role plus pending/document presence, not the owning
+completion decision. The executable review probe received `enabled: true` for the pending Loan
+Agreement and then `409 CHECKLIST_EVIDENCE_INCOMPLETE` from that action URL with the supplied server
+payload. This contradicts 008M2 requirements 3-4 and API §44. `008M3` makes owner-issued decisions,
+server-owned canonical identities, and public action parity the projection contract.
+
+#### Finding 4 - High - `sent` does not deliver the retained Annexure-I
+
+009B requirement 1 and integrations §8.1 require the official handoff to include the exact Excel.
+`sap_customer_code.py` lines 52-70 verifies the bytes, then creates pending Communication/
+Notification rows whose body contains only request/file UUIDs; the model/helper has no attachment,
+capability, or delivery call. The probe confirmed status `sent`, pending communication, completion-
+only task URL, no attachment field, and HTTP 403 for the frozen assignee's workbook read. `009B2`
+makes adapter acceptance and assignee-scoped audited delivery prerequisite to `sent`.
+
+#### Finding 5 - Medium - Reused-code completion replay is not exact
+
+009B requirement 5 says changed completion facts return 409. In `sap_customer_code.py` lines 415-
+450, reuse compares optional fields only when supplied and stores no request-local accepted input.
+The probe completed once with optional fields omitted, then added the retained vendor/time/notes;
+both calls returned 200 with the same response. `009B2` freezes the canonical first payload/digest
+and treats later addition or omission as changed replay.
+
+No material unrelated scope creep was found. 008L5 substantively binds bank decisions to the exact
+current case/decision and makes MP11 response truth depend on a coherent response→resubmission
+chain. 008M2 substantively restores readable code, strict pagination, redacted queue/timeline,
+download capability checks, truthful queue errors, real-Django browser execution, and four retained
+screenshots, but M06-FR-005-018 remain only partially reachable through the workspace until M3/M4;
+M06-FR-019 remains explicitly owned by 009D. 009A substantively implements M07-FR-003-005. 009B
+implements member code uniqueness/reuse and assignee confirmation portions of M07-FR-001/002/007-
+008, but M07-FR-006 delivery and exact audit/replay remain partial until B2; M07-FR-009-010 belong
+to later Epic 009 payment/readiness slices. A-124 honestly records the temporary outstanding-loan
+reuse limit, so no undocumented business rule was invented.
+
+### Corrective queue, state, and context
+
+`008M3-documentation-workspace-executable-action-closure` closes missing/dropped/non-executable
+actions and server-owned command identity. `008M4-documentation-workspace-deep-module-and-design-
+closure` then restores deep owners, bounded queries, shared transport, governed identities, and the
+fixed visual composition. `009B2-sap-delivery-replay-audit-and-owner-seam-closure` closes delivery,
+exact replay, mandatory audit, and the SAP owner/adapter seam. `009C` now depends on B2 and uses
+`loans.modules.loan_account_lifecycle`; `009D` uses the source-defined
+`disbursements.modules.disbursement_readiness`. No slice is Blocked, so no stale prerequisite needed
+reopening. CONTEXT, handoff, progress, state, and the architecture-review descriptor were refreshed.
+No ADR was added because source documents already decide every owner, adapter, audit, action, and
+visual rule recorded here.
+
+Summary: Standards found 3 High, 2 Medium, and 1 Low issue; the worst issues are missing Critical
+SAP audit/owner truth and a cross-domain workspace policy owner. Spec found 4 High and 1 Medium
+issue; the worst issues are actions that are absent/dropped/non-executable and a SAP handoff marked
+sent without delivering its Excel.
+
 ## 2026-07-16 02:38 - Architecture Review 2026-07-16_023011_architecture_review
 
 Reviewed completed work since architecture-review commit `e1e3c665`:

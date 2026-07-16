@@ -2,42 +2,39 @@
 
 ## Last Run
 
-2026-07-16_062256_repair
+2026-07-16_072819_architecture_review
 
 ## Current Status
 
-009B is complete pending Ralph's independent validation and commit. Credit Manager can send the
-exact checksum-verified/decrypted retained Annexure-I once to the frozen active Senior Manager
-Finance assignee through one direct communication/task ledger. That assignee can confirm a new
-globally normalized active member SAP code or explicitly reuse the retained same-member code; exact
-replay is zero-write and changed/stale/cross-object actions fail closed.
+The due independent review of 008L5, 008M2, 009A, and 009B is complete from fixed point `ad590fb7`.
+008L5's terminal bank and deficiency-chain corrections are substantive. 008M2 and 009A/B also add
+substantial real behavior, but executable probes reproduced three remaining contract defects: an
+enabled workspace completion receives 409 from its owner, a SAP request becomes `sent` without an
+assignee-reachable Excel, and a changed reuse-completion payload receives replay 200.
 
-Completion binds request/application/member/current sanction-cycle snapshots to the code, accepts
-only exact restricted immutable confirmation evidence, writes safe audit/workflow ledgers, and
-exposes only a masked assignee-scoped member read. It creates no loan account, readiness, payment,
-disbursement, balance, SAP posting, or borrower communication truth.
+Corrective slices 008M3 (complete/executable actions), 008M4 (deep owner/query/shared-client/fixed-
+layout seams), and 009B2 (SAP delivery/exact replay/audit/source owner) are queued in dependency
+order. No production code changed during the review.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-16_062256_repair/evidence/`. The focused SAP module passes 25
-tests with three PostgreSQL-only skips under SQLite. All three PostgreSQL race families pass in two
-final runs and each test contains two internal rounds. The final backend suite passes 940 tests with
-51 skips at 91% coverage; Django check and migration drift are clean. Unchanged frontend gates pass
-build, typecheck, lint, and all 319 tests. RED/GREEN evidence includes the missing public send route,
-PostgreSQL nullable-join lock correction, and cross-module migration-graph correction.
+Review evidence is in `.ralph/runs/2026-07-16_072819_architecture_review/evidence/terminal-logs/`.
+The three focused review probes pass while preserving the reproduced observations. Standards and
+Spec reports are consolidated newest-first in `REVIEW_FINDINGS.md`; full configured validation is
+recorded in the run folder.
 
 ## Important Continuation Notes
 
-- A-124 records the temporary conservative reuse authority: exact member plus retained active code,
-  never identity text or invented outstanding-loan truth. 009C+ may add governed outstanding-state
-  evidence prospectively without rewriting code/request history.
-- 009C remains concrete. A-121 forbids inventing a default role grant for its Critical create
-  permission, and A-122 requires truthful zero pre-disbursement balances.
-- 009D was sharpened from already-opened §31.1/M08/integration readiness sources. It must remain a
-  read-only, source-owned complete blocker projection; Finance initiation and CFC authorization are
-  downstream actions, not synthetic readiness passes.
+- 008M3 must start from the retained review probe and make owner action decisions executable before
+  008M4 performs structural/design cleanup; do not merge these contracts into one diff-limit repair.
+- 009B2 retains A-124's conservative same-member reuse rule while adding exact payload replay. It
+  must not invent outstanding-loan state or call real email/SAP services.
+- 009C now depends on 009B2 and is owned by `loans.modules.loan_account_lifecycle`; A-121 still
+  forbids a default Critical permission grant and A-122 still requires zero pre-disbursement balances.
+- 009D remains read-only and is owned by `disbursements.modules.disbursement_readiness`; Finance
+  initiation and CFC authorization remain downstream, not synthetic readiness checks.
 
 ## Next Run
 
-Run the due architecture review, then 009C-loan-account-creation-from-sanctioned-application and
-009D-disbursement-readiness-service.
+Run 008M3, then 008M4, then 009B2. Continue with sharpened 009C and 009D only after those corrective
+dependencies complete.

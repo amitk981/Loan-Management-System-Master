@@ -107,13 +107,23 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   state, under-tests staff downloads, and has none of its four required screenshots. Corrective
   008L5 now binds bank decisions and reconciliation to the exact current approval case/sanction
   decision and makes MP11 response state depend on one coherent retained workflow chain. Corrective
-  008M2 is next before Epic 009.
+  008M2 then restored readable source, strict queue pagination, source-shaped actions, redacted
+  timeline/download boundaries, truthful error states, and real-Django screenshots. Independent
+  review nevertheless reproduced an enabled action rejected by its owning workflow, while upload/
+  correction actions remain absent and Document Pack drops sibling mutations; its coordinator also
+  duplicates cross-domain policy/query logic and adds a non-prototype facts grid. Corrective 008M3
+  closes executable action reachability, then 008M4 restores deep owner/query/transport/design seams.
+  Epic 009 has started: 009A generates the encrypted retained Annexure-I from current sanctioned
+  facts, and 009B adds send, assigned Finance confirmation, normalized member-code uniqueness/reuse,
+  and PostgreSQL races. Review found that `sent` does not actually deliver the Excel, reuse replay
+  accepts changed optional payload, mandatory SAP audit context is incomplete, and policy lives
+  outside the source-defined SAP adapter owner. Corrective 009B2 closes those contracts before 009C.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and
   `PROTOTYPE_INVENTORY.md` are the authoritative ledger.
 - Backend: `sfpcl_credit/` — Django modular monolith (identity, members, applications, credit,
-  approvals, documents, legal_documents, security_instruments, workflows, communications,
+  approvals, documents, legal_documents, security_instruments, workflows, communications, finance,
   dashboard, configurations, scheduler, tracer)
   with JWT auth, role and object-level permissions, audit/workflow events, versioned
   configuration, document storage adapter, and seeded demo users.

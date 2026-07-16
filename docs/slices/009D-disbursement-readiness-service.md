@@ -37,10 +37,11 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-1. Add a finance-owned readiness coordinator for one loan account. Resolve canonical account,
-   application, member, exact current terminal sanction, active same-member SAP code, verified bank
-   evidence, final documentation/checklist approvals, and security evidence through their owning
-   read seams inside one consistent transaction.
+1. Implement the source-defined `disbursements.modules.disbursement_readiness` coordinator for one
+   loan account. Resolve the canonical account through 009C's loan owner, SAP truth through 009B2's
+   public owner selector, and exact current terminal sanction, verified bank, final documentation/
+   checklist approvals, and security evidence through their owning read seams inside one consistent
+   transaction; do not recreate those policies in a generic `finance` module.
 2. Return deterministic checks in source order for: current sanction, sanctioned loan-account state,
    conditional exception/general-meeting approval, active KYC/appraisal, documentation checklist,
    Company Secretary/Credit Manager/Sanction Committee approvals, security package, PoA, Term Sheet,

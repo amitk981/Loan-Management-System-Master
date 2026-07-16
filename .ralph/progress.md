@@ -7676,3 +7676,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_072819_architecture_review
+
+- Agent tool used: codex with the independent Standards/Spec review workflow.
+- Slice reviewed: architecture-review over `ad590fb7...14e68a6f` (008L5, 008M2, 009A, 009B).
+- Summary: Reproduced staff-workspace action projection/execution disagreement, SAP `sent` without
+  assignee-reachable retained Excel, and changed-payload replay acceptance. Consolidated Standards
+  and Spec findings and queued 008M3, 008M4, and 009B2; sharpened 009C/009D owner dependencies. No
+  production code changed.
+- Tests run: focused executable review probes; frontend build/typecheck/lint and 319 tests; Django
+  check/migration drift and 940 tests with 51 expected skips at 91% coverage; Ralph queue,
+  capability, trusted-browser metadata, and workflow-regression checks; integrity/diff checks.
+- Evidence saved: `.ralph/runs/2026-07-16_072819_architecture_review/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: Low review-only diff; High corrective slices due to regulated authorization, delivery,
+  replay, audit, and owner-seam behavior.
+- Next action: Run 008M3, then 008M4, then 009B2 before 009C and 009D.
+
+## 2026-07-16 08:08:47 - 2026-07-16_072819_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_072819_architecture_review/.ralph/runs/2026-07-16_072819_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_072819_architecture_review/.ralph/runs/2026-07-16_072819_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

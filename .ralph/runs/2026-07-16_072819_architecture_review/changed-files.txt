@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009C-loan-account-creation-from-sanctioned-application.md
+ M docs/slices/009D-disbursement-readiness-service.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-16_072819_architecture_review/
+?? docs/slices/008M3-documentation-workspace-executable-action-closure.md
+?? docs/slices/008M4-documentation-workspace-deep-module-and-design-closure.md
+?? docs/slices/009B2-sap-delivery-replay-audit-and-owner-seam-closure.md
