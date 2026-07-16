@@ -1,0 +1,68 @@
+test_008m3_upload_and_correction_use_durable_owner_workflows (__main__.ReviewContractProbes.test_008m3_upload_and_correction_use_durable_owner_workflows) ... FAIL
+test_008m4_required_poa_path_has_an_explicit_governed_decision (__main__.ReviewContractProbes.test_008m4_required_poa_path_has_an_explicit_governed_decision) ... FAIL
+test_009b2_public_sap_owner_does_not_depend_on_private_finance_owner (__main__.ReviewContractProbes.test_009b2_public_sap_owner_does_not_depend_on_private_finance_owner) ... FAIL
+test_009d_consumes_terminal_security_evidence_not_status_only_rows (__main__.ReviewContractProbes.test_009d_consumes_terminal_security_evidence_not_status_only_rows) ... FAIL
+test_009d_does_not_filter_open_signature_mismatches_from_readiness (__main__.ReviewContractProbes.test_009d_does_not_filter_open_signature_mismatches_from_readiness) ... FAIL
+test_009d_reconciles_checklist_completion_through_owner_evidence (__main__.ReviewContractProbes.test_009d_reconciles_checklist_completion_through_owner_evidence) ... FAIL
+test_009d_uses_loan_account_scope_not_origination_assignment (__main__.ReviewContractProbes.test_009d_uses_loan_account_scope_not_origination_assignment) ... FAIL
+
+======================================================================
+FAIL: test_008m3_upload_and_correction_use_durable_owner_workflows (__main__.ReviewContractProbes.test_008m3_upload_and_correction_use_durable_owner_workflows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_143718_architecture_review/evidence/probes/test_review_contracts.py", line 67, in test_008m3_upload_and_correction_use_durable_owner_workflows
+    self.fail("upload/correction are workspace-local writes with no consumed owner state")
+AssertionError: upload/correction are workspace-local writes with no consumed owner state
+
+======================================================================
+FAIL: test_008m4_required_poa_path_has_an_explicit_governed_decision (__main__.ReviewContractProbes.test_008m4_required_poa_path_has_an_explicit_governed_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_143718_architecture_review/evidence/probes/test_review_contracts.py", line 55, in test_008m4_required_poa_path_has_an_explicit_governed_decision
+    self.fail("required PoA creation is always unreachable and no blocker is projected")
+AssertionError: required PoA creation is always unreachable and no blocker is projected
+
+======================================================================
+FAIL: test_009b2_public_sap_owner_does_not_depend_on_private_finance_owner (__main__.ReviewContractProbes.test_009b2_public_sap_owner_does_not_depend_on_private_finance_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_143718_architecture_review/evidence/probes/test_review_contracts.py", line 47, in test_009b2_public_sap_owner_does_not_depend_on_private_finance_owner
+    self.fail("the declared SAP owner is still a forwarding shell over Finance policy/models")
+AssertionError: the declared SAP owner is still a forwarding shell over Finance policy/models
+
+======================================================================
+FAIL: test_009d_consumes_terminal_security_evidence_not_status_only_rows (__main__.ReviewContractProbes.test_009d_consumes_terminal_security_evidence_not_status_only_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_143718_architecture_review/evidence/probes/test_review_contracts.py", line 33, in test_009d_consumes_terminal_security_evidence_not_status_only_rows
+    self.fail("009D bypasses the exact evidence/checksum/workflow reconciliation seam")
+AssertionError: 009D bypasses the exact evidence/checksum/workflow reconciliation seam
+
+======================================================================
+FAIL: test_009d_does_not_filter_open_signature_mismatches_from_readiness (__main__.ReviewContractProbes.test_009d_does_not_filter_open_signature_mismatches_from_readiness)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_143718_architecture_review/evidence/probes/test_review_contracts.py", line 25, in test_009d_does_not_filter_open_signature_mismatches_from_readiness
+    self.fail("an unverified mismatch is excluded and all(empty) becomes true")
+AssertionError: an unverified mismatch is excluded and all(empty) becomes true
+
+======================================================================
+FAIL: test_009d_reconciles_checklist_completion_through_owner_evidence (__main__.ReviewContractProbes.test_009d_reconciles_checklist_completion_through_owner_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_143718_architecture_review/evidence/probes/test_review_contracts.py", line 17, in test_009d_reconciles_checklist_completion_through_owner_evidence
+    self.fail("009D currently trusts ChecklistItem.completion_status directly")
+AssertionError: 009D currently trusts ChecklistItem.completion_status directly
+
+======================================================================
+FAIL: test_009d_uses_loan_account_scope_not_origination_assignment (__main__.ReviewContractProbes.test_009d_uses_loan_account_scope_not_origination_assignment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_143718_architecture_review/evidence/probes/test_review_contracts.py", line 40, in test_009d_uses_loan_account_scope_not_origination_assignment
+    self.fail("readiness authorizes loan access through application origination scope")
+AssertionError: readiness authorizes loan access through application origination scope
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+FAILED (failures=7)

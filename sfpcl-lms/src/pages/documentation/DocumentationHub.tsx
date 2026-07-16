@@ -251,7 +251,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
                     <div className="text-xs text-slate-400 mt-1">
                       <span>{item.sanctioned_amount ?? 'Amount blocked'}</span> · <span>{item.shareholding_mode ? display(item.shareholding_mode) : 'Share route blocked'}</span> · {item.required_document_summary.complete}/{item.required_document_summary.required} complete
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">{display(item.bank_verification_status)} bank verification · Owner: <span>{item.current_owner}</span></div>
+                    <div className="text-xs text-slate-400 mt-1">{display(item.bank_verification_status)} bank verification · PoA: {display(item.poa_blocker ?? item.poa_status)} · Owner: <span>{item.current_owner}</span></div>
                   </div>
                 </button>
               ))}
@@ -335,6 +335,11 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
 
                     <div className="p-5 space-y-4">
                       <div className="border border-slate-200 rounded-xl p-4 bg-slate-50"><StageStepper steps={approvalSteps} /></div>
+                      {workspace.approval_stages.flatMap(stage => stage.conditions.map(condition => (
+                        <div key={`${stage.role}:${condition}`} className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                          {display(stage.role)} condition: {condition}
+                        </div>
+                      )))}
                       {workspace.available_actions.map(action => <button key={action.action_key} className="btn-primary text-xs" onClick={() => startAction(action)} disabled={!action.enabled || busy} title={action.disabled_reason ?? undefined}>{action.label}</button>)}
                     </div>
 

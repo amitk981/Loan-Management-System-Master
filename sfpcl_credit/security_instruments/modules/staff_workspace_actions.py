@@ -22,6 +22,20 @@ class CreationGateways:
     create_sh4: object
     create_pledge: object
     create_blank_cheque: object
+    resolve_attorney: object
+
+@dataclass(frozen=True)
+class GovernedAttorneyDecision:
+    status: str
+    application_id: object
+    attorney_user_id: object = None
+    decision_id: object = None
+
+def governed_attorney_decision(*, application_id):
+    """A-125 fail-closed seam until a governed identity owner is configured."""
+    return GovernedAttorneyDecision(
+        status='blocked', application_id=application_id,
+    )
 
 def _action(action_code, label, required_permission, action_url, *, owner_execute, fixed_payload=None, fields=None):
     result = {'action_code': action_code, 'label': label, 'enabled': True, 'disabled_reason': None, 'required_permission': required_permission, 'action_url': action_url, 'method': 'POST', '_owner_execute': owner_execute}
@@ -42,30 +56,38 @@ def project_workflows(actor, package, items, *, legal_facts, gateways):
     by_code = {row['item_code']: row for row in items}
     result = {'tri_party_agreement': _workflow_from_item(by_code['tri_party_agreement']), 'cancelled_cheque': _workflow_from_item(by_code['cancelled_cheque'])}
     if package is None:
-        result.update({'power_of_attorney': _workflow(True, 'pending', []), 'sh4': _workflow_from_item(by_code['sh4']), 'cdsl_pledge': _workflow_from_item(by_code['cdsl_pledge']), 'blank_dated_cheque': _workflow_from_item(by_code['blank_dated_cheque'])})
+        result.update({'power_of_attorney': _workflow(True, 'blocked', [], blocker='governed_attorney_unconfigured'), 'sh4': _workflow_from_item(by_code['sh4']), 'cdsl_pledge': _workflow_from_item(by_code['cdsl_pledge']), 'blank_dated_cheque': _workflow_from_item(by_code['blank_dated_cheque'])})
         return result
     specs = {'power_of_attorney': (package.poa_required_flag, getattr(package, 'power_of_attorney', None), 'status', power_of_attorney.require_manage_actor, 'security.poa.manage', 'power-of-attorney'), 'sh4': (package.physical_share_security_required_flag, getattr(package, 'sh4_share_transfer_form', None), 'form_status', sh4.require_manage_actor, 'security.sh4.manage', 'sh4-share-transfer-form'), 'cdsl_pledge': (package.demat_pledge_required_flag, getattr(package, 'cdsl_share_pledge', None), 'pledge_status', cdsl_share_pledge.require_manage_actor, 'security.cdsl_pledge.manage', 'cdsl-share-pledge'), 'blank_dated_cheque': (package.blank_cheque_required_flag, getattr(package, 'blank_dated_cheque', None), 'cheque_status', blank_dated_cheque.require_manage_actor, 'security.blank_cheque.manage', 'blank-dated-cheque')}
     for code, spec in specs.items():
         required, row, field, authorizer, permission, collection = spec
         actions = []
+        decision = gateways.resolve_attorney(application_id=package.loan_application_id) if code == 'power_of_attorney' and required and row is None else None
         if required and row is None and _owner_allows(authorizer, actor):
             endpoint = f'/api/v1/security-packages/{package.pk}/{collection}/'
-            action = _security_create_action(actor, package, code, permission, endpoint, legal_facts=legal_facts, gateways=gateways)
+            action = _security_create_action(actor, package, code, permission, endpoint, legal_facts=legal_facts, gateways=gateways, attorney_decision=decision)
             if action:
                 actions.append(action)
-        result[code] = _workflow(required, getattr(row, field, 'pending'), actions)
+        blocker = None
+        status = getattr(row, field, 'pending')
+        if code == 'power_of_attorney' and required and row is None:
+            if decision is None or decision.status == 'blocked':
+                status, blocker = 'blocked', 'governed_attorney_unconfigured'
+            elif decision.status != 'configured' or decision.application_id != package.loan_application_id or not decision.attorney_user_id or not decision.decision_id:
+                status, blocker = 'blocked', 'governed_attorney_decision_stale'
+        result[code] = _workflow(required, status, actions, blocker=blocker)
     return result
 
-def _security_create_action(actor, package, code, permission, endpoint, *, legal_facts, gateways):
+def _security_create_action(actor, package, code, permission, endpoint, *, legal_facts, gateways, attorney_decision=None):
     """Expose create only when every server-owned prerequisite can be selected."""
     application = package.loan_application
     fixed, fields, request_type, creator = (None, [], None, None)
     if code == 'power_of_attorney':
-        attorney = None
-        if application.nominee_id and legal_facts.poa_document_id and legal_facts.poa_stamp_id and legal_facts.poa_notary_id and attorney:
+        attorney_id = attorney_decision.attorney_user_id if attorney_decision and attorney_decision.status == 'configured' and attorney_decision.application_id == application.pk and attorney_decision.decision_id else None
+        if application.nominee_id and legal_facts.poa_document_id and legal_facts.poa_stamp_id and legal_facts.poa_notary_id and attorney_id:
             request_type = PowerOfAttorneyRequest
             creator = gateways.create_poa
-            fixed = {'borrower_member_id': str(application.member_id), 'nominee_id': str(application.nominee_id), 'attorney_user_id': str(attorney.pk), 'loan_document_id': str(legal_facts.poa_document_id), 'stamp_duty_record_id': str(legal_facts.poa_stamp_id), 'notarisation_record_id': str(legal_facts.poa_notary_id), 'execution_status': 'pending', 'effective_from': None, 'status': 'draft'}
+            fixed = {'borrower_member_id': str(application.member_id), 'nominee_id': str(application.nominee_id), 'attorney_user_id': str(attorney_id), 'attorney_decision_id': str(attorney_decision.decision_id), 'loan_document_id': str(legal_facts.poa_document_id), 'stamp_duty_record_id': str(legal_facts.poa_stamp_id), 'notarisation_record_id': str(legal_facts.poa_notary_id), 'execution_status': 'pending', 'effective_from': None, 'status': 'draft'}
             fields = [{'name': 'purpose_summary', 'label': 'Purpose and authority', 'type': 'textarea', 'required': True}]
     elif code == 'sh4':
         witnesses = list(Witness.objects.filter(loan_application=application, verification_status='verified', shareholder_verified_flag=True).order_by('created_at', 'witness_id')[:2])
@@ -94,8 +116,8 @@ def _security_create_action(actor, package, code, permission, endpoint, *, legal
     fixed['security_package_id'] = str(package.pk)
     return _action(f'manage_{code}', f"Manage {code.replace('_', ' ').title()}", permission, endpoint, owner_execute=partial(_execute_security_create, actor, package.pk, dict(fixed), request_type, creator), fixed_payload=fixed, fields=fields)
 
-def _workflow(required, status, actions):
-    return {'required': required, 'status': status if required else 'not_required', 'available_actions': actions}
+def _workflow(required, status, actions, blocker=None):
+    return {'required': required, 'status': status if required else 'not_required', 'blocker': blocker, 'available_actions': actions}
 
 def _workflow_from_item(item):
     return _workflow(item['applicable'], item['status'], item['available_actions'])
@@ -106,6 +128,7 @@ def _metadata(request):
 def _execute_security_create(actor, package_id, fixed, request_type, creator, values, _file, request):
     payload = {**fixed, **values}
     payload.pop('security_package_id', None)
+    payload.pop('attorney_decision_id', None)
     parsed = request_type.parse(payload)
     try:
         return creator(actor=actor, security_package_id=package_id, values=parsed.as_values(), metadata=_metadata(request))

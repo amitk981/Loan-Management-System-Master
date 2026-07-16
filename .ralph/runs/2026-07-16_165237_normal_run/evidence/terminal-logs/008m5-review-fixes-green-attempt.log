@@ -1,0 +1,28 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+F...
+======================================================================
+FAIL: test_staff_workspace_upload_and_correction_are_durable_owner_truth (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_upload_and_correction_are_durable_owner_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 597, in test_staff_workspace_upload_and_correction_are_durable_owner_truth
+    self.assertEqual(evidence_counts, (
+AssertionError: Tuples differ: (1, 0, 3, 5, 1, 2) != (1, 0, 3, 6, 1, 2)
+
+First differing element 3:
+5
+6
+
+- (1, 0, 3, 5, 1, 2)
+?           ^
+
++ (1, 0, 3, 6, 1, 2)
+?           ^
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.593s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

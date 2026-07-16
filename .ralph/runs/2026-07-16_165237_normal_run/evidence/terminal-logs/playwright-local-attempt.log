@@ -1,0 +1,24 @@
+[2m[WebServer] [22m[16/Jul/2026 11:35:11] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:15071) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M5 persists staff documentation actions through real Django (4ms)
+
+
+  1) [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M5 persists staff documentation actions through real Django 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/amitkallapa/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  1 failed
+    [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M5 persists staff documentation actions through real Django 

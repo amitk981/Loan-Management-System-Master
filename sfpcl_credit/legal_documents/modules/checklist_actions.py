@@ -27,6 +27,7 @@ from sfpcl_credit.legal_documents.models import (
     SignatureRecord,
     StampDutyRecord,
 )
+from sfpcl_credit.legal_documents.modules import documentation_actions
 from sfpcl_credit.legal_documents.request_contracts import (
     ChecklistApprovalRequest,
     ChecklistItemCompletionRequest,
@@ -162,6 +163,8 @@ def item_completion_decision(
             return ActionDecision(False, "This item is not currently required.")
         if item.completion_status != ChecklistItem.STATUS_PENDING:
             return ActionDecision(False, "The item is not pending completion.")
+        if documentation_actions.has_open_blocker(checklist, item):
+            return ActionDecision(False, "A correction must be resolved first.")
         document = _current_document(
             application_id=checklist.loan_application_id,
             item=item,
@@ -195,6 +198,7 @@ def available_approval_action(*, actor, checklist, completed_item_ids):
     if action_type == ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL:
         required_ids = {item.pk for item in checklist.items.all() if item.required_flag and item.applicable_flag}
         if set(completed_item_ids) != required_ids: return None
+    if documentation_actions.has_open_blocker(checklist): return None
     return action_type
 
 
@@ -258,6 +262,8 @@ def complete_item(
         raise EvidenceBlocked("Only a current required and applicable item can be completed.")
     if item.completion_status != ChecklistItem.STATUS_PENDING:
         raise Conflict("Retained completion has no durable 008K action identity.")
+    if documentation_actions.has_open_blocker(checklist, item):
+        raise EvidenceBlocked("The item's open correction requires a signed successor.")
     document = _current_document(
         application_id=checklist.loan_application_id,
         item=item,
@@ -378,6 +384,8 @@ def _approve(
             "Checklist approvals must follow Company Secretary, Credit Manager, then Sanction Committee.",
             "CHECKLIST_APPROVAL_OUT_OF_ORDER",
         )
+    if documentation_actions.has_open_blocker(checklist):
+        raise EvidenceBlocked("Open documentation corrections block checklist approval.")
     prior = list(
         ChecklistAction.objects.filter(document_checklist=checklist)
         .exclude(action_type=ChecklistAction.TYPE_ITEM_COMPLETION)

@@ -36,6 +36,9 @@ export interface DocumentationItem {
     loan_document_id: string; version: string;
     generation_status: string; execution_status: string; verification_status: string;
     download: DocumentationDownload | null;
+    signed_copy: null | {
+      signed_copy_id: string; file_name: string; uploaded_at: string; remarks: string;
+    };
   };
 }
 
@@ -55,10 +58,11 @@ export interface DocumentationWorkspace {
   };
   items: DocumentationItem[];
   blockers: { item_code: string; label: string; reason: string }[];
-  approval_stages: { role: string; status: string }[];
+  approval_stages: { role: string; status: string; conditions: string[] }[];
   available_actions: DocumentationAction[];
   security_workflows: Record<string, {
-    required: boolean; status: string; available_actions: DocumentationAction[];
+    required: boolean; status: string; blocker: string | null;
+    available_actions: DocumentationAction[];
   }>;
   timeline: AuditEvent[];
 }
@@ -69,7 +73,7 @@ export interface DocumentationQueueRow {
   loan_application_id: string; application_reference_number: string | null; borrower_name: string;
   sanctioned_amount: string | null; shareholding_mode: string | null;
   required_document_summary: { complete: number; required: number };
-  poa_status: string; tri_party_status: string; sh4_status: string; cdsl_pledge_status: string;
+  poa_status: string; poa_blocker: string | null; tri_party_status: string; sh4_status: string; cdsl_pledge_status: string;
   term_sheet_status: string; loan_agreement_status: string; bank_verification_status: string;
   checklist_status: string; current_owner: string;
 }

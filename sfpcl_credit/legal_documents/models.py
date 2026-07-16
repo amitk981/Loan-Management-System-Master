@@ -851,6 +851,152 @@ class PortalDocumentationSubmission(models.Model):
         raise ValidationError({"portal_submission": "Portal submission evidence is immutable."})
 
 
+class _ImmutableStaffDocumentationQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError({"staff_documentation": "Staff documentation evidence is immutable."})
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError({"staff_documentation": "Staff documentation evidence is immutable."})
+
+    def delete(self):
+        raise ValidationError({"staff_documentation": "Staff documentation evidence is immutable."})
+
+
+class StaffDocumentReviewAction(models.Model):
+    TYPE_REQUEST_CORRECTION = "request_correction"
+    TYPE_RETURN_CORRECTION = "return_for_correction"
+    TYPE_ADD_CONDITION = "add_condition"
+    ACTION_TYPES = {TYPE_REQUEST_CORRECTION, TYPE_RETURN_CORRECTION, TYPE_ADD_CONDITION}
+
+    staff_document_review_action_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    workspace_action_id = models.CharField(max_length=128, unique=True)
+    document_checklist = models.ForeignKey(
+        DocumentChecklist, on_delete=models.PROTECT, related_name="staff_review_actions"
+    )
+    checklist_item = models.ForeignKey(
+        ChecklistItem, blank=True, null=True, on_delete=models.PROTECT,
+        related_name="staff_review_actions",
+    )
+    loan_document = models.ForeignKey(
+        LoanDocument, blank=True, null=True, on_delete=models.PROTECT,
+        related_name="staff_review_actions",
+    )
+    action_type = models.CharField(max_length=80, db_index=True)
+    approval_stage = models.CharField(max_length=80)
+    reason = models.TextField()
+    prior_state = models.CharField(max_length=80)
+    current_state = models.CharField(max_length=80)
+    actor_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="staff_document_review_actions"
+    )
+    actor_user_name_snapshot = models.CharField(max_length=200)
+    canonical_role_code = models.CharField(max_length=80)
+    actor_team_codes_json = models.JSONField(default=list)
+    request_id = models.CharField(max_length=255, blank=True, null=True)
+    workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent", on_delete=models.PROTECT,
+        related_name="staff_document_review_action",
+    )
+    audit_log = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT,
+        related_name="staff_document_review_action",
+    )
+    version_history = models.OneToOneField(
+        "configurations.VersionHistory", on_delete=models.PROTECT,
+        related_name="staff_document_review_action",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    objects = _ImmutableStaffDocumentationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "staff_document_review_actions"
+        ordering = ["created_at", "staff_document_review_action_id"]
+        indexes = [
+            models.Index(fields=["document_checklist", "action_type", "created_at"],
+                         name="idx_staff_review_scope")
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(action_type__in=[
+                    "request_correction", "return_for_correction", "add_condition"
+                ]), name="staff_review_action_type_bounded"
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"staff_documentation": "Staff review evidence is immutable."})
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"staff_documentation": "Staff review evidence is immutable."})
+
+
+class StaffSignedDocumentCopy(models.Model):
+    staff_signed_document_copy_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    workspace_action_id = models.CharField(max_length=128, unique=True)
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication", on_delete=models.PROTECT,
+        related_name="staff_signed_document_copies",
+    )
+    loan_document = models.ForeignKey(
+        LoanDocument, on_delete=models.PROTECT, related_name="staff_signed_copies"
+    )
+    document = models.OneToOneField(
+        "documents.DocumentFile", on_delete=models.PROTECT,
+        related_name="staff_signed_document_copy",
+    )
+    uploader_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT,
+        related_name="uploaded_staff_signed_document_copies",
+    )
+    checksum_sha256 = models.CharField(max_length=128)
+    remarks = models.TextField()
+    request_id = models.CharField(max_length=255, blank=True, null=True)
+    supersedes = models.OneToOneField(
+        "self", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="successor",
+    )
+    resolves_review_action = models.OneToOneField(
+        StaffDocumentReviewAction, blank=True, null=True, on_delete=models.PROTECT,
+        related_name="resolved_by_signed_copy",
+    )
+    workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent", on_delete=models.PROTECT,
+        related_name="staff_signed_document_copy",
+    )
+    audit_log = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT,
+        related_name="staff_signed_document_copy",
+    )
+    version_history = models.OneToOneField(
+        "configurations.VersionHistory", on_delete=models.PROTECT,
+        related_name="staff_signed_document_copy",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    objects = _ImmutableStaffDocumentationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "staff_signed_document_copies"
+        ordering = ["created_at", "staff_signed_document_copy_id"]
+        indexes = [
+            models.Index(fields=["loan_application", "loan_document", "created_at"],
+                         name="idx_staff_signed_current")
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"staff_documentation": "Signed-copy evidence is immutable."})
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"staff_documentation": "Signed-copy evidence is immutable."})
+
+
 class ChecklistActionQuerySet(models.QuerySet):
     def update(self, **kwargs):
         raise ValidationError({"checklist_action": "Checklist evidence is immutable."})

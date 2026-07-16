@@ -1,0 +1,34 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_165237_normal_run/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/staff-documentation-workspace.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/staff-documentation-workspace.e2e.spec.ts
+
+[2m[WebServer] [22m[16/Jul/2026 11:54:22] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M5 persists staff documentation actions through real Django (3ms)
+
+
+  1) [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M5 persists staff documentation actions through real Django 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/amitkallapa/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  1 failed
+    [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M5 persists staff documentation actions through real Django 
+
+Duration milliseconds: 17637
+Exit code: 1

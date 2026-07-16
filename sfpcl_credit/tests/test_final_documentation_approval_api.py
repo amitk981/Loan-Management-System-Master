@@ -27,6 +27,8 @@ from sfpcl_credit.legal_documents.models import (
     LoanDocument,
     NotarisationRecord,
     SignatureRecord,
+    StaffDocumentReviewAction,
+    StaffSignedDocumentCopy,
     StampDutyRecord,
 )
 from sfpcl_credit.legal_documents.modules import document_checklist
@@ -54,6 +56,7 @@ from sfpcl_credit.security_instruments.models import (
     SecurityPackage,
     SH4ShareTransferForm,
 )
+from sfpcl_credit.security_instruments.modules import staff_workspace_actions as security_workspace_actions
 from sfpcl_credit.shared.encryption import FieldEncryption
 from sfpcl_credit.tests.api_contracts import (
     assert_error_envelope,
@@ -538,7 +541,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
         )
         self.assertEqual(replay.status_code, 404, replay.content)
 
-    def test_staff_workspace_upload_and_correction_actions_are_reachable(self):
+    def test_staff_workspace_upload_and_correction_are_durable_owner_truth(self):
         self._grant(
             self.compliance,
             "documents.checklist.read",
@@ -553,6 +556,48 @@ class FinalDocumentationApprovalApiTests(TestCase):
         actions = {row["action_code"]: row for row in item["available_actions"]}
         self.assertTrue({"upload_signed_copy", "request_correction"} <= set(actions))
 
+        outsider = self.fixture._user("compliance_team_member", "Other Durable Action User")
+        self._grant(
+            outsider, "documents.checklist.read", "documents.checklist.update",
+            "documents.file.upload",
+        )
+        before_scope_denials = (
+            StaffSignedDocumentCopy.objects.count(), StaffDocumentReviewAction.objects.count(),
+            DocumentFile.objects.count(),
+        )
+        denied = self.client.post(
+            actions["upload_signed_copy"]["action_url"],
+            {"file": SimpleUploadedFile("cross-user.pdf", b"cross user", "application/pdf"),
+             "remarks": "Cross-user attempt."},
+            **self.fixture._auth(outsider),
+        )
+        cross_application = self.client.post(
+            actions["request_correction"]["action_url"].replace(str(self.application.pk), str(uuid4())),
+            {"remarks": "Cross-application attempt."}, content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        token_tail = actions["request_correction"]["action_url"][-2]
+        tampered_url = actions["request_correction"]["action_url"][:-2] + ("a" if token_tail != "a" else "b") + "/"
+        tampered = self.client.post(
+            tampered_url, {"remarks": "Tampered attempt."}, content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        cross_document = self.client.post(
+            actions["upload_signed_copy"]["action_url"],
+            {"file": SimpleUploadedFile("cross-document.pdf", b"cross document", "application/pdf"),
+             "remarks": "Cross-document attempt.", "loan_document_id": str(uuid4())},
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(
+            (denied.status_code, cross_application.status_code, tampered.status_code,
+             cross_document.status_code),
+            (404, 404, 404, 400),
+        )
+        self.assertEqual(before_scope_denials, (
+            StaffSignedDocumentCopy.objects.count(), StaffDocumentReviewAction.objects.count(),
+            DocumentFile.objects.count(),
+        ))
+
         upload = self.client.post(
             actions["upload_signed_copy"]["action_url"],
             {
@@ -566,8 +611,88 @@ class FinalDocumentationApprovalApiTests(TestCase):
         )
         self.assertEqual(upload.status_code, 200, upload.content)
         self.assertEqual(upload.json()["data"]["action_code"], "upload_signed_copy")
-        uploaded_id = upload.json()["data"]["document_id"]
-        self.assertTrue(DocumentFile.objects.filter(pk=uploaded_id).exists())
+        uploaded_id = upload.json()["data"]["signed_copy_id"]
+        first = StaffSignedDocumentCopy.objects.get(pk=uploaded_id)
+        original_id = first.loan_document.document_id
+        self.assertIsNone(first.supersedes_id)
+        self.assertEqual(first.uploader_user, self.compliance)
+        self.assertEqual(first.document.checksum_sha256, first.checksum_sha256)
+        self.assertEqual(first.request_id, "008m3-staff-upload")
+        self.assertEqual(upload.json()["data"]["workflow_event_id"], str(first.workflow_event_id))
+        self.assertEqual(first.audit_log.new_value_json["audit_log_id"], str(first.audit_log_id))
+        self.assertEqual(first.audit_log.new_value_json["version_history_id"], str(first.version_history_id))
+        self.assertEqual(first.version_history.new_value_json["workflow_event_id"], str(first.workflow_event_id))
+        self.assertEqual(first.audit_log.new_value_json["workspace_action_id"], first.workspace_action_id)
+        evidence_counts = (
+            StaffSignedDocumentCopy.objects.count(), StaffDocumentReviewAction.objects.count(),
+            DocumentFile.objects.count(), AuditLog.objects.filter(
+                action__in=["documents.file.uploaded", "legal_documents.signed_copy_uploaded"]
+            ).count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_signed_document_copy").count(),
+            WorkflowEvent.objects.filter(workflow_name="staff_signed_document_copy").count(),
+        )
+        replay = self.client.post(
+            actions["upload_signed_copy"]["action_url"],
+            {"file": SimpleUploadedFile("signed-term-sheet.pdf", b"signed staff evidence", "application/pdf"),
+             "remarks": "Borrower signed copy received."},
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(replay.json()["data"]["signed_copy_id"], str(first.pk))
+        self.assertTrue(replay.json()["data"]["replay"])
+        self.assertEqual(evidence_counts, (
+            StaffSignedDocumentCopy.objects.count(), StaffDocumentReviewAction.objects.count(),
+            DocumentFile.objects.count(), AuditLog.objects.filter(
+                action__in=["documents.file.uploaded", "legal_documents.signed_copy_uploaded"]
+            ).count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_signed_document_copy").count(),
+            WorkflowEvent.objects.filter(workflow_name="staff_signed_document_copy").count(),
+        ))
+        changed = self.client.post(
+            actions["upload_signed_copy"]["action_url"],
+            {"file": SimpleUploadedFile("changed.pdf", b"changed signed evidence", "application/pdf"),
+             "remarks": "Changed replay."},
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(changed.status_code, 409, changed.content)
+        self.assertEqual(evidence_counts, (
+            StaffSignedDocumentCopy.objects.count(), StaffDocumentReviewAction.objects.count(),
+            DocumentFile.objects.count(), AuditLog.objects.filter(
+                action__in=["documents.file.uploaded", "legal_documents.signed_copy_uploaded"]
+            ).count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_signed_document_copy").count(),
+            WorkflowEvent.objects.filter(workflow_name="staff_signed_document_copy").count(),
+        ))
+
+        after_first = next(
+            row
+            for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        self.assertEqual(after_first["document"]["signed_copy"]["signed_copy_id"], uploaded_id)
+        reupload_action = next(
+            row for row in after_first["available_actions"]
+            if row["action_code"] == "upload_signed_copy"
+        )
+        reupload = self.client.post(
+            reupload_action["action_url"],
+            {
+                "file": SimpleUploadedFile(
+                    "corrected-signed-term-sheet.pdf", b"corrected signed staff evidence",
+                    "application/pdf",
+                ),
+                "remarks": "Corrected borrower and nominee signed copy.",
+            },
+            HTTP_X_REQUEST_ID="008m5-staff-reupload",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(reupload.status_code, 200, reupload.content)
+        second = StaffSignedDocumentCopy.objects.get(
+            pk=reupload.json()["data"]["signed_copy_id"]
+        )
+        self.assertEqual(second.supersedes, first)
+        self.assertEqual(second.loan_document.document_id, original_id)
+        self.assertEqual(StaffSignedDocumentCopy.objects.count(), 2)
 
         refreshed = next(
             row
@@ -587,13 +712,308 @@ class FinalDocumentationApprovalApiTests(TestCase):
         )
         self.assertEqual(returned.status_code, 200, returned.content)
         self.assertEqual(returned.json()["data"]["new_status"], "correction_requested")
-        self.assertTrue(
-            WorkflowEvent.objects.filter(
-                workflow_name="staff_documentation_action",
-                entity_id=self.application.pk,
-                to_state="correction_requested",
-            ).exists()
+        review = StaffDocumentReviewAction.objects.get(
+            pk=returned.json()["data"]["review_action_id"]
         )
+        self.assertEqual(review.checklist_item.item_code, "term_sheet")
+        self.assertEqual(review.loan_document_id, first.loan_document_id)
+        self.assertEqual(review.actor_user, self.compliance)
+        self.assertEqual(review.canonical_role_code, "compliance_team_member")
+        self.assertTrue(review.workflow_event_id)
+        self.assertTrue(review.audit_log_id)
+        self.assertTrue(review.version_history_id)
+        self.assertEqual(review.audit_log.new_value_json["workspace_action_id"], review.workspace_action_id)
+        review_counts = (
+            StaffDocumentReviewAction.objects.count(), AuditLog.objects.filter(
+                action="legal_documents.request_correction"
+            ).count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        )
+        replay = self.client.post(
+            correction["action_url"], {"remarks": "Nominee signature is missing."},
+            content_type="application/json", **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(replay.json()["data"]["review_action_id"], str(review.pk))
+        self.assertEqual(review_counts, (
+            StaffDocumentReviewAction.objects.count(), AuditLog.objects.filter(
+                action="legal_documents.request_correction"
+            ).count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        ))
+        conflict = self.client.post(
+            correction["action_url"], {"remarks": "Changed correction reason."},
+            content_type="application/json", **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(conflict.status_code, 409, conflict.content)
+        self.assertEqual(review_counts, (
+            StaffDocumentReviewAction.objects.count(), AuditLog.objects.filter(
+                action="legal_documents.request_correction"
+            ).count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        ))
+        blocked = next(
+            row for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        self.assertEqual((blocked["status"], blocked["blocker"]),
+                         ("blocked", "correction_requested"))
+        self.assertIn("Nominee signature is missing.", str(self._workspace(self.compliance).json()["data"]["timeline"]))
+
+        correction_upload = next(
+            row for row in blocked["available_actions"]
+            if row["action_code"] == "upload_signed_copy"
+        )
+        resolved = self.client.post(
+            correction_upload["action_url"],
+            {
+                "file": SimpleUploadedFile(
+                    "resolved-term-sheet.pdf", b"resolved signed staff evidence",
+                    "application/pdf",
+                ),
+                "remarks": "Nominee signature corrected.",
+            },
+            HTTP_X_REQUEST_ID="008m5-resolve-correction",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(resolved.status_code, 200, resolved.content)
+        successor = StaffSignedDocumentCopy.objects.get(
+            pk=resolved.json()["data"]["signed_copy_id"]
+        )
+        self.assertEqual(successor.resolves_review_action, review)
+        refetched = next(
+            row for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        self.assertNotEqual(refetched["blocker"], "correction_requested")
+
+    def test_staff_workspace_required_poa_projects_governed_attorney_blocker(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "security.poa.manage",
+        )
+        SecurityPackage.objects.create(
+            loan_application=self.application,
+            physical_share_security_required_flag=True,
+            demat_pledge_required_flag=False,
+            poa_required_flag=True,
+            blank_cheque_required_flag=True,
+            cancelled_cheque_required_flag=True,
+        )
+        workspace = self._workspace(self.compliance).json()["data"]
+        poa = workspace["security_workflows"]["power_of_attorney"]
+        self.assertEqual(
+            (poa["status"], poa["blocker"], poa["available_actions"]),
+            ("blocked", "governed_attorney_unconfigured", []),
+        )
+        self.assertIn(
+            "governed_attorney_unconfigured",
+            {row["reason"] for row in workspace["blockers"]},
+        )
+        queue = self.client.get(
+            "/api/v1/documentation-workspaces/?page=1&page_size=20",
+            **self.fixture._auth(self.compliance),
+        ).json()["data"]
+        queue_row = next(row for row in queue if row["loan_application_id"] == str(self.application.pk))
+        self.assertEqual((queue_row["poa_status"], queue_row["poa_blocker"]),
+                         ("blocked", "governed_attorney_unconfigured"))
+        wrong_role = self._workspace(self.credit).json()["data"]["security_workflows"]["power_of_attorney"]
+        self.assertEqual((wrong_role["status"], wrong_role["blocker"], wrong_role["available_actions"]),
+                         ("blocked", "governed_attorney_unconfigured", []))
+        self.assertFalse(PowerOfAttorney.objects.exists())
+
+    def test_staff_workspace_poa_uses_only_current_injected_governed_decision(self):
+        self._grant(self.compliance, "documents.checklist.read", "security.poa.manage")
+        poa_document = self._current_document("power_of_attorney")
+        self._stamp_and_notary(poa_document, "500.00")
+        SecurityPackage.objects.create(
+            loan_application=self.application,
+            physical_share_security_required_flag=True,
+            demat_pledge_required_flag=False,
+            poa_required_flag=True,
+            blank_cheque_required_flag=True,
+            cancelled_cheque_required_flag=True,
+        )
+        configured = security_workspace_actions.GovernedAttorneyDecision(
+            status="configured",
+            application_id=self.application.pk,
+            attorney_user_id=self.cs.pk,
+            decision_id=uuid4(),
+        )
+        with patch.object(
+            security_workspace_actions, "governed_attorney_decision",
+            return_value=configured,
+        ):
+            poa = self._workspace(self.compliance).json()["data"]["security_workflows"]["power_of_attorney"]
+        self.assertEqual(poa["blocker"], None)
+        self.assertEqual([row["action_code"] for row in poa["available_actions"]], ["manage_power_of_attorney"])
+
+        stale = security_workspace_actions.GovernedAttorneyDecision(
+            status="stale", application_id=self.application.pk,
+            attorney_user_id=self.cs.pk, decision_id=uuid4(),
+        )
+        with patch.object(
+            security_workspace_actions, "governed_attorney_decision",
+            return_value=stale,
+        ):
+            poa = self._workspace(self.compliance).json()["data"]["security_workflows"]["power_of_attorney"]
+        self.assertEqual((poa["status"], poa["blocker"], poa["available_actions"]),
+                         ("blocked", "governed_attorney_decision_stale", []))
+
+        with patch.object(
+            security_workspace_actions, "governed_attorney_decision",
+            return_value=configured,
+        ):
+            action = self._workspace(self.compliance).json()["data"]["security_workflows"]["power_of_attorney"]["available_actions"][0]
+            created = self.client.post(
+                action["action_url"],
+                {"purpose_summary": "Authorise Company Secretary to initiate sale of shares on default."},
+                content_type="application/json",
+                HTTP_X_REQUEST_ID="008m5-governed-attorney",
+                **self.fixture._auth(self.compliance),
+            )
+        self.assertEqual(created.status_code, 200, created.content)
+        self.assertEqual(PowerOfAttorney.objects.get().attorney_user, self.cs)
+
+    def test_staff_return_and_condition_are_durable_and_block_until_successor(self):
+        self._grant(self.compliance, "documents.checklist.read", "documents.file.upload")
+        self._complete_all_applicable_items()
+        workspace = self._workspace(self.cs).json()["data"]
+        condition = next(row for row in workspace["available_actions"] if row["action_code"] == "add_condition")
+        other_cs = self.fixture._user("company_secretary", "Other Documentation CS")
+        self._grant(other_cs, "documents.checklist.read", "documents.checklist.approve_cs")
+        denied_condition = self.client.post(
+            condition["action_url"], {"condition": "Cross-user condition."},
+            content_type="application/json", **self.fixture._auth(other_cs),
+        )
+        self.assertEqual(denied_condition.status_code, 404, denied_condition.content)
+        condition_response = self.client.post(
+            condition["action_url"], {"condition": "Retain originals in CS custody."},
+            content_type="application/json", HTTP_X_REQUEST_ID="008m5-condition",
+            **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(condition_response.status_code, 200, condition_response.content)
+        condition_row = StaffDocumentReviewAction.objects.get(
+            pk=condition_response.json()["data"]["review_action_id"]
+        )
+        self.assertEqual((condition_row.action_type, condition_row.approval_stage),
+                         ("add_condition", "company_secretary"))
+        self.assertEqual(condition_response.json()["data"]["workflow_event_id"], str(condition_row.workflow_event_id))
+        self.assertEqual(condition_row.audit_log.new_value_json["review_action_id"], str(condition_row.pk))
+        self.assertEqual(condition_row.version_history.new_value_json["version_history_id"], str(condition_row.version_history_id))
+        condition_counts = (
+            StaffDocumentReviewAction.objects.count(),
+            AuditLog.objects.filter(action="legal_documents.add_condition").count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        )
+        replay = self.client.post(
+            condition["action_url"], {"condition": "Retain originals in CS custody."},
+            content_type="application/json", **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        changed = self.client.post(
+            condition["action_url"], {"condition": "Changed retained condition."},
+            content_type="application/json", **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(changed.status_code, 409, changed.content)
+        self.assertEqual(condition_counts, (
+            StaffDocumentReviewAction.objects.count(),
+            AuditLog.objects.filter(action="legal_documents.add_condition").count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        ))
+        projected_stage = next(
+            stage for stage in self._workspace(self.cs).json()["data"]["approval_stages"]
+            if stage["role"] == "company_secretary"
+        )
+        self.assertEqual(projected_stage["conditions"], ["Retain originals in CS custody."])
+        self.assertIn("Retain originals in CS custody.", str(self._workspace(self.cs).json()["data"]["timeline"]))
+
+        returned_action = next(
+            row for row in self._workspace(self.cs).json()["data"]["available_actions"]
+            if row["action_code"] == "return_for_correction"
+        )
+        denied = self.client.post(
+            returned_action["action_url"], {"remarks": "Cross-user return."},
+            content_type="application/json", **self.fixture._auth(other_cs),
+        )
+        self.assertEqual(denied.status_code, 404, denied.content)
+        returned = self.client.post(
+            returned_action["action_url"], {"remarks": "Correct final checklist index."},
+            content_type="application/json", HTTP_X_REQUEST_ID="008m5-return",
+            **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(returned.status_code, 200, returned.content)
+        return_row = StaffDocumentReviewAction.objects.get(
+            pk=returned.json()["data"]["review_action_id"]
+        )
+        self.assertEqual(
+            (return_row.approval_stage, return_row.checklist_item.item_code,
+             returned.json()["data"]["workflow_event_id"]),
+            ("company_secretary", "final_checklist", str(return_row.workflow_event_id)),
+        )
+        self.assertEqual(return_row.audit_log.new_value_json["workspace_action_id"],
+                         return_row.workspace_action_id)
+        return_counts = (
+            StaffDocumentReviewAction.objects.count(),
+            AuditLog.objects.filter(action="legal_documents.return_for_correction").count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        )
+        replay = self.client.post(
+            returned_action["action_url"], {"remarks": "Correct final checklist index."},
+            content_type="application/json", **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(return_counts, (
+            StaffDocumentReviewAction.objects.count(),
+            AuditLog.objects.filter(action="legal_documents.return_for_correction").count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        ))
+        changed_return = self.client.post(
+            returned_action["action_url"], {"remarks": "Changed return reason."},
+            content_type="application/json", **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(changed_return.status_code, 409, changed_return.content)
+        self.assertEqual(return_counts, (
+            StaffDocumentReviewAction.objects.count(),
+            AuditLog.objects.filter(action="legal_documents.return_for_correction").count(),
+            VersionHistory.objects.filter(versioned_entity_type="staff_document_review_action").count(),
+            WorkflowEvent.objects.filter(workflow_name="documentation_review").count(),
+        ))
+        blocked = self._post_stage(
+            "approve-as-company-secretary", self.cs,
+            {"comments": "All documents verified and attached."},
+        )
+        self.assertEqual(blocked.status_code, 409, blocked.content)
+        self.assertEqual(blocked.json()["error"]["code"], "CHECKLIST_EVIDENCE_INCOMPLETE")
+
+        final_item = next(
+            row for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "final_checklist"
+        )
+        self.assertEqual((final_item["status"], final_item["blocker"]),
+                         ("blocked", "correction_requested"))
+        upload = next(row for row in final_item["available_actions"] if row["action_code"] == "upload_signed_copy")
+        resolved = self.client.post(
+            upload["action_url"],
+            {"file": SimpleUploadedFile("corrected-index.pdf", b"corrected index", "application/pdf"),
+             "remarks": "Corrected final checklist index."},
+            HTTP_X_REQUEST_ID="008m5-return-resolution",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(resolved.status_code, 200, resolved.content)
+        approved = self._post_stage(
+            "approve-as-company-secretary", self.cs,
+            {"comments": "All documents verified and attached."},
+        )
+        self.assertEqual(approved.status_code, 200, approved.content)
 
     def test_staff_workspace_executes_every_loan_agreement_sibling_mutation(self):
         self._grant(

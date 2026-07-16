@@ -2326,6 +2326,38 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+## 2026-07-16 - 2026-07-16_172426_repair
+
+- Agent tool used: codex with the diagnosing-bugs feedback loop.
+- Slice repaired: 008M5-documentation-durable-actions-and-blocker-closure.
+- Demonstrated failure: the trusted browser runner could not find Playwright Chromium revision 1148,
+  so the first run stopped before the test body and all five screenshots were absent.
+- Repair: the selected 008M5 spec keeps bundled Chromium as its first choice and falls back to the
+  installed macOS Google Chrome only when the bundled executable is missing.
+- Tests run: Playwright collection; 18 focused documentation frontend tests; typecheck; lint; build.
+  A local Chrome launch reached the executable but was terminated by sandboxed macOS services, so
+  the independent twice-run browser gate remains authoritative and no screenshots were fabricated.
+- Evidence saved: `.ralph/runs/2026-07-16_172426_repair/evidence/terminal-logs/`.
+- Result: Repair complete pending independent orchestrator browser revalidation.
+- Risk level: High slice; Low incremental repair risk, limited to browser executable selection.
+- Next action: Independently run the declared browser contract twice, retain all five screenshots,
+  and commit only after the complete revalidation passes.
+
+## 2026-07-16 - 2026-07-16_165237_normal_run
+
+- Agent tool used: codex with TDD plus independent Standards and Spec review passes.
+- Slice completed: 008M5-documentation-durable-actions-and-blocker-closure.
+- Summary: Added immutable staff signed-copy succession, durable correction/return/condition owner
+  ledgers, exact opaque replay/conflict handling, consumed checklist/approval blockers, exact-stage
+  conditions, and the A-125 governed-attorney queue/detail blocker with an injected future-owner seam.
+- Tests run: failing-first architecture and behavior probes; 49 impacted backend tests; 18 focused
+  frontend tests; Django check and migration sync; frontend typecheck, lint, and build; Playwright
+  collection. Local Chromium execution was unavailable because the browser binary is not installed.
+- Evidence saved: `.ralph/runs/2026-07-16_165237_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator full gates and twice-run trusted-browser screenshots.
+- Risk level: High; immutable legal evidence, role/object scope, approval blocking, and attorney authority.
+- Next action: Run 009B3, then 009D2 before 009E.
+
 ## 2026-07-13 - 2026-07-13_145943_normal_run
 
 - Agent tool used: codex
@@ -7873,6 +7905,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_143718_architecture_review/.ralph/runs/2026-07-16_143718_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_143718_architecture_review/.ralph/runs/2026-07-16_143718_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 17:42:03 - 2026-07-16_172426_repair
+- Agent tool used: codex
+- Slice attempted: 008M5-documentation-durable-actions-and-blocker-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_172426_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_172426_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

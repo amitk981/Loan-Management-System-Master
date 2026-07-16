@@ -8,8 +8,7 @@ from sfpcl_credit.applications.models import Witness
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.documents.models import DocumentTemplate
 from sfpcl_credit.legal_documents.models import ChecklistAction, ChecklistItem, DocumentChecklist, SignatureRecord
-from sfpcl_credit.legal_documents.modules import checklist_actions, document_generation, loan_document_verification, signatures, stamp_notary
-from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.legal_documents.modules import checklist_actions, document_generation, documentation_actions, loan_document_verification, signatures, stamp_notary
 DOCUMENT_TYPES = {'witness_pan_aadhaar': 'witness_pan_aadhaar', 'cancelled_cheque': 'cancelled_cheque', 'blank_dated_cheque': 'blank_dated_cheque', 'poa': 'power_of_attorney', 'tri_party_agreement': 'tri_party_agreement', 'sh4': 'sh4', 'cdsl_pledge': 'cdsl_pledge_evidence', 'term_sheet': 'term_sheet', 'loan_agreement': 'loan_agreement', 'bank_verification_letter': 'bank_verification_letter', 'final_checklist': 'document_checklist'}
 APPROVALS = {ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL: ('approve_as_company_secretary', 'Approve as Company Secretary', 'documents.checklist.approve_cs', 'company_secretary', 'approve-as-company-secretary'), ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL: ('approve_as_credit_manager', 'Approve as Credit Manager', 'documents.checklist.approve_credit', 'credit_manager', 'approve-as-credit-manager'), ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL: ('approve_as_sanction_committee', 'Approve as Sanction Committee', 'documents.checklist.approve_sanction', 'director', 'approve-as-sanction-committee')}
 
@@ -48,6 +47,12 @@ def _execute_with_translation(callback, values, uploaded_file, request):
         raise OwnerNotFound from exc
     except checklist_actions.Conflict as exc:
         raise OwnerConflict(str(exc), exc.error_code) from exc
+    except documentation_actions.AccessDenied as exc:
+        raise OwnerAccessDenied from exc
+    except documentation_actions.NotFound as exc:
+        raise OwnerNotFound from exc
+    except documentation_actions.Conflict as exc:
+        raise OwnerConflict(str(exc)) from exc
     except (document_generation.LegalDocumentAccessDenied, loan_document_verification.AccessDenied, signatures.AccessDenied, stamp_notary.AccessDenied) as exc:
         raise OwnerAccessDenied from exc
     except (document_generation.LegalDocumentNotFound, loan_document_verification.NotFound, signatures.NotFound, stamp_notary.NotFound) as exc:
@@ -85,17 +90,17 @@ def item_actions(actor, application, item, document, status, *, gateways):
         actions.append(_action('complete_item', 'Mark complete', 'documents.checklist.update', f'/api/v1/checklist-items/{item.pk}/complete/', required_role='compliance_team_member', owner_execute=partial(_execute_complete_item, gateways.complete_item, actor, item.pk, document.pk), fixed_payload={'checklist_item_id': str(item.pk), 'loan_document_id': str(document.pk)}, fields=[{'name': 'remarks', 'label': 'Remarks', 'type': 'textarea', 'required': True}]))
     if document.document_type == 'tri_party_agreement' and document.verification_status != 'verified' and _owner_allows(loan_document_verification.require_verify_actor, actor):
         actions.append(_action('verify_document', 'Verify document', 'documents.loan_document.verify', f'/api/v1/loan-documents/{document.pk}/verify/', required_role='company_secretary', owner_execute=partial(_execute_verify_document, actor, document.pk), fixed_payload={'loan_document_id': str(document.pk), 'verification_status': 'verified'}, fields=[{'name': 'remarks', 'label': 'Remarks', 'type': 'textarea', 'required': True}]))
-    if status == ChecklistItem.STATUS_PENDING:
+    if status in {ChecklistItem.STATUS_PENDING, 'blocked'}:
         actions.extend(_legal_evidence_actions(actor, application, document))
-        actions.extend(_workspace_document_actions(actor, application, document))
+        actions.extend(_workspace_document_actions(actor, application, item, document))
     return actions
 
-def _workspace_document_actions(actor, application, document):
+def _workspace_document_actions(actor, application, item, document):
     actions = []
     if document_services.user_can_upload_documents(actor):
-        actions.append(_action('upload_signed_copy', 'Upload / re-upload signed copy', document_services.DOCUMENT_UPLOAD_PERMISSION, 'workspace:upload_signed_copy', owner_execute=partial(_execute_upload_signed_copy, actor, application.pk, document.pk), fields=[{'name': 'file', 'label': 'Signed document', 'type': 'file', 'required': True}, {'name': 'remarks', 'label': 'Remarks', 'type': 'textarea', 'required': True}], fixed_payload={'loan_document_id': str(document.pk)}))
+        actions.append(_action('upload_signed_copy', 'Upload / re-upload signed copy', document_services.DOCUMENT_UPLOAD_PERMISSION, 'workspace:upload_signed_copy', owner_execute=partial(_execute_signed_copy, actor, application.pk, document.pk), fields=[{'name': 'file', 'label': 'Signed document', 'type': 'file', 'required': True}, {'name': 'remarks', 'label': 'Remarks', 'type': 'textarea', 'required': True}], fixed_payload={'loan_document_id': str(document.pk)}))
     if _owner_allows(checklist_actions.require_item_completion_actor, actor):
-        actions.append(_action('request_correction', 'Request correction', checklist_actions.ITEM_COMPLETE_PERMISSION, 'workspace:request_correction', owner_execute=partial(_execute_workspace_record, actor, application.pk, 'request_correction'), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'loan_document_id': str(document.pk)}))
+        actions.append(_action('request_correction', 'Request correction', checklist_actions.ITEM_COMPLETE_PERMISSION, 'workspace:request_correction', owner_execute=partial(_execute_review_action, actor, item.document_checklist_id, 'request_correction', item.pk, document.pk), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'loan_document_id': str(document.pk)}))
     return actions
 
 def _legal_evidence_actions(actor, application, document):
@@ -167,7 +172,8 @@ def record_actions(actor, checklist, *, gateways):
         if checklist_actions.available_approval_action(actor=actor, checklist=checklist, completed_item_ids=completed) is None:
             return []
     permission = APPROVALS[action_type][2]
-    return [_action('return_for_correction', 'Return for correction', permission, 'workspace:return_for_correction', owner_execute=partial(_execute_workspace_record, actor, checklist.loan_application_id, 'return_for_correction'), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)}), _action('add_condition', 'Add condition', permission, 'workspace:add_condition', owner_execute=partial(_execute_workspace_record, actor, checklist.loan_application_id, 'add_condition'), fields=[{'name': 'condition', 'label': 'Condition', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)})]
+    final_item = checklist.items.filter(item_code='final_checklist').first()
+    return [_action('return_for_correction', 'Return for correction', permission, 'workspace:return_for_correction', owner_execute=partial(_execute_review_action, actor, checklist.pk, 'return_for_correction', final_item.pk if final_item else None, final_item.loan_document_id if final_item else None), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)}), _action('add_condition', 'Add condition', permission, 'workspace:add_condition', owner_execute=partial(_execute_review_action, actor, checklist.pk, 'add_condition', None, None), fields=[{'name': 'condition', 'label': 'Condition', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)})]
 
 def _metadata(module, request):
     return module.RequestMetadata(request_id=request.headers.get('X-Request-ID'), ip_address=request.META.get('REMOTE_ADDR', ''), user_agent=request.headers.get('User-Agent', ''))
@@ -196,16 +202,15 @@ def _execute_notary(actor, document_id, fixed, values, _file, request):
 def _execute_mismatch(actor, signature_id, values, _file, request):
     return signatures.resolve_mismatch(actor=actor, signature_record_id=signature_id, payload=values, metadata=_metadata(signatures, request))
 
-def _execute_upload_signed_copy(actor, application_id, document_id, values, uploaded_file, request):
-    if uploaded_file is None:
-        raise ValidationError({'file': 'A signed document file is required.'})
-    document = document_services.store_document_upload(user=actor, request=request, uploaded_file=uploaded_file, document_category='legal', sensitivity_level='confidential', related_entity_type='loan_document', related_entity_id=document_id, provenance_metadata={'loan_application_id': str(application_id), 'loan_document_id': str(document_id), 'remarks': values.get('remarks')})
-    return {'action_code': 'upload_signed_copy', 'document_id': str(document.pk), 'entity_type': 'loan_document', 'entity_id': str(document_id), 'previous_status': 'signed_copy_pending', 'new_status': 'signed_copy_uploaded', 'available_actions': []}
+def _execute_signed_copy(actor, application_id, document_id, values, uploaded_file, request):
+    return documentation_actions.upload_signed_copy(actor=actor, application_id=application_id, loan_document_id=document_id, remarks=values.get('remarks'), uploaded_file=uploaded_file, request=request, metadata=_metadata(documentation_actions, request))
 
-def _execute_workspace_record(actor, application_id, code, values, _file, _request):
-    reason = values.get('remarks') or values.get('condition')
-    if not isinstance(reason, str) or not reason.strip():
-        raise ValidationError({'remarks': 'A reason is required.'})
-    to_state = 'condition_added' if code == 'add_condition' else 'correction_requested'
-    event = record_workflow_event(actor=actor, workflow_name='staff_documentation_action', entity_type='loan_application', entity_id=application_id, from_state='documentation_review', to_state=to_state, trigger_reason=reason.strip(), action_code=code)
-    return {'action_code': code, 'entity_type': 'loan_application', 'entity_id': str(application_id), 'previous_status': 'documentation_review', 'new_status': to_state, 'workflow_event_id': str(event.pk), 'available_actions': []}
+def _execute_review_action(actor, checklist_id, code, item_id, document_id, values, _file, request):
+    metadata = documentation_actions.RequestMetadata(request_id=request.headers.get('X-Request-ID'), ip_address=request.META.get('REMOTE_ADDR', ''), user_agent=request.headers.get('User-Agent', ''), workspace_action_id=getattr(request, '_workspace_action_id', None))
+    return documentation_actions.record_review_action(actor=actor, checklist_id=checklist_id, action_type=code, reason=values.get('remarks') or values.get('condition'), checklist_item_id=item_id, loan_document_id=document_id, metadata=metadata)
+
+def replay_action(actor, application_id, action_id, payload, uploaded_file):
+    try:
+        return documentation_actions.replay_workspace_action(actor=actor, application_id=application_id, workspace_action_id=action_id, payload=payload, uploaded_file=uploaded_file)
+    except documentation_actions.Conflict as exc:
+        raise OwnerConflict(str(exc)) from exc

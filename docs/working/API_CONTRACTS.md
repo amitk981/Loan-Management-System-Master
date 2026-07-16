@@ -3692,6 +3692,23 @@ retained ids and fails closed when they are no longer the current terminal cycle
 - `GET /api/v1/documentation-workspaces/` returns the strictly paginated S26 queue; `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/` returns one locked, redacted S26-S35 snapshot whose executable owner-authorized actions use the shared §44 shape and whose timeline omits internal evidence identities.
 - `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/{item_code}/download/` issues an actor/application/item/current-renderer-bound capability; content re-resolves current truth, records the generic staff download audit, and returns `404` after replacement/tamper.
 - 008M3 replaces caller-controlled `fixed_payload` with `action_id` plus a stable unique `action_key`. Every mutation posts only its declared user fields to `POST /api/v1/loan-applications/{loan_application_id}/documentation-workspace/actions/{action_id}/`; the server re-resolves the locked actor/application/snapshot and all canonical object identities before calling the existing legal, checklist, security, bank, document-upload, or workflow owner.
+- 008M5 makes `upload_signed_copy`, `request_correction`, `return_for_correction`, and
+  `add_condition` durable legal-owner actions. A signed-copy success returns `signed_copy_id` and
+  subsequent GETs project redacted `document.signed_copy {signed_copy_id, file_name, uploaded_at,
+  remarks}` while retaining the generated original as the independent download source. Each
+  successor preserves its predecessor; a corrected successor resolves the exact open item/return
+  action. Open corrections project `status: blocked` plus `blocker: correction_requested`, appear
+  in the pack/blocker/timeline surfaces, and deny item completion or checklist approval until the
+  successor is retained. Conditions remain visible in `approval_stages[].conditions` at their exact
+  approval role without becoming generic workflow state. The queue returns nullable `poa_blocker`
+  beside `poa_status`. Exact replay of a retained opaque action identity returns the same owner row
+  and workflow identity with zero writes; changed facts conflict, while actor/application/document/
+  action-identity tamper is rejected without creating a file or legal ledger.
+- When PoA is required but the governed application-scoped attorney decision is absent, the security
+  workflow returns `status: blocked`, `blocker: governed_attorney_unconfigured`, and no create
+  action. A configured decision is accepted only from the security-owner seam when its application,
+  attorney, and decision identities are all current; stale decisions return
+  `governed_attorney_decision_stale`. Neither blocker grants attorney authority.
 - The command boundary accepts JSON for ordinary actions and multipart `file` plus `remarks` for signed-copy upload/re-upload. Unknown, stale, tampered, cross-user, cross-application, or no-longer-advertised action identities return nondisclosing `404` with zero writes; field validation returns `400`, owner conflicts return `409`, success returns the owner's §6.3 action data, and the client refetches the workspace once.
 
 ## Member portal documentation actions (008L)

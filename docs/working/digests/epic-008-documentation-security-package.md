@@ -28,6 +28,20 @@ Sources:
   succession and correction/condition ledgers, exact replay/conflict behavior, downstream blocking,
   and a real-Django refetch/browser contract using the established S26-S35 composition.
 
+## 008M5 Durable Action and Attorney Blocker Closure (2026-07-16)
+
+Signed staff copies now form an immutable owner-held predecessor/successor chain without replacing
+the renderer original. Opaque action identities are retained with exact file/checksum/uploader/
+request and audit/workflow/version facts; exact replay is zero-write, while changed, cross-scope,
+forged-document, or tampered attempts fail closed. Request-correction and final-return rows block
+item completion and ordered approval until an exact signed successor resolves them. Conditions are
+retained against the exact approval role and projected in the established approval surface.
+
+A-125 remains fail-closed. The security owner accepts only an injected, application-matching current
+governed-attorney decision whose identity is bound into the opaque command. Production detail and
+queue projections return `governed_attorney_unconfigured` with no create action; wrong-role and
+stale-decision paths create no PoA or authority.
+
 ## Architecture Review 2026-07-16 07:41 — Workspace Action and Deep-Module Closure
 
 - S26/S27/S35 require upload/re-upload and correction/return actions in addition to generation,

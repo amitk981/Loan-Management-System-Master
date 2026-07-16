@@ -1,0 +1,55 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_172426_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/staff-documentation-workspace.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/staff-documentation-workspace.e2e.spec.ts
+
+[2m[WebServer] [22m[16/Jul/2026 12:02:17] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "POST /api/v1/auth/login/ HTTP/1.1" 200 1317
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "GET /api/v1/auth/me/ HTTP/1.1" 200 1901
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[16/Jul/2026 12:02:21] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 917
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 917
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "OPTIONS /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "GET /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/ HTTP/1.1" 200 11716
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "OPTIONS /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/142b4a4c0a836a4984f6d1b804bdc35f3437701a/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:22] "POST /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/142b4a4c0a836a4984f6d1b804bdc35f3437701a/ HTTP/1.1" 200 519
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "GET /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/ HTTP/1.1" 200 11949
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "OPTIONS /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/358e8e9c265b10c1e31fac30aea184b6f1220223/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "POST /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/358e8e9c265b10c1e31fac30aea184b6f1220223/ HTTP/1.1" 200 510
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "GET /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/ HTTP/1.1" 200 12435
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "OPTIONS /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/088f8c6e4fdd1b67b99ca11f2191ce14e7af970e/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "POST /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/088f8c6e4fdd1b67b99ca11f2191ce14e7af970e/ HTTP/1.1" 200 520
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "GET /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/ HTTP/1.1" 200 12439
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "OPTIONS /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/acf03427843cb4cedd2a56effeaa9be3927981e8/ HTTP/1.1" 200 0
+[2m[WebServer] [22mBad Request: /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/acf03427843cb4cedd2a56effeaa9be3927981e8/
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "POST /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/acf03427843cb4cedd2a56effeaa9be3927981e8/ HTTP/1.1" 400 341
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "OPTIONS /api/v1/documentation-workspaces/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 12:02:23] "GET /api/v1/documentation-workspaces/ HTTP/1.1" 200 883
+[2m[WebServer] [22m[16/Jul/2026 12:02:24] "GET /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/ HTTP/1.1" 200 12405
+[2m[WebServer] [22m[16/Jul/2026 12:02:24] "OPTIONS /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/678d5cce118f77fd69c7dda7fa7eae772fa20f9a/ HTTP/1.1" 200 0
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/678d5cce118f77fd69c7dda7fa7eae772fa20f9a/
+[2m[WebServer] [22m[16/Jul/2026 12:02:24] "POST /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/actions/678d5cce118f77fd69c7dda7fa7eae772fa20f9a/ HTTP/1.1" 404 230
+[2m[WebServer] [22m[16/Jul/2026 12:02:24] "OPTIONS /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/term_sheet/download/ HTTP/1.1" 200 0
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/term_sheet/download/
+[2m[WebServer] [22m[16/Jul/2026 12:02:24] "GET /api/v1/loan-applications/86a9e295-047a-4b97-bc5c-787bac65dbf3/documentation-workspace/term_sheet/download/ HTTP/1.1" 404 218
+  ✓  1 [chromium] › staff-documentation-workspace.e2e.spec.ts:27:5 › 008M5 persists staff documentation actions through real Django (6.0s)
+
+  1 passed (22.1s)
+
+Duration milliseconds: 22776
+Exit code: 0

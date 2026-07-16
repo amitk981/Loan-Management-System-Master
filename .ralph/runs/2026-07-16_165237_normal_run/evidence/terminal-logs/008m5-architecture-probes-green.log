@@ -1,0 +1,7 @@
+test_required_poa_path_has_an_explicit_governed_decision (__main__.ReviewContractProbes.test_required_poa_path_has_an_explicit_governed_decision) ... ok
+test_upload_and_correction_use_durable_owner_workflows (__main__.ReviewContractProbes.test_upload_and_correction_use_durable_owner_workflows) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK

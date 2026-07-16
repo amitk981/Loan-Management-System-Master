@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_staff_workspace_poa_uses_only_current_injected_governed_decision (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_poa_uses_only_current_injected_governed_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 749, in test_staff_workspace_poa_uses_only_current_injected_governed_decision
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Documentation action failed validation.", "details": {}, "field_errors": {"purpose_summary": "Must explicitly authorise the Company Secretary to initiate share sale on default."}}, "meta": {"request_id": "008m5-governed-attorney", "timestamp": "2026-07-16T11:32:45.038270Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.159s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

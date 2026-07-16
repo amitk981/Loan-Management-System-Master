@@ -1,0 +1,23 @@
+Command (original independent run):
+RALPH_EVIDENCE_DIR=<run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/staff-documentation-workspace.e2e.spec.ts
+
+Result: FAIL before the test body.
+
+Error: browserType.launch: Executable doesn't exist at
+/Users/amitkallapa/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell
+
+Consequences recorded by independent validation:
+- first trusted slice-specific browser run failed;
+- second run was skipped;
+- all five declared screenshots were missing.
+
+Package/cache probe:
+- installed @playwright/test: 1.49.1;
+- expected Chromium and headless-shell revision: 1148;
+- Playwright browser cache: no executable present;
+- host executable present: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome.
+
+Post-repair local launch attempt:
+- Playwright selected the host executable and launched its process;
+- the coding sandbox closed Chrome during macOS service bootstrap before page creation;
+- this anticipated sandbox limitation is not claimed as application/browser acceptance.

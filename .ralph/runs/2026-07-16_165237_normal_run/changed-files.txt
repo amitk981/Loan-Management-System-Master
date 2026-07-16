@@ -1,0 +1,19 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008M5-documentation-durable-actions-and-blocker-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl-lms/e2e/staff-documentation-workspace.e2e.spec.ts
+ M sfpcl-lms/src/pages/documentation/DocumentationHub.test.tsx
+ M sfpcl-lms/src/pages/documentation/DocumentationHub.tsx
+ M sfpcl-lms/src/services/documentationWorkspaceApi.ts
+ M sfpcl_credit/legal_documents/models.py
+ M sfpcl_credit/legal_documents/modules/checklist_actions.py
+ M sfpcl_credit/legal_documents/modules/staff_workspace_actions.py
+ M sfpcl_credit/processes/staff_documentation_workspace.py
+ M sfpcl_credit/security_instruments/modules/staff_workspace_actions.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+?? .ralph/runs/2026-07-16_165237_normal_run/
+?? sfpcl_credit/legal_documents/migrations/0014_staff_documentation_durable_actions.py
+?? sfpcl_credit/legal_documents/modules/documentation_actions.py

@@ -50,7 +50,7 @@ const queueRow: DocumentationQueueRow = {
   loan_application_id: 'application-1', application_reference_number: 'LO000001',
   borrower_name: 'API Borrower', sanctioned_amount: '400000.00', shareholding_mode: 'physical',
   required_document_summary: { complete: 1, required: 2 },
-  poa_status: 'draft', tri_party_status: 'pending', sh4_status: 'held_in_custody',
+  poa_status: 'draft', poa_blocker: null, tri_party_status: 'pending', sh4_status: 'held_in_custody',
   cdsl_pledge_status: 'not_required', term_sheet_status: 'complete',
   loan_agreement_status: 'pending', bank_verification_status: 'blocked',
   checklist_status: 'in_progress', current_owner: 'Compliance Team',
@@ -81,6 +81,7 @@ const workspace: DocumentationWorkspace = {
       document: {
         loan_document_id: 'doc-1', version: '2.0', generation_status: 'generated',
         execution_status: 'executed', verification_status: 'verified',
+        signed_copy: null,
         download: { file_name: 'term-sheet.pdf', mime_type: 'application/pdf', action_url: '/api/v1/loan-applications/application-1/documentation-workspace/term_sheet/download/' },
       },
     },
@@ -95,9 +96,9 @@ const workspace: DocumentationWorkspace = {
     ['power_of_attorney', true, 'draft'], ['tri_party_agreement', true, 'pending'],
     ['sh4', true, 'held_in_custody'], ['cdsl_pledge', false, 'not_required'],
     ['blank_dated_cheque', true, 'held'], ['cancelled_cheque', true, 'complete'],
-  ].map(([code, required, status]) => [code, { required, status, available_actions: [] }])) as DocumentationWorkspace['security_workflows'],
+  ].map(([code, required, status]) => [code, { required, status, blocker: null, available_actions: [] }])) as DocumentationWorkspace['security_workflows'],
   approval_stages: ['company_secretary', 'credit_manager', 'sanction_committee', 'senior_manager_finance']
-    .map((role, index) => ({ role, status: index === 3 ? 'blocked_until_disbursement' : 'pending' })),
+    .map((role, index) => ({ role, status: index === 3 ? 'blocked_until_disbursement' : 'pending', conditions: [] })),
   available_actions: [approvalAction],
   timeline: [{
     id: 'company_secretary_approval:0', entityType: 'document_checklist',
@@ -157,6 +158,23 @@ describe('008M2 documentation workspace contract', () => {
     for (const label of ['Power of Attorney', 'Tri-Party Agreement', 'SH-4', 'CDSL Pledge', 'Blank-Dated Cheque', 'Cancelled Cheque']) expect(screen.getByText(label)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Audit Trail' }));
     expect(screen.getByText('All documents verified and attached.')).toBeTruthy();
+  });
+
+  it('shows the governed-attorney blocker in the queue and conditions at their approval stage', async () => {
+    vi.mocked(fetchDocumentationQueue).mockResolvedValueOnce({
+      items: [{ ...queueRow, poa_status: 'blocked', poa_blocker: 'governed_attorney_unconfigured' }],
+      pagination,
+    });
+    vi.mocked(fetchDocumentationWorkspace).mockResolvedValueOnce({
+      ...workspace,
+      approval_stages: workspace.approval_stages.map(stage => stage.role === 'company_secretary'
+        ? { ...stage, conditions: ['Retain originals in CS custody.'] }
+        : stage),
+    });
+    await renderHub();
+    expect(screen.getByText(/PoA: Governed Attorney Unconfigured/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Approvals' }));
+    expect(screen.getByText('Company Secretary condition: Retain originals in CS custody.')).toBeTruthy();
   });
 
   it('posts a server-owned approval and refetches once without optimism', async () => {
@@ -258,7 +276,7 @@ describe('008M2 documentation workspace contract', () => {
       ...workspace,
       security_workflows: {
         ...workspace.security_workflows,
-        power_of_attorney: { required: true, status: 'pending', available_actions: [manageAction] },
+        power_of_attorney: { required: true, status: 'pending', blocker: null, available_actions: [manageAction] },
       },
     });
     const onOpenApplication = vi.fn();

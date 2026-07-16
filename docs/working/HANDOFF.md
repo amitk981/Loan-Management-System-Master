@@ -2,37 +2,46 @@
 
 ## Last Run
 
-2026-07-16_143718_architecture_review
+2026-07-16_172426_repair
 
 ## Current Status
 
-Architecture review of 008M3, 008M4, 009B2, 009C, and 009D is complete. Separate Standards and Spec
-passes found Critical correctness gaps: readiness can trust mutable legal/security labels, exclude
-an open unverified signature mismatch, and authorise through application intake assignment; the SAP
-owner remains a Finance forwarding shell. Workspace uploads/corrections also retain generic local
-records no later owner consumes, while the honest absent-attorney path has no visible blocker.
+008M5's trusted-browser launch repair is complete pending independent orchestrator revalidation.
+Staff signed-copy uploads and re-uploads now form an immutable legal-owner succession chain while
+the generated renderer original remains unchanged. Correction and final-return actions are durable,
+visible after refetch, and block item completion or ordered approvals until an exact signed successor
+resolves them. Conditions are retained and shown against the exact approval role.
 
-No production code changed. Findings are newest-first in `docs/working/REVIEW_FINDINGS.md`; seven
-failing read-only probes preserve the reviewed defects. Corrective slices 008M5, 009B3, and 009D2
-are fully sharpened. 009E now depends on 009D2 and therefore cannot consume the shallow readiness
-gate.
+A-125 remains honest: production queue and detail projections expose
+`governed_attorney_unconfigured`, issue no PoA create command, and grant no attorney authority. The
+future governed decision is injected through the security-owner gateway; stale and wrong-role paths
+remain zero-write, and the decision identity participates in the opaque action identity.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-16_143718_architecture_review/evidence/`. The review range is
-`1601a903...d519dc53` (75 non-run files). The seven probes fail with clean contract assertions as
-review evidence; queue lint and the proportionate repository gates are recorded in terminal logs.
+Failing-first and green evidence is in
+`.ralph/runs/2026-07-16_165237_normal_run/evidence/terminal-logs/`. The final impacted backend run
+passed 49 tests with two expected PostgreSQL-only skips; the durable public matrix and copied review
+probes pass. Frontend documentation tests pass (18), as do typecheck, lint, build, Django check, and
+migration sync. The repair keeps the Playwright bundled browser as first choice and uses the host's
+installed Google Chrome only when that bundle is absent. Playwright collects the exact real-Django
+spec and five screenshot names; the focused frontend tests, typecheck, lint, and build pass. The
+coding sandbox terminated host Chrome during macOS service bootstrap, so the orchestrator must run
+the declared browser contract twice outside that sandbox and retain the screenshots.
+
+Independent Standards and Spec reviews initially found response-schema, replay, blocker-surface,
+condition-stage, attorney-gateway, browser-order, and matrix gaps. All were repaired; both final
+re-reviews report no remaining finding.
 
 ## Important Continuation Notes
 
-- Run 008M5 first to make displayed documentation mutations durable and expose the A-125 blocker.
-- Then run 009B3 before 009D2: readiness must depend on the real SAP owner after its non-destructive
-  migration, not strengthen a cycle-bound facade.
-- 009D2 must keep all 23 checks and A-126's honest source-bank failure while replacing shallow pass
-  criteria and origination scope. It must prove a genuine public all-pass state without mocked owner
-  projections.
-- 009E remains behind 009D2 and must consume its exact decision rather than reimplement readiness.
+- The one new migration is `legal_documents.0014`; it creates only the two immutable staff legal
+  evidence tables and preserves existing document/checklist/security rows.
+- The next two slices, 009B3 and 009D2, were already fully sharpened by the preceding architecture
+  review; this run verified their concrete requirements and dependencies without changing them.
+- 009D2 must consume the post-009B3 SAP owner and exact current legal/security evidence. 009E remains
+  blocked behind 009D2.
 
 ## Next Run
 
-Run 008M5, then 009B3, then 009D2. Proceed to 009E only after those corrective gates pass.
+Run 009B3, then 009D2. Proceed to 009E only after both corrective gates pass.

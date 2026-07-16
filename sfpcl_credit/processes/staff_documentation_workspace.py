@@ -24,6 +24,7 @@ from sfpcl_credit.legal_documents.models import (
     LoanDocument,
 )
 from sfpcl_credit.legal_documents.modules import (
+    documentation_actions,
     staff_workspace_actions as legal_workspace_actions,
     staff_workspace_facts,
 )
@@ -151,8 +152,9 @@ def _serialize(
         .select_related("document", "document_template")
         .filter(pk__in=latest_ids.values())
     }
+    owner_projection = documentation_actions.current_projection(checklist)
     rows = [
-        _serialize_item(actor, application, item, documents.get(DOCUMENT_TYPES[item.item_code]), item.pk in completed)
+        _serialize_item(actor, application, item, documents.get(DOCUMENT_TYPES[item.item_code]), item.pk in completed, owner_projection)
         for item in items
     ]
     gateways = _checklist_gateways()
@@ -185,8 +187,31 @@ def _serialize(
         ("credit_manager", checklist.credit_manager_signature_id),
         ("sanction_committee", checklist.sanction_committee_signature_id),
     ]
+    security_workflows = security_workspace_actions.project_workflows(
+        actor,
+        package,
+        rows,
+        legal_facts=staff_workspace_facts.security_creation_facts(
+            application_id=application.pk
+        ),
+        gateways=security_workspace_actions.CreationGateways(
+            create_poa=security_instrument_evidence.create_poa,
+            create_sh4=security_instrument_evidence.create_sh4,
+            create_pledge=security_instrument_evidence.create_pledge,
+            create_blank_cheque=security_instrument_evidence.create_blank_cheque,
+            resolve_attorney=security_workspace_actions.governed_attorney_decision,
+        ),
+    )
+    blockers = [
+        {"item_code": row["item_code"], "label": row["item_label"], "reason": row["blocker"] or row["status"]}
+        for row in applicable if row["status"] != ChecklistItem.STATUS_COMPLETE
+    ]
+    blockers.extend(
+        {"item_code": code, "label": code.replace("_", " ").title(), "reason": workflow["blocker"]}
+        for code, workflow in security_workflows.items() if workflow.get("blocker")
+    )
     workspace = {
-        "snapshot_id": f"{checklist.pk}:{checklist.updated_at.isoformat()}",
+        "snapshot_id": f"{checklist.pk}:{checklist.updated_at.isoformat()}:{','.join(owner_projection['snapshot_ids'])}",
         "loan_application_id": str(application.pk),
         "application_reference_number": application.application_reference_number,
         "borrower_name": application.member.display_name,
@@ -201,35 +226,32 @@ def _serialize(
                 bool(row["document"] and row["status"] != "complete") for row in applicable
             ),
         },
-        "blockers": [
-            {"item_code": row["item_code"], "label": row["item_label"], "reason": row["blocker"] or row["status"]}
-            for row in applicable
-            if row["status"] != ChecklistItem.STATUS_COMPLETE
-        ],
-        "security_workflows": security_workspace_actions.project_workflows(
-            actor,
-            package,
-            rows,
-            legal_facts=staff_workspace_facts.security_creation_facts(
-                application_id=application.pk
-            ),
-            gateways=security_workspace_actions.CreationGateways(
-                create_poa=security_instrument_evidence.create_poa,
-                create_sh4=security_instrument_evidence.create_sh4,
-                create_pledge=security_instrument_evidence.create_pledge,
-                create_blank_cheque=security_instrument_evidence.create_blank_cheque,
-            ),
-        ),
+        "blockers": blockers,
+        "security_workflows": security_workflows,
         "approval_stages": [
-            {"role": role, "status": "signed" if signature else "pending"}
+            {
+                "role": role,
+                "status": "signed" if signature else "pending",
+                "conditions": [
+                    row.reason for row in owner_projection["conditions"]
+                    if row.approval_stage == role
+                ],
+            }
             for role, signature in stages
         ]
         + [
-            {"role": "senior_manager_finance", "status": (
-                "signed" if checklist.senior_manager_finance_signature_id else "blocked_until_disbursement"
-            )}
+            {
+                "role": "senior_manager_finance",
+                "status": (
+                    "signed" if checklist.senior_manager_finance_signature_id else "blocked_until_disbursement"
+                ),
+                "conditions": [
+                    row.reason for row in owner_projection["conditions"]
+                    if row.approval_stage == "senior_manager_finance"
+                ],
+            }
         ],
-        "timeline": _timeline(checklist),
+        "timeline": _timeline(checklist, owner_projection),
         "available_actions": actions,
     }
     _finalize_workspace_actions(
@@ -239,13 +261,16 @@ def _serialize(
     return workspace
 
 
-def _serialize_item(actor, application, item, document, reconciled):
+def _serialize_item(actor, application, item, document, reconciled, owner_projection):
     status = item.completion_status
     blocker = item.applicability_blocker
     if status == ChecklistItem.STATUS_COMPLETE and not reconciled:
         status, blocker = "blocked", "completion_evidence_stale"
     elif item.applicable_flag and document is None:
         blocker = blocker or "current_document_missing"
+    open_review = owner_projection["open_by_item"].get(item.pk)
+    if open_review:
+        status, blocker = "blocked", open_review.current_state
     actions = legal_workspace_actions.item_actions(
         actor,
         application,
@@ -263,6 +288,7 @@ def _serialize_item(actor, application, item, document, reconciled):
         }
     metadata = None
     if document:
+        signed_copy = owner_projection["signed_by_document"].get(document.pk)
         metadata = {
             "loan_document_id": str(document.pk),
             "version": document.document_template.template_version,
@@ -270,6 +296,12 @@ def _serialize_item(actor, application, item, document, reconciled):
             "execution_status": document.execution_status,
             "verification_status": document.verification_status,
             "download": download,
+            "signed_copy": ({
+                "signed_copy_id": str(signed_copy.pk),
+                "file_name": signed_copy.document.file_name,
+                "uploaded_at": signed_copy.created_at.isoformat(),
+                "remarks": signed_copy.remarks,
+            } if signed_copy else None),
         }
     return {
         "checklist_item_id": str(item.pk),
@@ -324,7 +356,7 @@ def _finalize_workspace_actions(
                 action["_owner_execute"] = owner_execute
 
 
-def _timeline(checklist):
+def _timeline(checklist, owner_projection):
     labels = {
         ChecklistAction.TYPE_ITEM_COMPLETION: "Checklist Item Completed",
         ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL: "Company Secretary Approved",
@@ -337,7 +369,7 @@ def _timeline(checklist):
         "chief_financial_controller": "cfc",
     }
     actions = checklist.actions.select_related("actor_user").order_by("-signed_at")
-    return [
+    timeline = [
         {
             "id": f"{action.action_type}:{index}", "entity_type": "document_checklist",
             "entity_id": str(checklist.loan_application_id), "event_type": labels[action.action_type],
@@ -349,6 +381,16 @@ def _timeline(checklist):
         }
         for index, action in enumerate(actions)
     ]
+    timeline.extend({
+        "id": f"review:{row.pk}", "entity_type": "document_checklist",
+        "entity_id": str(checklist.loan_application_id),
+        "event_type": row.action_type.replace("_", " ").title(),
+        "timestamp": row.created_at.isoformat(), "actor_name": row.actor_user_name_snapshot,
+        "actor_role": role_aliases.get(row.canonical_role_code, row.canonical_role_code),
+        "new_state": row.current_state, "comment": row.reason,
+        "reason": row.approval_stage,
+    } for row in owner_projection["all_reviews"])
+    return sorted(timeline, key=lambda row: row["timestamp"], reverse=True)
 
 
 def _queue_row(actor, checklist):
@@ -385,6 +427,27 @@ def _queue_row(actor, checklist):
         row = getattr(package, relation, None) if package else None
         return getattr(row, field, "pending")
 
+    poa_row = getattr(package, "power_of_attorney", None) if package else None
+    poa_decision = (
+        security_workspace_actions.governed_attorney_decision(
+            application_id=application.pk
+        )
+        if poa_row is None else None
+    )
+    poa_blocker = (
+        "governed_attorney_unconfigured"
+        if poa_decision is not None and poa_decision.status == "blocked"
+        else (
+            "governed_attorney_decision_stale"
+            if poa_decision is not None and (
+                poa_decision.status != "configured"
+                or poa_decision.application_id != application.pk
+                or not poa_decision.attorney_user_id
+                or not poa_decision.decision_id
+            ) else None
+        )
+    )
+
     return {
         "loan_application_id": str(application.pk),
         "application_reference_number": application.application_reference_number,
@@ -392,7 +455,8 @@ def _queue_row(actor, checklist):
         "sanctioned_amount": str(terminal.sanctioned_amount) if terminal else None,
         "shareholding_mode": terminal.holding_mode if terminal else None,
         "required_document_summary": {"complete": len(complete), "required": len(required)},
-        "poa_status": security_status("power_of_attorney", "status", True),
+        "poa_status": "blocked" if poa_blocker else security_status("power_of_attorney", "status", True),
+        "poa_blocker": poa_blocker,
         "tri_party_status": item_status("tri_party_agreement"),
         "sh4_status": security_status(
             "sh4_share_transfer_form", "form_status",
@@ -437,7 +501,17 @@ def execute_action(*, actor, application_id, action_id, payload, uploaded_file, 
         (action for action in _all_actions(workspace) if action["action_id"] == action_id),
         None,
     )
-    if current is None or not current["enabled"]:
+    if current is None:
+        try:
+            replay = legal_workspace_actions.replay_action(
+                actor, application_id, action_id, dict(payload), uploaded_file
+            )
+        except legal_workspace_actions.OwnerConflict as exc:
+            raise ActionConflict(str(exc), exc.error_code) from exc
+        if replay is not None:
+            return replay
+        raise NotFound
+    if not current["enabled"]:
         raise NotFound
     allowed = {field["name"] for field in current.get("fields", [])}
     unknown = set(payload) - (allowed - {"file"})
@@ -457,6 +531,7 @@ def execute_action(*, actor, application_id, action_id, payload, uploaded_file, 
     }
     if missing:
         raise ValidationError(missing)
+    request._workspace_action_id = action_id
     try:
         return current["_owner_execute"](dict(payload), uploaded_file, request)
     except ValidationError:
