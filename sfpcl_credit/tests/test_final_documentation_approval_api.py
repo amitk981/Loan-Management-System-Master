@@ -13,6 +13,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import close_old_connections, connection, connections, transaction
 from django.test import TestCase
 from django.test import TransactionTestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import VersionHistory
@@ -32,6 +33,7 @@ from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.legal_documents.modules import checklist_actions
 from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.processes import document_checklist_actions as checklist_action_process
+from sfpcl_credit.processes import staff_documentation_workspace
 from sfpcl_credit.applications.modules import bank_verification
 from sfpcl_credit.applications.modules import document_checklist_facts
 from sfpcl_credit.applications.models import (
@@ -685,6 +687,55 @@ class FinalDocumentationApprovalApiTests(TestCase):
             "signer_name_snapshot",
         ):
             self.assertNotIn(forbidden, serialized)
+
+    def test_staff_queue_pages_before_projection_with_stable_off_page_query_cost(self):
+        def add_rows(count, offset, status=LoanApplication.STATUS_APPROVED_BY_SANCTION):
+            for index in range(offset, offset + count):
+                application = LoanApplication.objects.create(
+                    application_reference_number=f"008M4-Q-{index:03d}",
+                    member=self.application.member,
+                    borrower_type=self.application.borrower_type,
+                    received_by_user=self.compliance,
+                    application_status=status,
+                )
+                DocumentChecklist.objects.create(loan_application=application)
+
+        def project(*, actor, checklists):
+            return [{"loan_application_id": str(row.loan_application_id)} for row in checklists]
+
+        add_rows(4, 0)
+        with patch.object(
+            staff_documentation_workspace,
+            "project_queue_rows",
+            side_effect=project,
+        ):
+            with CaptureQueriesContext(connection) as small_queries:
+                final_page = staff_documentation_workspace.list_queue(
+                    actor=self.cs,
+                    query_params={"page": "3", "page_size": "2"},
+                )
+            self.assertEqual(
+                (len(final_page["items"]), final_page["pagination"]),
+                (1, {
+                    "page": 3, "page_size": 2, "total_count": 5,
+                    "total_pages": 3, "has_next": False, "has_previous": True,
+                }),
+            )
+            add_rows(40, 4, LoanApplication.STATUS_DRAFT)
+            with CaptureQueriesContext(connection) as large_queries:
+                mixed_page = staff_documentation_workspace.list_queue(
+                    actor=self.cs,
+                    query_params={"page": "3", "page_size": "2"},
+                )
+        self.assertEqual(mixed_page["pagination"]["total_count"], 5)
+        self.assertEqual(len(small_queries), len(large_queries))
+        self.assertLessEqual(len(large_queries), 8)
+
+    def test_staff_workspace_detail_read_has_a_fixed_query_ceiling(self):
+        with CaptureQueriesContext(connection) as queries:
+            response = self._workspace(self.cs)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertLessEqual(len(queries), 80)
 
     def test_staff_download_succeeds_once_and_scope_denials_write_no_audit(self):
         self._grant(self.cs, "documents.file.download")

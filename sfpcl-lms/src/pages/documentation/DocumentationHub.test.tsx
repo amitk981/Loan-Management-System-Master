@@ -133,6 +133,20 @@ describe('008M2 documentation workspace contract', () => {
   it('uses the backend queue/detail contract without aggregate or file-list bypasses', () => {
     expect(apiSource).not.toContain('Promise.all'); expect(apiSource).not.toContain('/api/v1/document-files/');
     expect(apiSource).toContain('action_code'); expect(apiSource).toContain('/api/v1/documentation-workspaces/');
+    expect(apiSource).toContain('authenticatedPaginatedRequest');
+    expect(apiSource).toContain('authenticatedRequest');
+    expect(apiSource).toContain('authenticatedMultipartRequest');
+    expect(apiSource).not.toContain('loadStoredAuthSession');
+    expect(apiSource).not.toContain('requestEnvelope');
+    expect(apiSource).not.toContain('fetch(`${API_BASE_URL}');
+  });
+
+  it('keeps S26 facts in the approved queue/card vocabulary without the invented facts grid', async () => {
+    await renderHub();
+    expect(screen.getByText('400000.00')).toBeTruthy();
+    expect(screen.getByText('Physical')).toBeTruthy();
+    expect(screen.getByText('Compliance Team')).toBeTruthy();
+    expect(document.querySelector('.grid.grid-cols-2.lg\\:grid-cols-4')).toBeNull();
   });
 
   it('renders the S26 facts, blockers, workflows, timeline, and terminal status beside Download', async () => {

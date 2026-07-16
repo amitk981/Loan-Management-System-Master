@@ -2,49 +2,47 @@
 
 ## Last Run
 
-2026-07-16_093846_repair
+2026-07-16_100439_normal_run
 
 ## Current Status
 
-Corrective slice 008M3 is complete. This bounded repair fixed the independent trusted-browser spec's
-stale `termSheet` locator: after the scenario was moved to the pending Power of Attorney fixture,
-the restricted-state assertion still referenced the removed locator and crashed with a JavaScript
-`ReferenceError` after two screenshots. It now reuses the declared lazy Power of Attorney row
-locator. No production, fixture, workflow, authority, API, or visual behavior changed.
+Corrective slice 008M4 is complete. The staff documentation queue now applies approval-owned
+post-sanction scope, counts and paginates before lightweight row projection, and does not lock or
+serialize every checklist. Query regressions cover an exact one-row final page, growth by forty
+inaccessible/off-page rows, and a bounded detail read.
 
-The staff documentation workspace continues to project only actions
-that their owner decision would permit from the same current locked facts. The public action
-boundary accepts an HMAC-bound opaque action identity plus source-required user input, reconstructs
-the current private command server-side, and returns nondisclosing 404 with zero writes for stale,
-tampered, cross-user, and cross-application identities.
+The stable public workspace module is a shallow facade over queue and locked projection seams.
+008M3 action behavior remains current-fact and opaque-ID bound; the old action-code dispatcher,
+owner-URL id reconstruction, and arbitrary Company Secretary selection are gone. No governed PoA
+attorney selector exists, so A-125 deliberately withholds that create action. Existing completion,
+generation, verification, signature, stamp/notary, upload, correction, bank, security, mismatch,
+approval, download, redaction, ordering, multipart, and one-refetch behaviors remain green.
 
-Every projected mutation is rendered in the checklist and Document Pack. Required-party signature,
-stamp/notary, upload/re-upload, correction/return, ordered S35 approval/condition/return, generation,
-bank, security, mismatch, verification, and completion actions dispatch through existing owners.
-Success refetches once; rejected actions remain non-optimistic and visible.
+The documentation frontend now uses the shared authenticated JSON, paginated, multipart, and blob
+transports, including request-id and structured envelope errors. The 008M2-only four-column facts
+grid is removed and required S26 facts remain in the existing queue-row composition. The trusted
+browser spec declares all five required PNGs, including the narrow viewport.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-16_093846_repair/evidence/`. The exact undeclared-locator
-TypeScript regression is green and Playwright collects the real-Django spec. Frontend validation
-passed 321 tests, typecheck, lint, and build. Backend validation passed 944 tests with 51 expected
-skips at 91% coverage, plus check and migration drift. Local Chromium was denied macOS bootstrap
-services before page creation, so no screenshots were fabricated; the independent twice-run browser
-gate must produce the four declared PNGs and is the remaining authoritative acceptance step.
+Run evidence is in `.ralph/runs/2026-07-16_100439_normal_run/evidence/`. Focused backend workspace,
+query, dependency, frontend transport, and layout tests are green. Backend check and migration drift
+are green; the full backend suite passed 951 tests with 51 expected skips at 91% coverage. Frontend
+build, typecheck, lint, and all 322 tests passed. Playwright collects the real-Django spec. Local
+Chromium was denied macOS Mach-port/bootstrap services before page creation, so no screenshots were
+fabricated; the orchestrator's twice-run browser contract is authoritative for the five PNGs.
 
 ## Important Continuation Notes
 
-- 008M4 is sharpened to move the broad workspace dispatch/private-command construction behind deep
-  owner decision/execute pairs without changing 008M3's opaque-ID, multipart, sibling-order, or
-  rejected-action behavior.
-- 009B2 retains A-124's conservative same-member reuse rule while adding exact payload replay. It
-  must not invent outstanding-loan state or call real email/SAP services.
-- 009C now depends on 009B2 and is owned by `loans.modules.loan_account_lifecycle`; A-121 still
-  forbids a default Critical permission grant and A-122 still requires zero pre-disbursement balances.
-- 009D remains read-only and is owned by `disbursements.modules.disbursement_readiness`; Finance
-  initiation and CFC authorization remain downstream, not synthetic readiness checks.
+- 009B2 is already sharpened: establish the public SAP owner/manual adapter before 009C consumes a
+  code; exact retained workbook delivery, replay input, audit vocabulary, and PostgreSQL races are
+  mandatory.
+- 009C is already sharpened and depends on 009B2. It owns one replay-safe pre-disbursement account
+  under `loans.modules.loan_account_lifecycle`; A-121 keeps its Critical permission ungranted and
+  A-122 keeps all pre-disbursement balances zero.
+- 009D remains read-only and must consume the 009B2/009C public owner seams. Finance initiation and
+  CFC authorization are later actions, not readiness checks.
 
 ## Next Run
 
-Run 008M4, then 009B2. Continue with sharpened 009C and 009D only after those corrective dependencies
-complete.
+Run 009B2, then 009C. Continue to 009D only after both owner dependencies complete.

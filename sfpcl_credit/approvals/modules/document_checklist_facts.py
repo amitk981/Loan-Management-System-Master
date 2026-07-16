@@ -12,6 +12,7 @@ from sfpcl_credit.approvals.modules import approval_case_engine
 class ApprovedChecklistFacts:
     sanction_decision_id: object
     approval_case_id: object
+    sanctioned_amount: object
     holding_mode: str | None
     subsidiary_route: bool | None
 
@@ -58,6 +59,7 @@ def resolve_approved_facts(*, application_id):
     return ApprovedChecklistFacts(
         sanction_decision_id=decision.pk,
         approval_case_id=latest_case.pk,
+        sanctioned_amount=decision.sanctioned_amount,
         holding_mode=shareholding.get("holding_mode"),
         subsidiary_route=subsidiary_route,
     )

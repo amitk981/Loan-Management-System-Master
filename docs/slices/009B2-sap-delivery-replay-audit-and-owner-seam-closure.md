@@ -55,6 +55,13 @@ before loan-account creation consumes its code.
    assignee ownership, evidence provenance, zero loser writes, and no account/readiness/payment/
    disbursement side effects. Update API contracts and Epic 009 traceability for M07-FR-001-008.
 
+## 008M4 Boundary Sharpening
+
+- Follow the completed 008M4 deep-owner pattern: callers receive an SAP-owned decision/capability
+  and do not query SAP tables, reconstruct adapter requests, or translate adapter exception classes.
+- Keep queue/read projections bounded before any workbook decryption or delivery-capability issue;
+  no list response may open the retained Annexure-I.
+
 ## Test Cases
 
 - Both architecture-review SAP probes close: the assignee receives/reads the exact workbook through

@@ -1,0 +1,3 @@
+Listing tests:
+  [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M3 executes every staff documentation action through real Django
+Total: 1 test in 1 file

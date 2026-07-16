@@ -373,6 +373,19 @@ export const authenticatedMultipartRequest = async <T>(path: string, fields: Rec
   return envelope.data as T;
 };
 
+export const authenticatedBlobRequest = async (path: string): Promise<Blob> => {
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: authenticatedHeaders(session.accessToken),
+  });
+  if (!response.ok) {
+    await parseAuthenticatedEnvelope<never>(response);
+    throw new AuthSessionError('DOWNLOAD_FAILED', 'Document download failed.', response.status);
+  }
+  return response.blob();
+};
+
 export const loginAndLoadCurrentUser = async (credentials: { email: string; password: string }): Promise<FrontendCurrentUser> => {
   const loginData = await request<LoginData>('/api/v1/auth/login/', {
     method: 'POST',

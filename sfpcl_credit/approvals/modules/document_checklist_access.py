@@ -2,9 +2,13 @@
 
 from dataclasses import dataclass
 
+from django.db.models import Exists, OuterRef, Q, Subquery
+
 from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.approvals.modules.read_scope import (
     evaluate_approval_case_read_scope,
+    resolve_persisted_role_scope,
 )
 from sfpcl_credit.identity.modules import auth_service
 
@@ -13,6 +17,43 @@ READ_PERMISSION = "documents.checklist.read"
 LEGACY_READ_PERMISSION = "applications.loan_application.read"
 ROUTE_POST_SANCTION = "post_sanction"
 ROUTE_PRE_SANCTION = "pre_sanction"
+
+
+def scope_post_sanction_checklists(*, actor, queryset):
+    """Apply the same governed object scope as detail reads to a checklist queryset."""
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if not actor.can_authenticate() or READ_PERMISSION not in permissions:
+        return queryset.none(), "FORBIDDEN"
+    queryset = queryset.filter(
+        loan_application__application_status=LoanApplication.STATUS_APPROVED_BY_SANCTION
+    )
+    roles = set(actor.role_codes())
+    if roles & {
+        "compliance_team_member", "company_secretary", "credit_manager",
+        "internal_auditor",
+    }:
+        return queryset, None
+    if "senior_manager_finance" in roles:
+        return queryset.filter(checklist_status="sanction_approved"), None
+    if "chief_financial_controller" in roles:
+        return queryset.none(), None
+    if resolve_persisted_role_scope(actor):
+        return queryset, None
+    latest_cases = ApprovalCase.objects.filter(
+        loan_application_id=OuterRef("loan_application_id")
+    ).order_by("-cycle_number", "-submitted_at")
+    queryset = queryset.annotate(
+        latest_case_id=Subquery(latest_cases.values("pk")[:1])
+    )
+    attributable_latest_case = ApprovalCase.objects.filter(
+        pk=OuterRef("latest_case_id")
+    ).filter(
+        Q(required_approver_index__user_id=actor.pk)
+        | Q(actions__approver_user_id=actor.pk)
+    )
+    return queryset.annotate(
+        actor_can_read_latest_case=Exists(attributable_latest_case)
+    ).filter(actor_can_read_latest_case=True), None
 
 
 @dataclass(frozen=True)

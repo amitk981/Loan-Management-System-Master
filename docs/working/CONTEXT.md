@@ -113,7 +113,9 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   correction actions remain absent and Document Pack drops sibling mutations; its coordinator also
   duplicates cross-domain policy/query logic and adds a non-prototype facts grid. Corrective 008M3
   has now closed executable action reachability with owner-backed decisions and opaque current
-  action identities; 008M4 remains to restore deep owner/query/transport/design seams.
+  action identities. 008M4 now supplies the page-bounded queue selector, approval-owned read scope,
+  shallow public coordinator, governed-identity blocker, shared frontend transport, and restored
+  prototype composition while preserving those behaviors.
   Epic 009 has started: 009A generates the encrypted retained Annexure-I from current sanctioned
   facts, and 009B adds send, assigned Finance confirmation, normalized member-code uniqueness/reuse,
   and PostgreSQL races. Review found that `sent` does not actually deliver the Excel, reuse replay

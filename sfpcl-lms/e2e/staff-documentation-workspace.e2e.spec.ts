@@ -78,6 +78,12 @@ test('008M3 executes every staff documentation action through real Django', asyn
   await page.getByRole('button', { name: 'Checklist' }).click(); await expect(powerOfAttorney.getByRole('button', { name: 'Download' })).toHaveCount(0);
   await capture(page, 'documentation-restricted-state.png');
 
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('heading', { name: 'Document Checklist' })).toBeVisible();
+  await expect(powerOfAttorney.getByRole('button', { name: 'Record borrower signature' })).toBeVisible();
+  await capture(page, 'documentation-checklist-narrow.png');
+  await page.setViewportSize({ width: 1280, height: 720 });
+
   await page.getByRole('button', { name: 'Approvals' }).click(); await expect(page.getByText('Senior Manager Finance', { exact: true }).last()).toBeVisible();
   await capture(page, 'documentation-final-approval.png');
 });

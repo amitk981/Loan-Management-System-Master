@@ -56,6 +56,13 @@ None for this slice, except updating frontend documentation or fixtures if requi
    retained account; changed repeats conflict. PostgreSQL concurrent first creates have one account,
    terms, status-history, audit, and workflow winner with zero loser evidence.
 
+## 008M4 Boundary Sharpening
+
+- Consume only 009B2's public SAP owner decision/selector. Dependency guards must reject imports of
+  SAP models, manual-adapter internals, retained workbook storage, or SAP exception vocabulary.
+- Keep any future account list projection page-bounded; account creation may lock only the one
+  supplied application and its exact current owner-issued prerequisite facts.
+
 ## Database/Model Impact
 - Add source §18.1 `loan_accounts` under the `loans` owner with unique application and account number, protected member,
   sanction, and nullable active SAP-code links; positive/non-negative balance constraints; indexed

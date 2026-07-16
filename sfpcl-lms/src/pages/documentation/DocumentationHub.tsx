@@ -202,7 +202,6 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
         ? 'in_progress'
         : 'not_started',
   }));
-  const selectedQueueRow = queue.find(item => item.loan_application_id === selectedId);
 
   if (loading) {
     return <div className="card text-sm text-slate-500">Loading documentation queue…</div>;
@@ -250,9 +249,9 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
                     </div>
                     <div className="text-xs text-slate-500 truncate mt-0.5">{item.borrower_name}</div>
                     <div className="text-xs text-slate-400 mt-1">
-                      {item.shareholding_mode ? display(item.shareholding_mode) : 'Share route blocked'} · {item.required_document_summary.complete}/{item.required_document_summary.required} complete
+                      <span>{item.sanctioned_amount ?? 'Amount blocked'}</span> · <span>{item.shareholding_mode ? display(item.shareholding_mode) : 'Share route blocked'}</span> · {item.required_document_summary.complete}/{item.required_document_summary.required} complete
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">Owner: {item.current_owner}</div>
+                    <div className="text-xs text-slate-400 mt-1">{display(item.bank_verification_status)} bank verification · Owner: <span>{item.current_owner}</span></div>
                   </div>
                 </button>
               ))}
@@ -288,14 +287,6 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({
                       <button className="btn-secondary flex items-center gap-2" onClick={() => void loadWorkspace(workspace.loan_application_id)} disabled={workspaceLoading}><RefreshCw size={14} /> Refresh</button>
                     </div>
                   </div>
-                  {selectedQueueRow && (
-                    <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs text-slate-500">
-                      <div>Sanctioned amount<br /><span className="font-semibold text-slate-800">{selectedQueueRow.sanctioned_amount ?? 'Blocked'}</span></div>
-                      <div>Shareholding<br /><span className="font-semibold text-slate-800">{selectedQueueRow.shareholding_mode ? display(selectedQueueRow.shareholding_mode) : 'Blocked'}</span></div>
-                      <div>Bank verification<br /><span className="font-semibold text-slate-800">{display(selectedQueueRow.bank_verification_status)}</span></div>
-                      <div>Current owner<br /><span className="font-semibold text-slate-800">{selectedQueueRow.current_owner}</span></div>
-                    </div>
-                  )}
                   <div className="mt-4"><StageStepper steps={approvalSteps} /></div>
                 </div>
 

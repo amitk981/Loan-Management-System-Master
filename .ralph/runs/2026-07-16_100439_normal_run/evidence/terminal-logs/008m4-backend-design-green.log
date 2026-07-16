@@ -1,0 +1,11 @@
+Found 3 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_owner_boundary_does_not_infer_authority_from_exception_names (sfpcl_credit.tests.test_staff_documentation_workspace_design.StaffDocumentationWorkspaceDesignTests.test_owner_boundary_does_not_infer_authority_from_exception_names) ... ok
+test_public_coordinator_is_shallow_and_uses_bounded_owner_seams (sfpcl_credit.tests.test_staff_documentation_workspace_design.StaffDocumentationWorkspaceDesignTests.test_public_coordinator_is_shallow_and_uses_bounded_owner_seams) ... ok
+test_queue_selector_pages_before_projection_and_never_locks_the_queue (sfpcl_credit.tests.test_staff_documentation_workspace_design.StaffDocumentationWorkspaceDesignTests.test_queue_selector_pages_before_projection_and_never_locks_the_queue) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK

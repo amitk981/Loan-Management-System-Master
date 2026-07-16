@@ -27,6 +27,23 @@ Sources:
   008M4 restores page-bounded selectors, governed identity, deep legal/security owners, shared
   frontend transport, and the fixed prototype composition without changing 008M3 behavior.
 
+## 008M4 Deep-Module and Design Closure (2026-07-16)
+
+The public staff-workspace process is now a shallow facade over a permission-scoped, page-bounded
+queue selector and a locked owner projection. Queue scope is issued by the approval access owner,
+pagination occurs before lightweight row projection, and query ceilings remain stable when forty
+inaccessible/off-page rows are added. Detail actions retain 008M3's current-fact owner callbacks and
+opaque actor/application/snapshot-bound identities; action-code request dispatch and URL-derived ids
+are gone. Where no governed authorised-attorney selector exists, PoA creation is withheld under
+A-125 rather than selecting an arbitrary Company Secretary.
+
+The frontend documentation API now owns DTO mapping only and uses the shared authenticated JSON,
+pagination, multipart, and blob transports with common request-id/envelope errors. The 008M2-only
+facts grid is removed; S26 facts remain in the established queue-row vocabulary. The browser spec
+declares the four desktop captures plus `documentation-checklist-narrow.png`; local Chromium was
+denied macOS bootstrap services before page creation, so independent twice-run validation remains
+the screenshot authority.
+
 ## 008M3 Executable Workspace Action Closure (2026-07-16)
 
 The S26-S35 workspace now issues actor/application/current-snapshot-bound opaque commands instead
@@ -38,7 +55,7 @@ stamp, notary, generation, verification, security creation, bank verification, a
 use the same generic command boundary while retaining their existing owner modules and ledgers.
 Checklist and Document Pack render every stable sibling action beside independent Download, support
 multipart uploads, retain rejected actions without optimism, and refetch exactly once after success.
-008M4 still owns the already-recorded deep selector/coordinator/shared-transport/fixed-layout cleanup.
+008M4 has completed the recorded selector/coordinator/shared-transport/fixed-layout cleanup.
 
 ## 008L5 Current Stage-4 and Response Evidence Closure (2026-07-16)
 

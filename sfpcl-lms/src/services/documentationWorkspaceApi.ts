@@ -1,5 +1,11 @@
 import type { AuditEvent } from '../types';
-import { API_BASE_URL, AuthSessionError, loadStoredAuthSession } from './authSession';
+import {
+  AuthSessionError,
+  authenticatedBlobRequest,
+  authenticatedMultipartRequest,
+  authenticatedPaginatedRequest,
+  authenticatedRequest,
+} from './authSession';
 
 export interface DocumentationActionField {
   name: string; label: string;
@@ -73,26 +79,14 @@ export interface Pagination {
   has_next: boolean; has_previous: boolean;
 }
 
-interface Envelope<T> {
-  success: boolean; data?: T; pagination?: Pagination;
-  error?: { code: string; message: string; field_errors?: Record<string, string> };
-}
-
 export async function fetchDocumentationQueue(page = 1, pageSize = 20) {
-  const envelope = await requestEnvelope<DocumentationQueueRow[]>(
+  return authenticatedPaginatedRequest<DocumentationQueueRow>(
     `/api/v1/documentation-workspaces/?page=${page}&page_size=${pageSize}`,
   );
-  return {
-    items: envelope.data ?? [],
-    pagination: envelope.pagination ?? {
-      page, page_size: pageSize, total_count: 0, total_pages: 1,
-      has_next: false, has_previous: false,
-    },
-  };
 }
 
 export async function fetchDocumentationWorkspace(applicationId: string): Promise<DocumentationWorkspace> {
-  const workspace = await request<RawDocumentationWorkspace>(
+  const workspace = await authenticatedRequest<RawDocumentationWorkspace>(
     `/api/v1/loan-applications/${applicationId}/documentation-workspace/`,
   );
   return {
@@ -112,59 +106,27 @@ export function submitDocumentationAction(
   payload: Record<string, string | File>,
 ) {
   if (Object.values(payload).some(value => value instanceof File)) {
-    const body = new FormData();
-    Object.entries(payload).forEach(([name, value]) => body.append(name, value));
-    return request<Record<string, unknown>>(action.action_url, action.method, body);
+    return authenticatedMultipartRequest<Record<string, unknown>>(action.action_url, payload);
   }
-  return request<Record<string, unknown>>(action.action_url, action.method, payload);
+  return authenticatedRequest<Record<string, unknown>>(
+    action.action_url,
+    { method: action.method, body: payload },
+  );
 }
 
 export async function downloadStaffDocument(download: DocumentationDownload) {
   if (!/^\/api\/v1\/loan-applications\/[0-9a-f-]+\/documentation-workspace\/[a-z0-9_-]+\/download\/$/i.test(download.action_url)) {
     throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Document download action is invalid.', 400);
   }
-  const descriptor = await request<{ download_url: string }>(download.action_url);
+  const descriptor = await authenticatedRequest<{ download_url: string }>(download.action_url);
   if (!descriptor.download_url.startsWith(`${download.action_url}?content=1&token=`)) {
     throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Document download capability is invalid.', 400);
   }
-  const session = loadStoredAuthSession();
-  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
-  const response = await fetch(`${API_BASE_URL}${descriptor.download_url}`, {
-    headers: { Authorization: `Bearer ${session.accessToken}` },
-  });
-  if (!response.ok) throw new AuthSessionError('DOWNLOAD_FAILED', 'Document download failed.', response.status);
-  return response.blob();
+  return authenticatedBlobRequest(descriptor.download_url);
 }
 
 export function openStaffDocumentBlob(content: Blob) {
   const url = URL.createObjectURL(content);
   window.open(url, '_blank', 'noopener,noreferrer');
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}
-
-async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const envelope = await requestEnvelope<T>(path, method, body);
-  return envelope.data as T;
-}
-
-async function requestEnvelope<T>(path: string, method = 'GET', body?: unknown) {
-  const session = loadStoredAuthSession();
-  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    // The browser owns multipart boundaries; JSON actions retain the standard envelope.
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${session.accessToken}`,
-      'X-Request-ID': crypto.randomUUID(),
-      ...(body && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
-    },
-    ...(body ? { body: body instanceof FormData ? body : JSON.stringify(body) } : {}),
-  });
-  const envelope = await response.json() as Envelope<T>;
-  if (!response.ok || !envelope.success || envelope.data === undefined) {
-    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED',
-      envelope.error?.message ?? 'Request failed.', response.status, envelope.error?.field_errors);
-  }
-  return envelope;
 }
