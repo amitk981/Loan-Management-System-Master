@@ -9,6 +9,8 @@ source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 source "$repo_root/scripts/lib/ralph-repair-context.sh"
 source "$repo_root/scripts/lib/ralph-merge-guard.sh"
 source "$repo_root/scripts/lib/ralph-node-runtime.sh"
+source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
+source "$repo_root/scripts/lib/ralph-browser-runtime.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -25,6 +27,10 @@ no_worktree=0
 continue_failed=0
 resume_worktree=""
 failed_run_id=""
+split_slice_id="${RALPH_SPLIT_SLICE_ID:-}"
+split_failed_run_id="${RALPH_SPLIT_FAILED_RUN_ID:-}"
+split_total_lines="${RALPH_SPLIT_TOTAL_LINES:-}"
+split_max_lines="${RALPH_SPLIT_MAX_LINES:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -40,6 +46,23 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown run argument: $1" >&2; exit 2 ;;
   esac
 done
+
+if [[ -n "$split_slice_id" ]]; then
+  if [[ "$mode" != "architecture_review" \
+      || ! "$split_slice_id" =~ ^[A-Za-z0-9]+$ \
+      || ! "$split_failed_run_id" =~ ^[A-Za-z0-9_.-]+$ \
+      || ! "$split_total_lines" =~ ^[0-9]+$ \
+      || ! "$split_max_lines" =~ ^[0-9]+$ \
+      || "$split_total_lines" -le "$split_max_lines" ]]; then
+    echo "Invalid oversized-slice planning environment." >&2
+    exit 2
+  fi
+  split_slice_file="$(find docs/slices -maxdepth 1 -type f -name "${split_slice_id}-*.md" | sort | head -n 1)"
+  if [[ -z "$split_slice_file" ]]; then
+    echo "Oversized source slice is missing: $split_slice_id" >&2
+    exit 2
+  fi
+fi
 
 if [[ -n "$resume_worktree" || -n "$failed_run_id" ]]; then
   if [[ "$mode" != "repair" || -z "$resume_worktree" || -z "$failed_run_id" || "$no_worktree" == 1 || "$no_commit" == 1 ]]; then
@@ -286,10 +309,60 @@ ensure_frontend_env() {
 ensure_backend_env
 ensure_frontend_env
 
+# Browser availability is infrastructure owned by the orchestrator, not a
+# product concern for the coding agent. Probe only slices that declare the
+# localhost E2E capability, recover the Playwright browser once, and stop with
+# a structured infrastructure outcome before implementation if launch remains
+# unavailable.
+if [[ "$mode" =~ ^(normal_run|repair)$ ]] \
+    && ralph_slice_has_capability "$worktree_dir/docs/slices/$slice_file" \
+      "$RALPH_CAPABILITY_LOCALHOST_E2E_SERVER"; then
+  browser_probe_log="$run_dir/evidence/terminal-logs/browser-infrastructure-probe.log"
+  if ! ralph_ensure_browser_runtime \
+      "$worktree_dir/$project_dir_cfg" \
+      "$browser_probe_log" \
+      "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+      300; then
+    cat > "$run_dir/browser-infrastructure-results.md" <<EOF
+# Browser Infrastructure Results
+
+FAIL: the central Playwright launch probe still fails after one bounded Chromium recovery.
+This is an orchestrator infrastructure stop; no coding agent or product repair was started.
+See evidence/terminal-logs/browser-infrastructure-probe.log.
+EOF
+    cat > "$run_dir/final-summary.md" <<EOF
+# Final Summary
+
+Result: Browser Infrastructure Unavailable
+
+Ralph stopped before implementation for $slice_id because neither the centrally selected browser
+nor one bounded Playwright Chromium recovery could create a page. No product changes were made.
+EOF
+    if [[ -z "$resume_worktree" && "$no_worktree" == 0 ]]; then
+      mkdir -p "$main_run_dir"
+      cp -R "$run_dir/." "$main_run_dir/" 2>/dev/null || true
+      git -C "$repo_root" worktree remove --force "$worktree_dir"
+      git -C "$repo_root" branch -D "$branch_name" >/dev/null 2>&1 || true
+      run_dir="$main_run_dir"
+    fi
+    exit "$RALPH_EXIT_BROWSER_INFRASTRUCTURE"
+  fi
+fi
+
 if [[ -n "$resume_worktree" ]]; then
   repair_instruction="- In repair mode: work in this existing quarantined worktree. Diagnose $previous_failure_summary first, preserve the slice's current uncommitted implementation, fix only the demonstrated failure, and rely on full independent revalidation before any commit."
 else
   repair_instruction="- In repair mode: first diagnose the most recent failure — read failure-summary.md in the newest failed .ralph/runs/*/ folder (failed checks, last log lines, changed files); open the full gate logs only if that summary is insufficient, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh."
+fi
+
+split_instruction=""
+split_read_target="docs/slices/$slice_file"
+architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues."
+if [[ -n "$split_slice_id" ]]; then
+  split_read_target="$split_slice_file"
+  printf -v split_origin_marker 'Oversized slice: `%s`' "$split_slice_id"
+  split_instruction="- This is an oversized-slice queue rewrite, not a general architecture review. Do not modify production code or review unrelated slices. Read $split_slice_file and the retained evidence for failed run $split_failed_run_id. The failed candidate measured $split_total_lines lines against a $split_max_lines-line limit. Mark $split_slice_id Superseded and create at least two dependency-ordered Not Started successor slices named ${split_slice_id}A, ${split_slice_id}B, and so on. Each successor must contain an Origin section with the exact marker $split_origin_marker. The first successor inherits every original prerequisite; each later successor depends on the previous one; every existing downstream dependency on $split_slice_id must point to the terminal successor. Preserve every original requirement, test, evidence, and risk across the successors. Each successor must be independently implementable and independently green, with a predicted diff comfortably below the configured limit. Update queue handoff or digest documents only when needed. Do not sharpen or change unrelated slices."
+  architecture_instruction="- In this queue-rewrite architecture mode, perform only the oversized-slice split described above."
 fi
 
 cat > "$run_dir/prompt.md" <<EOF
@@ -339,7 +412,8 @@ Core requirements:
 - Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 $repair_instruction
-- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues.
+$split_instruction
+$architecture_instruction
 - If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
 - If the selected slice is a change request (CR-*): write impact-analysis.md in the run folder BEFORE editing any code — affected backend/frontend pieces, blast radius across modules, and the regression tests to add in each affected module. Validation fails the run without it. Then add those regression tests as part of the fix.
 
@@ -354,7 +428,7 @@ Read in this order:
 8. docs/working/HANDOFF.md
 9. docs/working/DECISION_POLICY.md
 10. docs/working/FRONTEND_DESIGN_RULES.md (mandatory before any frontend change)
-11. docs/slices/$slice_file
+11. $split_read_target
 12. The matching docs/working/digests/ file for this epic, if it exists
 
 Do not load all docs/source during a normal run unless the selected slice explicitly requires it.
@@ -517,7 +591,7 @@ if "$mode" != "architecture_review":
     threshold = int("$arch_threshold")
     state["slices_completed_since_architecture_review"] = count
     state["architecture_review_due"] = count >= threshold
-else:
+elif not "$split_slice_id":
     state["slices_completed_since_architecture_review"] = 0
     state["architecture_review_due"] = False
 path.write_text(json.dumps(state, indent=2) + "\n")

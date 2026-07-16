@@ -17,6 +17,7 @@ ralph_run_fast_candidate_checks() {
   local queue_lint_problems lint_line
   local st_path st_old st_new st_base st_violations=0 st_checked=0
   local max_files max_lines files_changed tracked_lines untracked_lines total_lines f
+  local oversized_request_file
   local review_packet declared_result declared_result_normalized declared_result_is_failure=0
   local impact_file ia_results noop_file agent_changes aq_file dl_file artifact_file declared_file required
 
@@ -196,6 +197,8 @@ ralph_run_fast_candidate_checks() {
     done < <( (cd "$worktree_dir" && git ls-files --others --exclude-standard) | grep -v '^\.ralph/' || true)
     total_lines=$((tracked_lines + untracked_lines))
     dl_file="$run_dir/diff-limits-results.md"
+    oversized_request_file="$run_dir/oversized-slice-request.json"
+    rm -f "$oversized_request_file"
     {
       echo "# Diff Limits Results"
       echo
@@ -208,6 +211,23 @@ ralph_run_fast_candidate_checks() {
     fi
     if (( total_lines > max_lines )); then
       echo "- FAIL: changed-line count exceeds limits.max_lines_changed." >> "$dl_file"
+      python3 - "$oversized_request_file" "$(basename "$run_dir")" "$slice_id" \
+        "$total_lines" "$max_lines" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+request = {
+    "version": 1,
+    "reason": "diff_limit_exceeded",
+    "run_id": sys.argv[2],
+    "slice_id": sys.argv[3],
+    "total_lines": int(sys.argv[4]),
+    "max_lines": int(sys.argv[5]),
+}
+path.write_text(json.dumps(request, indent=2) + "\n")
+PY
       failures=$((failures + 1))
     fi
     if (( files_changed <= max_files && total_lines <= max_lines )); then

@@ -52,6 +52,21 @@ npm install
 npx playwright install chromium
 ```
 
+All specs use the browser selected centrally by `playwright.browser.ts`: an
+explicit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`, then Playwright-managed
+Chromium, then an installed system Chrome/Chromium. Verify that the selected
+browser can create a page without starting Django or Vite:
+
+```bash
+npm run e2e:probe
+```
+
+Before a Ralph slice declaring `localhost-e2e-server` starts, the orchestrator
+runs this probe. If it fails, Ralph makes one bounded Chromium installation
+attempt and probes again. A second failure stops as browser infrastructure;
+it does not spend a product repair attempt. The slice-specific browser
+acceptance still runs twice after implementation.
+
 ## Running
 ```bash
 # From sfpcl-lms/. Point E2E_DJANGO_PYTHON at the Ralph venv interpreter.
@@ -84,7 +99,9 @@ E2E_DJANGO_PYTHON="$(git rev-parse --path-format=absolute --git-common-dir)/../.
 Deleting a baseline PNG and re-running with `--update-snapshots` regenerates just
 that screenshot; commit the regenerated file.
 
-## Promoting to a required gate
-`quality_gates.e2e_tests` is `optional` in `.ralph/config.yaml` (a protected
-file). Once this suite proves stable with committed baselines, the owner-side
-operator may flip it so drift fails the run. See `docs/working/HANDOFF.md`.
+## Required slice acceptance
+
+General E2E remains optional in `.ralph/config.yaml`, but any slice declaring
+`localhost-e2e-server` must name its trusted specs and screenshots. Ralph runs
+that exact contract twice and rejects the slice on either failure or missing
+evidence.

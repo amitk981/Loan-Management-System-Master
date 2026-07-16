@@ -37,11 +37,12 @@ re-reviews report no remaining finding.
 
 - The one new migration is `legal_documents.0014`; it creates only the two immutable staff legal
   evidence tables and preserves existing document/checklist/security rows.
-- The next two slices, 009B3 and 009D2, were already fully sharpened by the preceding architecture
-  review; this run verified their concrete requirements and dependencies without changing them.
-- 009D2 must consume the post-009B3 SAP owner and exact current legal/security evidence. 009E remains
+- Oversized slice 009B3 is superseded by 009B3A (non-destructive model ownership) and 009B3B
+  (executable policy/adapter dependency closure); both preserve its full requirements while staying
+  independently executable below the 2,000-line limit.
+- 009D2 must consume the post-009B3B SAP owner and exact current legal/security evidence. 009E remains
   blocked behind 009D2.
 
 ## Next Run
 
-Run 009B3, then 009D2. Proceed to 009E only after both corrective gates pass.
+Run 009B3A, then 009B3B, then 009D2. Proceed to 009E only after all corrective gates pass.

@@ -20,6 +20,9 @@ source scripts/lib/ralph-runtime-capabilities.sh
 [[ -f scripts/lib/ralph-browser-acceptance.sh ]] || fail "missing trusted browser acceptance helper"
 # shellcheck source=../lib/ralph-browser-acceptance.sh
 source scripts/lib/ralph-browser-acceptance.sh
+[[ -f scripts/lib/ralph-browser-runtime.sh ]] || fail "missing browser infrastructure recovery helper"
+# shellcheck source=../lib/ralph-browser-runtime.sh
+source scripts/lib/ralph-browser-runtime.sh
 
 [[ -f scripts/lib/ralph-retry-policy.sh ]] || fail "missing bounded Ralph retry policy helper"
 # shellcheck source=../lib/ralph-retry-policy.sh
@@ -34,6 +37,8 @@ source scripts/lib/ralph-merge-guard.sh
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_OWNER_VETO")" == "owner_veto" ]] || fail "owner-veto status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_MERGE_FAILED")" == "merge_failed" ]] || fail "merge-failed status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_AGENT_LIMIT")" == "agent_limit" ]] || fail "agent-limit status misclassified"
+[[ "$(ralph_outcome_for_status "$RALPH_EXIT_BROWSER_INFRASTRUCTURE")" == "browser_infrastructure" ]] \
+  || fail "browser-infrastructure status misclassified"
 [[ "$(ralph_outcome_for_status 1)" == "failed" ]] || fail "generic failure misclassified"
 
 [[ -f scripts/lib/ralph-postgresql-acceptance.sh ]] || fail "missing PostgreSQL acceptance predicate"
@@ -104,6 +109,9 @@ git -C "$merge_repo" merge --ff-only -q completed-slice \
 [[ -f scripts/lib/ralph-repair-context.sh ]] || fail "missing same-worktree repair context helper"
 # shellcheck source=../lib/ralph-repair-context.sh
 source scripts/lib/ralph-repair-context.sh
+[[ -f scripts/lib/ralph-oversized-slice.sh ]] || fail "missing oversized-slice split request helper"
+# shellcheck source=../lib/ralph-oversized-slice.sh
+source scripts/lib/ralph-oversized-slice.sh
 repair_repo="$fixture_dir/repair-repo"
 repair_worktree="$repair_repo/.ralph/worktrees/failed-run"
 repair_run_dir="$repair_worktree/.ralph/runs/failed-run"
@@ -176,6 +184,21 @@ ralph_write_repair_context \
   "$registered_run_dir/failure-summary.md"
 ralph_repair_context_is_resumable "$registered_repo" "$registered_context" \
   || fail "registered quarantined Ralph worktree was rejected for repair"
+
+cat > "$registered_run_dir/oversized-slice-request.json" <<'EOF'
+{
+  "version": 1,
+  "reason": "diff_limit_exceeded",
+  "run_id": "registered-failure",
+  "slice_id": "999X-browser-fixture",
+  "total_lines": 2885,
+  "max_lines": 2000
+}
+EOF
+split_request="$(ralph_oversized_slice_request "$registered_repo" "$registered_context")" \
+  || fail "valid oversized candidate did not produce a split request"
+[[ "$split_request" == $'999X\tregistered-failure\t2885\t2000' ]] \
+  || fail "oversized split request returned the wrong trusted facts: $split_request"
 
 ralph_write_repair_context \
   "$registered_context" registered-failure "$registered_worktree" \
@@ -349,6 +372,38 @@ fi
 if ralph_validate_trusted_browser_acceptance "$fixture_dir/missing-browser-contract-slice.md" "$fixture_dir/browser-project" >/dev/null 2>&1; then
   fail "localhost E2E slice without a trusted browser contract did not fail closed"
 fi
+
+browser_runtime_project="$fixture_dir/browser-runtime-project"
+browser_runtime_bin="$fixture_dir/browser-runtime-bin"
+browser_runtime_log="$fixture_dir/browser-runtime.log"
+browser_runtime_state="$fixture_dir/browser-runtime.state"
+mkdir -p "$browser_runtime_project" "$browser_runtime_bin"
+cat > "$browser_runtime_bin/npm" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$*" == "run e2e:probe" ]]
+echo probe >> "$BROWSER_RUNTIME_INVOCATIONS"
+[[ -f "$BROWSER_RUNTIME_STATE" ]]
+EOF
+cat > "$browser_runtime_bin/npx" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$*" == "playwright install chromium" ]]
+echo install >> "$BROWSER_RUNTIME_INVOCATIONS"
+touch "$BROWSER_RUNTIME_STATE"
+EOF
+chmod +x "$browser_runtime_bin/npm" "$browser_runtime_bin/npx"
+PATH="$browser_runtime_bin:$PATH" \
+  BROWSER_RUNTIME_INVOCATIONS="$browser_runtime_log" \
+  BROWSER_RUNTIME_STATE="$browser_runtime_state" \
+  ralph_ensure_browser_runtime \
+    "$browser_runtime_project" \
+    "$fixture_dir/browser-runtime-evidence.log" \
+    "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+    30 \
+  || fail "browser infrastructure recovery did not retry a failed launch probe"
+[[ "$(paste -sd ',' "$browser_runtime_log")" == "probe,install,probe" ]] \
+  || fail "browser recovery did not run probe-install-probe exactly once"
 
 # A failed required browser run must reach repair evidence quickly. It must not
 # spend another full backend-test/coverage cycle on a candidate that is already
@@ -526,6 +581,52 @@ grep -qF 'PASS: candidate content remained frozen throughout validation.' \
   "$validator_success_run_dir/candidate-hash-results.md" \
   || fail "all-green validator did not verify the frozen candidate"
 
+oversized_run="oversized-candidate-run"
+oversized_run_dir="$validator_success_repo/.ralph/runs/$oversized_run"
+mkdir -p "$oversized_run_dir"
+for artifact in prompt.md changed-files.txt final-summary.md; do
+  printf 'fixture\n' > "$oversized_run_dir/$artifact"
+done
+printf '1. Exercise oversized candidate classification.\n' > "$oversized_run_dir/execution-plan.md"
+printf 'Low risk fixture.\n' > "$oversized_run_dir/risk-assessment.md"
+cat > "$oversized_run_dir/review-packet.md" <<'EOF'
+## Result
+Ready to merge
+EOF
+awk 'BEGIN { for (i = 1; i <= 2001; i++) print "oversized candidate line " i }' \
+  > "$validator_success_repo/frontend/oversized.txt"
+set +e
+scripts/ralph-validate.sh \
+  --run-id "$oversized_run" \
+  --worktree "$validator_success_repo" \
+  --mode normal_run \
+  --slice 999Z-validator-success \
+  > "$fixture_dir/oversized-candidate.stdout" \
+  2> "$fixture_dir/oversized-candidate.stderr"
+oversized_rc=$?
+set -e
+[[ "$oversized_rc" == "1" ]] \
+  || fail "oversized candidate returned $oversized_rc instead of validation failure"
+python3 - "$oversized_run_dir/oversized-slice-request.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+request = json.loads(Path(sys.argv[1]).read_text())
+expected = {
+    "version": 1,
+    "reason": "diff_limit_exceeded",
+    "run_id": "oversized-candidate-run",
+    "slice_id": "999Z-validator-success",
+    "max_lines": 2000,
+}
+for key, value in expected.items():
+    if request.get(key) != value:
+        raise SystemExit(f"FAIL: oversized marker {key}={request.get(key)!r}, expected {value!r}")
+if request.get("total_lines", 0) <= request["max_lines"]:
+    raise SystemExit("FAIL: oversized marker did not record a genuine limit breach")
+PY
+
 # Owner-maintenance performance and reliability contracts. These checks keep
 # the exact quality gates while ensuring doomed candidates fail before costly
 # suites, candidate contents remain frozen during validation, and the agent's
@@ -696,6 +797,33 @@ rg -q 'slice does not declare localhost-e2e-server' scripts/ralph-validate.sh \
   || fail "ordinary slices do not explicitly skip the capability-only E2E gate"
 rg -q 'do not declare the run failed solely because Chromium cannot launch' scripts/ralph-run.sh \
   || fail "coding-agent prompt does not delegate sandbox-blocked browser execution to trusted validation"
+rg -q 'ralph_ensure_browser_runtime' scripts/ralph-run.sh \
+  || fail "Ralph does not probe and recover browser infrastructure before E2E implementation"
+rg -q 'RALPH_EXIT_BROWSER_INFRASTRUCTURE' scripts/ralph-run.sh \
+  || fail "persistent browser infrastructure failure is not returned as a structured outcome"
+rg -qF 'browser_infrastructure)' scripts/ralph-loop.sh \
+  || fail "outer loop does not stop browser infrastructure failure outside product repair"
+rg -q 'RALPH_SPLIT_SLICE_ID' scripts/ralph-loop.sh \
+  || fail "outer loop does not launch a trusted oversized-slice queue rewrite"
+rg -q 'RALPH_SPLIT_SLICE_ID' scripts/ralph-run.sh \
+  || fail "Ralph run prompt does not distinguish queue splitting from architecture review"
+rg -q 'ralph_validate_oversized_slice_split' scripts/ralph-validate.sh \
+  || fail "independent validation does not verify oversized-slice queue rewrites"
+python3 - <<'PY'
+from pathlib import Path
+
+source = Path('scripts/ralph-run.sh').read_text()
+probe = source.index('ralph_ensure_browser_runtime')
+agent = source.index('scripts/agent-adapters/$agent.sh')
+if probe > agent:
+    raise SystemExit('FAIL: browser launch probe runs after the coding agent starts')
+
+loop = Path('scripts/ralph-loop.sh').read_text()
+detect = loop.index('ralph_oversized_slice_request')
+repair = loop.rindex('run_bounded_repair "$status"')
+if detect > repair:
+    raise SystemExit('FAIL: diff-limit split is detected only after product repair starts')
+PY
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \
   || fail "independent PostgreSQL acceptance log path is missing"
 rg -q 'run_postgresql_acceptance_once 1' scripts/ralph-validate.sh \
@@ -810,6 +938,95 @@ make_fixture_slice 001D "Not Started"
 make_fixture_slice 001E "Not Started" 009Z
 make_fixture_slice 001F Superseded
 make_fixture_slice 001G "Not Started" 001F
+
+split_repo="$fixture_dir/oversized-split-repo"
+mkdir -p "$split_repo/docs/slices" "$split_repo/src"
+git init -q "$split_repo"
+git -C "$split_repo" config user.name "Ralph Regression"
+git -C "$split_repo" config user.email "ralph-regression@example.invalid"
+cat > "$split_repo/docs/slices/020A-prerequisite.md" <<'EOF'
+## Status
+Complete
+
+## Depends On
+- None
+EOF
+cat > "$split_repo/docs/slices/020B-oversized.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- 020A
+EOF
+cat > "$split_repo/docs/slices/020C-downstream.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- 020B
+EOF
+printf 'baseline product\n' > "$split_repo/src/base.py"
+git -C "$split_repo" add docs/slices src/base.py
+git -C "$split_repo" commit -qm fixture
+python3 - "$split_repo/docs/slices/020B-oversized.md" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text().replace('Not Started', 'Superseded', 1))
+PY
+cat > "$split_repo/docs/slices/020BA-owner-migration.md" <<'EOF'
+## Status
+Not Started
+
+## Origin
+Oversized slice: `020B`
+
+## Depends On
+- 020A
+EOF
+cat > "$split_repo/docs/slices/020BB-policy-closure.md" <<'EOF'
+## Status
+Not Started
+
+## Origin
+Oversized slice: `020B`
+
+## Depends On
+- 020BA
+EOF
+python3 - "$split_repo/docs/slices/020C-downstream.md" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text().replace('- 020B\n', '- 020BB\n'))
+PY
+ralph_validate_oversized_slice_split "$split_repo" 020B \
+  || fail "valid dependency-ordered oversized-slice split was rejected"
+ralph_validate_oversized_split_change_scope "$split_repo" 020B \
+  || fail "queue-only oversized split was rejected as a product change"
+printf '\nunrelated rewrite\n' >> "$split_repo/docs/slices/020A-prerequisite.md"
+if ralph_validate_oversized_split_change_scope "$split_repo" 020B >/dev/null 2>&1; then
+  fail "oversized-slice planning accepted an unrelated slice rewrite"
+fi
+python3 - "$split_repo/docs/slices/020A-prerequisite.md" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text().replace('\nunrelated rewrite\n', ''))
+PY
+printf 'unsafe\n' > "$split_repo/src/unsafe.py"
+if ralph_validate_oversized_split_change_scope "$split_repo" 020B >/dev/null 2>&1; then
+  fail "oversized-slice planning accepted a product-code change"
+fi
+rm -f "$split_repo/src/unsafe.py"
+git -C "$split_repo" mv src/base.py docs/slices/020BD-hidden-product.md
+if ralph_validate_oversized_split_change_scope "$split_repo" 020B >/dev/null 2>&1; then
+  fail "oversized-slice planning hid a product deletion inside an allowed queue rename"
+fi
+git -C "$split_repo" mv docs/slices/020BD-hidden-product.md src/base.py
 
 priority_fixture="$fixture_dir/priority-slices"
 mkdir -p "$priority_fixture"

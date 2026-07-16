@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:member-governance-container:ci": "vitest run src/pages/members/MemberGovernanceForm.container.test.tsx --maxWorkers=1 --fileParallelism=false",
     "lint": "eslint src",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:probe": "playwright test --config playwright.probe.config.ts"
   },
   "keywords": [],
   "author": "",

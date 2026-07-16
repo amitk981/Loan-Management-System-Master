@@ -9,6 +9,7 @@ readonly RALPH_EXIT_OWNER_VETO=21
 readonly RALPH_EXIT_MERGE_FAILED=22
 readonly RALPH_EXIT_AGENT_LIMIT=23
 readonly RALPH_EXIT_QUEUE_BLOCKED=24
+readonly RALPH_EXIT_BROWSER_INFRASTRUCTURE=25
 
 ralph_outcome_for_status() {
   case "${1:?status is required}" in
@@ -18,6 +19,7 @@ ralph_outcome_for_status() {
     "$RALPH_EXIT_MERGE_FAILED") echo "merge_failed" ;;
     "$RALPH_EXIT_AGENT_LIMIT") echo "agent_limit" ;;
     "$RALPH_EXIT_QUEUE_BLOCKED") echo "queue_blocked" ;;
+    "$RALPH_EXIT_BROWSER_INFRASTRUCTURE") echo "browser_infrastructure" ;;
     *) echo "failed" ;;
   esac
 }

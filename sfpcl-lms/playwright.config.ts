@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
+import { resolveChromiumExecutable } from './playwright.browser';
 
 // This config lives in sfpcl-lms/. The Django backend is one level up.
 const repoRoot = path.resolve(__dirname, '..');
@@ -26,6 +27,7 @@ const e2eStorageRoot =
   path.join(process.env.TMPDIR || '/tmp', 'sfpcl-e2e-document-storage', path.basename(repoRoot));
 
 const manage = `"${djangoPython}" sfpcl_credit/manage.py`;
+const chromiumExecutable = resolveChromiumExecutable();
 
 export default defineConfig({
   testDir: './e2e',
@@ -39,6 +41,7 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     timezoneId: 'Asia/Kolkata',
     trace: 'on-first-retry',
+    launchOptions: { executablePath: chromiumExecutable.executablePath },
   },
   projects: [
     {

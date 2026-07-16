@@ -1,7 +1,15 @@
 # Slice 009B3: SAP Policy Owner and Dependency Closure
 
 ## Status
-Not Started
+Superseded
+
+## Superseded By
+
+- 009B3A
+- 009B3B
+
+The first implementation attempt measured 2,885 changed lines against the 2,000-line slice limit.
+The requirements below are preserved across the dependency-ordered successors.
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement

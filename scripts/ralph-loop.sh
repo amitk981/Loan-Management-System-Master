@@ -13,6 +13,7 @@ cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 source "$repo_root/scripts/lib/ralph-retry-policy.sh"
 source "$repo_root/scripts/lib/ralph-repair-context.sh"
+source "$repo_root/scripts/lib/ralph-oversized-slice.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -149,6 +150,10 @@ run_bounded_repair() {
       echo "Repair validation passed but final merge failed; stopping with the completed branch preserved instead of launching another product repair." | tee -a "$loop_log"
       return "$repair_status"
     fi
+    if (( repair_status == RALPH_EXIT_BROWSER_INFRASTRUCTURE )); then
+      echo "Browser infrastructure remains unavailable after bounded recovery; stopping outside product repair." | tee -a "$loop_log"
+      return "$repair_status"
+    fi
 
     if (( repair_status == 0 )); then
       return 0
@@ -171,6 +176,47 @@ run_bounded_repair() {
 
   echo "Progressive repair safety ceiling reached after $total_repair_attempts attempt(s). Stopping this slice without advancing the queue." | tee -a "$loop_log"
   return "$repair_status"
+}
+
+# A measured diff-limit failure is a queue-shaping problem, not a product-code
+# defect. Discard the ungated implementation, then ask a clean planning run to
+# replace the oversized slice with independently executable successor slices.
+run_oversized_slice_split() {
+  local request="${1:?trusted split request is required}"
+  local slice_id failed_run_id total_lines max_lines split_status
+  IFS=$'\t' read -r slice_id failed_run_id total_lines max_lines <<< "$request"
+
+  echo "Slice $slice_id measured $total_lines changed lines (limit $max_lines). Replacing it with dependency-ordered successor slices before any product repair." | tee -a "$loop_log"
+  if ! ./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log"; then
+    echo "Unable to discard the ungated oversized worktree safely; stopping before queue maintenance." | tee -a "$loop_log"
+    return 1
+  fi
+
+  run_streamed env \
+    AGENT_TOOL="$active_tool" \
+    CODEX_REASONING_EFFORT=high \
+    RALPH_SPLIT_SLICE_ID="$slice_id" \
+    RALPH_SPLIT_FAILED_RUN_ID="$failed_run_id" \
+    RALPH_SPLIT_TOTAL_LINES="$total_lines" \
+    RALPH_SPLIT_MAX_LINES="$max_lines" \
+    ./scripts/afk-dev.sh 1 --mode architecture-review
+  split_status=$?
+  if (( split_status == RALPH_EXIT_AGENT_LIMIT )); then
+    switch_agent_or_stop
+    ./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log" || return 1
+    echo "Retrying oversized-slice queue rewrite with $active_tool." | tee -a "$loop_log"
+    run_streamed env \
+      AGENT_TOOL="$active_tool" \
+      CODEX_REASONING_EFFORT=high \
+      RALPH_SPLIT_SLICE_ID="$slice_id" \
+      RALPH_SPLIT_FAILED_RUN_ID="$failed_run_id" \
+      RALPH_SPLIT_TOTAL_LINES="$total_lines" \
+      RALPH_SPLIT_MAX_LINES="$max_lines" \
+      ./scripts/afk-dev.sh 1 --mode architecture-review
+    split_status=$?
+  fi
+  context_tripwire_check
+  return "$split_status"
 }
 
 echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
@@ -240,10 +286,30 @@ for ((i = 1; i <= max_iterations; i++)); do
       echo "The interrupted slice will rerun with $active_tool." | tee -a "$loop_log"
       continue
       ;;
+    browser_infrastructure)
+      echo "Stopping: Playwright browser infrastructure is unavailable after one bounded recovery. Product repair was not started." | tee -a "$loop_log"
+      echo "See the latest browser-infrastructure-results.md and browser-infrastructure-probe.log, restore a browser, then rerun the loop." | tee -a "$loop_log"
+      exit "$RALPH_EXIT_BROWSER_INFRASTRUCTURE"
+      ;;
   esac
 
   if (( status != 0 )); then
-    if ! run_bounded_repair "$status"; then
+    split_request=""
+    if split_request="$(ralph_oversized_slice_request "$repo_root" "$repo_root/.ralph/repair-context.json")"; then
+      if run_oversized_slice_split "$split_request"; then
+        echo "Oversized slice queue rewrite passed independent validation; continuing with its first successor." | tee -a "$loop_log"
+        continue
+      fi
+      echo "Oversized slice queue rewrite failed. Stopping for human review without launching product repair." | tee -a "$loop_log"
+      exit 1
+    fi
+    run_bounded_repair "$status"
+    repair_status=$?
+    if (( repair_status == RALPH_EXIT_BROWSER_INFRASTRUCTURE )); then
+      echo "Stopping: Playwright browser infrastructure became unavailable during repair. No further product repair will run." | tee -a "$loop_log"
+      exit "$RALPH_EXIT_BROWSER_INFRASTRUCTURE"
+    fi
+    if (( repair_status != 0 )); then
       echo "All bounded repair attempts failed. Stopping for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"
       exit 1
     fi

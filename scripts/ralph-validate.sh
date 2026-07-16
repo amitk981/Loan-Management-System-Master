@@ -8,6 +8,7 @@ source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
 source "$repo_root/scripts/lib/ralph-browser-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 source "$repo_root/scripts/lib/ralph-fast-candidate-checks.sh"
+source "$repo_root/scripts/lib/ralph-oversized-slice.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -40,9 +41,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 slice_file="$worktree_dir/docs/slices/${slice_id}.md"
+split_slice_id="${RALPH_SPLIT_SLICE_ID:-}"
 postgres_acceptance_required=0
 localhost_e2e_required=0
-if [[ -n "$slice_id" ]]; then
+if [[ -n "$split_slice_id" ]]; then
+  if [[ "$mode" != "architecture_review" || ! "$split_slice_id" =~ ^[A-Za-z0-9]+$ ]]; then
+    echo "Invalid oversized-slice validation environment." >&2
+    exit 2
+  fi
+elif [[ -n "$slice_id" && "$mode" != "architecture_review" ]]; then
   if [[ ! -f "$slice_file" ]]; then
     echo "Selected slice file is missing: $slice_file" >&2
     exit 2
@@ -59,6 +66,27 @@ fi
 run_id="${run_id:-$(date '+%Y-%m-%d_%H%M%S')_validate}"
 run_dir="$worktree_dir/.ralph/runs/$run_id"
 mkdir -p "$run_dir"
+
+if [[ -n "$split_slice_id" ]]; then
+  split_results="$run_dir/oversized-slice-split-results.md"
+  {
+    echo "# Oversized Slice Split Results"
+    echo
+    split_semantics=0
+    split_scope=0
+    ralph_validate_oversized_slice_split "$worktree_dir" "$split_slice_id" && split_semantics=1
+    ralph_validate_oversized_split_change_scope "$worktree_dir" "$split_slice_id" && split_scope=1
+    (( split_semantics == 1 )) \
+      && echo "PASS: $split_slice_id was replaced by a dependency-ordered, drainable successor chain." \
+      || echo "FAIL: the queue rewrite for $split_slice_id is incomplete or unsafe."
+    (( split_scope == 1 )) \
+      && echo "PASS: the planning run changed queue metadata only." \
+      || echo "FAIL: the planning run changed files outside the queue-metadata allowlist."
+    if (( split_semantics != 1 || split_scope != 1 )); then
+      exit 1
+    fi
+  } > "$split_results"
+fi
 
 config="$worktree_dir/.ralph/config.yaml"
 project_dir="$(awk -F': *' '/^[[:space:]]*project_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
@@ -179,6 +207,31 @@ printf '%s\n' "$commit_candidate_hash_before" \
   echo "Before validation: $candidate_hash_before"
   echo "Commit candidate before validation: $commit_candidate_hash_before"
 } > "$run_dir/candidate-hash-results.md"
+
+if [[ -n "$split_slice_id" ]]; then
+  # This candidate is proven queue-metadata-only above. Product gates cannot
+  # add signal to a Markdown dependency rewrite, so record their deliberate
+  # omission and finish after the same frozen-candidate hash used by commits.
+  for queue_only_gate in build install typecheck lint test e2e backend-check backend-test backend-migrations backend-coverage; do
+    write_skipped "$queue_only_gate" "oversized-slice queue rewrite contains no product changes"
+  done
+  candidate_hash_after="$(ralph_candidate_hash "$worktree_dir")"
+  {
+    echo "After validation: $candidate_hash_after"
+    if [[ "$candidate_hash_after" == "$candidate_hash_before" ]]; then
+      echo "PASS: candidate content remained frozen throughout queue validation."
+    else
+      echo "FAIL: candidate content changed while queue validation was running."
+    fi
+  } >> "$run_dir/candidate-hash-results.md"
+  if [[ "$candidate_hash_after" != "$candidate_hash_before" ]]; then
+    echo "Queue candidate changed during validation." >&2
+    exit 1
+  fi
+  echo "Validation passed: queue-only oversized-slice split." >> "$artifact_file"
+  echo "Ralph queue validation passed: $run_dir"
+  exit 0
+fi
 
 run_postgresql_acceptance_once() {
   local ordinal="$1"

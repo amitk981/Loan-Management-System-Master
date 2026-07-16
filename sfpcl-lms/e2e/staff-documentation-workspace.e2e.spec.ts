@@ -1,4 +1,4 @@
-import { chromium, expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { E2E_PASSWORD, staffLogin } from './helpers';
@@ -6,17 +6,9 @@ import { E2E_PASSWORD, staffLogin } from './helpers';
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
 fs.mkdirSync(evidenceDir, { recursive: true });
-const bundledChromium = chromium.executablePath();
-const macOsChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const availableChromium = fs.existsSync(bundledChromium)
-  ? bundledChromium
-  : fs.existsSync(macOsChrome)
-    ? macOsChrome
-    : undefined;
 
 test.use({
   viewport: { width: 1280, height: 720 },
-  launchOptions: availableChromium ? { executablePath: availableChromium } : {},
 });
 
 async function capture(page: Page, name: string) {

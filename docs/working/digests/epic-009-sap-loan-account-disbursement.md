@@ -4,9 +4,10 @@
 
 - 009B2's public `sap_workflow` module still imports Finance models, encrypted storage, and the
   request/send/complete/read implementations. That facade leaves Finance as policy owner and creates
-  a Finance↔SAP dependency. `009B3` must perform a state-only/non-destructive owner migration,
-  preserve all tables/ids/ciphertext/digests/history, keep Manual/Fake/Future adapters in the SAP
-  owner, and remove executable SAP→Finance edges.
+  a Finance↔SAP dependency. Oversized `009B3` is split into `009B3A`, which performs the state-only/
+  non-destructive owner migration while preserving all tables/ids/ciphertext/digests/history, and
+  `009B3B`, which keeps Manual/Fake/Future adapters in the SAP owner and removes executable
+  SAP→Finance edges.
 - 009D legal readiness trusts mutable item/checklist statuses and non-null approval ledger ids rather
   than exact current completion/approval identities. It also filters unverified signature rows, so
   one open mismatch can become `all([]) == true`, contrary to S34 and M06-FR-019.
