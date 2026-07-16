@@ -1,0 +1,16 @@
+GREEN — impacted SAP, loan-account, and readiness tests
+
+Command:
+"/Users/amitkallapa/LMS/.ralph/venv/bin/python" manage.py test \
+  tests.test_sap_model_ownership_migration \
+  tests.test_sap_customer_profile_request_api \
+  tests.test_sap_customer_profile_repair \
+  tests.test_loan_account_creation_api \
+  tests.test_disbursement_readiness_api --verbosity 1
+
+Observed:
+- Found 101 tests.
+- System check identified no issues.
+- Ran 101 tests in 6.402s.
+- `OK (skipped=4)`; the four skips are the expected PostgreSQL-only concurrency cases under SQLite.
+- Exit code: 0.

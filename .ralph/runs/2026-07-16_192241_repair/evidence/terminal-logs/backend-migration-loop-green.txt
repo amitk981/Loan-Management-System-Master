@@ -1,0 +1,16 @@
+GREEN — focused migration isolation loop
+
+Command:
+"/Users/amitkallapa/LMS/.ralph/venv/bin/python" sfpcl_credit/manage.py test \
+  sfpcl_credit.tests.test_credit_model_ownership_migration \
+  sfpcl_credit.tests.test_sap_model_ownership_migration \
+  sfpcl_credit.tests.test_witness_evidence_migration
+
+Observed:
+- Found 9 tests.
+- Result: `.........`
+- Ran 9 tests in 94.925s.
+- `OK`
+- Exit code: 0.
+
+The same combined historical-migration order that produced six deterministic errors now passes.

@@ -1,0 +1,6 @@
+BEGIN;
+--
+-- Transfer SAP model ownership in Django state only
+--
+-- THIS OPERATION CANNOT BE WRITTEN AS SQL
+COMMIT;

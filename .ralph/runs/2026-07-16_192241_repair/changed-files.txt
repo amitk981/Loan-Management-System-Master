@@ -1,0 +1,19 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009B3A-sap-model-owner-and-state-migration.md
+ M docs/slices/009B3B-sap-policy-adapter-and-dependency-closure.md
+ M docs/slices/009D2-readiness-evidence-and-loan-scope-closure.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl-lms/playwright.browser.ts
+ M sfpcl_credit/finance/models.py
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_profile.py
+ M sfpcl_credit/tests/test_credit_model_ownership_migration.py
+ M sfpcl_credit/tests/test_witness_evidence_migration.py
+?? .ralph/runs/2026-07-16_190027_normal_run/
+?? .ralph/runs/2026-07-16_192241_repair/
+?? sfpcl-lms/src/node-fs.d.ts
+?? sfpcl_credit/sap_workflow/migrations/
+?? sfpcl_credit/sap_workflow/models.py
+?? sfpcl_credit/tests/test_sap_model_ownership_migration.py

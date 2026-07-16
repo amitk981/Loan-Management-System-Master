@@ -1,0 +1,9 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_sap_workflow_owns_models_without_changing_physical_identity (tests.test_sap_model_ownership_migration.SapRuntimeModelOwnershipTests.test_sap_workflow_owns_models_without_changing_physical_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

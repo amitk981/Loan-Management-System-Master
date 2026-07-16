@@ -2,47 +2,53 @@
 
 ## Last Run
 
-2026-07-16_172426_repair
+2026-07-16_194722_repair
 
 ## Current Status
 
-008M5's trusted-browser launch repair is complete pending independent orchestrator revalidation.
-Staff signed-copy uploads and re-uploads now form an immutable legal-owner succession chain while
-the generated renderer original remains unchanged. Correction and final-return actions are durable,
-visible after refetch, and block item completion or ordered approvals until an exact signed successor
-resolves them. Conditions are retained and shown against the exact approval role.
+009B3A's second validation repair is complete pending independent orchestrator revalidation.
+`sap_workflow.models` owns the
+existing SAP request and customer-code model state. One reversible state-only migration relocates
+the historical model identities and their relation targets without executing any database schema or
+data operation. The physical Finance-era tables, columns, indexes, constraints, rows, ids,
+ciphertext, checksums, completion digest, delivery/task links, and audit/workflow identities remain
+unchanged.
 
-A-125 remains honest: production queue and detail projections expose
-`governed_attorney_unconfigured`, issue no PoA create command, and grant no attorney authority. The
-future governed decision is injected through the security-owner gateway; stale and wrong-role paths
-remain zero-write, and the decision identity participates in the opaque action identity.
+`finance.models` is now only a one-way compatibility import whose names are object-identical to the
+canonical SAP classes. The public SAP module and loan-account relation consume the canonical owner.
+Executable Finance request/delivery/completion policy intentionally remains for 009B3B.
+
+The quarantined implementation was preserved. After the first repair, independent coverage found
+one remaining order-dependent error: `LegalDocumentOwnershipMigrationTests` left the database at a
+historical legal-document migration after its tests, so the following SAP migration fixture saw the
+Finance migration recorded but the physical `sap_customer_codes` table absent. The class now
+restores all migration leaves in `tearDown`, matching the repository's other historical migration
+tests. No production migration, SAP model, policy, frontend behavior, or public contract changed in
+this repair.
 
 ## Validation
 
-Failing-first and green evidence is in
-`.ralph/runs/2026-07-16_165237_normal_run/evidence/terminal-logs/`. The final impacted backend run
-passed 49 tests with two expected PostgreSQL-only skips; the durable public matrix and copied review
-probes pass. Frontend documentation tests pass (18), as do typecheck, lint, build, Django check, and
-migration sync. The repair keeps the Playwright bundled browser as first choice and uses the host's
-installed Google Chrome only when that bundle is absent. Playwright collects the exact real-Django
-spec and five screenshot names; the focused frontend tests, typecheck, lint, and build pass. The
-coding sandbox terminated host Chrome during macOS service bootstrap, so the orchestrator must run
-the declared browser contract twice outside that sandbox and retain the screenshots.
-
-Independent Standards and Spec reviews initially found response-schema, replay, blocker-surface,
-condition-stage, attorney-gateway, browser-order, and matrix gaps. All were repaired; both final
-re-reviews report no remaining finding.
+- The exact two-test migration-order reproducer changed from one `no such table:
+  sap_customer_codes` error to two passes.
+- Nineteen historical migration tests pass together, including the legal boundary and SAP owner
+  transfer in authoritative suite order.
+- All four SAP ownership/migration/compatibility/graph tests pass.
+- Django check and migration sync pass.
+- Prior retained evidence still covers the 101-test impacted backend run, twice-run PostgreSQL SAP
+  races, zero-SQL transfer, and frontend resolver/typecheck/lint/build repair. The orchestrator runs
+  the authoritative full backend coverage and configured frontend gates again.
+- No screen, style, route, runtime browser-resolution behavior, or public HTTP contract changed; the
+  orchestrator runs the authoritative full backend coverage and configured frontend gates.
 
 ## Important Continuation Notes
 
-- The one new migration is `legal_documents.0014`; it creates only the two immutable staff legal
-  evidence tables and preserves existing document/checklist/security rows.
-- Oversized slice 009B3 is superseded by 009B3A (non-destructive model ownership) and 009B3B
-  (executable policy/adapter dependency closure); both preserve its full requirements while staying
-  independently executable below the 2,000-line limit.
-- 009D2 must consume the post-009B3B SAP owner and exact current legal/security evidence. 009E remains
-  blocked behind 009D2.
+- The sole new migration is `sap_workflow.0001_sap_model_owner_state`; do not replace it with
+  create/copy/delete/rename schema operations.
+- 009B3B must move executable request, Annexure storage/delivery, completion/reuse/read, and adapter
+  policy behind the canonical SAP interface without redefining models or adding schema work.
+- 009D2 then consumes the post-009B3B SAP decision and exact legal/security evidence through source
+  owner interfaces. 009E remains blocked until both corrective slices complete.
 
 ## Next Run
 
-Run 009B3A, then 009B3B, then 009D2. Proceed to 009E only after all corrective gates pass.
+Run 009B3B, then 009D2. Proceed to 009E only after both corrective gates pass.

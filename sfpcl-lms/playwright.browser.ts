@@ -36,6 +36,13 @@ const defaultSystemCandidates = [
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
 ];
 
+const environment = () =>
+  (
+    globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process?.env;
+
 export function resolveChromiumExecutable(
   options: BrowserResolverOptions = {},
 ): ChromiumExecutable {
@@ -43,7 +50,7 @@ export function resolveChromiumExecutable(
   const exists = options.exists ?? existsSync;
   const systemCandidates = options.systemCandidates ?? defaultSystemCandidates;
   const overrideExecutable =
-    options.overrideExecutable ?? process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+    options.overrideExecutable ?? environment()?.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
   if (overrideExecutable) {
     if (exists(overrideExecutable)) {

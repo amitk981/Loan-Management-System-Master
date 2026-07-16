@@ -1,0 +1,17 @@
+GREEN — frontend repair validation
+
+1. `npm run typecheck --if-present`
+   - `tsc --noEmit`
+   - Exit code: 0.
+2. `npm test -- --run src/playwrightBrowser.test.ts`
+   - 1 file passed; 4 tests passed in 2ms.
+   - Exit code: 0.
+3. `npm run lint --if-present`
+   - `eslint src`
+   - Exit code: 0.
+4. `npm run build --if-present`
+   - 1,880 modules transformed; production bundle built in 2.94s.
+   - Exit code: 0.
+
+No screen, style, route, or browser-resolution behavior changed. The repair supplies the narrow
+TypeScript surface for `node:fs` and reads the optional process environment through `globalThis`.

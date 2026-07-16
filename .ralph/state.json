@@ -235,14 +235,15 @@
     "009B2-sap-delivery-replay-audit-and-owner-seam-closure",
     "009C-loan-account-creation-from-sanctioned-application",
     "009D-disbursement-readiness-service",
-    "008M5-documentation-durable-actions-and-blocker-closure"
+    "008M5-documentation-durable-actions-and-blocker-closure",
+    "009B3A-sap-model-owner-and-state-migration"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "d519dc53",
-  "last_run_id": "2026-07-16_172426_repair",
+  "last_run_id": "2026-07-16_194722_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

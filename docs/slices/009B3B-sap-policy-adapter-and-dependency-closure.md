@@ -50,6 +50,10 @@ policy behind the canonical `sap_workflow` public owner and remove the Financeâ†
 5. Delete or reduce legacy Finance orchestration to policy-free public forwarding only. Any
    temporary legacy import must be one-way, explicitly tested, and contain no model query, action,
    adapter, capability, workbook-storage, or decision implementation.
+6. Consume `SapCustomerProfileRequest` and `SapCustomerCode` only from the canonical
+   `sap_workflow.models` owner established by 009B3A. Do not redefine either model, change their
+   tables/fields/constraints, or add a second state/data migration; `finance.models` remains an
+   object-identical import compatibility seam until all legacy callers move.
 
 ## Test Cases
 
@@ -64,6 +68,8 @@ policy behind the canonical `sap_workflow` public owner and remove the Financeâ†
   the policy move; delivery/read capability races disclose neither file identity nor token material.
 - Downstream selector tests prove loans and disbursements receive the immutable SAP decision without
   importing Finance internals or changing account/readiness/payment truth.
+- Migration-sync and import-identity tests prove the policy move adds no schema operation and leaves
+  the 009B3A canonical model classes and Finance compatibility names object-identical.
 
 ## Evidence Required
 

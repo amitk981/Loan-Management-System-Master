@@ -45,7 +45,7 @@ class LoanAccount(models.Model):
         "members.Member", on_delete=models.PROTECT, related_name="loan_accounts"
     )
     sap_customer_code = models.ForeignKey(
-        "finance.SapCustomerCode",
+        "sap_workflow.SapCustomerCode",
         null=True,
         blank=True,
         on_delete=models.PROTECT,

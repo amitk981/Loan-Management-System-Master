@@ -20,7 +20,7 @@ from sfpcl_credit.domain_errors import (
     DomainObjectAccessDenied,
     DomainPermissionDenied,
 )
-from sfpcl_credit.finance.models import SapCustomerCode, SapCustomerProfileRequest
+from sfpcl_credit.sap_workflow.models import SapCustomerCode, SapCustomerProfileRequest
 from sfpcl_credit.finance.modules.annexure_storage import EncryptedAnnexureStorage
 from sfpcl_credit.finance.modules.sap_customer_code import (
     complete_request as _complete_request,

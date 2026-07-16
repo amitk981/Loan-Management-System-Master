@@ -1,0 +1,21 @@
+RED — focused migration isolation loop
+
+Command:
+"/Users/amitkallapa/LMS/.ralph/venv/bin/python" sfpcl_credit/manage.py test \
+  sfpcl_credit.tests.test_credit_model_ownership_migration \
+  sfpcl_credit.tests.test_sap_model_ownership_migration \
+  sfpcl_credit.tests.test_witness_evidence_migration
+
+Observed:
+- Found 9 tests.
+- Result: `EEE...EEE`
+- `LookupError: App 'applications' doesn't have a 'EligibilityAssessment' model.` (2 errors)
+- `django.db.utils.OperationalError: no such table: sap_customer_codes` (1 error)
+- `django.db.utils.OperationalError: table witnesses has no column named verification_folio_number`
+  (3 errors)
+- Ran 9 tests in 14.213s.
+- `FAILED (errors=6)`
+- Exit code: 1.
+
+This is the same six-error signature reported by the authoritative coverage gate and is deterministic,
+fast, agent-runnable, and specific to historical migration state/schema isolation.

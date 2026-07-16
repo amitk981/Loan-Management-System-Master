@@ -17,11 +17,18 @@ class WitnessEvidenceMigrationTests(TransactionTestCase):
         legacy_targets = [
             node
             for node in executor.loader.graph.leaf_nodes()
-            # Legal and finance owners explicitly anchor later application state.
-            # Exclude those descendants when projecting the pre-0012 application
-            # model or the historical state would outrun the reversed schema.
+            # Legal, finance, loan, and SAP owners explicitly anchor later
+            # application state. Exclude those descendants when projecting the
+            # pre-0012 application model or the historical state would outrun
+            # the reversed schema.
             if node[0]
-            not in {"applications", "finance", "legal_documents", "loans"}
+            not in {
+                "applications",
+                "finance",
+                "legal_documents",
+                "loans",
+                "sap_workflow",
+            }
         ] + self.migrate_from
         old_apps = executor.loader.project_state(legacy_targets).apps
         self.ids = self._create_legacy_rows(old_apps)

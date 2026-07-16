@@ -1,0 +1,17 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_sap_workflow_owns_models_without_changing_physical_identity (tests.test_sap_model_ownership_migration.SapRuntimeModelOwnershipTests.test_sap_workflow_owns_models_without_changing_physical_identity) ... ERROR
+
+======================================================================
+ERROR: test_sap_workflow_owns_models_without_changing_physical_identity (tests.test_sap_model_ownership_migration.SapRuntimeModelOwnershipTests.test_sap_workflow_owns_models_without_changing_physical_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_190027_normal_run/sfpcl_credit/tests/test_sap_model_ownership_migration.py", line 11, in test_sap_workflow_owns_models_without_changing_physical_identity
+    from sfpcl_credit.sap_workflow.models import (
+ModuleNotFoundError: No module named 'sfpcl_credit.sap_workflow.models'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

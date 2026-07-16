@@ -1,0 +1,17 @@
+Repository integrity checks
+
+Command: git diff --check
+Result: PASS (no output)
+Exit code: 0
+
+Command: jq empty .ralph/state.json
+Result: PASS (no output)
+Exit code: 0
+
+Command: git diff --name-only -- scripts .ralph/config.yaml .ralph/permissions.json .codex/config.toml AGENTS.md CLAUDE.md .gitignore docs/working/HIGH_RISK_APPROVALS.md docs/working/DECISION_POLICY.md docs/working/FRONTEND_DESIGN_RULES.md docs/source
+Result: PASS (no protected/forbidden path output)
+Exit code: 0
+
+The selected slice remains Complete in its slice file and completed in `.ralph/state.json`.
+The next slices, 009B3B and 009D2, were already fully sharpened from the Epic 009 digest and remain
+Not Started with concrete fields, owner boundaries, validation/role rules, tests, and dependencies.

@@ -1,0 +1,24 @@
+RED — exact order-dependent failure reproduced before the repair
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_legal_document_boundary.LegalDocumentOwnershipMigrationTests.test_renderer_provenance_migration_preserves_retained_row_as_legacy sfpcl_credit.tests.test_sap_model_ownership_migration.SapModelOwnershipMigrationTests.test_forward_and_reverse_transfer_preserve_exact_business_state --verbosity 1
+
+Result:
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.E
+
+ERROR: test_forward_and_reverse_transfer_preserve_exact_business_state
+(sfpcl_credit.tests.test_sap_model_ownership_migration.SapModelOwnershipMigrationTests.test_forward_and_reverse_transfer_preserve_exact_business_state)
+
+The renderer-provenance historical migration test passed, after which the SAP ownership fixture
+failed at `Code.objects.create(...)` with:
+
+django.db.utils.OperationalError: no such table: sap_customer_codes
+
+Ran 2 tests in 16.905s
+FAILED (errors=1)
+Exit code: 1
+
+The SAP test alone had already passed (1 test in 3.181s), proving the production transfer operation
+was not independently broken and making this a deterministic migration-test isolation failure.

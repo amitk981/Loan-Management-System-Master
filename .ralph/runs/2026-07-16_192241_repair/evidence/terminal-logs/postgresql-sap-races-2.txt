@@ -1,0 +1,11 @@
+GREEN — PostgreSQL SAP race acceptance, run 2
+
+Command used PostgreSQL settings and isolated database
+`test_sfpcl_credit_009b3a_repair_2_20260716` for
+`tests.test_sap_customer_profile_request_api.SapCustomerProfileRequestRaceTests`.
+
+- Found 3 tests.
+- System check identified no issues.
+- Ran 3 tests in 3.029s.
+- `OK`
+- Exit code: 0.

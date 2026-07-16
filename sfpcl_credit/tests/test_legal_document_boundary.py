@@ -96,6 +96,11 @@ from sfpcl_credit.documents.modules import document_templates
 class LegalDocumentOwnershipMigrationTests(TransactionTestCase):
     reset_sequences = True
 
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
     def test_renderer_provenance_migration_preserves_retained_row_as_legacy(self):
         executor = MigrationExecutor(connection)
         executor.migrate([("legal_documents", "0002_document_checklists")])

@@ -1,0 +1,27 @@
+GREEN — exact reproducer after restoring migration leaves in test teardown
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_legal_document_boundary.LegalDocumentOwnershipMigrationTests.test_renderer_provenance_migration_preserves_retained_row_as_legacy sfpcl_credit.tests.test_sap_model_ownership_migration.SapModelOwnershipMigrationTests.test_forward_and_reverse_transfer_preserve_exact_business_state --verbosity 1
+
+Result:
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+----------------------------------------------------------------------
+Ran 2 tests in 26.180s
+
+OK
+Exit code: 0
+
+Broader migration-order regression command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_appraisal_api.AppraisalSnapshotMigrationTests sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests sfpcl_credit.tests.test_appraisal_api.LegacyAppraisalRemediationMigrationTests sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalReadScopeMigrationTests sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalConflictProjectionMigrationTests sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalCycleMigrationTests sfpcl_credit.tests.test_credit_model_ownership_migration.CreditAssessmentModelOwnershipMigrationTests sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationAnchorTests sfpcl_credit.tests.test_legal_document_boundary.LegalDocumentOwnershipMigrationTests sfpcl_credit.tests.test_sap_model_ownership_migration.SapModelOwnershipMigrationTests sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentOwnershipMigrationTests sfpcl_credit.tests.test_witness_evidence_migration.WitnessEvidenceMigrationTests --verbosity 1
+
+Result:
+Found 19 test(s).
+System check identified no issues (0 silenced).
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 273.237s
+
+OK
+Exit code: 0

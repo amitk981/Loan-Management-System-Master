@@ -1,0 +1,21 @@
+GREEN — backend integrity and state-only SQL proof
+
+1. `"/Users/amitkallapa/LMS/.ralph/venv/bin/python" manage.py check`
+   - `System check identified no issues (0 silenced).`
+   - Exit code: 0.
+2. `"/Users/amitkallapa/LMS/.ralph/venv/bin/python" manage.py makemigrations --check --dry-run`
+   - `No changes detected`
+   - Exit code: 0.
+3. `"/Users/amitkallapa/LMS/.ralph/venv/bin/python" manage.py sqlmigrate sap_workflow 0001`
+   - Output:
+
+     ```text
+     BEGIN;
+     --
+     -- Transfer SAP model ownership in Django state only
+     --
+     -- THIS OPERATION CANNOT BE WRITTEN AS SQL
+     COMMIT;
+     ```
+
+   - Exit code: 0.

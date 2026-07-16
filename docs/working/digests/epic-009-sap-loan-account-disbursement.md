@@ -23,6 +23,29 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 `integrations.md` §8/§33.1, `data-model.md` §19.1-19.2, `api-contracts.md` §29.1, and
 `functional-spec.md` BR-047-BR-050/M07-FR-001-M07-FR-010.
 
+## 009B3A Retained Model-State Truth
+
+- `sap_workflow.models` is the canonical Django owner of `SapCustomerProfileRequest` and
+  `SapCustomerCode`; both retain the exact Finance-era table, field, index, constraint, relation,
+  id, ciphertext, checksum, digest, lifecycle, and evidence identities.
+- `sap_workflow.0001_sap_model_owner_state` is one reversible state-only operation. It emits no
+  schema/data SQL and rewrites only historical model ownership plus relation targets, including the
+  existing nullable `LoanAccount.sap_customer_code` state.
+- `finance.models` is a one-way, policy-free compatibility import whose exported names are identical
+  canonical class objects. Executable Finance request/delivery/completion policy remains untouched
+  until 009B3B moves it behind the SAP owner.
+- Forward/reverse migration manifests compare exact synthetic encrypted tokens, file/delivery
+  checksums, completion digest, all request/code foreign keys, audit/workflow identities, physical
+  tables, and introspected constraints/indexes. The existing three request/code race tests pass
+  twice on PostgreSQL, with two rounds per test.
+- Repair `2026-07-16_192241_repair` made historical credit and witness migration-test projections
+  exclude the new downstream `sap_workflow` leaf. This restores explicit pre-migration state/schema
+  isolation; the SAP transfer operation and its zero-SQL runtime/model contract remain unchanged.
+- Repair `2026-07-16_194722_repair` restored migration leaves after the historical legal-document
+  ownership tests. Without that teardown, their reversed schema contaminated the following SAP
+  transfer fixture in full-suite order even though the SAP test passed alone. The exact ordered
+  repro and the 19-test migration set now pass; production migration/model behavior is unchanged.
+
 ## Architecture Review 2026-07-16 07:41 — SAP Delivery, Replay, Audit, and Owner
 
 - Source codebase-design §§16.1/20.3-20.4/36.2 assigns SAP policy to

@@ -53,6 +53,10 @@ assignment cannot authorize payment readiness.
 6. Preserve all 23 ordered checks, safe blocker reasons, query bound, read-only behavior, current SAP
    owner decision, and honest A-126 source-bank failure. 009E must consume only this corrected exact
    decision; no payment/CFC/activation truth is added here.
+7. Consume customer-code readiness through the post-009B3B public SAP decision interface. Direct
+   `finance.models`, Finance orchestration/storage imports, or copied SAP status/code queries are
+   forbidden; the canonical `sap_workflow` owner must decide current member/application/code
+   coherence without exposing the retained workbook or customer-code plaintext.
 
 ## Test Cases
 
@@ -68,6 +72,9 @@ assignment cannot authorize payment readiness.
 - Keep the isolated coordinator boolean matrix as a small unit test, but it cannot substitute for the
   public real-owner success/failure matrix. Architecture tests exercise public interfaces and
   dependency direction rather than source substrings.
+- SAP readiness probes cover absent, inactive, cross-member, cross-application, incomplete-request,
+  and exact current completed-code decisions through the public owner; every failure is secret-free
+  and leaves SAP, loan, checklist, security, audit, workflow, and task rows unchanged.
 
 ## Evidence Required
 

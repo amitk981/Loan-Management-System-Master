@@ -1,5 +1,20 @@
 # Ralph Progress Log
 
+## 2026-07-16 - 2026-07-16_194722_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow and focused migration-order TDD loop.
+- Slice repaired: 009B3A-sap-model-owner-and-state-migration.
+- Summary: Preserved the quarantined SAP owner transfer and fixed the sole remaining independent
+  coverage error. The historical legal-document migration class now restores the current migration
+  leaves after each test, preventing its reversed schema from contaminating the following SAP
+  transfer fixture. No production migration, model, policy, API, or frontend behavior changed.
+- Tests run: exact two-test RED/GREEN order reproducer; 19-test historical migration-order set; four
+  SAP ownership tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-16_194722_repair/evidence/`.
+- Result: Repair complete pending independent full validation and orchestrator commit.
+- Risk level: High inherited slice risk; Low repair delta limited to migration-test teardown.
+- Next action: Independently revalidate 009B3A, then run 009B3B and 009D2 before 009E.
+
 ## 2026-07-16 - 2026-07-16_111411_repair
 
 - Agent tool used: codex with the diagnosing-bugs skill.
@@ -7915,6 +7930,50 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_172426_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_165237_normal_run/.ralph/runs/2026-07-16_172426_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_190027_normal_run
+
+- Agent tool used: codex with TDD and deep-module design workflows.
+- Slice completed: 009B3A-sap-model-owner-and-state-migration.
+- Summary: Transferred the two existing SAP model identities from Finance to the canonical
+  `sap_workflow` owner through one reversible state-only migration. Preserved every physical and
+  business identity; reduced `finance.models` to object-identical compatibility imports; repointed
+  the public SAP module and loan relation without moving executable policy.
+- Tests run: staged RED/GREEN owner and migration tests; four final ownership/compatibility/graph
+  tests; 101 impacted backend tests; Django check and migration sync; two separate PostgreSQL runs
+  of all three SAP request/code race tests (two internal rounds each).
+- Evidence saved: `.ralph/runs/2026-07-16_190027_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator full validation and commit.
+- Risk level: High; production SAP financial identity and historical migration ownership, mitigated
+  by zero database SQL, bidirectional exact manifests, compatibility aliases, and PostgreSQL races.
+- Next action: Run 009B3B, then 009D2 before 009E.
+
+## 2026-07-16 - 2026-07-16_192241_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow and focused RED/GREEN repair loop.
+- Slice repaired: 009B3A-sap-model-owner-and-state-migration.
+- Summary: Preserved the state-only SAP owner transfer and fixed the independent validation
+  failures. Historical credit/witness migration tests now exclude the new downstream SAP graph leaf
+  from their intentionally reversed projections. The Node-only Playwright resolver has the narrow
+  TypeScript declarations needed by its existing `src` unit test; no UI behavior changed.
+- Tests run: exact 9-test migration loop RED with six errors then GREEN; 101 impacted backend tests;
+  Django check, migration sync, and zero-SQL proof; Playwright resolver tests, frontend typecheck,
+  lint, and build; all three SAP request/code PostgreSQL races in two separate runs.
+- Evidence saved: `.ralph/runs/2026-07-16_192241_repair/evidence/`.
+- Result: Repair complete pending independent orchestrator full validation and commit.
+- Risk level: High because the retained slice transfers regulated SAP model state; the repair itself
+  changes test isolation and compile-time Node declarations only.
+- Next action: Run 009B3B, then 009D2 before 009E.
+
+## 2026-07-16 20:16:21 - 2026-07-16_194722_repair
+- Agent tool used: codex
+- Slice attempted: 009B3A-sap-model-owner-and-state-migration
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_190027_normal_run/.ralph/runs/2026-07-16_194722_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_190027_normal_run/.ralph/runs/2026-07-16_194722_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

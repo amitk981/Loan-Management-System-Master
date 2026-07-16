@@ -1,0 +1,10 @@
+GREEN — Ralph consistency checks
+
+- Slice queue lint: every slice parses and the pending dependency graph drains completely.
+- `.ralph/state.json`: valid JSON.
+- `git diff --check`: pass.
+- Deliverable artifacts: no scaffold placeholders remain.
+- Protected/forbidden paths: no changes detected.
+- Repair instrumentation: no `[DEBUG-...]` markers remain.
+- Executed slice remains `Complete`; the already-sharpened next slices 009B3B and 009D2 remain
+  `Not Started` with concrete fields, boundaries, validation, role, concurrency, and evidence rules.
