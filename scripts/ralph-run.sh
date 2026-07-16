@@ -8,6 +8,7 @@ source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 source "$repo_root/scripts/lib/ralph-repair-context.sh"
 source "$repo_root/scripts/lib/ralph-merge-guard.sh"
+source "$repo_root/scripts/lib/ralph-node-runtime.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -264,6 +265,7 @@ ensure_backend_env() {
   fi
 }
 project_dir_cfg="$(awk -F': *' '/^[[:space:]]*project_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
+ralph_activate_pinned_node "$repo_root" "$project_dir_cfg" || exit 1
 ensure_frontend_env() {
   local fe_dir="$worktree_dir/${project_dir_cfg}"
   [[ -n "$project_dir_cfg" && -f "$fe_dir/package-lock.json" ]] || return 0
@@ -321,7 +323,8 @@ Core requirements:
 - Frontend node_modules are pre-installed in the worktree by the orchestrator. Do not run npm install unless you add a new pinned package; if that install fails offline, note it in final-summary.md and finish — the orchestrator installs from the lockfile before validation.
 - Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
 - Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
-- Run required quality gates.
+- During implementation, run focused red/green tests for the changed backend/business behavior and the impacted frontend tests, typecheck, lint, and build as appropriate.
+- Do not run the complete backend suite or full coverage yourself. The orchestrator runs the authoritative complete backend suite once under coverage after you finish, and rejects any test failure or coverage below the configured floor. This avoids paying for identical full-suite executions without removing any acceptance gate.
 - For a slice declaring 'localhost-e2e-server', implement the exact specs and screenshot outputs in its '## Trusted Browser Acceptance' section. Your coding sandbox may deny Chromium's macOS services: use Playwright collection or non-browser tests for your local feedback, do not fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch. The orchestrator runs the declared browser contract twice outside your sandbox after you finish; that independent gate decides browser acceptance.
 - Save evidence.
 - Save changed-files.txt.
@@ -578,8 +581,46 @@ if (( no_commit == 0 )); then
     if git diff --cached --quiet; then
       echo "No changes to commit for $slice_id."
       exit 10
-    else
-      git commit -m "chore(${slice_id}): complete Ralph AFK run"
+    fi
+    expected_candidate_hash="$(cat "$run_dir/validated-commit-candidate.sha256" 2>/dev/null || true)"
+    actual_candidate_hash="$(python3 "$repo_root/scripts/lib/ralph-candidate-hash.py" \
+      "$worktree_dir" \
+      --exclude "docs/slices/${slice_id}.md" \
+      --exclude "docs/working/HANDOFF.md")"
+    {
+      echo
+      echo "Before commit: $actual_candidate_hash"
+    } >> "$run_dir/candidate-hash-results.md"
+    if [[ -z "$expected_candidate_hash" || "$actual_candidate_hash" != "$expected_candidate_hash" ]]; then
+      echo "Candidate changed after validation; refusing to commit." >&2
+      exit 11
+    fi
+
+    git commit -m "chore(${slice_id}): complete Ralph AFK run"
+
+    committed_candidate_hash="$(python3 "$repo_root/scripts/lib/ralph-candidate-hash.py" \
+      "$worktree_dir" \
+      --target HEAD \
+      --exclude "docs/slices/${slice_id}.md" \
+      --exclude "docs/working/HANDOFF.md")"
+    {
+      echo "Committed candidate: $committed_candidate_hash"
+      if [[ "$committed_candidate_hash" == "$expected_candidate_hash" ]]; then
+        echo "PASS: committed product candidate exactly matches the validated candidate."
+      else
+        echo "FAIL: committed product candidate differs from the validated candidate."
+      fi
+    } >> "$run_dir/candidate-hash-results.md"
+    if [[ "$committed_candidate_hash" != "$expected_candidate_hash" ]]; then
+      echo "Commit hook changed the validated candidate; refusing to merge." >&2
+      exit 12
+    fi
+    if [[ -n "$(git status --porcelain -- . \
+        ':(exclude).ralph' \
+        ":(exclude)docs/slices/${slice_id}.md" \
+        ':(exclude)docs/working/HANDOFF.md')" ]]; then
+      echo "Commit left unvalidated product changes behind; refusing to merge." >&2
+      exit 13
     fi
   ); then
     committed=1

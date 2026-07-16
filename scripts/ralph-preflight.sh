@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+source "$repo_root/scripts/lib/ralph-node-runtime.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -111,7 +112,9 @@ if [[ -n "$selected_slice" ]]; then
     fail "Selected slice not found: $selected_slice"
   fi
 else
-  find docs/slices -maxdepth 1 -type f -name '*.md' | grep -q . && pass "At least one slice file exists." || fail "No slice files found."
+  compgen -G 'docs/slices/*.md' >/dev/null \
+    && pass "At least one slice file exists." \
+    || fail "No slice files found."
 fi
 
 mkdir -p .ralph/locks
@@ -123,7 +126,7 @@ for lock in .ralph/locks/*.lock; do
     warn "Removed stale lock $(basename "$lock") — owning process is no longer running (previous session interrupted)."
   fi
 done
-if find .ralph/locks -maxdepth 1 -type f -name '*.lock' | grep -q .; then
+if compgen -G '.ralph/locks/*.lock' >/dev/null; then
   fail "Another Ralph run is active right now (live lock). Wait for it or stop it before starting a new run."
 else
   pass "No active Ralph locks."
@@ -147,6 +150,14 @@ fi
 
 if [[ -n "$pm" ]]; then
   pass "Package manager detected: $pm in $project_dir."
+  pinned_node_version="$(ralph_pinned_node_version "$repo_root" "$project_dir" 2>/dev/null || true)"
+  if [[ -z "$pinned_node_version" ]]; then
+    fail "Repository Node version is not pinned in .nvmrc."
+  elif pinned_node_bin="$(ralph_node_bin_dir_for_version "$pinned_node_version" 2>/dev/null)"; then
+    pass "Pinned Node v$pinned_node_version is available at $pinned_node_bin."
+  else
+    fail "Pinned Node v$pinned_node_version is not installed."
+  fi
   if [[ -f "$project_dir/package.json" ]]; then
     grep -q '"build"' "$project_dir/package.json" && pass "Build script detected." || warn "No build script detected."
     grep -q '"lint"' "$project_dir/package.json" && pass "Lint script detected." || warn "No lint script detected."

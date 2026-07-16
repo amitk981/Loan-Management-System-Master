@@ -105,10 +105,20 @@ log="$RUN_DIR/evidence/terminal-logs/codex.log"
 codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" > "$log" 2>&1 &
 agent_pid=$!
 
-# Stream the agent's log to stdout while it runs so callers see live progress
-# instead of silence until the run ends.
-tail -n +1 -f "$log" &
-tail_pid=$!
+# The run artifact is the single authoritative full transcript. Streaming that
+# transcript through the outer loop duplicated tens or hundreds of MB into
+# last-run-output.log and loop-*.log. Emit a bounded heartbeat instead.
+echo "Full agent log: $log"
+(
+  heartbeat_seconds="${RALPH_AGENT_HEARTBEAT_SECONDS:-30}"
+  while kill -0 "$agent_pid" 2>/dev/null; do
+    sleep "$heartbeat_seconds"
+    kill -0 "$agent_pid" 2>/dev/null || break
+    log_bytes="$(wc -c < "$log" 2>/dev/null | xargs || echo 0)"
+    echo "Codex agent active (PID $agent_pid, full log ${log_bytes} bytes)."
+  done
+) &
+heartbeat_pid=$!
 
 # The watchdog must be fully detached from stdout/stderr: an inherited pipe
 # keeps callers that use command substitution blocked on the sleep child even
@@ -130,8 +140,11 @@ pkill -P "$watchdog_pid" 2>/dev/null || true
 kill "$watchdog_pid" 2>/dev/null || true
 wait "$watchdog_pid" 2>/dev/null || true
 sleep 1
-kill "$tail_pid" 2>/dev/null || true
-wait "$tail_pid" 2>/dev/null || true
+pkill -P "$heartbeat_pid" 2>/dev/null || true
+kill "$heartbeat_pid" 2>/dev/null || true
+wait "$heartbeat_pid" 2>/dev/null || true
+echo "Codex agent finished with exit $status. Final log excerpt:"
+tail -n 30 "$log" 2>/dev/null | cut -c1-500 || true
 
 # Flag usage-limit exhaustion so the loop can switch agents. Only a failed
 # agent whose final log lines name a usage/rate limit counts — a genuine

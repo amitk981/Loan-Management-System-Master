@@ -433,6 +433,9 @@ git -C "$browser_failfast_repo" config user.name "Ralph Regression"
 git -C "$browser_failfast_repo" config user.email "ralph-regression@example.invalid"
 git -C "$browser_failfast_repo" add .
 git -C "$browser_failfast_repo" commit -qm fixture
+# Simulate a real agent candidate so the pre-coverage no-op blocker passes and
+# this fixture reaches the trusted-browser fail-fast lane it is testing.
+printf '// candidate change\n' >> "$browser_failfast_repo/frontend/e2e/failfast.e2e.spec.ts"
 set +e
 PATH="$browser_failfast_bin:$PATH" \
   BROWSER_INVOCATIONS="$browser_invocations" \
@@ -460,6 +463,159 @@ done
 grep -qF 'e2e-results.md:- FAIL: first trusted slice-specific browser run did not pass.' \
   "$browser_failfast_run_dir/failure-summary.md" \
   || fail "browser fail-fast did not leave repair-readable failure evidence"
+
+# A cheap all-gates-disabled fixture must still reach a clean validator exit;
+# this catches moved evidence variables becoming unbound after consolidation.
+validator_success_repo="$fixture_dir/validator-success-repo"
+validator_success_run="validator-success-run"
+validator_success_run_dir="$validator_success_repo/.ralph/runs/$validator_success_run"
+mkdir -p "$validator_success_repo/.ralph" "$validator_success_repo/docs/slices" \
+  "$validator_success_repo/frontend" "$validator_success_run_dir"
+cat > "$validator_success_repo/.ralph/config.yaml" <<'EOF'
+project_dir: frontend
+backend_dir: backend
+build: false
+install: false
+typecheck: false
+lint: false
+unit_tests: false
+backend_check: false
+backend_tests: false
+backend_migrations: false
+backend_coverage: false
+max_changed_files: 30
+max_lines_changed: 2000
+EOF
+printf '%s\n' '{"completed_slices": []}' > "$validator_success_repo/.ralph/state.json"
+printf '%s\n' '{}' > "$validator_success_repo/.ralph/permissions.json"
+cat > "$validator_success_repo/docs/slices/999Z-validator-success.md" <<'EOF'
+# Slice 999Z: Validator success fixture
+
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+for artifact in prompt.md changed-files.txt final-summary.md; do
+  printf 'fixture\n' > "$validator_success_run_dir/$artifact"
+done
+printf '1. Exercise validator success.\n' > "$validator_success_run_dir/execution-plan.md"
+printf 'Low risk fixture.\n' > "$validator_success_run_dir/risk-assessment.md"
+cat > "$validator_success_run_dir/review-packet.md" <<'EOF'
+## Result
+Ready to merge
+EOF
+git init -q "$validator_success_repo"
+git -C "$validator_success_repo" config user.name "Ralph Regression"
+git -C "$validator_success_repo" config user.email "ralph-regression@example.invalid"
+git -C "$validator_success_repo" add .
+git -C "$validator_success_repo" commit -qm fixture
+printf 'candidate\n' > "$validator_success_repo/frontend/change.txt"
+scripts/ralph-validate.sh \
+  --run-id "$validator_success_run" \
+  --worktree "$validator_success_repo" \
+  --mode normal_run \
+  --slice 999Z-validator-success \
+  > "$fixture_dir/validator-success.stdout" \
+  2> "$fixture_dir/validator-success.stderr" \
+  || fail "all-green validator fixture did not complete"
+grep -qF 'Validation passed.' "$validator_success_run_dir/ralph-artifact-validation.md" \
+  || fail "all-green validator did not finalize artifact evidence"
+grep -qF 'PASS: candidate content remained frozen throughout validation.' \
+  "$validator_success_run_dir/candidate-hash-results.md" \
+  || fail "all-green validator did not verify the frozen candidate"
+
+# Owner-maintenance performance and reliability contracts. These checks keep
+# the exact quality gates while ensuring doomed candidates fail before costly
+# suites, candidate contents remain frozen during validation, and the agent's
+# complete log is stored once rather than copied into every loop transcript.
+if rg -q "find docs/slices .*grep -q" scripts/ralph-preflight.sh; then
+  fail "preflight slice discovery still uses the pipefail/SIGPIPE-prone find-to-grep pipeline"
+fi
+rg -q 'ralph_run_fast_candidate_checks' scripts/ralph-validate.sh \
+  || fail "validator does not run cheap candidate blockers before expensive gates"
+python3 - <<'PY'
+from pathlib import Path
+
+source = Path("scripts/ralph-validate.sh").read_text()
+cheap = source.index("ralph_run_fast_candidate_checks")
+frontend = source.index('run_gate build "npm run build"')
+postgres = source.index("run_postgresql_acceptance_once 1")
+backend = source.index("run_backend_gate backend-coverage")
+if not cheap < min(frontend, postgres, backend):
+    raise SystemExit("FAIL: cheap candidate checks do not precede every expensive validation lane")
+PY
+for cheap_contract in 'Slice Status Transition Check' 'No-Op Check Results' 'state.json is valid' 'config.yaml is parseable'; do
+  rg -q "$cheap_contract" scripts/lib/ralph-fast-candidate-checks.sh \
+    || fail "pre-coverage validation omits cheap contract: $cheap_contract"
+done
+if rg -q '^# Protected paths:|^# No-op check:|^# Artifact quality:' scripts/ralph-validate.sh; then
+  fail "validator duplicates authoritative cheap-check implementations after expensive gates"
+fi
+rg -q 'Duration milliseconds:' scripts/ralph-validate.sh \
+  || fail "validation gate results do not record monotonic duration"
+rg -q 'ralph_candidate_hash' scripts/ralph-validate.sh \
+  || fail "validator does not verify a frozen candidate hash"
+
+candidate_hash_helper="scripts/lib/ralph-candidate-hash.py"
+[[ -x "$candidate_hash_helper" ]] || fail "missing executable candidate hash helper"
+candidate_repo="$fixture_dir/candidate-hash-repo"
+git init -q "$candidate_repo"
+git -C "$candidate_repo" config user.name "Ralph Regression"
+git -C "$candidate_repo" config user.email "ralph-regression@example.invalid"
+printf 'tracked\n' > "$candidate_repo/tracked.txt"
+git -C "$candidate_repo" add tracked.txt
+git -C "$candidate_repo" commit -qm fixture
+first_candidate_hash="$(python3 "$candidate_hash_helper" "$candidate_repo")"
+mkdir -p "$candidate_repo/.ralph/runs/example"
+printf 'validation evidence\n' > "$candidate_repo/.ralph/runs/example/result.md"
+[[ "$(python3 "$candidate_hash_helper" "$candidate_repo")" == "$first_candidate_hash" ]] \
+  || fail "candidate hash changed for Ralph evidence only"
+printf 'changed\n' >> "$candidate_repo/tracked.txt"
+second_candidate_hash="$(python3 "$candidate_hash_helper" "$candidate_repo")"
+[[ "$second_candidate_hash" != "$first_candidate_hash" ]] \
+  || fail "candidate hash ignored a tracked product change"
+printf 'new product file\n' > "$candidate_repo/new.txt"
+third_candidate_hash="$(python3 "$candidate_hash_helper" "$candidate_repo")"
+[[ "$third_candidate_hash" != "$second_candidate_hash" ]] \
+  || fail "candidate hash ignored an untracked product change"
+git -C "$candidate_repo" add tracked.txt new.txt
+git -C "$candidate_repo" commit -qm candidate
+committed_candidate_hash="$(python3 "$candidate_hash_helper" "$candidate_repo" --target HEAD)"
+[[ "$committed_candidate_hash" == "$third_candidate_hash" ]] \
+  || fail "committed candidate hash does not match the validated working-tree candidate"
+rg -q 'PASS: committed product candidate exactly matches the validated candidate' scripts/ralph-run.sh \
+  || fail "orchestrator does not verify the actual committed candidate before merge"
+
+if rg -q 'tail -n \+1 -f "\$log"' scripts/agent-adapters/codex.sh scripts/agent-adapters/claude.sh; then
+  fail "agent adapters still duplicate the complete agent log into the outer loop log"
+fi
+rg -q 'Full agent log:' scripts/agent-adapters/codex.sh \
+  || fail "Codex adapter does not identify the retained authoritative full log"
+
+[[ "$(tr -d '[:space:]' < .nvmrc)" == "20.19.6" ]] \
+  || fail "repository Node version is not pinned to 20.19.6"
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+package = json.loads(Path("sfpcl-lms/package.json").read_text())
+if package.get("engines", {}).get("node") != "20.19.6":
+    raise SystemExit("FAIL: frontend package metadata does not pin Node 20.19.6")
+lock = json.loads(Path("sfpcl-lms/package-lock.json").read_text())
+if lock["packages"][""].get("engines", {}).get("node") != "20.19.6":
+    raise SystemExit("FAIL: frontend lock metadata does not pin Node 20.19.6")
+PY
+rg -q 'node-version: 20\.19\.6' .github/workflows/ci.yml \
+  || fail "GitHub CI does not use the exact supported Node version"
+rg -q 'ralph_activate_pinned_node' scripts/ralph-run.sh \
+  || fail "Ralph does not activate the repository-pinned Node runtime"
+rg -q 'Do not run the complete backend suite or full coverage yourself' scripts/ralph-run.sh \
+  || fail "agent prompt still permits duplicate complete backend coverage runs"
+if rg -q "grep -qiE 'fail\|blocked'" scripts/ralph-validate.sh; then
+  fail "agent-declared result still treats explanatory uses of 'failure' as a failed verdict"
+fi
 
 # Agent output is untrusted text. It must never drive loop control flow.
 if rg -n 'grep -q .*No eligible slice found|grep -q .*has been vetoed by the owner|grep -q .*MERGE_FAILED|grep -q .*AGENT_LIMIT_EXHAUSTED' scripts/ralph-loop.sh; then
@@ -534,7 +690,7 @@ rg -q "README E2E command does not resolve the shared venv" scripts/ralph-valida
   || fail "independent localhost E2E validation does not enforce the worktree-safe README command"
 rg -q "Playwright does not pin the dashboard baseline timezone" scripts/ralph-validate.sh \
   || fail "independent localhost E2E validation does not enforce the fixed browser timezone"
-rg -q "grep -Eq '\^\[\[:space:\]\]\*\[0-9\]" scripts/ralph-validate.sh \
+rg -q "grep -Eq '\^\[\[:space:\]\]\*\[0-9\]" scripts/lib/ralph-fast-candidate-checks.sh \
   || fail "artifact validation does not distinguish a filled numbered plan from an untouched template"
 rg -q 'slice does not declare localhost-e2e-server' scripts/ralph-validate.sh \
   || fail "ordinary slices do not explicitly skip the capability-only E2E gate"
@@ -555,7 +711,7 @@ if rg -q -- '--settings=sfpcl_credit.config.postgres_test_settings --keepdb' scr
 fi
 rg -q 'postgres_acceptance_required' scripts/ralph-validate.sh \
   || fail "PostgreSQL validation is not selected from the shared capability declaration"
-rg -q 'verified acceptance-only slice' scripts/ralph-validate.sh \
+rg -q 'acceptance-only slice is eligible' scripts/lib/ralph-fast-candidate-checks.sh \
   || fail "006F4 no-op exception is not tied to verified acceptance"
 rg -q 'validation_timeout_seconds' scripts/ralph-run.sh \
   || fail "independent validation does not have a configured timeout"

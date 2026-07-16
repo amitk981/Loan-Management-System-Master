@@ -7,6 +7,7 @@ source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
 source "$repo_root/scripts/lib/ralph-browser-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-slice-selection.sh"
+source "$repo_root/scripts/lib/ralph-fast-candidate-checks.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -81,10 +82,36 @@ enabled() {
   awk -F': *' -v key="$key" '$1 ~ "^[[:space:]]*" key "$" {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs
 }
 
+ralph_monotonic_ms() {
+  python3 -c 'import time; print(time.monotonic_ns() // 1_000_000)'
+}
+
+ralph_candidate_hash() {
+  local candidate_worktree="${1:?worktree directory is required}"
+  shift
+  python3 "$repo_root/scripts/lib/ralph-candidate-hash.py" \
+    "$candidate_worktree" "$@"
+}
+
+ralph_append_gate_timing() {
+  local file="${1:?result file is required}"
+  local started_ms="${2:?start time is required}"
+  local rc="${3:?exit code is required}"
+  local ended_ms
+  ended_ms="$(ralph_monotonic_ms)"
+  {
+    echo
+    echo "Duration milliseconds: $((ended_ms - started_ms))"
+    echo "Exit code: $rc"
+  } >> "$file"
+}
+
 run_gate() {
   local name="$1"
   local command="$2"
   local file="$run_dir/${name}-results.md"
+  local started_ms rc=0
+  started_ms="$(ralph_monotonic_ms)"
   {
     echo "# $name Results"
     echo
@@ -93,6 +120,7 @@ run_gate() {
   } > "$file"
   if [[ ! -d "$project_path" ]]; then
     echo "Project directory not found: $project_path" >> "$file"
+    ralph_append_gate_timing "$file" "$started_ms" 1
     failed_gate_logs+=("${name}-results.md")
     return 1
   fi
@@ -101,9 +129,11 @@ run_gate() {
     echo >> "$file"
     command="export PATH=\"$node_bin_dir:\$PATH\"; $command"
   fi
-  if ! (cd "$project_path" && bash -lc "$command") >> "$file" 2>&1; then
+  (cd "$project_path" && bash -lc "$command") >> "$file" 2>&1 || rc=$?
+  ralph_append_gate_timing "$file" "$started_ms" "$rc"
+  if (( rc != 0 )); then
     failed_gate_logs+=("${name}-results.md")
-    return 1
+    return "$rc"
   fi
 }
 
@@ -125,12 +155,39 @@ backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/,
 postgres_acceptance_passed=0
 required_browser_failed=0
 
+# Reject protected edits, invalid queue state, unfilled artifacts, declared
+# failures, and oversized diffs before any expensive validation command runs.
+if ! ralph_run_fast_candidate_checks \
+    "$worktree_dir" "$run_dir" "$config" "$mode" "$slice_id" \
+    "$postgres_acceptance_required"; then
+  echo "Candidate failed cheap validation; expensive gates were not started." >&2
+  exit 1
+fi
+artifact_file="$run_dir/ralph-artifact-validation.md"
+changed_paths="$( (cd "$worktree_dir" && git status --porcelain) \
+  | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"
+
+candidate_hash_before="$(ralph_candidate_hash "$worktree_dir")"
+commit_candidate_hash_before="$(ralph_candidate_hash "$worktree_dir" \
+  --exclude "docs/slices/${slice_id}.md" \
+  --exclude "docs/working/HANDOFF.md")"
+printf '%s\n' "$commit_candidate_hash_before" \
+  > "$run_dir/validated-commit-candidate.sha256"
+{
+  echo "# Candidate Hash Results"
+  echo
+  echo "Before validation: $candidate_hash_before"
+  echo "Commit candidate before validation: $commit_candidate_hash_before"
+} > "$run_dir/candidate-hash-results.md"
+
 run_postgresql_acceptance_once() {
   local ordinal="$1"
   local log="$run_dir/evidence/terminal-logs/postgresql-acceptance-validation-${ordinal}.txt"
   local rc=0
   local cleanup_rc=0
+  local started_ms
   local postgres_test_db
+  started_ms="$(ralph_monotonic_ms)"
   postgres_test_db="$(postgresql_test_database_name "$run_id" "$ordinal")"
   mkdir -p "$(dirname "$log")"
   {
@@ -158,6 +215,7 @@ run_postgresql_acceptance_once() {
     echo "FAIL: unable to remove isolated PostgreSQL test database $postgres_test_db." >> "$log"
   fi
   echo >> "$log"
+  echo "Duration milliseconds: $(( $(ralph_monotonic_ms) - started_ms ))" >> "$log"
   echo "Exit code: $rc" >> "$log"
   echo "Cleanup exit code: $cleanup_rc" >> "$log"
   (( rc == 0 && cleanup_rc == 0 )) && postgresql_acceptance_log_passes "$log"
@@ -169,6 +227,8 @@ run_trusted_browser_acceptance_once() {
   local specs=()
   local spec=""
   local rc=0
+  local started_ms
+  started_ms="$(ralph_monotonic_ms)"
   while IFS= read -r spec; do
     [[ -n "$spec" ]] && specs+=("$spec")
   done < <(ralph_trusted_e2e_specs "$slice_file")
@@ -197,6 +257,7 @@ run_trusted_browser_acceptance_once() {
     rc=$?
   fi
   echo >> "$log"
+  echo "Duration milliseconds: $(( $(ralph_monotonic_ms) - started_ms ))" >> "$log"
   echo "Exit code: $rc" >> "$log"
   (( rc == 0 ))
 }
@@ -354,15 +415,19 @@ run_backend_gate() {
   local name="$1"
   local command="$2"
   local file="$run_dir/${name}-results.md"
+  local started_ms rc=0
+  started_ms="$(ralph_monotonic_ms)"
   {
     echo "# $name Results"
     echo
     echo "Command: $command"
     echo
   } > "$file"
-  if ! (cd "$worktree_dir" && bash -lc "$command") >> "$file" 2>&1; then
+  (cd "$worktree_dir" && bash -lc "$command") >> "$file" 2>&1 || rc=$?
+  ralph_append_gate_timing "$file" "$started_ms" "$rc"
+  if (( rc != 0 )); then
     failed_gate_logs+=("${name}-results.md")
-    return 1
+    return "$rc"
   fi
 }
 
@@ -412,280 +477,18 @@ else
   write_skipped backend-test "no backend detected at ${backend_dir:-<unset>}/manage.py"
 fi
 
-# Protected paths: an agent run must never modify guardrail files.
-guard_file="$run_dir/protected-paths-check.md"
+candidate_hash_after="$(ralph_candidate_hash "$worktree_dir")"
 {
-  echo "# Protected Paths Check"
-  echo
-} > "$guard_file"
-protected_paths=(
-  "scripts/"
-  ".github/"
-  ".ralph/config.yaml"
-  ".ralph/permissions.json"
-  ".codex/config.toml"
-  "AGENTS.md"
-  "CLAUDE.md"
-  ".gitignore"
-  "docs/working/HIGH_RISK_APPROVALS.md"
-  "docs/working/DECISION_POLICY.md"
-  "docs/working/FRONTEND_DESIGN_RULES.md"
-  "docs/change-requests/TEMPLATE-bug.md"
-  "docs/change-requests/TEMPLATE-feature.md"
-  "docs/change-requests/TEMPLATE-slice.md"
-  "docs/change-requests/TEMPLATE-epic.md"
-  "docs/change-requests/README.md"
-  "docs/source/"
-)
-changed_paths="$( (cd "$worktree_dir" && git status --porcelain) | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"
-protected_violations=0
-while IFS= read -r changed; do
-  [[ -z "$changed" ]] && continue
-  for prot in "${protected_paths[@]}"; do
-    if [[ "$changed" == "$prot" || "$changed" == "$prot"* ]]; then
-      echo "- FAIL: protected path modified by this run: $changed" >> "$guard_file"
-      protected_violations=$((protected_violations + 1))
-    fi
-  done
-done <<< "$changed_paths"
-if (( protected_violations > 0 )); then
-  echo "" >> "$guard_file"
-  echo "Protected files may only be changed by the human owner outside Ralph runs." >> "$guard_file"
-  failures=$((failures + protected_violations))
-else
-  echo "- PASS: no protected paths were modified." >> "$guard_file"
-fi
-
-# Slice queue lint: any run may create or sharpen slices (architecture
-# reviews especially), and a new slice only executes seamlessly if the queue
-# stays parseable and its Depends On graph still drains. Reject dangling
-# references, malformed sections, and dependency cycles before they merge.
-queue_lint_file="$run_dir/slice-queue-lint.md"
-{
-  echo "# Slice Queue Lint"
-  echo
-} > "$queue_lint_file"
-queue_lint_problems="$(ralph_slice_queue_lint "$worktree_dir/docs/slices" || true)"
-if [[ -z "$queue_lint_problems" ]]; then
-  echo "- PASS: every slice parses and the pending Depends On graph drains completely." >> "$queue_lint_file"
-else
-  while IFS= read -r lint_line; do
-    if [[ -n "$lint_line" ]]; then
-      echo "- FAIL: ${lint_line#problem: }" >> "$queue_lint_file"
-    fi
-  done <<< "$queue_lint_problems"
-  echo "" >> "$queue_lint_file"
-  echo "New or edited slices must follow the to-issues slice standard (## Status, ## Depends On with real slice ids) so the queue stays executable." >> "$queue_lint_file"
+  echo "After validation: $candidate_hash_after"
+  if [[ "$candidate_hash_after" == "$candidate_hash_before" ]]; then
+    echo "PASS: candidate content remained frozen throughout validation."
+  else
+    echo "FAIL: candidate content changed while validation was running."
+  fi
+} >> "$run_dir/candidate-hash-results.md"
+if [[ "$candidate_hash_after" != "$candidate_hash_before" ]]; then
   failures=$((failures + 1))
-fi
-
-# Slice status transitions: only the selected slice may change status in a
-# normal/repair run, and no run may flip a slice it did not execute to
-# Complete — that silently removes queued work. Reviews may re-park slices
-# (Blocked <-> Not Started, Superseded) but never complete them.
-st_file="$run_dir/slice-status-transition-check.md"
-{
-  echo "# Slice Status Transition Check"
-  echo
-} > "$st_file"
-st_violations=0
-st_checked=0
-while IFS= read -r st_path; do
-  case "$st_path" in
-    docs/slices/*.md) ;;
-    *) continue ;;
-  esac
-  st_old="$( (cd "$worktree_dir" && git show "HEAD:$st_path" 2>/dev/null || true) | awk '/^## Status/ { getline; print; exit }' )"
-  if [[ -z "$st_old" ]]; then
-    continue
-  fi
-  if [[ -f "$worktree_dir/$st_path" ]]; then
-    st_new="$(ralph_slice_status "$worktree_dir/$st_path")"
-  else
-    st_new="(deleted)"
-  fi
-  st_base="$(basename "$st_path" .md)"
-  st_checked=$((st_checked + 1))
-  if ralph_slice_transition_allowed "$mode" "${slice_id:-}" "$st_base" "$st_old" "$st_new"; then
-    if [[ "$st_old" != "$st_new" ]]; then
-      echo "- PASS: $st_base status '$st_old' -> '$st_new' (allowed for this run)." >> "$st_file"
-    fi
-  else
-    echo "- FAIL: $st_base status changed '$st_old' -> '$st_new' but this run executed '${slice_id:-<none>}'." >> "$st_file"
-    st_violations=$((st_violations + 1))
-  fi
-done <<< "$changed_paths"
-if (( st_violations > 0 )); then
-  echo "" >> "$st_file"
-  echo "A run may only transition the slice it executed; reviews may re-park other slices but never mark them Complete." >> "$st_file"
-  failures=$((failures + st_violations))
-elif (( st_checked == 0 )); then
-  echo "- PASS: no existing slice files were modified." >> "$st_file"
-else
-  echo "- PASS: all slice status transitions are allowed for this run." >> "$st_file"
-fi
-
-# Impact-analysis gate: change-request slices (CR-*) must map their blast
-# radius before any code change is accepted.
-if [[ "$mode" == "normal_run" && "$slice_id" == CR-* ]]; then
-  impact_file="$run_dir/impact-analysis.md"
-  ia_results="$run_dir/impact-analysis-check-results.md"
-  if [[ -s "$impact_file" ]] && grep -qi "blast radius\|affected" "$impact_file" && grep -qi "regression" "$impact_file"; then
-    {
-      echo "# Impact Analysis Check Results"
-      echo
-      echo "PASS: impact-analysis.md exists and covers affected modules and regression tests."
-    } > "$ia_results"
-  else
-    {
-      echo "# Impact Analysis Check Results"
-      echo
-      echo "FAIL: change-request slice $slice_id requires impact-analysis.md in the run folder,"
-      echo "covering affected modules (blast radius) and the regression tests to add per module."
-    } > "$ia_results"
-    failures=$((failures + 1))
-  fi
-fi
-
-# No-op check: a normal run must actually change something outside Ralph's
-# own bookkeeping, otherwise the slice would be silently marked Complete
-# without any work having been done.
-if [[ "$mode" == "normal_run" ]]; then
-  noop_file="$run_dir/no-op-check-results.md"
-  agent_changes="$(printf '%s\n' "$changed_paths" | grep -v '^\.ralph/' | grep -v '^$' || true)"
-  if [[ -z "$agent_changes" ]]; then
-    if [[ "$slice_id" == "006F4-postgresql-credit-concurrency-acceptance" && "$postgres_acceptance_passed" == "1" ]]; then
-      {
-        echo "# No-Op Check Results"
-        echo
-        echo "PASS: verified acceptance-only slice completed through the independent PostgreSQL gate."
-        echo "No product change is required when both authoritative runs and environment evidence pass."
-      } > "$noop_file"
-    else
-      {
-        echo "# No-Op Check Results"
-        echo
-        echo "FAIL: the agent produced no changes outside .ralph/ bookkeeping."
-        echo "A normal run cannot complete a slice with zero product/doc changes."
-      } > "$noop_file"
-      failures=$((failures + 1))
-    fi
-  else
-    {
-      echo "# No-Op Check Results"
-      echo
-      echo "PASS: the run produced real changes:"
-      printf '%s\n' "$agent_changes" | sed 's/^/- /'
-    } > "$noop_file"
-  fi
-fi
-
-# Artifact quality: the pre-created plan and risk assessment must have been
-# replaced with real content — existence alone proves nothing.
-aq_file="$run_dir/artifact-quality-check.md"
-{
-  echo "# Artifact Quality Check"
-  echo
-} > "$aq_file"
-if grep -qF "must replace this template" "$run_dir/execution-plan.md" 2>/dev/null \
-   && ! grep -Eq '^[[:space:]]*[0-9]+\.[[:space:]]+' "$run_dir/execution-plan.md" 2>/dev/null; then
-  echo "- FAIL: execution-plan.md is still the unfilled template." >> "$aq_file"
-  failures=$((failures + 1))
-else
-  echo "- PASS: execution-plan.md was filled in." >> "$aq_file"
-fi
-if grep -qF "To be completed by the selected agent" "$run_dir/risk-assessment.md" 2>/dev/null; then
-  echo "- FAIL: risk-assessment.md is still the unfilled template." >> "$aq_file"
-  failures=$((failures + 1))
-else
-  echo "- PASS: risk-assessment.md was filled in." >> "$aq_file"
-fi
-
-# Diff limits: catch runaway rewrites (config limits, .ralph/ excluded).
-if [[ "$mode" == "normal_run" || "$mode" == "repair" ]]; then
-  max_files="$(awk -F': *' '/^[[:space:]]*max_changed_files:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
-  max_lines="$(awk -F': *' '/^[[:space:]]*max_lines_changed:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
-  max_files="${max_files:-30}"
-  max_lines="${max_lines:-2000}"
-
-  files_changed="$(printf '%s\n' "$changed_paths" | grep -v '^\.ralph/' | grep -cv '^$' || true)"
-  tracked_lines="$( (cd "$worktree_dir" && git diff --numstat HEAD -- . ':(exclude).ralph') | awk '{added=$1; deleted=$2; if (added != "-") total += added; if (deleted != "-") total += deleted} END {print total + 0}')"
-  untracked_lines=0
-  while IFS= read -r f; do
-    [[ -z "$f" || ! -f "$worktree_dir/$f" ]] && continue
-    untracked_lines=$((untracked_lines + $(wc -l < "$worktree_dir/$f" 2>/dev/null || echo 0)))
-  done < <( (cd "$worktree_dir" && git ls-files --others --exclude-standard) | grep -v '^\.ralph/' || true)
-  total_lines=$((tracked_lines + untracked_lines))
-
-  dl_file="$run_dir/diff-limits-results.md"
-  {
-    echo "# Diff Limits Results"
-    echo
-    echo "- Files changed (excluding .ralph/): $files_changed (limit $max_files)"
-    echo "- Lines changed (tracked + new files, excluding .ralph/): $total_lines (limit $max_lines)"
-  } > "$dl_file"
-  if (( files_changed > max_files )); then
-    echo "- FAIL: changed-file count exceeds limits.max_changed_files." >> "$dl_file"
-    failures=$((failures + 1))
-  fi
-  if (( total_lines > max_lines )); then
-    echo "- FAIL: changed-line count exceeds limits.max_lines_changed." >> "$dl_file"
-    failures=$((failures + 1))
-  fi
-  if (( files_changed <= max_files && total_lines <= max_lines )); then
-    echo "- PASS: within diff limits." >> "$dl_file"
-  fi
-fi
-
-artifact_file="$run_dir/ralph-artifact-validation.md"
-{
-  echo "# Ralph Artifact Validation"
-  echo
-  echo "- Run folder: $run_dir"
-} > "$artifact_file"
-
-for required in prompt.md execution-plan.md changed-files.txt risk-assessment.md final-summary.md review-packet.md; do
-  if [[ -f "$run_dir/$required" ]]; then
-    echo "- PASS: $required exists." >> "$artifact_file"
-  else
-    echo "- FAIL: $required is missing." >> "$artifact_file"
-    failures=$((failures + 1))
-  fi
-done
-
-python3 -m json.tool "$worktree_dir/.ralph/state.json" >/dev/null && echo "- PASS: state.json is valid." >> "$artifact_file" || { echo "- FAIL: state.json invalid." >> "$artifact_file"; failures=$((failures + 1)); }
-python3 -m json.tool "$worktree_dir/.ralph/permissions.json" >/dev/null && echo "- PASS: permissions.json is valid." >> "$artifact_file" || { echo "- FAIL: permissions.json invalid." >> "$artifact_file"; failures=$((failures + 1)); }
-
-if command -v ruby >/dev/null 2>&1; then
-  ruby -e 'require "yaml"; YAML.load_file(ARGV[0])' "$config" >/dev/null 2>&1 && echo "- PASS: config.yaml is parseable." >> "$artifact_file" || { echo "- FAIL: config.yaml invalid." >> "$artifact_file"; failures=$((failures + 1)); }
-fi
-
-# Agent-declared result: if the agent's own review packet says the run failed,
-# is blocked, or must not be committed/merged, the run must not pass validation
-# even when every mechanical gate is green. (006F3 lesson: the committed packet
-# said "Failed acceptance; do not commit or merge" while the run reported
-# Success and merged.)
-declared_file="$run_dir/agent-declared-result-check.md"
-{
-  echo "# Agent-Declared Result Check"
-  echo
-} > "$declared_file"
-review_packet="$run_dir/review-packet.md"
-if [[ "$mode" != "normal_run" && "$mode" != "repair" ]]; then
-  echo "- SKIP: mode $mode (architecture-review packets may quote failure phrases from findings)." >> "$declared_file"
-elif [[ -f "$review_packet" ]]; then
-  declared_result="$(awk '/^## Result/{while ((getline line) > 0) { if (line !~ /^[[:space:]]*$/) { print line; exit } }}' "$review_packet" | xargs || true)"
-  if printf '%s' "$declared_result" | grep -qiE 'fail|blocked' \
-     || grep -qiE 'do not (commit|merge)' "$review_packet"; then
-    echo "- FAIL: the agent's review-packet.md declares this run failed or unmergeable (Result: ${declared_result:-<none>})." >> "$declared_file"
-    echo "  Validation honours the agent's own verdict; passing gates do not override it." >> "$declared_file"
-    failures=$((failures + 1))
-    failed_gate_logs+=("review-packet.md")
-  else
-    echo "- PASS: review-packet.md declares no failed/blocked/unmergeable result (Result: ${declared_result:-In Progress})." >> "$declared_file"
-  fi
-else
-  echo "- SKIP: review-packet.md missing (reported by the artifact check)." >> "$declared_file"
+  failed_gate_logs+=("candidate-hash-results.md")
 fi
 
 if (( failures > 0 )); then

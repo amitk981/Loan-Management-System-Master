@@ -16,6 +16,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "engines": {
+    "node": "20.19.6"
+  },
   "dependencies": {
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
