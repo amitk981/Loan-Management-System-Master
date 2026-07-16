@@ -48,9 +48,9 @@ def sap_customer_profile_request(request, loan_application_id):
             "You do not have access to this loan application.",
         )
     except DomainInvalidStateError as exc:
-        return error_response(request, 409, "INVALID_STATE", str(exc))
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except SapRequestConflict as exc:
-        return error_response(request, 409, "SAP_REQUEST_CONFLICT", str(exc))
+        return error_response(request, 409, "CONFLICT", str(exc))
 
 
 @require_http_methods(["POST"])
@@ -76,9 +76,9 @@ def sap_customer_profile_request_send(request, sap_customer_profile_request_id):
             "The SAP request was not found or is inaccessible.",
         )
     except DomainInvalidStateError as exc:
-        return error_response(request, 409, "INVALID_STATE", str(exc))
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except SapRequestConflict as exc:
-        return error_response(request, 409, "SAP_REQUEST_CONFLICT", str(exc))
+        return error_response(request, 409, "CONFLICT", str(exc))
 
 
 @require_http_methods(["POST"])
@@ -104,9 +104,9 @@ def sap_customer_profile_request_complete(request, sap_customer_profile_request_
             "The SAP request was not found or is inaccessible.",
         )
     except DomainInvalidStateError as exc:
-        return error_response(request, 409, "INVALID_STATE", str(exc))
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except SapRequestConflict as exc:
-        return error_response(request, 409, "SAP_REQUEST_CONFLICT", str(exc))
+        return error_response(request, 409, "CONFLICT", str(exc))
 
 
 @require_http_methods(["POST"])
@@ -136,7 +136,7 @@ def sap_annexure_delivery_capability(request, sap_customer_profile_request_id):
             "The SAP request was not found or is inaccessible.",
         )
     except DomainInvalidStateError as exc:
-        return error_response(request, 409, "INVALID_STATE", str(exc))
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
 
 
 @require_http_methods(["GET"])
@@ -179,13 +179,13 @@ def sap_annexure_download(request, sap_customer_profile_request_id):
             actor=actor, request_id=sap_customer_profile_request_id,
             request=request, reason="invalid_delivery_state",
         )
-        return error_response(request, 409, "INVALID_STATE", str(exc))
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except SapRequestConflict as exc:
         record_delivery_denial(
             actor=actor, request_id=sap_customer_profile_request_id,
             request=request, reason="invalid_or_expired_capability",
         )
-        return error_response(request, 409, "SAP_DELIVERY_CONFLICT", str(exc))
+        return error_response(request, 409, "CONFLICT", str(exc))
 
 
 @require_http_methods(["GET"])
@@ -205,7 +205,7 @@ def member_sap_customer_code(request, member_id):
             "The member SAP code was not found or is inaccessible.",
         )
     except DomainInvalidStateError as exc:
-        return error_response(request, 409, "INVALID_STATE", str(exc))
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
 
 
 def _validation_error(request, exc, message):

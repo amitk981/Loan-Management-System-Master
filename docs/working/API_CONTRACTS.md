@@ -198,7 +198,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
 | Communication templates and communication history | Content-template metadata shell implemented in 003F; communication send/list shell implemented in 003I; real delivery and notification-center UI remain draft | None directly | `api-contracts.md` §39.1-§39.3; `data-model.md` §24.1-§24.2; `functional-spec.md` M16-FR-001-M16-FR-007/M18-FR-006 | `content_templates` and `communications` are persisted. `GET/POST/PATCH /api/v1/content-templates/` is protected by narrow A-022 content-template permissions. `POST /api/v1/communications/send/` renders approved/effective template snapshots, persists a pending communication record, and audits metadata only; `GET /api/v1/communications/` lists records for a supplied related entity with standard pagination. No real email/SMS/courier/phone provider is called yet. |
-| SAP and disbursement | Draft from source | Disbursement and CFC | SOP PDFs, `api-contracts.md` | Integration is manual/adapter-first for MVP. |
+| SAP and disbursement | SAP request/delivery/completion/reuse implemented through 009B3B; loan-account/readiness implemented through 009D | Disbursement and CFC | `api-contracts.md` §§29-31; `integrations.md` §8 | SAP is manual/adapter-first for MVP and owned by the public `sap_workflow` module; Finance retains only the model-identity compatibility import. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |
 | Compliance, registers, reports | Draft from source | Compliance, registers, reports | `api-contracts.md`, `auth-permissions.md` | Export masking must be tested. |
@@ -3831,14 +3831,14 @@ Creation requires the application owner's latest approval case to be approved an
 `SanctionDecision` to be `sanctioned` with a positive amount/date. It locks that evidence and the
 member before freezing name/type, folio, full registered address, optional contacts, application
 number, sanction facts, encrypted PAN, individual-only encrypted Aadhaar, and current verified bank
-last-four/IFSC when available. An active member SAP code returns `409 SAP_REQUEST_CONFLICT`; a
-missing/current-state failure returns stable validation, `INVALID_STATE`, `FORBIDDEN`, or
+last-four/IFSC when available. An active member SAP code returns `409 CONFLICT`; a
+missing/current-state failure returns stable validation, `INVALID_STATE_TRANSITION`, `FORBIDDEN`, or
 `OBJECT_ACCESS_DENIED` envelopes without creating a row/file/event.
 
 Success returns only `sap_customer_profile_request_id`, `request_status: draft`, `excel_file_id`,
 and canonical `assigned_to_user {user_id, full_name}`. The linked file is a checksum-retained,
 restricted genuine `.xlsx` Annexure I whose physical storage bytes are authenticated ciphertext;
-Finance's Annexure storage boundary verifies, decrypts, and returns the readable workbook. The
+The SAP owner's Annexure storage boundary verifies, decrypts, and returns the readable workbook. The
 response and audit/workflow evidence omit PAN, Aadhaar, address, and bank secrets. The active-request
 identity is application plus status `draft`/`sent`: sequential or concurrent retry returns the
 retained projection and creates no duplicate file, audit, or workflow event, unless an active
@@ -3885,7 +3885,7 @@ Correction, loan-account, readiness, and disbursement changes are not part of th
   reuse the retained code. The first accepted request freezes a canonical digest containing each
   field's supplied-versus-omitted marker plus its normalized value. Replay is HTTP 200 only when all
   five canonical fields match that digest; adding, omitting, or changing any retained optional value
-  returns `409 SAP_REQUEST_CONFLICT` with no success artifacts.
+  returns `409 CONFLICT` with no success artifacts.
 - Optional confirmation evidence must have one immutable upload-provenance row, sensitivity
   `restricted`, category `sap_confirmation`, uploader equal to the assignee, and scope equal to the
   request or its loan application. Missing, cross-object, public, template/portal, other-uploader,
@@ -3907,6 +3907,15 @@ Trusted downstream modules use `SapCustomerProfileModule.get_customer_code_for_m
 It returns an immutable coherent decision containing only customer-code, member, completed-profile-
 request, and loan-application ids plus active status, or `None`. Consumers must not import Finance
 SAP models, adapter internals, retained workbook storage, or SAP exception vocabulary.
+
+009B3B keeps these route paths, HTTP statuses, success fields, field errors, idempotency identities,
+audit/workflow vocabulary, ciphertext context, and nondisclosure rules unchanged while aligning
+touched workflow errors with §7: stale/invalid states use `409 INVALID_STATE_TRANSITION`; changed
+replays, duplicate-code conflicts, rejected adapter results, and invalid/expired delivery
+capabilities use `409 CONFLICT`. Executable request, rendering/storage, send, capability/download,
+completion/reuse/read, and Manual/Fake/Future adapter policy now live under `sap_workflow` and import
+no Finance model or implementation. `finance.models` remains only the object-identical legacy model
+import established by 009B3A; the former Finance SAP orchestration modules no longer exist.
 
 ## Loan account creation from terminal sanction (009C)
 

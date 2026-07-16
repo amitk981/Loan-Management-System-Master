@@ -1,0 +1,24 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009B3B-sap-policy-adapter-and-dependency-closure.md
+ M docs/slices/009D2-readiness-evidence-and-loan-scope-closure.md
+ M docs/slices/009E-payment-initiation-by-senior-manager-finance.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ D sfpcl_credit/finance/modules/annexure_i.py
+ D sfpcl_credit/finance/modules/annexure_storage.py
+ D sfpcl_credit/finance/modules/sap_customer_code.py
+ D sfpcl_credit/finance/modules/sap_customer_request.py
+ M sfpcl_credit/finance/views.py
+ M sfpcl_credit/sap_workflow/adapters.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_profile.py
+ M sfpcl_credit/tests/test_disbursement_readiness_api.py
+ M sfpcl_credit/tests/test_loan_account_creation_api.py
+ M sfpcl_credit/tests/test_sap_customer_profile_repair.py
+ M sfpcl_credit/tests/test_sap_customer_profile_request_api.py
+?? .ralph/runs/2026-07-16_201643_normal_run/
+?? sfpcl_credit/sap_workflow/modules/annexure_i.py
+?? sfpcl_credit/sap_workflow/modules/annexure_storage.py
+?? sfpcl_credit/sap_workflow/modules/sap_customer_code.py
+?? sfpcl_credit/sap_workflow/modules/sap_customer_request.py

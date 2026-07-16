@@ -104,7 +104,7 @@ class DisbursementReadinessApiTests(TestCase):
             self.assertNotIn(forbidden, secret_surface)
 
     def test_all_current_owner_decisions_return_ready(self):
-        from sfpcl_credit.finance.models import SapCustomerCode
+        from sfpcl_credit.sap_workflow.models import SapCustomerCode
         from sfpcl_credit.loans.models import LoanAccount
 
         code = SapCustomerCode.objects.create(
@@ -191,7 +191,7 @@ class DisbursementReadinessApiTests(TestCase):
         self.assertTrue(all("reason" not in item for item in data["checks"]))
 
     def test_each_source_fact_independently_blocks_aggregate_readiness(self):
-        from sfpcl_credit.finance.models import SapCustomerCode
+        from sfpcl_credit.sap_workflow.models import SapCustomerCode
         from sfpcl_credit.loans.models import LoanAccount
 
         code = SapCustomerCode.objects.create(

@@ -27,10 +27,14 @@ from sfpcl_credit.credit.models import (
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.documents.services import store_document_upload
 from sfpcl_credit.domain_errors import DomainPermissionDenied
-from sfpcl_credit.finance.models import SapCustomerCode, SapCustomerProfileRequest
-from sfpcl_credit.finance.modules.annexure_storage import EncryptedAnnexureStorage
-from sfpcl_credit.finance.modules.sap_customer_code import complete_request, send_request
-from sfpcl_credit.finance.modules.sap_customer_request import SapRequestConflict, create_request
+from sfpcl_credit.sap_workflow.models import SapCustomerCode, SapCustomerProfileRequest
+from sfpcl_credit.sap_workflow.modules.annexure_storage import EncryptedAnnexureStorage
+from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+    SapRequestConflict,
+    complete_request,
+    create_request,
+    send_request,
+)
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.shared.encryption import FieldEncryption
@@ -205,7 +209,7 @@ class SapCustomerProfileRequestApiTests(TestCase):
 
         changed = self._send(request_id, remarks="changed")
         self.assertEqual(changed.status_code, 409, changed.content)
-        assert_error_envelope(self, changed.json(), "SAP_REQUEST_CONFLICT")
+        assert_error_envelope(self, changed.json(), "CONFLICT")
         other_owner = self._user(
             "credit_manager", "Other SAP Credit Manager",
             "finance.sap_request.create", "finance.sap_request.send",
@@ -259,7 +263,7 @@ class SapCustomerProfileRequestApiTests(TestCase):
 
         changed = self._complete(request_id, sap_customer_code="REPLAY-CODE-002")
         self.assertEqual(changed.status_code, 409, changed.content)
-        assert_error_envelope(self, changed.json(), "SAP_REQUEST_CONFLICT")
+        assert_error_envelope(self, changed.json(), "CONFLICT")
         self.assertEqual(SapCustomerCode.objects.count(), 1)
         self.assertEqual(
             AuditLog.objects.filter(
@@ -346,7 +350,7 @@ class SapCustomerProfileRequestApiTests(TestCase):
         request_id = self._create_and_send("inactive-history")
         response = self._complete(request_id, sap_customer_code="NEW-ACTIVE-CODE")
         self.assertEqual(response.status_code, 409, response.content)
-        assert_error_envelope(self, response.json(), "SAP_REQUEST_CONFLICT")
+        assert_error_envelope(self, response.json(), "CONFLICT")
         historical.refresh_from_db()
         self.assertEqual(historical.status, SapCustomerCode.STATUS_INACTIVE)
         self.assertEqual(SapCustomerCode.objects.count(), 1)
@@ -675,7 +679,7 @@ class SapCustomerProfileRequestApiTests(TestCase):
             ifsc="HDFC0001234",
         )
         with patch(
-            "sfpcl_credit.finance.modules.sap_customer_request.resolve_blank_cheque_bank_fact",
+            "sfpcl_credit.sap_workflow.modules.sap_customer_request.resolve_blank_cheque_bank_fact",
             return_value=bank_fact,
         ):
             response = self._post_request("req-sap-verified-bank")
@@ -716,7 +720,7 @@ class SapCustomerProfileRequestApiTests(TestCase):
         self.application.save(update_fields=["application_status"])
         response = self._post_request("req-sap-non-terminal")
         self.assertEqual(response.status_code, 409, response.content)
-        assert_error_envelope(self, response.json(), "INVALID_STATE")
+        assert_error_envelope(self, response.json(), "INVALID_STATE_TRANSITION")
         self._assert_no_sap_artifacts()
 
     def test_active_customer_code_can_start_reuse_request_and_missing_fact_rolls_back(self):

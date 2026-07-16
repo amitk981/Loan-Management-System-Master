@@ -1,0 +1,4 @@
+Executable SAP -> Finance imports:
+Diff limit:
+1974 / 2000 lines
+Protected changes:

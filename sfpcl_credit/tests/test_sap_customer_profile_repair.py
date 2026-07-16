@@ -1,5 +1,6 @@
 """009B2 failing-first probes for SAP delivery and exact completion replay."""
 
+import ast
 from datetime import timedelta
 import hashlib
 import json
@@ -10,14 +11,12 @@ from django.test import RequestFactory
 from django.utils import timezone
 
 from sfpcl_credit.communications.models import Communication, Notification
-from sfpcl_credit.finance.models import SapCustomerCode, SapCustomerProfileRequest
-from sfpcl_credit.finance.modules.annexure_storage import EncryptedAnnexureStorage
+from sfpcl_credit.sap_workflow.models import SapCustomerCode, SapCustomerProfileRequest
+from sfpcl_credit.sap_workflow.modules.annexure_storage import EncryptedAnnexureStorage
 from sfpcl_credit.identity.models import AuditLog, Team, UserTeamMembership
 from sfpcl_credit.sap_workflow.adapters import (
     ManualSapAdapter,
     SapCustomerProfilePayload,
-    SapCustomerResult,
-    SapCustomerStatus,
 )
 from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
     get_customer_code_for_member,
@@ -215,6 +214,8 @@ class SapCustomerProfileRepairTests(SapCustomerProfileRequestApiTests):
             self.assertNotIn(secret, secret_surface)
 
     def test_manual_and_fake_adapters_share_the_public_contract(self):
+        from sfpcl_credit.sap_workflow.adapters import FakeSapAdapter, FutureSapAdapter
+
         payload = SapCustomerProfilePayload(
             request_id=uuid4(),
             assignee_user_id=uuid4(),
@@ -233,12 +234,17 @@ class SapCustomerProfileRepairTests(SapCustomerProfileRequestApiTests):
             "delivered",
         )
 
-        class FakeSapAdapter:
-            def create_customer_profile_request(self, payload, idempotency_key):
-                return SapCustomerResult("fake:accepted", "delivered", payload.checksum_sha256)
-
-            def get_customer_status(self, external_reference):
-                return SapCustomerStatus(external_reference, "delivered")
+        fake = FakeSapAdapter()
+        fake_first = fake.create_customer_profile_request(payload, "same-key")
+        self.assertEqual(fake_first, fake.create_customer_profile_request(payload, "same-key"))
+        self.assertEqual(
+            fake.get_customer_status(fake_first.external_reference).delivery_status,
+            "delivered",
+        )
+        future = FutureSapAdapter(transport=fake)
+        self.assertEqual(
+            future.create_customer_profile_request(payload, "same-key"), fake_first
+        )
 
         created = self._post_request("009b2-fake-adapter").json()["data"]
         result = send_request(
@@ -248,25 +254,41 @@ class SapCustomerProfileRepairTests(SapCustomerProfileRequestApiTests):
             request=RequestFactory().post(
                 "/sap/send/", HTTP_X_REQUEST_ID="009b2-fake-adapter-send"
             ),
-            adapter=FakeSapAdapter(),
+            adapter=fake,
         )
-        self.assertEqual(result["delivery"]["delivery_reference"], "fake:accepted")
+        self.assertTrue(result["delivery"]["delivery_reference"].startswith("manual:"))
 
-    def test_http_and_downstream_dependencies_use_public_sap_owner(self):
+    def test_sap_owner_has_no_executable_finance_dependency(self):
         root = Path(__file__).resolve().parents[1]
-        views = (root / "finance" / "views.py").read_text()
-        self.assertIn(
-            "sfpcl_credit.sap_workflow.modules.sap_customer_profile", views
-        )
-        self.assertNotIn("finance.modules.sap_customer_code import", views)
-        self.assertNotIn("finance.modules.sap_customer_request import", views)
-        for directory in ("loans", "disbursements", "processes"):
-            candidate = root / directory
-            if not candidate.exists():
-                continue
-            for source in candidate.rglob("*.py"):
-                text = source.read_text()
-                self.assertNotIn("sfpcl_credit.finance.modules.sap_", text, source)
+        apps = {"sap_workflow", "finance", "loans", "disbursements"}
+        graph = {app: set() for app in apps}
+        for app in apps:
+            for source in (root / app).rglob("*.py"):
+                if "migrations" in source.parts:
+                    continue
+                tree = ast.parse(source.read_text(), filename=str(source))
+                for node in ast.walk(tree):
+                    modules = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
+                               else [node.module] if isinstance(node, ast.ImportFrom) and node.module else [])
+                    for module in modules:
+                        parts = module.split(".")
+                        if len(parts) > 1 and parts[0] == "sfpcl_credit" and parts[1] in apps:
+                            dependency = parts[1]
+                            if dependency != app:
+                                graph[app].add(dependency)
+
+        def reaches(start, target, visited=frozenset()):
+            return start not in visited and (target in graph[start] or any(
+                reaches(dependency, target, visited | {start}) for dependency in graph[start]))
+
+        cycles = [f"{source}->{target}" for source in apps for target in graph[source]
+                  if reaches(target, source)]
+        self.assertEqual(cycles, [], graph)
+        self.assertNotIn("finance", graph["sap_workflow"])
+        self.assertIn("sap_workflow", graph["finance"])
+        for legacy in ("annexure_i.py", "annexure_storage.py", "sap_customer_code.py",
+                       "sap_customer_request.py"):
+            self.assertFalse((root / "finance" / "modules" / legacy).exists(), legacy)
 
     def _issue(self, request_id):
         response = self.client.post(

@@ -28,7 +28,7 @@ from sfpcl_credit.loans.modules.loan_account_lifecycle import (
     create_loan_account,
 )
 from sfpcl_credit.members.models import Member, Nominee, Shareholding
-from sfpcl_credit.finance.models import SapCustomerCode
+from sfpcl_credit.sap_workflow.models import SapCustomerCode
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
 from sfpcl_credit.workflows.models import WorkflowEvent
 

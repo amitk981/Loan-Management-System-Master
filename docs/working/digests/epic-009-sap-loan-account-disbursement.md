@@ -1,5 +1,11 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009B3B SAP Policy Owner Closure
+
+Executable SAP policy and Manual/Fake/Future adapters now live only in `sap_workflow`; Finance keeps
+the object-identical model alias, standard 409 taxonomy is restored, and downstream modules consume
+only the immutable SAP decision. No schema, route, ciphertext context, or retained evidence changed.
+
 ## Architecture Review 2026-07-16 14:37 — Owner, Evidence, and Loan-Scope Closure
 
 - 009B2's public `sap_workflow` module still imports Finance models, encrypted storage, and the

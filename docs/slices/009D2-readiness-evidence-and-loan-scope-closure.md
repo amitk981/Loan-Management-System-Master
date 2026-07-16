@@ -57,6 +57,7 @@ assignment cannot authorize payment readiness.
    `finance.models`, Finance orchestration/storage imports, or copied SAP status/code queries are
    forbidden; the canonical `sap_workflow` owner must decide current member/application/code
    coherence without exposing the retained workbook or customer-code plaintext.
+8. Treat absent/incoherent SAP decisions as the named readiness failure, never as a generic owner error.
 
 ## Test Cases
 

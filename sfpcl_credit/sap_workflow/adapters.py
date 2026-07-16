@@ -66,7 +66,28 @@ class ManualSapAdapter:
         )
 
 
+class FakeSapAdapter(ManualSapAdapter):
+    """Deterministic test adapter satisfying the same file-acceptance contract."""
+
+    _NAMESPACE = uuid.UUID("d6283117-8c45-4a4b-b00e-2a56a8857fd9")
+
+
+class FutureSapAdapter:
+    """Future transport slot; validates SAP-owned facts before delegation."""
+
+    def __init__(self, *, transport: SapAdapter):
+        self.transport = transport
+
+    def create_customer_profile_request(self, payload, idempotency_key):
+        ManualSapAdapter().create_customer_profile_request(payload, idempotency_key)
+        return self.transport.create_customer_profile_request(payload, idempotency_key)
+
+    def get_customer_status(self, external_reference):
+        return self.transport.get_customer_status(external_reference)
+
 __all__ = [
+    "FakeSapAdapter",
+    "FutureSapAdapter",
     "ManualSapAdapter",
     "SapAdapter",
     "SapCustomerProfilePayload",

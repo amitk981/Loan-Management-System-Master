@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_send_replay_change_owner_and_terminal_state_are_zero_write (sfpcl_credit.tests.test_sap_customer_profile_request_api.SapCustomerProfileRequestApiTests.test_send_replay_change_owner_and_terminal_state_are_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_201643_normal_run/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 212, in test_send_replay_change_owner_and_terminal_state_are_zero_write
+    assert_error_envelope(self, changed.json(), "CONFLICT")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_201643_normal_run/sfpcl_credit/tests/api_contracts.py", line 71, in assert_error_envelope
+    test_case.assertEqual(error["code"], expected_code)
+AssertionError: 'SAP_REQUEST_CONFLICT' != 'CONFLICT'
+- SAP_REQUEST_CONFLICT
++ CONFLICT
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.048s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

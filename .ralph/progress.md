@@ -7977,3 +7977,25 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_201643_normal_run
+
+- Agent tool used: codex with TDD and deep-module design workflows.
+- Slice completed: 009B3B-sap-policy-adapter-and-dependency-closure.
+- Summary: Moved all executable SAP request, Annexure, delivery, completion/reuse/read, capability,
+  and adapter policy to `sap_workflow`; removed the Finance orchestration modules and dependency cycle.
+- Tests run: 58 impacted tests; Django check/migration sync; SAP PostgreSQL races twice.
+- Evidence saved: `.ralph/runs/2026-07-16_201643_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; mitigated by unchanged schema/contracts, public-interface tests, and race evidence.
+- Next action: Run 009D2, then 009E.
+
+## 2026-07-16 20:45:28 - 2026-07-16_201643_normal_run
+- Agent tool used: codex
+- Slice attempted: 009B3B-sap-policy-adapter-and-dependency-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_201643_normal_run/.ralph/runs/2026-07-16_201643_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_201643_normal_run/.ralph/runs/2026-07-16_201643_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

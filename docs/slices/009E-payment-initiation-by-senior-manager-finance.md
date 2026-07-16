@@ -90,6 +90,7 @@ or legal/security evidence payloads in those ledgers. Replay writes nothing.
   invalid amount, or any replaced evidence is zero-write.
 - MVP mode records a manual bank-portal instruction only; bank APIs/file exchange/webhooks remain
   future adapters.
+- Freeze the exact 009B3B SAP decision identity consumed by the passing 009D2 result; never re-query Finance.
 
 ## Test Cases
 - Public service/API success proves exact passing readiness and bank/source evidence, canonical

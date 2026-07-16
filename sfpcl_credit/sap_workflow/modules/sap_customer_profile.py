@@ -1,9 +1,4 @@
-"""Public owner for SAP customer request, delivery, completion, and code reads.
-
-The existing ``finance`` tables and implementation functions remain a data-history compatibility
-seam. HTTP and downstream modules use this owner so loan/disbursement code never imports Finance's
-private implementation.
-"""
+"""Public owner for SAP customer request, delivery, completion, and code reads."""
 
 from datetime import timedelta
 from dataclasses import dataclass
@@ -21,13 +16,13 @@ from sfpcl_credit.domain_errors import (
     DomainPermissionDenied,
 )
 from sfpcl_credit.sap_workflow.models import SapCustomerCode, SapCustomerProfileRequest
-from sfpcl_credit.finance.modules.annexure_storage import EncryptedAnnexureStorage
-from sfpcl_credit.finance.modules.sap_customer_code import (
+from sfpcl_credit.sap_workflow.modules.annexure_storage import EncryptedAnnexureStorage
+from sfpcl_credit.sap_workflow.modules.sap_customer_code import (
     complete_request as _complete_request,
     read_member_code as _read_member_code,
     send_request as _send_request,
 )
-from sfpcl_credit.finance.modules.sap_customer_request import create_request as _create_request
+from sfpcl_credit.sap_workflow.modules.sap_customer_request import create_request as _create_request
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.sap_workflow.adapters import ManualSapAdapter
