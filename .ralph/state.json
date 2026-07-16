@@ -238,14 +238,15 @@
     "008M5-documentation-durable-actions-and-blocker-closure",
     "009B3A-sap-model-owner-and-state-migration",
     "009B3B-sap-policy-adapter-and-dependency-closure",
-    "009D2-readiness-evidence-and-loan-scope-closure"
+    "009D2-readiness-evidence-and-loan-scope-closure",
+    "008M6-documentation-corrected-copy-and-stage-evidence-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "9d8fb0a7",
-  "last_run_id": "2026-07-16_213746_architecture_review",
+  "last_run_id": "2026-07-16_220501_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

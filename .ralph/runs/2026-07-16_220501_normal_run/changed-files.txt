@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008M6-documentation-corrected-copy-and-stage-evidence-closure.md
+ M docs/slices/009B3C-sap-current-evidence-and-adapter-contract-closure.md
+ M docs/slices/009D3-readiness-approval-reader-and-boundary-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M sfpcl_credit/legal_documents/modules/documentation_actions.py
+ M sfpcl_credit/legal_documents/modules/staff_workspace_actions.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+?? .ralph/runs/2026-07-16_220501_normal_run/

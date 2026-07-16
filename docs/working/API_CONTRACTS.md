@@ -3704,6 +3704,16 @@ retained ids and fails closed when they are no longer the current terminal cycle
   beside `poa_status`. Exact replay of a retained opaque action identity returns the same owner row
   and workflow identity with zero writes; changed facts conflict, while actor/application/document/
   action-identity tamper is rejected without creating a file or legal ledger.
+- 008M6 makes correction resolution a current-evidence decision rather than a reverse-relation
+  check. A resolving upload must be the coherent successor of an existing current signed copy and
+  must retain matching file/checksum, uploader, remarks, request/action, resolution-target,
+  upload-audit, legal-audit, workflow, and version facts; missing, changed, duplicate, cross-target,
+  stale-renderer, or ambiguous evidence keeps the correction blocked. A first signed upload with no
+  predecessor remains an ordinary unresolved copy; only its coherent successor may resolve the
+  correction. Review actions similarly require singular matching owner ledgers. Opaque
+  `request_correction`, `return_for_correction`, and `add_condition` commands freeze the current
+  approval stage and the effective primary or governed role that authorises that stage; changed
+  stage evidence is neither projected nor accepted as approval truth.
 - When PoA is required but the governed application-scoped attorney decision is absent, the security
   workflow returns `status: blocked`, `blocker: governed_attorney_unconfigured`, and no create
   action. A configured decision is accepted only from the security-owner seam when its application,

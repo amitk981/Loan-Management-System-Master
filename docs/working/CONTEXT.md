@@ -136,8 +136,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   loan scope. The next independent review found that changed corrected-copy and SAP send evidence
   can still remain current, ordered approvals survive a changed completion, source-authorised
   Credit Manager/CFO/Auditor readiness reads are rejected, and adapter/signature edge contracts are
-  under-tested. Corrective 008M6, 009B3C, and 009D3 now precede 009E and close those evidence,
-  reader-scope, signer, adapter, and deep-boundary gaps before payment initiation.
+  under-tested. Corrective 008M6 now requires a coherent signed-copy predecessor/tail plus exact
+  owner ledgers and freezes review actions to their actual stage and authorising primary/governed
+  role. 009B3C and 009D3 still precede 009E to close the remaining SAP, approval, reader-scope,
+  signer, adapter, and deep-boundary gaps before payment initiation.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

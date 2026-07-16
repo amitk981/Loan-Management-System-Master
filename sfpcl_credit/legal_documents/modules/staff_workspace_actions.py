@@ -7,6 +7,7 @@ from django.utils import timezone
 from sfpcl_credit.applications.models import Witness
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.documents.models import DocumentTemplate
+from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.legal_documents.models import ChecklistAction, ChecklistItem, DocumentChecklist, SignatureRecord
 from sfpcl_credit.legal_documents.modules import checklist_actions, document_generation, documentation_actions, loan_document_verification, signatures, stamp_notary
 DOCUMENT_TYPES = {'witness_pan_aadhaar': 'witness_pan_aadhaar', 'cancelled_cheque': 'cancelled_cheque', 'blank_dated_cheque': 'blank_dated_cheque', 'poa': 'power_of_attorney', 'tri_party_agreement': 'tri_party_agreement', 'sh4': 'sh4', 'cdsl_pledge': 'cdsl_pledge_evidence', 'term_sheet': 'term_sheet', 'loan_agreement': 'loan_agreement', 'bank_verification_letter': 'bank_verification_letter', 'final_checklist': 'document_checklist'}
@@ -78,6 +79,16 @@ def _owner_allows(authorizer, actor):
         return False
     return True
 
+def _item_authorising_role(actor):
+    allowed = {'compliance_team_member', 'company_secretary'}
+    effective = set(auth_service.effective_role_codes(actor))
+    governed = (actor.approval_authority_type or '').strip()
+    if governed in allowed and governed in effective:
+        return governed
+    if actor.primary_role.role_code in allowed and actor.primary_role.role_code in effective:
+        return actor.primary_role.role_code
+    return None
+
 def item_actions(actor, application, item, document, status, *, gateways):
     if not item.applicable_flag:
         return []
@@ -100,7 +111,9 @@ def _workspace_document_actions(actor, application, item, document):
     if document_services.user_can_upload_documents(actor):
         actions.append(_action('upload_signed_copy', 'Upload / re-upload signed copy', document_services.DOCUMENT_UPLOAD_PERMISSION, 'workspace:upload_signed_copy', owner_execute=partial(_execute_signed_copy, actor, application.pk, document.pk), fields=[{'name': 'file', 'label': 'Signed document', 'type': 'file', 'required': True}, {'name': 'remarks', 'label': 'Remarks', 'type': 'textarea', 'required': True}], fixed_payload={'loan_document_id': str(document.pk)}))
     if _owner_allows(checklist_actions.require_item_completion_actor, actor):
-        actions.append(_action('request_correction', 'Request correction', checklist_actions.ITEM_COMPLETE_PERMISSION, 'workspace:request_correction', owner_execute=partial(_execute_review_action, actor, item.document_checklist_id, 'request_correction', item.pk, document.pk), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'loan_document_id': str(document.pk)}))
+        role = _item_authorising_role(actor)
+        if role:
+            actions.append(_action('request_correction', 'Request correction', checklist_actions.ITEM_COMPLETE_PERMISSION, 'workspace:request_correction', owner_execute=partial(_execute_review_action, actor, item.document_checklist_id, 'request_correction', 'checklist_item', role, item.pk, document.pk), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'loan_document_id': str(document.pk)}))
     return actions
 
 def _legal_evidence_actions(actor, application, document):
@@ -172,8 +185,10 @@ def record_actions(actor, checklist, *, gateways):
         if checklist_actions.available_approval_action(actor=actor, checklist=checklist, completed_item_ids=completed) is None:
             return []
     permission = APPROVALS[action_type][2]
+    role = APPROVALS[action_type][3]
+    stage = 'sanction_committee' if action_type == ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL else role
     final_item = checklist.items.filter(item_code='final_checklist').first()
-    return [_action('return_for_correction', 'Return for correction', permission, 'workspace:return_for_correction', owner_execute=partial(_execute_review_action, actor, checklist.pk, 'return_for_correction', final_item.pk if final_item else None, final_item.loan_document_id if final_item else None), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)}), _action('add_condition', 'Add condition', permission, 'workspace:add_condition', owner_execute=partial(_execute_review_action, actor, checklist.pk, 'add_condition', None, None), fields=[{'name': 'condition', 'label': 'Condition', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)})]
+    return [_action('return_for_correction', 'Return for correction', permission, 'workspace:return_for_correction', owner_execute=partial(_execute_review_action, actor, checklist.pk, 'return_for_correction', stage, role, final_item.pk if final_item else None, final_item.loan_document_id if final_item else None), fields=[{'name': 'remarks', 'label': 'Correction required', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)}), _action('add_condition', 'Add condition', permission, 'workspace:add_condition', owner_execute=partial(_execute_review_action, actor, checklist.pk, 'add_condition', stage, role, None, None), fields=[{'name': 'condition', 'label': 'Condition', 'type': 'textarea', 'required': True}], fixed_payload={'document_checklist_id': str(checklist.pk)})]
 
 def _metadata(module, request):
     return module.RequestMetadata(request_id=request.headers.get('X-Request-ID'), ip_address=request.META.get('REMOTE_ADDR', ''), user_agent=request.headers.get('User-Agent', ''))
@@ -205,9 +220,9 @@ def _execute_mismatch(actor, signature_id, values, _file, request):
 def _execute_signed_copy(actor, application_id, document_id, values, uploaded_file, request):
     return documentation_actions.upload_signed_copy(actor=actor, application_id=application_id, loan_document_id=document_id, remarks=values.get('remarks'), uploaded_file=uploaded_file, request=request, metadata=_metadata(documentation_actions, request))
 
-def _execute_review_action(actor, checklist_id, code, item_id, document_id, values, _file, request):
+def _execute_review_action(actor, checklist_id, code, stage, role, item_id, document_id, values, _file, request):
     metadata = documentation_actions.RequestMetadata(request_id=request.headers.get('X-Request-ID'), ip_address=request.META.get('REMOTE_ADDR', ''), user_agent=request.headers.get('User-Agent', ''), workspace_action_id=getattr(request, '_workspace_action_id', None))
-    return documentation_actions.record_review_action(actor=actor, checklist_id=checklist_id, action_type=code, reason=values.get('remarks') or values.get('condition'), checklist_item_id=item_id, loan_document_id=document_id, metadata=metadata)
+    return documentation_actions.record_review_action(actor=actor, checklist_id=checklist_id, action_type=code, reason=values.get('remarks') or values.get('condition'), approval_stage=stage, canonical_role_code=role, checklist_item_id=item_id, loan_document_id=document_id, metadata=metadata)
 
 def replay_action(actor, application_id, action_id, payload, uploaded_file):
     try:

@@ -1,7 +1,7 @@
 # Slice 008M6: Documentation Corrected-Copy and Stage-Evidence Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package
@@ -89,15 +89,15 @@ High
 - Existing renderer, action, download, redaction, pagination, and prototype contracts remain green.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Trusted-browser evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit delegated to the orchestrator only after passing configured gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Trusted-browser contract collected; screenshots delegated to the independent orchestrator gate
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit delegated to the orchestrator only after passing configured gates

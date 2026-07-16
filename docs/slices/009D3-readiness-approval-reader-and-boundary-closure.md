@@ -63,6 +63,10 @@ disbursement-readiness boundary before payment initiation.
 - Reproduce the review probe: after a genuine all-pass owner fixture, change one completion version
   body; `documentation_complete` and all three approvals fail. Repeat for order, duplicate sibling
   audit/workflow/version rows, action identities, renderer/current signed copy, and security facts.
+- For corrected signed copies, mutate the 008M6 predecessor/tail, retained file checksum, uploader,
+  request/action identity, resolution target, upload/legal audit, workflow, and version facts one at
+  a time. Readiness must consume the legal owner's fail-closed decision, never re-derive truth from
+  `resolved_by_signed_copy`, and all four documentation/approval checks must fail together.
 - Remove each required current signer and prove the named signature/documentation check fails;
   cover wrong, stale, duplicate, open mismatch, resolved mismatch, and inapplicable document paths.
 - Public scope matrix covers Senior Finance, pre/post-009E-shaped CFC seam, Credit Manager, CFO,

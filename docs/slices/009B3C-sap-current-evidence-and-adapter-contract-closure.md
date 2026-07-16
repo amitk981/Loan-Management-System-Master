@@ -57,6 +57,9 @@ and prove that Manual, Fake, and Future adapters enforce the same negative as we
   truth unchanged.
 - Parameterize Manual/Fake/Future positive, replay, invalid checksum, invalid bytes, changed
   idempotency facts, bad reference, and rejecting transport cases through the same contract.
+- For every adapter denial, assert zero new request/code/delivery/communication/task/audit/workflow
+  rows; exact replay must return the original delivery reference and changed assignee, capability,
+  workbook checksum, or idempotency key must conflict without invoking the transport twice.
 - Dependency/import tests prove canonical model identity and no executable SAP-to-Finance edge.
 
 ## Evidence Required

@@ -1,15 +1,16 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-16_213746_architecture_review
+2026-07-16_220501_normal_run
 
 ## Current Status
-Independent Standards and Spec review of 008M5, 009B3A/B, and 009D2 found no production-code changes
-were appropriate in review mode. Four executable probes reproduce changed corrected-copy evidence
-clearing a blocker, approvals surviving changed completion evidence, source readiness readers being
-hard-rejected, and changed SAP send evidence remaining current. Corrective slices 008M6, 009B3C,
-and 009D3 are fully sharpened; 009E now waits for them through 009D3.
+008M6 is complete pending independent validation. Corrected-copy resolution now requires one
+coherent predecessor/tail and exact file, uploader, request/action, target, upload/legal audit,
+workflow, and version evidence. Tamper, ambiguity, missing predecessor, or renderer replacement
+restores the shared blocker. Review commands freeze the actual checklist/approval stage and primary
+or governed authorising role; invalid condition/return evidence cannot become approval truth.
 
 ## Next Run
-Run 008M6, then 009B3C and 009D3 before 009E. Preserve the corrected-copy/SAP/current-approval
-evidence fixes and the full source reader matrix before payment initiation creates CFC scope.
+Run 009B3C, then 009D3 before 009E. 009D3 must consume the 008M6 legal-owner decision rather than
+re-deriving correction truth from `resolved_by_signed_copy`, and must restore current approvals,
+signers, and the full source reader matrix before payment initiation creates CFC scope.

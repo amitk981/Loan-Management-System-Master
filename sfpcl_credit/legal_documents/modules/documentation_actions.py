@@ -20,6 +20,7 @@ from sfpcl_credit.legal_documents.models import (
     StaffDocumentReviewAction,
     StaffSignedDocumentCopy,
 )
+from sfpcl_credit.legal_documents import selectors
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -51,13 +52,44 @@ def _file_checksum(uploaded_file):
     return digest.hexdigest()
 
 
-def _canonical_role(actor, action_type):
-    roles = set(auth_service.effective_role_codes(actor))
-    if action_type == StaffDocumentReviewAction.TYPE_REQUEST_CORRECTION:
-        allowed = ("compliance_team_member", "company_secretary")
-    else:
-        allowed = ("company_secretary", "credit_manager", "director")
-    return next((role for role in allowed if role in roles), None)
+_APPROVAL_STAGE = {
+    DocumentChecklist.STATUS_IN_PROGRESS: (
+        "company_secretary",
+        "company_secretary",
+        "documents.checklist.approve_cs",
+    ),
+    DocumentChecklist.STATUS_CS_APPROVED: (
+        "credit_manager",
+        "credit_manager",
+        "documents.checklist.approve_credit",
+    ),
+    DocumentChecklist.STATUS_CREDIT_APPROVED: (
+        "sanction_committee",
+        "director",
+        "documents.checklist.approve_sanction",
+    ),
+}
+
+_DOCUMENT_TYPE_BY_ITEM = {
+    "witness_pan_aadhaar": "witness_pan_aadhaar",
+    "cancelled_cheque": "cancelled_cheque",
+    "blank_dated_cheque": "blank_dated_cheque",
+    "poa": "power_of_attorney",
+    "tri_party_agreement": "tri_party_agreement",
+    "sh4": "sh4",
+    "cdsl_pledge": "cdsl_pledge_evidence",
+    "term_sheet": "term_sheet",
+    "loan_agreement": "loan_agreement",
+    "bank_verification_letter": "bank_verification_letter",
+    "final_checklist": "document_checklist",
+}
+
+
+def _actor_can_authorise(actor, role, permission):
+    return (
+        role in auth_service.effective_role_codes(actor)
+        and permission in auth_service.effective_permission_codes(actor)
+    )
 
 
 def _metadata_body(actor, metadata):
@@ -89,6 +121,333 @@ def _history(*, actor, entity_type, entity_id, action, old, new, history_id=None
     )
 
 
+def _review_expected_body(row):
+    audit_body = row.audit_log.new_value_json
+    if not isinstance(audit_body, dict):
+        return None
+    role_codes = audit_body.get("actor_role_codes")
+    if not isinstance(role_codes, list) or row.canonical_role_code not in role_codes:
+        return None
+    return {
+        "review_action_id": str(row.pk),
+        "workspace_action_id": row.workspace_action_id,
+        "loan_application_id": str(row.document_checklist.loan_application_id),
+        "document_checklist_id": str(row.document_checklist_id),
+        "checklist_item_id": str(row.checklist_item_id) if row.checklist_item_id else None,
+        "loan_document_id": str(row.loan_document_id) if row.loan_document_id else None,
+        "action_type": row.action_type,
+        "approval_stage": row.approval_stage,
+        "reason": row.reason,
+        "prior_state": row.prior_state,
+        "current_state": row.current_state,
+        "workflow_event_id": str(row.workflow_event_id),
+        "actor_user_id": str(row.actor_user_id),
+        "actor_user_name_snapshot": row.actor_user_name_snapshot,
+        "actor_role_codes": role_codes,
+        "actor_team_codes": row.actor_team_codes_json,
+        "request_id": row.request_id,
+        "audit_log_id": str(row.audit_log_id),
+        "version_history_id": str(row.version_history_id),
+    }
+
+
+def review_action_is_current(row):
+    """Reconcile one immutable review action before it can affect current truth."""
+    expected_stage = None
+    if row.action_type == StaffDocumentReviewAction.TYPE_REQUEST_CORRECTION:
+        if row.checklist_item_id is None or row.loan_document_id is None:
+            valid_target = False
+        else:
+            current_document_id = selectors.latest_generated_metadata_by_type(
+                application_id=row.document_checklist.loan_application_id,
+                document_types={row.loan_document.document_type},
+            ).get(row.loan_document.document_type)
+            valid_target = (
+                row.approval_stage == "checklist_item"
+                and row.canonical_role_code
+                in {"compliance_team_member", "company_secretary"}
+                and row.checklist_item.document_checklist_id
+                == row.document_checklist_id
+                and _DOCUMENT_TYPE_BY_ITEM.get(row.checklist_item.item_code)
+                == row.loan_document.document_type
+                and current_document_id == row.loan_document_id
+                and row.loan_document.loan_application_id
+                == row.document_checklist.loan_application_id
+            )
+    else:
+        expected_stage = next(
+            (
+                (status, stage, role)
+                for status, (stage, role, _permission) in _APPROVAL_STAGE.items()
+                if stage == row.approval_stage
+            ),
+            None,
+        )
+        valid_target = (
+            expected_stage is not None
+            and row.canonical_role_code == expected_stage[2]
+            and (
+                row.action_type == StaffDocumentReviewAction.TYPE_ADD_CONDITION
+                and row.checklist_item_id is None
+                and row.loan_document_id is None
+                and row.prior_state == expected_stage[0]
+                or row.action_type == StaffDocumentReviewAction.TYPE_RETURN_CORRECTION
+                and row.checklist_item_id is not None
+                and row.loan_document_id is not None
+                and row.checklist_item.document_checklist_id == row.document_checklist_id
+                and row.checklist_item.item_code == "final_checklist"
+                and row.checklist_item.loan_document_id == row.loan_document_id
+                and row.prior_state == row.checklist_item.completion_status
+                and row.loan_document.loan_application_id
+                == row.document_checklist.loan_application_id
+            )
+        )
+    expected_current = (
+        "condition_added"
+        if row.action_type == StaffDocumentReviewAction.TYPE_ADD_CONDITION
+        else "correction_requested"
+    )
+    workflow_entity = "checklist_item" if row.checklist_item_id else "document_checklist"
+    workflow_entity_id = row.checklist_item_id or row.document_checklist_id
+    expected_body = _review_expected_body(row)
+    if expected_body is None:
+        return False
+    result = bool(
+        valid_target
+        and row.current_state == expected_current
+        and row.workflow_event.workflow_name == "documentation_review"
+        and row.workflow_event.entity_type == workflow_entity
+        and row.workflow_event.entity_id == workflow_entity_id
+        and row.workflow_event.from_state == row.prior_state
+        and row.workflow_event.to_state == row.current_state
+        and row.workflow_event.triggered_by_user_id == row.actor_user_id
+        and row.workflow_event.trigger_reason == row.action_type
+        and row.audit_log.actor_user_id == row.actor_user_id
+        and row.audit_log.action == f"legal_documents.{row.action_type}"
+        and row.audit_log.entity_type == workflow_entity
+        and row.audit_log.entity_id == workflow_entity_id
+        and row.audit_log.old_value_json == {"status": row.prior_state}
+        and row.audit_log.new_value_json == expected_body
+        and row.version_history.versioned_entity_type == "staff_document_review_action"
+        and row.version_history.versioned_entity_id == workflow_entity_id
+        and row.version_history.change_summary == f"legal_documents.{row.action_type}"
+        and row.version_history.author_user_id == row.actor_user_id
+        and row.version_history.old_value_json == {"status": row.prior_state}
+        and row.version_history.new_value_json == expected_body
+        and AuditLog.objects.filter(
+            action=f"legal_documents.{row.action_type}",
+            entity_type=workflow_entity,
+            entity_id=workflow_entity_id,
+            new_value_json__review_action_id=str(row.pk),
+        ).count() == 1
+        and VersionHistory.objects.filter(
+            versioned_entity_type="staff_document_review_action",
+            versioned_entity_id=workflow_entity_id,
+            new_value_json__review_action_id=str(row.pk),
+        ).count() == 1
+        and AuditLog.objects.filter(
+            action=f"legal_documents.{row.action_type}",
+            new_value_json__workflow_event_id=str(row.workflow_event_id),
+        ).count() == 1
+        and VersionHistory.objects.filter(
+            versioned_entity_type="staff_document_review_action",
+            new_value_json__workflow_event_id=str(row.workflow_event_id),
+        ).count() == 1
+    )
+    return result
+
+
+def _signed_copy_expected_body(row):
+    audit_body = row.audit_log.new_value_json
+    if not isinstance(audit_body, dict):
+        return None
+    role_codes = audit_body.get("actor_role_codes")
+    team_codes = audit_body.get("actor_team_codes")
+    actor_name = audit_body.get("actor_user_name_snapshot")
+    if not isinstance(role_codes, list) or not isinstance(team_codes, list) or not actor_name:
+        return None
+    return {
+        "signed_copy_id": str(row.pk),
+        "workspace_action_id": row.workspace_action_id,
+        "loan_application_id": str(row.loan_application_id),
+        "loan_document_id": str(row.loan_document_id),
+        "document_id": str(row.document_id),
+        "checksum_sha256": row.checksum_sha256,
+        "remarks": row.remarks,
+        "supersedes_signed_copy_id": str(row.supersedes_id) if row.supersedes_id else None,
+        "resolves_review_action_id": (
+            str(row.resolves_review_action_id) if row.resolves_review_action_id else None
+        ),
+        "audit_log_id": str(row.audit_log_id),
+        "version_history_id": str(row.version_history_id),
+        "actor_user_id": str(row.uploader_user_id),
+        "actor_user_name_snapshot": actor_name,
+        "actor_role_codes": role_codes,
+        "actor_team_codes": team_codes,
+        "request_id": row.request_id,
+        "workflow_event_id": str(row.workflow_event_id),
+    }
+
+
+def _signed_copy_row_evidence_is_current(row):
+    expected_body = _signed_copy_expected_body(row)
+    if expected_body is None:
+        return False
+    expected_old = {"signed_copy_id": str(row.supersedes_id) if row.supersedes_id else None}
+    upload_audits = AuditLog.objects.filter(
+        action="documents.file.uploaded",
+        entity_type="document_file",
+        entity_id=row.document_id,
+    )
+    upload_audit = upload_audits.first()
+    upload_body = upload_audit.new_value_json if upload_audit else None
+    return bool(
+        row.loan_document.loan_application_id == row.loan_application_id
+        and row.document.checksum_sha256 == row.checksum_sha256
+        and row.document.uploaded_by_user_id == row.uploader_user_id
+        and upload_audits.count() == 1
+        and upload_audit.actor_user_id == row.uploader_user_id
+        and upload_audit.ip_address == row.audit_log.ip_address
+        and upload_audit.user_agent == row.audit_log.user_agent
+        and isinstance(upload_body, dict)
+        and upload_body.get("document_id") == str(row.document_id)
+        and upload_body.get("checksum_sha256") == row.checksum_sha256
+        and upload_body.get("related_entity_type") == "loan_document_signed_copy"
+        and upload_body.get("related_entity_id") == str(row.loan_document_id)
+        and upload_body.get("supersedes_signed_copy_id")
+        == (str(row.supersedes_id) if row.supersedes_id else None)
+        and upload_body.get("resolves_review_action_id")
+        == (str(row.resolves_review_action_id) if row.resolves_review_action_id else None)
+        and upload_body.get("remarks") == row.remarks
+        and upload_body.get("request_id") == row.request_id
+        and upload_body.get("workspace_action_id") == row.workspace_action_id
+        and upload_body.get("signed_copy_id") == str(row.pk)
+        and row.workflow_event.workflow_name == "staff_signed_document_copy"
+        and row.workflow_event.entity_type == "loan_document"
+        and row.workflow_event.entity_id == row.loan_document_id
+        and row.workflow_event.from_state
+        == ("signed_copy_uploaded" if row.supersedes_id else "signed_copy_pending")
+        and row.workflow_event.to_state
+        == (
+            "corrected_signed_copy_uploaded"
+            if row.resolves_review_action_id
+            else "signed_copy_uploaded"
+        )
+        and row.workflow_event.triggered_by_user_id == row.uploader_user_id
+        and row.workflow_event.trigger_reason == "upload_signed_copy"
+        and row.audit_log.actor_user_id == row.uploader_user_id
+        and row.audit_log.action == "legal_documents.signed_copy_uploaded"
+        and row.audit_log.entity_type == "loan_document"
+        and row.audit_log.entity_id == row.loan_document_id
+        and row.audit_log.old_value_json == expected_old
+        and row.audit_log.new_value_json == expected_body
+        and row.version_history.versioned_entity_type == "staff_signed_document_copy"
+        and row.version_history.versioned_entity_id == row.loan_document_id
+        and row.version_history.change_summary == "legal_documents.signed_copy_uploaded"
+        and row.version_history.author_user_id == row.uploader_user_id
+        and row.version_history.old_value_json == expected_old
+        and row.version_history.new_value_json == expected_body
+        and AuditLog.objects.filter(
+            action="legal_documents.signed_copy_uploaded",
+            entity_type="loan_document",
+            entity_id=row.loan_document_id,
+            new_value_json__signed_copy_id=str(row.pk),
+        ).count() == 1
+        and VersionHistory.objects.filter(
+            versioned_entity_type="staff_signed_document_copy",
+            versioned_entity_id=row.loan_document_id,
+            new_value_json__signed_copy_id=str(row.pk),
+        ).count() == 1
+        and AuditLog.objects.filter(
+            action="legal_documents.signed_copy_uploaded",
+            new_value_json__workflow_event_id=str(row.workflow_event_id),
+        ).count() == 1
+        and VersionHistory.objects.filter(
+            versioned_entity_type="staff_signed_document_copy",
+            new_value_json__workflow_event_id=str(row.workflow_event_id),
+        ).count() == 1
+        and (
+            row.resolves_review_action_id is None
+            or (
+                row.supersedes_id is not None
+                and review_action_is_current(row.resolves_review_action)
+                and row.resolves_review_action.action_type
+                in {
+                    StaffDocumentReviewAction.TYPE_REQUEST_CORRECTION,
+                    StaffDocumentReviewAction.TYPE_RETURN_CORRECTION,
+                }
+                and row.resolves_review_action.document_checklist.loan_application_id
+                == row.loan_application_id
+                and row.resolves_review_action.loan_document_id == row.loan_document_id
+            )
+        )
+    )
+
+
+def _current_signed_copy_chain(loan_document_id):
+    rows = list(
+        StaffSignedDocumentCopy.objects.filter(loan_document_id=loan_document_id)
+        .select_related(
+            "loan_document",
+            "document",
+            "uploader_user",
+            "workflow_event",
+            "audit_log",
+            "version_history",
+            "resolves_review_action",
+        )
+        .order_by("created_at", "staff_signed_document_copy_id")
+    )
+    if not rows:
+        return []
+    tails = [row for row in rows if not hasattr(row, "successor")]
+    if len(tails) != 1:
+        return None
+    chain = []
+    seen = set()
+    current = tails[0]
+    while current is not None and current.pk not in seen:
+        chain.append(current)
+        seen.add(current.pk)
+        current = current.supersedes
+    chain.reverse()
+    if len(chain) != len(rows) or any(
+        row.loan_application_id != chain[0].loan_application_id
+        or row.loan_document_id != loan_document_id
+        or not _signed_copy_row_evidence_is_current(row)
+        for row in chain
+    ):
+        return None
+    return chain
+
+
+def signed_copy_is_current(row):
+    chain = _current_signed_copy_chain(row.loan_document_id)
+    return bool(chain and chain[-1].pk == row.pk)
+
+
+def _review_is_resolved(row):
+    if row.loan_document_id is None:
+        return False
+    try:
+        resolved = row.resolved_by_signed_copy
+    except StaffSignedDocumentCopy.DoesNotExist:
+        return False
+    chain = _current_signed_copy_chain(row.loan_document_id)
+    latest = selectors.latest_generated_metadata_by_type(
+        application_id=row.document_checklist.loan_application_id,
+        document_types={row.loan_document.document_type},
+    )
+    return bool(
+        chain
+        and latest.get(row.loan_document.document_type) == row.loan_document_id
+        and resolved.pk in {copy.pk for copy in chain}
+        and resolved.resolves_review_action_id == row.pk
+        and resolved.loan_application_id == row.document_checklist.loan_application_id
+        and resolved.loan_document_id == row.loan_document_id
+    )
+
+
 @transaction.atomic
 def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
                        uploaded_file, request, metadata):
@@ -111,12 +470,16 @@ def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
     if checklist is None:
         raise NotFound
     checksum = _file_checksum(uploaded_file)
-    current = (
+    current_rows = list(
         StaffSignedDocumentCopy.objects.select_for_update()
-        .filter(loan_document=document, successor__isnull=True)
-        .first()
+        .filter(loan_document=document, successor__isnull=True)[:2]
     )
-    open_review = (
+    if len(current_rows) > 1:
+        raise Conflict("Signed-copy predecessor chain is ambiguous.")
+    current = current_rows[0] if current_rows else None
+    if current is not None and not signed_copy_is_current(current):
+        raise Conflict("Signed-copy predecessor evidence is not current.")
+    open_reviews = list(
         StaffDocumentReviewAction.objects.select_for_update()
         .filter(
             document_checklist=checklist,
@@ -127,8 +490,22 @@ def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
             ],
             resolved_by_signed_copy__isnull=True,
         )
-        .order_by("created_at", "staff_document_review_action_id")
-        .first()
+        .select_related(
+            "document_checklist", "checklist_item", "loan_document", "actor_user",
+            "workflow_event", "audit_log", "version_history",
+        )
+        .order_by("created_at", "staff_document_review_action_id")[:2]
+    )
+    if any(not review_action_is_current(row) for row in open_reviews):
+        raise Conflict("Open correction evidence is not current.")
+    if len(open_reviews) > 1:
+        raise Conflict("Open correction evidence is ambiguous.")
+    open_review = open_reviews[0] if open_reviews else None
+    resolving_review = open_review if current is not None else None
+    action_id, audit_id, version_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    workspace_action_id = (
+        metadata.workspace_action_id
+        or getattr(request, "_workspace_action_id", uuid.uuid4().hex)
     )
     stored = document_services.store_document_upload(
         user=actor,
@@ -142,12 +519,15 @@ def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
             "loan_application_id": str(application_id),
             "loan_document_id": str(document.pk),
             "supersedes_signed_copy_id": str(current.pk) if current else None,
-            "resolves_review_action_id": str(open_review.pk) if open_review else None,
+            "resolves_review_action_id": (
+                str(resolving_review.pk) if resolving_review else None
+            ),
             "remarks": remarks,
+            "request_id": metadata.request_id,
+            "workspace_action_id": workspace_action_id,
+            "signed_copy_id": str(action_id),
         },
     )
-    action_id, audit_id, version_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
-    workspace_action_id = getattr(request, "_workspace_action_id", uuid.uuid4().hex)
     old = {"signed_copy_id": str(current.pk) if current else None}
     body = {
         "signed_copy_id": str(action_id),
@@ -158,7 +538,9 @@ def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
         "checksum_sha256": checksum,
         "remarks": remarks,
         "supersedes_signed_copy_id": str(current.pk) if current else None,
-        "resolves_review_action_id": str(open_review.pk) if open_review else None,
+        "resolves_review_action_id": (
+            str(resolving_review.pk) if resolving_review else None
+        ),
         "audit_log_id": str(audit_id),
         "version_history_id": str(version_id),
         **_metadata_body(actor, metadata),
@@ -169,7 +551,11 @@ def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
         entity_type="loan_document",
         entity_id=document.pk,
         from_state="signed_copy_uploaded" if current else "signed_copy_pending",
-        to_state="corrected_signed_copy_uploaded" if open_review else "signed_copy_uploaded",
+        to_state=(
+            "corrected_signed_copy_uploaded"
+            if resolving_review
+            else "signed_copy_uploaded"
+        ),
         trigger_reason="upload_signed_copy",
     )
     audit = AuditLog.objects.create(
@@ -204,7 +590,7 @@ def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
         remarks=remarks,
         request_id=metadata.request_id,
         supersedes=current,
-        resolves_review_action=open_review,
+        resolves_review_action=resolving_review,
         workflow_event=workflow,
         audit_log=audit,
         version_history=history,
@@ -214,10 +600,8 @@ def upload_signed_copy(*, actor, application_id, loan_document_id, remarks,
 
 @transaction.atomic
 def record_review_action(*, actor, checklist_id, action_type, reason, metadata,
+                         approval_stage, canonical_role_code,
                          checklist_item_id=None, loan_document_id=None):
-    role = _canonical_role(actor, action_type)
-    if role is None:
-        raise AccessDenied
     application_id = DocumentChecklist.objects.filter(pk=checklist_id).values_list(
         "loan_application_id", flat=True
     ).first()
@@ -235,11 +619,31 @@ def record_review_action(*, actor, checklist_id, action_type, reason, metadata,
         item is None or document is None
     ):
         raise NotFound
-    stage = (
-        "checklist_item"
-        if action_type == StaffDocumentReviewAction.TYPE_REQUEST_CORRECTION
-        else role
-    )
+    if action_type == StaffDocumentReviewAction.TYPE_REQUEST_CORRECTION:
+        current_document_id = selectors.latest_generated_metadata_by_type(
+            application_id=application_id,
+            document_types={document.document_type},
+        ).get(document.document_type)
+        valid_authority = (
+            approval_stage == "checklist_item"
+            and canonical_role_code in {"compliance_team_member", "company_secretary"}
+            and _actor_can_authorise(
+                actor, canonical_role_code, "documents.checklist.update"
+            )
+            and _DOCUMENT_TYPE_BY_ITEM.get(item.item_code) == document.document_type
+            and current_document_id == document.pk
+        )
+    else:
+        current_stage = _APPROVAL_STAGE.get(checklist.checklist_status)
+        valid_authority = (
+            current_stage is not None
+            and (approval_stage, canonical_role_code) == current_stage[:2]
+            and _actor_can_authorise(actor, current_stage[1], current_stage[2])
+        )
+    if not valid_authority:
+        raise AccessDenied
+    stage = approval_stage
+    role = canonical_role_code
     existing = StaffDocumentReviewAction.objects.select_for_update().filter(
         document_checklist=checklist,
         checklist_item=item,
@@ -343,13 +747,21 @@ def current_projection(checklist):
         StaffDocumentReviewAction.objects.filter(document_checklist=checklist)
         .select_related("actor_user", "checklist_item", "loan_document")
     )
+    reconciled_ids = {row.pk for row in reviews if review_action_is_current(row)}
     unresolved_ids = {
         row.pk for row in reviews
-        if row.action_type != StaffDocumentReviewAction.TYPE_ADD_CONDITION
-        and not hasattr(row, "resolved_by_signed_copy")
+        if row.pk not in reconciled_ids
+        or (
+            row.action_type != StaffDocumentReviewAction.TYPE_ADD_CONDITION
+            and not _review_is_resolved(row)
+        )
     }
+    valid_signed = [
+        row for row in signed
+        if signed_copy_is_current(row)
+    ]
     return {
-        "signed_by_document": {row.loan_document_id: row for row in signed},
+        "signed_by_document": {row.loan_document_id: row for row in valid_signed},
         "open_by_item": {
             row.checklist_item_id: row for row in reviews
             if row.pk in unresolved_ids and row.checklist_item_id
@@ -358,24 +770,43 @@ def current_projection(checklist):
         "conditions": [
             row for row in reviews
             if row.action_type == StaffDocumentReviewAction.TYPE_ADD_CONDITION
+            and row.pk in reconciled_ids
         ],
-        "all_reviews": reviews,
-        "snapshot_ids": [str(row.pk) for row in signed + reviews],
+        "all_reviews": [row for row in reviews if row.pk in reconciled_ids],
+        "snapshot_ids": [
+            f"{row.pk}:{'current' if row in valid_signed else 'invalid'}"
+            for row in signed
+        ] + [
+            f"{row.pk}:{'current' if row.pk in reconciled_ids else 'invalid'}:"
+            f"{'open' if row.pk in unresolved_ids else 'resolved'}"
+            for row in reviews
+        ],
     }
 
 
 def has_open_blocker(checklist, checklist_item=None):
     query = StaffDocumentReviewAction.objects.filter(
         document_checklist=checklist,
-        action_type__in=[
-            StaffDocumentReviewAction.TYPE_REQUEST_CORRECTION,
-            StaffDocumentReviewAction.TYPE_RETURN_CORRECTION,
-        ],
-        resolved_by_signed_copy__isnull=True,
+    ).select_related(
+        "document_checklist",
+        "checklist_item",
+        "loan_document",
+        "actor_user",
+        "workflow_event",
+        "audit_log",
+        "version_history",
     )
     if checklist_item is not None:
         query = query.filter(checklist_item=checklist_item)
-    return query.exists()
+    for row in query:
+        if not review_action_is_current(row):
+            return True
+        if (
+            row.action_type != StaffDocumentReviewAction.TYPE_ADD_CONDITION
+            and not _review_is_resolved(row)
+        ):
+            return True
+    return False
 
 
 def replay_workspace_action(*, actor, application_id, workspace_action_id,
@@ -393,8 +824,10 @@ def replay_workspace_action(*, actor, application_id, workspace_action_id,
             and payload.get("remarks") == signed.remarks
             and set(payload) == {"remarks"}
         )
-        if exact:
+        if exact and signed_copy_is_current(signed):
             return serialize_signed_copy(signed, replay=True)
+        if exact:
+            raise Conflict("Signed-copy action evidence is no longer current.")
         raise Conflict("Signed-copy action facts are immutable.")
     review = StaffDocumentReviewAction.objects.filter(
         workspace_action_id=workspace_action_id,
@@ -403,7 +836,12 @@ def replay_workspace_action(*, actor, application_id, workspace_action_id,
     if review is None or review.actor_user_id != actor.pk:
         return None
     field = "condition" if review.action_type == StaffDocumentReviewAction.TYPE_ADD_CONDITION else "remarks"
-    if set(payload) == {field} and payload.get(field) == review.reason and uploaded_file is None:
+    if (
+        set(payload) == {field}
+        and payload.get(field) == review.reason
+        and uploaded_file is None
+        and review_action_is_current(review)
+    ):
         return serialize_review_action(review, replay=True)
     raise Conflict("Documentation review action facts are immutable.")
 
