@@ -142,7 +142,7 @@ def complete_request(*, actor, request_id, payload, request):
         row.completion_input_digest = completion_digest
         row.save(update_fields=["request_status", "completed_at", "sap_customer_code", "completion_reused_existing_code", "completion_input_digest"])
         evidence = _safe_evidence(row, actor, outcome="reused" if reused else "created")
-        evidence.update({"sap_customer_code_id": str(code.pk), "confirmation_document_id": (str(code.confirmation_document_id) if code.confirmation_document_id else None), "reuse": reused, "provenance": "manual_sap_confirmation", "request_id": request.headers.get("X-Request-ID")})
+        evidence.update({"sap_customer_code_id": str(code.pk), "confirmation_document_id": (str(code.confirmation_document_id) if code.confirmation_document_id else None), "reuse": reused, "completion_input_digest": completion_digest, "provenance": "manual_sap_confirmation", "request_id": request.headers.get("X-Request-ID")})
         completion_action = "sap.customer_code_reused" if reused else "sap.customer_code_created"
         _record_audit(actor=actor, request=request, row=row, action=completion_action, evidence=evidence)
         record_workflow_event(

@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_incoherent_completed_request_fails_named_sap_check_without_writes (sfpcl_credit.tests.test_disbursement_readiness_api.DisbursementReadinessSapOwnerTests.test_incoherent_completed_request_fails_named_sap_check_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_204540_normal_run/sfpcl_credit/tests/test_disbursement_readiness_api.py", line 559, in test_incoherent_completed_request_fails_named_sap_check_without_writes
+    self.assertEqual(checks["sap_customer_code_present"]["status"], "fail")
+AssertionError: 'pass' != 'fail'
+- pass
++ fail
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.071s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

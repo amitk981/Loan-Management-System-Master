@@ -814,6 +814,56 @@ class SapCustomerProfileRequestApiTests(TestCase):
         })
         self._assert_no_sap_artifacts()
 
+    def test_readiness_owner_rejects_incoherent_and_superseded_sap_evidence(self):
+        from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+            get_customer_code_for_member,
+        )
+
+        request_id = self._create_and_send("readiness-owner-matrix")
+        completed = self._complete(
+            request_id, sap_customer_code="READINESS-SAP-001"
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+        decision = lambda: get_customer_code_for_member(self.application.member_id)
+        self.assertEqual(decision().loan_application_id, self.application.pk)
+
+        request = SapCustomerProfileRequest.objects.get(pk=request_id)
+        retained_digest = request.completion_input_digest
+        SapCustomerProfileRequest.objects.filter(pk=request_id).update(
+            completion_input_digest=""
+        )
+        self.assertIsNone(decision())
+        SapCustomerProfileRequest.objects.filter(pk=request_id).update(
+            completion_input_digest=retained_digest
+        )
+        SapCustomerProfileRequest.objects.filter(pk=request_id).update(
+            completion_input_digest="f" * 64
+        )
+        self.assertIsNone(decision())
+        SapCustomerProfileRequest.objects.filter(pk=request_id).update(
+            completion_input_digest=retained_digest
+        )
+
+        retained_checksum = request.delivery_checksum_sha256
+        SapCustomerProfileRequest.objects.filter(pk=request_id).update(
+            delivery_checksum_sha256="e" * 64
+        )
+        self.assertIsNone(decision())
+        SapCustomerProfileRequest.objects.filter(pk=request_id).update(
+            delivery_checksum_sha256=retained_checksum
+        )
+
+        self.assignee.status = "inactive"
+        self.assignee.save(update_fields=["status"])
+        self.assertIsNone(decision())
+        self.assignee.status = "active"
+        self.assignee.save(update_fields=["status"])
+        self.assertIsNone(get_customer_code_for_member(uuid4()))
+
+        newer = self._post_request("readiness-owner-newer-draft")
+        self.assertEqual(newer.status_code, 200, newer.content)
+        self.assertIsNone(decision())
+
     def _terminal_application(
         self, suffix="001", member_type="individual_farmer",
         pan="ABCDE1234F", aadhaar="123412341234",

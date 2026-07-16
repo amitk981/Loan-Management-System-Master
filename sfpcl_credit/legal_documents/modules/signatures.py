@@ -4,14 +4,17 @@ from dataclasses import dataclass
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
 from sfpcl_credit.applications.modules import signature_identity_facts
+from sfpcl_credit.applications.models import LoanApplication, Witness
+from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.documents import services as document_services
-from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.legal_documents import selectors
-from sfpcl_credit.legal_documents.models import SignatureRecord
+from sfpcl_credit.legal_documents.models import LoanDocument, SignatureRecord
 from sfpcl_credit.legal_documents.modules import document_authority, document_checklist
 from sfpcl_credit.legal_documents.request_contracts import (
     SignatureMismatchResolutionRequest,
@@ -59,6 +62,110 @@ class EvidenceConflict(Exception):
 
 class ProjectionConflict(Exception):
     pass
+
+
+def all_current_signatures_resolved(*, application_id):
+    """Decide current signer identity, provenance, and mismatch evidence."""
+    application = LoanApplication.objects.select_related("nominee").filter(pk=application_id).first()
+    if application is None:
+        return False
+    latest = {}
+    for document_type, document_id in LoanDocument.objects.filter(
+        loan_application_id=application_id
+    ).order_by("document_type", "-created_at", "-loan_document_id").values_list(
+        "document_type", "loan_document_id"
+    ):
+        latest.setdefault(document_type, document_id)
+    witnesses = set(Witness.objects.filter(
+        loan_application_id=application_id,
+        verification_status="verified",
+        shareholder_verified_flag=True,
+    ).values_list("witness_id", flat=True))
+    rows = list(SignatureRecord.objects.select_for_update().select_related(
+        "loan_document", "mismatch_resolution_workflow_event"
+    ).filter(loan_document__loan_application_id=application_id))
+    return all(
+        row.loan_document_id == latest.get(row.loan_document.document_type)
+        and _expected_readiness_signer(row, application, witnesses)
+        and _readiness_row_resolved(row)
+        for row in rows
+    )
+
+
+def _expected_readiness_signer(row, application, witnesses):
+    allowed_parties = {
+        "power_of_attorney": {"borrower", "nominee"},
+        "tri_party_agreement": {"borrower", "nominee"},
+        "sh4": {"borrower", "witness"},
+        "term_sheet": {"borrower", "nominee", "user"},
+        "loan_agreement": {"borrower", "witness"},
+    }.get(row.loan_document.document_type, set())
+    if row.signer_party_type not in allowed_parties:
+        return False
+    if row.signer_party_type == "borrower":
+        return row.signer_party_id == application.member_id
+    if row.signer_party_type == "nominee":
+        return bool(application.nominee_id and row.signer_party_id == application.nominee_id)
+    if row.signer_party_type == "witness":
+        return row.signer_party_id in witnesses
+    if row.signer_party_type == "user" and row.loan_document.document_type == "term_sheet":
+        user = User.objects.filter(pk=row.signer_party_id).first()
+        case = (
+            ApprovalCase.objects.filter(loan_application_id=application.pk)
+            .order_by("-cycle_number", "-submitted_at", "-approval_case_id")
+            .first()
+        )
+        projection = case.committee_projection_json if case else {}
+        eligible_ids = {
+            str(projection.get("cfo_user_id") or ""),
+            *{str(value) for value in projection.get("director_user_ids", []) if value},
+        }
+        excluded_ids = {
+            str(value.get("user_id"))
+            for value in (case.excluded_approvers_json if case else [])
+            if isinstance(value, dict) and value.get("user_id")
+        }
+        return bool(
+            user
+            and user.can_authenticate()
+            and str(row.signer_party_id) in eligible_ids - excluded_ids
+        )
+    return False
+
+
+def _readiness_row_resolved(row):
+    if row.signature_status == "signed":
+        return bool(not row.signature_mismatch_flag and row.signed_at and row.captured_by_user_id and row.mismatch_resolution_type is None)
+    if row.signature_status != "mismatch" or not row.signature_mismatch_flag:
+        return False
+    required_type = "bank_verification_letter" if row.mismatch_resolution_type == "bank_verification_letter" else "borrower_declaration"
+    evidence = LoanDocument.objects.select_related("document").filter(
+        loan_application_id=row.loan_document.loan_application_id,
+        document_id=row.mismatch_resolution_document_id,
+        document_type=required_type,
+        generation_status=LoanDocument.GENERATION_GENERATED,
+        renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+        renderer_validated_document_id=F("document_id"),
+        renderer_validated_checksum_sha256=F("document__checksum_sha256"),
+    ).first()
+    audits = list(AuditLog.objects.filter(action="documents.signature.mismatch_resolved", entity_type="signature_record", entity_id=row.pk)[:2])
+    histories = list(VersionHistory.objects.filter(versioned_entity_type="signature_record", versioned_entity_id=row.pk, change_summary="documents.signature.mismatch_resolved")[:2])
+    workflow = row.mismatch_resolution_workflow_event
+    return bool(
+        row.mismatch_resolution_type and row.mismatch_resolution_document_id
+        and row.mismatch_resolution_remarks and row.captured_by_user_id
+        and row.verified_by_user_id and row.captured_by_user_id != row.verified_by_user_id
+        and row.verified_at and evidence and len(audits) == 1 and len(histories) == 1
+        and audits[0].actor_user_id == row.verified_by_user_id
+        and histories[0].author_user_id == row.verified_by_user_id
+        and audits[0].new_value_json == histories[0].new_value_json
+        and (audits[0].new_value_json or {}).get("signature_record_id") == str(row.pk)
+        and workflow and workflow.workflow_name == "loan_document_signature"
+        and workflow.entity_type == "loan_document" and workflow.entity_id == row.loan_document_id
+        and workflow.from_state == "mismatch" and workflow.to_state == "resolved"
+        and workflow.triggered_by_user_id == row.verified_by_user_id
+        and workflow.trigger_reason == "documents.signature.mismatch_resolved"
+    )
 
 
 def record(*, actor, loan_document_id, payload, metadata):

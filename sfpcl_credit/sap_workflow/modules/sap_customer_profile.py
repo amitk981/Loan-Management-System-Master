@@ -27,6 +27,7 @@ from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.sap_workflow.adapters import ManualSapAdapter
 from sfpcl_credit.sap_workflow.errors import SapRequestConflict
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 _CAPABILITY_SALT = "sfpcl.sap-annexure-delivery.v1"
@@ -64,8 +65,37 @@ class SapCustomerCodeDecision:
     status: str
 
 
+def is_current_finance_assignee(*, application_id, member_id, actor_id):
+    """Decide the persisted pre-disbursement Senior Finance object scope."""
+    request = (
+        SapCustomerProfileRequest.objects.select_for_update()
+        .select_related("assigned_to_user__primary_role")
+        .filter(loan_application_id=application_id, member_id=member_id)
+        .order_by("-created_at", "-sap_customer_profile_request_id")
+        .first()
+    )
+    return bool(
+        request
+        and request.assigned_to_user_id == actor_id
+        and request.assigned_to_user.can_authenticate()
+        and request.assigned_to_user.primary_role.status == "active"
+        and request.assigned_to_user.primary_role.role_code == "senior_manager_finance"
+    )
+
+
 def get_customer_code_for_member(member_id, *, for_update=False):
     """Return only coherent SAP-owned linkage for trusted downstream modules."""
+    request_queryset = SapCustomerProfileRequest.objects
+    if for_update:
+        request_queryset = request_queryset.select_for_update()
+    request = (
+        request_queryset.filter(member_id=member_id)
+        .select_related("assigned_to_user__primary_role")
+        .order_by("-created_at", "-sap_customer_profile_request_id")
+        .first()
+    )
+    if request is None or request.request_status != request.STATUS_COMPLETED:
+        return None
     code_queryset = SapCustomerCode.objects
     if for_update:
         code_queryset = code_queryset.select_for_update()
@@ -78,23 +108,7 @@ def get_customer_code_for_member(member_id, *, for_update=False):
     )
     if code is None:
         return None
-    request_queryset = SapCustomerProfileRequest.objects
-    if for_update:
-        request_queryset = request_queryset.select_for_update()
-    request = (
-        request_queryset.filter(
-            member_id=member_id,
-            request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
-            sap_customer_code_id=code.pk,
-        )
-        .only(
-            "sap_customer_profile_request_id", "loan_application_id",
-            "sap_customer_code_id", "member_id",
-        )
-        .order_by("-completed_at", "-sap_customer_profile_request_id")
-        .first()
-    )
-    if request is None:
+    if request.sap_customer_code_id != code.pk or not _current_completed_code_evidence(request, code):
         return None
     return SapCustomerCodeDecision(
         customer_code_id=code.pk,
@@ -102,6 +116,66 @@ def get_customer_code_for_member(member_id, *, for_update=False):
         profile_request_id=request.pk,
         loan_application_id=request.loan_application_id,
         status=code.status,
+    )
+
+
+def _current_completed_code_evidence(request, code):
+    completion_actions = ("sap.customer_code_created", "sap.customer_code_reused")
+    audits = list(AuditLog.objects.filter(
+        entity_type="sap_customer_profile_request",
+        entity_id=request.pk,
+        action__in=completion_actions,
+    ).order_by("created_at", "audit_log_id")[:2])
+    send_audits = list(AuditLog.objects.filter(
+        entity_type="sap_customer_profile_request",
+        entity_id=request.pk,
+        action="finance.sap_customer_code.sent",
+    ).order_by("created_at", "audit_log_id")[:2])
+    workflows = list(WorkflowEvent.objects.filter(
+        workflow_name="SAPCustomerCodeCompleted",
+        entity_type="sap_customer_profile_request",
+        entity_id=request.pk,
+        trigger_reason__in=completion_actions,
+    ).order_by("created_at", "workflow_event_id")[:2])
+    if len(audits) != 1 or len(send_audits) != 1 or len(workflows) != 1:
+        return False
+    audit, send_audit, workflow = audits[0], send_audits[0], workflows[0]
+    evidence = audit.new_value_json or {}
+    send_evidence = send_audit.new_value_json or {}
+    action = audit.action
+    expected_reuse = action == "sap.customer_code_reused"
+    return bool(
+        request.completed_at
+        and request.sent_at
+        and request.sent_communication_id
+        and request.sent_task_id
+        and request.delivery_reference
+        and len(request.delivery_checksum_sha256 or "") == 64
+        and send_evidence.get("annexure_checksum_sha256")
+        == request.delivery_checksum_sha256
+        and request.delivery_file_id_snapshot == request.excel_file_id
+        and request.delivery_assignee_id_snapshot == request.assigned_to_user_id
+        and len(request.completion_input_digest or "") == 64
+        and evidence.get("completion_input_digest")
+        == request.completion_input_digest
+        and request.completion_reused_existing_code is expected_reuse
+        and request.member_id == code.member_id
+        and request.sap_customer_code_id == code.pk
+        and request.assigned_to_user.can_authenticate()
+        and request.assigned_to_user.primary_role.status == "active"
+        and request.assigned_to_user.primary_role.role_code == "senior_manager_finance"
+        and audit.actor_user_id == request.assigned_to_user_id
+        and evidence.get("sap_customer_profile_request_id") == str(request.pk)
+        and evidence.get("loan_application_id") == str(request.loan_application_id)
+        and evidence.get("member_id") == str(request.member_id)
+        and evidence.get("sap_customer_code_id") == str(code.pk)
+        and evidence.get("assigned_to_user_id") == str(request.assigned_to_user_id)
+        and evidence.get("request_status") == request.STATUS_COMPLETED
+        and evidence.get("reuse") is expected_reuse
+        and workflow.from_state == request.STATUS_SENT
+        and workflow.to_state == request.STATUS_COMPLETED
+        and workflow.triggered_by_user_id == request.assigned_to_user_id
+        and workflow.trigger_reason == action
     )
 
 
@@ -335,6 +409,7 @@ class SapCustomerProfileModule:
     send_request = staticmethod(send_request)
     complete = staticmethod(complete_request)
     get_customer_code_for_member = staticmethod(get_customer_code_for_member)
+    is_current_finance_assignee = staticmethod(is_current_finance_assignee)
     issue_delivery_capability = staticmethod(issue_delivery_capability)
     read_delivered_annexure = staticmethod(read_delivered_annexure)
 
@@ -346,6 +421,7 @@ __all__ = [
     "complete_request",
     "create_request",
     "issue_delivery_capability",
+    "is_current_finance_assignee",
     "get_customer_code_for_member",
     "read_delivered_annexure",
     "record_delivery_denial",

@@ -6,6 +6,18 @@ Executable SAP policy and Manual/Fake/Future adapters now live only in `sap_work
 the object-identical model alias, standard 409 taxonomy is restored, and downstream modules consume
 only the immutable SAP decision. No schema, route, ciphertext context, or retained evidence changed.
 
+## 009D2 Readiness Evidence and Loan Scope Closure
+
+- Readiness now consumes the checklist owner's exact completion and ordered-approval reconciliation,
+  the signature owner's current signer/mismatch decision, coordinated security terminal evidence,
+  and the SAP owner's newest-request/completion decision. Mutable labels and stale/forged ledgers do
+  not pass.
+- Senior Manager Finance loan scope is the active assignee of the newest persisted SAP request for
+  the exact application/member. CFC scope remains absent until 009E creates the source-defined
+  initiated-disbursement relation; application intake assignment is never loan scope.
+- Blank-cheque custody and cancelled-cheque linkage remain unconditional readiness requirements.
+  Only SH-4 and CDSL use owner applicability. The source-bank check remains the honest A-126 blocker.
+
 ## Architecture Review 2026-07-16 14:37 — Owner, Evidence, and Loan-Scope Closure
 
 - 009B2's public `sap_workflow` module still imports Finance models, encrypted storage, and the

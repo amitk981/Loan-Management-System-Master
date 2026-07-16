@@ -2251,6 +2251,280 @@ class FinalDocumentationApprovalApiTests(TestCase):
 
         self.assertNotIn(item.pk, completed)
 
+    def test_disbursement_readiness_reconciles_real_owner_evidence(self):
+        from sfpcl_credit.processes.document_checklist_actions import (
+            resolve_disbursement_readiness,
+            resolve_security_disbursement_readiness,
+        )
+
+        self._complete_readiness_documentation()
+
+        legal = resolve_disbursement_readiness(application_id=self.application.pk)
+        security = resolve_security_disbursement_readiness(
+            application_id=self.application.pk
+        )
+        self.assertTrue(legal.documentation_complete)
+        self.assertTrue(legal.company_secretary_approval)
+        self.assertTrue(legal.credit_manager_approval)
+        self.assertTrue(legal.sanction_committee_approval)
+        self.assertTrue(legal.signature_mismatch_resolved)
+        self.assertTrue(security.security_package_complete)
+        self.assertTrue(security.poa_complete)
+        self.assertTrue(security.sh4_complete)
+        self.assertTrue(security.cdsl_pledge_complete)
+        self.assertTrue(security.blank_dated_cheque_received)
+
+    def test_disbursement_readiness_rejects_wrong_signer_and_rolled_back_chain(self):
+        from sfpcl_credit.processes.document_checklist_actions import (
+            resolve_disbursement_readiness,
+        )
+
+        self._complete_readiness_documentation()
+        poa = self.checklist.items.get(item_code="poa").loan_document
+        SignatureRecord.objects.create(
+            loan_document=poa,
+            signer_party_type="witness",
+            signer_party_id=self.witness.pk,
+            signer_name_snapshot=self.witness.witness_name,
+            signature_method="wet_ink",
+            signature_status="signed",
+            signature_mismatch_flag=False,
+            signed_at=timezone.now(),
+            captured_by_user=self.compliance,
+        )
+        self.assertFalse(resolve_disbursement_readiness(
+            application_id=self.application.pk
+        ).signature_mismatch_resolved)
+        SignatureRecord.objects.filter(
+            loan_document=poa, signer_party_type="witness"
+        ).delete()
+
+        term_sheet = self.checklist.items.get(item_code="term_sheet").loan_document
+        unrelated_director = self.fixture._user(
+            "director", "Unassigned Term Sheet Director"
+        )
+        SignatureRecord.objects.create(
+            loan_document=term_sheet,
+            signer_party_type="user",
+            signer_party_id=unrelated_director.pk,
+            signer_name_snapshot=unrelated_director.full_name,
+            signature_method="wet_ink",
+            signature_status="signed",
+            signature_mismatch_flag=False,
+            signed_at=timezone.now(),
+            captured_by_user=self.compliance,
+        )
+        self.assertFalse(resolve_disbursement_readiness(
+            application_id=self.application.pk
+        ).signature_mismatch_resolved)
+        SignatureRecord.objects.filter(
+            loan_document=term_sheet, signer_party_id=unrelated_director.pk
+        ).delete()
+
+        DocumentChecklist.objects.filter(pk=self.checklist.pk).update(
+            checklist_status=DocumentChecklist.STATUS_IN_PROGRESS
+        )
+        readiness = resolve_disbursement_readiness(application_id=self.application.pk)
+        self.assertFalse(readiness.company_secretary_approval)
+        self.assertFalse(readiness.credit_manager_approval)
+        self.assertFalse(readiness.sanction_committee_approval)
+
+    def test_disbursement_readiness_owner_evidence_mutations_fail_independently(self):
+        from sfpcl_credit.processes.document_checklist_actions import (
+            resolve_disbursement_readiness,
+            resolve_security_disbursement_readiness,
+        )
+
+        self._complete_readiness_documentation()
+        item = self.checklist.items.get(item_code="final_checklist")
+        history = VersionHistory.objects.get(
+            versioned_entity_type="checklist_item_completion",
+            versioned_entity_id=item.pk,
+        )
+        retained_history = dict(history.new_value_json)
+        changed_history = {**retained_history, "request_id": "tampered-readiness"}
+        VersionHistory.objects.filter(pk=history.pk).update(
+            new_value_json=changed_history
+        )
+        self.assertFalse(resolve_disbursement_readiness(
+            application_id=self.application.pk
+        ).documentation_complete)
+        VersionHistory.objects.filter(pk=history.pk).update(
+            new_value_json=retained_history
+        )
+
+        cs_action = ChecklistAction.objects.get(
+            document_checklist=self.checklist,
+            action_type=ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL,
+        )
+        retained_audit = dict(cs_action.audit_log.new_value_json)
+        AuditLog.objects.filter(pk=cs_action.audit_log_id).update(
+            new_value_json={"forged": True}
+        )
+        self.assertFalse(resolve_disbursement_readiness(
+            application_id=self.application.pk
+        ).company_secretary_approval)
+        AuditLog.objects.filter(pk=cs_action.audit_log_id).update(
+            new_value_json=retained_audit
+        )
+
+        term = self.checklist.items.get(item_code="term_sheet").loan_document
+        mismatch = SignatureRecord.objects.create(
+            loan_document=term,
+            signer_party_type="user",
+            signer_party_id=uuid4(),
+            signer_name_snapshot="Open mismatch",
+            signature_method="wet_ink",
+            signature_status="mismatch",
+            signature_mismatch_flag=True,
+            captured_by_user=self.compliance,
+        )
+        self.assertFalse(resolve_disbursement_readiness(
+            application_id=self.application.pk
+        ).signature_mismatch_resolved)
+        mismatch.delete()
+
+        poa = PowerOfAttorney.objects.get(
+            security_package__loan_application=self.application
+        )
+        activation = dict(poa.activation_evidence_json)
+        retained_checksum = activation["document_checksum_sha256"]
+        activation["document_checksum_sha256"] = "0" * 64
+        PowerOfAttorney.objects.filter(pk=poa.pk).update(
+            activation_evidence_json=activation
+        )
+        security = resolve_security_disbursement_readiness(
+            application_id=self.application.pk
+        )
+        self.assertFalse(security.poa_complete)
+        self.assertFalse(security.security_package_complete)
+        activation["document_checksum_sha256"] = retained_checksum
+        PowerOfAttorney.objects.filter(pk=poa.pk).update(
+            activation_evidence_json=activation
+        )
+
+    def test_disbursement_readiness_real_owners_reach_a126_then_all_pass(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+
+        from sfpcl_credit.loans.models import LoanAccount, LoanTerms
+
+        self._complete_readiness_documentation()
+        self._grant(
+            self.credit,
+            "finance.sap_request.create",
+            "finance.sap_request.send",
+        )
+        self._grant(
+            self.finance,
+            "finance.sap_request.complete",
+            "finance.disbursement.readiness",
+        )
+        member = self.application.member
+        member.registered_address_line1 = "Village Road"
+        member.registered_village_city = "Nashik"
+        member.registered_district = "Nashik"
+        member.registered_state = "Maharashtra"
+        member.registered_pincode = "422001"
+        member.pan_encrypted = FieldEncryption.encrypt("members.pan", "ABCDE1234F")
+        member.aadhaar_encrypted = FieldEncryption.encrypt(
+            "members.aadhaar", "123412341234"
+        )
+        member.save(update_fields=[
+            "registered_address_line1", "registered_village_city",
+            "registered_district", "registered_state", "registered_pincode",
+            "pan_encrypted", "aadhaar_encrypted",
+        ])
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/sap-customer-profile-request/",
+            {"assigned_to_user_id": str(self.finance.pk)},
+            content_type="application/json",
+            **self.fixture._auth(self.credit),
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        request_id = created.json()["data"]["sap_customer_profile_request_id"]
+        sent = self.client.post(
+            f"/api/v1/sap-customer-profile-requests/{request_id}/send/",
+            {"remarks": "Readiness owner handoff."},
+            content_type="application/json",
+            **self.fixture._auth(self.credit),
+        )
+        self.assertEqual(sent.status_code, 200, sent.content)
+        completed = self.client.post(
+            f"/api/v1/sap-customer-profile-requests/{request_id}/complete/",
+            {"sap_customer_code": "READY-REAL-OWNER-001"},
+            content_type="application/json",
+            **self.fixture._auth(self.finance),
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+        account = LoanAccount.objects.create(
+            loan_application=self.application,
+            loan_account_number="LN-REAL-OWNER-001",
+            loan_account_number_normalized="LN-REAL-OWNER-001",
+            member=member,
+            sap_customer_code_id=completed.json()["data"]["sap_customer_code_id"],
+            sanction_decision=self.case.sanction_decision,
+            sanctioned_amount=self.case.sanction_decision.sanctioned_amount,
+            loan_type="short_term",
+            interest_rate_type="floating",
+            current_interest_rate="9.0000",
+            repayment_date=timezone.localdate(),
+        )
+        LoanTerms.objects.create(
+            loan_account=account,
+            borrower_details_snapshot_json={},
+            nominee_details_snapshot_json={},
+            shareholding_snapshot_json={},
+            facility_type="short_term",
+            loan_amount=account.sanctioned_amount,
+            purpose="Crop production",
+            rate_of_interest="9.0000",
+            interest_rate_type="floating",
+            interest_tenure="12 months",
+            repayment_date=timezone.localdate(),
+            penalty_interest_rate="0.0000",
+            other_charges_fees_json={},
+            security_details_json={},
+            dispute_resolution_text="Governed clause.",
+        )
+        auth = self.fixture._auth(self.finance)
+        blocked = self.client.get(
+            f"/api/v1/loan-accounts/{account.pk}/disbursement-readiness/", **auth
+        )
+        self.assertEqual(blocked.status_code, 200, blocked.content)
+        self.assertEqual(
+            [row["code"] for row in blocked.json()["data"]["checks"]
+             if row["status"] == "fail"],
+            ["source_bank_account_configured"],
+        )
+        with patch(
+            "sfpcl_credit.disbursements.modules.disbursement_readiness."
+            "resolve_source_bank_account",
+            return_value=SimpleNamespace(active=True),
+        ):
+            ready = self.client.get(
+                f"/api/v1/loan-accounts/{account.pk}/disbursement-readiness/", **auth
+            )
+        self.assertEqual(ready.status_code, 200, ready.content)
+        self.assertTrue(ready.json()["data"]["ready_for_disbursement"])
+        self.assertTrue(all(
+            row["status"] == "pass" for row in ready.json()["data"]["checks"]
+        ))
+
+    def _complete_readiness_documentation(self):
+        self._complete_all_applicable_items()
+        for suffix, actor, comments in (
+            ("approve-as-company-secretary", self.cs, "All verified."),
+            ("approve-as-credit-manager", self.credit, "Limits reviewed."),
+            ("approve-as-sanction-committee", self.second_director, "Final approval."),
+        ):
+            response = self._post_stage(suffix, actor, {"comments": comments})
+            self.assertEqual(response.status_code, 200, response.content)
+        LoanDocument.objects.filter(
+            loan_application=self.application,
+            document_type__in=("term_sheet", "loan_agreement"),
+        ).update(execution_status="executed")
+
     def _post_stage(self, suffix, actor, payload):
         return self.client.post(
             f"/api/v1/document-checklists/{self.checklist.pk}/{suffix}/",

@@ -48,6 +48,9 @@ None for this slice, except updating frontend documentation or fixtures if requi
    register/account-activation fields null, false, or unchanged.
 4. Close the pending CFC task with the same decision. Do not call a bank API/portal, mark transfer
    successful, change balances/status, create repayment/schedule truth, or notify the borrower.
+5. Resolve CFC object scope only through the exact current 009E initiated-disbursement/CFC-task
+   relation. Application intake assignment and a bare readiness/authorise permission remain
+   irrelevant; replaced, closed, rejected, cross-account, or cross-member relations fail closed.
 
 ## Database/Model Impact
 - Extend the 009E disbursement aggregate only where required for protected nullable CFC checker,
@@ -97,6 +100,8 @@ Exact replay writes nothing; denied and concurrent losers create no success evid
 - Reject missing/wrong role or permission, inactive/checker-maker actor, cross-object/missing id,
   malformed/unknown decision/comments, non-pending/stale initiation, replaced readiness/bank facts,
   and caller-supplied outcome fields without partial writes.
+- Prove CFC readiness/read scope is absent before 009E initiation, present only for the exact pending
+  assigned relation, and removed when that relation is terminal or incoherent.
 - Exact replay is zero-write; changed/opposite replay conflicts. Twice-run PostgreSQL five-caller
   approval/rejection races retain one complete decision/evidence winner and no loser success facts.
 

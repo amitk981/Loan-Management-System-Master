@@ -50,6 +50,10 @@ None for this slice, except updating frontend documentation or fixtures if requi
 4. Produce one safe CFC task/action projection after persistence. Do not call a bank API, mark the
    bank portal transfer successful, create a UTR, alter loan balances/status, update the Loan
    Register, or notify the borrower.
+5. Consume 009D2 loan scope exactly: the initiating Senior Manager Finance must remain the active
+   assignee of the application's newest SAP request. The newly persisted initiated-disbursement
+   relation becomes the first canonical CFC loan/readiness scope; application `received_by_user`,
+   role strings, or permission alone never create either scope.
 
 ## Database/Model Impact
 - Add source §19.3 `disbursements` under the `disbursements` owner with protected loan/application/
@@ -100,6 +104,8 @@ or legal/security evidence payloads in those ledgers. Replay writes nothing.
   unknown payload/header, and maker-checker overlap with zero partial artifacts.
 - Exact replay returns retained projection and creates no new task/audit/workflow; changed replay
   conflicts. Twice-run PostgreSQL races retain one complete initiation/evidence winner.
+- Before the initiated row exists, a CFC readiness read remains nondisclosing; after the exact row
+  exists, its active assigned CFC path can consume readiness without any origination assignment.
 
 ## Visual Acceptance Criteria
 None.

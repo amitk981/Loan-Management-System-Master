@@ -5,9 +5,10 @@ from sfpcl_credit.legal_documents.models import (
     ChecklistItem,
     DocumentChecklist,
 )
+from sfpcl_credit.legal_documents.modules import checklist_actions
+from sfpcl_credit.legal_documents.modules import signatures
 from sfpcl_credit.legal_documents.selectors import (
     current_loan_term_document_for_update,
-    signature_facts_for_application,
 )
 
 
@@ -22,7 +23,7 @@ class LegalReadinessFacts:
     signature_mismatch_resolved: bool
 
 
-def resolve_legal_readiness(*, application_id):
+def resolve_legal_readiness(*, application_id, terminal_security_evidence=None):
     """Project current legal/checklist facts without refreshing or completing them."""
     checklist = (
         DocumentChecklist.objects.select_for_update()
@@ -34,16 +35,19 @@ def resolve_legal_readiness(*, application_id):
         .filter(loan_application_id=application_id)
         .first()
     )
-    items = list(
-        ChecklistItem.objects.select_for_update()
-        .filter(document_checklist=checklist)
-        .values("required_flag", "applicable_flag", "completion_status")
-    ) if checklist else []
-    item_truth = bool(items) and all(
-        (not row["required_flag"] and not row["applicable_flag"])
-        or row["completion_status"] == ChecklistItem.STATUS_COMPLETE
-        for row in items
+    items = list(ChecklistItem.objects.select_for_update().filter(
+        document_checklist=checklist
+    )) if checklist else []
+    required_ids = {
+        row.pk for row in items if row.required_flag and row.applicable_flag
+    }
+    completed_ids = (
+        checklist_actions.borrower_safe_completed_item_ids(
+            checklist, terminal_security_evidence=terminal_security_evidence
+        )
+        if checklist else set()
     )
+    item_truth = bool(items) and completed_ids == required_ids
     terminal = bool(
         checklist
         and checklist.checklist_status == DocumentChecklist.STATUS_SANCTION_APPROVED
@@ -54,35 +58,21 @@ def resolve_legal_readiness(*, application_id):
     loan_agreement = current_loan_term_document_for_update(
         application_id=application_id, document_type="loan_agreement"
     )
-    signatures = list(signature_facts_for_application(application_id=application_id))
-    signature_resolved = all(
-        row["signature_status"] != "mismatch" or bool(row["mismatch_resolution_type"])
-        for row in signatures
-        if row["verified_by_user_id"] and row["verified_at"]
+    signature_resolved = signatures.all_current_signatures_resolved(
+        application_id=application_id
     )
-    def approval_matches(action, action_type):
-        return bool(
-            action
-            and action.document_checklist_id == checklist.pk
-            and action.action_type == action_type
-            and action.workflow_event_id
-            and action.audit_log_id
-            and action.version_history_id
-        )
+    approvals = checklist_actions.approval_readiness(checklist)
     return LegalReadinessFacts(
         documentation_complete=terminal and item_truth,
-        company_secretary_approval=approval_matches(
-            checklist.company_secretary_signature if checklist else None,
-            ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL,
-        ),
-        credit_manager_approval=approval_matches(
-            checklist.credit_manager_signature if checklist else None,
-            ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL,
-        ),
-        sanction_committee_approval=approval_matches(
-            checklist.sanction_committee_signature if checklist else None,
-            ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL,
-        ),
+        company_secretary_approval=approvals[
+            ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL
+        ],
+        credit_manager_approval=approvals[
+            ChecklistAction.TYPE_CREDIT_MANAGER_APPROVAL
+        ],
+        sanction_committee_approval=approvals[
+            ChecklistAction.TYPE_SANCTION_COMMITTEE_APPROVAL
+        ],
         term_sheet_complete=term_sheet is not None,
         loan_agreement_complete=loan_agreement is not None,
         signature_mismatch_resolved=signature_resolved,

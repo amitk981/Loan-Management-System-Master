@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+Found 15 test(s).
+System check identified no issues (0 silenced).
+..............E
+======================================================================
+ERROR: test_readiness_owner_rejects_incoherent_and_superseded_sap_evidence (sfpcl_credit.tests.test_sap_customer_profile_request_api.SapCustomerProfileRequestApiTests.test_readiness_owner_rejects_incoherent_and_superseded_sap_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_204540_normal_run/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 831, in test_readiness_owner_rejects_incoherent_and_superseded_sap_evidence
+    self.assertIsNotNone(decision())
+                         ^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_204540_normal_run/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 827, in <lambda>
+    decision = lambda: get_customer_code_for_member(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: get_customer_code_for_member() got an unexpected keyword argument 'loan_application_id'
+
+----------------------------------------------------------------------
+Ran 15 tests in 2.319s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

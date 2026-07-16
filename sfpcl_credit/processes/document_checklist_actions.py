@@ -25,6 +25,30 @@ def borrower_safe_completed_item_ids(checklist):
     )
 
 
+def resolve_disbursement_readiness(*, application_id):
+    from sfpcl_credit.legal_documents.modules.disbursement_readiness import (
+        resolve_legal_readiness,
+    )
+    return resolve_legal_readiness(
+        application_id=application_id,
+        terminal_security_evidence=_terminal_security_evidence,
+    )
+
+
+def resolve_security_disbursement_readiness(*, application_id):
+    from sfpcl_credit.security_instruments.modules.disbursement_readiness import (
+        resolve_security_readiness,
+    )
+
+    completed_codes = checklist_actions.reconciled_completed_item_codes(
+        application_id=application_id,
+        terminal_security_evidence=_terminal_security_evidence,
+    )
+    return resolve_security_readiness(
+        application_id=application_id,
+        terminal_item_completed=completed_codes.__contains__,
+    )
+
 def approve_company_secretary(**kwargs):
     return checklist_actions.approve_company_secretary(
         terminal_security_evidence=_terminal_security_evidence, **kwargs

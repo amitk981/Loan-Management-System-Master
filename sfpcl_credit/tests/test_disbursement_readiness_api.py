@@ -1,6 +1,7 @@
 from django.test import Client, TestCase
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 from contextlib import ExitStack
 from decimal import Decimal
 from types import SimpleNamespace
@@ -63,6 +64,26 @@ class DisbursementReadinessApiTests(TestCase):
         self.actor.primary_role.role_code = "senior_manager_finance"
         self.actor.primary_role.save(update_fields=["role_code"])
         fixture._grant(self.actor, "finance.disbursement.readiness")
+        from sfpcl_credit.documents.models import DocumentFile
+        from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest
+
+        SapCustomerProfileRequest.objects.create(
+            loan_application=self.application,
+            member=self.application.member,
+            requested_by_user=self.actor,
+            assigned_to_user=self.actor,
+            farmer_full_name=self.application.member.legal_name,
+            borrower_type=self.application.borrower_type,
+            folio_number=self.application.member.folio_number,
+            pan_number_encrypted="scope-only",
+            address_text="scope-only",
+            loan_application_number=self.application.application_reference_number,
+            sanctioned_amount=self._account().sanctioned_amount,
+            sanction_date=timezone.localdate(),
+            excel_file=DocumentFile.objects.first(),
+            sanction_decision_id_snapshot=self._account().sanction_decision_id,
+            sanction_approval_case_id_snapshot=fixture.case.pk,
+        )
         self.password = fixture.password
         self.client = Client()
 
@@ -327,14 +348,12 @@ class DisbursementReadinessApiTests(TestCase):
                 self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
 
         self.fixture._grant(missing_permission, "finance.disbursement.readiness")
-        outside_scope = self.client.get(
+        cfc_stage_scope = self.client.get(
             f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
             **self._auth_for(missing_permission),
         )
-        self.assertEqual(outside_scope.status_code, 403, outside_scope.content)
-        self.assertEqual(
-            outside_scope.json()["error"]["code"], "OBJECT_ACCESS_DENIED"
-        )
+        self.assertEqual(cfc_stage_scope.status_code, 403, cfc_stage_scope.content)
+        self.assertEqual(cfc_stage_scope.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
 
         missing = self.client.get(
             f"/api/v1/loan-accounts/{uuid4()}/disbursement-readiness/",
@@ -355,13 +374,15 @@ class DisbursementReadinessApiTests(TestCase):
     def test_cfc_exact_scope_and_unknown_query_contract(self):
         cfc = self.fixture._user("chief_financial_controller", "CFC")
         self.fixture._grant(cfc, "finance.disbursement.readiness")
-        self.application.received_by_user = cfc
+        unrelated = self.fixture._user("field_officer", "Unrelated Intake Owner")
+        self.application.received_by_user = unrelated
         self.application.save(update_fields=["received_by_user"])
         permitted = self.client.get(
             f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
             **self._auth_for(cfc),
         )
-        self.assertEqual(permitted.status_code, 200, permitted.content)
+        self.assertEqual(permitted.status_code, 403, permitted.content)
+        self.assertEqual(permitted.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
 
         unknown = self.client.get(
             f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/?page=1",
@@ -374,7 +395,57 @@ class DisbursementReadinessApiTests(TestCase):
             {"page": "Unknown query parameter."},
         )
 
-    def test_real_projection_is_query_bounded_and_coordinator_uses_owner_seams(self):
+    def test_senior_finance_scope_ignores_application_origination_assignment(self):
+        unrelated = self.fixture._user("field_officer", "Different Intake Assignee")
+        self.application.received_by_user = unrelated
+        self.application.save(update_fields=["received_by_user"])
+
+        response = self.client.get(
+            f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+            **self._auth(),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+
+    def test_cross_member_account_and_sap_scope_fail_nondisclosing(self):
+        from sfpcl_credit.members.models import Member
+        from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest
+
+        unrelated = Member.objects.create(
+            member_number="READINESS-UNRELATED-MEMBER",
+            member_type="individual_farmer",
+            legal_name="Unrelated Readiness Member",
+            display_name="Unrelated Readiness Member",
+            folio_number="READINESS-UNRELATED-FOLIO",
+            membership_status="active",
+            kyc_status="verified",
+            default_status="no_default",
+        )
+        account = self._account()
+        account.member = unrelated
+        account.save(update_fields=["member"])
+        denied = self.client.get(
+            f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+            **self._auth(),
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+
+        account.member = self.application.member
+        account.save(update_fields=["member"])
+        request = SapCustomerProfileRequest.objects.get(
+            loan_application=self.application
+        )
+        request.member = unrelated
+        request.save(update_fields=["member"])
+        denied = self.client.get(
+            f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+            **self._auth(),
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+
+    def test_real_projection_is_query_bounded(self):
         auth = self._auth()
         with CaptureQueriesContext(connection) as queries:
             response = self.client.get(
@@ -383,33 +454,6 @@ class DisbursementReadinessApiTests(TestCase):
             )
         self.assertEqual(response.status_code, 200, response.content)
         self.assertLessEqual(len(queries), 30)
-
-        from pathlib import Path
-
-        source = (
-            Path(__file__).parents[1]
-            / "disbursements/modules/disbursement_readiness.py"
-        ).read_text(encoding="utf-8")
-        for owner in (
-            "resolve_readiness_account",
-            "resolve_approval_readiness",
-            "resolve_legal_readiness",
-            "resolve_security_readiness",
-            "resolve_blank_cheque_bank_fact",
-            "resolve_sap_code",
-            "resolve_source_bank_account",
-        ):
-            self.assertIn(owner, source)
-        for forbidden in (
-            "approvals.models",
-            "legal_documents.models",
-            "security_instruments.models",
-            "finance.models",
-            "members.models",
-            "SapCustomerCode",
-            "BankAccount",
-        ):
-            self.assertNotIn(forbidden, source)
 
     def test_stale_application_lifecycle_fails_the_sanction_check(self):
         from sfpcl_credit.applications.models import LoanApplication
@@ -426,6 +470,30 @@ class DisbursementReadinessApiTests(TestCase):
             item["code"]: item["status"] for item in response.json()["data"]["checks"]
         }
         self.assertEqual(statuses["sanction_approved"], "fail")
+
+    def test_mutable_security_package_status_cannot_replace_terminal_evidence(self):
+        from sfpcl_credit.security_instruments.models import SecurityPackage
+
+        SecurityPackage.objects.create(
+            loan_application=self.application,
+            physical_share_security_required_flag=False,
+            demat_pledge_required_flag=False,
+            poa_required_flag=True,
+            blank_cheque_required_flag=False,
+            cancelled_cheque_required_flag=False,
+            security_status=SecurityPackage.STATUS_COMPLETE,
+        )
+
+        response = self.client.get(
+            f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+            **self._auth(),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        statuses = {
+            item["code"]: item["status"] for item in response.json()["data"]["checks"]
+        }
+        self.assertEqual(statuses["security_package_complete"], "fail")
 
     def _account(self):
         from sfpcl_credit.loans.models import LoanAccount

@@ -60,7 +60,7 @@ class ReadinessAccountFacts:
 
 
 def resolve_readiness_account(*, actor, loan_account_id):
-    """Resolve a readiness-scoped account without disclosing denied identifiers."""
+    """Resolve Stage-5 loan scope without reusing origination assignment."""
     actor = _locked_actor(actor)
     permissions = set(auth_service.effective_permission_codes(actor))
     permission = "finance.disbursement.readiness"
@@ -71,9 +71,9 @@ def resolve_readiness_account(*, actor, loan_account_id):
     account = (
         LoanAccount.objects.select_for_update()
         .select_related(
-            "loan_application__created_by_user",
-            "loan_application__received_by_user",
+            "loan_application",
             "member",
+            "sanction_decision",
             "terms",
         )
         .filter(pk=loan_account_id)
@@ -81,14 +81,26 @@ def resolve_readiness_account(*, actor, loan_account_id):
     )
     if account is None:
         raise DomainObjectAccessDenied(None)
-    access = evaluate_application_object_access(
-        application=account.loan_application,
-        actor=actor,
-        required_permission=permission,
-        actor_permissions=permissions,
-    )
-    if not access.allowed:
-        raise DomainObjectAccessDenied(access)
+    roles = set(actor.role_codes())
+    if "senior_manager_finance" in roles:
+        scoped = SapCustomerProfileModule.is_current_finance_assignee(
+            application_id=account.loan_application_id,
+            member_id=account.member_id,
+            actor_id=actor.pk,
+        )
+    else:
+        # A CFC obtains loan scope from the canonical initiated-disbursement
+        # relation owned by 009E. No such relation exists in this slice.
+        scoped = False
+    if not scoped:
+        raise DomainObjectAccessDenied(None)
+    if (
+        account.loan_application.member_id != account.member_id
+        or account.terms.loan_account_id != account.pk
+        or account.sanction_decision.loan_application_id
+        != account.loan_application_id
+    ):
+        raise DomainObjectAccessDenied(None)
     return ReadinessAccountFacts(
         loan_account_id=account.pk,
         loan_application_id=account.loan_application_id,

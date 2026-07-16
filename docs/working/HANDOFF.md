@@ -1,13 +1,15 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-16_201643_normal_run
+2026-07-16_204540_normal_run
 
 ## Current Status
-009B3B moved all SAP request, Annexure storage/delivery, capability, completion/reuse/read, and
-Manual/Fake/Future adapter policy into `sap_workflow`; Finance retains only its 009B3A model alias.
-The four-app graph is acyclic, 58 focused tests pass, PostgreSQL SAP races pass twice, and Django
-check/migration sync are clean. The orchestrator still owns full coverage and frontend gates.
+009D2 makes all 23 readiness checks consume exact owner-reconciled checklist, ordered approval,
+current signature, security, bank, SAP, sanction, and loan facts. Senior Manager Finance scope is
+the newest SAP-request assignment; CFC remains nondisclosing until 009E creates its canonical
+initiated-disbursement relation. Fifteen focused readiness/owner-matrix tests plus impacted owner tests pass;
+Django check and migration sync are clean. The orchestrator still owns full coverage/frontend gates.
 
 ## Next Run
-Run 009D2, then 009E. Readiness must consume only the canonical SAP decision and exact owner evidence.
+Run the due architecture review, then 009E. Initiation must consume the exact 009D2 decision and
+create the first canonical CFC loan/readiness scope without using application intake assignment.
