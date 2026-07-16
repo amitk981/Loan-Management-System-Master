@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from sfpcl_credit.applications import views as application_views
@@ -15,6 +16,7 @@ from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.legal_documents.modules import checklist_actions
 from sfpcl_credit.processes import document_checklist_actions as checklist_action_process
+from sfpcl_credit.processes import staff_documentation_workspace
 from sfpcl_credit.legal_documents.modules import stamp_notary
 from sfpcl_credit.legal_documents.modules import signatures
 from sfpcl_credit.legal_documents.modules import loan_document_verification
@@ -173,6 +175,85 @@ def legal_document_checklist(request, loan_application_id):
     return success_response(data, request)
 
 
+@require_GET
+def documentation_workspace_queue(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = staff_documentation_workspace.list_queue(
+            actor=user,
+            query_params=request.GET,
+        )
+    except staff_documentation_workspace.AccessDenied as exc:
+        return error_response(
+            request,
+            403,
+            exc.error_code,
+            "You do not have access to the documentation queue.",
+        )
+    return list_response(data["items"], data["pagination"], request)
+
+
+@require_GET
+def documentation_workspace(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = staff_documentation_workspace.read(actor=user, application_id=loan_application_id)
+    except staff_documentation_workspace.AccessDenied as exc:
+        return error_response(request, 403, exc.error_code, "You do not have access to this documentation workspace.")
+    except staff_documentation_workspace.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Documentation workspace was not found.")
+    return success_response(data, request)
+
+
+@require_POST
+def documentation_workspace_action(request, loan_application_id, action_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        multipart = request.content_type.startswith("multipart/form-data")
+        payload = request.POST.dict() if multipart else parse_json_body(request)
+        data = staff_documentation_workspace.execute_action(
+            actor=user,
+            application_id=loan_application_id,
+            action_id=action_id,
+            payload=payload,
+            uploaded_file=request.FILES.get("file") if multipart else None,
+            request=request,
+        )
+    except (staff_documentation_workspace.AccessDenied, staff_documentation_workspace.NotFound):
+        return error_response(request, 404, "NOT_FOUND", "Documentation action was not found.")
+    except staff_documentation_workspace.ActionConflict as exc:
+        return error_response(request, 409, exc.error_code, str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Documentation action failed validation.",
+            checklist_actions.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_GET
+def documentation_workspace_download(request, loan_application_id, item_code):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try:
+        data = staff_documentation_workspace.download(actor=user, application_id=loan_application_id, item_code=item_code, request=request)
+    except (staff_documentation_workspace.AccessDenied, staff_documentation_workspace.NotFound):
+        return error_response(request, 404, "NOT_FOUND", "Document was not found.")
+    if isinstance(data, staff_documentation_workspace.DocumentContent):
+        response = HttpResponse(data.body, content_type=data.mime_type)
+        response["Content-Disposition"] = f'attachment; filename="{data.file_name}"'
+        response["Cache-Control"] = "no-store"; response["Pragma"] = "no-cache"
+        return response
+    return success_response(data, request)
 def _checklist_action_metadata(request):
     return checklist_actions.RequestMetadata(
         request_id=request.headers.get("X-Request-ID"),

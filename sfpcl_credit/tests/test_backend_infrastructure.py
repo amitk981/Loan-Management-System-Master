@@ -76,6 +76,23 @@ class BackendInfrastructureTests(SimpleTestCase):
             response["Access-Control-Allow-Origin"], "http://localhost:5173"
         )
 
+    def test_frontend_preflight_allows_canonical_request_id_header(self):
+        response = Client().options(
+            "/api/v1/health/live/",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "authorization,x-request-id",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        allowed_headers = {
+            value.strip().lower()
+            for value in response["Access-Control-Allow-Headers"].split(",")
+        }
+        self.assertIn("x-request-id", allowed_headers)
+
     def test_backend_tests_use_migrated_test_database_not_manual_schema_setup(self):
         forbidden_snippets = [
             "django." + "setup()",

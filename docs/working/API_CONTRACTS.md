@@ -225,7 +225,7 @@ Member portal endpoints added in 005FA:
 |---|---|---|---|
 | `POST /api/v1/portal/auth/activation/start/` | `folio_or_member_id`, `contact`, optional `pan_last4`, optional `aadhaar_last4` | `challenge_id`, `masked_contact`, `expires_at` | Member/contact/last-four facts must match a non-deleted member; already-active accounts return `409 PORTAL_ACCOUNT_ACTIVE`; no full PAN/Aadhaar or OTP is returned. Creates an OTP challenge, a pending communication-shell row, and `portal.auth.activation.started` audit metadata. |
 | `POST /api/v1/portal/auth/activation/complete/` | `challenge_id`, `otp`, `password`, `confirm_password` | `portal_account` with `portal_account_id`, `member_id`, `status`, masked contact facts | OTP must be pending and unexpired; password must match and be at least 10 characters. Creates/updates a `borrower_portal_user` user linked one-to-one to the member, activates the portal account, and writes `portal.account.activated`. |
-| `POST /api/v1/portal/auth/login/` | `identifier`, `password` | bearer token payload plus user payload | Identifier may match portal user email, member email, or member mobile. Invalid/inactive/suspended cases return generic `401 INVALID_CREDENTIALS` and write `portal.login.failed`; successful login writes `portal.login.success`. Access tokens include `member_id`, `portal_account_id`, and `portal_role = borrower_member` only for active, non-deleted member portal accounts; `/auth/me` returns the same member scope and only portal own-data permissions while the portal account remains active. |
+| `POST /api/v1/portal/auth/login/` | `identifier`, `password` | bearer token payload plus user payload | Identifier may match portal user email, member email, or member mobile. Invalid/inactive/suspended cases return generic `401 INVALID_CREDENTIALS` and write `portal.login.failed`; successful login writes `portal.login.success`. Access tokens include `member_id`, `portal_account_id`, and `portal_role = borrower_member` only for active, non-deleted member portal accounts; `/auth/me` returns the active `borrower_portal_user` role, the same member scope, and only portal own-data permissions while the portal account remains active. |
 | `POST /api/v1/portal/auth/password-reset/start/` | `identifier` | generic message plus challenge details when a valid account exists | Returns a generic response to avoid account enumeration; valid active portal accounts receive an OTP challenge and `portal.auth.password_reset.started` audit metadata. |
 | `POST /api/v1/portal/auth/password-reset/complete/` | `challenge_id`, `otp`, `password`, `confirm_password` | `{ "reset": true }` | OTP is single-use and expiring; successful reset updates the password hash, revokes all active sessions with reason `portal_password_reset`, and writes `portal.auth.password_reset.completed`. Replay returns `400 OTP_INVALID`. |
 | `POST /api/v1/portal/auth/password/change/` | bearer token plus `current_password`, `new_password`, `confirm_password` | `{ "password_changed": true }` | Requires a portal bearer session whose linked portal account is still active. Suspended/inactive portal accounts using old bearer tokens receive `401 INVALID_TOKEN` and the session is revoked with reason `portal_account_status_changed`. Current password must match. Successful change updates the password hash, revokes other active sessions with reason `portal_password_change`, keeps the current session active, and writes `portal.password.changed`. |
@@ -3667,6 +3667,33 @@ ids, hashes, ciphertext, and storage keys. Internal terminal selectors retain ex
 granting it to readers. Canonical recursive redaction preserves only full fixed masks or a governed
 last-four mask; mixed plaintext such as `1234*5678` is replaced with `[REDACTED]`.
 
+008K5 authority closure: the bank-decision endpoint now resolves authority before any bank,
+cheque, or document evidence and accepts writes only while the canonical application status is
+`approved_by_sanction_committee`. Missing and every non-documentation state are zero-write scope
+denials; unrelated or changed source identities remain zero-write conflicts. Success and exact
+replay return the complete §6.3 action body (`entity_type`, `entity_id`, `previous_status`,
+`new_status`, `workflow_event_id`, and `available_actions`) alongside the immutable decision and
+source identities. Borrower-safe completion now requires singular exact workflow/audit/version
+rows, their action linkages and full retained body, the current renderer/terminal body, and its
+digest; any missing, extra, changed, cross-object, or newer source fact removes completion without
+exposing the evidence.
+
+008L5 current-terminal closure: `approved_by_sanction_committee` remains necessary but no longer
+supplies sanction authority by itself. Under the application lock, every new or replayed bank
+decision must resolve the approval owner's latest approved case and its sanctioned decision; the
+response and immutable audit/version digest now include `approval_case_id` and
+`sanction_decision_id`. Missing, rejected, returned, replaced, malformed, or stale latest-cycle
+facts return nondisclosing `403 FORBIDDEN` before bank/document lookup or any decision/audit/
+workflow/version write. Downstream cancelled-cheque/checklist truth also re-resolves those exact
+retained ids and fails closed when they are no longer the current terminal cycle.
+
+## Staff documentation workspace (008M)
+
+- `GET /api/v1/documentation-workspaces/` returns the strictly paginated S26 queue; `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/` returns one locked, redacted S26-S35 snapshot whose executable owner-authorized actions use the shared §44 shape and whose timeline omits internal evidence identities.
+- `GET /api/v1/loan-applications/{loan_application_id}/documentation-workspace/{item_code}/download/` issues an actor/application/item/current-renderer-bound capability; content re-resolves current truth, records the generic staff download audit, and returns `404` after replacement/tamper.
+- 008M3 replaces caller-controlled `fixed_payload` with `action_id` plus a stable unique `action_key`. Every mutation posts only its declared user fields to `POST /api/v1/loan-applications/{loan_application_id}/documentation-workspace/actions/{action_id}/`; the server re-resolves the locked actor/application/snapshot and all canonical object identities before calling the existing legal, checklist, security, bank, document-upload, or workflow owner.
+- The command boundary accepts JSON for ordinary actions and multipart `file` plus `remarks` for signed-copy upload/re-upload. Unknown, stale, tampered, cross-user, cross-application, or no-longer-advertised action identities return nondisclosing `404` with zero writes; field validation returns `400`, owner conflicts return `409`, success returns the owner's §6.3 action data, and the client refetches the workspace once.
+
 ## Member portal documentation actions (008L)
 
 Authenticated borrower portal sessions use these application-scoped routes:
@@ -3700,22 +3727,27 @@ loan-account, or disbursement facts. Unknown fields/action codes, crafted eviden
 inapplicable actions, empty/oversize/type-mismatched files, and cross-member references fail before
 any success evidence.
 
-Only current renderer-validated `term_sheet` and `loan_agreement` checklist outputs receive a safe
+Only canonical latest current renderer-validated `term_sheet` and `loan_agreement` outputs receive a safe
 download action. It returns a short-lived portal-scoped content URL; authenticated retrieval verifies
-the retained bytes and writes the central `documents.file.downloaded` event with portal account,
-member, application, action, document/version/category/sensitivity/checksum, reason,
-request/network, capability verification, and accepted outcome—never a key.
+the retained bytes and writes exactly one central `portal.document.downloaded` event with portal
+account, member, application, action, document/version/category/sensitivity, reason,
+request/network, capability verification, and accepted outcome—never a checksum or storage fact.
 
-008L3 closure: projection and upload now consume one locked action-authority decision. A pending
+008L4 closure: projection, upload, and download now consume one application/checklist-locked
+action-authority decision, including locked current submissions and canonical latest generated
+renderer outputs. A pending
 required/applicable item is mutable only when it has no applicability blocker and no retained
 completion status; a stale/status-only completion remains honestly non-complete but advertises
 neither upload flag and cannot be reopened by a crafted POST. Accepted upload/re-upload uses only
-the central `documents.file.uploaded` vocabulary with portal attribution and immutable version/
-predecessor facts. Downloads use the central signed capability: the content URL contains a token,
+the central `portal.document.uploaded` vocabulary with portal attribution and immutable version/
+predecessor facts, without a parallel generic event. Downloads use the central signed capability:
+the content URL contains a token,
 not caller-editable expiry authority, and the signature binds portal account, member, application,
 action, current loan document, and current file. Tamper, expiry, replacement, cross-action, and
 cross-scope reads are nondisclosing and write no success event. Responses remain `no-store` at the
-HTTP content boundary.
+HTTP content boundary. A production generation successor immediately changes projection/download
+authority and invalidates a descriptor issued for its predecessor; no checklist pointer assignment
+participates in current-document selection.
 
 ## Member portal deficiency response and resubmission (008L2)
 
@@ -3750,7 +3782,84 @@ status from `incomplete_returned` to `submitted`, reopening the existing staff c
 `applications.loan_application.resubmitted` audit/workflow writer. Upload/re-upload and resubmit
 workflow facts target the immutable deficiency-response aggregate (`absent/responded -> responded ->
 submitted_for_review`); they never claim that the staff-owned open deficiency changed state. The
+008L4 borrower projection derives the current immutable response state from those retained workflow
+facts, so it reports `submitted_for_review` after resubmission while the staff-owned deficiency
+continues to report `open`. Deficiency uploads and downloads likewise retain exactly one central
+`portal.document.uploaded` or `portal.document.downloaded` event with safe portal scope and document
+metadata, without a parallel generic event or checksum/storage disclosure. The
 borrower timeline shows `Application resubmitted` (A-095). Empty, partially responded, or
 non-returned applications fail before any transition. Deficiency actions never create or change
 Stage-4 checklist items/actions/history, approvals, verifier/role/remarks, legal/security evidence,
 readiness, loan-account, or disbursement truth.
+
+008L5 response-evidence closure: each projected current response is `responded` only when it has
+one exact borrower-attributed `absent/responded -> responded` workflow fact, and becomes
+`submitted_for_review` only when that fact is followed by one exact
+`responded -> submitted_for_review` fact. Missing, duplicate, wrong-workflow/entity/actor/state,
+reversed, contradictory, or extra terminal facts project `response_status = evidence_invalid`,
+set `resubmission_allowed = false`, and make resubmit return `400 VALIDATION_ERROR`. The open staff
+deficiency remains unchanged and internal workflow evidence ids are never returned.
+
+## SAP customer profile request (009A)
+
+- `POST /api/v1/loan-applications/{loan_application_id}/sap-customer-profile-request/`
+
+The authenticated actor must be an active persisted Credit Manager with
+`finance.sap_request.create` and canonical application object access. The JSON request accepts
+exactly `assigned_to_user_id`, which must resolve to one active persisted Senior Manager Finance
+user. Borrower, application, sanction, and optional current verified-bank facts are server-derived;
+unknown client fields return `400 VALIDATION_ERROR`.
+
+Creation requires the application owner's latest approval case to be approved and its exact
+`SanctionDecision` to be `sanctioned` with a positive amount/date. It locks that evidence and the
+member before freezing name/type, folio, full registered address, optional contacts, application
+number, sanction facts, encrypted PAN, individual-only encrypted Aadhaar, and current verified bank
+last-four/IFSC when available. An active member SAP code returns `409 SAP_REQUEST_CONFLICT`; a
+missing/current-state failure returns stable validation, `INVALID_STATE`, `FORBIDDEN`, or
+`OBJECT_ACCESS_DENIED` envelopes without creating a row/file/event.
+
+Success returns only `sap_customer_profile_request_id`, `request_status: draft`, `excel_file_id`,
+and canonical `assigned_to_user {user_id, full_name}`. The linked file is a checksum-retained,
+restricted genuine `.xlsx` Annexure I whose physical storage bytes are authenticated ciphertext;
+Finance's Annexure storage boundary verifies, decrypts, and returns the readable workbook. The
+response and audit/workflow evidence omit PAN, Aadhaar, address, and bank secrets. The active-request
+identity is application plus status `draft`/`sent`: sequential or concurrent retry returns the
+retained projection and creates no duplicate file, audit, or workflow event, unless an active
+member SAP code now exists, in which case a new request may be retained for explicit governed reuse.
+Correction, loan-account, readiness, and disbursement changes are not part of this route.
+
+## SAP request send, completion, reuse, and masked read (009B)
+
+- `POST /api/v1/sap-customer-profile-requests/{request_id}/send/` accepts exactly optional string
+  `remarks`. The active persisted Credit Manager with `finance.sap_request.send` must be the frozen
+  requester. The application/member/current sanction cycle, active frozen Senior Manager Finance
+  assignee, request row, and active member code are locked before the restricted Annexure-I is
+  checksum-verified and decrypted. Success moves only `draft -> sent` and returns request id,
+  `sent`, sent time, assignee, `communication_id`, and in-app `task_id`. Exact sent replay is
+  zero-write; changed remarks, completed/stale requests, wrong owner/role/object, and invalid retained
+  files fail without another communication, task, audit, or workflow row.
+- `POST /api/v1/sap-customer-profile-requests/{request_id}/complete/` accepts exactly required
+  `sap_customer_code` plus optional `sap_vendor_code`, `created_at_sap`,
+  `confirmation_document_id`, and `confirmation_notes`. Codes and notes are trimmed; codes are
+  canonical uppercase, nonblank, and at most 120 characters. SAP timestamps must be timezone-aware
+  and not future. Only the active persisted frozen Senior Manager Finance assignee with
+  `finance.sap_request.complete` may complete the exact current sent request.
+- Completion creates one globally case/padding-insensitive unique active member code or reuses that
+  member's retained active code. It never infers reuse from identity text, reactivates inactive
+  history, overwrites retained code evidence, or accepts another member's code. A request pending
+  before another request completed for that member loses with `409`; a later request may explicitly
+  reuse the retained code. Exact completion replay is zero-write and changed replay conflicts.
+- Optional confirmation evidence must have one immutable upload-provenance row, sensitivity
+  `restricted`, category `sap_confirmation`, uploader equal to the assignee, and scope equal to the
+  request or its loan application. Missing, cross-object, public, template/portal, other-uploader,
+  or ambiguous evidence returns the same nondisclosing field error.
+- Completion returns request/code/member/application ids, `completed`, completion time, `reuse`,
+  masked customer/vendor codes, and safe confirmation-file metadata. It never returns frozen
+  identity/bank values, storage keys, signed capabilities, or raw code values. It creates one safe
+  audit and workflow ledger only; it creates no loan account, readiness, payment, disbursement, or
+  borrower communication truth.
+- `GET /api/v1/members/{member_id}/sap-customer-code/` requires an active persisted Senior Manager
+  Finance user with `finance.sap_code.read` who is the assignee on a completed request bound to the
+  member's current active code. Success returns only code id, member id, masked customer/vendor code,
+  and active status. Missing and out-of-scope member identifiers share `403 OBJECT_ACCESS_DENIED`
+  and the response never exposes SAP request or borrower identity fields.

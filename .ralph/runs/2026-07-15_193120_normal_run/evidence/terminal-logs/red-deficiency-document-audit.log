@@ -1,0 +1,17 @@
+^DFound 1 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_borrower_uploads_response_and_resubmits_to_completeness_review (sfpcl_credit.tests.test_portal_deficiency_response_api.PortalDeficiencyResponseApiTests.test_borrower_uploads_response_and_resubmits_to_completeness_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/tests/test_portal_deficiency_response_api.py", line 178, in test_borrower_uploads_response_and_resubmits_to_completeness_review
+    self.assertTrue(AuditLog.objects.filter(action=action).exists())
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.066s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,83 @@
+{
+  "send_response": {
+    "success": true,
+    "data": {
+      "sap_customer_profile_request_id": "10000000-0000-0000-0000-000000000009",
+      "request_status": "sent",
+      "sent_at": "2026-07-16T01:30:00Z",
+      "assigned_to_user": {
+        "user_id": "20000000-0000-0000-0000-000000000009",
+        "full_name": "Senior Manager Finance"
+      },
+      "communication_id": "30000000-0000-0000-0000-000000000009",
+      "task_id": "40000000-0000-0000-0000-000000000009"
+    }
+  },
+  "completion_response": {
+    "success": true,
+    "data": {
+      "sap_customer_profile_request_id": "10000000-0000-0000-0000-000000000009",
+      "sap_customer_code_id": "50000000-0000-0000-0000-000000000009",
+      "member_id": "60000000-0000-0000-0000-000000000009",
+      "loan_application_id": "70000000-0000-0000-0000-000000000009",
+      "request_status": "completed",
+      "completed_at": "2026-07-16T01:35:00Z",
+      "reuse": false,
+      "sap_customer_code_masked": "******0123",
+      "sap_vendor_code_masked": "****0009",
+      "confirmation_document": {
+        "document_id": "80000000-0000-0000-0000-000000000009",
+        "file_name": "sap-confirmation.pdf",
+        "mime_type": "application/pdf",
+        "sensitivity_level": "restricted"
+      }
+    }
+  },
+  "member_read_response": {
+    "success": true,
+    "data": {
+      "sap_customer_code_id": "50000000-0000-0000-0000-000000000009",
+      "member_id": "60000000-0000-0000-0000-000000000009",
+      "sap_customer_code_masked": "******0123",
+      "sap_vendor_code_masked": "****0009",
+      "status": "active"
+    }
+  },
+  "send_audit_evidence": {
+    "sap_customer_profile_request_id": "10000000-0000-0000-0000-000000000009",
+    "loan_application_id": "70000000-0000-0000-0000-000000000009",
+    "member_id": "60000000-0000-0000-0000-000000000009",
+    "sanction_decision_id": "90000000-0000-0000-0000-000000000009",
+    "actor_user_id": "a0000000-0000-0000-0000-000000000009",
+    "assigned_to_user_id": "20000000-0000-0000-0000-000000000009",
+    "communication_id": "30000000-0000-0000-0000-000000000009",
+    "task_id": "40000000-0000-0000-0000-000000000009",
+    "excel_file_id": "b0000000-0000-0000-0000-000000000009",
+    "request_status": "sent",
+    "provenance": "manual_file_annexure_i",
+    "outcome": "sent"
+  },
+  "completion_audit_evidence": {
+    "sap_customer_profile_request_id": "10000000-0000-0000-0000-000000000009",
+    "loan_application_id": "70000000-0000-0000-0000-000000000009",
+    "member_id": "60000000-0000-0000-0000-000000000009",
+    "sap_customer_code_id": "50000000-0000-0000-0000-000000000009",
+    "actor_user_id": "20000000-0000-0000-0000-000000000009",
+    "assigned_to_user_id": "20000000-0000-0000-0000-000000000009",
+    "confirmation_document_id": "80000000-0000-0000-0000-000000000009",
+    "request_status": "completed",
+    "reuse": false,
+    "provenance": "manual_sap_confirmation",
+    "outcome": "created"
+  },
+  "communication_ledger": {
+    "communication_id": "30000000-0000-0000-0000-000000000009",
+    "related_entity_type": "sap_customer_profile_request",
+    "related_entity_id": "10000000-0000-0000-0000-000000000009",
+    "recipient_party_type": "user",
+    "recipient_party_id": "20000000-0000-0000-0000-000000000009",
+    "channel": "email",
+    "delivery_status": "pending",
+    "external_message_id": "manual:30000000-0000-0000-0000-000000000009"
+  }
+}

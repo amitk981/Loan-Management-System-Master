@@ -1,0 +1,30 @@
+^DFound 2 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+FE
+======================================================================
+ERROR: test_signed_download_capability_expires_and_cannot_cross_current_document_or_action (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_signed_download_capability_expires_and_cannot_cross_current_document_or_action)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 374, in test_signed_download_capability_expires_and_cannot_cross_current_document_or_action
+    execution_status=LoanDocument.EXECUTION_EXECUTED
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'LoanDocument' has no attribute 'EXECUTION_EXECUTED'
+
+======================================================================
+FAIL: test_current_term_sheet_download_uses_latest_renderer_without_checklist_pointer (sfpcl_credit.tests.test_portal_documentation_actions_api.PortalDocumentationActionsApiTests.test_current_term_sheet_download_uses_latest_renderer_without_checklist_pointer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_193120_normal_run/sfpcl_credit/tests/test_portal_documentation_actions_api.py", line 281, in test_current_term_sheet_download_uses_latest_renderer_without_checklist_pointer
+    self.assertEqual(
+AssertionError: {'file_name': 'term-sheet-LO-CHECK-001.pdf', 'mime_type'[140 chars]ad/'} != {'file_name': 'current-term-sheet.pdf', 'mime_type': 'ap[135 chars]ad/'}
+  {'action_url': '/api/v1/portal/applications/3a8742fd-2b84-4e86-be87-f9f63f3865f9/documentation-actions/term_sheet/download/',
+-  'file_name': 'term-sheet-LO-CHECK-001.pdf',
++  'file_name': 'current-term-sheet.pdf',
+   'mime_type': 'application/pdf'}
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.431s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...

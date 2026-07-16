@@ -1,0 +1,41 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFF
+======================================================================
+FAIL: test_migration_facing_constraint_values_are_ordered_and_exact (sfpcl_credit.tests.test_document_template_migration_state.DocumentTemplateMigrationStateTests.test_migration_facing_constraint_values_are_ordered_and_exact) (constraint='doc_template_approval_status', state='model')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/sfpcl_credit/tests/test_document_template_migration_state.py", line 29, in test_migration_facing_constraint_values_are_ordered_and_exact
+    self.assertEqual(
+AssertionError: {'retired', 'draft', 'approved'} != ('draft', 'approved', 'retired')
+
+======================================================================
+FAIL: test_migration_facing_constraint_values_are_ordered_and_exact (sfpcl_credit.tests.test_document_template_migration_state.DocumentTemplateMigrationStateTests.test_migration_facing_constraint_values_are_ordered_and_exact) (constraint='doc_template_approval_status', state='migration')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/sfpcl_credit/tests/test_document_template_migration_state.py", line 34, in test_migration_facing_constraint_values_are_ordered_and_exact
+    self.assertEqual(
+AssertionError: {'retired', 'draft', 'approved'} != ('draft', 'approved', 'retired')
+
+======================================================================
+FAIL: test_migration_facing_constraint_values_are_ordered_and_exact (sfpcl_credit.tests.test_document_template_migration_state.DocumentTemplateMigrationStateTests.test_migration_facing_constraint_values_are_ordered_and_exact) (constraint='doc_template_borrower_type', state='model')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/sfpcl_credit/tests/test_document_template_migration_state.py", line 29, in test_migration_facing_constraint_values_are_ordered_and_exact
+    self.assertEqual(
+AssertionError: {'individual_farmer', 'fpo', 'fpc'} != ('individual_farmer', 'fpc', 'fpo')
+
+======================================================================
+FAIL: test_migration_facing_constraint_values_are_ordered_and_exact (sfpcl_credit.tests.test_document_template_migration_state.DocumentTemplateMigrationStateTests.test_migration_facing_constraint_values_are_ordered_and_exact) (constraint='doc_template_borrower_type', state='migration')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/sfpcl_credit/tests/test_document_template_migration_state.py", line 34, in test_migration_facing_constraint_values_are_ordered_and_exact
+    self.assertEqual(
+AssertionError: {'individual_farmer', 'fpo', 'fpc'} != ('individual_farmer', 'fpc', 'fpo')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=4)
+Destroying test database for alias 'default'...

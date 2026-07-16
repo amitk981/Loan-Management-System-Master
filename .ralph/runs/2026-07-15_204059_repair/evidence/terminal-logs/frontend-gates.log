@@ -1,0 +1,8 @@
+Commands: npm run lint; npm run typecheck; npm test -- --run; npm run build
+
+Exit codes: all 0
+ESLint: pass
+TypeScript no-emit: pass
+Vitest: 35 files passed; 304 tests passed
+Vite build: 1879 modules transformed; production bundle built successfully
+Existing warning retained: the main minified chunk exceeds 500 kB.

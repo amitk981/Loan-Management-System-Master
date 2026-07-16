@@ -5,13 +5,18 @@ from pathlib import Path
 import tempfile
 from threading import Barrier
 from unittest import skipUnless
+from unittest.mock import patch
+from uuid import uuid4
 
-from django.db import close_old_connections, connection, connections
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import close_old_connections, connection, connections, transaction
 from django.test import TestCase
 from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import VersionHistory
+from sfpcl_credit.approvals.models import ApprovalCase, ApprovalCaseReadScopeGrant
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission
 from sfpcl_credit.legal_documents.models import (
@@ -28,7 +33,12 @@ from sfpcl_credit.legal_documents.modules import checklist_actions
 from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.processes import document_checklist_actions as checklist_action_process
 from sfpcl_credit.applications.modules import bank_verification
-from sfpcl_credit.applications.models import Witness
+from sfpcl_credit.applications.modules import document_checklist_facts
+from sfpcl_credit.applications.models import (
+    BankVerificationDecision,
+    LoanApplication,
+    Witness,
+)
 from sfpcl_credit.members.models import (
     BankAccount,
     CancelledCheque,
@@ -54,6 +64,13 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 
 class FinalDocumentationApprovalApiTests(TestCase):
     def setUp(self):
+        self.storage_directory = tempfile.TemporaryDirectory(prefix="sfpcl-final-doc-tests-")
+        self.addCleanup(self.storage_directory.cleanup)
+        storage_override = override_settings(
+            DOCUMENT_STORAGE_ROOT=self.storage_directory.name
+        )
+        storage_override.enable()
+        self.addCleanup(storage_override.disable)
         self.fixture = checklist_fixture.DocumentChecklistApiTests(
             methodName="test_approved_sanction_creates_ordered_applicability_once_with_evidence"
         )
@@ -291,6 +308,502 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertEqual(replay.status_code, 200, replay.json())
         self.assertEqual(replay.json()["data"]["checklist_action_id"], cs_action_id)
         self.assertEqual(self._evidence_counts(), counts)
+
+    def test_staff_workspace_is_one_redacted_action_projection(self):
+        self._grant(self.cs, "documents.file.download"); self._complete_all_applicable_items(); response = self._workspace(self.cs)
+        self.assertEqual(response.status_code, 200, response.content); assert_success_envelope(self, response.json())
+        data = response.json()["data"]
+        self.assertEqual(data["loan_application_id"], str(self.application.pk))
+        self.assertEqual((set(data["security_workflows"]), data["available_actions"][0]["action_code"]), ({"power_of_attorney", "tri_party_agreement", "sh4", "cdsl_pledge", "blank_dated_cheque", "cancelled_cheque"}, "approve_as_company_secretary"))
+        term_sheet = next(item for item in data["items"] if item["item_code"] == "term_sheet")
+        self.assertEqual((term_sheet["status"], term_sheet["document"]["download"]["action_url"].endswith("/documentation-workspace/term_sheet/download/"), term_sheet["available_actions"]), ("complete", True, []))
+        self._grant(self.compliance, "documents.checklist.read", "documents.signature.record", "documents.stamp.record", "documents.notary.record"); compliance_term = next(item for item in self._workspace(self.compliance).json()["data"]["items"] if item["item_code"] == "term_sheet"); self.assertEqual(compliance_term["available_actions"], [])
+        serialized = str(response.json()).lower()
+        for forbidden in ("terminal_evidence", "workflow_event_id", "checklist_action_id", "storage_key", "checksum", "ciphertext", "ip_address", "user_agent", "signer_name_snapshot"):
+            self.assertNotIn(forbidden, serialized)
+
+    def test_staff_workspace_advances_only_to_the_exact_role_turn(self):
+        self._complete_all_applicable_items()
+        cs_action = next(
+            action for action in self._workspace(self.cs).json()["data"]["available_actions"]
+            if action["action_code"] == "approve_as_company_secretary"
+        )
+        approved = self.client.post(
+            cs_action["action_url"],
+            {"comments": "All documents verified and attached."},
+            content_type="application/json",
+            **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(approved.status_code, 200, approved.json())
+        cs_view, credit_view = self._workspace(self.cs), self._workspace(self.credit)
+        self.assertEqual((cs_view.status_code, cs_view.json()["data"]["available_actions"], credit_view.json()["data"]["available_actions"][0]["action_code"]), (200, [], "approve_as_credit_manager"))
+
+    def test_staff_workspace_projects_generation_verification_and_security_actions(self):
+        self._grant(self.compliance, "documents.checklist.read", "documents.loan_document.generate", "documents.template.file_reference", "documents.loan_document.verify", "documents.signature.record", "documents.stamp.record", "documents.notary.record", "security.poa.manage", "security.sh4.manage", "security.cdsl_pledge.manage", "security.blank_cheque.manage")
+        term_sheet = self._current_document("term_sheet"); template = term_sheet.document_template
+        stored = document_generation.LocalDocumentStorage().store(
+            ContentFile(
+                generation_fixture.LoanDocumentGenerationApiTests._genuine_docx_fixture([]),
+                name="workspace-term-sheet.docx",
+            )
+        )
+        source = DocumentFile.objects.create(
+            file_name="workspace-term-sheet.docx", file_extension=".docx",
+            mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            file_size_bytes=stored.file_size_bytes, storage_provider=stored.storage_provider,
+            storage_key=stored.storage_key, checksum_sha256=stored.checksum_sha256,
+            uploaded_by_user=self.compliance, sensitivity_level="internal",
+        )
+        AuditLog.objects.create(
+            actor_user=self.compliance, actor_type="user", action="documents.file.uploaded",
+            entity_type="document_file", entity_id=source.pk,
+            new_value_json={
+                "document_id": str(source.pk), "file_name": source.file_name,
+                "file_extension": source.file_extension, "mime_type": source.mime_type,
+                "file_size_bytes": source.file_size_bytes, "storage_provider": source.storage_provider,
+                "storage_key": source.storage_key, "checksum_sha256": source.checksum_sha256,
+                "sensitivity_level": source.sensitivity_level, "document_category": "template_source",
+                "related_entity_type": "global", "related_entity_id": None,
+            },
+        )
+        template.template_file = source; template.save(update_fields=["template_file"]); term_sheet.delete()
+        generation_view = self._workspace(self.compliance); generation_item = next(item for item in generation_view.json()["data"]["items"] if item["item_code"] == "term_sheet"); generation = generation_item["available_actions"][0]
+        self.assertEqual(
+            (
+                generation["action_code"],
+                generation["template_version"],
+                generation["fields"][0]["options"],
+            ),
+            ("generate_document", template.template_version, ["pdf", "docx"]),
+        )
+        self.assertNotIn("fixed_payload", generation)
+        current = self._current_document("loan_agreement"); current.verification_status = LoanDocument.VERIFICATION_PENDING; current.verified_by_user = None; current.verified_at = None
+        current.save(update_fields=["verification_status", "verified_by_user", "verified_at"])
+        SecurityPackage.objects.create(loan_application=self.application, physical_share_security_required_flag=True, demat_pledge_required_flag=False, poa_required_flag=True, blank_cheque_required_flag=True, cancelled_cheque_required_flag=True)
+        data = self._workspace(self.compliance).json()["data"]; agreement = next(item for item in data["items"] if item["item_code"] == "loan_agreement"); self.assertEqual({action["action_code"] for action in agreement["available_actions"]}, {"record_borrower_signature", "record_witness_signature", "record_stamp", "record_notarisation", "request_correction"})
+        self.assertTrue(all(not workflow["available_actions"] for workflow in data["security_workflows"].values()), "Create actions stay hidden until every server-selected prerequisite exists.")
+
+    def test_staff_workspace_denies_unscoped_reader_without_security_disclosure(self):
+        response = self._workspace(self.fixture._user("field_officer", "Documentation Outsider"))
+        self.assertEqual(response.status_code, 403, response.content); assert_error_envelope(self, response.json()); self.assertNotIn("security_workflows", str(response.json()).lower())
+
+    def test_staff_workspace_uses_standard_owner_authorised_action_contract(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.loan_document.generate",
+            "documents.template.file_reference",
+            "documents.loan_document.verify",
+            "documents.signature.record",
+            "documents.stamp.record",
+            "documents.notary.record",
+        )
+        document = self._current_document("loan_agreement")
+        document.verification_status = LoanDocument.VERIFICATION_PENDING
+        document.save(update_fields=["verification_status"])
+
+        data = self._workspace(self.compliance).json()["data"]
+        actions = [
+            action
+            for item in data["items"]
+            for action in item["available_actions"]
+        ]
+        required = {
+            "action_code",
+            "label",
+            "enabled",
+            "disabled_reason",
+            "required_permission",
+        }
+        self.assertTrue(actions)
+        self.assertTrue(all(required <= set(action) for action in actions))
+        self.assertNotIn(
+            "verify_document",
+            {action["action_code"] for action in actions},
+            "Compliance has the permission string but the verification owner requires CS.",
+        )
+
+    def test_staff_workspace_does_not_advertise_owner_rejected_completion(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.signature.record",
+            "documents.stamp.record",
+            "documents.notary.record",
+        )
+        document = self._current_document("loan_agreement")
+        document.verification_status = LoanDocument.VERIFICATION_PENDING
+        document.verified_by_user = None
+        document.verified_at = None
+        document.save(
+            update_fields=["verification_status", "verified_by_user", "verified_at"]
+        )
+
+        item = next(
+            row
+            for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "loan_agreement"
+        )
+
+        self.assertNotIn(
+            "complete_item",
+            {action["action_code"] for action in item["available_actions"]},
+        )
+        self.assertGreaterEqual(len(item["available_actions"]), 3)
+        self.assertEqual(
+            len({action["action_key"] for action in item["available_actions"]}),
+            len(item["available_actions"]),
+        )
+        for action in item["available_actions"]:
+            self.assertIn("action_id", action)
+            self.assertNotIn("fixed_payload", action)
+            self.assertNotIn(str(document.pk), str(action))
+            self.assertRegex(
+                action["action_url"],
+                rf"^/api/v1/loan-applications/{self.application.pk}/documentation-workspace/actions/",
+            )
+        borrower_signature = next(
+            action for action in item["available_actions"]
+            if action["action_code"] == "record_borrower_signature"
+        )
+        recorded = self.client.post(
+            borrower_signature["action_url"],
+            {
+                "signature_method": "wet_ink",
+                "signature_status": "signed",
+                "signed_at": timezone.now().isoformat(),
+            },
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(recorded.status_code, 200, recorded.content)
+
+    def test_staff_workspace_opaque_completion_executes_and_stale_identity_is_zero_write(self):
+        self._grant(self.compliance, "documents.checklist.read")
+        self._current_document("document_checklist")
+        workspace = self._workspace(self.compliance).json()["data"]
+        item = next(row for row in workspace["items"] if row["item_code"] == "final_checklist")
+        action = next(row for row in item["available_actions"] if row["action_code"] == "complete_item")
+        before = self._evidence_counts()
+
+        token_tail = action["action_url"][-2]
+        tampered = action["action_url"][:-2] + ("a" if token_tail != "a" else "b") + "/"
+        denied = self.client.post(
+            tampered,
+            {"remarks": "Tampered command must not write."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(denied.status_code, 404, denied.content)
+        self.assertEqual(self._evidence_counts(), before)
+
+        other_compliance = self.fixture._user(
+            "compliance_team_member", "Other Documentation Compliance"
+        )
+        self._grant(
+            other_compliance, "documents.checklist.read", "documents.checklist.update"
+        )
+        cross_user = self.client.post(
+            action["action_url"],
+            {"remarks": "Cross-user command must not write."},
+            content_type="application/json",
+            **self.fixture._auth(other_compliance),
+        )
+        cross_application = self.client.post(
+            action["action_url"].replace(str(self.application.pk), str(uuid4())),
+            {"remarks": "Cross-application command must not write."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual((cross_user.status_code, cross_application.status_code), (404, 404))
+        self.assertEqual(self._evidence_counts(), before)
+
+        accepted = self.client.post(
+            action["action_url"],
+            {"remarks": "Current checklist file verified."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008m3-opaque-complete",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        self.assertEqual(accepted.json()["data"]["new_status"], "complete")
+
+        replay = self.client.post(
+            action["action_url"],
+            {"remarks": "Current checklist file verified."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(replay.status_code, 404, replay.content)
+
+    def test_staff_workspace_upload_and_correction_actions_are_reachable(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.file.upload",
+        )
+        self._current_document("term_sheet")
+        item = next(
+            row
+            for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        actions = {row["action_code"]: row for row in item["available_actions"]}
+        self.assertTrue({"upload_signed_copy", "request_correction"} <= set(actions))
+
+        upload = self.client.post(
+            actions["upload_signed_copy"]["action_url"],
+            {
+                "file": SimpleUploadedFile(
+                    "signed-term-sheet.pdf", b"signed staff evidence", "application/pdf"
+                ),
+                "remarks": "Borrower signed copy received.",
+            },
+            HTTP_X_REQUEST_ID="008m3-staff-upload",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(upload.status_code, 200, upload.content)
+        self.assertEqual(upload.json()["data"]["action_code"], "upload_signed_copy")
+        uploaded_id = upload.json()["data"]["document_id"]
+        self.assertTrue(DocumentFile.objects.filter(pk=uploaded_id).exists())
+
+        refreshed = next(
+            row
+            for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        correction = next(
+            row for row in refreshed["available_actions"]
+            if row["action_code"] == "request_correction"
+        )
+        returned = self.client.post(
+            correction["action_url"],
+            {"remarks": "Nominee signature is missing."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008m3-correction",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(returned.status_code, 200, returned.content)
+        self.assertEqual(returned.json()["data"]["new_status"], "correction_requested")
+        self.assertTrue(
+            WorkflowEvent.objects.filter(
+                workflow_name="staff_documentation_action",
+                entity_id=self.application.pk,
+                to_state="correction_requested",
+            ).exists()
+        )
+
+    def test_staff_workspace_executes_every_loan_agreement_sibling_mutation(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.signature.record",
+            "documents.stamp.record",
+            "documents.notary.record",
+        )
+        self._current_document("loan_agreement")
+        payloads = {
+            "record_borrower_signature": {
+                "signature_method": "wet_ink", "signature_status": "signed",
+                "signed_at": timezone.now().isoformat(),
+            },
+            "record_witness_signature": {
+                "signature_method": "wet_ink", "signature_status": "signed",
+                "signed_at": timezone.now().isoformat(),
+            },
+            "record_stamp": {
+                "stamp_paper_amount": "500.00", "stamp_type": "physical",
+                "status": "pending", "remarks": "Prepared for CS verification.",
+            },
+            "record_notarisation": {"status": "pending"},
+            "request_correction": {"remarks": "Retain a corrected executed copy."},
+        }
+        for code, payload in payloads.items():
+            item = next(
+                row for row in self._workspace(self.compliance).json()["data"]["items"]
+                if row["item_code"] == "loan_agreement"
+            )
+            action = next(row for row in item["available_actions"] if row["action_code"] == code)
+            response = self.client.post(
+                action["action_url"], payload, content_type="application/json",
+                **self.fixture._auth(self.compliance),
+            )
+            self.assertEqual(response.status_code, 200, (code, response.content))
+
+    def test_staff_workspace_projects_s26_queue_and_redacted_s35_timeline(self):
+        self._complete_all_applicable_items()
+        approved = self._post_stage(
+            "approve-as-company-secretary",
+            self.cs,
+            {"comments": "All documents verified and attached."},
+        )
+        self.assertEqual(approved.status_code, 200, approved.json())
+
+        queue = self.client.get(
+            "/api/v1/documentation-workspaces/?page=1&page_size=20",
+            **self.fixture._auth(self.cs),
+        )
+        self.assertEqual(queue.status_code, 200, queue.content)
+        queue_data = queue.json()["data"]
+        pagination = queue.json()["pagination"]
+        self.assertEqual(pagination["page_size"], 20)
+        self.assertGreaterEqual(pagination["total_count"], 1)
+        queue_row = next(
+            row
+            for row in queue_data
+            if row["loan_application_id"] == str(self.application.pk)
+        )
+        self.assertEqual(
+            {
+                "sanctioned_amount",
+                "shareholding_mode",
+                "required_document_summary",
+                "poa_status",
+                "tri_party_status",
+                "sh4_status",
+                "cdsl_pledge_status",
+                "term_sheet_status",
+                "loan_agreement_status",
+                "bank_verification_status",
+                "checklist_status",
+                "current_owner",
+            }
+            <= set(queue_row),
+            True,
+        )
+
+        workspace = self._workspace(self.cs).json()["data"]
+        self.assertEqual(workspace["timeline"][0]["comment"], "All documents verified and attached.")
+        serialized = str(workspace).lower()
+        for forbidden in (
+            "terminal_evidence",
+            "workflow_event_id",
+            "checklist_action_id",
+            "request_id",
+            "checksum",
+            "storage_key",
+            "signer_name_snapshot",
+        ):
+            self.assertNotIn(forbidden, serialized)
+
+    def test_staff_download_succeeds_once_and_scope_denials_write_no_audit(self):
+        self._grant(self.cs, "documents.file.download")
+        body = b"current staff document bytes"
+        with tempfile.TemporaryDirectory() as root:
+            stored = document_generation.LocalDocumentStorage(root=root).store(
+                ContentFile(body, name="staff-term-sheet.pdf")
+            )
+            output = DocumentFile.objects.create(
+                file_name="staff-term-sheet.pdf",
+                mime_type="application/pdf",
+                file_size_bytes=stored.file_size_bytes,
+                storage_provider=stored.storage_provider,
+                storage_key=stored.storage_key,
+                checksum_sha256=stored.checksum_sha256,
+                sensitivity_level="confidential",
+            )
+            template = DocumentTemplate.objects.create(
+                template_code="008m2-staff-term-sheet",
+                template_name="008M2 Staff Term Sheet",
+                document_type="term_sheet",
+                borrower_type="individual_farmer",
+                template_version="9.0",
+                merge_fields_json=[],
+                approval_status=DocumentTemplate.STATUS_APPROVED,
+                effective_from=timezone.localdate(),
+            )
+            current = LoanDocument.objects.create(
+                loan_application=self.application,
+                document_type="term_sheet",
+                document_category="legal",
+                party_required="borrower",
+                document_template=template,
+                document=output,
+                output_format="pdf",
+                generation_status="generated",
+                execution_status="pending",
+                verification_status="verified",
+                renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
+                renderer_validated_document_id=output.pk,
+                renderer_validated_checksum_sha256=stored.checksum_sha256,
+            )
+
+            with override_settings(DOCUMENT_STORAGE_ROOT=root):
+                descriptor = self.client.get(
+                    f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/term_sheet/download/",
+                    **self.fixture._auth(self.cs),
+                )
+                self.assertEqual(descriptor.status_code, 200, descriptor.content)
+                content_url = descriptor.json()["data"]["download_url"]
+                before = AuditLog.objects.filter(
+                    action="documents.file.downloaded",
+                    actor_user=self.cs,
+                ).count()
+                content = self.client.get(
+                    content_url,
+                    HTTP_X_REQUEST_ID="staff-download-success",
+                    **self.fixture._auth(self.cs),
+                )
+                self.assertEqual(content.status_code, 200, content.content)
+                self.assertEqual(content.content, body)
+                self.assertEqual(
+                    AuditLog.objects.filter(
+                        action="documents.file.downloaded",
+                        actor_user=self.cs,
+                    ).count(),
+                    before + 1,
+                )
+
+                outsider = self.fixture._user("company_secretary", "Other Checklist CS")
+                self._grant(outsider, "documents.checklist.read", "documents.file.download")
+                denied_urls = [
+                    content_url,
+                    content_url.replace("term_sheet", "loan_agreement"),
+                    content_url.replace(str(self.application.pk), str(uuid4())),
+                    content_url[:-1] + ("a" if not content_url.endswith("a") else "b"),
+                ]
+                denied_users = [outsider, self.cs, self.cs, self.cs]
+                audit_count = AuditLog.objects.filter(action="documents.file.downloaded").count()
+                for url, actor in zip(denied_urls, denied_users):
+                    denied = self.client.get(url, **self.fixture._auth(actor))
+                    self.assertIn(denied.status_code, {403, 404})
+                self.assertEqual(
+                    AuditLog.objects.filter(action="documents.file.downloaded").count(),
+                    audit_count,
+                )
+
+                missing_permission = self.client.get(
+                    f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/term_sheet/download/",
+                    **self.fixture._auth(self.credit),
+                )
+                self.assertEqual(missing_permission.status_code, 404)
+                self.assertEqual(
+                    AuditLog.objects.filter(action="documents.file.downloaded").count(),
+                    audit_count,
+                )
+
+                with patch(
+                    "sfpcl_credit.documents.services._DOWNLOAD_CAPABILITY_TTL_SECONDS",
+                    -1,
+                ):
+                    expired = self.client.get(content_url, **self.fixture._auth(self.cs))
+                self.assertEqual(expired.status_code, 404, expired.content)
+                self.assertEqual(
+                    AuditLog.objects.filter(action="documents.file.downloaded").count(),
+                    audit_count,
+                )
+
+    def test_staff_download_capability_is_invalid_after_current_renderer_replacement(self):
+        self._grant(self.cs, "documents.file.download"); current = self._current_document("term_sheet")
+        descriptor = self.client.get(f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/term_sheet/download/", **self.fixture._auth(self.cs))
+        self.assertEqual(descriptor.status_code, 200, descriptor.content); content_url = descriptor.json()["data"]["download_url"]
+        current.document_template.template_code = "008k-term-sheet-predecessor"; current.document_template.template_version = "0.9"; current.document_template.approval_status = DocumentTemplate.STATUS_RETIRED
+        current.document_template.save(update_fields=["template_code", "template_version", "approval_status"])
+        self.assertNotEqual(self._current_document("term_sheet").pk, current.pk); content = self.client.get(content_url, **self.fixture._auth(self.cs))
+        self.assertEqual(content.status_code, 404, content.content); assert_error_envelope(self, content.json()); self.assertNotIn("storage", str(content.json()).lower())
+
+    def _workspace(self, actor):
+        return self.client.get(f"/api/v1/loan-applications/{self.application.pk}/documentation-workspace/", **self.fixture._auth(actor))
 
     def test_company_secretary_rejects_status_only_completion_without_actions(self):
         now = timezone.now()
@@ -554,6 +1067,110 @@ class FinalDocumentationApprovalApiTests(TestCase):
             action.actor_user_name_snapshot, "Multi Role Checklist Secretary"
         )
 
+    def test_real_instrument_reader_matrix_returns_only_ordinary_dtos(self):
+        self._complete_all_applicable_items()
+        package = SecurityPackage.objects.get(loan_application=self.application)
+        auditor = self.fixture._user("internal_auditor", "Checklist Auditor")
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=auditor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+        )
+        cfc = self.fixture._user(
+            "chief_financial_controller", "Checklist Controller"
+        )
+        readers = (
+            self.compliance,
+            self.cs,
+            self.credit,
+            self.fixture.cfo,
+            self.director,
+            self.second_director,
+            auditor,
+            self.finance,
+            cfc,
+        )
+        for reader in readers:
+            self._grant(reader, "security.package.read", "documents.checklist.read")
+
+        allowed_before = {
+            self.compliance.pk,
+            self.cs.pk,
+            self.credit.pk,
+            self.fixture.cfo.pk,
+            self.director.pk,
+            auditor.pk,
+        }
+        responses = []
+        for reader in readers:
+            with self.subTest(state="in_progress", role=reader.primary_role.role_code):
+                response = self.client.get(
+                    f"/api/v1/loan-applications/{self.application.pk}/security-package/",
+                    **self.fixture._auth(reader),
+                )
+                self.assertEqual(
+                    response.status_code,
+                    200 if reader.pk in allowed_before else 403,
+                    response.content,
+                )
+                if response.status_code == 200:
+                    data = response.json()["data"]
+                    self.assertEqual(data["security_package_id"], str(package.pk))
+                    self.assertIsNotNone(data["power_of_attorney"])
+                    self.assertIsNotNone(data["sh4_share_transfer_form"])
+                    self.assertIsNotNone(data["blank_dated_cheque"])
+                    responses.append(data)
+
+        for suffix, actor, comments in (
+            ("approve-as-company-secretary", self.cs, "CS reader matrix approval."),
+            ("approve-as-credit-manager", self.credit, "Credit reader matrix approval."),
+            (
+                "approve-as-sanction-committee",
+                self.second_director,
+                "Director reader matrix approval.",
+            ),
+        ):
+            response = self._post_stage(suffix, actor, {"comments": comments})
+            self.assertEqual(response.status_code, 200, response.json())
+
+        finance = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/security-package/",
+            **self.fixture._auth(self.finance),
+        )
+        controller = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/security-package/",
+            **self.fixture._auth(cfc),
+        )
+        self.assertEqual(finance.status_code, 200, finance.content)
+        self.assertEqual(controller.status_code, 403, controller.content)
+        responses.append(finance.json()["data"])
+
+        forbidden_keys = {
+            "activation_evidence",
+            "custody_evidence",
+            "acceptance_evidence",
+            "request_id",
+            "storage_key",
+            "checksum_sha256",
+            "actor_user_name_snapshot",
+            "signer_name_snapshot",
+            "checklist_action_id",
+        }
+
+        def scan(value):
+            if isinstance(value, dict):
+                self.assertFalse(forbidden_keys.intersection(value))
+                for nested in value.values():
+                    scan(nested)
+            elif isinstance(value, list):
+                for nested in value:
+                    scan(nested)
+            elif isinstance(value, str):
+                self.assertNotIn("123456", value)
+                self.assertNotIn("field:v2", value)
+
+        for data in responses:
+            scan(data)
+
     def test_multi_role_completion_freezes_primary_authorising_role(self):
         multi_role = self.fixture._user(
             "company_secretary", "Multi Role Completion Secretary"
@@ -773,6 +1390,18 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertEqual(decision["decision_status"], "verified")
         self.assertEqual(decision["bank_account_id"], str(bank.pk))
         self.assertEqual(decision["cancelled_cheque_id"], str(cancelled.pk))
+        self.assertEqual(decision["approval_case_id"], str(self.case.pk))
+        self.assertEqual(
+            decision["sanction_decision_id"],
+            str(self.case.sanction_decision.pk),
+        )
+        self.assertEqual(decision["entity_type"], "bank_verification_decision")
+        self.assertEqual(
+            decision["entity_id"], decision["bank_verification_decision_id"]
+        )
+        self.assertEqual(decision["previous_status"], "pending")
+        self.assertEqual(decision["new_status"], "verified")
+        self.assertEqual(decision["available_actions"], [])
         self.assertTrue(decision["workflow_event_id"])
         self.assertTrue(decision["audit_log_id"])
         self.assertTrue(decision["version_history_id"])
@@ -821,6 +1450,335 @@ class FinalDocumentationApprovalApiTests(TestCase):
                 ),
             ),
         )
+
+    def test_bank_decision_is_zero_write_outside_canonical_stage4_scope(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        for status in (
+            self.application.STATUS_DRAFT,
+            self.application.STATUS_INCOMPLETE_RETURNED,
+            self.application.STATUS_SUBMITTED,
+            self.application.STATUS_REJECTED_BY_SANCTION,
+        ):
+            with self.subTest(status=status):
+                type(self.application).objects.filter(pk=self.application.pk).update(
+                    application_status=status
+                )
+                self.application.refresh_from_db()
+                response = self.client.post(
+                    f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+                    {
+                        "bank_account_id": str(prior.bank_account_id),
+                        "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                        "decision_status": "rejected",
+                    },
+                    content_type="application/json",
+                    HTTP_X_REQUEST_ID=f"008k5-outside-stage4-{status}",
+                    **self.fixture._auth(self.compliance),
+                )
+                self.assertEqual(response.status_code, 403, response.json())
+                self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+    def test_status_label_cannot_replace_current_terminal_sanction_for_bank_decision(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            current_status=ApprovalCase.STATUS_REJECTED
+        )
+
+        reconciled = document_checklist_facts.resolve_blank_cheque_bank_fact(
+            application_id=self.application.pk
+        )
+        self.assertFalse(reconciled.valid)
+        self.assertEqual(
+            reconciled.blocker,
+            "bank_verification_terminal_sanction_invalid",
+        )
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-invalid-terminal-case",
+            **self.fixture._auth(self.compliance),
+        )
+
+        self.assertEqual(response.status_code, 403, response.json())
+        self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+        self.assertNotIn(str(self.case.pk), str(response.json()))
+
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            current_status=ApprovalCase.STATUS_RETURNED
+        )
+        returned = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-returned-terminal-case",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(returned.status_code, 403, returned.json())
+        self.assertNotIn(str(self.case.pk), str(returned.json()))
+
+        unrelated_application = LoanApplication.objects.create(
+            member=self.application.member,
+            borrower_type=self.application.borrower_type,
+            received_by_user=self.application.received_by_user,
+            required_loan_amount="100000.00",
+            declared_purpose="Separate application for missing-case probe",
+            purpose_category="crop_production",
+            application_status=LoanApplication.STATUS_DRAFT,
+            completeness_status=LoanApplication.COMPLETENESS_NOT_STARTED,
+            current_stage=LoanApplication.STAGE_INITIAL,
+        )
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            loan_application=unrelated_application
+        )
+        missing = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-missing-terminal-case",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(missing.status_code, 403, missing.json())
+        self.assertNotIn(str(self.case.pk), str(missing.json()))
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+    def test_bank_decision_replay_and_change_retain_exact_terminal_cycle(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "bank-verification-decision/"
+        )
+        payload = {
+            "bank_account_id": str(prior.bank_account_id),
+            "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+            "decision_status": prior.decision_status,
+        }
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+
+        replay = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            HTTP_X_REQUEST_ID=prior.request_id,
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(replay.status_code, 200, replay.json())
+        self.assertEqual(
+            replay.json()["data"]["bank_verification_decision_id"],
+            str(prior.pk),
+        )
+        self.assertEqual(
+            replay.json()["data"]["approval_case_id"], str(self.case.pk)
+        )
+        self.assertEqual(
+            replay.json()["data"]["sanction_decision_id"],
+            str(self.case.sanction_decision.pk),
+        )
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+        changed = self.client.post(
+            url,
+            {**payload, "decision_status": "rejected"},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-bank-changed",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(changed.status_code, 200, changed.json())
+        changed_data = changed.json()["data"]
+        self.assertNotEqual(
+            changed_data["bank_verification_decision_id"], str(prior.pk)
+        )
+        self.assertEqual(changed_data["approval_case_id"], str(self.case.pk))
+        self.assertEqual(
+            changed_data["sanction_decision_id"],
+            str(self.case.sanction_decision.pk),
+        )
+        retained = self.application.bank_verification_decisions.get(
+            pk=changed_data["bank_verification_decision_id"]
+        )
+        expected = bank_verification.decision_evidence(retained)
+        self.assertEqual(
+            retained.audit_log.new_value_json,
+            {**expected, "evidence_digest": retained.evidence_digest},
+        )
+        self.assertEqual(
+            retained.version_history.new_value_json,
+            retained.audit_log.new_value_json,
+        )
+        self.assertEqual(
+            retained.evidence_digest,
+            bank_verification.evidence_digest(expected),
+        )
+
+    def test_malformed_terminal_facts_block_changed_bank_decision_without_writes(self):
+        self._complete_all_applicable_items()
+        prior = self.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        before = {
+            "decisions": self.application.bank_verification_decisions.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        ApprovalCase.objects.filter(pk=self.case.pk).update(appraisal_facts_json={})
+
+        denied = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/bank-verification-decision/",
+            {
+                "bank_account_id": str(prior.bank_account_id),
+                "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                "decision_status": "rejected",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="008l5-malformed-terminal-facts",
+            **self.fixture._auth(self.compliance),
+        )
+
+        self.assertEqual(denied.status_code, 403, denied.json())
+        self.assertNotIn(str(self.case.pk), str(denied.json()))
+        self.assertNotIn(str(self.case.sanction_decision.pk), str(denied.json()))
+        self.assertEqual(
+            {
+                "decisions": self.application.bank_verification_decisions.count(),
+                "audit": AuditLog.objects.filter(
+                    action="bank_verification.decision_recorded"
+                ).count(),
+                "workflow": WorkflowEvent.objects.filter(
+                    workflow_name="bank_verification"
+                ).count(),
+                "versions": VersionHistory.objects.filter(
+                    versioned_entity_type="bank_verification_decision"
+                ).count(),
+            },
+            before,
+        )
+
+    def test_borrower_safe_projection_rejects_changed_completion_version_body(self):
+        self._complete_all_applicable_items()
+        item = self.checklist.items.get(item_code="final_checklist")
+        history = VersionHistory.objects.get(
+            versioned_entity_type="checklist_item_completion",
+            versioned_entity_id=item.pk,
+        )
+        changed = dict(history.new_value_json)
+        changed["request_id"] = "008k5-tampered-request"
+        VersionHistory.objects.filter(pk=history.pk).update(new_value_json=changed)
+
+        completed = checklist_actions.borrower_safe_completed_item_ids(
+            self.checklist,
+            terminal_security_evidence=(
+                checklist_action_process._terminal_security_evidence
+            ),
+        )
+
+        self.assertNotIn(item.pk, completed)
 
     def _post_stage(self, suffix, actor, payload):
         return self.client.post(
@@ -1226,6 +2184,118 @@ class FinalDocumentationApprovalConcurrencyTests(TransactionTestCase):
     def test_generation_versus_cs_approval_retain_one_current_winner_repeat(self):
         self._exercise_generation_race("approval")
 
+    def test_changed_bank_decision_versus_terminal_case_invalidation(self):
+        self._exercise_bank_terminal_case_race()
+
+    def test_changed_bank_decision_versus_terminal_case_invalidation_repeat(self):
+        self._exercise_bank_terminal_case_race()
+
+    def _exercise_bank_terminal_case_race(self):
+        helper = FinalDocumentationApprovalApiTests(
+            methodName="test_bank_decision_replay_and_change_retain_exact_terminal_cycle"
+        )
+        helper.setUp()
+        helper._complete_all_applicable_items()
+        prior = helper.application.bank_verification_decisions.order_by(
+            "-decision_version"
+        ).first()
+        baseline = {
+            "decisions": BankVerificationDecision.objects.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        gate = Barrier(2)
+
+        def changed_writer():
+            close_old_connections()
+            try:
+                from sfpcl_credit.identity.models import User
+
+                actor = User.objects.get(pk=helper.compliance.pk)
+                gate.wait(timeout=10)
+                try:
+                    decision = bank_verification.record_decision(
+                        actor=actor,
+                        application_id=helper.application.pk,
+                        payload={
+                            "bank_account_id": str(prior.bank_account_id),
+                            "cancelled_cheque_id": str(prior.cancelled_cheque_id),
+                            "decision_status": "rejected",
+                        },
+                        metadata=bank_verification.RequestMetadata(
+                            "008l5-bank-terminal-race", "203.0.113.20", "race"
+                        ),
+                    )
+                    return "written", str(decision.pk)
+                except bank_verification.AccessDenied:
+                    return "denied", None
+            finally:
+                connections["default"].close()
+
+        def invalidate_case():
+            close_old_connections()
+            try:
+                gate.wait(timeout=10)
+                with transaction.atomic():
+                    LoanApplication.objects.select_for_update().get(
+                        pk=helper.application.pk
+                    )
+                    if BankVerificationDecision.objects.filter(
+                        loan_application_id=helper.application.pk
+                    ).count() > baseline["decisions"]:
+                        return "blocked", None
+                    ApprovalCase.objects.filter(pk=helper.case.pk).update(
+                        current_status=ApprovalCase.STATUS_REJECTED
+                    )
+                    return "invalidated", None
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            writer_future = pool.submit(changed_writer)
+            invalidator_future = pool.submit(invalidate_case)
+            results = [writer_future.result(timeout=30), invalidator_future.result(timeout=30)]
+
+        outcomes = {result[0] for result in results}
+        self.assertIn(outcomes, ({"written", "blocked"}, {"denied", "invalidated"}))
+        after = {
+            "decisions": BankVerificationDecision.objects.count(),
+            "audit": AuditLog.objects.filter(
+                action="bank_verification.decision_recorded"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="bank_verification"
+            ).count(),
+            "versions": VersionHistory.objects.filter(
+                versioned_entity_type="bank_verification_decision"
+            ).count(),
+        }
+        if "written" in outcomes:
+            self.assertEqual(
+                {key: after[key] - baseline[key] for key in after},
+                {"decisions": 1, "audit": 1, "workflow": 1, "versions": 1},
+            )
+            decision_id = next(value for outcome, value in results if outcome == "written")
+            winner = BankVerificationDecision.objects.get(pk=decision_id)
+            self.assertEqual(winner.approval_case_id_snapshot, helper.case.pk)
+            self.assertEqual(
+                winner.sanction_decision_id_snapshot,
+                helper.case.sanction_decision.pk,
+            )
+            helper.case.refresh_from_db()
+            self.assertEqual(helper.case.current_status, ApprovalCase.STATUS_APPROVED)
+        else:
+            self.assertEqual(after, baseline)
+            helper.case.refresh_from_db()
+            self.assertEqual(helper.case.current_status, ApprovalCase.STATUS_REJECTED)
+
     def _exercise_generation_race(self, mode):
         helper = FinalDocumentationApprovalApiTests(
             methodName="test_ordered_approval_sequence_retains_meanings_and_exact_replay"
@@ -1377,6 +2447,78 @@ class FinalDocumentationApprovalConcurrencyTests(TransactionTestCase):
             ).exists(),
             generated,
         )
+        successor_documents = LoanDocument.objects.filter(
+            loan_application=helper.application,
+            document_template=successor,
+        )
+        if generated:
+            winner_document = successor_documents.get()
+            generation_audit = AuditLog.objects.get(
+                action="documents.loan_document.generated",
+                entity_id=winner_document.pk,
+            )
+            generation_workflow = WorkflowEvent.objects.get(
+                workflow_name="loan_document_generation",
+                entity_id=winner_document.pk,
+            )
+            self.assertEqual(
+                generation_audit.new_value_json["request_id"],
+                f"008k4-{mode}-generation",
+            )
+            self.assertEqual(
+                generation_audit.new_value_json["document_id"],
+                str(winner_document.document_id),
+            )
+            self.assertEqual(
+                generation_audit.new_value_json[
+                    "renderer_validated_checksum_sha256"
+                ],
+                winner_document.renderer_validated_checksum_sha256,
+            )
+            self.assertEqual(generation_workflow.entity_id, winner_document.pk)
+            self.assertFalse(
+                VersionHistory.objects.filter(
+                    versioned_entity_type__in={
+                        "checklist_item_completion",
+                        "document_checklist_approval",
+                    },
+                    versioned_entity_id=(
+                        item.pk if mode == "completion" else helper.checklist.pk
+                    ),
+                ).exists()
+            )
+        else:
+            action = ChecklistAction.objects.get(
+                document_checklist=helper.checklist,
+                action_type=action_type,
+                **({"checklist_item": item} if mode == "completion" else {}),
+            )
+            self.assertEqual(action.loan_document_id, current.pk if mode == "completion" else None)
+            self.assertEqual(action.request_id, f"008k-generation-{'item' if mode == 'completion' else 'cs'}-race-{winners[0][1]}")
+            audit = AuditLog.objects.get(pk=action.audit_log_id)
+            history = VersionHistory.objects.get(pk=action.version_history_id)
+            self.assertEqual(audit.new_value_json, history.new_value_json)
+            self.assertEqual(audit.new_value_json["request_id"], action.request_id)
+            self.assertEqual(
+                audit.new_value_json["workflow_event_id"],
+                str(action.workflow_event_id),
+            )
+            if mode == "completion":
+                retained_terminal = audit.new_value_json[
+                    "consumed_terminal_evidence"
+                ]
+                self.assertEqual(
+                    audit.new_value_json["terminal_evidence_digest"],
+                    checklist_actions._evidence_digest(retained_terminal),
+                )
+            retained = str(audit.new_value_json) + str(history.new_value_json)
+            self.assertNotIn(f"008k4-{mode}-generation", retained)
+            for outcome, index in results:
+                if outcome == "blocked" and index != 0:
+                    self.assertNotIn(
+                        f"008k-generation-{'item' if mode == 'completion' else 'cs'}-race-{index}",
+                        retained,
+                    )
 
     def _exercise_full_race_matrix(self):
         helper = FinalDocumentationApprovalApiTests(

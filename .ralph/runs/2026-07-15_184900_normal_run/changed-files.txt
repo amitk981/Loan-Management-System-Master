@@ -1,0 +1,16 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008K5-final-evidence-authority-and-migration-closure.md
+ M docs/slices/008L4-portal-production-boundary-and-browser-proof.md
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl_credit/applications/modules/bank_verification.py
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/legal_documents/modules/checklist_actions.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+ M sfpcl_credit/tests/test_witness_evidence_migration.py
+?? .ralph/runs/2026-07-15_184900_normal_run/
+?? sfpcl_credit/legal_documents/migrations/0013_application_evidence_state_anchor.py
+?? sfpcl_credit/tests/test_legal_checklist_migration_anchor.py

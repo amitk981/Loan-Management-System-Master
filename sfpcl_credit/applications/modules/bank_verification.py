@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from sfpcl_credit.approvals.modules import document_checklist_facts as approval_facts
 from sfpcl_credit.applications.models import BankVerificationDecision, LoanApplication
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.documents.models import DocumentFile
@@ -61,7 +62,15 @@ def record_decision(*, actor, application_id, payload, metadata):
         .first()
     )
     if application is None:
-        raise NotFound
+        raise AccessDenied
+    if application.application_status != LoanApplication.STATUS_APPROVED_BY_SANCTION:
+        # Documentation actors have source-defined global access only to approved
+        # applications requiring Stage-4 work. Treat every other parent as absent
+        # before resolving evidence so no immutable ledger can escape that scope.
+        raise AccessDenied
+    terminal_facts = approval_facts.resolve_approved_facts(application_id=application.pk)
+    if terminal_facts is None:
+        raise AccessDenied
     bank = BankAccount.objects.select_for_update().filter(pk=values["bank_account_id"]).first()
     cheque = (
         CancelledCheque.objects.select_for_update()
@@ -83,6 +92,7 @@ def record_decision(*, actor, application_id, payload, metadata):
     if previous is not None and _same_decision(
         previous, bank=bank, cheque=cheque, document=document,
         status=values["decision_status"], request_id=request_id,
+        terminal_facts=terminal_facts,
     ):
         return previous
     decision_id = uuid.uuid4()
@@ -108,6 +118,8 @@ def record_decision(*, actor, application_id, payload, metadata):
         "verified_at": verified_at.isoformat(),
         "request_id": request_id,
         "decision_version": version,
+        "approval_case_id": str(terminal_facts.approval_case_id),
+        "sanction_decision_id": str(terminal_facts.sanction_decision_id),
         "workflow_event_id": str(workflow_id),
         "audit_log_id": str(audit_id),
         "version_history_id": str(version_id),
@@ -169,6 +181,8 @@ def record_decision(*, actor, application_id, payload, metadata):
         verified_at=verified_at,
         request_id=request_id,
         decision_version=version,
+        approval_case_id_snapshot=terminal_facts.approval_case_id,
+        sanction_decision_id_snapshot=terminal_facts.sanction_decision_id,
         workflow_event=workflow,
         audit_log=audit,
         version_history=history,
@@ -199,9 +213,29 @@ def decision_evidence(decision):
         "verified_at": decision.verified_at.isoformat(),
         "request_id": decision.request_id,
         "decision_version": decision.decision_version,
+        "approval_case_id": (
+            str(decision.approval_case_id_snapshot)
+            if decision.approval_case_id_snapshot else None
+        ),
+        "sanction_decision_id": (
+            str(decision.sanction_decision_id_snapshot)
+            if decision.sanction_decision_id_snapshot else None
+        ),
         "workflow_event_id": str(decision.workflow_event_id),
         "audit_log_id": str(decision.audit_log_id),
         "version_history_id": str(decision.version_history_id),
+    }
+
+
+def action_response(decision):
+    workflow = decision.workflow_event
+    return {
+        **decision_evidence(decision),
+        "entity_type": workflow.entity_type,
+        "entity_id": str(workflow.entity_id),
+        "previous_status": workflow.from_state,
+        "new_status": workflow.to_state,
+        "available_actions": [],
     }
 
 
@@ -255,7 +289,9 @@ def _verifier_role(actor):
     return sorted(roles.intersection({"compliance_team_member", "company_secretary"}))[0]
 
 
-def _same_decision(decision, *, bank, cheque, document, status, request_id):
+def _same_decision(
+    decision, *, bank, cheque, document, status, request_id, terminal_facts
+):
     return (
         decision.bank_account_id == bank.pk
         and decision.cancelled_cheque_id == cheque.pk
@@ -266,4 +302,6 @@ def _same_decision(decision, *, bank, cheque, document, status, request_id):
         and decision.branch_name_snapshot == (bank.branch_name or cheque.branch_name or "")
         and decision.decision_status == status
         and decision.request_id == request_id
+        and decision.approval_case_id_snapshot == terminal_facts.approval_case_id
+        and decision.sanction_decision_id_snapshot == terminal_facts.sanction_decision_id
     )

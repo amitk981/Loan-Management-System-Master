@@ -1,0 +1,20 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_uses_standard_owner_authorised_action_contract sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_projects_s26_queue_and_redacted_s35_timeline -v 2
+
+Result: RED (expected before implementation)
+
+Found 2 test(s).
+System check identified no issues (0 silenced).
+test_staff_workspace_uses_standard_owner_authorised_action_contract ... FAIL
+test_staff_workspace_projects_s26_queue_and_redacted_s35_timeline ... FAIL
+
+Failure 1:
+AssertionError: False is not true
+The projected actions did not contain the mandatory section 44 keys.
+
+Failure 2:
+AssertionError: 404 != 200
+GET /api/v1/documentation-workspaces/?page=1&page_size=20 did not exist.
+
+Ran 2 tests in 0.304s
+FAILED (failures=2)

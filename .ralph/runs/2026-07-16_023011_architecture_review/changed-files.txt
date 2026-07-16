@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009B-sap-customer-code-confirmation-and-reuse.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-16_023011_architecture_review/
+?? docs/slices/008L5-current-stage4-and-response-evidence-closure.md
+?? docs/slices/008M2-documentation-workspace-contract-and-visual-closure.md

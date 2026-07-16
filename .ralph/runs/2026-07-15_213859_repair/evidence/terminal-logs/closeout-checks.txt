@@ -1,0 +1,16 @@
+PASS: git diff --check
+PASS: state JSON parses
+PASS: protected paths unchanged
+PASS: historical documents migration 0002 unchanged
+PASS: no debug instrumentation
+PASS: selected slice marked Complete
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/slices/CR-008-document-template-constraint-migration-nondeterminism.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M sfpcl_credit/documents/models.py
+?? .ralph/runs/2026-07-15_213859_repair/
+?? sfpcl_credit/documents/migrations/0005_deterministic_document_template_constraints.py
+?? sfpcl_credit/tests/test_document_template_migration_state.py

@@ -1,0 +1,10 @@
+PYTHONHASHSEED=0
+No changes detected
+PYTHONHASHSEED=1
+No changes detected
+PYTHONHASHSEED=42
+No changes detected
+PYTHONHASHSEED=123456
+No changes detected
+PYTHONHASHSEED=random
+No changes detected

@@ -56,7 +56,12 @@ const MP07_DocumentChecklist: React.FC = () => {
               const positive = action.status === 'complete' || action.status === 'submitted';
               const blocked = action.status === 'blocked';
               return (
-                <div key={action.action_code} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
+                <div
+                  key={action.action_code}
+                  role="group"
+                  aria-label={`${action.label} documentation action`}
+                  className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"
+                >
                   <div className="flex items-start sm:items-center gap-3 min-w-0">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${positive ? 'bg-green-50' : blocked ? 'bg-red-50' : 'bg-amber-50'}`}>
                       <FileText size={20} className={positive ? 'text-green-600' : blocked ? 'text-red-600' : 'text-amber-600'} />
@@ -71,9 +76,11 @@ const MP07_DocumentChecklist: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center sm:justify-end gap-3 w-full sm:w-auto">
+                    <div className="flex-1 sm:flex-none flex justify-center sm:justify-end">
+                      <StatusBadge label={action.status === 'submitted' ? 'submitted_for_review' : action.status} size="sm" />
+                    </div>
                     {action.download && <button onClick={() => void download(action)} className="flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors" aria-label={`Download ${action.label}`}><Download size={16} className="text-slate-400" />Download</button>}
                     {(action.upload_allowed || action.reupload_allowed) && <button onClick={() => setSelectedAction(action)} className="flex items-center justify-center flex-1 sm:flex-none gap-1.5 text-sm bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition-colors" aria-label={`${action.reupload_allowed ? 'Re-upload' : 'Upload'} ${action.label}`}><Upload size={16} />{action.reupload_allowed ? 'Re-upload' : 'Upload'}</button>}
-                    {(action.status === 'complete' || (!action.download && !action.upload_allowed && !action.reupload_allowed)) && <div className="flex-1 sm:flex-none flex justify-center sm:justify-end"><StatusBadge label={action.status} size="sm" /></div>}
                   </div>
                 </div>
               );

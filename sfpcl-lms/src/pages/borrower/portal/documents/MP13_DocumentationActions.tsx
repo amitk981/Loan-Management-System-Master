@@ -70,7 +70,10 @@ const MP13_DocumentationActions: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold text-slate-900">{item.label}</p>
-                        <StatusBadge label={item.status} size="sm" />
+                        <StatusBadge
+                          label={item.status === 'submitted' ? 'submitted_for_review' : item.status}
+                          size="sm"
+                        />
                       </div>
                       <p className="text-xs text-slate-500 mt-1">{item.instruction}</p>
                       {item.note && <p className="text-xs text-amber-700 mt-1">{item.note}</p>}

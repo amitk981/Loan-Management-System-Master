@@ -1,13 +1,16 @@
 # Slice CR-007: GitHub backend CI does not provision the legal PDF Unicode font
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-15 from docs/change-requests/accepted/CR-007-github-ci-missing-legal-pdf-unicode-font.md.
 
 ## Risk Level
 High
+
+## Depends On
+- None
 
 ## Change Request (verbatim)
 
@@ -54,3 +57,12 @@ Validation fails this run if impact-analysis.md is missing.
 - The change request's own acceptance criteria are met.
 - Regression tests added for every module named in the impact analysis.
 - All quality gates pass.
+
+## Resolution
+
+Owner-authorized protected-path repair `615c1876` provisions Ubuntu's `fonts-noto-core` package in
+the GitHub backend job and verifies
+`/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf` before Python dependencies and
+tests run. GitHub Actions run `29414744868` completed successfully: frontend CI passed, the font
+provisioning step passed, and backend CI passed all 887 tests plus the 85% coverage gate. The
+renderer and its fail-closed glyph validation were not changed.

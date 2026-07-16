@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_completion_rejects_invalid_payload_state_assignee_and_stale_cycle (sfpcl_credit.tests.test_sap_customer_profile_request_api.SapCustomerProfileRequestApiTests.test_completion_rejects_invalid_payload_state_assignee_and_stale_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_062256_repair/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 457, in test_completion_rejects_invalid_payload_state_assignee_and_stale_cycle
+    self.assertEqual(nonterminal_denied.status_code, 403, nonterminal_denied.content)
+AssertionError: 409 != 403 : b'{"success": false, "error": {"code": "INVALID_STATE", "message": "A current terminal sanctioned decision is required.", "details": {}, "field_errors": {}}, "meta": {"request_id": "complete-af21cb01-1fd2-4253-bfe7-e9154803ad15", "timestamp": "2026-07-16T01:38:51.892368Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.086s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

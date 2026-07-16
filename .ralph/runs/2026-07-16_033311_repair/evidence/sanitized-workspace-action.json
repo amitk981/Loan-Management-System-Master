@@ -1,0 +1,20 @@
+{
+  "action_code": "record_stamp",
+  "label": "Record stamp",
+  "enabled": true,
+  "disabled_reason": null,
+  "required_permission": "documents.stamp.record",
+  "action_url": "/api/v1/loan-documents/00000000-0000-0000-0000-000000000001/stamp-duty-record/",
+  "method": "POST",
+  "fixed_payload": {
+    "stamp_number": null,
+    "stamp_purchase_date": null,
+    "executed_date": null,
+    "remarks": null
+  },
+  "fields": [
+    {"name": "stamp_paper_amount", "label": "Stamp amount", "type": "text", "required": true},
+    {"name": "stamp_type", "label": "Stamp type", "type": "select", "required": true},
+    {"name": "status", "label": "Status", "type": "select", "required": true}
+  ]
+}

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from sfpcl_credit.approvals.modules import document_checklist_facts as approval_facts
 from sfpcl_credit.applications.models import BankVerificationDecision, LoanApplication
 from sfpcl_credit.applications.modules.bank_verification import (
     decision_evidence,
@@ -65,6 +66,15 @@ def resolve_blank_cheque_bank_fact(*, application_id):
     )
     if decision is None:
         return BlankChequeBankFact(False, "bank_verification_decision_missing")
+    terminal_facts = approval_facts.resolve_approved_facts(application_id=application.pk)
+    if (
+        terminal_facts is None
+        or decision.approval_case_id_snapshot != terminal_facts.approval_case_id
+        or decision.sanction_decision_id_snapshot != terminal_facts.sanction_decision_id
+    ):
+        return BlankChequeBankFact(
+            False, "bank_verification_terminal_sanction_invalid"
+        )
     related_cheques = list(
         CancelledCheque.objects.select_for_update()
         .filter(loan_application_id=application.pk, member_id=application.member_id)

@@ -1,0 +1,13 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_omits_evidence_mutations_after_item_completion
+
+Result: FAIL (expected failing-first regression)
+
+The completed Term Sheet projected three impossible evidence mutations:
+`record_signature`, `record_stamp`, and `record_notarisation`.
+The assertion expected `available_actions == []`, matching the exact browser symptom where
+`Record stamp` was rendered and Django rejected it with `409`.
+
+To remain below Ralph's 2,000-line cap, the final assertion was folded into the existing
+`test_staff_workspace_is_one_redacted_action_projection` regression after the failing-first run.
+

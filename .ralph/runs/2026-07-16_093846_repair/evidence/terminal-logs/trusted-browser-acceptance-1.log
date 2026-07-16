@@ -1,0 +1,51 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_080903_repair/.ralph/runs/2026-07-16_093846_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/staff-documentation-workspace.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/staff-documentation-workspace.e2e.spec.ts
+
+[2m[WebServer] [22m[16/Jul/2026 04:26:24] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "POST /api/v1/auth/login/ HTTP/1.1" 200 1317
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "GET /api/v1/auth/me/ HTTP/1.1" 200 1901
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[16/Jul/2026 04:26:27] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[16/Jul/2026 04:26:28] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:28] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:28] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 863
+[2m[WebServer] [22m[16/Jul/2026 04:26:28] "OPTIONS /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:28] "GET /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/ HTTP/1.1" 200 11361
+[2m[WebServer] [22m[16/Jul/2026 04:26:28] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 863
+[2m[WebServer] [22m[16/Jul/2026 04:26:28] "OPTIONS /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/c9e71df6c7a81bf7bdf427bd008fbea9a1b2cf54/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "POST /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/c9e71df6c7a81bf7bdf427bd008fbea9a1b2cf54/ HTTP/1.1" 200 438
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "GET /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/ HTTP/1.1" 200 11361
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "OPTIONS /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/a650248d15a55729095e542d24b2c4919e0a3d57/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "POST /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/a650248d15a55729095e542d24b2c4919e0a3d57/ HTTP/1.1" 200 448
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "GET /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/ HTTP/1.1" 200 11361
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "OPTIONS /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/5190937f84f398a8e3227050ca310611fea4bac5/ HTTP/1.1" 200 0
+[2m[WebServer] [22mBad Request: /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/5190937f84f398a8e3227050ca310611fea4bac5/
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "POST /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/5190937f84f398a8e3227050ca310611fea4bac5/ HTTP/1.1" 400 341
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "OPTIONS /api/v1/documentation-workspaces/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "GET /api/v1/documentation-workspaces/ HTTP/1.1" 200 829
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "GET /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/ HTTP/1.1" 200 11327
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "OPTIONS /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/a650248d15a55729095e542d24b2c4919e0a3d5a/ HTTP/1.1" 200 0
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/a650248d15a55729095e542d24b2c4919e0a3d5a/
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "POST /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/actions/a650248d15a55729095e542d24b2c4919e0a3d5a/ HTTP/1.1" 404 230
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "OPTIONS /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/term_sheet/download/ HTTP/1.1" 200 0
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/term_sheet/download/
+[2m[WebServer] [22m[16/Jul/2026 04:26:29] "GET /api/v1/loan-applications/c112d643-b8e0-4e2a-9e87-2d79507fc844/documentation-workspace/term_sheet/download/ HTTP/1.1" 404 218
+  ✓  1 [chromium] › staff-documentation-workspace.e2e.spec.ts:16:5 › 008M3 executes every staff documentation action through real Django (3.6s)
+
+  1 passed (18.0s)
+
+Exit code: 0

@@ -1,5 +1,106 @@
 # Ralph Progress Log
 
+## 2026-07-16 - 2026-07-16_091335_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M3-documentation-workspace-executable-action-closure.
+- Summary: Preserved the quarantined implementation and repaired only the demonstrated trusted-
+  browser fixture/spec mismatch. The shared fixture intentionally completed the Term Sheet and
+  retained all signatures, so its missing signature buttons were correct. A pending source-correct
+  PoA fixture now supplies the borrower/nominee signature, stamp, notary, upload, correction, and
+  multi-action Document Pack path used by the browser contract.
+- Tests run: focused seed HTTP RED/GREEN; 39 affected backend tests; 16 focused frontend tests;
+  Playwright collection; frontend build/typecheck/lint and all 321 tests; Django check/migration
+  drift; all 944 backend tests with 51 expected skips at 91% coverage. Local Chromium remained
+  sandbox-denied before page creation.
+- Evidence: `.ralph/runs/2026-07-16_091335_repair/evidence/`. Next: independent twice-run browser
+  acceptance and four genuine screenshots, then run sharpened 008M4.
+
+## 2026-07-16 - 2026-07-16_062256_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice completed: 009B-sap-customer-code-confirmation-and-reuse.
+- Summary: Added the governed retained-Annexure send boundary, direct Finance communication/task,
+  exact Senior Manager Finance confirmation, one normalized active member SAP code, conservative
+  same-member reuse, immutable safe evidence, and masked scoped read without downstream finance truth.
+- Tests run: focused RED/GREEN and 25-test SAP module; migration-graph RED/GREEN; PostgreSQL request,
+  five-conflicting-code, and two-same-member-request races twice; Django check/migration drift; all
+  940 backend tests with 51 expected skips at 91% coverage; frontend build/typecheck/lint and all
+  319 tests.
+- Evidence: `.ralph/runs/2026-07-16_062256_repair/evidence/`. Next: architecture review is due,
+  then run sharpened 009C followed by sharpened 009D.
+
+## 2026-07-16 - 2026-07-16_042513_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Repaired the strict trusted-browser declaration by moving its behavioral prose out of
+  the machine-readable Spec/Screenshot section; no production implementation was changed.
+- Tests run: strict contract RED/GREEN, Ralph workflow regressions, Playwright collection, frontend
+  build/typecheck/lint/319 tests, Django check/migration drift, and 915 tests at 91% coverage. Local
+  Chromium remained sandbox-denied before page creation.
+- Evidence: `.ralph/runs/2026-07-16_042513_repair/evidence/`. Next: independent twice-run browser
+  acceptance and screenshots, then 009A followed by 009B.
+
+## 2026-07-16 - 2026-07-16_033311_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Restored a readable locked S26-S35 projection, strict queue, §44 owner actions, redacted timeline, exact signed downloads, and the real-Django four-screenshot browser contract.
+- Tests run: 915 backend tests at 91% coverage; 319 frontend tests, lint/build/typecheck; Django check/migration drift; Playwright collection. Local Chromium was sandbox-denied before page creation.
+- Evidence: `.ralph/runs/2026-07-16_033311_repair/evidence/`. Next: 009A, then sharpened 009B.
+
+## 2026-07-16 - 2026-07-16_015254_repair
+
+- Agent tool used: codex with the diagnosing-bugs skill.
+- Slice repaired: 008M-documentation-hub-frontend-wiring.
+- Summary: Preserved the staff documentation workspace and reduced redundant added formatting/prose until the exact Ralph tracked-plus-untracked diff calculation passed at final 1,994/2,000. No workflow contract, assertion, action, permission, or current-renderer boundary was removed.
+- Tests run: focused backend 5/5 and frontend 6/6; frontend lint/typecheck/build and all 311 tests; Django check/migration drift; all 905 backend tests with 46 expected capability skips at 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_015254_repair/evidence/`.
+- Result: Repair complete; Ralph validation passed, pending orchestrator commit/merge/push.
+- Risk level: Medium inherited frontend/API authority risk; Low repair delta because only representation density changed and focused/full behavior remained green.
+- Next action: run the due architecture review, then 009A; sharpened 009B follows.
+
+## 2026-07-15 - 2026-07-15_204059_repair
+
+- Agent tool used: codex with the diagnosing-bugs and browser-control skills.
+- Slice repaired: 008L4-portal-production-boundary-and-browser-proof.
+- Summary: Preserved the quarantined implementation and repaired only the demonstrated trusted-
+  browser login boundary. The canonical catalogue had kept `borrower_portal_user` inactive, so real
+  portal login and `/auth/me` succeeded but returned no role; the frontend selected the staff shell
+  and called `/api/v1/dashboard/`. The borrower role is now the one active external role, while all
+  future external identities remain inactive and portal permissions remain own-data-only.
+- Tests run: focused role/API RED then GREEN; 25 affected identity/portal tests; Playwright
+  collection; frontend lint, typecheck, build, and all 304 tests; Django check/migration drift; all
+  897 backend tests with 46 expected capability skips and 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_204059_repair/evidence/` plus the original browser failure
+  in `.ralph/runs/2026-07-15_193120_normal_run/evidence/`.
+- Result: Repair complete pending full independent orchestrator validation, twice-run trusted
+  browser execution, and all four genuine screenshots.
+- Risk level: High inherited slice risk; Medium repair-delta risk because the canonical RBAC seed
+  now activates the already-source-required borrower portal role without granting staff permissions.
+- Next action: Let the orchestrator rerun the declared browser contract twice; after acceptance,
+  continue with sharpened 008M.
+
+## 2026-07-15 - 2026-07-15_193120_normal_run
+
+- Agent tool used: codex with implement, TDD, codebase-design, and two-axis review skills.
+- Slice completed: 008L4-portal-production-boundary-and-browser-proof.
+- Summary: Replaced catch-all mocked portal browser traffic with guarded real Django fixtures and
+  authenticated API calls; unified portal documentation projection/upload/download behind one
+  locked current decision; selected published files from the canonical latest renderer; retained
+  single safe `portal.document.*` audits; and aligned response projections with resubmission and
+  staff-resolution workflow truth.
+- Tests run: staged backend RED/GREEN; 22-test final portal suite (20 pass, two PostgreSQL-only race
+  tests collected); Playwright collection; Django check/migration drift; frontend lint, typecheck,
+  build, and all 304 tests; all 897 backend tests with 46 expected capability skips at 92% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_193120_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation, twice-run trusted browser contract,
+  screenshot capture, and commit.
+- Risk level: High; authenticated document access, audit vocabulary, lifecycle projection, and
+  concurrency authority changed behind fail-closed locks and current-renderer capabilities.
+- Next action: Run sharpened 008M documentation hub frontend wiring.
+
 ## 2026-07-15 - 2026-07-15_073659_normal_run
 
 - Agent tool used: codex
@@ -7328,12 +7429,337 @@ Validation evidence added:
   presentation formatter option plus rendered-interface coverage.
 - Next action: Run the due architecture review, then 008M.
 
+## 2026-07-15 - 2026-07-15_181520_architecture_review
+
+- Agent tool used: codex with separate Standards and Spec review passes plus the local to-issues
+  tracer-slice standard.
+- Slice attempted: architecture-review.
+- Summary: Independently reviewed 008K4, CR-005, 008L3, CR-006, and CR-007 from fixed point
+  `8dbefb17`. Two expected-failure probes reproduced globally writable pre-Stage-4 bank evidence
+  and changed completion-version evidence still projecting complete. Also found legal migration
+  ownership drift, partial exact race/reader proof, unlocked portal GET authority, and browser
+  acceptance that mocks every API call.
+- Tests run: two-test expected-failure Django review probe; queue/dependency lint, JSON/YAML parse,
+  protected-path/diff checks, Django check, migration drift, and focused existing regression checks
+  recorded in the run evidence.
+- Evidence saved: `.ralph/runs/2026-07-15_181520_architecture_review/evidence/`.
+- Result: Review complete; findings recorded and corrective 008K5/008L4 queued before 008M.
+- Risk level: Low execution risk (review-only); findings include Critical immutable-evidence
+  authority and High current-truth/browser-proof risk.
+- Next action: Run 008K5, then 008L4, then 008M.
+
 ## 2026-07-15 17:12:03 - 2026-07-15_164806_normal_run
 - Agent tool used: codex
 - Slice attempted: CR-006-register-date-time-timezone-determinism
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_164806_normal_run/.ralph/runs/2026-07-15_164806_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_164806_normal_run/.ralph/runs/2026-07-15_164806_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - CR-007 owner-authorized protected-path repair
+
+- Repair completed: CR-007-github-ci-missing-legal-pdf-unicode-font.
+- Summary: With explicit owner authorization, added Ubuntu `fonts-noto-core` provisioning and an
+  exact Noto Devanagari path assertion to the protected GitHub backend workflow. Application code,
+  renderer behavior, glyph validation, tests, and quality thresholds were unchanged.
+- Local validation: workflow YAML parsed successfully; the deterministic CI font contract passed;
+  `git diff --check` passed. The complete 887-test backend suite had already passed under `TZ=UTC`.
+- Remote validation: GitHub Actions run 29414744868 completed successfully. Frontend CI passed;
+  backend font provisioning, all 887 tests, and the 85% coverage threshold passed.
+- Result: Complete at commit `615c1876`.
+- Risk level: High by CR declaration; low implementation blast radius because only CI runtime
+  provisioning changed.
+- Next action: Run the due architecture review, then 008M.
+
+## 2026-07-15 18:48:47 - 2026-07-15_181520_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_181520_architecture_review/.ralph/runs/2026-07-15_181520_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_181520_architecture_review/.ralph/runs/2026-07-15_181520_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_184900_normal_run
+
+- Agent tool used: codex.
+- Slice completed: 008K5-final-evidence-authority-and-migration-closure.
+- Summary: Closed sanctioned Stage-4 bank authority, §6.3 action projection, unconditional
+  borrower-safe evidence reconciliation, legal migration ownership, real-row reader DTO proof, and
+  exact generation race ledgers.
+- Tests run: architecture-review probes green unchanged; focused contract/migration/reader suites;
+  four PostgreSQL race tests; all 892 backend tests at 92% coverage; frontend lint, typecheck, all
+  304 tests, and build.
+- Evidence saved: `.ralph/runs/2026-07-15_184900_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; immutable compliance evidence, permissions, migrations, and concurrency.
+- Next action: Run 008L4, then 008M.
+
+## 2026-07-15 - 008L4 manual stopped-run recovery
+
+- Slice completed: 008L4-portal-production-boundary-and-browser-proof.
+- Summary: Recovered the preserved worktree after the owner stopped the failed loop; activated the
+  canonical borrower portal role, corrected stable browser locator boundaries, kept portal status
+  visible beside re-upload authority, and allowed the required `X-Request-ID` CORS preflight.
+- Tests run: both real Django-backed Playwright specs twice (2/2 each); all four screenshots;
+  frontend 305 tests, typecheck, lint, build; backend 898 tests at 92% coverage; Django check and
+  migration drift.
+- Evidence saved: `.ralph/runs/2026-07-15_204059_repair/evidence/`.
+- Result: Complete and ready for the recovered branch commit/merge.
+- Risk level: High; authenticated portal data, document audit, upload/download authority, and
+  lifecycle browser proof.
+- Next action: Run 008M.
+
+## 2026-07-15 19:31:08 - 2026-07-15_184900_normal_run
+- Agent tool used: codex
+- Slice attempted: 008K5-final-evidence-authority-and-migration-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_184900_normal_run/.ralph/runs/2026-07-15_184900_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_184900_normal_run/.ralph/runs/2026-07-15_184900_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_213859_repair
+
+- Agent tool used: codex with diagnosing-bugs, TDD, and codebase-design guidance.
+- Slice completed: CR-008-document-template-constraint-migration-nondeterminism.
+- Summary: Replaced unordered migration-facing document-template constraint values with ordered
+  tuples and added a forward migration preserving the same names, values, null handling, and
+  database enforcement without rewriting historical migration `0002`.
+- Tests run: focused RED/GREEN migration-state regression; 12 targeted document-template tests;
+  migration drift under hash seeds 0, 1, 42, 123456, and random; frontend lint/typecheck/305
+  tests/build; Django check, all 900 backend tests, migration sync, and 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-15_213859_repair/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High by CR declaration; deployment briefly removes/re-adds two same-definition check
+  constraints inside one migration while application behavior remains unchanged.
+- Next action: Run 008M-documentation-hub-frontend-wiring.
+
+## 2026-07-15 22:04:27 - 2026-07-15_213859_repair
+- Agent tool used: codex
+- Slice attempted: CR-008-document-template-constraint-migration-nondeterminism
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/.ralph/runs/2026-07-15_213859_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_213859_repair/.ralph/runs/2026-07-15_213859_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 02:29:43 - 2026-07-16_015254_repair
+- Agent tool used: codex
+- Slice attempted: 008M-documentation-hub-frontend-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/.ralph/runs/2026-07-16_015254_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/.ralph/runs/2026-07-16_015254_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 02:38 - 2026-07-16_023011_architecture_review
+
+- Agent tool used: codex with the `review` skill and isolated Standards/Spec critics.
+- Slice attempted: architecture-review.
+- Summary: Independently reviewed 008K5, 008L4, CR-008, and 008M from `e1e3c665`; reproduced stale
+  terminal-sanction bank authority and fabricated deficiency-response state; found 008M action,
+  screen, error, download, visual-evidence, readability, and diff-limit violations; queued 008L5
+  and 008M2; sharpened source §29.2/§29.3 SAP send/complete/reuse work in 009B.
+- Tests run: two focused Django review probes (both failed at the intended assertions); slice queue
+  lint, dependency/status audit, protected-path/diff inspection, frontend build/typecheck/lint and
+  311 tests, plus Django check/migration drift and 905 tests at 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_023011_architecture_review/evidence/`.
+- Result: Success; review findings and executable corrective queue recorded. No production code
+  changed.
+- Risk level: Low for this documentation-only review; findings cover High/Critical future repairs.
+- Next action: Run 008L5, then 008M2, before Epic 009.
+
+## 2026-07-16 02:59:32 - 2026-07-16_023011_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_023011_architecture_review/.ralph/runs/2026-07-16_023011_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_023011_architecture_review/.ralph/runs/2026-07-16_023011_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_025941_normal_run
+
+- Agent tool used: codex with the TDD skill.
+- Slice completed: 008L5-current-stage4-and-response-evidence-closure.
+- Summary: Bound every immutable bank decision to the approval owner's current terminal case and
+  sanctioned decision, reconciled those retained ids for checklist truth, and replaced MP11's
+  fabricated response fallback with an exact fail-closed workflow-chain resolver shared by GET and
+  resubmit.
+- Tests run: both architecture-review probes RED then GREEN; focused public bank/MP11 matrices;
+  PostgreSQL decision-versus-invalidation race twice; Django check and migration drift; all 912
+  backend tests at 91% coverage; frontend build/typecheck/lint and all 311 tests.
+- Evidence saved: `.ralph/runs/2026-07-16_025941_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; immutable compliance evidence, cross-module terminal sanction authority, one
+  schema migration, portal workflow truth, and PostgreSQL concurrency.
+- Next action: Run 008M2, then 009A and 009B.
+
+## 2026-07-16 03:33:01 - 2026-07-16_025941_normal_run
+- Agent tool used: codex
+- Slice attempted: 008L5-current-stage4-and-response-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_025941_normal_run/.ralph/runs/2026-07-16_025941_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_025941_normal_run/.ralph/runs/2026-07-16_025941_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_044126_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow and backend TDD.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Removed impossible evidence-mutation actions from completed checklist items and changed
+  the real-Django browser proof to assert a successful exact completion replay before the changed
+  replay conflict and restricted download denial.
+- Tests run: focused RED/GREEN workspace action projection; Playwright collection; frontend
+  build/typecheck/lint and 319 tests; Django check/migration drift and the full backend suite plus
+  temporary TDD regression (916 executions) at 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_044126_repair/evidence/`.
+- Result: Ready for independent trusted-browser validation; local Chromium is sandbox-blocked before
+  page creation and no screenshots were fabricated.
+- Risk level: High by slice declaration; Medium incremental action-contract/browser repair.
+- Next action: Run the declared browser spec twice externally, verify four PNGs, then run 009A.
+
+## 2026-07-16 - 2026-07-16_050957_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow.
+- Slice repaired: 008M2-documentation-workspace-contract-and-visual-closure.
+- Summary: Moved disposable Playwright document storage from the measured worktree to a
+  worktree-namespaced OS temp path, preventing the E2E seed PDF from exceeding the 2,000-line cap.
+- Tests run: exact diff-limit RED/GREEN; frontend build/typecheck/lint and all 319 tests; Django
+  check; Playwright collection; real server/browser setup through the expected Chromium sandbox
+  denial. The seed artifact was verified outside the repository; final bookkeeping left 1,998.
+- Evidence saved: `.ralph/runs/2026-07-16_050957_repair/evidence/`.
+- Result: Ready for full independent validation and twice-run trusted-browser acceptance.
+- Risk level: High by slice declaration; Low incremental test-infrastructure repair.
+- Next action: Independently validate 008M2, then run concrete 009A followed by 009B.
+
+## 2026-07-16 05:24:19 - 2026-07-16_050957_repair
+- Agent tool used: codex
+- Slice attempted: 008M2-documentation-workspace-contract-and-visual-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_033311_repair/.ralph/runs/2026-07-16_050957_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_033311_repair/.ralph/runs/2026-07-16_050957_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_052448_repair
+
+- Agent tool used: codex with diagnosing-bugs, implement, TDD, codebase-design, and independent
+  two-axis review skills.
+- Slice repaired/completed: 009A-sap-customer-code-request.
+- Summary: Added the terminal-sanction manual SAP request boundary, immutable canonical borrower and
+  sanction snapshots, encrypted restricted Annexure-I storage, persisted requester/assignee
+  authority, active-code conflict, replay safety, and atomic audit/workflow evidence. The prior
+  normal run had failed preflight before implementation.
+- Tests run: initial/review RED/GREEN; focused 13-test API/service suite; PostgreSQL five-caller race
+  twice after final changes; Django check/migration drift; all 928 backend tests at 91% coverage;
+  frontend build/typecheck/lint and all 319 tests.
+- Evidence saved: `.ralph/runs/2026-07-16_052448_repair/evidence/`.
+- Review: Standards and Spec critics found eight issues; fixes were independently rechecked and all
+  implementation/spec findings closed, with the bounded OOXML decision recorded as A-123.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; regulated identity values, encrypted artifacts, financial workflow authority,
+  schema constraints, and PostgreSQL concurrency.
+- Next action: Run 009B, then sharpened 009C.
+
+## 2026-07-16 06:22:42 - 2026-07-16_052448_repair
+- Agent tool used: codex
+- Slice attempted: 009A-sap-customer-code-request
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_052448_repair/.ralph/runs/2026-07-16_052448_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_052448_repair/.ralph/runs/2026-07-16_052448_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 07:28:04 - 2026-07-16_062256_repair
+- Agent tool used: codex
+- Slice attempted: 009B-sap-customer-code-confirmation-and-reuse
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_062256_repair/.ralph/runs/2026-07-16_062256_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_062256_repair/.ralph/runs/2026-07-16_062256_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_072819_architecture_review
+
+- Agent tool used: codex with the independent Standards/Spec review workflow.
+- Slice reviewed: architecture-review over `ad590fb7...14e68a6f` (008L5, 008M2, 009A, 009B).
+- Summary: Reproduced staff-workspace action projection/execution disagreement, SAP `sent` without
+  assignee-reachable retained Excel, and changed-payload replay acceptance. Consolidated Standards
+  and Spec findings and queued 008M3, 008M4, and 009B2; sharpened 009C/009D owner dependencies. No
+  production code changed.
+- Tests run: focused executable review probes; frontend build/typecheck/lint and 319 tests; Django
+  check/migration drift and 940 tests with 51 expected skips at 91% coverage; Ralph queue,
+  capability, trusted-browser metadata, and workflow-regression checks; integrity/diff checks.
+- Evidence saved: `.ralph/runs/2026-07-16_072819_architecture_review/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: Low review-only diff; High corrective slices due to regulated authorization, delivery,
+  replay, audit, and owner-seam behavior.
+- Next action: Run 008M3, then 008M4, then 009B2 before 009C and 009D.
+
+## 2026-07-16 08:08:47 - 2026-07-16_072819_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_072819_architecture_review/.ralph/runs/2026-07-16_072819_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_072819_architecture_review/.ralph/runs/2026-07-16_072819_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-16 - 2026-07-16_080903_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow and backend/frontend TDD.
+- Slice repaired/completed: 008M3-documentation-workspace-executable-action-closure.
+- Summary: Replaced shallow action projection with owner-backed current decisions, HMAC-bound opaque
+  action identities, server-side command reconstruction, and executable upload/correction,
+  required-party signature, stamp/notary, S35, generation, bank, security, mismatch, verification,
+  and completion actions. Rendered every sibling mutation in both staff workspace surfaces.
+- Tests run: retained architecture-review RED probe; backend and frontend RED/GREEN regressions;
+  focused action/seed suites; Playwright collection; frontend build/typecheck/lint and all 321 tests;
+  Django check/migration drift and all 944 backend tests with 51 skips at 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_080903_repair/evidence/`.
+- Result: Complete pending independent orchestrator validation and twice-run trusted-browser gate;
+  local Chromium was sandbox-blocked before page creation and no screenshots were fabricated.
+- Risk level: High; regulated document workflow authority, opaque capability binding, uploads,
+  signatures, approvals, audit/workflow evidence, and cross-object nondisclosure.
+- Next action: Run sharpened 008M4, then 009B2.
+
+## 2026-07-16 - 2026-07-16_093846_repair
+
+- Agent tool used: codex with the diagnosing-bugs workflow.
+- Slice repaired: 008M3-documentation-workspace-executable-action-closure.
+- Summary: Diagnosed the independent real-Django browser failure as one stale undeclared
+  `termSheet` locator left after the action scenario moved to the pending Power of Attorney row.
+  Reused the declared lazy Power of Attorney locator; no production or fixture behavior changed.
+- Tests run: authoritative preceding browser RED; exact focused TypeScript RED/GREEN; Playwright
+  collection; frontend build/typecheck/lint and all 321 tests; Django check/migration drift and all
+  944 backend tests with 51 expected skips at 91% coverage.
+- Evidence saved: `.ralph/runs/2026-07-16_093846_repair/evidence/`.
+- Result: Repair complete pending independent twice-run trusted-browser validation; local Chromium
+  was sandbox-blocked before page creation and no screenshots were fabricated.
+- Risk level: Parent slice High; repair delta Low and limited to one trusted-browser locator.
+- Next action: Independently run the browser contract twice, then run sharpened 008M4 and 009B2.
+
+## 2026-07-16 10:03:58 - 2026-07-16_093846_repair
+- Agent tool used: codex
+- Slice attempted: 008M3-documentation-workspace-executable-action-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_080903_repair/.ralph/runs/2026-07-16_093846_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_080903_repair/.ralph/runs/2026-07-16_093846_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

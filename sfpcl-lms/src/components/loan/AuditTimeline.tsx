@@ -1,7 +1,6 @@
 import React from 'react';
 import { FileText, CheckCircle2, XCircle, Upload, Banknote, User, AlertOctagon } from 'lucide-react';
 import type { AuditEvent } from '../../types';
-import { auditEvents } from '../../data/mockData';
 
 const eventIcons: Record<string, React.ReactNode> = {
   'Application Submitted':           <FileText size={14} />,
@@ -26,7 +25,7 @@ const eventColors: Record<string, string> = {
 };
 
 interface AuditTimelineProps {
-  entityId: string;
+  events: AuditEvent[];
   limit?: number;
   sensitiveVisible?: boolean;
 }
@@ -64,10 +63,10 @@ const maskText = (text: string, visible?: boolean) => {
     .replace(/(PAN|Aadhaar|Account)[ \w-]*?([0-9]{4})\b/ig, '$1 ••••$2');
 };
 
-const AuditTimeline: React.FC<AuditTimelineProps> = ({ entityId, limit = 20, sensitiveVisible }) => {
-  const events = auditEvents.filter(e => e.entityId === entityId).slice(0, limit);
+const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, limit = 20, sensitiveVisible }) => {
+  const visibleEvents = events.slice(0, limit);
 
-  if (events.length === 0) {
+  if (visibleEvents.length === 0) {
     return (
       <div className="text-center py-8 text-slate-400 text-sm">No audit events recorded yet.</div>
     );
@@ -75,8 +74,8 @@ const AuditTimeline: React.FC<AuditTimelineProps> = ({ entityId, limit = 20, sen
 
   return (
     <div className="space-y-0">
-      {events.map((event, idx) => {
-        const isLast = idx === events.length - 1;
+      {visibleEvents.map((event, idx) => {
+        const isLast = idx === visibleEvents.length - 1;
         const iconStyle = eventColors[event.eventType] || 'bg-slate-100 text-slate-600';
         const icon = eventIcons[event.eventType] || <FileText size={14} />;
 

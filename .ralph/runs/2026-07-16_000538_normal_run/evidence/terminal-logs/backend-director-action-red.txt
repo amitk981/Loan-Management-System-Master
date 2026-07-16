@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_staff_workspace_advances_the_action_to_the_next_exact_role (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_staff_workspace_advances_the_action_to_the_next_exact_role)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_000538_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 379, in test_staff_workspace_advances_the_action_to_the_next_exact_role
+    director_view.json()["data"]["available_actions"],
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'data'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.313s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

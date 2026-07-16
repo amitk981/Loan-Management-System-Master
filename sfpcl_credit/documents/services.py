@@ -50,6 +50,15 @@ class ImmutableUploadProvenance:
     related_entity_id: uuid.UUID | None
 
 
+@dataclass(frozen=True)
+class DocumentAuditSpec:
+    """One caller-owned vocabulary projected by the central document audit writer."""
+
+    action: str
+    actor_type: str
+    metadata: dict
+
+
 def user_can_upload_documents(user):
     return DOCUMENT_UPLOAD_PERMISSION in auth_service.effective_permission_codes(user)
 
@@ -83,6 +92,7 @@ def store_document_upload(
     related_entity_type=None,
     related_entity_id=None,
     provenance_metadata=None,
+    audit_spec=None,
     storage=None,
 ):
     """Store bytes and retain exact immutable provenance supplied by a trusted owner."""
@@ -118,18 +128,34 @@ def store_document_upload(
             "related_entity_id": str(related_entity_id) if related_entity_id else None,
         }
         metadata.update(provenance_metadata or {})
-        AuditLog.objects.create(
-            actor_user=user,
-            actor_type="user",
+        spec = audit_spec or DocumentAuditSpec(
             action=DOCUMENT_UPLOAD_AUDIT_ACTION,
-            entity_type="document_file",
-            entity_id=document.document_id,
-            old_value_json=None,
-            new_value_json=metadata,
-            ip_address=request_ip(request),
-            user_agent=request_user_agent(request),
+            actor_type="user",
+            metadata=metadata,
+        )
+        record_document_audit(
+            user=user,
+            request=request,
+            document=document,
+            spec=spec,
         )
     return document
+
+
+def record_document_audit(*, user, request, document, spec):
+    """Retain exactly one document event without adding a parallel vocabulary."""
+    metadata = {**spec.metadata, "document_id": str(document.pk)}
+    return AuditLog.objects.create(
+        actor_user=user,
+        actor_type=spec.actor_type,
+        action=spec.action,
+        entity_type="document_file",
+        entity_id=document.pk,
+        old_value_json=None,
+        new_value_json=metadata,
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )
 
 
 def issue_download_capability(*, document, scope):
@@ -415,6 +441,7 @@ def validation_field_errors(exc):
 
 
 __all__ = [
+    "DocumentAuditSpec",
     "DOCUMENT_DOWNLOAD_AUDIT_ACTION",
     "DOCUMENT_DOWNLOAD_PERMISSION",
     "DOCUMENT_UPLOAD_AUDIT_ACTION",
@@ -426,6 +453,7 @@ __all__ = [
     "GENERAL_MEETING_REFERENCE_PURPOSE",
     "GENERAL_MEETING_WORKFLOW_SCOPE",
     "resolve_referenceable_documents",
+    "record_document_audit",
     "ImmutableUploadProvenance",
     "resolve_immutable_upload_provenance",
     "resolve_template_source_reference",

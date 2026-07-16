@@ -4,6 +4,8 @@ import base64
 import json
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
+
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -50,6 +52,7 @@ FIELD_LOOKUP_KEY = os.environ.get("SFPCL_FIELD_LOOKUP_KEY", _LOCAL_LOOKUP_KEY)
 DEBUG = env_bool("SFPCL_DEBUG", True)
 ALLOWED_HOSTS = env_csv("SFPCL_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "testserver"])
 CORS_ALLOWED_ORIGINS = env_csv("SFPCL_CORS_ORIGINS", ["http://localhost:5173"])
+CORS_ALLOW_HEADERS = (*default_headers, "x-request-id")
 
 ROOT_URLCONF = "sfpcl_credit.config.urls"
 WSGI_APPLICATION = "sfpcl_credit.config.wsgi.application"
@@ -64,6 +67,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.configurations",
     "sfpcl_credit.credit",
     "sfpcl_credit.documents",
+    "sfpcl_credit.finance",
     "sfpcl_credit.legal_documents",
     "sfpcl_credit.security_instruments",
     "sfpcl_credit.identity",

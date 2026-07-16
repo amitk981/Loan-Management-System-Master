@@ -107,13 +107,15 @@ class DocumentTemplate(models.Model):
                 name="doc_template_effective_dates",
             ),
             models.CheckConstraint(
-                check=models.Q(approval_status__in={"draft", "approved", "retired"}),
+                check=models.Q(
+                    approval_status__in=("draft", "approved", "retired")
+                ),
                 name="doc_template_approval_status",
             ),
             models.CheckConstraint(
                 check=models.Q(borrower_type__isnull=True)
                 | models.Q(
-                    borrower_type__in={"individual_farmer", "fpc", "fpo"}
+                    borrower_type__in=("individual_farmer", "fpc", "fpo")
                 ),
                 name="doc_template_borrower_type",
             ),

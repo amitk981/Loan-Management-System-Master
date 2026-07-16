@@ -8,11 +8,12 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.modules import document_checklist_facts
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.documents.storage import LocalDocumentStorage
-from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.processes import document_checklist_actions, portal_application_scope
+from sfpcl_credit.legal_documents import selectors as legal_document_selectors
 from sfpcl_credit.legal_documents.models import (
     ChecklistItem,
     DocumentChecklist,
+    LoanDocument,
     PortalDocumentationSubmission,
 )
 UPLOAD_ACTION_CODES = frozenset(
@@ -55,6 +56,17 @@ class PortalActionAuthority:
     reconciled_complete: bool
     upload_allowed: bool
     reupload_allowed: bool
+
+
+@dataclass(frozen=True)
+class PortalActionDecision:
+    application: LoanApplication
+    checklist: DocumentChecklist | None
+    items: tuple[ChecklistItem, ...]
+    completion_action_item_ids: frozenset
+    current_submissions: dict
+    current_issued_documents: dict
+    approved: bool
 def resolve_context(*, actor, application_id):
     try:
         return portal_application_scope.resolve(
@@ -65,30 +77,21 @@ def resolve_context(*, actor, application_id):
 @transaction.atomic
 def get_projection(*, actor, application_id):
     context = resolve_context(actor=actor, application_id=application_id)
-    application = context.application
+    decision = _resolve_locked_decision(context=context)
+    application = decision.application
     base = {
         "loan_application_id": str(application.pk),
         "application_reference_number": application.application_reference_number,
         "application_status": application.application_status,
     }
-    approved_facts = document_checklist_facts.resolve_approved_facts(
-        application_id=application.pk
-    )
-    if (
-        application.application_status != LoanApplication.STATUS_APPROVED_BY_SANCTION
-        or approved_facts is None
-    ):
+    if not decision.approved:
         return {
             **base,
             "availability": "blocked",
             "unavailable_reason": "Documentation actions are available after a current sanction approval.",
             "actions": [],
         }
-    checklist = (
-        DocumentChecklist.objects.prefetch_related("items__loan_document__document")
-        .filter(loan_application=application)
-        .first()
-    )
+    checklist = decision.checklist
     if checklist is None:
         return {
             **base,
@@ -96,16 +99,6 @@ def get_projection(*, actor, application_id):
             "unavailable_reason": "The post-sanction documentation checklist is not available yet.",
             "actions": [],
         }
-    completion_action_item_ids = document_checklist_actions.borrower_safe_completed_item_ids(
-        checklist
-    )
-    current_submissions = {
-        row.action_code: row
-        for row in PortalDocumentationSubmission.objects.filter(
-            loan_application=application,
-            successor__isnull=True,
-        ).select_related("document")
-    }
     return {
         **base,
         "availability": "available",
@@ -114,13 +107,87 @@ def get_projection(*, actor, application_id):
             _serialize_item(
                 item,
                 checklist,
-                completion_action_item_ids,
-                current_submissions.get(item.item_code),
+                decision.completion_action_item_ids,
+                decision.current_submissions.get(item.item_code),
+                decision.current_issued_documents.get(item.item_code),
             )
-            for item in checklist.items.order_by("display_order", "checklist_item_id")
+            for item in decision.items
         ],
     }
-def _serialize_item(item, checklist, completion_action_item_ids, submission):
+
+
+def _resolve_locked_decision(*, context):
+    application = LoanApplication.objects.select_for_update().get(
+        pk=context.application.pk
+    )
+    approved = bool(
+        application.application_status == LoanApplication.STATUS_APPROVED_BY_SANCTION
+        and document_checklist_facts.resolve_approved_facts(application_id=application.pk)
+        is not None
+    )
+    if not approved:
+        return PortalActionDecision(
+            application=application,
+            checklist=None,
+            items=(),
+            completion_action_item_ids=frozenset(),
+            current_submissions={},
+            current_issued_documents={},
+            approved=False,
+        )
+    checklist = (
+        DocumentChecklist.objects.select_for_update()
+        .filter(loan_application=application)
+        .first()
+    )
+    if checklist is None:
+        return PortalActionDecision(
+            application=application,
+            checklist=None,
+            items=(),
+            completion_action_item_ids=frozenset(),
+            current_submissions={},
+            current_issued_documents={},
+            approved=True,
+        )
+    items = tuple(
+        ChecklistItem.objects.select_for_update()
+        .filter(document_checklist=checklist)
+        .order_by("display_order", "checklist_item_id")
+    )
+    submissions = {
+        row.action_code: row
+        for row in PortalDocumentationSubmission.objects.select_for_update()
+        .select_related("document")
+        .filter(loan_application=application, successor__isnull=True)
+    }
+    issued_types = {"term_sheet", "loan_agreement"}
+    current_ids = legal_document_selectors.latest_generated_metadata_by_type(
+        application_id=application.pk,
+        document_types=issued_types,
+    )
+    current_documents = {
+        row.document_type: row
+        for row in LoanDocument.objects.select_for_update()
+        .select_related("document", "document_template")
+        .filter(pk__in=current_ids.values())
+    }
+    return PortalActionDecision(
+        application=application,
+        checklist=checklist,
+        items=items,
+        completion_action_item_ids=frozenset(
+            document_checklist_actions.borrower_safe_completed_item_ids(checklist)
+        ),
+        current_submissions=submissions,
+        current_issued_documents=current_documents,
+        approved=True,
+    )
+
+
+def _serialize_item(
+    item, checklist, completion_action_item_ids, submission, current_issued_document
+):
     section, instruction = _ACTION_PRESENTATION[item.item_code]
     authority = _resolve_action_authority(
         item=item,
@@ -156,7 +223,7 @@ def _serialize_item(item, checklist, completion_action_item_ids, submission):
         ),
         "upload_allowed": authority.upload_allowed,
         "reupload_allowed": authority.reupload_allowed,
-        "download": _download_metadata(item),
+        "download": _download_metadata(item, current_issued_document),
     }
 
 
@@ -178,8 +245,7 @@ def _resolve_action_authority(*, item, completion_action_item_ids, submission):
         upload_allowed=mutable and submission is None,
         reupload_allowed=mutable and submission is not None,
     )
-def _download_metadata(item):
-    document = item.loan_document
+def _download_metadata(item, document):
     if (
         item.item_code not in {"term_sheet", "loan_agreement"}
         or document is None
@@ -198,43 +264,18 @@ def _download_metadata(item):
 @transaction.atomic
 def upload(*, actor, application_id, action_code, request):
     context = resolve_context(actor=actor, application_id=application_id)
-    application = LoanApplication.objects.select_for_update().get(pk=context.application.pk)
-    if (
-        application.application_status != LoanApplication.STATUS_APPROVED_BY_SANCTION
-        or document_checklist_facts.resolve_approved_facts(application_id=application.pk) is None
-    ):
+    decision = _resolve_locked_decision(context=context)
+    application = decision.application
+    if not decision.approved:
         raise PortalDocumentationUnavailable(
             "Documentation uploads require a current sanction approval."
         )
-    checklist = DocumentChecklist.objects.select_for_update().filter(
-        loan_application=application
-    ).first()
-    item = (
-        ChecklistItem.objects.select_for_update()
-        .filter(document_checklist=checklist, item_code=action_code)
-        .first()
-        if checklist
-        else None
-    )
-    previous = (
-        PortalDocumentationSubmission.objects.select_for_update()
-        .filter(
-            loan_application=application,
-            action_code=action_code,
-            successor__isnull=True,
-        )
-        .order_by("-created_at", "-portal_documentation_submission_id")
-        .first()
-    )
-    completed_item_ids = (
-        document_checklist_actions.borrower_safe_completed_item_ids(checklist)
-        if checklist
-        else set()
-    )
+    item = next((row for row in decision.items if row.item_code == action_code), None)
+    previous = decision.current_submissions.get(action_code)
     authority = (
         _resolve_action_authority(
             item=item,
-            completion_action_item_ids=completed_item_ids,
+            completion_action_item_ids=decision.completion_action_item_ids,
             submission=previous,
         )
         if item is not None
@@ -247,6 +288,12 @@ def upload(*, actor, application_id, action_code, request):
             "This documentation action is not currently available for upload."
         )
     uploaded_file, notes = _validate_upload_request(request)
+    document_version = (
+        PortalDocumentationSubmission.objects.filter(
+            loan_application=application, action_code=action_code
+        ).count()
+        + 1
+    )
     document = document_services.store_document_upload(
         user=actor,
         request=request,
@@ -255,24 +302,26 @@ def upload(*, actor, application_id, action_code, request):
         sensitivity_level="confidential",
         related_entity_type="loan_application",
         related_entity_id=application.pk,
-        provenance_metadata={
-            "portal_account_id": str(context.account.pk),
-            "member_id": str(context.account.member_id),
-            "loan_application_id": str(application.pk),
-            "action_code": action_code,
-            "document_version": (
-                PortalDocumentationSubmission.objects.filter(
-                    loan_application=application, action_code=action_code
-                ).count()
-                + 1
-            ),
-            "prior_current_document_id": (
-                str(previous.document_id) if previous else None
-            ),
-            "reason": "borrower_portal_submission",
-            "request_id": request.headers.get("X-Request-ID"),
-            "outcome": "accepted",
-        },
+        audit_spec=document_services.DocumentAuditSpec(
+            action="portal.document.uploaded",
+            actor_type="portal_account",
+            metadata={
+                "portal_account_id": str(context.account.pk),
+                "member_id": str(context.account.member_id),
+                "loan_application_id": str(application.pk),
+                "action_code": action_code,
+                "document_version": document_version,
+                "document_category": "legal",
+                "sensitivity_level": "confidential",
+                "reason": "borrower_portal_submission",
+                "request_id": request.headers.get("X-Request-ID"),
+                "network": {
+                    "ip_address": document_services.request_ip(request),
+                    "user_agent": document_services.request_user_agent(request),
+                },
+                "outcome": "accepted",
+            },
+        ),
     )
     submission = PortalDocumentationSubmission.objects.create(
         loan_application=application,
@@ -327,28 +376,23 @@ def _validate_upload_request(request):
     if field_errors:
         raise ValidationError(field_errors)
     return uploaded_file, notes
+@transaction.atomic
 def download(*, actor, application_id, action_code, request, storage=None):
     context = resolve_context(actor=actor, application_id=application_id)
-    application = context.application
+    decision = _resolve_locked_decision(context=context)
+    application = decision.application
     if (
-        application.application_status != LoanApplication.STATUS_APPROVED_BY_SANCTION
-        or document_checklist_facts.resolve_approved_facts(application_id=application.pk) is None
+        not decision.approved
         or action_code not in {"term_sheet", "loan_agreement"}
     ):
         raise PortalDocumentationNotFound
-    item = (
-        ChecklistItem.objects.select_related("loan_document__document")
-        .filter(
-            document_checklist__loan_application=application,
-            item_code=action_code,
-            required_flag=True,
-            applicable_flag=True,
-        )
-        .first()
-    )
-    document = item.loan_document if item else None
+    item = next((row for row in decision.items if row.item_code == action_code), None)
+    document = decision.current_issued_documents.get(action_code)
     if (
-        document is None
+        item is None
+        or not item.required_flag
+        or not item.applicable_flag
+        or document is None
         or document.document is None
         or document.renderer_validation_status != document.RENDERER_CURRENT_VALIDATED
     ):
@@ -383,22 +427,20 @@ def download(*, actor, application_id, action_code, request, storage=None):
         )
     except ValidationError:
         raise PortalDocumentationNotFound
-    AuditLog.objects.create(
-        actor_user=actor,
-        actor_type="portal_account",
-        action="documents.file.downloaded",
-        entity_type="document_file",
-        entity_id=document.document_id,
-        old_value_json=None,
-        new_value_json={
+    document_services.record_document_audit(
+        user=actor,
+        request=request,
+        document=document.document,
+        spec=document_services.DocumentAuditSpec(
+            action="portal.document.downloaded",
+            actor_type="portal_account",
+            metadata={
             "portal_account_id": str(context.account.pk),
             "member_id": str(context.account.member_id),
             "loan_application_id": str(application.pk),
             "action_code": action_code,
-            "document_id": str(document.document_id),
             "document_version": document.document_template.template_version,
             "document_category": document.document_category,
-            "checksum_sha256": document.document.checksum_sha256,
             "request_id": request.headers.get("X-Request-ID"),
             "sensitivity_level": document.document.sensitivity_level,
             "reason": "borrower_portal_published_document",
@@ -408,9 +450,8 @@ def download(*, actor, application_id, action_code, request, storage=None):
             },
             "capability_verified": True,
             "outcome": "accepted",
-        },
-        ip_address=document_services.request_ip(request),
-        user_agent=document_services.request_user_agent(request),
+            },
+        ),
     )
     return PortalDocumentContent(
         body=body, file_name=document.document.file_name,

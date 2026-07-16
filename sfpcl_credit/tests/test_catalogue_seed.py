@@ -76,9 +76,10 @@ class CatalogueSeedTests(TestCase):
         seeded_teams = set(Team.objects.values_list("team_code", flat=True))
         self.assertEqual(seeded_teams, set(TEAM_CODES))
 
-        # External / future roles are seeded but inactive / non-MVP (slice req 4).
+        # Borrower portal access is live; only the remaining future external
+        # identities stay inactive / non-MVP.
         borrower = Role.objects.get(role_code="borrower_portal_user")
-        self.assertEqual(borrower.status, "inactive")
+        self.assertEqual(borrower.status, "active")
         self.assertFalse(borrower.is_system_role)
 
     def test_seed_creates_representative_permission_per_module_group(self):

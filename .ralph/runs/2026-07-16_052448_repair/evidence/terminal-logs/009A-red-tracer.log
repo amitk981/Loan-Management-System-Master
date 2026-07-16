@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_credit_manager_creates_draft_request_after_terminal_sanction (sfpcl_credit.tests.test_sap_customer_profile_request_api.SapCustomerProfileRequestApiTests.test_credit_manager_creates_draft_request_after_terminal_sanction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_052448_repair/sfpcl_credit/tests/test_sap_customer_profile_request_api.py", line 46, in test_credit_manager_creates_draft_request_after_terminal_sanction
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 404 != 200 : b'\n<!doctype html>\n<html lang="en">\n<head>\n  <title>Not Found</title>\n</head>\n<body>\n  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>\n</body>\n</html>\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

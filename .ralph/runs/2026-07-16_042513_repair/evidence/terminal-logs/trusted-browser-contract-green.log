@@ -1,0 +1,7 @@
+Command:
+bash -lc 'source scripts/lib/ralph-browser-acceptance.sh; ralph_validate_trusted_browser_acceptance docs/slices/008M2-documentation-workspace-contract-and-visual-closure.md sfpcl-lms'
+
+Exit: 0
+Output: (none)
+
+The strict browser contract parser accepts the repaired selected-slice section.

@@ -1,0 +1,59 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_033311_repair/.ralph/runs/2026-07-16_042513_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/staff-documentation-workspace.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/staff-documentation-workspace.e2e.spec.ts
+
+[2m[WebServer] [22m[15/Jul/2026 23:11:14] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "POST /api/v1/auth/login/ HTTP/1.1" 200 1317
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "GET /api/v1/auth/me/ HTTP/1.1" 200 1851
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[15/Jul/2026 23:11:17] "GET /api/v1/dashboard/ HTTP/1.1" 200 937
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "OPTIONS /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 863
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "GET /api/v1/documentation-workspaces/?page=1&page_size=20 HTTP/1.1" 200 863
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "OPTIONS /api/v1/loan-applications/34d998b6-6d97-4292-a594-a9ad3f8381b7/documentation-workspace/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "GET /api/v1/loan-applications/34d998b6-6d97-4292-a594-a9ad3f8381b7/documentation-workspace/ HTTP/1.1" 200 8944
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "OPTIONS /api/v1/loan-documents/0b189660-136b-4e36-a1b4-4defab5ed47c/stamp-duty-record/ HTTP/1.1" 200 0
+[2m[WebServer] [22mConflict: /api/v1/loan-documents/0b189660-136b-4e36-a1b4-4defab5ed47c/stamp-duty-record/
+[2m[WebServer] [22m[15/Jul/2026 23:11:18] "POST /api/v1/loan-documents/0b189660-136b-4e36-a1b4-4defab5ed47c/stamp-duty-record/ HTTP/1.1" 409 304
+  ✘  1 [chromium] › staff-documentation-workspace.e2e.spec.ts:17:5 › 008M2 closes the real staff documentation workspace contract (7.8s)
+
+
+  1) [chromium] › staff-documentation-workspace.e2e.spec.ts:17:5 › 008M2 closes the real staff documentation workspace contract 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText('Action accepted. The canonical documentation snapshot was refreshed.')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Action accepted. The canonical documentation snapshot was refreshed.')[22m
+
+
+      24 |   await termSheet.getByRole('button', { name: 'Record stamp' }).click(); await page.getByLabel('Stamp amount').fill('500.00');
+      25 |   await page.getByRole('button', { name: 'Confirm action' }).click();
+    > 26 |   await expect(page.getByText('Action accepted. The canonical documentation snapshot was refreshed.')).toBeVisible();
+         |                                                                                                        ^
+      27 |
+      28 |   const boundary = await page.evaluate(async () => {
+      29 |     const session = JSON.parse(localStorage.getItem('sfpcl_staff_auth_session') || '{}');
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-16_033311_repair/sfpcl-lms/e2e/staff-documentation-workspace.e2e.spec.ts:26:104
+
+  1 failed
+    [chromium] › staff-documentation-workspace.e2e.spec.ts:17:5 › 008M2 closes the real staff documentation workspace contract 
+
+Exit code: 1

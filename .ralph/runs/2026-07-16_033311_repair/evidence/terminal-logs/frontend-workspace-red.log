@@ -1,0 +1,15 @@
+Command:
+npm test -- --run src/pages/documentation/DocumentationHub.test.tsx
+
+Result: RED (expected before implementation)
+
+DocumentationHub.test.tsx: 10 tests, 4 failed and 6 passed.
+
+- Queue failure still rendered "All documentation is complete".
+- The API client had no `action_code` and no backend-owned workspace queue route.
+- The Document Pack did not expose the independently authorised Verify action beside Download.
+- A returned security action navigated away and never called its production endpoint.
+
+Test Files: 1 failed (1)
+Tests: 4 failed | 6 passed (10)
+Duration: 1.63s

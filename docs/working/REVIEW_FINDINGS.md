@@ -2,6 +2,416 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-16 07:41 - Architecture Review 2026-07-16_072819_architecture_review
+
+Reviewed completed work since architecture-review commit `ad590fb7`:
+- `008L5-current-stage4-and-response-evidence-closure` (`7cb7b5d6`)
+- `008M2-documentation-workspace-contract-and-visual-closure` (`8de3658c`)
+- `009A-sap-customer-code-request` (`3a5d3b09`)
+- `009B-sap-customer-code-confirmation-and-reuse` (`14e68a6f`)
+
+The review checked `git diff ad590fb7...14e68a6f` after excluding Ralph run logs, all 48 changed
+production/test/migration/documentation files, the four completed slice contracts, Epic 008/009
+digests, and the cited functional, screen, integration, API, auth, data-model, frontend, and
+codebase-design sources. Standards and Spec ran as isolated parallel passes. Three review-only
+executable probes passed while reproducing contract defects: an enabled Loan Agreement completion
+action executes as HTTP 409, a `sent` SAP request leaves its assignee with HTTP 403 and no attachment
+path to the Excel, and a changed reuse-completion payload returns HTTP 200 as replay. Probe source
+and output are retained under this run's `evidence/terminal-logs/`; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - SAP audit truth omits mandatory vocabulary and actor context
+
+`finance/modules/sap_customer_request.py` lines 135-167 and `sap_customer_code.py` lines 194-223
+write safe ids, but completion uses `finance.sap_customer_code.completed` rather than the mandatory
+`sap.customer_code_created` event in auth-permissions §30.1. Create/send/complete evidence also
+omits role and team at action time required by §30.2. This weakens a Critical financial audit even
+though request/IP/user-agent and secret redaction are substantive. `009B2` restores the exact event
+and complete actor/action context without duplicating ledgers.
+
+#### Finding 2 - High - The workspace has become a second cross-domain policy and query owner
+
+`processes/staff_documentation_workspace.py` lines 136-715 locks every checklist, serializes full
+workspaces to build queue rows, queries legal/security/member/approval tables directly, infers
+authorisation by exception class name, and selects the first active Company Secretary. This drifts
+from codebase-design §§14-15/27/36-37/42: those decisions belong behind deep legal/security/selectors,
+and list work must stay bounded. `008M4` restores narrow owner projections, deterministic governed
+identity, and page-bounded queue reads after `008M3` closes behavior.
+
+#### Finding 3 - High - SAP is implemented outside its source-defined owner and adapter seam
+
+Codebase-design §§16.1/20.3-20.4/36.2 define `sap_workflow.modules.sap_customer_profile` and one
+replaceable Manual/Fake/Future `SapAdapter`. The new `finance` modules instead own policy, storage,
+communication dispatch, and SAP state directly, so downstream loan/disbursement work would bind to
+private Finance implementation details. `009B2` establishes the public SAP owner and manual adapter
+while preserving applied table/data history.
+
+#### Finding 4 - Medium - Finance HTTP adapters also own domain request parsing
+
+`finance/views.py` forwards raw dictionaries while `sap_customer_request.py` lines 188-203 and
+`sap_customer_code.py` lines 453-524 own transport shape/type/time parsing. Codebase-design §§6.3-
+6.4 assign HTTP validation to thin serializer/adapters and domain invariants to the module. `009B2`
+must leave one strict shared contract without creating view/domain parsing drift.
+
+#### Finding 5 - Medium - 008M2 introduced a new facts layout despite the frozen prototype
+
+`DocumentationHub.tsx` lines 285-291 adds a four-column responsive facts grid. The values are
+source-required, but FRONTEND_DESIGN_RULES permits label/data/action wiring only and forbids a new
+layout. `008M4` moves those facts into the existing queue/card/table composition and recaptures the
+declared visual contract.
+
+#### Finding 6 - Low - The documentation client duplicates the shared authenticated transport
+
+`documentationWorkspaceApi.ts` lines 138-161 reimplements session loading, auth/request-id headers,
+fetch, envelope parsing, and error mapping already owned by `authSession.ts`'s
+`authenticatedRequest`/`authenticatedPaginatedRequest`. `008M4` keeps only workspace DTO mapping at
+this feature seam.
+
+### Spec
+
+#### Finding 1 - High - Required upload and correction action families remain absent
+
+008M2 requirement 3 and screen S26/S27/S35 require reachable signed-document upload/re-upload and
+request/return-for-correction actions. `staff_documentation_workspace.py` lines 312-497 projects
+generation/completion/verification/signature/stamp/notary/mismatch/approval only; backend and
+frontend tests freeze that reduced list. `008M3` adds owner-derived upload/correction/condition paths
+without generic navigation or parallel state.
+
+#### Finding 2 - High - Document Pack silently drops all but the first mutation
+
+008M2 requirement 7 says Download and every independently authorised mutation remain visible.
+`DocumentPackModal.tsx` lines 116-141 selects `available_actions[0]` and renders one button, while
+its test supplies exactly one action. A row with Complete, Signature, Stamp, and Notary therefore
+loses three actions. `008M3` renders/tests the full ordered list beside independent Download.
+
+#### Finding 3 - High - Advertised actions are not executable in the same current state
+
+The workspace advertises `complete_item` from role plus pending/document presence, not the owning
+completion decision. The executable review probe received `enabled: true` for the pending Loan
+Agreement and then `409 CHECKLIST_EVIDENCE_INCOMPLETE` from that action URL with the supplied server
+payload. This contradicts 008M2 requirements 3-4 and API §44. `008M3` makes owner-issued decisions,
+server-owned canonical identities, and public action parity the projection contract.
+
+#### Finding 4 - High - `sent` does not deliver the retained Annexure-I
+
+009B requirement 1 and integrations §8.1 require the official handoff to include the exact Excel.
+`sap_customer_code.py` lines 52-70 verifies the bytes, then creates pending Communication/
+Notification rows whose body contains only request/file UUIDs; the model/helper has no attachment,
+capability, or delivery call. The probe confirmed status `sent`, pending communication, completion-
+only task URL, no attachment field, and HTTP 403 for the frozen assignee's workbook read. `009B2`
+makes adapter acceptance and assignee-scoped audited delivery prerequisite to `sent`.
+
+#### Finding 5 - Medium - Reused-code completion replay is not exact
+
+009B requirement 5 says changed completion facts return 409. In `sap_customer_code.py` lines 415-
+450, reuse compares optional fields only when supplied and stores no request-local accepted input.
+The probe completed once with optional fields omitted, then added the retained vendor/time/notes;
+both calls returned 200 with the same response. `009B2` freezes the canonical first payload/digest
+and treats later addition or omission as changed replay.
+
+No material unrelated scope creep was found. 008L5 substantively binds bank decisions to the exact
+current case/decision and makes MP11 response truth depend on a coherent response→resubmission
+chain. 008M2 substantively restores readable code, strict pagination, redacted queue/timeline,
+download capability checks, truthful queue errors, real-Django browser execution, and four retained
+screenshots, but M06-FR-005-018 remain only partially reachable through the workspace until M3/M4;
+M06-FR-019 remains explicitly owned by 009D. 009A substantively implements M07-FR-003-005. 009B
+implements member code uniqueness/reuse and assignee confirmation portions of M07-FR-001/002/007-
+008, but M07-FR-006 delivery and exact audit/replay remain partial until B2; M07-FR-009-010 belong
+to later Epic 009 payment/readiness slices. A-124 honestly records the temporary outstanding-loan
+reuse limit, so no undocumented business rule was invented.
+
+### Corrective queue, state, and context
+
+`008M3-documentation-workspace-executable-action-closure` closes missing/dropped/non-executable
+actions and server-owned command identity. `008M4-documentation-workspace-deep-module-and-design-
+closure` then restores deep owners, bounded queries, shared transport, governed identities, and the
+fixed visual composition. `009B2-sap-delivery-replay-audit-and-owner-seam-closure` closes delivery,
+exact replay, mandatory audit, and the SAP owner/adapter seam. `009C` now depends on B2 and uses
+`loans.modules.loan_account_lifecycle`; `009D` uses the source-defined
+`disbursements.modules.disbursement_readiness`. No slice is Blocked, so no stale prerequisite needed
+reopening. CONTEXT, handoff, progress, state, and the architecture-review descriptor were refreshed.
+No ADR was added because source documents already decide every owner, adapter, audit, action, and
+visual rule recorded here.
+
+Summary: Standards found 3 High, 2 Medium, and 1 Low issue; the worst issues are missing Critical
+SAP audit/owner truth and a cross-domain workspace policy owner. Spec found 4 High and 1 Medium
+issue; the worst issues are actions that are absent/dropped/non-executable and a SAP handoff marked
+sent without delivering its Excel.
+
+## 2026-07-16 02:38 - Architecture Review 2026-07-16_023011_architecture_review
+
+Reviewed completed work since architecture-review commit `e1e3c665`:
+- `008K5-final-evidence-authority-and-migration-closure` (`6d389b43`)
+- `008L4-portal-production-boundary-and-browser-proof` (`7dfea592`)
+- `CR-008-document-template-constraint-migration-nondeterminism` (`0eae53d7`)
+- `008M-documentation-hub-frontend-wiring` (`74440c6d`)
+
+The review checked `git diff e1e3c665...74440c6d`, every production/test/migration hunk in those
+four slices, retained run evidence, Epic 005/008 digests, M03/M06 coverage, and the cited screen,
+functional, API, auth, data-model, frontend, and codebase-design rules. Standards and Spec ran as
+isolated parallel passes. Two executable review probes reached clean failing assertions: a latest
+approval case changed to rejected still accepted a new immutable bank decision with HTTP 200, and
+deleting the sole deficiency-response workflow event still projected `responded`. No production
+code changed.
+
+The range also contains owner/orchestrator workflow repairs `bf78775b` (trusted-browser fail-fast)
+and `88072f45` (emergency-CR priority). They are not product-slice implementation and are therefore
+listed separately rather than attributed to the four contracts. Their focused shell regressions
+exercise the changed selection/gate behavior; no product finding below depends on them.
+
+### Standards
+
+#### Finding 1 - Critical - The diff limit was satisfied by minifying production and tests
+
+The failed 008M repair says 2,084 changed lines exceeded the mandatory 2,000-line stop and that
+further reduction would require minification. The successful repair then says it changed only
+“representation density” to reach 1,994. The result is
+`processes/staff_documentation_workspace.py` lines 4-75, where imports, branches, queries, whole
+serializers, and workflow policies share physical lines, plus similarly compressed backend and
+frontend tests. This is a direct reinterpretation of the diff-limit safety gate and materially
+damages locality/readability, contrary to DECISION_POLICY §4, AFK_RUNBOOK stopping conditions, and
+codebase-design §§2/3.8/42.1. `008M2` must restore readable deep-module structure while meeting the
+limit through narrow scope and reuse.
+
+#### Finding 2 - High - The workspace invents a private available-actions contract
+
+`staff_documentation_workspace.py` lines 33/41-57 returns `{action, action_url, ...}` and the new
+frontend DTO/tests freeze that shape. API §44 and auth-permissions §23.2 require `action_code`,
+`label`, `enabled`, `disabled_reason`, `required_permission`, and optional `required_role`. The new
+endpoint therefore creates a parallel action vocabulary at exactly the shared server-authority
+seam. `008M2` restores the standard object while retaining safe endpoint/method extensions.
+
+#### Finding 3 - High - Queue failure is rendered alongside a false all-complete success
+
+`DocumentationHub.tsx` lines 35-44 records a queue error but leaves `queue=[]`; lines 105/109-110
+then render both the error and “All documentation is complete.” This violates the binding truthful
+error/empty-state rule and 008M requirement 6. The six frontend tests omit queue failure. `008M2`
+adds mutually exclusive loading/error/unauthorized/empty/success acceptance.
+
+#### Finding 4 - High - Bank verification still treats an application status as terminal sanction
+
+K5 promised the canonical Stage-4 workflow scope inside `applications.modules.bank_verification`,
+but lines 58-69 check only `application_status == approved_by_sanction_committee`; unlike the
+checklist/portal owners, they never recompute approval-owned current terminal facts. The executable
+probe retained that label, changed the latest approval case to rejected, confirmed
+`resolve_approved_facts` returned `None`, then received HTTP 200 and a second decision/audit/
+workflow/version ledger. `008L5` binds decisions to the exact current case/decision under lock and
+adds the case-invalidation race.
+
+#### Finding 5 - Medium - Staff signed-download acceptance does not test its central contract
+
+The sole new backend staff-download test checks renderer replacement. It never reads content
+successfully, asserts exactly one generic staff audit, or covers tamper, expiry, cross-user,
+cross-application, cross-item/action, and missing-permission denial with zero audit. The frontend
+descriptor/token checks likewise have no direct test. This leaves a high-sensitivity boundary
+under-tested against auth-permissions §§22/37 and codebase-design §26.3; `008M2` adds the matrix.
+
+### Spec
+
+#### Finding 1 - High - S28-S34 actions are labels or dead navigation, not wired workflows
+
+008M requirement 2 says every PoA/tri-party/SH-4/CDSL/cheque workflow gets status and actions, and
+S28-S34 also require uploads, stamp/notary, correction, signature-mismatch/bank resolution, and
+verification actions. The backend fabricates some permission-only `manage_*` URLs, but
+`DocumentationHub.startAction` lines 69-77 discards their endpoint/method and merely opens the
+generic application page. Stamp/notary and bank-mismatch actions are absent entirely. Backend tests
+assert action names and the frontend checks labels; neither executes a manage action. `008M2`
+derives actions from their owner modules and makes every displayed action reachable and tested.
+
+#### Finding 2 - High - 008M was marked complete without its mandatory screenshots
+
+008M acceptance requires screenshots of checklist blockers, a security workflow panel, restricted
+state, and final approval. The successful repair's `evidence/visual-acceptance.md` explicitly says
+screenshots were not recollected, and its evidence folder has none, yet the slice is Complete.
+jsdom assertions are useful but do not satisfy the visual contract or FRONTEND_DESIGN_RULES.
+`008M2` declares one real-Django trusted-browser spec and the exact four outputs, run twice.
+
+#### Finding 3 - High - The S26/S35 source surface is only partially represented
+
+S26 requires sanctioned amount, shareholding mode, per-workflow status, required set, bank status,
+checklist status, and current owner in the operational queue; S35 requires an approval timeline,
+comments, and readiness. 008M loads the generic applications list at page size 100 and shows only
+reference/borrower, while its Audit tab is hard-coded “No audit events recorded yet.” This is not
+the claimed S26-S35 workspace even though mock imports are gone. `008M2` completes the locked,
+paginated, redacted queue and timeline without exposing evidence internals.
+
+#### Finding 4 - Medium - Missing response evidence defaults to a valid borrower state
+
+L4 requires the borrower projection and retained workflow evidence to agree. The response query
+collects recognized workflow states, but `_serialize_response` lines 615-624 defaults a missing
+entry to `responded`. The executable probe deleted the response event and GET still returned
+`responded`. Missing, duplicate, wrong-entity, or contradictory evidence is untested. `008L5`
+centralizes fail-closed response-chain reconciliation and blocks resubmission on invalid evidence.
+
+#### Finding 5 - Medium - Document Pack suppresses an independently authorised action
+
+008M sharpening says status, Download, and every mutation flag are independent. In
+`DocumentPackModal.tsx` lines 132-141, an action renders only when no Download exists, so a
+downloadable pending document silently loses a separately authorised Verify/Complete action. The
+main-table test does not exercise this modal combination. `008M2` renders and tests both controls.
+
+CR-008 is faithful: current model and terminal migration state use exact ordered tuples, database
+constraints retain every allowed/denied value, historical migration `0002` is untouched, and the
+run executes migration drift across five hash seeds. K5's unconditional completion reconciliation,
+legal graph anchor, real reader DTO scan, and exact race ledgers are substantive despite the bank
+scope gap. L4's real Django-backed Playwright path, current renderer selector, signed capability,
+single portal audit vocabulary, and normal response transitions are substantive despite the
+missing-evidence fallback. No unrelated product scope creep was found.
+
+M03-FR-010-012 remain substantive; L5 owns the remaining response-evidence honesty gap. M06-FR-001-
+012 and 014-018 retain substantive backend owners, but the staff S26-S35 reachability/evidence is
+partial until M2. M06-FR-013 remains explicitly A-101 configuration-blocked, and M06-FR-019 remains
+deferred to 009D rather than falsely claimed. Epic 008 therefore remains open through L5/M2.
+
+### Corrective queue, state, and context
+
+`008L5-current-stage4-and-response-evidence-closure` depends on completed 008L4 and closes exact
+terminal bank authority plus deficiency workflow-chain truth. `008M2-documentation-workspace-
+contract-and-visual-closure` depends on L5 and completed 008M; it closes readable architecture,
+standard/reachable actions, S26/S35 fidelity, error/pagination/download matrices, and the four
+missing screenshots. `009B` is sharpened behind 009A with the previously unowned source §29.2
+send boundary and exact §29.3 complete/reuse contract. No slice is Blocked, so no stale prerequisite
+required reopening. CONTEXT and the Epic 009 digest are updated. No ADR was added because the source
+already decides terminal sanction, workflow evidence, action shape, screens, and visual proof.
+
+Summary: Standards found 1 Critical, 3 High, and 1 Medium issue; the worst is deliberate diff-limit
+minification. Spec found 3 High and 2 Medium issues; the worst is a staff workflow that displays
+actions it cannot execute and omits other required actions.
+
+## 2026-07-15 18:15 - Architecture Review 2026-07-15_181520_architecture_review
+
+Reviewed completed work since architecture-review commit `8dbefb17`:
+- `008K4-current-evidence-and-security-read-closure` (`36435151`)
+- `CR-005-mp07-completed-download-status-visible` (`525fe572`)
+- `008L3-portal-action-and-resubmission-contract-closure` (`a9a518a8`)
+- `CR-006-register-date-time-timezone-determinism` (`2de35942`)
+- `CR-007-github-ci-missing-legal-pdf-unicode-font` (`615c1876`, closed at `fad70f95`)
+
+The review checked `git diff 8dbefb17...fad70f95`, all production/test/migration/workflow hunks,
+the five completed contracts, Epic 005/007/008 digests, M03/M06 requirement coverage, and cited API,
+data-model, auth, member-portal, deployment, frontend, and codebase-design rules. Standards and Spec
+ran as isolated passes. Two executable review probes reached clean failing assertions: a changed
+completion VersionHistory body still projected complete, and a draft application accepted a new
+immutable bank-verification decision. No production code changed.
+
+### Standards
+
+#### Finding 1 - Critical - Bank verification has role permission but no object or workflow scope
+
+`applications.modules.bank_verification.record_decision` checks only a global Compliance/Company
+Secretary role plus `documents.checklist.update`, then accepts any application id. It never applies
+the §19.2 application object scope or requires the §20.1 approved/documentation state. The review
+probe first retained valid current bank evidence, moved the application to `draft`, submitted a new
+rejected decision through HTTP, and received 200 with a second immutable ledger. Such pre-Stage-4
+evidence can later become checklist authority. `008K5` adds module-owned object/stage enforcement,
+nondisclosure, and a complete zero-write matrix.
+
+#### Finding 2 - High - Borrower-safe reconciliation skips most predicates in the normal case
+
+In `borrower_safe_completed_item_ids`, the inline `... == audits[0].pk if len(audits) == 1 else
+False and ...` is parsed as one conditional expression. When the normal single audit exists, every
+following version-body/current-terminal/digest predicate is outside the evaluated branch. The review
+probe changed only the sole completion VersionHistory request id and the item remained borrower-safe
+complete. This contradicts K4's exact action/audit/workflow/version/current-evidence contract and can
+surface stale truth to MP07. `008K5` makes every predicate unconditional and regression-tests changed
+durable/current evidence.
+
+#### Finding 3 - High - A generic cross-app migration operation obscures checklist schema ownership
+
+`applications.0016` adds two fields to `legal_documents.ChecklistAction` through the new
+`shared.migration_operations.AddFieldToAppModel`. The physical migration depends on legal 0012, but
+the legal app's own future branch does not own or necessarily depend on that schema state. This
+works on the current full fresh plan but violates codebase-design §§6.2/7.1/36.2 and creates fragile
+future/partial migration ordering. `008K5` adds a non-destructive legal-owned graph anchor and
+forward/reverse/fresh-install proof without rewriting applied history.
+
+#### Finding 4 - High - Trusted browser tests replace every backend boundary with fixtures
+
+Both new Playwright files route `**/api/v1/**`; login, scope, upload, refetch, signed capability,
+tamper denial, crafted POST denial, lifecycle guard, and resubmission are all in-memory booleans and
+responses. The screenshots are genuine browser renders, but Django receives none of the promised
+business requests. This does not satisfy L3's explicit “real portal session” scenario or its matched
+frontend/API evidence requirement. `008L4` moves the same four-screen contract onto the real Django
+test server and permits mocks only at genuine external adapters.
+
+#### Finding 5 - Medium - Workflow response and concurrency evidence are incomplete
+
+The new bank-decision POST returns a resource DTO without the §6.3 entity/previous/new/action body.
+K4's generation races assert only one returned winner plus action/document existence, not the exact
+request, current document, action, audit, workflow, version, terminal digest, or loser zero-ledger.
+The portal suite has no real completion-versus-upload race. `008K5` closes the action envelope and
+exact PostgreSQL ledger; `008L4` adds the real portal writer race.
+
+#### Finding 6 - Medium - Portal GET and POST do not share one locked decision
+
+POST locks application/checklist/item, but `get_projection` merely enters an atomic transaction and
+reads application/checklist/submission facts without acquiring the same locks. A concurrent
+completion can therefore produce a mixed projection rather than the one locked authority required
+by L3. `008L4` exposes one locked decision interface for read and write and proves coherent winner/
+loser artifacts.
+
+### Spec
+
+#### Finding 1 - High - Browser acceptance does not exercise the specified production path
+
+L3's Trusted Browser Scenario requires a real portal session, real upload/refetch, signed download
+and tamper rejection, crafted POST denial, and guarded resubmission. Catch-all request interception
+means the production backend is never exercised, so the required acceptance and screenshots do not
+prove those behaviors. `008L4` owns an exact real-boundary rerun twice.
+
+#### Finding 2 - High - K4's current-evidence promise is false for changed retained bodies
+
+K4 requires missing, extra, changed, deleted, or cross-object action/workflow/audit/version/current
+evidence to block both Company Secretary and borrower-safe projections. The executable changed-
+VersionHistory probe remains green in the projection because of the precedence defect above.
+`008K5` makes this acceptance matrix executable through public projections and approval.
+
+#### Finding 3 - High - The required real-row reader matrix remains partial
+
+K4 explicitly replaces K2's 404-only finance proof with real PoA, SH-4, CDSL, cheque, package, and
+checklist rows before/after approval for every reader role and CFC zero-read state. Individual module
+tests now validate real redacted rows for one principal role, but the cross-role package test still
+has no nested instruments and accepts 404. The retained focused ordinary-read evidence ran only one
+PoA test. `008K5` adds real rows and full DTO scans for the complete role/state matrix.
+
+#### Finding 4 - Medium - Portal source audit and response states remain inconsistent
+
+Member-portal source §11 requires the critical actions `portal.document.uploaded` and
+`portal.document.downloaded`; L3 retains only `documents.file.*`. Resubmission writes a response
+workflow state `submitted_for_review`, while `_serialize_response` always returns `responded` and
+the immutable response has no corresponding retained state. Source wins over the digest's parallel-
+vocabulary sharpening. `008L4` keeps one central audit writer but emits the source-defined portal
+action once, and makes response projection/history agree without resolving the staff-owned
+deficiency.
+
+No unrelated scope creep was found. CR-005 correctly keeps Complete beside Download without
+reopening mutation; CR-006 fixes Asia/Kolkata display while retaining UTC instants; CR-007 only
+provisions the existing fail-closed renderer font and its complete remote CI run is green. K4's
+immutable bank evidence, ordinary DTO redaction, mask tightening, and shared generation lock are
+substantive; L3's signed capabilities, application transition owner, no-store downloads, and visual
+composition are substantive despite the gaps above.
+
+M03-FR-010-012 remain substantive for staff completeness and unique numbering; borrower
+resubmission evidence needs L4 state/browser closure. M06-FR-005/006/018 remain partial until K5
+closes bank authority and exact current projection. M06-FR-007-012/014-017 retain substantive
+owners. M06-FR-013 remains explicitly A-101 configuration-blocked; M06-FR-019 remains deferred to
+009D. Epic 008 remains open through K5/L4/008M.
+
+### Corrective queue, state, and context
+
+`008K5-final-evidence-authority-and-migration-closure` depends on completed 008L3 and closes bank
+scope/envelope, borrower reconciliation, legal migration ownership, exact race evidence, and the
+real-reader matrix. `008L4-portal-production-boundary-and-browser-proof` depends on K5 and closes
+the real authenticated browser boundary, locked read/write decision, current renderer download,
+source audit vocabulary, and response-state truth. `008M` now depends on L4. No slice is Blocked,
+so no stale prerequisite required reopening. No ADR was added because source documents already
+decide object/stage access, app ownership, audit vocabulary, current evidence, and browser scope.
+
+Summary: Standards found 1 Critical, 3 High, and 2 Medium issues; the worst is globally writable
+immutable bank authority. Spec found 3 High and 1 Medium issues; the worst is acceptance evidence
+that never reaches the production backend.
+
 ## 2026-07-15 09:11 - Architecture Review 2026-07-15_085859_architecture_review
 
 Reviewed completed work since architecture-review commit `fc8d3380`:

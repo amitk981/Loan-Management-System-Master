@@ -1,0 +1,13 @@
+Commands:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage run --source=sfpcl_credit manage.py test sfpcl_credit.tests --verbosity 1
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85
+
+Exit codes: all 0
+System check identified no issues (0 silenced).
+No migration changes detected.
+Found 897 tests.
+Ran 897 tests in 343.655s.
+OK (skipped=46)
+Coverage: 37101 statements, 3160 missed, 91% total; configured floor 85%.

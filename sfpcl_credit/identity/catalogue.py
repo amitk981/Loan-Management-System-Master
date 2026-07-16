@@ -4,7 +4,7 @@ Single source of truth for backend RBAC codes, transcribed from
 ``docs/source/auth-permissions.md``:
 
 * Permissions   -> §12.1-12.13 (module_name is the code's leading segment).
-* Roles         -> §13.1 (internal) and §4.2 (external / future, seeded inactive).
+* Roles         -> §13.1 (internal) and §4.2 (external; future-only roles remain inactive).
 * Teams         -> §9.3 / §38.2.
 * Role links    -> §15.1-15.12 "Key Permissions" (filtered to codes present in §12;
                    codes §15 references but §12 omits are recorded in ASSUMPTIONS A-007).
@@ -276,8 +276,11 @@ INTERNAL_ROLES = [
     ("management_viewer", "Management Viewer", "Read-only dashboards and reports", False),
 ]
 
+ACTIVE_EXTERNAL_ROLES = [
+    ("borrower_portal_user", "Borrower / Member", "Borrower-facing self-service access", False),
+]
+
 EXTERNAL_FUTURE_ROLES = [
-    ("borrower_portal_user", "Borrower / Member", "Future borrower-facing self-service access", False),
     ("nominee", "Nominee", "Future limited access for nominee acknowledgment", False),
     ("bank_user", "Bank User", "Not recommended for MVP; bank evidence handled internally", False),
     ("subsidiary_user", "Subsidiary Company User", "Future access for produce deduction confirmation", False),
@@ -288,6 +291,9 @@ EXTERNAL_FUTURE_ROLES = [
 ROLES = [
     (code, name, description, is_system, "active")
     for (code, name, description, is_system) in INTERNAL_ROLES
+] + [
+    (code, name, description, is_system, "active")
+    for (code, name, description, is_system) in ACTIVE_EXTERNAL_ROLES
 ] + [
     (code, name, description, is_system, "inactive")
     for (code, name, description, is_system) in EXTERNAL_FUTURE_ROLES

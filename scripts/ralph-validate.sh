@@ -123,6 +123,7 @@ failures=0
 failed_gate_logs=()
 backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
 postgres_acceptance_passed=0
+required_browser_failed=0
 
 run_postgresql_acceptance_once() {
   local ordinal="$1"
@@ -291,6 +292,7 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; t
   browser_timezone=0
   browser_first=0
   browser_second=0
+  browser_second_deferred=0
   browser_screenshots=1
   ralph_validate_trusted_browser_acceptance "$slice_file" "$project_path" && browser_contract=1
   rg -q "git rev-parse .*--git-common-dir" "$project_path/e2e/README.md" && browser_readme=1
@@ -300,8 +302,12 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; t
     while IFS= read -r screenshot; do
       [[ -n "$screenshot" ]] && rm -f "$run_dir/evidence/screenshots/$screenshot"
     done < <(ralph_trusted_e2e_screenshots "$slice_file")
-    run_trusted_browser_acceptance_once 1 && browser_first=1
-    run_trusted_browser_acceptance_once 2 && browser_second=1
+    if run_trusted_browser_acceptance_once 1; then
+      browser_first=1
+      run_trusted_browser_acceptance_once 2 && browser_second=1
+    else
+      browser_second_deferred=1
+    fi
     while IFS= read -r screenshot; do
       [[ -z "$screenshot" ]] && continue
       [[ -s "$run_dir/evidence/screenshots/$screenshot" ]] || browser_screenshots=0
@@ -317,7 +323,13 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; t
     (( browser_readme == 1 )) && echo "- PASS: README E2E command resolves the shared venv through Git's common directory." || echo "- FAIL: README E2E command does not resolve the shared venv through Git's common directory."
     (( browser_timezone == 1 )) && echo "- PASS: Playwright pins the dashboard baseline timezone to Asia/Kolkata." || echo "- FAIL: Playwright does not pin the dashboard baseline timezone to Asia/Kolkata."
     (( browser_first == 1 )) && echo "- PASS: first trusted slice-specific browser run passed." || echo "- FAIL: first trusted slice-specific browser run did not pass."
-    (( browser_second == 1 )) && echo "- PASS: second trusted slice-specific browser run passed." || echo "- FAIL: second trusted slice-specific browser run did not pass."
+    if (( browser_second == 1 )); then
+      echo "- PASS: second trusted slice-specific browser run passed."
+    elif (( browser_second_deferred == 1 )); then
+      echo "- SKIP: second trusted slice-specific browser run deferred because the first run failed."
+    else
+      echo "- FAIL: second trusted slice-specific browser run did not pass."
+    fi
     (( browser_screenshots == 1 )) && echo "- PASS: every declared browser screenshot exists and is non-empty." || echo "- FAIL: one or more declared browser screenshots are missing or empty."
     echo
     echo "Declared specs:"
@@ -331,6 +343,7 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; t
     :
   else
     failures=$((failures + 1))
+    required_browser_failed=1
     failed_gate_logs+=("e2e-results.md")
   fi
 else
@@ -353,7 +366,16 @@ run_backend_gate() {
   fi
 }
 
-if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
+if (( required_browser_failed == 1 )); then
+  # A required browser failure already makes this candidate unmergeable. Keep
+  # the cheap repository/evidence checks below, but defer the expensive backend
+  # suite until the browser repair is green. The repair rerun executes every
+  # backend gate normally, so no acceptance gate is removed from a passing run.
+  write_skipped backend-check "required trusted browser acceptance failed; deferred until repair"
+  write_skipped backend-test "required trusted browser acceptance failed; deferred until repair"
+  write_skipped backend-migrations "required trusted browser acceptance failed; deferred until repair"
+  write_skipped backend-coverage "required trusted browser acceptance failed; deferred until repair"
+elif [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
   if [[ "$(enabled backend_check)" == "true" ]]; then
     run_backend_gate backend-check "\"$venv_python\" $backend_dir/manage.py check" || failures=$((failures + 1))
   else

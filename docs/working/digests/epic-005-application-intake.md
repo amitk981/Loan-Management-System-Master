@@ -1,5 +1,14 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## Architecture Review 2026-07-15 18:15 - Real Resubmission Evidence
+
+008L3 correctly delegates the application change to the guarded application owner and keeps the
+staff deficiency open. Its Playwright MP11 flow intercepts every API call, so it does not prove a
+real session, upload, guard, resubmission, or queue return. In addition, workflow history advances
+the immutable response to `submitted_for_review` while the borrower projection always reports
+`responded`. Corrective 008L4 makes the real backend drive the browser proof twice and keeps the
+response projection/history truthful without taking staff resolution authority.
+
 ## 008L3 Borrower Resubmission Closure (2026-07-15)
 
 The portal process now resolves active portal-account/member/application scope once, locks the

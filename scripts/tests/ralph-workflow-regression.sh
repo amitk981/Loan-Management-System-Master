@@ -350,6 +350,117 @@ if ralph_validate_trusted_browser_acceptance "$fixture_dir/missing-browser-contr
   fail "localhost E2E slice without a trusted browser contract did not fail closed"
 fi
 
+# A failed required browser run must reach repair evidence quickly. It must not
+# spend another full backend-test/coverage cycle on a candidate that is already
+# unmergeable; the repair rerun restores every backend gate after browser green.
+browser_failfast_repo="$fixture_dir/browser-failfast-repo"
+browser_failfast_run="browser-failfast-run"
+browser_failfast_run_dir="$browser_failfast_repo/.ralph/runs/$browser_failfast_run"
+browser_failfast_bin="$fixture_dir/browser-failfast-bin"
+browser_invocations="$fixture_dir/browser-invocations.log"
+backend_invocation="$fixture_dir/backend-invocation.log"
+mkdir -p \
+  "$browser_failfast_repo/.ralph" \
+  "$browser_failfast_repo/docs/slices" \
+  "$browser_failfast_repo/frontend/e2e" \
+  "$browser_failfast_repo/backend" \
+  "$browser_failfast_run_dir" \
+  "$browser_failfast_bin"
+cat > "$browser_failfast_repo/.ralph/config.yaml" <<'EOF'
+project_dir: frontend
+backend_dir: backend
+build: false
+install: false
+typecheck: false
+lint: false
+unit_tests: false
+backend_check: true
+backend_tests: true
+backend_migrations: true
+backend_coverage: true
+max_changed_files: 30
+max_lines_changed: 2000
+EOF
+printf '%s\n' '{"completed_slices": []}' > "$browser_failfast_repo/.ralph/state.json"
+printf '%s\n' '{}' > "$browser_failfast_repo/.ralph/permissions.json"
+cat > "$browser_failfast_repo/docs/slices/999Y-browser-failfast.md" <<'EOF'
+# Slice 999Y: Browser fail-fast fixture
+
+## Status
+Not Started
+
+## Depends On
+- None
+
+## Runtime Capabilities
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+- Spec: `e2e/failfast.e2e.spec.ts`
+- Screenshot: `failfast.png`
+EOF
+touch "$browser_failfast_repo/frontend/e2e/failfast.e2e.spec.ts"
+cat > "$browser_failfast_repo/frontend/e2e/README.md" <<'EOF'
+Resolve the shared environment with `git rev-parse --git-common-dir`.
+EOF
+cat > "$browser_failfast_repo/frontend/playwright.config.ts" <<'EOF'
+export default { use: { timezoneId: 'Asia/Kolkata' } }
+EOF
+cat > "$browser_failfast_bin/npm" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo browser >> "$BROWSER_INVOCATIONS"
+exit 1
+EOF
+chmod +x "$browser_failfast_bin/npm"
+cat > "$browser_failfast_repo/backend/manage.py" <<'EOF'
+from pathlib import Path
+import os
+
+Path(os.environ["BACKEND_INVOCATION"]).write_text("backend gate ran\n")
+EOF
+for artifact in prompt.md changed-files.txt final-summary.md; do
+  printf 'fixture\n' > "$browser_failfast_run_dir/$artifact"
+done
+printf '1. Exercise browser fail-fast.\n' > "$browser_failfast_run_dir/execution-plan.md"
+printf 'Low risk fixture.\n' > "$browser_failfast_run_dir/risk-assessment.md"
+cat > "$browser_failfast_run_dir/review-packet.md" <<'EOF'
+## Result
+In Progress
+EOF
+git init -q "$browser_failfast_repo"
+git -C "$browser_failfast_repo" config user.name "Ralph Regression"
+git -C "$browser_failfast_repo" config user.email "ralph-regression@example.invalid"
+git -C "$browser_failfast_repo" add .
+git -C "$browser_failfast_repo" commit -qm fixture
+set +e
+PATH="$browser_failfast_bin:$PATH" \
+  BROWSER_INVOCATIONS="$browser_invocations" \
+  BACKEND_INVOCATION="$backend_invocation" \
+  scripts/ralph-validate.sh \
+    --run-id "$browser_failfast_run" \
+    --worktree "$browser_failfast_repo" \
+    --mode normal_run \
+    --slice 999Y-browser-failfast \
+    > "$fixture_dir/browser-failfast.stdout" \
+    2> "$fixture_dir/browser-failfast.stderr"
+browser_failfast_rc=$?
+set -e
+[[ "$browser_failfast_rc" == "1" ]] \
+  || fail "failed trusted browser fixture returned $browser_failfast_rc instead of validation failure"
+[[ "$(wc -l < "$browser_invocations" | xargs)" == "1" ]] \
+  || fail "validator did not stop trusted browser repetitions after the first failure"
+[[ ! -e "$backend_invocation" ]] \
+  || fail "backend gates ran after required trusted browser acceptance failed"
+for backend_result in backend-check backend-test backend-migrations backend-coverage; do
+  grep -qF 'Skipped: required trusted browser acceptance failed; deferred until repair' \
+    "$browser_failfast_run_dir/${backend_result}-results.md" \
+    || fail "$backend_result did not record browser fail-fast deferral"
+done
+grep -qF 'e2e-results.md:- FAIL: first trusted slice-specific browser run did not pass.' \
+  "$browser_failfast_run_dir/failure-summary.md" \
+  || fail "browser fail-fast did not leave repair-readable failure evidence"
+
 # Agent output is untrusted text. It must never drive loop control flow.
 if rg -n 'grep -q .*No eligible slice found|grep -q .*has been vetoed by the owner|grep -q .*MERGE_FAILED|grep -q .*AGENT_LIMIT_EXHAUSTED' scripts/ralph-loop.sh; then
   fail "ralph-loop.sh still derives control flow from agent transcript text"
@@ -543,6 +654,34 @@ make_fixture_slice 001D "Not Started"
 make_fixture_slice 001E "Not Started" 009Z
 make_fixture_slice 001F Superseded
 make_fixture_slice 001G "Not Started" 001F
+
+priority_fixture="$fixture_dir/priority-slices"
+mkdir -p "$priority_fixture"
+cat > "$priority_fixture/008M-ordinary.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+cat > "$priority_fixture/CR-900-emergency.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+[[ "$(ralph_first_grabbable_slice "$priority_fixture")" == "CR-900-emergency.md" ]] \
+  || fail "accepted emergency CR was not selected before ordinary backlog work"
+cat > "$priority_fixture/CR-900-emergency.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- 999Z
+EOF
+[[ "$(ralph_first_grabbable_slice "$priority_fixture" 2>/dev/null)" == "008M-ordinary.md" ]] \
+  || fail "dependency-blocked emergency CR froze unrelated ordinary work"
 
 [[ "$(ralph_slice_status "$slices_fixture/001A-fixture.md")" == "Complete" ]] \
   || fail "slice status helper misread a Complete slice"

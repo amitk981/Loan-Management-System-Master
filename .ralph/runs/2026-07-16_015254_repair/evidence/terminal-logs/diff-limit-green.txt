@@ -1,0 +1,7 @@
+Command: repository validator-equivalent tracked-plus-untracked line-count loop
+
+tracked_lines=1865
+untracked_lines=129
+total_lines=1994
+limit=2000
+verdict=PASS

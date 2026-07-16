@@ -37,6 +37,13 @@ class PortalDeficiencyResponseApiTests(TestCase):
             risk_level=Permission.RISK_MEDIUM,
         )
         RolePermission.objects.create(role=staff_role, permission=read_permission)
+        resolve_permission = Permission.objects.create(
+            permission_code="applications.deficiency.resolve",
+            permission_name="Resolve application deficiencies",
+            module_name="applications",
+            risk_level=Permission.RISK_HIGH,
+        )
+        RolePermission.objects.create(role=staff_role, permission=resolve_permission)
         self.member = self._member("M-008L2", "FOL-008L2")
         self.portal_user = self._user("member.portal@sfpcl.example", portal_role)
         self.portal_account = PortalAccount.objects.create(
@@ -171,11 +178,34 @@ class PortalDeficiencyResponseApiTests(TestCase):
         self.assertIsNone(self.deficiency.resolved_by_user)
         self.assertIsNone(self.deficiency.resolved_at)
         for action in (
-            "documents.file.uploaded",
+            "portal.document.uploaded",
             "portal.deficiency.responded",
             "applications.loan_application.resubmitted",
         ):
             self.assertTrue(AuditLog.objects.filter(action=action).exists())
+        self.assertFalse(
+            AuditLog.objects.filter(action="documents.file.uploaded").exists()
+        )
+        document_audit = AuditLog.objects.get(action="portal.document.uploaded")
+        self.assertEqual(document_audit.actor_type, "portal_account")
+        self.assertEqual(
+            document_audit.new_value_json,
+            {
+                "portal_account_id": str(self.portal_account.pk),
+                "member_id": str(self.member.pk),
+                "loan_application_id": str(self.application.pk),
+                "action_code": "six_month_bank_statement",
+                "deficiency_id": str(self.deficiency.pk),
+                "document_id": upload_data["document"]["document_id"],
+                "document_version": 1,
+                "document_category": "finance",
+                "sensitivity_level": "confidential",
+                "reason": "borrower_portal_deficiency_response",
+                "request_id": "upload-1",
+                "network": {"ip_address": "127.0.0.1", "user_agent": ""},
+                "outcome": "accepted",
+            },
+        )
         response_id = upload_data["response"]["deficiency_response_id"]
         self.assertTrue(
             WorkflowEvent.objects.filter(
@@ -194,6 +224,14 @@ class PortalDeficiencyResponseApiTests(TestCase):
             ).exists()
         )
         self.assertTrue(WorkflowEvent.objects.filter(entity_type="loan_application", entity_id=self.application.pk, from_state="incomplete_returned", to_state="submitted").exists())
+        canonical = self.client.get(
+            self._url(), headers={"Authorization": f"Bearer {token}"}
+        )
+        self.assertEqual(canonical.status_code, 200, canonical.content)
+        self.assertEqual(
+            canonical.json()["data"]["items"][0]["response"]["response_status"],
+            "submitted_for_review",
+        )
         lifecycle_audit = AuditLog.objects.get(
             action="applications.loan_application.resubmitted"
         )
@@ -236,6 +274,135 @@ class PortalDeficiencyResponseApiTests(TestCase):
         self.assertIn(str(self.application.pk), str(queue.json()["data"]))
         status = self.client.get(f"/api/v1/portal/applications/{self.application.pk}/", headers={"Authorization": f"Bearer {token}"})
         self.assertIn("Application resubmitted", [event["event"] for event in status.json()["data"]["timeline"]])
+
+    def test_missing_response_workflow_cannot_project_responded_truth(self):
+        token = self._token()
+        uploaded = self._upload(token)
+        self.assertEqual(uploaded.status_code, 200, uploaded.content)
+        response_id = uploaded.json()["data"]["response"]["deficiency_response_id"]
+        WorkflowEvent.objects.filter(
+            workflow_name="application_deficiency",
+            entity_type="application_deficiency_response",
+            entity_id=response_id,
+        ).delete()
+
+        projection = self.client.get(
+            self._url(), headers={"Authorization": f"Bearer {token}"}
+        )
+
+        self.assertEqual(projection.status_code, 200, projection.content)
+        data = projection.json()["data"]
+        self.assertEqual(
+            data["items"][0]["response"]["response_status"],
+            "evidence_invalid",
+        )
+        self.assertFalse(data["resubmission_allowed"])
+        self.deficiency.refresh_from_db()
+        self.assertEqual(
+            self.deficiency.resolution_status,
+            ApplicationDeficiency.STATUS_OPEN,
+        )
+
+    def test_invalid_response_event_matrix_blocks_projection_and_resubmission(self):
+        token = self._token()
+        uploaded = self._upload(token)
+        self.assertEqual(uploaded.status_code, 200, uploaded.content)
+        response = ApplicationDeficiencyResponse.objects.get(
+            pk=uploaded.json()["data"]["response"]["deficiency_response_id"]
+        )
+        response_reason = (
+            "Borrower uploaded a deficiency response for completeness review."
+        )
+        submitted_reason = (
+            "Borrower resubmitted the response for staff completeness review."
+        )
+        valid_responded = {
+            "workflow_name": "application_deficiency",
+            "entity_type": "application_deficiency_response",
+            "entity_id": response.pk,
+            "from_state": "absent",
+            "to_state": "responded",
+            "triggered_by_user": self.portal_user,
+            "trigger_reason": response_reason,
+        }
+        invalid_cases = {
+            "missing": [],
+            "duplicate": [valid_responded, valid_responded],
+            "wrong_workflow": [
+                {**valid_responded, "workflow_name": "loan_application"}
+            ],
+            "wrong_entity": [
+                {**valid_responded, "entity_type": "application_deficiency"}
+            ],
+            "wrong_actor": [
+                {**valid_responded, "triggered_by_user": self.staff_user}
+            ],
+            "wrong_state": [
+                {**valid_responded, "from_state": "pending"}
+            ],
+            "reversed": [
+                {
+                    **valid_responded,
+                    "from_state": "responded",
+                    "to_state": "submitted_for_review",
+                    "trigger_reason": submitted_reason,
+                },
+                valid_responded,
+            ],
+            "extra_terminal": [
+                valid_responded,
+                {
+                    **valid_responded,
+                    "from_state": "responded",
+                    "to_state": "resolved",
+                    "trigger_reason": "Unexpected terminal response state.",
+                },
+            ],
+        }
+        for name, events in invalid_cases.items():
+            with self.subTest(name=name):
+                WorkflowEvent.objects.filter(entity_id=response.pk).delete()
+                retained_ids = [
+                    str(WorkflowEvent.objects.create(**event).pk) for event in events
+                ]
+                projection = self.client.get(
+                    self._url(), headers={"Authorization": f"Bearer {token}"}
+                )
+                self.assertEqual(projection.status_code, 200, projection.content)
+                data = projection.json()["data"]
+                self.assertEqual(
+                    data["items"][0]["response"]["response_status"],
+                    "evidence_invalid",
+                )
+                self.assertFalse(data["resubmission_allowed"])
+                self.assertTrue(
+                    all(event_id not in str(data) for event_id in retained_ids)
+                )
+                resubmit = self.client.post(
+                    self._url("resubmit/"),
+                    data={},
+                    content_type="application/json",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                self.assertEqual(resubmit.status_code, 400, resubmit.content)
+                assert_error_envelope(self, resubmit.json(), "VALIDATION_ERROR")
+                self.assertFalse(
+                    AuditLog.objects.filter(
+                        action="applications.loan_application.resubmitted"
+                    ).exists()
+                )
+                self.assertFalse(
+                    WorkflowEvent.objects.filter(
+                        entity_type="loan_application",
+                        entity_id=self.application.pk,
+                        to_state="submitted",
+                    ).exists()
+                )
+                self.deficiency.refresh_from_db()
+                self.assertEqual(
+                    self.deficiency.resolution_status,
+                    ApplicationDeficiency.STATUS_OPEN,
+                )
 
     def test_cross_member_read_upload_and_resubmit_are_nondisclosing_and_audited(self):
         other_member = self._member("M-OTHER-L2", "FOL-OTHER-L2")
@@ -334,7 +501,10 @@ class PortalDeficiencyResponseApiTests(TestCase):
         tampered = self.client.get(download_url.replace("token=", "token=tampered"), headers={"Authorization": f"Bearer {token}"})
         self.assertEqual(tampered.status_code, 404)
         assert_error_envelope(self, tampered.json(), "NOT_FOUND")
-        self.assertTrue(AuditLog.objects.filter(action="documents.file.downloaded").exists())
+        self.assertTrue(AuditLog.objects.filter(action="portal.document.downloaded").exists())
+        self.assertFalse(
+            AuditLog.objects.filter(action="documents.file.downloaded").exists()
+        )
 
     def test_deficiency_resubmission_cannot_mutate_stage4_checklist_truth(self):
         checklist = DocumentChecklist.objects.create(
@@ -360,6 +530,42 @@ class PortalDeficiencyResponseApiTests(TestCase):
         self.assertFalse(VersionHistory.objects.filter(versioned_entity_type__in=["checklist_item_completion", "document_checklist_approval"]).exists())
         self.assertFalse(AuditLog.objects.filter(action__startswith="document_checklist.").exists())
         self.assertFalse(WorkflowEvent.objects.filter(workflow_name="documentation_checklist").exists())
+
+    def test_staff_resolution_removes_the_open_item_without_rewriting_response_history(self):
+        portal_token = self._token()
+        upload = self._upload(portal_token, name="statement.pdf")
+        self.assertEqual(upload.status_code, 200, upload.content)
+        response_id = upload.json()["data"]["response"]["deficiency_response_id"]
+        resubmit = self.client.post(
+            self._url("resubmit/"),
+            data={},
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {portal_token}"},
+        )
+        self.assertEqual(resubmit.status_code, 200, resubmit.content)
+
+        resolved = self.client.post(
+            f"/api/v1/deficiencies/{self.deficiency.pk}/resolve/",
+            data={"resolution_notes": "Replacement statement verified."},
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {self._token(staff=True)}"},
+        )
+        self.assertEqual(resolved.status_code, 200, resolved.content)
+        projection = self.client.get(
+            self._url(), headers={"Authorization": f"Bearer {portal_token}"}
+        )
+        self.assertEqual(projection.status_code, 200, projection.content)
+        self.assertEqual(projection.json()["data"]["items"], [])
+        self.assertFalse(projection.json()["data"]["resubmission_allowed"])
+        retained = ApplicationDeficiencyResponse.objects.get(pk=response_id)
+        self.assertEqual(retained.response_remark, "The missing statement is attached.")
+        self.assertTrue(
+            WorkflowEvent.objects.filter(
+                entity_type="application_deficiency_response",
+                entity_id=retained.pk,
+                to_state="submitted_for_review",
+            ).exists()
+        )
 
     def test_staff_and_suspended_portal_sessions_cannot_use_deficiency_routes(self):
         routes = (("get", self._url()), ("post", self._url("resubmit/")))

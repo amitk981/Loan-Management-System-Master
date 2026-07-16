@@ -62,27 +62,7 @@ def bank_verification_decision(request, loan_application_id):
             "Bank verification decision failed validation.",
             services.validation_field_errors(exc),
         )
-    return success_response(
-        {
-            "bank_verification_decision_id": str(decision.pk),
-            "loan_application_id": str(decision.loan_application_id),
-            "member_id": str(decision.member_id),
-            "bank_account_id": str(decision.bank_account_id),
-            "cancelled_cheque_id": str(decision.cancelled_cheque_id),
-            "cancelled_cheque_document_id": str(
-                decision.cancelled_cheque_document_id
-            ),
-            "decision_status": decision.decision_status,
-            "verifier_user_id": str(decision.verifier_user_id),
-            "verified_at": decision.verified_at.isoformat(),
-            "request_id": decision.request_id,
-            "decision_version": decision.decision_version,
-            "workflow_event_id": str(decision.workflow_event_id),
-            "audit_log_id": str(decision.audit_log_id),
-            "version_history_id": str(decision.version_history_id),
-        },
-        request,
-    )
+    return success_response(bank_verification.action_response(decision), request)
 
 
 @require_http_methods(["GET", "POST"])

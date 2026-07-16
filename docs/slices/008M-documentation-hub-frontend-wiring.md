@@ -1,7 +1,7 @@
 # Slice 008M: Documentation Hub Frontend Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package
@@ -14,7 +14,7 @@ Wire the staff documentation surface to the backend built in 008A-008K: Document
 Compliance and CS staff work the real legal/security package — blockers, checklist state, and approval sequence come from the backend, so disbursement readiness reflects the truth.
 
 ## Depends On
-- 008L3
+- 008L4
 
 ## Source References
 - docs/source/screen-spec.md screens S26-S35 and section 9.5 (documentation rules)
@@ -114,6 +114,46 @@ Member portal documentation actions (008L done), disbursement readiness consumpt
   `documents.file.downloaded` vocabulary with actor/application/document/version/category/
   sensitivity/reason/request/network/outcome facts. Do not add portal- or hub-specific parallel
   file audit semantics.
+
+## Architecture Review Sharpening (2026-07-15 18:15)
+
+- Depend on 008L4 and reuse only its real-boundary-proven current-document capability and locked
+  action projection. Do not copy the former catch-all mocked browser fixtures into staff acceptance.
+- Treat every K4-era borrower-safe completion as untrusted until 008K5 has reconciled its exact
+  action/audit/workflow/version/current-terminal body and digest. A terminal badge or action remains
+  blocked when any durable identity differs.
+- Consume only the source-defined single file audit vocabulary delivered by 008L4; the staff hub
+  must not add a hub-specific duplicate event for the same upload or download.
+
+## 008K5 Completion Sharpening (2026-07-15)
+
+- Render the bank-verification action only from sanctioned Stage-4 server authority and consume its
+  §6.3 `available_actions`; role or permission strings alone must never expose a writer.
+- Treat the ordinary package/checklist DTO allowlist as closed. The hub must not request or retain
+  terminal evidence bodies, request/network facts, signer snapshots, internal action identities,
+  hashes, ciphertext, checksums, or storage keys in component state or error output.
+
+## 008L4 Completion Sharpening (2026-07-15)
+
+- Reuse the canonical latest-current renderer selector and its server-issued signed capability;
+  never recover a downloadable Term Sheet or Loan Agreement from a checklist FK, cached descriptor,
+  portal submission row, or locally retained file id. A generated successor must replace the staff
+  action on refetch and make predecessor content nondisclosing.
+- Treat projection flags, terminal status, and download metadata as one server snapshot. Do not
+  combine an application status from one request with checklist/action facts from another or infer
+  a mutation from a terminal badge.
+- Keep staff and portal audit semantics distinct: staff document activity continues to consume the
+  central generic document events, while borrower portal uploads/downloads expose the source-defined
+  `portal.document.uploaded`/`portal.document.downloaded` events exactly once. The hub must not write
+  either family or duplicate a retained backend event.
+
+## CR-008 Completion Sharpening (2026-07-15)
+
+- CR-008 changes migration serialization only. Keep the existing template status vocabulary
+  (`draft`, `approved`, `retired`) and nullable borrower variants (`individual_farmer`, `fpc`,
+  `fpo`) unchanged; do not add client-side aliases, sorting, or variant mappings.
+- Generation controls must continue to consume the server-selected approved/effective template and
+  returned version. Constraint ordering is not presentation order and grants no client authority.
 
 ## Risk Level
 Medium

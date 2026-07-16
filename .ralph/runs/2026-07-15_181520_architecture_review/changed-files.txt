@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-15_181520_architecture_review/
+?? docs/slices/008K5-final-evidence-authority-and-migration-closure.md
+?? docs/slices/008L4-portal-production-boundary-and-browser-proof.md

@@ -1,0 +1,10 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_catalogue_seed sfpcl_credit.tests.test_portal_auth_api sfpcl_credit.tests.test_seed_portal_e2e_fixture --verbosity 1
+
+Exit code: 0
+Found 25 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 183 permissions, 20 roles, 8 teams, 203 role-permission links.
+Portal E2E fixture seeded and replayed idempotently.
+Ran 25 tests in 3.463s.
+OK

@@ -1,0 +1,5 @@
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+src/pages/documentation/DocumentationHub.test.tsx(25,5): error TS1136: Property assignment expected.

@@ -45,6 +45,41 @@ ralph_slice_unmet_dependencies() {
   fi
 }
 
+# Print slice paths in execution priority. CR slices can only enter an active
+# product backlog through the owner's emergency `ralph-intake.sh --now` path,
+# so a grabbable CR must run before ordinary numbered work. Under normal
+# maintenance-stage intake there are no unfinished product slices, making the
+# same ordering harmless.
+ralph_slice_execution_order() {
+  local slices_dir="${1:-docs/slices}" file base
+  for file in "$slices_dir"/CR-*.md; do
+    [[ -f "$file" ]] && printf '%s\n' "$file"
+  done
+  for file in "$slices_dir"/*.md; do
+    [[ -f "$file" ]] || continue
+    base="$(basename "$file")"
+    [[ "$base" == CR-* ]] && continue
+    printf '%s\n' "$file"
+  done
+}
+
+# Print the basename of the highest-priority grabbable slice. Dependency-
+# blocked emergency CRs do not freeze unrelated work: report the blocker and
+# continue through the ordinary queue.
+ralph_first_grabbable_slice() {
+  local slices_dir="${1:-docs/slices}" file unmet
+  while IFS= read -r file; do
+    [[ -f "$file" ]] || continue
+    [[ "$(ralph_slice_status "$file")" == "Not Started" ]] || continue
+    if unmet="$(ralph_slice_unmet_dependencies "$file" "$slices_dir")"; then
+      basename "$file"
+      return 0
+    fi
+    echo "Skipping $(basename "$file" .md): waiting on $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')" >&2
+  done < <(ralph_slice_execution_order "$slices_dir")
+  return 1
+}
+
 # Lint the whole slice queue so newly created slices (architecture-review
 # correctives especially) stay executable: every slice has a recognized
 # status, every pending slice declares "## Depends On", every reference

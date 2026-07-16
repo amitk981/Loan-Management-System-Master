@@ -409,6 +409,43 @@ def create_internal_team_communication(
     return row, notification
 
 
+def create_internal_user_task(
+    *, sender, recipient, related_entity_type, related_entity_id, subject, body,
+    action_label, action_url, notification_type, category,
+):
+    """Persist one adapter-owned direct communication and its in-app task."""
+    communication_id = uuid.uuid4()
+    row = Communication.objects.create(
+        communication_id=communication_id,
+        related_entity_type=related_entity_type,
+        related_entity_id=related_entity_id,
+        recipient_party_type="user",
+        recipient_party_id=recipient.pk,
+        recipient_address=recipient.email,
+        channel=Communication.CHANNEL_EMAIL,
+        subject_snapshot=subject,
+        body_snapshot=body,
+        sent_by_user=sender,
+        delivery_status=Communication.DELIVERY_PENDING,
+        external_message_id=f"manual:{communication_id}",
+    )
+    task = Notification.objects.create(
+        communication=row,
+        notification_type=notification_type,
+        category=category,
+        severity=Notification.SEVERITY_INFO,
+        title=subject,
+        message=body,
+        related_entity_type=related_entity_type,
+        related_entity_id=related_entity_id,
+        action_label=action_label,
+        action_url=action_url,
+        sender_user=sender,
+        recipient_user=recipient,
+    )
+    return row, task
+
+
 def mark_notification_read(user, request, notification_id, payload):
     expected_version = _clean_read_state_version(payload)
     with transaction.atomic():

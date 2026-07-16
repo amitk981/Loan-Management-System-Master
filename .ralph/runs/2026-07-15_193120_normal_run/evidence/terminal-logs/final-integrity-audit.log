@@ -1,0 +1,8 @@
+diff_whitespace=PASS
+state_json=PASS
+permissions_json=PASS
+protected_paths=PASS
+catch_all_api_interception=ABSENT
+changed_product_files=18
+changed_lines_excluding_run_artifacts=1887
+limits=PASS (30 files / 2000 lines)

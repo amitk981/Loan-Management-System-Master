@@ -6,6 +6,7 @@ from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
+from sfpcl_credit.finance import views as finance_views
 from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import (
     login,
@@ -28,6 +29,26 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/sap-customer-profile-request/",
+        finance_views.sap_customer_profile_request,
+        name="loan-application-sap-customer-profile-request",
+    ),
+    path(
+        "api/v1/sap-customer-profile-requests/<uuid:sap_customer_profile_request_id>/send/",
+        finance_views.sap_customer_profile_request_send,
+        name="sap-customer-profile-request-send",
+    ),
+    path(
+        "api/v1/sap-customer-profile-requests/<uuid:sap_customer_profile_request_id>/complete/",
+        finance_views.sap_customer_profile_request_complete,
+        name="sap-customer-profile-request-complete",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/sap-customer-code/",
+        finance_views.member_sap_customer_code,
+        name="member-sap-customer-code",
+    ),
     path(
         "api/v1/loan-documents/<uuid:loan_document_id>/verify/",
         legal_document_views.verify_loan_document,
@@ -122,6 +143,22 @@ urlpatterns = [
         "api/v1/loan-applications/<uuid:loan_application_id>/loan-documents/",
         legal_document_views.loan_document_collection,
         name="loan-document-list",
+    ),
+    path(
+        "api/v1/documentation-workspaces/",
+        legal_document_views.documentation_workspace_queue,
+        name="documentation-workspace-queue",
+    ),
+    path("api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/", legal_document_views.documentation_workspace, name="loan-application-documentation-workspace"),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/actions/<str:action_id>/",
+        legal_document_views.documentation_workspace_action,
+        name="loan-application-documentation-workspace-action",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/documentation-workspace/<slug:item_code>/download/",
+        legal_document_views.documentation_workspace_download,
+        name="loan-application-documentation-workspace-download",
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/sanction-decision/",

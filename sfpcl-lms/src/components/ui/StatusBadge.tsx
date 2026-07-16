@@ -52,7 +52,7 @@ const sizeStyles = {
 
 export const getStatusFamily = (status: string): Family => {
   const map: Record<string, Family> = {
-    draft: 'neutral', submitted: 'info', incomplete: 'pending', completeness_check: 'info',
+    draft: 'neutral', submitted: 'info', submitted_for_review: 'info', incomplete: 'pending', completeness_check: 'info',
     pending_completeness: 'info', submitted_by_internal_team: 'info',
     reference_generated: 'info', appraisal_in_progress: 'pending', appraisal_pending: 'pending',
     'application_complete_/_appraisal_in_progress': 'pending',
@@ -101,6 +101,7 @@ export const getStatusFamily = (status: string): Family => {
 export const formatStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
     draft: 'Draft', submitted: 'Submitted - Pending Completeness Check',
+    submitted_for_review: 'Submitted for review',
     pending_completeness: 'Pending Completeness',
     submitted_by_internal_team: 'Submitted by Internal Team - Pending Completeness Check',
     completeness_check: 'Under Completeness Check',

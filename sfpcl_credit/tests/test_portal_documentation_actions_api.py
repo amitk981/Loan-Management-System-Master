@@ -1,18 +1,25 @@
-import hashlib
 import tempfile
-from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+from unittest import skipUnless
 from unittest.mock import patch
 from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase, override_settings
+from django.db import close_old_connections, connection, connections
+from django.test import Client, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
-from sfpcl_credit.identity.models import AuditLog, PortalAccount, Role, User
-from sfpcl_credit.legal_documents.models import ChecklistAction, LoanDocument
-from sfpcl_credit.legal_documents.modules import document_checklist
+from sfpcl_credit.documents import services as document_services
+from sfpcl_credit.documents.storage import LocalDocumentStorage
+from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, Role, RolePermission, User
+from sfpcl_credit.legal_documents.models import ChecklistAction, LoanDocument, SignatureRecord
+from sfpcl_credit.legal_documents.modules import document_checklist, document_generation
+from sfpcl_credit.legal_documents.modules.checklist_actions import RequestMetadata
+from sfpcl_credit.processes import document_checklist_actions, portal_documentation_actions
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
-from sfpcl_credit.tests import test_document_checklist_api
+from sfpcl_credit.tests import test_document_checklist_api, test_loan_document_generation_api
 class PortalDocumentationActionsApiTests(TestCase):
     password = "PortalDocuments123!"
     def setUp(self):
@@ -143,12 +150,35 @@ class PortalDocumentationActionsApiTests(TestCase):
             submissions[0].delete()
         with self.assertRaises(ValidationError):
             submissions[0].save()
-        self.assertEqual(
-            AuditLog.objects.filter(action="documents.file.uploaded").count(), 2
+        audits = list(
+            AuditLog.objects.filter(action="portal.document.uploaded").order_by(
+                "created_at", "audit_log_id"
+            )
         )
-        self.assertEqual(
-            AuditLog.objects.filter(action="documents.file.uploaded").count(), 2
+        self.assertEqual(len(audits), 2)
+        self.assertFalse(
+            AuditLog.objects.filter(action="documents.file.uploaded").exists()
         )
+        self.assertEqual(audits[0].actor_type, "portal_account")
+        self.assertEqual(
+            audits[0].new_value_json,
+            {
+                "portal_account_id": str(self.portal_account.pk),
+                "member_id": str(self.application.member_id),
+                "loan_application_id": str(self.application.pk),
+                "action_code": "cancelled_cheque",
+                "document_id": str(submissions[0].document_id),
+                "document_version": 1,
+                "document_category": "legal",
+                "sensitivity_level": "confidential",
+                "reason": "borrower_portal_submission",
+                "request_id": None,
+                "network": {"ip_address": "127.0.0.1", "user_agent": ""},
+                "outcome": "accepted",
+            },
+        )
+        self.assertNotIn("storage", str(audits[0].new_value_json).lower())
+        self.assertNotIn("checksum", str(audits[0].new_value_json).lower())
         item.refresh_from_db()
         self.assertEqual(item.completion_status, before["completion_status"])
         self.assertEqual(ChecklistAction.objects.count(), before["checklist_actions"])
@@ -249,19 +279,16 @@ class PortalDocumentationActionsApiTests(TestCase):
         self.assertFalse(
             AuditLog.objects.filter(action="documents.file.uploaded").exists()
         )
-    def test_current_term_sheet_download_uses_borrower_safe_descriptor_and_separate_audit(self):
+    def test_current_term_sheet_download_uses_latest_renderer_without_checklist_pointer(self):
         output, loan_document = self._generated_document(
             "term_sheet", b"current term sheet bytes", "current-term-sheet.pdf")
-        item = self.checklist.items.get(item_code="term_sheet")
-        item.loan_document = loan_document
-        item.save(update_fields=["loan_document"])
         projection = self.client.get(self._collection_url(), headers=self._portal_auth())
         self.assertEqual(projection.status_code, 200, projection.content)
         metadata = self._action(projection.json()["data"], "term_sheet")["download"]
         self.assertEqual(
             metadata,
             {
-                "file_name": "current-term-sheet.pdf",
+                "file_name": output.file_name,
                 "mime_type": "application/pdf",
                 "action_url": (
                     f"/api/v1/portal/applications/{self.application.pk}/"
@@ -289,10 +316,10 @@ class PortalDocumentationActionsApiTests(TestCase):
             descriptor["download_url"],
             headers={**self._portal_auth(), "X-Request-ID": "portal-download-1"})
         self.assertEqual(content.status_code, 200, content.content)
-        self.assertEqual(content.content, b"current term sheet bytes")
+        self.assertTrue(content.content.startswith(b"%PDF"))
         self.assertEqual(content["Cache-Control"], "no-store")
         self.assertEqual(content["Pragma"], "no-cache")
-        audit = AuditLog.objects.get(action="documents.file.downloaded")
+        audit = AuditLog.objects.get(action="portal.document.downloaded")
         self.assertEqual(audit.actor_user, self.portal_user)
         self.assertEqual(audit.new_value_json["portal_account_id"], str(self.portal_account.pk))
         self.assertEqual(audit.new_value_json["member_id"], str(self.application.member_id))
@@ -309,21 +336,22 @@ class PortalDocumentationActionsApiTests(TestCase):
         self.assertTrue(audit.new_value_json["capability_verified"])
         self.assertEqual(audit.new_value_json["request_id"], "portal-download-1")
         self.assertNotIn("storage_key", str(audit.new_value_json).lower())
+        self.assertNotIn("checksum", str(audit.new_value_json).lower())
+        self.assertFalse(
+            AuditLog.objects.filter(action="documents.file.downloaded").exists()
+        )
         denied = self.client.get(
             f"{self._collection_url()}poa/download/",
             headers=self._portal_auth(),
         )
         self.assertEqual(denied.status_code, 404)
         self.assertEqual(
-            AuditLog.objects.filter(action="documents.file.downloaded").count(), 1
+            AuditLog.objects.filter(action="portal.document.downloaded").count(), 1
         )
     def test_signed_download_capability_expires_and_cannot_cross_current_document_or_action(self):
         _output, term_sheet = self._generated_document(
             "term_sheet", b"term sheet v1", "term-sheet-v1.pdf"
         )
-        term_item = self.checklist.items.get(item_code="term_sheet")
-        term_item.loan_document = term_sheet
-        term_item.save(update_fields=["loan_document"])
         action_url = self._action(
             self.client.get(
                 self._collection_url(), headers=self._portal_auth()
@@ -344,19 +372,17 @@ class PortalDocumentationActionsApiTests(TestCase):
         _replacement_output, replacement = self._generated_document(
             "term_sheet", b"term sheet v2", "term-sheet-v2.pdf", template_version="2.0"
         )
-        term_item.loan_document = replacement
-        term_item.save(update_fields=["loan_document"])
         replaced = self.client.get(
             fresh["download_url"], headers=self._portal_auth()
         )
         self.assertEqual(replaced.status_code, 404, replaced.content)
 
+        LoanDocument.objects.filter(pk=replacement.pk).update(
+            execution_status="executed"
+        )
         _agreement_output, agreement = self._generated_document(
             "loan_agreement", b"loan agreement", "loan-agreement.pdf"
         )
-        agreement_item = self.checklist.items.get(item_code="loan_agreement")
-        agreement_item.loan_document = agreement
-        agreement_item.save(update_fields=["loan_document"])
         cross_action = self.client.get(
             fresh["download_url"].replace(
                 "/term_sheet/download/", "/loan_agreement/download/"
@@ -364,7 +390,7 @@ class PortalDocumentationActionsApiTests(TestCase):
             headers=self._portal_auth(),
         )
         self.assertEqual(cross_action.status_code, 404, cross_action.content)
-        self.assertFalse(AuditLog.objects.filter(action="documents.file.downloaded").exists())
+        self.assertFalse(AuditLog.objects.filter(action="portal.document.downloaded").exists())
     def test_stale_status_only_completion_cannot_be_reopened_by_portal_upload(self):
         item = self.checklist.items.get(item_code="cancelled_cheque")
         _output, loan_document = self._generated_document(
@@ -384,6 +410,12 @@ class PortalDocumentationActionsApiTests(TestCase):
         self.assertFalse(projected["upload_allowed"])
         self.assertFalse(projected["reupload_allowed"])
         document_count = DocumentFile.objects.count()
+        generic_upload_audit_count = AuditLog.objects.filter(
+            action="documents.file.uploaded"
+        ).count()
+        portal_upload_audit_count = AuditLog.objects.filter(
+            action="portal.document.uploaded"
+        ).count()
         crafted = self.client.post(
             f"{self._collection_url()}cancelled_cheque/upload/",
             data={"file": self._pdf("crafted.pdf", b"%PDF crafted")},
@@ -391,10 +423,13 @@ class PortalDocumentationActionsApiTests(TestCase):
         )
         self.assertEqual(crafted.status_code, 409, crafted.content)
         self.assertEqual(DocumentFile.objects.count(), document_count)
-        self.assertFalse(
-            AuditLog.objects.filter(
-                action="documents.file.uploaded"
-            ).exists()
+        self.assertEqual(
+            AuditLog.objects.filter(action="documents.file.uploaded").count(),
+            generic_upload_audit_count,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action="portal.document.uploaded").count(),
+            portal_upload_audit_count,
         )
     def test_every_canonical_borrower_upload_code_is_accepted_only_when_applicable(self):
         self.checklist.items.model.objects.filter(
@@ -412,7 +447,10 @@ class PortalDocumentationActionsApiTests(TestCase):
                 self.assertEqual(response.json()["data"]["action_code"], code)
         self.assertEqual(DocumentFile.objects.count(), len(allowed))
         self.assertEqual(AuditLog.objects.filter(
-            action="documents.file.uploaded").count(), len(allowed))
+            action="portal.document.uploaded").count(), len(allowed))
+        self.assertFalse(
+            AuditLog.objects.filter(action="documents.file.uploaded").exists()
+        )
     def test_portal_actor_gets_no_internal_checklist_security_or_reveal_authority(self):
         auth = self._portal_auth()
         denied = (
@@ -444,30 +482,370 @@ class PortalDocumentationActionsApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         return {"Authorization": f"Bearer {response.json()['data']['access_token']}"}
     def _generated_document(self, code, content, file_name, *, template_version="1.0"):
-        checksum = hashlib.sha256(content).hexdigest()
-        output = DocumentFile.objects.create(
-            file_name=file_name, file_extension=".pdf", mime_type="application/pdf",
-            file_size_bytes=len(content), storage_provider="local", storage_key=f"generated/{file_name}",
-            checksum_sha256=checksum, uploaded_by_user=self.fixture.actor,
-            sensitivity_level="confidential")
-        path = Path(self.storage_directory.name, output.storage_key)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(content)
+        del content, file_name
+        for permission_code in (
+            "documents.loan_document.generate",
+            "documents.template.file_reference",
+        ):
+            permission, _ = Permission.objects.get_or_create(
+                permission_code=permission_code,
+                defaults={
+                    "permission_name": permission_code,
+                    "module_name": "documents",
+                    "risk_level": "high",
+                },
+            )
+            RolePermission.objects.get_or_create(
+                role=self.fixture.actor.primary_role, permission=permission
+            )
+        storage = LocalDocumentStorage()
+        source_bytes = test_loan_document_generation_api.LoanDocumentGenerationApiTests._genuine_docx_fixture([])
+        stored = storage.store(ContentFile(source_bytes, name=f"{code}-template.docx"))
+        source = DocumentFile.objects.create(
+            file_name=f"{code}-template.docx",
+            file_extension=".docx",
+            mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            file_size_bytes=stored.file_size_bytes,
+            storage_provider=stored.storage_provider,
+            storage_key=stored.storage_key,
+            checksum_sha256=stored.checksum_sha256,
+            uploaded_by_user=self.fixture.actor,
+            sensitivity_level="internal",
+        )
+        AuditLog.objects.create(
+            actor_user=self.fixture.actor,
+            actor_type="user",
+            action="documents.file.uploaded",
+            entity_type="document_file",
+            entity_id=source.pk,
+            new_value_json={
+                "document_id": str(source.pk),
+                "file_name": source.file_name,
+                "file_extension": source.file_extension,
+                "mime_type": source.mime_type,
+                "file_size_bytes": source.file_size_bytes,
+                "storage_provider": source.storage_provider,
+                "storage_key": source.storage_key,
+                "checksum_sha256": source.checksum_sha256,
+                "sensitivity_level": source.sensitivity_level,
+                "document_category": "template_source",
+                "related_entity_type": "global",
+                "related_entity_id": None,
+            },
+        )
         template = DocumentTemplate.objects.create(
             template_code=f"portal-{code}-v{template_version}", template_name=f"Portal {code}",
             document_type=code, borrower_type="individual_farmer", template_version=template_version,
-            merge_fields_json=[], approval_status="approved", effective_from=timezone.localdate())
-        document = LoanDocument.objects.create(
-            loan_application=self.application, document_type=code, document_category="legal",
-            party_required="borrower", document_template=template, document=output,
-            output_format="pdf", generation_status="generated", execution_status="pending",
-            verification_status="verified", renderer_contract_version=LoanDocument.RENDERER_CONTRACT_V1,
-            renderer_validated_document_id=output.pk,
-            renderer_validated_checksum_sha256=output.checksum_sha256)
-        return output, document
+            template_file=source, merge_fields_json=[], approval_status="approved",
+            effective_from=timezone.localdate())
+        generated = document_generation.generate(
+            actor=self.fixture.actor,
+            application_id=self.application.pk,
+            payload={
+                "document_type": code,
+                "template_id": str(template.pk),
+                "output_format": "pdf",
+            },
+            metadata=document_generation.RequestMetadata(
+                request_id=f"portal-{code}-{template_version}",
+                ip_address="127.0.0.1",
+                user_agent="portal-test",
+            ),
+            storage=storage,
+        )
+        document = LoanDocument.objects.select_related("document").get(
+            pk=generated["loan_document_id"]
+        )
+        return document.document, document
     @staticmethod
     def _pdf(name, content):
         return SimpleUploadedFile(name, content, content_type="application/pdf")
     @staticmethod
     def _action(data, code):
         return next(action for action in data["actions"] if action["action_code"] == code)
+
+
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Authoritative portal completion/upload race requires PostgreSQL row locks.",
+)
+class PortalDocumentationActionConcurrencyTests(TransactionTestCase):
+    reset_sequences = True
+    setUp = PortalDocumentationActionsApiTests.setUp
+    _generated_document = PortalDocumentationActionsApiTests._generated_document
+    _pdf = staticmethod(PortalDocumentationActionsApiTests._pdf)
+    _action = staticmethod(PortalDocumentationActionsApiTests._action)
+
+    def test_completion_and_upload_serialize_to_one_coherent_projection(self):
+        permission, _ = Permission.objects.get_or_create(
+            permission_code="documents.checklist.update",
+            defaults={
+                "permission_name": "Update document checklist",
+                "module_name": "documents",
+                "risk_level": Permission.RISK_HIGH,
+            },
+        )
+        RolePermission.objects.get_or_create(
+            role=self.fixture.actor.primary_role, permission=permission
+        )
+        _output, term_sheet = self._generated_document(
+            "term_sheet", b"unused", "unused.pdf"
+        )
+        for party_type, party_id in (
+            ("borrower", self.application.member_id),
+            ("nominee", self.application.nominee_id),
+            ("user", self.fixture.cfo.pk),
+        ):
+            SignatureRecord.objects.create(
+                loan_document=term_sheet,
+                signer_party_type=party_type,
+                signer_party_id=party_id,
+                signer_name_snapshot=party_type,
+                signature_method="wet_ink",
+                signature_status="signed",
+                signature_mismatch_flag=False,
+                signed_at=timezone.now(),
+                captured_by_user=self.fixture.actor,
+            )
+        item = self.checklist.items.get(item_code="term_sheet")
+        barrier = Barrier(2)
+        baseline = {
+            "documents": DocumentFile.objects.count(),
+            "submissions": apps.get_model(
+                "legal_documents", "PortalDocumentationSubmission"
+            ).objects.count(),
+            "portal_audits": AuditLog.objects.filter(
+                action="portal.document.uploaded"
+            ).count(),
+        }
+
+        def complete():
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=self.fixture.actor.pk)
+                barrier.wait(timeout=10)
+                document_checklist_actions.complete_item(
+                    actor=actor,
+                    checklist_item_id=item.pk,
+                    payload={
+                        "loan_document_id": str(term_sheet.pk),
+                        "remarks": "Concurrent verified Term Sheet.",
+                    },
+                    metadata=RequestMetadata(
+                        request_id="portal-race-complete",
+                        ip_address="127.0.0.1",
+                        user_agent="portal-race",
+                    ),
+                )
+                return "completed"
+            finally:
+                connections["default"].close()
+
+        def upload():
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=self.portal_user.pk)
+                request = RequestFactory().post(
+                    "/portal-race-upload/",
+                    data={"file": self._pdf("signed-term-sheet.pdf", b"%PDF race")},
+                    HTTP_X_REQUEST_ID="portal-race-upload",
+                )
+                barrier.wait(timeout=10)
+                try:
+                    portal_documentation_actions.upload(
+                        actor=actor,
+                        application_id=self.application.pk,
+                        action_code="term_sheet",
+                        request=request,
+                    )
+                    return "uploaded"
+                except portal_documentation_actions.PortalDocumentationUnavailable:
+                    return "denied"
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(complete), pool.submit(upload)]
+            results = {future.result(timeout=30) for future in futures}
+
+        self.assertIn("completed", results)
+        item.refresh_from_db()
+        self.assertEqual(item.completion_status, "complete")
+        projection = portal_documentation_actions.get_projection(
+            actor=User.objects.get(pk=self.portal_user.pk),
+            application_id=self.application.pk,
+        )
+        projected = self._action(projection, "term_sheet")
+        self.assertEqual(projected["status"], "complete")
+        self.assertFalse(projected["upload_allowed"])
+        self.assertFalse(projected["reupload_allowed"])
+        submission_count = apps.get_model(
+            "legal_documents", "PortalDocumentationSubmission"
+        ).objects.count()
+        if "denied" in results:
+            self.assertEqual(DocumentFile.objects.count(), baseline["documents"])
+            self.assertEqual(submission_count, baseline["submissions"])
+            self.assertEqual(
+                AuditLog.objects.filter(action="portal.document.uploaded").count(),
+                baseline["portal_audits"],
+            )
+        else:
+            self.assertEqual(submission_count, baseline["submissions"] + 1)
+            self.assertEqual(
+                AuditLog.objects.filter(action="portal.document.uploaded").count(),
+                baseline["portal_audits"] + 1,
+            )
+
+    def test_generation_and_old_capability_read_serialize_at_application_lock(self):
+        _output, original = self._generated_document(
+            "term_sheet", b"unused", "unused.pdf"
+        )
+        storage = LocalDocumentStorage()
+        source_bytes = (
+            test_loan_document_generation_api.LoanDocumentGenerationApiTests
+            ._genuine_docx_fixture([])
+        )
+        stored = storage.store(ContentFile(source_bytes, name="term-sheet-v2-template.docx"))
+        source = DocumentFile.objects.create(
+            file_name="term-sheet-v2-template.docx",
+            file_extension=".docx",
+            mime_type=(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ),
+            file_size_bytes=stored.file_size_bytes,
+            storage_provider=stored.storage_provider,
+            storage_key=stored.storage_key,
+            checksum_sha256=stored.checksum_sha256,
+            uploaded_by_user=self.fixture.actor,
+            sensitivity_level="internal",
+        )
+        AuditLog.objects.create(
+            actor_user=self.fixture.actor,
+            actor_type="user",
+            action="documents.file.uploaded",
+            entity_type="document_file",
+            entity_id=source.pk,
+            new_value_json={
+                "document_id": str(source.pk),
+                "file_name": source.file_name,
+                "file_extension": source.file_extension,
+                "mime_type": source.mime_type,
+                "file_size_bytes": source.file_size_bytes,
+                "storage_provider": source.storage_provider,
+                "storage_key": source.storage_key,
+                "checksum_sha256": source.checksum_sha256,
+                "sensitivity_level": source.sensitivity_level,
+                "document_category": "template_source",
+                "related_entity_type": "global",
+                "related_entity_id": None,
+            },
+        )
+        template = DocumentTemplate.objects.create(
+            template_code="portal-term-sheet-race-v2",
+            template_name="Portal Term Sheet race v2",
+            document_type="term_sheet",
+            borrower_type="individual_farmer",
+            template_version="2.0",
+            template_file=source,
+            merge_fields_json=[],
+            approval_status="approved",
+            effective_from=timezone.localdate(),
+        )
+        scope = {
+            "portal_account_id": str(self.portal_account.pk),
+            "member_id": str(self.application.member_id),
+            "loan_application_id": str(self.application.pk),
+            "action_code": "term_sheet",
+            "loan_document_id": str(original.pk),
+        }
+        capability = document_services.issue_download_capability(
+            document=original.document, scope=scope
+        )
+        barrier = Barrier(2)
+        baseline_audits = AuditLog.objects.filter(
+            action="portal.document.downloaded"
+        ).count()
+
+        def generate_successor():
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=self.fixture.actor.pk)
+                barrier.wait(timeout=10)
+                result = document_generation.generate(
+                    actor=actor,
+                    application_id=self.application.pk,
+                    payload={
+                        "document_type": "term_sheet",
+                        "template_id": str(template.pk),
+                        "output_format": "pdf",
+                    },
+                    metadata=document_generation.RequestMetadata(
+                        request_id="portal-generation-race",
+                        ip_address="127.0.0.1",
+                        user_agent="portal-race",
+                    ),
+                    storage=LocalDocumentStorage(),
+                )
+                return result["loan_document_id"]
+            finally:
+                connections["default"].close()
+
+        def read_original():
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=self.portal_user.pk)
+                request = RequestFactory().get(
+                    "/portal-race-download/",
+                    data={"content": "1", "token": capability["token"]},
+                    HTTP_X_REQUEST_ID="portal-read-race",
+                )
+                barrier.wait(timeout=10)
+                try:
+                    portal_documentation_actions.download(
+                        actor=actor,
+                        application_id=self.application.pk,
+                        action_code="term_sheet",
+                        request=request,
+                        storage=LocalDocumentStorage(),
+                    )
+                    return "served_original"
+                except portal_documentation_actions.PortalDocumentationNotFound:
+                    return "denied_original"
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            generation_future = pool.submit(generate_successor)
+            read_future = pool.submit(read_original)
+            successor_id = generation_future.result(timeout=30)
+            read_result = read_future.result(timeout=30)
+
+        projection = portal_documentation_actions.get_projection(
+            actor=User.objects.get(pk=self.portal_user.pk),
+            application_id=self.application.pk,
+        )
+        self.assertEqual(
+            self._action(projection, "term_sheet")["download"]["file_name"],
+            LoanDocument.objects.get(pk=successor_id).document.file_name,
+        )
+        expected_audits = baseline_audits + (read_result == "served_original")
+        self.assertEqual(
+            AuditLog.objects.filter(action="portal.document.downloaded").count(),
+            expected_audits,
+        )
+        stale_request = RequestFactory().get(
+            "/portal-stale-download/",
+            data={"content": "1", "token": capability["token"]},
+        )
+        with self.assertRaises(portal_documentation_actions.PortalDocumentationNotFound):
+            portal_documentation_actions.download(
+                actor=User.objects.get(pk=self.portal_user.pk),
+                application_id=self.application.pk,
+                action_code="term_sheet",
+                request=stale_request,
+                storage=LocalDocumentStorage(),
+            )
+        self.assertEqual(
+            AuditLog.objects.filter(action="portal.document.downloaded").count(),
+            expected_audits,
+        )

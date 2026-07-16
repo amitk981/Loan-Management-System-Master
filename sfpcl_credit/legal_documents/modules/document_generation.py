@@ -71,6 +71,98 @@ class LegalDocumentNotFound(Exception):
     pass
 
 
+def can_generate(*, actor, application_id):
+    """Return the same global/object authority decision used by ``generate``."""
+    permissions = auth_service.effective_permission_codes(actor)
+    if (
+        not actor.can_authenticate()
+        or GENERATE_PERMISSION not in permissions
+        or document_services.TEMPLATE_FILE_REFERENCE_PERMISSION not in permissions
+    ):
+        return False
+    application, access = application_authority.resolve_documentation_application_access(
+        application_id=application_id,
+        actor=actor,
+        required_permission=GENERATE_PERMISSION,
+        actor_permissions=permissions,
+    )
+    return bool(application and access.allowed)
+
+
+def executable_output_formats(
+    *, actor, application_id, document_type, template_id, storage=None
+):
+    """Return formats whose current locked owner prerequisites can reach rendering."""
+    permissions = auth_service.effective_permission_codes(actor)
+    if not can_generate(actor=actor, application_id=application_id):
+        return ()
+    storage = storage or LocalDocumentStorage()
+    try:
+        with transaction.atomic():
+            application = application_facts.resolve_for_generation(
+                application_id=application_id, for_update=True
+            )
+            if (
+                application is None
+                or application.application_status != application_facts.sanctioned_status()
+            ):
+                return ()
+            variant = document_templates.resolve_borrower_template_variant(
+                application.borrower_type
+            )
+            template = _resolve_template(
+                {
+                    "document_type": document_type,
+                    "template_id": str(template_id),
+                    "output_format": "pdf",
+                },
+                variant,
+            )
+            document_services.resolve_template_source_reference(
+                actor_permissions=permissions,
+                document_id=template.template_file_id,
+            )
+            _require_document_prerequisites(
+                application_id=application.application_id,
+                document_type=document_type,
+            )
+            _require_generation_not_terminal(
+                application_id=application.application_id,
+                document_type=document_type,
+            )
+            source = storage.read_verified(template.template_file)
+            sanction = approval_facts.resolve_for_generation(
+                application_id=application.application_id
+            )
+            if sanction is None:
+                return ()
+            merge_values = _project_merge_values(application, sanction)
+            declared = template.merge_fields_json or []
+            _validate_declared_merge_fields(declared, merge_values)
+            formats = []
+            for output_format in ("pdf", "docx"):
+                try:
+                    document_renderer.render(
+                        output_format=output_format,
+                        template_bytes=source,
+                        merge_values={field: merge_values[field] for field in declared},
+                    )
+                except (ValidationError, ValueError, OSError):
+                    continue
+                formats.append(output_format)
+            return tuple(formats)
+    except (
+        ValidationError,
+        InvalidGenerationState,
+        OSError,
+        ValueError,
+    ):
+        return ()
+
+
+resolve_borrower_template_variant = document_templates.resolve_borrower_template_variant
+
+
 def generate(*, actor, application_id, payload, metadata, storage=None):
     permissions = auth_service.effective_permission_codes(actor)
     if (

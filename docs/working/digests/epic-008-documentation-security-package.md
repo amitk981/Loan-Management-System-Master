@@ -11,8 +11,122 @@ Sources:
   **Deck p.N** (12-page board deck; Stage 4 list p. 7, checklist signatures p. 8, statutory
   framework p. 10, top-10 errors p. 11)
 - `docs/source/api-contracts.md` §26-§28, `docs/source/data-model.md` §16,
-  `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
+`docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
+
+## Architecture Review 2026-07-16 07:41 — Workspace Action and Deep-Module Closure
+
+- S26/S27/S35 require upload/re-upload and correction/return actions in addition to generation,
+  verification, evidence, and approvals. 008M2 omits those families, and its Document Pack renders
+  only `available_actions[0]`; 008M3 restores every independent mutation beside Download.
+- API §44 action truth must match the owning public workflow. The review probe received an enabled
+  Loan Agreement `complete_item` and then HTTP 409 `CHECKLIST_EVIDENCE_INCOMPLETE` in the same state.
+  008M3 makes owner-issued executable decisions and server-owned canonical action identities the seam.
+- The S26 coordinator currently scans/locks all checklists, serializes full detail for queue rows,
+  queries owner tables, catches authority by exception name, and chooses the first Company Secretary.
+  008M4 restores page-bounded selectors, governed identity, deep legal/security owners, shared
+  frontend transport, and the fixed prototype composition without changing 008M3 behavior.
+
+## 008M3 Executable Workspace Action Closure (2026-07-16)
+
+The S26-S35 workspace now issues actor/application/current-snapshot-bound opaque commands instead
+of caller-controlled canonical ids. Checklist completion is projected only after the checklist
+owner re-evaluates the exact current renderer, signatures, stamp/notary, bank, security, sanction,
+and durable completion facts; stale/tampered/cross-scope commands are nondisclosing and zero-write.
+Signed-copy upload/re-upload, item correction, S35 return/condition, every required party signature,
+stamp, notary, generation, verification, security creation, bank verification, and ordered approval
+use the same generic command boundary while retaining their existing owner modules and ledgers.
+Checklist and Document Pack render every stable sibling action beside independent Download, support
+multipart uploads, retain rejected actions without optimism, and refetch exactly once after success.
+008M4 still owns the already-recorded deep selector/coordinator/shared-transport/fixed-layout cleanup.
+
+## 008L5 Current Stage-4 and Response Evidence Closure (2026-07-16)
+
+Application status no longer substitutes for approval-owned terminal sanction truth. Bank decision
+creation/replay and cancelled-cheque reconciliation share the application lock, resolve the latest
+approved case plus its sanctioned decision, and retain both exact ids in the immutable decision,
+audit/version body, and digest. Missing/rejected/returned/replaced/malformed current cycles deny
+nondisclosing and zero-write; the changed-decision/invalidation lock race passed twice on
+PostgreSQL with either one current-cycle writer or an invalidated-cycle denial.
+
+MP11 now uses one canonical workflow-chain resolver for GET and resubmit. A response is `responded`
+only from its exact borrower-attributed response event and `submitted_for_review` only from the
+ordered response then resubmission pair. Missing, duplicate, foreign-shape, wrong actor/state,
+reversed, contradictory, or extra terminal evidence projects `evidence_invalid`, disables
+resubmission, leaves the staff deficiency open, and discloses no workflow evidence identity.
+
+## CR-008 Deterministic Template Constraint State (2026-07-15)
+
+The `DocumentTemplate` approval-status and borrower-type check constraints retain the exact 008A
+catalogues (`draft`/`approved`/`retired` and nullable `individual_farmer`/`fpc`/`fpo`) and their
+existing names. Migration-facing `__in` values are now ordered tuples; historical migration `0002`
+remains immutable and forward migration `0005` aligns terminal state deterministically. This is a
+schema-serialization repair only: template APIs, selection, generation, permissions, and frontend
+behavior do not change.
+
+## 008L4 Real Portal Boundary Closure (2026-07-15)
+
+Repair closure: the canonical role catalogue now provisions `borrower_portal_user` as active because
+MP00/005FA portal authentication is a live MVP boundary. This makes real `/auth/me` return the
+borrower role used by the frontend shell; all other future external identities remain inactive and
+the portal session still receives only its central own-data permission allowlist.
+
+MP07/MP13 GET, upload, and published-document download now consume one application/checklist-locked
+decision containing current checklist items, completion evidence, portal submissions, and canonical
+latest renderer outputs. Term Sheet/Loan Agreement authority no longer follows the checklist FK;
+a production generation successor changes the projection immediately and invalidates a predecessor
+capability. PostgreSQL-only threaded regressions cover completion-versus-upload and generation-
+versus-content serialization, while ordinary tests prove zero artifacts for every denied writer.
+
+Borrower document uploads/downloads retain exactly one central `portal.document.uploaded` or
+`portal.document.downloaded` event with safe actor/member/application/document/version/category/
+sensitivity/reason/request/network/outcome facts and no parallel generic event, checksum, or storage
+fact. MP11 derives `responded`/`submitted_for_review` from immutable response workflow evidence;
+staff resolution removes the open borrower item without rewriting response history. The guarded E2E
+seed creates real authenticated MP07/MP11 fixtures without pre-sanction bank evidence, and the two
+declared Playwright specs now call Django directly for upload, re-upload, download, tamper, crafted
+denial, resubmit, and replay. Chromium screenshots/twice-run acceptance remain the independent
+orchestrator gate when the coding sandbox denies browser launch.
+
+008M must consume the same latest-current selector/signed capability and one server snapshot for
+status/action rendering. It must never derive a staff download from a checklist FK, portal
+submission, cached descriptor, or file id, and must not duplicate either staff-generic or
+portal-specific document audit events.
+
+## 008K5 Final Evidence Authority Closure (2026-07-15)
+
+Immutable bank decisions now fail before evidence lookup unless the authenticated Compliance/CS
+actor has checklist-update authority and the canonical application is sanctioned for Stage 4. The
+HTTP success/replay shape includes the full §6.3 action fields beside immutable source identities.
+Borrower-safe completion unconditionally reconciles singular action/audit/workflow/version rows,
+their exact retained body, current renderer/terminal evidence, and digest; changed or extra facts
+project pending without evidence disclosure. Legal migration `0013` is a no-op graph anchor over
+`applications.0016`, so future legal state owns the two checklist evidence relations without
+replaying columns. Real-row reader DTO scans and the two generation race families (twice on
+PostgreSQL) now prove allowlisted projections and exact winner/zero-loser ledgers. 008L4 must use
+this exact locked truth at the real portal/browser boundary; 008M must consume only the ordinary
+staff DTOs.
+
+## Architecture Review 2026-07-15 18:15 - Final Evidence and Real Portal Boundary
+
+- K4 materially adds immutable bank decisions, current terminal recomputation, shared application
+  locking, redacted ordinary security DTOs, and stricter masks. Independent probes nevertheless
+  show a draft application can create a new immutable decision because the module checks only
+  global role/permission, and the borrower-safe reconciliation conditional skips every predicate
+  after the audit-id check when exactly one audit exists. `008K5` restores §19.2/§20.1 object/state
+  authority and unconditional current action/audit/workflow/version/body/digest reconciliation.
+- K4's cross-app application migration mutates the legal checklist schema through a shared custom
+  operation; K5 must add a non-destructive legal-owned dependency anchor before future legal
+  migrations. It also replaces existence-only generation-race assertions and the partial one-role
+  instrument tests with exact winner/loser ledgers and real rows across the reader/state matrix.
+- L3 materially adds signed scope-bound capabilities, a guarded application resubmit owner,
+  no-store downloads, and the approved MP07/MP11/MP13 composition. Its declared browser specs,
+  however, intercept every API call, so login, upload, tamper/crafted denial, and resubmission never
+  reach Django. `008L4` reruns the four screenshots twice against the real authenticated backend.
+- L4 also makes GET/POST share one locked action decision, resolves downloads from the current
+  renderer through production generation, emits the source §11 single `portal.document.*` audit
+  vocabulary through the central writer, and makes response projection agree with retained
+  `responded/submitted_for_review` evidence. 008M now waits for K5 then L4.
 
 ## 008L3 Portal Contract Closure (2026-07-15)
 
@@ -666,6 +780,8 @@ current Term Sheet/Loan Agreement bytes remain behind the authenticated member s
 Blockers that must be visible before disbursement: unstamped/unnotarised instruments (V10 p.24),
 signature mismatch unresolved (§4.11), missing witness (p.32 #4), incomplete checklist
 signatures in the §4.13 order, custody not recorded. Deck p.7-8 is the visual/stage reference.
+
+Screen/API extract (008M): S26-S35 compose checklist applicability, current generation/verification, stamp/notary, PoA/tri-party/SH-4/CDSL/cheque, and ordered CS → Credit Manager → Sanction Committee → post-disbursement Finance truth. §26-§28 actions/downloads are server authority; terminal status and independently authorised Download coexist.
 
 ## Cross-epic boundary notes
 - Witness identity (PAN/Aadhaar, existing-shareholder rule) is Epic 004 data (004E/006Y2);
