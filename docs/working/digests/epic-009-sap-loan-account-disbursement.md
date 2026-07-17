@@ -1,5 +1,24 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-17 21:08 — Register, Checklist, and Advice Ownership
+
+- CR-009's deterministic malformed/authenticated-tamper split is substantive. 009E4, 009G2, and
+  009H2 also close most prior rationale, post-transfer, replay, authority, current-contact/rendering,
+  and audit findings; ten focused retained tests pass.
+- Review reproduced two remaining hard safety/idempotency edges. Formatted bank identifiers and an
+  unrelated `field:v2:` token pass the source-bank rationale validator into audit/version evidence;
+  `009E5` centralises safe audit text. The same advice idempotency key produces two logical provider
+  ids if payload changes after acceptance but before local receipt retention; `009H3` freezes a
+  communications-owned outbox before dispatch and moves duplicated template/delivery policy to the
+  source owner.
+- 009G2 creates the register and pending advice atomically, but the true register flag can outlive a
+  deletable register row. Its checklist route also requires signer=historical initiator rather than
+  canonical current Senior Finance scope, and replay under-checks completion-owned ledgers. `009G3`
+  restores owner-protected register truth, Stage-5 authority, and exact immutable reconciliation.
+- The disbursements 0005 migration changes legal checklist state from the downstream app. `009G4`
+  adds a legal-owned state anchor/guard without rewriting applied history. 009I/009J now depend on
+  G4/H3 and project G3 register/transfer truth.
+
 ## 009H2 Advice Authority, Current Truth, and Delivery Closure
 
 - `DisbursementWorkflow.send_advice` now consumes the exact 009G2 pending advice UUID as the

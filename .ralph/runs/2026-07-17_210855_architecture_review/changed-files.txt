@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009I-member-portal-disbursement-status.md
+ M docs/slices/009J-loan-account-360-initial-view.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-17_210855_architecture_review/
+?? docs/slices/009E5-source-bank-rationale-redaction-closure.md
+?? docs/slices/009G3-post-transfer-aggregate-and-checklist-integrity-closure.md
+?? docs/slices/009G4-legal-checklist-migration-ownership-anchor.md
+?? docs/slices/009H3-communications-owned-advice-outbox-idempotency-closure.md

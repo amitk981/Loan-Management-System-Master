@@ -1,24 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_201120_normal_run
+2026-07-17_210855_architecture_review
 
 ## Current Status
-009H2 is complete pending independent orchestrator validation. Advice delivery now consumes the
-exact 009G2 pending UUID as the communication/provider identity, marks that intent sent only after
-acceptance, and remains logically idempotent across a fresh adapter after post-acceptance rollback.
-Replay fails closed on changed canonical contact, current template/rendering, provider facts,
-sender role/team, transfer/register/intent, audit, action, or workflow evidence.
+Architecture review independently examined CR-009, 009E4, 009G2, and 009H2 over
+`e6fd78d1...d0ae505e` in isolated Standards and Spec passes. Ten focused retained tests pass. Two
+review-only probes fail as expected: formatted bank identifiers/field tokens enter reviewable
+source-bank audit reasons, and a stable advice key can produce two provider identities when payload
+changes after acceptance but before durable receipt retention. No production code changed.
 
-Auth §26.5 is restored: exact Senior Finance initiating-maker/current-SAP scope and canonical active
-Credit Manager scope may act with the High grant; CFC-only authority is denied, including for
-effective multi-role users. Full recipient email remains only on the protected communication row;
-general audit carries a mask and digest. Forty-three impacted backend tests, four architecture
-probes, Django check, migration sync, frontend build/typecheck/lint and all 327 frontend tests pass.
-Both PostgreSQL five-caller race methods passed in two independent executions after a real nullable-
-join lock defect was found and repaired. The orchestrator still owns complete backend coverage/floor.
+The review also confirmed communications policy/receipt ownership has drifted into disbursements;
+Loan Register truth can outlive its deletable row; post-transfer checklist sign-off wrongly requires
+the historical initiating maker rather than current source Stage-5 Senior Finance scope; checklist
+replay checks only part of its immutable ledger; and a downstream migration owns legal checklist
+state. CR-009's deterministic tamper coverage and the major prior E4/G2/H2 corrections are otherwise
+substantive. Findings, requirement traceability, probes, and corrective ownership are retained in
+this run, `REVIEW_FINDINGS.md`, CONTEXT, and the Epic 009 digest.
 
 ## Next Run
-Run the due architecture review, then 009I for borrower-owned MP14 status and advice download.
-009I and 009J were rechecked against the current Epic 009 source/digest and remain fully concrete;
-no speculative edits were needed.
+Run 009E5 for shared safe audit text. Then 009G3 restores register/checklist integrity and current
+Senior Finance scope while 009H3 restores communications-owned durable outbox/provider idempotency;
+009G4 follows both to anchor the combined legal migration state. Sharpened 009I and 009J wait for those corrected
+owners before borrower MP14 and Loan Account 360 wiring.

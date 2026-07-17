@@ -164,7 +164,13 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   unassigned Critical grant, and fails closed on evidence drift. Corrective 009G2 now atomically
   retains Loan Register and stable pending-advice truth, implements exact §45.2 replay, and makes
   the post-transfer Senior Finance checklist signature reachable through a top-level coordinator.
-  Corrective 009H2 still precedes the borrower/status and Loan Account 360 screens.
+  Corrective 009H2 restores advice authority, current contact/rendered/provider evidence, masked
+  audit, and retained delivery identity. The next independent review confirmed those prior fixes but
+  found four residual seams: unsafe formatted/token rationale text, deletable register truth plus
+  initiator-only/partial checklist reconciliation, downstream ownership of legal migration state,
+  and advice delivery/template policy outside communications with an unretained-acceptance crash
+  window. Corrective 009E5, 009G3, 009G4, and 009H3 now precede the borrower/status and Loan Account
+  360 screens.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

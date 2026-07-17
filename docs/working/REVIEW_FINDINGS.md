@@ -2,6 +2,131 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-17 21:08 - Architecture Review 2026-07-17_210855_architecture_review
+
+Reviewed the four completed slices merged after architecture-review commit `e6fd78d1`:
+- `CR-009-deterministic-field-encryption-tamper-coverage` (`c64f7316`)
+- `009E4-source-bank-rationale-and-approval-evidence-closure` (`d0d97614`)
+- `009G2-post-disbursement-register-checklist-and-replay-closure` (`7f439955`)
+- `009H2-advice-authority-current-truth-and-delivery-closure` (`d0ae505e`)
+
+The full range `git diff e6fd78d1...d0ae505e` also contains two owner Ralph-maintenance commits
+(`936b303a`, `e598179f`), which were separated from product-slice conclusions. The review read all
+four contracts/run packets, the Epic 009 digest/epic, cited source sections, production/test/
+migration diffs, M08 requirement IDs, queue dependencies, blocked states, and CONTEXT truth.
+Standards and Spec ran as isolated parallel passes. Ten focused retained tests pass. Two review-only
+probes fail as expected: formatted bank identifiers/field tokens enter source-bank reason evidence,
+and one stable advice idempotency key produces two provider identities after unretained acceptance
+plus payload drift. Probe source/output is retained in this run; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - Reviewable source-bank reasons can leak sensitive values to general ledgers
+
+`source_bank_governance._clean_reason` rejects contiguous eight-digit numbers, three ad-hoc markers,
+and exact protected values only for the bank being activated. Formatted identifiers such as
+`1234-5678-9012` and unrelated canonical `field:v2:...` ciphertext pass, after which the full reason
+is copied into governance, `VersionHistory`, and `AuditLog`. The retained unsafe-reason table omits
+both edges. The review probe reproduced acceptance. This violates data-model §29.3, auth §30.3
+AUD-005/006, and codebase-design §§39/42. `009E5` installs one shared safe-audit-text boundary while
+preserving 009E4's genuinely reviewable, honestly attributed configuration history.
+
+#### Finding 2 - High - Disbursements has absorbed the source-owned communications module
+
+The expanded `disbursement_advice.py` now selects and renders templates, validates communication
+variables, dispatches adapters, reconciles provider receipts, persists `Communication`, and owns its
+audit/status policy. `DisbursementAdviceDeliveryReceipt` also lives in the disbursements app. These
+are the exact responsibilities assigned to `communications.modules.communication_dispatcher` by
+codebase-design §§40.1-40.2; §36.2 does not make communications a disbursements dependency. The code
+duplicates existing template lookup/rendering in `communications/services.py`, reducing locality.
+`009H3` transfers policy and receipt state to the communications owner behind a narrow decision.
+
+#### Finding 3 - High - Durable email idempotency begins after the provider call
+
+`_accepted_delivery_receipt` calls the adapter before a durable key/payload receipt exists. The
+Manual/Fake provider identity is derived from key plus payload, so after acceptance but before local
+receipt retention, a changed retry under the same key becomes a second logical provider identity.
+The probe produced two ids. The rollback test fails only after the receipt was safely committed, and
+the PostgreSQL race permits any `adapter.calls >= 1` without recording provider results. This does
+not satisfy codebase-design §§20.6/22.2/26.3/42.4. `009H3` freezes a communications-owned outbox
+before dispatch and proves exact and changed retry across both crash windows and five callers.
+
+#### Finding 4 - Medium - A downstream migration owns legal checklist schema state
+
+`disbursements/migrations/0005_...` defines custom operations that edit
+`legal_documents.DocumentChecklist` constraints. Although current migration apply/sync passes, the
+legal app's own leaf does not anchor that state and a future legal migration can be ordered without
+it. This is app/schema ownership drift under codebase-design §§6-8/36. `009G4` adds a zero-data-loss
+legal state anchor and an executable guard against future cross-app state mutations; applied history
+is not rewritten.
+
+### Spec
+
+#### Finding 1 - High - M08-FR-011 is restricted to the historical payment initiator
+
+Auth §§15.6/16.3 and M08-FR-011 authorise Senior Manager Finance to sign the checklist after actual
+disbursement. 009G2 requires active permission plus source Stage-5 loan/application scope. Production
+adds `transfer.initiated_by_user_id == actor.pk`, and the public test expressly denies a different
+Senior Manager Finance. A current assignee cannot complete the required sign-off after reassignment
+or maker absence. `009G3` reuses canonical current Stage-5 scope without making role/permission alone
+sufficient.
+
+#### Finding 2 - High - Loan Register truth can outlive the register row
+
+009G2 requirement 1 says `loan_register_updated_flag` may be true only with singular coherent
+evidence. The flag is independent on `Disbursement`, while the only relation points from a deletable
+`LoanRegisterUpdate` back to it. A retained public test deletes that row while successful/true state
+remains, then relies on replay-time failure. Detection is useful but persisted truth already violates
+M08-FR-009 and data-model §34. `009G3` makes the register an owner-protected aggregate relation and
+database-forbids successful/true state without it.
+
+#### Finding 3 - Medium - Checklist replay checks only a subset of its promised immutable ledger
+
+009G2 requirement 4 promises an exact action/audit/workflow chain. `_disbursement_signature_is_
+coherent` checks transfer keys in `AuditLog.new_value_json` and a few relation/state fields, but not
+the exact action meaning, retained comment, audit old value/request metadata, version author/old
+value/change/version, sibling singularity, or the complete workflow tuple. Existing tests mutate
+upstream transfer rows, not these completion-owned facts. `009G3` adds an exhaustive one-field and
+duplicate-sibling replay matrix.
+
+#### Finding 4 - Medium - The H2 race does not prove one provider message
+
+009H2 requirement 4 and its race case claim one logical provider message across rollback/retry and
+five callers. The race only requires at least one adapter call; the fake retains no provider-result
+ledger. Five sends would pass if they converged later to one database row. `009H3` records every
+provider result and requires one external identity plus one frozen outbox/receipt/communication.
+
+No material scope creep was found. CR-009 deterministically separates malformed Base64 from
+authenticated ciphertext tamper and its focused coverage is substantive. 009E4's reviewable
+rationale/attribution history, 009G2's transfer/register/pending-intent transaction and §45.2 replay,
+and 009H2's role/current-contact/rendered/audit corrections are substantive; the issues above are
+remaining safety, ownership, authority, and crash-window gaps rather than wholesale non-delivery.
+
+### Requirement Traceability
+
+- M08-FR-007-008: exact transfer reference/evidence and funded activation remain implemented by
+  009G2; focused transfer replay passes.
+- M08-FR-009: register creation exists but persistence integrity remains partial until `009G3`.
+- M08-FR-010 / BR-054: 009H2 sends current protected advice, but durable provider/outbox ownership
+  remains partial until `009H3`.
+- M08-FR-011: a public sign-off exists but authority and immutable replay remain partial until
+  `009G3`.
+- CR-009 has no product requirement id and meets its accepted deterministic security-test contract.
+
+### Corrective Queue
+
+- `009E5-source-bank-rationale-redaction-closure` closes sensitive safe-text/audit edges.
+- `009G3-post-transfer-aggregate-and-checklist-integrity-closure` closes register ownership,
+  current Senior Finance authority, and completion-ledger reconciliation.
+- `009G4-legal-checklist-migration-ownership-anchor` repairs future legal migration state ownership.
+- `009H3-communications-owned-advice-outbox-idempotency-closure` restores the source communications
+  owner and closes provider/outbox crash/race idempotency.
+- `009I` and `009J` are re-sharpened to consume the corrected G3/G4/H3 boundaries.
+
+Worst severity is High on both axes. Standards: 3 High, 1 Medium. Spec: 2 High, 2 Medium. No ADR is
+needed because cited source documents already decide sensitive-audit handling, module ownership,
+idempotency, Stage-5 authority, register integrity, and migration locality.
+
 ## 2026-07-17 16:56 - Architecture Review 2026-07-17_164724_architecture_review
 
 Reviewed the four product slices merged after architecture-review commit `f35e0fc7` and before the
