@@ -25,7 +25,18 @@ The shadow pilot ran the complete backend test label once under the existing ser
 - Both lanes: 45,130 statements, 41,256 covered, 3,874 missing, 14 excluded, 91.4159095945%
 - Exact line-set SHA-256 in both lanes: `5eb9c68285ac6d6ae235ea2ff5492760f13c2a5c32b70f91bb0097c249585a9f`
 
-Because every proof predicate matched, authoritative backend coverage is bounded at two workers. The helper still runs the full suite, combines worker coverage, and enforces the existing 85% floor. Setting the worker count to 1 restores the original serial command.
+The initial proof enabled two workers. A later six-worker pilot exposed nondeterministic branch coverage in a ciphertext-tampering test: the random encrypted token and an A/B replacement of its last Base64 character could exercise either the noncanonical-Base64 rejection path or the authenticated-decryption rejection path. CR-009 split that test into two deterministic cases, preserving the expected `InvalidCiphertext` behavior while making both rejection paths explicit and repeatable.
+
+The corrected 1,097-test suite was then piloted at six workers and, only after that passed, at eight workers. Both pilots compared a serial lane with the bounded parallel lane using the same exact predicates:
+
+- Both worker counts: 1,097 discovered and run, 62 skipped, 0 failures, 0 errors
+- Both worker counts and serial controls: 45,147 statements, 41,275 covered, 3,872 missing, 14 excluded, 91.4235718874%
+- Exact line-set SHA-256 in every corrected lane: `1e9a93c0cb3dbb7c10cc8acaa776049aa800c0458cc45ff1a757874387baff6e`
+- Six workers: 932.1s serial control, 362.9s parallel, 2.568x speedup
+- Eight workers: 1,001.7s serial control, 381.5s parallel, 2.626x speedup
+- Eight workers were 18.6s (5.1%) slower than six in absolute parallel runtime on the current 8-core host
+
+Because every proof predicate matched and six had the best measured wall time, authoritative backend coverage is bounded at six workers. The helper still runs the full suite, combines worker coverage, and enforces the existing 85% floor. Setting the worker count to 1 restores the original serial command. Re-pilot before changing the bound on a different host or after material test-suite growth.
 
 ## Documentation-only architecture reviews
 

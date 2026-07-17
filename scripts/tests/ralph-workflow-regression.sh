@@ -918,8 +918,8 @@ rg -q -- '--fail-under="\$coverage_floor"' "$parallel_coverage_gate" \
   || fail "authoritative parallel coverage does not retain the configured floor"
 rg -q 'ralph-parallel-backend-coverage.sh' scripts/ralph-validate.sh \
   || fail "validator does not invoke the proven parallel-coverage module"
-rg -q 'backend_coverage_parallel_workers: 2' .ralph/config.yaml \
-  || fail "authoritative coverage worker count is not explicitly bounded at two"
+rg -q 'backend_coverage_parallel_workers: 6' .ralph/config.yaml \
+  || fail "authoritative coverage worker count is not explicitly bounded at the proven six"
 
 # The PostgreSQL TransactionTestCase cannot share Django's class-level fixture.
 # It must retain an explicit per-test builder instead of inheriting the no-op
