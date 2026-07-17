@@ -45,7 +45,7 @@ def _authorise(*, actor, disbursement_id, payload, request=None):
             raise DomainObjectAccessDenied(None)
         _lock_related_evidence(row)
         if row.authorisation_status in DECISIONS:
-            if _is_complete_terminal_replay(row, cleaned):
+            if is_current_terminal_authorisation(row, cleaned):
                 return serialize_authorisation(row)
             raise DisbursementAuthorisationConflict(
                 "The disbursement already has a different terminal authorisation decision."
@@ -274,7 +274,7 @@ def _locked_checker(actor):
     return checker
 
 
-def _is_complete_terminal_replay(row, cleaned):
+def is_current_terminal_authorisation(row, cleaned, *, require_pending_transfer=True):
     initiation = row.initiation_audit.new_value_json or {}
     initiation_request_id = initiation.get("request_id")
     initiation_comment_digest = initiation.get("final_verification_comment_digest")
@@ -326,7 +326,10 @@ def _is_complete_terminal_replay(row, cleaned):
     return bool(
         row.authorisation_status == cleaned["decision"]
         and row.authorisation_comments == cleaned["comments"]
-        and row.bank_transfer_status == Disbursement.TRANSFER_PENDING
+        and (
+            not require_pending_transfer
+            or row.bank_transfer_status == Disbursement.TRANSFER_PENDING
+        )
         and row.authorised_at
         and row.authorised_by_user_id
         and row.authorisation_action_id
@@ -377,4 +380,7 @@ def _sha256(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-__all__ = ["DisbursementAuthorisationConflict"]
+__all__ = [
+    "DisbursementAuthorisationConflict",
+    "is_current_terminal_authorisation",
+]

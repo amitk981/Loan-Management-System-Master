@@ -8391,3 +8391,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-17 - 2026-07-17_132523_normal_run
+
+- Agent tool used: codex with implement, TDD, and parallel standards/spec review workflows.
+- Slice completed: 009G-utr-capture-and-transfer-success.
+- Summary: Added exact approved-transfer success, unique UTR/evidence, atomic account funding and
+  activation, linked history, safe ledgers, coherent replay, and zero-write stale/race losers.
+- Tests run: 9 focused and 36 impacted tests; twice-run two-method PostgreSQL five-caller races;
+  Django check, migration sync, and Ruff. Full suite/coverage remains the orchestrator's gate.
+- Evidence saved: `.ralph/runs/2026-07-17_132523_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; mitigated by locks, database uniqueness/aggregate constraints, exact evidence,
+  nondisclosure, immutable safe audit facts, and later-slice side-effect absence.
+- Next action: Run sharpened 009H, then sharpened 009I.
+
+## 2026-07-17 14:36:29 - 2026-07-17_132523_normal_run
+- Agent tool used: codex
+- Slice attempted: 009G-utr-capture-and-transfer-success
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_132523_normal_run/.ralph/runs/2026-07-17_132523_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_132523_normal_run/.ralph/runs/2026-07-17_132523_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

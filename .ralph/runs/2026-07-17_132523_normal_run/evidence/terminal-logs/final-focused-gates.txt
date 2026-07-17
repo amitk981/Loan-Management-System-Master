@@ -1,0 +1,20 @@
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test (36 impacted tests)
+Creating test database for alias 'default'...
+Found 36 test(s).
+System check identified no issues (0 silenced).
+....................................
+----------------------------------------------------------------------
+Ran 36 tests in 13.845s
+
+OK
+Destroying test database for alias 'default'...
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py check
+System check identified no issues (0 silenced).
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py makemigrations --check --dry-run
+No changes detected
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python -m ruff check changed backend files
+/Users/amitkallapa/LMS/.ralph/venv/bin/python3.11: No module named ruff
+$ git diff --check
+$ ruff check changed backend files
+All checks passed!
+$ git diff --check

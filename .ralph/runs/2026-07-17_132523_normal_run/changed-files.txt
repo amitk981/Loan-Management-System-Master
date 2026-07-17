@@ -1,0 +1,18 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009G-utr-capture-and-transfer-success.md
+ M docs/slices/009I-member-portal-disbursement-status.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/disbursements/models.py
+ M sfpcl_credit/disbursements/modules/current_disbursement_evidence.py
+ M sfpcl_credit/disbursements/modules/disbursement_authorisation.py
+ M sfpcl_credit/disbursements/modules/disbursement_workflow.py
+ M sfpcl_credit/disbursements/views.py
+?? .ralph/runs/2026-07-17_132523_normal_run/
+?? sfpcl_credit/disbursements/migrations/0004_transfer_success.py
+?? sfpcl_credit/disbursements/modules/disbursement_transfer_success.py
+?? sfpcl_credit/tests/test_disbursement_transfer_success_api.py

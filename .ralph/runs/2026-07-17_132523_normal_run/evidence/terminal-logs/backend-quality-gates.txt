@@ -1,0 +1,10 @@
+Backend focused gates
+
+- Django check: PASS — no issues.
+- Migration sync: PASS — no changes detected.
+- Ruff: PASS — all touched disbursement code, transfer tests, and URL configuration.
+- `git diff --check`: PASS.
+- Full backend suite/coverage: intentionally not run by the agent; Ralph orchestrator owns the
+  authoritative complete coverage run under the selected-run instructions.
+- Frontend gates: not run locally because 009G changes no frontend source or contract consumer;
+  the orchestrator still runs the configured full frontend gates.

@@ -18,6 +18,12 @@ class CurrentDisbursementEvidence:
     loan_creation_audit_id: object
     loan_creation_workflow_event_id: object
     authorisation_status: str
+    authorisation_action_id: object | None
+    authorisation_audit_id: object | None
+    authorisation_workflow_event_id: object | None
+    authorisation_evidence_digest: str | None
+    authorised_by_user_id: object | None
+    authorised_at: object | None
 
 
 def resolve_current_disbursement_evidence(
@@ -73,6 +79,19 @@ def resolve_current_disbursement_evidence(
         return None
     if not _aggregate_has_no_later_truth(row, account):
         return None
+    if row.authorisation_status == "approved":
+        from sfpcl_credit.disbursements.modules.disbursement_authorisation import (
+            is_current_terminal_authorisation,
+        )
+
+        if not is_current_terminal_authorisation(
+            row,
+            {
+                "decision": "approved",
+                "comments": row.authorisation_comments or "",
+            },
+        ):
+            return None
     return CurrentDisbursementEvidence(
         disbursement_id=row.pk,
         loan_account_id=row.loan_account_id,
@@ -84,6 +103,12 @@ def resolve_current_disbursement_evidence(
         loan_creation_audit_id=account.creation_audit_id,
         loan_creation_workflow_event_id=account.creation_workflow_event_id,
         authorisation_status=row.authorisation_status,
+        authorisation_action_id=row.authorisation_action_id,
+        authorisation_audit_id=row.authorisation_audit_id,
+        authorisation_workflow_event_id=row.authorisation_workflow_event_id,
+        authorisation_evidence_digest=row.authorisation_evidence_digest,
+        authorised_by_user_id=row.authorised_by_user_id,
+        authorised_at=row.authorised_at,
     )
 
 
@@ -172,8 +197,6 @@ def _initiation_ledger_is_coherent(row):
 
 
 def _aggregate_has_no_later_truth(row, account):
-    if row.authorisation_status == "approved":
-        return True
     return bool(
         row.bank_transfer_status == Disbursement.TRANSFER_PENDING
         and row.bank_reference_number is None

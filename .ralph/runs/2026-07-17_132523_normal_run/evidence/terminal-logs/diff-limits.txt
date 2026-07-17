@@ -1,0 +1,6 @@
+Ralph diff-limit verification
+
+Non-run-artifact files changed: 15; configured maximum: 30.
+Non-run-artifact changed lines: 1,988 (512 tracked additions/deletions plus 1,476 lines in three
+new backend files); configured maximum: 2,000.
+Protected files and docs/source changes: none.

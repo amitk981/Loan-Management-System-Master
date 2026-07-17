@@ -32,6 +32,11 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/disbursements/<uuid:disbursement_id>/mark-transfer-successful/",
+        disbursement_views.mark_transfer_successful,
+        name="disbursement-mark-transfer-successful",
+    ),
+    path(
         "api/v1/disbursements/<uuid:disbursement_id>/authorise/",
         disbursement_views.authorise_disbursement,
         name="disbursement-authorise",

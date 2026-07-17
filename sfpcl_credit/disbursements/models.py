@@ -108,6 +108,60 @@ class Disbursement(models.Model):
         max_length=120, null=True, blank=True, db_index=True
     )
     disbursed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    bank_transfer_evidence_document = models.ForeignKey(
+        "documents.DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="evidenced_disbursements",
+    )
+    transfer_success_action_id = models.UUIDField(null=True, blank=True, unique=True)
+    transfer_success_actor_user = models.ForeignKey(
+        "identity.User",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="successful_disbursement_transfers",
+    )
+    transfer_success_role_code = models.CharField(max_length=80, null=True, blank=True)
+    transfer_success_team_codes_json = models.JSONField(null=True, blank=True)
+    transfer_success_idempotency_key_digest = models.CharField(
+        max_length=64, null=True, blank=True, unique=True
+    )
+    transfer_success_payload_digest = models.CharField(
+        max_length=64, null=True, blank=True
+    )
+    transfer_success_evidence_digest = models.CharField(
+        max_length=64, null=True, blank=True
+    )
+    transfer_success_request_id = models.CharField(
+        max_length=255, null=True, blank=True
+    )
+    transfer_success_ip_address = models.CharField(
+        max_length=80, null=True, blank=True
+    )
+    transfer_success_user_agent = models.TextField(null=True, blank=True)
+    transfer_success_audit = models.OneToOneField(
+        "identity.AuditLog",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="disbursement_transfer_success",
+    )
+    transfer_success_workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="disbursement_transfer_success",
+    )
+    transfer_success_loan_status_history = models.OneToOneField(
+        "loans.LoanStatusHistory",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="disbursement_transfer_success",
+    )
     disbursement_advice_communication = models.ForeignKey(
         "communications.Communication",
         null=True,
@@ -212,10 +266,144 @@ class Disbursement(models.Model):
                 ),
                 name="disb_transfer_requires_approval",
             ),
+            models.CheckConstraint(
+                check=(
+                    Q(
+                        bank_transfer_status="successful",
+                        authorisation_status="approved",
+                        bank_reference_number__isnull=False,
+                        disbursed_at__isnull=False,
+                        bank_transfer_evidence_document__isnull=False,
+                        transfer_success_action_id__isnull=False,
+                        transfer_success_actor_user__isnull=False,
+                        transfer_success_role_code__isnull=False,
+                        transfer_success_team_codes_json__isnull=False,
+                        transfer_success_idempotency_key_digest__isnull=False,
+                        transfer_success_payload_digest__isnull=False,
+                        transfer_success_evidence_digest__isnull=False,
+                        transfer_success_request_id__isnull=False,
+                        transfer_success_ip_address__isnull=False,
+                        transfer_success_user_agent__isnull=False,
+                        transfer_success_audit__isnull=False,
+                        transfer_success_workflow_event__isnull=False,
+                        transfer_success_loan_status_history__isnull=False,
+                    )
+                    | Q(
+                        bank_transfer_status__in=(
+                            "pending",
+                            "processing",
+                            "failed",
+                            "reversed",
+                        ),
+                        bank_transfer_evidence_document__isnull=True,
+                        transfer_success_action_id__isnull=True,
+                        transfer_success_actor_user__isnull=True,
+                        transfer_success_role_code__isnull=True,
+                        transfer_success_team_codes_json__isnull=True,
+                        transfer_success_idempotency_key_digest__isnull=True,
+                        transfer_success_payload_digest__isnull=True,
+                        transfer_success_evidence_digest__isnull=True,
+                        transfer_success_request_id__isnull=True,
+                        transfer_success_ip_address__isnull=True,
+                        transfer_success_user_agent__isnull=True,
+                        transfer_success_audit__isnull=True,
+                        transfer_success_workflow_event__isnull=True,
+                        transfer_success_loan_status_history__isnull=True,
+                    )
+                ),
+                name="disb_success_evidence_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    ~Q(bank_transfer_status="pending")
+                    | Q(
+                        bank_reference_number__isnull=True,
+                        disbursed_at__isnull=True,
+                        bank_transfer_evidence_document__isnull=True,
+                    )
+                ),
+                name="disb_pending_has_no_transfer",
+            ),
             models.UniqueConstraint(
                 fields=["loan_account"],
                 condition=Q(authorisation_status__in=("pending", "approved"))
                 & Q(bank_transfer_status__in=("pending", "processing")),
                 name="uniq_active_disb_account",
+            ),
+        ]
+
+
+class BankTransfer(models.Model):
+    bank_transfer_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    disbursement = models.OneToOneField(
+        Disbursement, on_delete=models.PROTECT, related_name="bank_transfer"
+    )
+    loan_account = models.OneToOneField(
+        "loans.LoanAccount",
+        on_delete=models.PROTECT,
+        related_name="successful_bank_transfer",
+    )
+    transfer_type = models.CharField(max_length=60, default="disbursement")
+    related_entity_type = models.CharField(max_length=80, default="disbursement")
+    related_entity_id = models.UUIDField(db_index=True)
+    source_bank_account = models.ForeignKey(
+        "members.BankAccount",
+        on_delete=models.PROTECT,
+        related_name="outgoing_bank_transfers",
+    )
+    destination_bank_account = models.ForeignKey(
+        "members.BankAccount",
+        on_delete=models.PROTECT,
+        related_name="incoming_bank_transfers",
+    )
+    evidence_document = models.ForeignKey(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="evidenced_bank_transfers",
+    )
+    amount = models.DecimalField(max_digits=18, decimal_places=2)
+    payment_method = models.CharField(max_length=60, default="manual")
+    bank_reference_number = models.CharField(max_length=120)
+    bank_reference_number_normalized = models.CharField(max_length=120, unique=True)
+    bank_status = models.CharField(max_length=60, default="successful", db_index=True)
+    initiated_at = models.DateTimeField()
+    completed_at = models.DateTimeField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "bank_transfers"
+        indexes = [
+            models.Index(
+                fields=["transfer_type", "related_entity_id"],
+                name="idx_bank_transfer_related",
+            ),
+            models.Index(
+                fields=["bank_status", "completed_at"],
+                name="idx_bank_transfer_status",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(amount__gt=0), name="bank_transfer_amount_positive"
+            ),
+            models.CheckConstraint(
+                check=Q(
+                    transfer_type="disbursement",
+                    related_entity_type="disbursement",
+                    payment_method="manual",
+                    bank_status="successful",
+                ),
+                name="bank_transfer_manual_success",
+            ),
+            models.CheckConstraint(
+                check=Q(completed_at__gte=models.F("initiated_at")),
+                name="bank_transfer_time_order",
+            ),
+            models.CheckConstraint(
+                check=~Q(bank_reference_number="")
+                & ~Q(bank_reference_number_normalized=""),
+                name="bank_transfer_reference_present",
             ),
         ]

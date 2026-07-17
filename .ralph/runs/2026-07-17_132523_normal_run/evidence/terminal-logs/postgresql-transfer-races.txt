@@ -1,0 +1,17 @@
+PostgreSQL five-caller acceptance
+
+Command (executed twice independently):
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test
+sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessRaceTests
+--settings=sfpcl_credit.config.postgres_test_settings --verbosity 1
+
+Final review-hardened run 1: PASS — 2 tests in 11.667s.
+Final review-hardened run 2: PASS — 2 tests in 9.776s.
+
+Each test method releases five different UTR/idempotency contenders together. Every round retains
+one successful disbursement, one manual bank transfer, one funded active account, one active status
+history, one success audit, and one workflow event; the other four contenders return conflicts.
+
+Diagnostic note: the first attempt exposed PostgreSQL's prohibition on locking nullable outer-join
+sides. The replay lookup was corrected to `select_for_update(of=("self",))`; both independent reruns
+then passed.

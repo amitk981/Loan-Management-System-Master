@@ -81,6 +81,39 @@ returns zero-write `409 CONFLICT`. Exact terminal decision/comments replay retur
 projection without writes only while the complete terminal ledger remains coherent; changed or
 opposite replay returns `409 CONFLICT`.
 
+## Bank transfer success and loan activation (009G)
+
+`POST /api/v1/disbursements/{disbursement_id}/mark-transfer-successful/` implements source §31.4.
+It requires `Idempotency-Key` and exactly `bank_reference_number`, timezone-aware `disbursed_at`, and
+`bank_transfer_evidence_document_id`. The reference is NFKC-normalized, trimmed, whitespace-
+collapsed, uppercase, nonempty, at most 120 characters, and globally unique; duplicates return
+`409 DUPLICATE_BANK_REFERENCE`. Time cannot precede CFC authorisation or exceed A-127's five-minute
+future tolerance. Evidence must be a checksum-current immutable `restricted`/`finance` upload
+scoped to the exact `loan_application` or `loan_account`.
+
+Only an active persisted exact CFC checker or exact Senior Manager Finance initiating maker may act,
+and only with the Critical `finance.disbursement.mark_success` grant. Role, permission, intake
+assignment, another CFC/Senior Finance user, or an inaccessible id is insufficient; missing and
+out-of-scope ids use nondisclosing `403 OBJECT_ACCESS_DENIED`.
+
+The workflow consumes the locked 009F2 typed approved decision and reconciles its terminal
+authorisation tuple, frozen initiation/readiness/bank/loan-creation evidence, exact unfunded
+sanctioned account/terms, and current evidence checksum. Pending/rejected, stale, partially funded,
+active, over-sanction, changed-owner, bad-time, cross-object, or already-transferred facts fail
+without success artifacts. Success returns only `disbursement_id`, `bank_transfer_status:
+successful`, `loan_account_status: active`, and `disbursement_advice_communication_id: null`.
+
+Atomically it creates one unique manual transfer/evidence, funds disbursed/principal/total with the
+exact amount, keeps interest/charges zero, sets tenure start, activates the account, and links one
+sanctioned-to-active history. Safe audit/workflow evidence keeps only masked/reference digest,
+evidence id/checksum, owner/action ids, amount/status, actor role/team, and request/network context.
+
+Exact normalized key/payload/actor retry returns the retained four-field projection with no write.
+Changed key/payload, changed retained success ledger, duplicate UTR, or a concurrent loser returns a
+stable conflict. The action sends no advice, updates no Loan Register/checklist, and creates no
+communication, repayment, schedule, interest, or borrower-visible truth; 009H and later owners
+perform those steps.
+
 ## Tri-party agreement verification (008G/008G2)
 
 `POST /api/v1/loan-documents/{loan_document_id}/verify/` implements source §26.6 only for a

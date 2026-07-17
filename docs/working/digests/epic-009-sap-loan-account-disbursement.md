@@ -1,5 +1,31 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009G UTR Capture and Transfer Success
+
+- `DisbursementWorkflow.mark_transfer_successful` owns the exact §31.4 POST. Active exact CFC
+  checker or Senior Finance initiating maker scope plus the Critical mark-success grant is required;
+  the action consumes the 009F2 typed approved decision and its terminal authorisation tuple.
+- One normalized unique manual bank transfer and restricted current finance-evidence link are
+  atomic with exact-amount funding, zero interest/charges, sanctioned-to-active account transition,
+  tenure start, one append-only status history, and safe action/audit/workflow identities. Advice,
+  Loan Register, checklist, repayment, schedule, interest, and borrower truth remain absent.
+- Exact key/payload/actor replay returns the retained four-field projection only while the complete
+  success ledger/file/account/history remains coherent. Changed/stale/duplicate/concurrent losers
+  write nothing. A-127 records the source-silent five-minute future clock-skew tolerance.
+- Eight public behavior tests and the 35-test initiation/authorisation/success set pass. Both
+  PostgreSQL race methods passed in two separate executions, retaining one complete winner and four
+  clean conflicts per round.
+
+## 009I MP14 Sharpening Extract
+
+- MP14 source requires own-only borrower finance status, sanctioned/final disbursement amounts,
+  masked destination last four, completed date, optionally masked reference, and downloadable exact
+  advice without internal authoriser/full-bank disclosure. The sharpened slice replaces every
+  hard-coded MP14 value through one portal-self-scoped 009A-009H projection and one-use advice read.
+- Borrower stages are documentation complete, SAP setup, payment initiated, CFC authorisation,
+  transfer completed, and advice issued. Missing/mixed owner evidence shows the last safe stage or
+  borrower-safe blocked state; it never infers success from mutable labels.
+
 ## 009F2 CFC Authorisation Integrity and Bank-Evidence Closure
 
 - Initiation now freezes the exact application-owned beneficiary-bank decision manifest (bank,

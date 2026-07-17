@@ -1,0 +1,22 @@
+TDD GREEN — transfer-success behavior
+
+Focused command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test
+sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests
+--verbosity 1
+
+Result: PASS — 9 tests in 5.496s after review hardening.
+
+Regression command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test
+sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests
+sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationApiTests
+sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests
+--verbosity 1
+
+Final result: PASS — 36 tests in 15.630s.
+
+Covered behavior: genuine initiation/CFC approval, transfer success, replay/conflicts, strict input,
+governed CFC/Senior Finance scope, evidence/authorisation/success-ledger drift, rejected state,
+cross-object evidence, already-active/partially-funded state, database constraints, short-reference
+masking, safe audit/workflow evidence, exact funding/activation, and later-slice side-effect absence.

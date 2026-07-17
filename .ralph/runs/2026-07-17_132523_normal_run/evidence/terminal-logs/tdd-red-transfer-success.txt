@@ -1,0 +1,13 @@
+TDD RED — public transfer-success tracer
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests.test_public_success_records_transfer_and_activates_exact_loan_atomically --verbosity 1
+
+Result: FAILED (expected), 1 test run.
+
+Failure:
+ImportError: cannot import name 'BankTransfer' from
+'sfpcl_credit.disbursements.models'.
+
+The public behavior test starts from genuine initiation and CFC approval and fails because the
+009G bank-transfer capability/model does not exist yet.
