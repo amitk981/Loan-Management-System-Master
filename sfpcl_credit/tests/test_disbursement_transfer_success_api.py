@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 from unittest import skipUnless
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import (
@@ -16,7 +16,12 @@ from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 from django.utils import timezone
 
 from sfpcl_credit.communications.models import Communication
-from sfpcl_credit.disbursements.models import BankTransfer, Disbursement
+from sfpcl_credit.disbursements.models import (
+    BankTransfer,
+    Disbursement,
+    DisbursementAdviceIntent,
+    LoanRegisterUpdate,
+)
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
     DisbursementTransferConflict,
     DisbursementWorkflow,
@@ -24,7 +29,12 @@ from sfpcl_credit.disbursements.modules.disbursement_workflow import (
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.documents.services import store_document_upload
 from sfpcl_credit.identity.models import AuditLog, RolePermission, User
-from sfpcl_credit.legal_documents.models import DocumentChecklist
+from sfpcl_credit.legal_documents.models import ChecklistAction, DocumentChecklist
+from sfpcl_credit.legal_documents.modules.checklist_actions import (
+    Conflict as ChecklistConflict,
+    RequestMetadata,
+)
+from sfpcl_credit.processes import document_checklist_actions
 from sfpcl_credit.loans.models import LoanAccount, LoanStatusHistory
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
 from sfpcl_credit.tests.test_disbursement_authorisation_api import (
@@ -78,15 +88,11 @@ class DisbursementTransferSuccessApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200, response.content)
         assert_success_envelope(self, response.json())
-        self.assertEqual(
-            response.json()["data"],
-            {
-                "disbursement_id": str(row.pk),
-                "bank_transfer_status": "successful",
-                "loan_account_status": "active",
-                "disbursement_advice_communication_id": None,
-            },
-        )
+        data = response.json()["data"]
+        self.assertEqual(data["disbursement_id"], str(row.pk))
+        self.assertEqual(data["bank_transfer_status"], "successful")
+        self.assertEqual(data["loan_account_status"], "active")
+        UUID(data["disbursement_advice_communication_id"])
         row.refresh_from_db()
         account.refresh_from_db()
         self.assertEqual(row.authorisation_status, "approved")
@@ -94,7 +100,7 @@ class DisbursementTransferSuccessApiTests(TestCase):
         self.assertEqual(row.bank_reference_number, "RBL-UTR-0001")
         self.assertEqual(row.bank_transfer_evidence_document_id, self.evidence.pk)
         self.assertIsNone(row.disbursement_advice_communication_id)
-        self.assertFalse(row.loan_register_updated_flag)
+        self.assertTrue(row.loan_register_updated_flag)
         self.assertEqual(account.loan_account_status, "active")
         self.assertEqual(account.disbursed_amount, row.disbursement_amount)
         self.assertEqual(account.principal_outstanding, row.disbursement_amount)
@@ -123,6 +129,21 @@ class DisbursementTransferSuccessApiTests(TestCase):
         )
         self.assertEqual(audit.entity_id, row.pk)
         self.assertEqual(workflow.entity_id, row.pk)
+        register_update = LoanRegisterUpdate.objects.get(disbursement=row)
+        advice_intent = DisbursementAdviceIntent.objects.get(disbursement=row)
+        self.assertEqual(register_update.bank_transfer_id, transfer.pk)
+        self.assertEqual(register_update.loan_account_id, account.pk)
+        self.assertEqual(register_update.loan_application_id, row.loan_application_id)
+        self.assertEqual(register_update.member_id, row.member_id)
+        self.assertEqual(register_update.amount, row.disbursement_amount)
+        self.assertEqual(register_update.transfer_audit_id, audit.pk)
+        self.assertEqual(register_update.transfer_workflow_event_id, workflow.pk)
+        self.assertEqual(advice_intent.bank_transfer_id, transfer.pk)
+        self.assertEqual(advice_intent.delivery_status, "pending")
+        self.assertEqual(advice_intent.transfer_action_id, row.transfer_success_action_id)
+        self.assertEqual(
+            data["disbursement_advice_communication_id"], str(advice_intent.pk)
+        )
         self.assertEqual(audit.new_value_json["bank_transfer_id"], str(transfer.pk))
         self.assertEqual(
             audit.new_value_json["loan_status_history_id"], str(history.pk)
@@ -162,7 +183,13 @@ class DisbursementTransferSuccessApiTests(TestCase):
         )
 
         self.assertEqual(replay.status_code, 200, replay.content)
-        self.assertEqual(replay.json()["data"], first.json()["data"])
+        self.assertEqual(
+            replay.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": first.json()["data"],
+            },
+        )
         self.assertEqual(changed_payload.status_code, 409, changed_payload.content)
         self.assertEqual(changed_key.status_code, 409, changed_key.content)
         self.assertEqual(
@@ -350,6 +377,51 @@ class DisbursementTransferSuccessApiTests(TestCase):
             LoanAccount.objects.values().get(pk=row.loan_account_id), account_before
         )
 
+    def test_replay_rejects_changed_register_and_pending_advice_relations(self):
+        accepted_at = timezone.now()
+        first = self._post(
+            bank_reference_number="RBL-POST-TRANSFER-0001", disbursed_at=accepted_at
+        )
+        self.assertEqual(first.status_code, 200, first.content)
+        row = Disbursement.objects.get()
+        register = LoanRegisterUpdate.objects.get(disbursement=row)
+        intent = DisbursementAdviceIntent.objects.get(disbursement=row)
+        mutations = (
+            (LoanRegisterUpdate, register.pk, "bank_reference_digest", "0" * 64,
+             register.bank_reference_digest),
+            (LoanRegisterUpdate, register.pk, "evidence_checksum_sha256", "0" * 64,
+             register.evidence_checksum_sha256),
+            (DisbursementAdviceIntent, intent.pk, "transfer_evidence_digest", "0" * 64,
+             intent.transfer_evidence_digest),
+            (DisbursementAdviceIntent, intent.pk, "evidence_checksum_sha256", "0" * 64,
+             intent.evidence_checksum_sha256),
+        )
+        counts = (
+            BankTransfer.objects.count(),
+            LoanRegisterUpdate.objects.count(),
+            DisbursementAdviceIntent.objects.count(),
+            AuditLog.objects.filter(action="disbursement.transfer_succeeded").count(),
+        )
+        for model, pk, field, changed, retained in mutations:
+            with self.subTest(model=model.__name__, field=field):
+                model.objects.filter(pk=pk).update(**{field: changed})
+                replay = self._post(
+                    bank_reference_number="RBL-POST-TRANSFER-0001",
+                    disbursed_at=accepted_at,
+                )
+                self.assertEqual(replay.status_code, 409, replay.content)
+                self.assertEqual(
+                    (
+                        BankTransfer.objects.count(),
+                        LoanRegisterUpdate.objects.count(),
+                        DisbursementAdviceIntent.objects.count(),
+                        AuditLog.objects.filter(
+                            action="disbursement.transfer_succeeded"
+                        ).count(),
+                    ),
+                    counts,
+                )
+                model.objects.filter(pk=pk).update(**{field: retained})
     def test_exact_retry_fails_closed_when_retained_success_ledger_changes(self):
         accepted_at = timezone.now()
         first = self._post(
@@ -613,6 +685,54 @@ class DisbursementTransferSuccessRaceTests(TransactionTestCase):
         self.assertEqual(
             WorkflowEvent.objects.filter(
                 workflow_name="DisbursementTransferSucceeded"
+            ).count(),
+            1,
+        )
+        self.assertEqual(LoanRegisterUpdate.objects.filter(disbursement=row).count(), 1)
+        self.assertEqual(
+            DisbursementAdviceIntent.objects.filter(disbursement=row).count(), 1
+        )
+
+        checklist = DocumentChecklist.objects.get(
+            loan_application_id=row.loan_application_id
+        )
+        checklist_gate = Barrier(5)
+
+        def checklist_contender(index):
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=row.initiated_by_user_id)
+                checklist_gate.wait(timeout=15)
+                try:
+                    result = document_checklist_actions.sign_disbursement_complete(
+                        actor=actor,
+                        document_checklist_id=checklist.pk,
+                        payload={"comments": f"Concurrent transfer sign-off {index}."},
+                        metadata=RequestMetadata(
+                            request_id=f"checklist-race-{index}",
+                            ip_address="127.0.0.1",
+                            user_agent="postgres-race",
+                        ),
+                    )
+                    return ("won", result["checklist_action_id"])
+                except ChecklistConflict:
+                    return ("conflict", None)
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            checklist_results = list(pool.map(checklist_contender, range(5)))
+
+        self.assertEqual(
+            len([item for item in checklist_results if item[0] == "won"]), 1
+        )
+        self.assertEqual(
+            len([item for item in checklist_results if item[0] == "conflict"]), 4
+        )
+        self.assertEqual(
+            ChecklistAction.objects.filter(
+                document_checklist=checklist,
+                action_type=ChecklistAction.TYPE_DISBURSEMENT_SIGNATURE,
             ).count(),
             1,
         )

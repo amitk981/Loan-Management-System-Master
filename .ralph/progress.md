@@ -8517,3 +8517,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-17 - 2026-07-17_192021_normal_run
+
+- Agent tool used: codex with implement, TDD, and parallel standards/spec review skills.
+- Slice completed: 009G2-post-disbursement-register-checklist-and-replay-closure.
+- Summary: Added atomic Loan Register and stable pending-advice identities to transfer success,
+  exact §45.2 replay, and a reachable aggregate-backed Senior Finance checklist sign-off through
+  coordinator injection. Independent review findings were fixed before completion.
+- Tests run: failing-first transfer/replay and checklist cycles; 32 post-review focused tests; 44
+  initiation/authorisation/advice regressions; Django check and migration sync; frontend build,
+  typecheck, lint, and all 327 tests. PostgreSQL races collected locally and delegated through the
+  declared capability.
+- Evidence saved: `.ralph/runs/2026-07-17_192021_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; mitigated by one atomic transaction, exact coherent ledgers, database aggregate
+  constraints, explicit Stage-5 scope, zero-write replay/conflicts, and no advice delivery/servicing.
+- Next action: Run 009H2, then 009I.
+
+## 2026-07-17 20:11:08 - 2026-07-17_192021_normal_run
+- Agent tool used: codex
+- Slice attempted: 009G2-post-disbursement-register-checklist-and-replay-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/.ralph/runs/2026-07-17_192021_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/.ralph/runs/2026-07-17_192021_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

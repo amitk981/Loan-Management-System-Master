@@ -450,7 +450,9 @@ def _approve(
 
 
 @transaction.atomic
-def sign_disbursement_complete(*, actor, document_checklist_id, payload, metadata):
+def sign_disbursement_complete(
+    *, actor, document_checklist_id, payload, metadata, post_transfer_evidence
+):
     require_finance_actor(actor)
     request = (
         payload
@@ -465,8 +467,18 @@ def sign_disbursement_complete(*, actor, document_checklist_id, payload, metadat
     if checklist is None:
         raise NotFound
     _require_stage4_scope(checklist)
+    transfer = post_transfer_evidence
+    if transfer is None:
+        raise Conflict(
+            "A real successful disbursement aggregate is required before this signature.",
+            "DISBURSEMENT_EVIDENCE_UNAVAILABLE",
+        )
+    if transfer.initiated_by_user_id != actor.pk:
+        raise AccessDenied("OBJECT_ACCESS_DENIED")
     existing = (
-        ChecklistAction.objects.select_related("workflow_event")
+        ChecklistAction.objects.select_related(
+            "workflow_event", "audit_log", "version_history"
+        )
         .filter(
             document_checklist=checklist,
             action_type=ChecklistAction.TYPE_DISBURSEMENT_SIGNATURE,
@@ -474,12 +486,81 @@ def sign_disbursement_complete(*, actor, document_checklist_id, payload, metadat
         .first()
     )
     if existing is not None:
-        if existing.actor_user_id == actor.pk and existing.comments == request.comments:
+        if (
+            existing.actor_user_id == actor.pk
+            and existing.comments == request.comments
+            and checklist.checklist_status == DocumentChecklist.STATUS_READY
+            and checklist.senior_manager_finance_signature_id == existing.pk
+            and checklist.loan_account_id == transfer.loan_account_id
+            and _disbursement_signature_is_coherent(existing, transfer)
+        ):
             return _action_response(existing)
         raise Conflict("Disbursement signature evidence is immutable.")
-    raise Conflict(
-        "A real successful disbursement aggregate is required before this signature.",
-        "DISBURSEMENT_EVIDENCE_UNAVAILABLE",
+    if (
+        checklist.checklist_status != DocumentChecklist.STATUS_SANCTION_APPROVED
+        or checklist.company_secretary_signature_id is None
+        or checklist.credit_manager_signature_id is None
+        or checklist.sanction_committee_signature_id is None
+        or checklist.senior_manager_finance_signature_id is not None
+        or checklist.loan_account_id is not None
+    ):
+        raise Conflict(
+            "The documentation checklist is not at the post-disbursement signature stage.",
+            "CHECKLIST_APPROVAL_OUT_OF_ORDER",
+        )
+    action = _create_action(
+        actor=actor,
+        checklist=checklist,
+        item=None,
+        document=None,
+        action_type=ChecklistAction.TYPE_DISBURSEMENT_SIGNATURE,
+        meaning="actual disbursement and post-transfer evidence confirmed",
+        comments=request.comments,
+        previous_status=DocumentChecklist.STATUS_SANCTION_APPROVED,
+        new_status=DocumentChecklist.STATUS_READY,
+        context=transfer.checklist_evidence(),
+        metadata=metadata,
+        canonical_role_code="senior_manager_finance",
+    )
+    checklist.senior_manager_finance_signature = action
+    checklist.loan_account_id = transfer.loan_account_id
+    checklist.checklist_status = DocumentChecklist.STATUS_READY
+    checklist.updated_at = timezone.now()
+    checklist.save(
+        update_fields=[
+            "senior_manager_finance_signature",
+            "loan_account_id",
+            "checklist_status",
+            "updated_at",
+        ]
+    )
+    return _action_response(action)
+
+
+def _disbursement_signature_is_coherent(action, transfer):
+    evidence = transfer.checklist_evidence()
+    audit = action.audit_log
+    history = action.version_history
+    workflow = action.workflow_event
+    retained = audit.new_value_json or {}
+    return bool(
+        action.action_type == ChecklistAction.TYPE_DISBURSEMENT_SIGNATURE
+        and action.canonical_role_code == "senior_manager_finance"
+        and all(retained.get(key) == value for key, value in evidence.items())
+        and audit.action == "document_checklist.disbursement_signature"
+        and audit.entity_type == "document_checklist"
+        and audit.entity_id == action.document_checklist_id
+        and audit.actor_user_id == action.actor_user_id
+        and history.versioned_entity_type == "document_checklist_approval"
+        and history.versioned_entity_id == action.document_checklist_id
+        and history.new_value_json == retained
+        and workflow.workflow_name == "documentation_checklist"
+        and workflow.entity_type == "document_checklist"
+        and workflow.entity_id == action.document_checklist_id
+        and workflow.from_state == DocumentChecklist.STATUS_SANCTION_APPROVED
+        and workflow.to_state == DocumentChecklist.STATUS_READY
+        and workflow.trigger_reason == ChecklistAction.TYPE_DISBURSEMENT_SIGNATURE
+        and workflow.triggered_by_user_id == action.actor_user_id
     )
 
 

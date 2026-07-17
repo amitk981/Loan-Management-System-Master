@@ -549,10 +549,6 @@ class DocumentChecklist(models.Model):
                 name="document_checklist_valid_status",
             ),
             models.CheckConstraint(
-                check=models.Q(loan_account_id__isnull=True),
-                name="checklist_account_requires_epic_009",
-            ),
-            models.CheckConstraint(
                 check=(
                     models.Q(credit_manager_signature_id__isnull=True)
                     | models.Q(company_secretary_signature_id__isnull=False)
@@ -567,8 +563,28 @@ class DocumentChecklist(models.Model):
                 name="checklist_sanction_requires_credit",
             ),
             models.CheckConstraint(
-                check=models.Q(senior_manager_finance_signature_id__isnull=True),
-                name="checklist_finance_requires_epic_009",
+                check=(
+                    models.Q(senior_manager_finance_signature_id__isnull=True)
+                    | models.Q(sanction_committee_signature_id__isnull=False)
+                ),
+                name="checklist_finance_requires_sanction",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        checklist_status="ready",
+                        senior_manager_finance_signature_id__isnull=False,
+                        loan_account_id__isnull=False,
+                    )
+                    | (
+                        ~models.Q(checklist_status="ready")
+                        & models.Q(
+                            senior_manager_finance_signature_id__isnull=True,
+                            loan_account_id__isnull=True,
+                        )
+                    )
+                ),
+                name="checklist_ready_evidence_complete",
             ),
         ]
 

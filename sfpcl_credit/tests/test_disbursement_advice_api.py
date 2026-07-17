@@ -109,7 +109,7 @@ class DisbursementAdviceApiTests(TestCase):
         )
         self.assertEqual(list(DocumentChecklist.objects.values()), checklist_before)
         self.assertEqual(Repayment.objects.count(), repayment_count)
-        self.assertFalse(self.row.loan_register_updated_flag)
+        self.assertTrue(self.row.loan_register_updated_flag)
 
     def test_exact_replay_is_zero_write_and_changed_replay_conflicts(self):
         class CountingAdapter(FakeEmailDeliveryAdapter):

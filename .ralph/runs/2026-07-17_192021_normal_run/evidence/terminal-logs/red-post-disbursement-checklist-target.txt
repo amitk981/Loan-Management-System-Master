@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_public_post_disbursement_signature_binds_current_transfer_evidence (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_public_post_disbursement_signature_binds_current_transfer_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 2400, in test_public_post_disbursement_signature_binds_current_transfer_evidence
+    self.assertEqual(signed.status_code, 200, signed.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "DISBURSEMENT_EVIDENCE_UNAVAILABLE", "message": "A real successful disbursement aggregate is required before this signature.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T13:59:45.257513Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.724s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

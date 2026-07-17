@@ -101,18 +101,25 @@ authorisation tuple, frozen initiation/readiness/bank/loan-creation evidence, ex
 sanctioned account/terms, and current evidence checksum. Pending/rejected, stale, partially funded,
 active, over-sanction, changed-owner, bad-time, cross-object, or already-transferred facts fail
 without success artifacts. Success returns only `disbursement_id`, `bank_transfer_status:
-successful`, `loan_account_status: active`, and `disbursement_advice_communication_id: null`.
+successful`, `loan_account_status: active`, and the stable protected pending
+`disbursement_advice_communication_id`. The final field is an advice/outbox identity, not a sent or
+provider-accepted claim.
 
 Atomically it creates one unique manual transfer/evidence, funds disbursed/principal/total with the
-exact amount, keeps interest/charges zero, sets tenure start, activates the account, and links one
-sanctioned-to-active history. Safe audit/workflow evidence keeps only masked/reference digest,
-evidence id/checksum, owner/action ids, amount/status, actor role/team, and request/network context.
+exact amount, keeps interest/charges zero, sets tenure start, activates the account, links one
+sanctioned-to-active history, creates one exact Loan Register update, and creates one pending advice
+intent. The register and intent each bind the transfer/account/application/member/amount, reference
+digest, file/checksum, transfer action/evidence digest, audit, and workflow identities. Only this
+singular coherent register evidence permits `loan_register_updated_flag: true`. Safe audit/workflow
+evidence keeps only masked/reference digest, evidence id/checksum, owner/action ids, amount/status,
+actor role/team, and request/network context.
 
-Exact normalized key/payload/actor retry returns the retained four-field projection with no write.
+Exact normalized key/payload/actor retry returns API §45.2's
+`{idempotency_replayed: true, original_response: <retained first response>}` with no write.
 Changed key/payload, changed retained success ledger, duplicate UTR, or a concurrent loser returns a
-stable conflict. The action sends no advice, updates no Loan Register/checklist, and creates no
-communication, repayment, schedule, interest, or borrower-visible truth; 009H and later owners
-perform those steps.
+stable conflict. Missing, duplicate, cross-linked, or changed register/advice-intent evidence also
+fails closed. The action sends no advice, signs no checklist, and creates no repayment, schedule,
+interest, or borrower-visible truth; 009H2 owns delivery of the stable pending identity.
 
 ## Disbursement advice (009H)
 
@@ -3765,10 +3772,15 @@ Completion accepts only the latest current-renderer same-application document of
 item type and consumes owner-held terminal legal/security evidence. Masked CDSL/cheque ledgers are
 never revealed or decrypted. CS approval requires every applicable required item complete; Credit
 Manager approval requires the canonical frozen limit package; one active non-excluded director from
-the frozen committee may give the final documentation approval. The Senior Manager Finance route is
-intentionally present but returns `409 DISBURSEMENT_EVIDENCE_UNAVAILABLE` with zero writes until an
-Epic 009 owner supplies a real successful-disbursement relation. No route creates a loan account or
-changes package/security readiness.
+the frozen committee may give the final documentation approval. The Senior Manager Finance route
+consumes the singular current successful-transfer decision through the top-level post-disbursement
+evidence coordinator. An active Senior Manager Finance actor needs the explicit signature grant and
+exact Stage-5 initiating-maker scope. The first valid request creates one immutable checklist
+action/audit/workflow/version chain bound to the transfer, Loan Register update, pending advice
+identity, evidence digest, and owner ids. Exact actor/comment replay is zero-write; changed actor/
+comment, pre-success, missing or stale register/advice/transfer evidence, and cross-object scope fail
+without changing finance or documentation truth. No route creates a loan account or changes
+package/security readiness.
 
 008K3 hardening: the completion route now receives security facts only through the public
 cross-owner process coordinator and resolves current source-owned rows rather than accepting

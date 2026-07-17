@@ -1,5 +1,7 @@
 """Public coordinator for legal-checklist actions that consume security-owned facts."""
 
+from django.db import transaction
+
 from sfpcl_credit.legal_documents.modules import checklist_actions
 from sfpcl_credit.processes import security_instrument_evidence
 
@@ -43,5 +45,28 @@ def approve_sanction_committee(**kwargs):
     )
 
 
+@transaction.atomic
 def sign_disbursement_complete(**kwargs):
-    return checklist_actions.sign_disbursement_complete(**kwargs)
+    from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
+        resolve_post_transfer_evidence,
+    )
+
+    decision = resolve_post_transfer_evidence(
+        application_id=_checklist_application_id(
+            kwargs.get("document_checklist_id")
+        ),
+        for_update=True,
+    )
+    return checklist_actions.sign_disbursement_complete(
+        **kwargs, post_transfer_evidence=decision
+    )
+
+
+def _checklist_application_id(checklist_id):
+    from sfpcl_credit.legal_documents.models import DocumentChecklist
+
+    return (
+        DocumentChecklist.objects.filter(pk=checklist_id)
+        .values_list("loan_application_id", flat=True)
+        .first()
+    )

@@ -287,6 +287,7 @@ class Disbursement(models.Model):
                         transfer_success_audit__isnull=False,
                         transfer_success_workflow_event__isnull=False,
                         transfer_success_loan_status_history__isnull=False,
+                        loan_register_updated_flag=True,
                     )
                     | Q(
                         bank_transfer_status__in=(
@@ -309,6 +310,7 @@ class Disbursement(models.Model):
                         transfer_success_audit__isnull=True,
                         transfer_success_workflow_event__isnull=True,
                         transfer_success_loan_status_history__isnull=True,
+                        loan_register_updated_flag=False,
                     )
                 ),
                 name="disb_success_evidence_complete",
@@ -405,5 +407,120 @@ class BankTransfer(models.Model):
                 check=~Q(bank_reference_number="")
                 & ~Q(bank_reference_number_normalized=""),
                 name="bank_transfer_reference_present",
+            ),
+        ]
+
+
+class LoanRegisterUpdate(models.Model):
+    loan_register_update_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    disbursement = models.OneToOneField(
+        Disbursement, on_delete=models.PROTECT, related_name="loan_register_update"
+    )
+    bank_transfer = models.OneToOneField(
+        BankTransfer, on_delete=models.PROTECT, related_name="loan_register_update"
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount", on_delete=models.PROTECT,
+        related_name="loan_register_updates",
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication", on_delete=models.PROTECT,
+        related_name="loan_register_updates",
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT,
+        related_name="loan_register_updates",
+    )
+    amount = models.DecimalField(max_digits=18, decimal_places=2)
+    bank_reference_digest = models.CharField(max_length=64)
+    evidence_document = models.ForeignKey(
+        "documents.DocumentFile", on_delete=models.PROTECT,
+        related_name="loan_register_updates",
+    )
+    evidence_checksum_sha256 = models.CharField(max_length=128)
+    transfer_action_id = models.UUIDField(unique=True)
+    transfer_evidence_digest = models.CharField(max_length=64)
+    transfer_audit = models.ForeignKey(
+        "identity.AuditLog", on_delete=models.PROTECT,
+        related_name="loan_register_updates",
+    )
+    transfer_workflow_event = models.ForeignKey(
+        "workflows.WorkflowEvent", on_delete=models.PROTECT,
+        related_name="loan_register_updates",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "loan_register_updates"
+        constraints = [
+            models.CheckConstraint(
+                check=Q(amount__gt=0), name="loan_register_amount_positive"
+            ),
+            models.CheckConstraint(
+                check=~Q(bank_reference_digest="") & ~Q(evidence_checksum_sha256=""),
+                name="loan_register_evidence_present",
+            ),
+        ]
+
+
+class DisbursementAdviceIntent(models.Model):
+    DELIVERY_PENDING = "pending"
+    DELIVERY_SENT = "sent"
+    advice_intent_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    disbursement = models.OneToOneField(
+        Disbursement, on_delete=models.PROTECT, related_name="advice_intent"
+    )
+    bank_transfer = models.OneToOneField(
+        BankTransfer, on_delete=models.PROTECT, related_name="advice_intent"
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount", on_delete=models.PROTECT,
+        related_name="disbursement_advice_intents",
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication", on_delete=models.PROTECT,
+        related_name="disbursement_advice_intents",
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT,
+        related_name="disbursement_advice_intents",
+    )
+    amount = models.DecimalField(max_digits=18, decimal_places=2)
+    bank_reference_digest = models.CharField(max_length=64)
+    evidence_document = models.ForeignKey(
+        "documents.DocumentFile", on_delete=models.PROTECT,
+        related_name="disbursement_advice_intents",
+    )
+    evidence_checksum_sha256 = models.CharField(max_length=128)
+    transfer_action_id = models.UUIDField(unique=True)
+    transfer_evidence_digest = models.CharField(max_length=64)
+    transfer_audit = models.ForeignKey(
+        "identity.AuditLog", on_delete=models.PROTECT,
+        related_name="disbursement_advice_intents",
+    )
+    transfer_workflow_event = models.ForeignKey(
+        "workflows.WorkflowEvent", on_delete=models.PROTECT,
+        related_name="disbursement_advice_intents",
+    )
+    delivery_status = models.CharField(max_length=40, default=DELIVERY_PENDING)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "disbursement_advice_intents"
+        constraints = [
+            models.CheckConstraint(
+                check=Q(amount__gt=0), name="advice_intent_amount_positive"
+            ),
+            models.CheckConstraint(
+                check=Q(delivery_status__in=("pending", "sent")),
+                name="advice_intent_status_valid",
+            ),
+            models.CheckConstraint(
+                check=~Q(bank_reference_digest="") & ~Q(evidence_checksum_sha256=""),
+                name="advice_intent_evidence_present",
             ),
         ]

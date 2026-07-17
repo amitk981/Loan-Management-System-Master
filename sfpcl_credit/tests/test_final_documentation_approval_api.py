@@ -11,7 +11,7 @@ from uuid import uuid4
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import close_old_connections, connection, connections, transaction
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.test import TransactionTestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
@@ -19,6 +19,7 @@ from django.utils import timezone
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.approvals.models import ApprovalCase, ApprovalCaseReadScopeGrant
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
+from sfpcl_credit.documents.services import store_document_upload
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission
 from sfpcl_credit.legal_documents.models import (
     ChecklistAction,
@@ -2334,6 +2335,223 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.checklist.refresh_from_db()
         self.assertIsNone(self.checklist.loan_account_id)
         self.assertIsNone(self.checklist.senior_manager_finance_signature_id)
+
+    def test_public_post_disbursement_signature_binds_current_transfer_evidence(self):
+        from sfpcl_credit.disbursements.models import Disbursement
+
+        self._real_owner_initiation_fixture()
+        disbursement = Disbursement.objects.get(loan_application=self.application)
+        cfc = self.fixture._user(
+            "chief_financial_controller", "Checklist Transfer CFC"
+        )
+        cfc.approval_authority_type = "chief_financial_controller"
+        cfc.save(update_fields=["approval_authority_type"])
+        self._grant(
+            cfc,
+            "finance.disbursement.authorise",
+            "finance.disbursement.mark_success",
+        )
+        authorised = self.client.post(
+            f"/api/v1/disbursements/{disbursement.pk}/authorise/",
+            {
+                "decision": "approved",
+                "comments": "Independent transfer approval recorded.",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="checklist-transfer-authorise",
+            **self.fixture._auth(cfc),
+        )
+        self.assertEqual(authorised.status_code, 200, authorised.content)
+        evidence = store_document_upload(
+            user=cfc,
+            request=RequestFactory().post(
+                "/api/v1/documents/", REMOTE_ADDR="127.0.0.1"
+            ),
+            uploaded_file=SimpleUploadedFile(
+                "checklist-transfer-evidence.pdf",
+                b"%PDF-1.4 sanitized checklist transfer evidence",
+                content_type="application/pdf",
+            ),
+            document_category="finance",
+            sensitivity_level="restricted",
+            related_entity_type="loan_application",
+            related_entity_id=self.application.pk,
+        )
+        transferred = self.client.post(
+            f"/api/v1/disbursements/{disbursement.pk}/mark-transfer-successful/",
+            {
+                "bank_reference_number": "RBL-CHECKLIST-TRANSFER-001",
+                "disbursed_at": timezone.now().isoformat(),
+                "bank_transfer_evidence_document_id": str(evidence.pk),
+            },
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="checklist-transfer-success",
+            HTTP_X_REQUEST_ID="checklist-transfer-success-request",
+            **self.fixture._auth(cfc),
+        )
+        self.assertEqual(transferred.status_code, 200, transferred.content)
+        self.finance.approval_authority_type = "credit_manager"
+        self.finance.save(update_fields=["approval_authority_type"])
+
+        pre_signature_counts = self._evidence_counts()
+        self.checklist.checklist_status = DocumentChecklist.STATUS_CREDIT_APPROVED
+        self.checklist.save(update_fields=["checklist_status"])
+        out_of_order = self._post_stage(
+            "sign-disbursement-complete",
+            self.finance,
+            {"comments": "Cannot skip the final documentation approval."},
+        )
+        self.assertEqual(out_of_order.status_code, 409, out_of_order.content)
+        self.assertEqual(
+            out_of_order.json()["error"]["code"],
+            "CHECKLIST_APPROVAL_OUT_OF_ORDER",
+        )
+        self.assertEqual(self._evidence_counts(), pre_signature_counts)
+        self.checklist.checklist_status = DocumentChecklist.STATUS_SANCTION_APPROVED
+        self.checklist.save(update_fields=["checklist_status"])
+
+        inactive_headers = self.fixture._auth(self.finance)
+        self.finance.status = "inactive"
+        self.finance.save(update_fields=["status"])
+        inactive = self.client.post(
+            f"/api/v1/document-checklists/{self.checklist.pk}/"
+            "sign-disbursement-complete/",
+            {"comments": "Inactive actor must not sign."},
+            content_type="application/json",
+            **inactive_headers,
+        )
+        self.assertEqual(inactive.status_code, 401, inactive.content)
+        self.assertEqual(self._evidence_counts(), pre_signature_counts)
+        self.finance.status = "active"
+        self.finance.save(update_fields=["status"])
+
+        signed = self._post_stage(
+            "sign-disbursement-complete",
+            self.finance,
+            {"comments": "Loan has been disbursed to the applicant account."},
+        )
+
+        self.assertEqual(signed.status_code, 200, signed.content)
+        disbursement.refresh_from_db()
+        self.checklist.refresh_from_db()
+        action = ChecklistAction.objects.get(
+            pk=signed.json()["data"]["checklist_action_id"]
+        )
+        self.assertEqual(
+            self.checklist.senior_manager_finance_signature_id, action.pk
+        )
+        self.assertEqual(self.checklist.loan_account_id, disbursement.loan_account_id)
+        self.assertEqual(self.checklist.checklist_status, DocumentChecklist.STATUS_READY)
+        self.assertEqual(action.action_type, ChecklistAction.TYPE_DISBURSEMENT_SIGNATURE)
+        self.assertEqual(action.canonical_role_code, "senior_manager_finance")
+        self.assertEqual(action.workflow_event.from_state, "sanction_approved")
+        self.assertEqual(action.workflow_event.to_state, "ready")
+        self.assertEqual(
+            action.audit_log.new_value_json["transfer_success_action_id"],
+            str(disbursement.transfer_success_action_id),
+        )
+        self.assertEqual(
+            action.audit_log.new_value_json["loan_register_update_id"],
+            str(disbursement.loan_register_update.pk),
+        )
+        self.assertEqual(
+            action.audit_log.new_value_json["disbursement_advice_communication_id"],
+            str(disbursement.advice_intent.pk),
+        )
+        counts = self._evidence_counts()
+        replay = self._post_stage(
+            "sign-disbursement-complete",
+            self.finance,
+            {"comments": "Loan has been disbursed to the applicant account."},
+        )
+        changed = self._post_stage(
+            "sign-disbursement-complete",
+            self.finance,
+            {"comments": "Changed post-transfer confirmation."},
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(replay.json()["data"], signed.json()["data"])
+        self.assertEqual(changed.status_code, 409, changed.content)
+        self.assertEqual(self._evidence_counts(), counts)
+
+        permission_only = self.fixture._user(
+            "compliance_team_member", "Permission Only Finance Signer"
+        )
+        self._grant(
+            permission_only, "documents.checklist.sign_disbursement_complete"
+        )
+        denied = self._post_stage(
+            "sign-disbursement-complete",
+            permission_only,
+            {"comments": "Not an authorised finance role."},
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(self._evidence_counts(), counts)
+
+        role_only = self.fixture._user(
+            "field_officer", "Role Only Finance Signer"
+        )
+        role_only.approval_authority_type = "senior_manager_finance"
+        role_only.save(update_fields=["approval_authority_type"])
+        denied = self._post_stage(
+            "sign-disbursement-complete",
+            role_only,
+            {"comments": "Role without the explicit permission."},
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+
+        other_finance = self.fixture._user(
+            "senior_manager_finance", "Out of Scope Finance Signer"
+        )
+        denied = self._post_stage(
+            "sign-disbursement-complete",
+            other_finance,
+            {"comments": "Not the Stage-5 finance owner."},
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+        self.assertEqual(self._evidence_counts(), counts)
+
+        retained_digest = disbursement.advice_intent.transfer_evidence_digest
+        disbursement.advice_intent.__class__.objects.filter(
+            pk=disbursement.advice_intent.pk
+        ).update(transfer_evidence_digest="0" * 64)
+        stale = self._post_stage(
+            "sign-disbursement-complete",
+            self.finance,
+            {"comments": "Loan has been disbursed to the applicant account."},
+        )
+        self.assertEqual(stale.status_code, 409, stale.content)
+        self.assertEqual(
+            stale.json()["error"]["code"], "DISBURSEMENT_EVIDENCE_UNAVAILABLE"
+        )
+        self.assertEqual(self._evidence_counts(), counts)
+        disbursement.advice_intent.__class__.objects.filter(
+            pk=disbursement.advice_intent.pk
+        ).update(transfer_evidence_digest=retained_digest)
+
+        register = disbursement.loan_register_update
+        register_id = register.pk
+        register.delete()
+        missing_register = self._post_stage(
+            "sign-disbursement-complete",
+            self.finance,
+            {"comments": "Loan has been disbursed to the applicant account."},
+        )
+        self.assertEqual(missing_register.status_code, 409, missing_register.content)
+        register.pk = register_id
+        register._state.adding = True
+        register.save(force_insert=True)
+
+        intent = disbursement.advice_intent
+        intent.delete()
+        missing_intent = self._post_stage(
+            "sign-disbursement-complete",
+            self.finance,
+            {"comments": "Loan has been disbursed to the applicant account."},
+        )
+        self.assertEqual(missing_intent.status_code, 409, missing_intent.content)
+        self.assertEqual(self._evidence_counts(), counts)
 
     def test_multi_role_stage_freezes_authorising_role_and_name(self):
         self._complete_all_applicable_items()

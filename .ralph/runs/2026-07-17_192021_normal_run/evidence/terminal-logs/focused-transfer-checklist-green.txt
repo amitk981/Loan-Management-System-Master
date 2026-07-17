@@ -1,0 +1,61 @@
+Creating test database for alias 'default'...
+Found 12 test(s).
+System check identified no issues (0 silenced).
+...........E
+======================================================================
+ERROR: test_public_post_disbursement_signature_binds_current_transfer_evidence (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_public_post_disbursement_signature_binds_current_transfer_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 2424, in test_public_post_disbursement_signature_binds_current_transfer_evidence
+    replay = self._post_stage(
+             ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 3796, in _post_stage
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/legal_documents/views.py", line 340, in sign_checklist_disbursement_complete
+    return _run_checklist_action(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/legal_documents/views.py", line 270, in _run_checklist_action
+    data = recorder(
+           ^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/processes/document_checklist_actions.py", line 47, in sign_disbursement_complete
+    return checklist_actions.sign_disbursement_complete(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/legal_documents/modules/checklist_actions.py", line 494, in sign_disbursement_complete
+    and _disbursement_signature_is_coherent(existing, transfer)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/legal_documents/modules/checklist_actions.py", line 538, in _disbursement_signature_is_coherent
+    and workflow.action_code == ChecklistAction.TYPE_DISBURSEMENT_SIGNATURE
+        ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'WorkflowEvent' object has no attribute 'action_code'
+
+----------------------------------------------------------------------
+Ran 12 tests in 6.796s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

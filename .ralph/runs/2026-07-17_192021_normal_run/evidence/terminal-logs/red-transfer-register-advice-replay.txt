@@ -1,0 +1,42 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+EF
+======================================================================
+ERROR: test_public_success_records_transfer_and_activates_exact_loan_atomically (sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests.test_public_success_records_transfer_and_activates_exact_loan_atomically)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/tests/test_disbursement_transfer_success_api.py", line 85, in test_public_success_records_transfer_and_activates_exact_loan_atomically
+    UUID(data["disbursement_advice_communication_id"])
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/uuid.py", line 172, in __init__
+    raise TypeError('one of the hex, bytes, bytes_le, fields, '
+TypeError: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+
+======================================================================
+FAIL: test_exact_retry_is_zero_write_and_changed_replays_conflict (sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests.test_exact_retry_is_zero_write_and_changed_replays_conflict)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_192021_normal_run/sfpcl_credit/tests/test_disbursement_transfer_success_api.py", line 161, in test_exact_retry_is_zero_write_and_changed_replays_conflict
+    self.assertEqual(
+AssertionError: {'disbursement_id': '1080824a-7f2b-4791-8dd[128 chars]None} != {'idempotency_replayed': True, 'original_re[181 chars]one}}
++ {'idempotency_replayed': True,
+- {'bank_transfer_status': 'successful',
++  'original_response': {'bank_transfer_status': 'successful',
+? ++++++++++++++++++++++
+
+-  'disbursement_advice_communication_id': None,
++                        'disbursement_advice_communication_id': None,
+? ++++++++++++++++++++++
+
+-  'disbursement_id': '1080824a-7f2b-4791-8dd3-8c6fd6d3a260',
++                        'disbursement_id': '1080824a-7f2b-4791-8dd3-8c6fd6d3a260',
+? ++++++++++++++++++++++
+
+-  'loan_account_status': 'active'}
++                        'loan_account_status': 'active'}}
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.223s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...

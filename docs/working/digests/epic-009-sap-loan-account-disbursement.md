@@ -1,5 +1,24 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009G2 Post-Disbursement Register, Checklist, and Replay Closure
+
+- The public transfer-success transaction now creates one exact Loan Register update and one stable
+  protected pending advice/outbox identity alongside the unique transfer, funded activation,
+  history, audit, and workflow. Both new ledgers bind the exact disbursement/account/application/
+  member/amount, normalized-reference digest, evidence file/checksum, transfer action/evidence
+  digest, audit, and workflow; the register flag is true only with this coherent singular evidence.
+- Source API §45.2 replay now returns `idempotency_replayed: true` with the retained original §31.4
+  response. Exact replay writes nothing; changed payload/key/actor or changed register, advice,
+  transfer, upload, authorisation, audit, workflow, account, or history evidence fails closed.
+- The §27.7 Senior Manager Finance route now consumes a frozen post-transfer decision through the
+  top-level process coordinator, preserving the legal-to-disbursement dependency boundary. Active
+  explicit permission, effective Senior Finance role, and exact initiating-maker Stage-5 scope are
+  all required. The first signature retains an immutable action/audit/workflow/version chain bound
+  to the current transfer/register/advice identities; exact replay is zero-write and changed or
+  stale replay conflicts.
+- The action still sends no advice and creates no repayment, schedule, interest, default, closure,
+  or borrower-visible truth. 009H2 owns durable delivery of the stable pending advice identity.
+
 ## 009E4 Source-Bank Rationale and Approval Evidence Closure
 
 - The existing `source_bank_governance` deep module now retains each accepted first activation or

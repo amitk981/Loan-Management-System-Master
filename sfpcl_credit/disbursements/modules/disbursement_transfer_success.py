@@ -10,7 +10,12 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.disbursements.models import BankTransfer, Disbursement
+from sfpcl_credit.disbursements.models import (
+    BankTransfer,
+    Disbursement,
+    DisbursementAdviceIntent,
+    LoanRegisterUpdate,
+)
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
     resolve_current_disbursement_evidence,
 )
@@ -59,6 +64,8 @@ def _mark_transfer_successful(
                 "transfer_success_audit",
                 "transfer_success_workflow_event",
                 "transfer_success_loan_status_history",
+                "loan_register_update",
+                "advice_intent",
             )
             .filter(
                 transfer_success_idempotency_key_digest=cleaned[
@@ -73,7 +80,10 @@ def _mark_transfer_successful(
                 and replay.transfer_success_payload_digest == payload_digest
                 and completed_success_is_coherent(replay)
             ):
-                return serialize_transfer_success(replay)
+                return {
+                    "idempotency_replayed": True,
+                    "original_response": serialize_transfer_success(replay),
+                }
             raise DisbursementTransferConflict(
                 "The idempotency key is already bound to a different transfer request."
             )
@@ -139,6 +149,8 @@ def _mark_transfer_successful(
         action_id = uuid.uuid4()
         bank_transfer_id = uuid.uuid4()
         loan_status_history_id = uuid.uuid4()
+        loan_register_update_id = uuid.uuid4()
+        advice_intent_id = uuid.uuid4()
         request_id = _request_id(request)
         ip_address = request_ip(request) if request else ""
         user_agent = request_user_agent(request) if request else ""
@@ -156,6 +168,8 @@ def _mark_transfer_successful(
                     reference_digest,
                     cleaned["disbursed_at"].isoformat(),
                     f"{row.disbursement_amount:.2f}",
+                    str(loan_register_update_id),
+                    str(advice_intent_id),
                 )
             )
         )
@@ -174,6 +188,8 @@ def _mark_transfer_successful(
             "authorisation_evidence_digest": row.authorisation_evidence_digest,
             "bank_transfer_id": str(bank_transfer_id),
             "loan_status_history_id": str(loan_status_history_id),
+            "loan_register_update_id": str(loan_register_update_id),
+            "disbursement_advice_communication_id": str(advice_intent_id),
             "bank_reference_digest": reference_digest,
             "bank_reference_masked": masked_reference,
             "bank_transfer_evidence_document_id": str(evidence.document.pk),
@@ -272,6 +288,41 @@ def _mark_transfer_successful(
             replay_flag=False,
             outcome="activated",
         )
+        transfer = BankTransfer.objects.get(pk=bank_transfer_id)
+        register_update = LoanRegisterUpdate.objects.create(
+            loan_register_update_id=loan_register_update_id,
+            disbursement=row,
+            bank_transfer=transfer,
+            loan_account=account,
+            loan_application_id=row.loan_application_id,
+            member_id=row.member_id,
+            amount=row.disbursement_amount,
+            bank_reference_digest=reference_digest,
+            evidence_document=evidence.document,
+            evidence_checksum_sha256=evidence.document.checksum_sha256,
+            transfer_action_id=action_id,
+            transfer_evidence_digest=evidence_digest,
+            transfer_audit=audit,
+            transfer_workflow_event=workflow,
+            created_at=cleaned["disbursed_at"],
+        )
+        advice_intent = DisbursementAdviceIntent.objects.create(
+            advice_intent_id=advice_intent_id,
+            disbursement=row,
+            bank_transfer=transfer,
+            loan_account=account,
+            loan_application_id=row.loan_application_id,
+            member_id=row.member_id,
+            amount=row.disbursement_amount,
+            bank_reference_digest=reference_digest,
+            evidence_document=evidence.document,
+            evidence_checksum_sha256=evidence.document.checksum_sha256,
+            transfer_action_id=action_id,
+            transfer_evidence_digest=evidence_digest,
+            transfer_audit=audit,
+            transfer_workflow_event=workflow,
+            created_at=cleaned["disbursed_at"],
+        )
         row.bank_transfer_status = "successful"
         row.bank_reference_number = cleaned["bank_reference_normalized"]
         row.disbursed_at = cleaned["disbursed_at"]
@@ -289,6 +340,7 @@ def _mark_transfer_successful(
         row.transfer_success_audit = audit
         row.transfer_success_workflow_event = workflow
         row.transfer_success_loan_status_history_id = loan_status_history_id
+        row.loan_register_updated_flag = True
         row.save(
             update_fields=[
                 "bank_transfer_status",
@@ -308,8 +360,11 @@ def _mark_transfer_successful(
                 "transfer_success_audit",
                 "transfer_success_workflow_event",
                 "transfer_success_loan_status_history",
+                "loan_register_updated_flag",
             ]
         )
+        row._state.fields_cache["loan_register_update"] = register_update
+        row._state.fields_cache["advice_intent"] = advice_intent
         return serialize_transfer_success(row)
 
 
@@ -318,7 +373,7 @@ def serialize_transfer_success(row):
         "disbursement_id": str(row.pk),
         "bank_transfer_status": "successful",
         "loan_account_status": "active",
-        "disbursement_advice_communication_id": None,
+        "disbursement_advice_communication_id": str(row.advice_intent.pk),
     }
 
 
@@ -497,7 +552,13 @@ def _current_transfer_evidence(*, document_id, loan_application_id, loan_account
 def completed_success_is_coherent(row):
     try:
         transfer = row.bank_transfer
-    except BankTransfer.DoesNotExist:
+        register_update = row.loan_register_update
+        advice_intent = row.advice_intent
+    except (
+        BankTransfer.DoesNotExist,
+        LoanRegisterUpdate.DoesNotExist,
+        DisbursementAdviceIntent.DoesNotExist,
+    ):
         return False
     account = row.loan_account
     audit = row.transfer_success_audit
@@ -529,6 +590,8 @@ def completed_success_is_coherent(row):
                 reference_digest,
                 row.disbursed_at.isoformat(),
                 f"{row.disbursement_amount:.2f}",
+                str(register_update.pk),
+                str(advice_intent.pk),
             )
         )
     )
@@ -547,6 +610,8 @@ def completed_success_is_coherent(row):
         "authorisation_evidence_digest": row.authorisation_evidence_digest,
         "bank_transfer_id": str(transfer.pk),
         "loan_status_history_id": str(history.pk),
+        "loan_register_update_id": str(register_update.pk),
+        "disbursement_advice_communication_id": str(advice_intent.pk),
         "bank_reference_digest": reference_digest,
         "bank_reference_masked": _masked_reference(
             transfer.bank_reference_number_normalized
@@ -579,6 +644,7 @@ def completed_success_is_coherent(row):
         and row.transfer_success_action_id
         and row.transfer_success_actor_user_id
         and row.transfer_success_evidence_digest
+        and row.loan_register_updated_flag
         and transfer.disbursement_id == row.pk
         and transfer.loan_account_id == row.loan_account_id
         and transfer.related_entity_id == row.pk
@@ -594,6 +660,43 @@ def completed_success_is_coherent(row):
         and transfer.bank_status == "successful"
         and transfer.initiated_at == row.initiated_at
         and transfer.completed_at == row.disbursed_at
+        and register_update.disbursement_id == row.pk
+        and register_update.bank_transfer_id == transfer.pk
+        and register_update.loan_account_id == row.loan_account_id
+        and register_update.loan_application_id == row.loan_application_id
+        and register_update.member_id == row.member_id
+        and register_update.amount == row.disbursement_amount
+        and register_update.bank_reference_digest == reference_digest
+        and register_update.evidence_document_id
+        == row.bank_transfer_evidence_document_id
+        and register_update.evidence_checksum_sha256
+        == evidence.document.checksum_sha256
+        and register_update.transfer_action_id == row.transfer_success_action_id
+        and register_update.transfer_evidence_digest
+        == row.transfer_success_evidence_digest
+        and register_update.transfer_audit_id == row.transfer_success_audit_id
+        and register_update.transfer_workflow_event_id
+        == row.transfer_success_workflow_event_id
+        and advice_intent.disbursement_id == row.pk
+        and advice_intent.bank_transfer_id == transfer.pk
+        and advice_intent.loan_account_id == row.loan_account_id
+        and advice_intent.loan_application_id == row.loan_application_id
+        and advice_intent.member_id == row.member_id
+        and advice_intent.amount == row.disbursement_amount
+        and advice_intent.bank_reference_digest == reference_digest
+        and advice_intent.evidence_document_id == row.bank_transfer_evidence_document_id
+        and advice_intent.evidence_checksum_sha256
+        == evidence.document.checksum_sha256
+        and advice_intent.transfer_action_id == row.transfer_success_action_id
+        and advice_intent.transfer_evidence_digest == row.transfer_success_evidence_digest
+        and advice_intent.transfer_audit_id == row.transfer_success_audit_id
+        and advice_intent.transfer_workflow_event_id
+        == row.transfer_success_workflow_event_id
+        and advice_intent.delivery_status
+        in {
+            DisbursementAdviceIntent.DELIVERY_PENDING,
+            DisbursementAdviceIntent.DELIVERY_SENT,
+        }
         and account.loan_account_status == "active"
         and account.disbursed_amount == row.disbursement_amount
         and account.principal_outstanding == row.disbursement_amount
