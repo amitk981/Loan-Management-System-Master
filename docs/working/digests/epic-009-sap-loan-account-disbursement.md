@@ -1,5 +1,33 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H Disbursement Advice and Communication
+
+- `DisbursementWorkflow.send_advice` owns source §31.5 behind one deep module. It requires the exact
+  009G CFC checker or Senior Finance maker with the High send grant, locks the current transfer,
+  active funded account, member/application, canonical email, template, and retained advice facts,
+  and rejects inaccessible ids without disclosure.
+- One approved effective borrower-email template must declare and use exactly the seven safe advice
+  variables. The rendered snapshot uses server-owned application/account/amount/date facts and a
+  masked UTR only. A Manual/Fake email adapter seam validates accepted delivery without network I/O;
+  provider rejection creates no sent/link truth.
+- Acceptance atomically retains one protected sent communication/link and singular safe action,
+  audit, and workflow evidence. Exact actor/channel/recipient replay is zero-write/no-resend;
+  changed or stale retained evidence conflicts. No money, transfer, account, register, checklist,
+  repayment, schedule, or interest fact changes.
+- Six public behavior tests cover success, replay, ledger drift, validation/template/provider
+  failure, and permission/scope/stale-transfer denial. Two PostgreSQL five-caller methods prove one
+  accepted communication and complete ledger; the sandbox socket is unavailable, so the declared
+  capability delegates both authoritative twice-run executions to the orchestrator.
+
+## 009J Sharpening Extract
+
+- Initial Loan Account 360 wiring owns only the account list, header, KPI row, and Summary tab from
+  exact 009C creation and 009G activation truth. Later ledger/schedule/interest/monitoring/default/
+  closure data remains owned by Epic 010 and must not be inferred or newly mocked.
+- Reuse `finance.loan_account.read` and the canonical loan-account scope selector. Safe projections
+  carry account/application/member display facts, immutable terms, exact balances/status, SAP-safe
+  display, and disbursement date only when current owner evidence proves them.
+
 ## 009G UTR Capture and Transfer Success
 
 - `DisbursementWorkflow.mark_transfer_successful` owns the exact §31.4 POST. Active exact CFC

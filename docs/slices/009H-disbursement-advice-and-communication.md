@@ -1,7 +1,7 @@
 # Slice 009H: Disbursement Advice and Communication
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -17,6 +17,10 @@ the message content, recipient, delivery attempt, and source UTR without exposin
 
 ## Depends On
 - 009G
+
+## Runtime Capabilities
+
+postgresql-five-race-acceptance
 
 ## Source References
 - docs/source/implementation-roadmap.md section 14
@@ -104,16 +108,16 @@ High
 - All configured gates pass.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

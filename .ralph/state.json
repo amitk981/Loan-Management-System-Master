@@ -249,15 +249,16 @@
     "009F-cfc-authorization-rejection",
     "009E3-disbursement-amount-and-source-bank-governance-closure",
     "009F2-cfc-authorisation-integrity-and-bank-evidence-closure",
-    "009G-utr-capture-and-transfer-success"
+    "009G-utr-capture-and-transfer-success",
+    "009H-disbursement-advice-and-communication"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "277f6c8f",
-  "last_run_id": "2026-07-17_132523_normal_run",
+  "last_run_id": "2026-07-17_143710_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

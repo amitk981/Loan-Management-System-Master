@@ -114,6 +114,35 @@ stable conflict. The action sends no advice, updates no Loan Register/checklist,
 communication, repayment, schedule, interest, or borrower-visible truth; 009H and later owners
 perform those steps.
 
+## Disbursement advice (009H)
+
+`POST /api/v1/disbursements/{disbursement_id}/send-advice/` implements source §31.5 with exactly
+`channel` and `recipient_email`; query parameters and unknown fields are rejected. MVP accepts only
+normalized `email`, and the address must equal the exact member's current canonical email. Caller
+text, recipient identity, template, transfer facts, and delivery outcome are never accepted from
+the request.
+
+Only an active persisted exact Senior Manager Finance initiating maker or exact CFC checker with
+the High `finance.disbursement.send_advice` grant may act. Missing or out-of-scope ids use
+nondisclosing `403 OBJECT_ACCESS_DENIED`; role, permission, borrower contact, or intake scope alone
+is insufficient.
+
+The workflow locks and reconciles the complete current 009G transfer/audit/workflow/history,
+unique transfer, active exactly funded account, member/application/account relation, and canonical
+contact. It requires exactly one approved effective borrower email template whose declared and
+used variables are exactly borrower name, application reference, account number, sanctioned and
+disbursed amounts, date, and masked bank reference. Missing, ambiguous, stale, unfunded, or
+malformed evidence returns zero-write `409 CONFLICT`.
+
+After the idempotent email adapter accepts, the workflow atomically retains one `sent`
+communication snapshot/link plus one `disbursement.advice_sent` audit and
+`DisbursementAdviceSent` workflow event. The response contains only `disbursement_id`,
+`disbursement_advice_communication_id`, `delivery_status`, and UTC `sent_at`. Exact actor/channel/
+recipient replay returns that projection with no write or adapter invocation; changed replay or
+changed retained evidence conflicts. Adapter rejection returns `409 DELIVERY_FAILED` without a
+sent communication/link. The action never changes money, transfer/CFC state, loan status/terms,
+Loan Register, checklist, repayment, schedule, or interest truth.
+
 ## Tri-party agreement verification (008G/008G2)
 
 `POST /api/v1/loan-documents/{loan_document_id}/verify/` implements source §26.6 only for a

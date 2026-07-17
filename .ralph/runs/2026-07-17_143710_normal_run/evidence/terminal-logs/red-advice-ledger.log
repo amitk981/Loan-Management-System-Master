@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_replay_fails_closed_when_retained_advice_evidence_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_fails_closed_when_retained_advice_evidence_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_143710_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 175, in test_replay_fails_closed_when_retained_advice_evidence_changes
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "a9dc021e-6939-4f7b-92ea-7f3249f9902c", "disbursement_advice_communication_id": "8e076bc8-9b3d-406a-ae7a-1086b39309c9", "delivery_status": "sent", "sent_at": "2026-07-17T09:19:53.876736Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-17T09:19:53.887178Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.604s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

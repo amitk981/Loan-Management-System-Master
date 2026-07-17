@@ -71,7 +71,7 @@ def _mark_transfer_successful(
             if (
                 replay.pk == disbursement_id
                 and replay.transfer_success_payload_digest == payload_digest
-                and _completed_success_is_coherent(replay)
+                and completed_success_is_coherent(replay)
             ):
                 return serialize_transfer_success(replay)
             raise DisbursementTransferConflict(
@@ -494,7 +494,7 @@ def _current_transfer_evidence(*, document_id, loan_application_id, loan_account
     return provenance
 
 
-def _completed_success_is_coherent(row):
+def completed_success_is_coherent(row):
     try:
         transfer = row.bank_transfer
     except BankTransfer.DoesNotExist:
@@ -685,4 +685,8 @@ def _sha256(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-__all__ = ["DisbursementTransferConflict", "DuplicateBankReference"]
+__all__ = [
+    "DisbursementTransferConflict",
+    "DuplicateBankReference",
+    "completed_success_is_coherent",
+]

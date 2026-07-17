@@ -8415,3 +8415,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-17 - 2026-07-17_143710_normal_run
+
+- Agent tool used: codex with TDD and deep-module design workflows.
+- Slice completed: 009H-disbursement-advice-and-communication.
+- Summary: Added exact 009G-backed borrower advice rendering/delivery, canonical recipient and
+  approved-template selection, protected communication linkage, safe audit/workflow evidence,
+  zero-write/no-resend replay, and fail-closed validation/provider/permission/staleness behavior.
+- Tests run: failing-first success/replay/ledger cycles; 80 impacted backend tests; Django check,
+  migration sync, and Ruff. PostgreSQL socket was sandbox-blocked; the declared capability delegates
+  both two-method five-caller runs to independent validation.
+- Evidence saved: `.ralph/runs/2026-07-17_143710_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; mitigated by locked exact transfer evidence, canonical contact/template facts,
+  idempotent adapter acceptance, singular ledgers, nondisclosing scope, and no financial side effects.
+- Next action: Architecture review, then 009I borrower portal disbursement status.
+
+## 2026-07-17 15:30:38 - 2026-07-17_143710_normal_run
+- Agent tool used: codex
+- Slice attempted: 009H-disbursement-advice-and-communication
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_143710_normal_run/.ralph/runs/2026-07-17_143710_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_143710_normal_run/.ralph/runs/2026-07-17_143710_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

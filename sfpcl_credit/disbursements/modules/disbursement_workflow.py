@@ -15,6 +15,11 @@ from sfpcl_credit.disbursements.modules.disbursement_transfer_success import (
     DuplicateBankReference,
     _mark_transfer_successful,
 )
+from sfpcl_credit.disbursements.modules.disbursement_advice import (
+    DisbursementAdviceConflict,
+    DisbursementAdviceDeliveryFailed,
+    _send_advice,
+)
 
 
 class DisbursementWorkflow:
@@ -24,6 +29,7 @@ class DisbursementWorkflow:
     initiate = staticmethod(_initiate)
     authorise = staticmethod(_authorise)
     mark_transfer_successful = staticmethod(_mark_transfer_successful)
+    send_advice = staticmethod(_send_advice)
 
 
 __all__ = [
@@ -32,5 +38,7 @@ __all__ = [
     "DisbursementReadinessStale",
     "DisbursementTransferConflict",
     "DuplicateBankReference",
+    "DisbursementAdviceConflict",
+    "DisbursementAdviceDeliveryFailed",
     "DisbursementWorkflow",
 ]

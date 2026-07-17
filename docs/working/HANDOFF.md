@@ -1,19 +1,22 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_132523_normal_run
+2026-07-17_143710_normal_run
 
 ## Current Status
-009G is complete pending independent orchestrator validation and commit. The existing workflow owner
-now records one unique manual transfer against exact approved 009F2 evidence, funds and activates the
-sanctioned account, and appends its linked status history atomically. Exact retained replay is
-zero-write; stale, duplicate, partially funded, cross-object, or concurrent attempts fail closed.
+009H is complete pending independent orchestrator validation and commit. The disbursement workflow
+now sends one governed borrower email advice only from exact coherent 009G transfer truth, through
+one approved effective template and idempotent Manual/Fake adapter seam. It retains one protected
+sent communication/link and singular safe audit/workflow action; exact replay is zero-write and
+changed, stale, ambiguous, unauthorized, or rejected delivery creates no false advice truth.
 
-Nine public transfer-success tests and the 36-test impacted set pass. Both PostgreSQL race methods
-passed twice; Django check, migration sync, and Ruff are green. Advice, Loan Register, checklist,
-repayment, schedule, interest, communication, and borrower-visible truth remain absent for later
-owners. Source §31.4 and the Epic 009 digest now carry the implemented contract and A-127 tolerance.
+Six public behavior tests pass with the 81-test impacted disbursement/communication/catalogue set.
+Django check, migration sync, and Ruff pass. The two PostgreSQL five-caller methods are collected;
+the local sandbox denied the database socket, so `postgresql-five-race-acceptance` is declared for
+the orchestrator's authoritative twice-run gate. No schema, frontend, financial, transfer, account,
+Loan Register, checklist, repayment, schedule, or interest mutation was added.
 
 ## Next Run
-Run sharpened 009H for advice and register effects only after this exact transfer success. Then run
-newly sharpened 009I to replace MP14 fixtures with the borrower-safe 009A-009H projection.
+An architecture review is due after four completed slices. After that review, run sharpened 009I
+for the borrower-safe MP14 projection/advice download, then sharpened 009J for the initial real Loan
+Account 360 list/header/KPI/Summary view.

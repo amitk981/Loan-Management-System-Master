@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exact_replay_is_zero_write_and_changed_replay_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_exact_replay_is_zero_write_and_changed_replay_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_143710_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 151, in test_exact_replay_is_zero_write_and_changed_replay_conflicts
+    self.assertEqual(changed_email.status_code, 409, changed_email.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"recipient_email": ["Must match the member\'s current email address."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-17T09:18:19.517393Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.673s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
