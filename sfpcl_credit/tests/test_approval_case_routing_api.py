@@ -88,8 +88,13 @@ def _pre_007o_review_facts(case):
 
 @override_settings(DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-gm-doc-tests-"))
 class ApprovalCaseRoutingApiTests(TestCase):
-    def setUp(self):
-        self.client = Client()
+    @classmethod
+    def setUpTestData(cls):
+        # This immutable approval graph used to be rebuilt before all 127
+        # tests. Django deep-copies class test data for each TestCase instance
+        # and rolls every mutation back, so one class-level build preserves
+        # isolation while removing the repeated inserts.
+        self = cls
         self.read_permission = self._permission("approvals.case.read")
         self.application_read_permission = self._permission(
             "applications.loan_application.read"

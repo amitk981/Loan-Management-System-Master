@@ -4,6 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/../lib/ralph-exit-protocol.sh"
 source "$script_dir/../lib/ralph-runtime-capabilities.sh"
+source "$script_dir/../lib/ralph-agent-log.sh"
 
 for assignment in "$@"; do
   export "$assignment"
@@ -100,15 +101,16 @@ if ! [[ "$timeout_secs" =~ ^[0-9]+$ ]]; then
   echo "WARN: AGENT_TIMEOUT_SECONDS is not a number ('$timeout_secs'); using 7200." >&2
   timeout_secs=7200
 fi
-log="$RUN_DIR/evidence/terminal-logs/codex.log"
+ralph_prepare_agent_log "$WORKTREE_DIR" "$RUN_ID" codex
+log="$RALPH_AGENT_RAW_LOG"
+summary_log="$RUN_DIR/evidence/terminal-logs/codex-summary.md"
 
 codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" > "$log" 2>&1 &
 agent_pid=$!
 
-# The run artifact is the single authoritative full transcript. Streaming that
-# transcript through the outer loop duplicated tens or hundreds of MB into
-# last-run-output.log and loop-*.log. Emit a bounded heartbeat instead.
-echo "Full agent log: $log"
+# The full transcript is short-lived operator-local evidence outside the Git
+# candidate. Committed run evidence receives only a bounded excerpt and hash.
+echo "Full agent log: $log (bounded local retention)"
 (
   heartbeat_seconds="${RALPH_AGENT_HEARTBEAT_SECONDS:-30}"
   while kill -0 "$agent_pid" 2>/dev/null; do
@@ -143,6 +145,7 @@ sleep 1
 pkill -P "$heartbeat_pid" 2>/dev/null || true
 kill "$heartbeat_pid" 2>/dev/null || true
 wait "$heartbeat_pid" 2>/dev/null || true
+ralph_write_agent_log_summary "$log" "$summary_log" codex "$status"
 echo "Codex agent finished with exit $status. Final log excerpt:"
 tail -n 30 "$log" 2>/dev/null | cut -c1-500 || true
 
@@ -154,7 +157,7 @@ if (( status != 0 )) && tail -n 40 "$log" | grep -qiE "usage limit|rate limit|li
   {
     echo "# Agent Limit Exhausted"
     echo
-    echo "codex exited $status; the log tail names a usage/rate limit. See evidence/terminal-logs/codex.log."
+    echo "codex exited $status; the log tail names a usage/rate limit. See evidence/terminal-logs/codex-summary.md."
   } > "$RUN_DIR/agent-limit-exhausted.md"
   exit "$RALPH_EXIT_AGENT_LIMIT"
 fi

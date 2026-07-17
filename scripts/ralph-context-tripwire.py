@@ -13,15 +13,41 @@ else 0. Runs with no Codex telemetry (e.g. claude-driven) are skipped.
 
 Usage:
   scripts/ralph-context-tripwire.py [--threshold 0.85] [--watch 0.70]
-                                    [--last N] [--runs-dir DIR] [--json]
+                                    [--last N] [--runs-dir DIR]
+                                    [--agent-logs-dir DIR] [--json]
 """
-import argparse, glob, json, os, re, sys
+import argparse
+import glob
+import json
+import os
+import re
+import subprocess
+import sys
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_RUNS = os.path.join(REPO_ROOT, ".ralph/runs")
 SESS_DIRS = [os.path.expanduser("~/.codex/sessions"),
              os.path.expanduser("~/.codex/archived_sessions")]
 UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+
+
+def default_agent_logs():
+    try:
+        common = subprocess.check_output(
+            [
+                "git",
+                "-C",
+                REPO_ROOT,
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-common-dir",
+            ],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        common = os.path.join(REPO_ROOT, ".git")
+    return os.path.join(common, "ralph-agent-logs")
 
 
 def index_rollouts():
@@ -34,12 +60,22 @@ def index_rollouts():
     return idx
 
 
-def session_id_of(run_dir):
-    log = os.path.join(run_dir, "evidence/terminal-logs/codex.log")
-    if not os.path.exists(log):
-        return None
-    m = re.search(r"session id:\s*(" + UUID + ")", open(log, errors="ignore").read())
-    return m.group(1) if m else None
+def session_id_of(run_dir, agent_logs_dir):
+    run_id = os.path.basename(run_dir)
+    candidates = (
+        os.path.join(agent_logs_dir, run_id, "codex.log"),
+        os.path.join(run_dir, "evidence/terminal-logs/codex-summary.md"),
+        os.path.join(run_dir, "evidence/terminal-logs/codex.log"),
+    )
+    for log in candidates:
+        if not os.path.exists(log):
+            continue
+        with open(log, errors="ignore") as stream:
+            for line in stream:
+                m = re.search(r"session id:\s*(" + UUID + ")", line, re.I)
+                if m:
+                    return m.group(1)
+    return None
 
 
 def peak_occupancy(rollout_path):
@@ -62,6 +98,7 @@ def main():
     ap.add_argument("--watch", type=float, default=0.70, help="warn band (fraction of window)")
     ap.add_argument("--last", type=int, default=0, help="only the last N runs (0 = all)")
     ap.add_argument("--runs-dir", default=DEFAULT_RUNS)
+    ap.add_argument("--agent-logs-dir", default=default_agent_logs())
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
@@ -73,7 +110,7 @@ def main():
     results, breaches, watches, skipped = [], [], [], []
     for d in run_dirs:
         rid = os.path.basename(d)
-        sid = session_id_of(d)
+        sid = session_id_of(d, a.agent_logs_dir)
         if not sid or sid not in rolls:
             skipped.append(rid)
             continue

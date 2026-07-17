@@ -9,6 +9,7 @@ source "$repo_root/scripts/lib/ralph-browser-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 source "$repo_root/scripts/lib/ralph-fast-candidate-checks.sh"
 source "$repo_root/scripts/lib/ralph-oversized-slice.sh"
+source "$repo_root/scripts/lib/ralph-architecture-review.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -208,12 +209,36 @@ printf '%s\n' "$commit_candidate_hash_before" \
   echo "Commit candidate before validation: $commit_candidate_hash_before"
 } > "$run_dir/candidate-hash-results.md"
 
+queue_only_reason=""
+queue_only_label=""
 if [[ -n "$split_slice_id" ]]; then
-  # This candidate is proven queue-metadata-only above. Product gates cannot
-  # add signal to a Markdown dependency rewrite, so record their deliberate
-  # omission and finish after the same frozen-candidate hash used by commits.
+  queue_only_reason="oversized-slice queue rewrite contains no product changes"
+  queue_only_label="queue-only oversized-slice split"
+elif [[ "$mode" == "architecture_review" ]]; then
+  architecture_scope_results="$run_dir/architecture-review-scope-results.md"
+  {
+    echo "# Architecture Review Scope Results"
+    echo
+    if ralph_validate_architecture_review_change_scope "$worktree_dir"; then
+      echo "PASS: documentation-only architecture review contains no product changes."
+    else
+      echo "FAIL: architecture review changed a product path."
+      exit 1
+    fi
+  } > "$architecture_scope_results" || {
+    echo "Architecture review changed product code; refusing specialized validation." >&2
+    exit 1
+  }
+  queue_only_reason="documentation-only architecture review contains no product changes"
+  queue_only_label="documentation-only architecture review"
+fi
+
+if [[ -n "$queue_only_reason" ]]; then
+  # The candidate is proven documentation/Ralph-metadata-only above. Product
+  # gates cannot add signal to that change class, so record their deliberate
+  # omission and finish with the same frozen-candidate hash used by commits.
   for queue_only_gate in build install typecheck lint test e2e backend-check backend-test backend-migrations backend-coverage; do
-    write_skipped "$queue_only_gate" "oversized-slice queue rewrite contains no product changes"
+    write_skipped "$queue_only_gate" "$queue_only_reason"
   done
   candidate_hash_after="$(ralph_candidate_hash "$worktree_dir")"
   {
@@ -225,11 +250,11 @@ if [[ -n "$split_slice_id" ]]; then
     fi
   } >> "$run_dir/candidate-hash-results.md"
   if [[ "$candidate_hash_after" != "$candidate_hash_before" ]]; then
-    echo "Queue candidate changed during validation." >&2
+    echo "Queue/documentation candidate changed during validation." >&2
     exit 1
   fi
-  echo "Validation passed: queue-only oversized-slice split." >> "$artifact_file"
-  echo "Ralph queue validation passed: $run_dir"
+  echo "Validation passed: $queue_only_label." >> "$artifact_file"
+  echo "Ralph specialized validation passed ($queue_only_label): $run_dir"
   exit 0
 fi
 
@@ -512,8 +537,21 @@ elif [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
   if [[ "$(enabled backend_coverage)" == "true" ]]; then
     coverage_floor="$(awk -F': *' '/^[[:space:]]*coverage_fail_under:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
     coverage_floor="${coverage_floor:-85}"
+    coverage_workers="$(awk -F': *' '/^[[:space:]]*backend_coverage_parallel_workers:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+    coverage_workers="${coverage_workers:-1}"
     if "$venv_python" -c "import coverage" >/dev/null 2>&1; then
-      run_backend_gate backend-coverage "\"$venv_python\" -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests && \"$venv_python\" -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
+      if ! [[ "$coverage_workers" =~ ^[1-9][0-9]*$ ]]; then
+        {
+          echo "# backend-coverage Results"
+          echo
+          echo "FAIL: backend_coverage_parallel_workers must be a positive integer."
+        } > "$run_dir/backend-coverage-results.md"
+        failures=$((failures + 1))
+      elif (( coverage_workers > 1 )); then
+        run_backend_gate backend-coverage "\"$repo_root/scripts/ralph-parallel-backend-coverage.sh\" \"$venv_python\" \"$worktree_dir\" \"$backend_dir\" \"$coverage_workers\" \"$coverage_floor\"" || failures=$((failures + 1))
+      else
+        run_backend_gate backend-coverage "\"$venv_python\" -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests && \"$venv_python\" -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
+      fi
     else
       {
         echo "# backend-coverage Results"

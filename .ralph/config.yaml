@@ -122,6 +122,10 @@ quality_gates:
   backend_tests: false
   backend_migrations: true
   backend_coverage: true
+  # Enabled at two workers after the 2026-07-17 shadow pilot proved identical
+  # test outcomes and exact executed/missing/excluded coverage line sets.
+  # Set to 1 for the serial fallback without changing suite scope or the floor.
+  backend_coverage_parallel_workers: 2
   coverage_fail_under: 85
 
 risk:

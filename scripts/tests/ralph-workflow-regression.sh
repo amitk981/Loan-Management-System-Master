@@ -695,6 +695,220 @@ fi
 rg -q 'Full agent log:' scripts/agent-adapters/codex.sh \
   || fail "Codex adapter does not identify the retained authoritative full log"
 
+# Full agent transcripts are operator-local, bounded-retention diagnostics.
+# Only compact excerpts and cryptographic hashes belong in committed run evidence.
+agent_log_helper="scripts/lib/ralph-agent-log.sh"
+[[ -f "$agent_log_helper" ]] || fail "missing bounded external agent-log helper"
+# shellcheck source=../lib/ralph-agent-log.sh
+source "$agent_log_helper"
+agent_log_repo="$fixture_dir/agent-log-repo"
+git init -q "$agent_log_repo"
+git -C "$agent_log_repo" config user.name "Ralph Regression"
+git -C "$agent_log_repo" config user.email "ralph-regression@example.invalid"
+printf 'fixture\n' > "$agent_log_repo/tracked.txt"
+git -C "$agent_log_repo" add tracked.txt
+git -C "$agent_log_repo" commit -qm fixture
+if RALPH_RAW_AGENT_LOG_ROOT="$fixture_dir/untrusted-agent-log-root" \
+    ralph_prepare_agent_log "$agent_log_repo" unsafe-run codex >/dev/null 2>&1; then
+  fail "agent-log retention accepted an external deletion root without explicit test/operator opt-in"
+fi
+if RALPH_RAW_AGENT_LOG_ROOT="$fixture_dir/raw-agent-logs" \
+    RALPH_ALLOW_EXTERNAL_AGENT_LOG_ROOT=true \
+    ralph_prepare_agent_log "$agent_log_repo" ../unsafe-run codex >/dev/null 2>&1; then
+  fail "agent-log retention accepted a path-traversing run id"
+fi
+RALPH_RAW_AGENT_LOG_ROOT="$fixture_dir/raw-agent-logs" \
+  RALPH_ALLOW_EXTERNAL_AGENT_LOG_ROOT=true \
+  ralph_prepare_agent_log "$agent_log_repo" fixture-run codex
+printf 'session id: 11111111-1111-1111-1111-111111111111\nfirst line\nsecond line\n' > "$RALPH_AGENT_RAW_LOG"
+agent_summary="$agent_log_repo/codex-log-summary.md"
+ralph_write_agent_log_summary "$RALPH_AGENT_RAW_LOG" "$agent_summary" codex 0
+grep -q '^SHA-256: [0-9a-f]\{64\}$' "$agent_summary" \
+  || fail "compact agent-log summary omitted its SHA-256 digest"
+grep -qF 'second line' "$agent_summary" \
+  || fail "compact agent-log summary omitted the bounded final excerpt"
+grep -qF 'Session ID: 11111111-1111-1111-1111-111111111111' "$agent_summary" \
+  || fail "compact agent-log summary omitted context-tripwire session identity"
+[[ "$RALPH_AGENT_RAW_LOG" != "$agent_log_repo"/* ]] \
+  || fail "full agent transcript is still stored inside the commit candidate"
+rm -rf "$fixture_dir/raw-agent-logs/fixture-run"
+summary_run_dir="$agent_log_repo/.ralph/runs/fixture-run"
+mkdir -p "$summary_run_dir/evidence/terminal-logs"
+cp "$agent_summary" "$summary_run_dir/evidence/terminal-logs/codex-summary.md"
+python3 - "$summary_run_dir" "$fixture_dir/raw-agent-logs" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+script = Path("scripts/ralph-context-tripwire.py")
+spec = importlib.util.spec_from_file_location("ralph_context_tripwire", script)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+actual = module.session_id_of(sys.argv[1], sys.argv[2])
+expected = "11111111-1111-1111-1111-111111111111"
+if actual != expected:
+    raise SystemExit(f"compact-summary session lookup returned {actual!r}")
+PY
+mkdir -p "$fixture_dir/raw-agent-logs/older-run" "$fixture_dir/raw-agent-logs/newer-run"
+python3 - "$fixture_dir/raw-agent-logs/older-run" "$fixture_dir/raw-agent-logs/newer-run" <<'PY'
+import os
+import sys
+import time
+
+now = time.time()
+os.utime(sys.argv[1], (now - 200, now - 200))
+os.utime(sys.argv[2], (now - 100, now - 100))
+PY
+RALPH_RAW_AGENT_LOG_ROOT="$fixture_dir/raw-agent-logs" \
+RALPH_ALLOW_EXTERNAL_AGENT_LOG_ROOT=true \
+RALPH_RAW_AGENT_LOG_RETENTION_DAYS=365 \
+RALPH_RAW_AGENT_LOG_RETENTION_COUNT=2 \
+  ralph_prepare_agent_log "$agent_log_repo" current-run codex
+[[ ! -d "$fixture_dir/raw-agent-logs/older-run" ]] \
+  || fail "bounded agent-log retention did not prune the oldest run"
+[[ -d "$fixture_dir/raw-agent-logs/current-run" && -d "$fixture_dir/raw-agent-logs/newer-run" ]] \
+  || fail "bounded agent-log retention removed one of the newest runs"
+for adapter in scripts/agent-adapters/codex.sh scripts/agent-adapters/claude.sh; do
+  rg -q 'ralph_prepare_agent_log' "$adapter" \
+    || fail "$(basename "$adapter") does not route full logs outside the commit candidate"
+  if rg -q 'RUN_DIR/evidence/terminal-logs/(codex|claude)\.log' "$adapter"; then
+    fail "$(basename "$adapter") still stores a full transcript in committed run evidence"
+  fi
+done
+rg -q 'codex-summary.md' scripts/ralph-context-tripwire.py \
+  || fail "context trip-wire cannot read compact agent-log summaries"
+rg -q 'ralph-agent-logs' scripts/ralph-context-tripwire.py \
+  || fail "context trip-wire cannot read retained external raw logs"
+
+# Ordinary architecture reviews are documentation/queue inspections. They
+# may use the queue-only validation lane only when every candidate path is
+# documentation or Ralph bookkeeping; any product path must fail closed.
+architecture_scope_helper="scripts/lib/ralph-architecture-review.sh"
+[[ -f "$architecture_scope_helper" ]] \
+  || fail "missing architecture-review change-scope helper"
+# shellcheck source=../lib/ralph-architecture-review.sh
+source "$architecture_scope_helper"
+architecture_repo="$fixture_dir/architecture-review-repo"
+mkdir -p "$architecture_repo/docs/working" "$architecture_repo/src" "$architecture_repo/.ralph"
+git init -q "$architecture_repo"
+git -C "$architecture_repo" config user.name "Ralph Regression"
+git -C "$architecture_repo" config user.email "ralph-regression@example.invalid"
+printf 'baseline\n' > "$architecture_repo/docs/working/REVIEW_FINDINGS.md"
+printf 'product\n' > "$architecture_repo/src/product.py"
+printf '{}\n' > "$architecture_repo/.ralph/state.json"
+git -C "$architecture_repo" add .
+git -C "$architecture_repo" commit -qm fixture
+printf 'review finding\n' >> "$architecture_repo/docs/working/REVIEW_FINDINGS.md"
+printf '{"architecture_review_due": false}\n' > "$architecture_repo/.ralph/state.json"
+ralph_validate_architecture_review_change_scope "$architecture_repo" \
+  || fail "documentation-only architecture review was rejected"
+printf 'unsafe product edit\n' >> "$architecture_repo/src/product.py"
+if ralph_validate_architecture_review_change_scope "$architecture_repo" >/dev/null 2>&1; then
+  fail "architecture-review queue-only lane accepted a product change"
+fi
+rg -q 'ralph_validate_architecture_review_change_scope' scripts/ralph-validate.sh \
+  || fail "validator does not classify documentation-only architecture reviews"
+rg -q 'documentation-only architecture review contains no product changes' scripts/ralph-validate.sh \
+  || fail "validator does not record the specialized architecture-review lane"
+architecture_validator_repo="$fixture_dir/architecture-validator-repo"
+architecture_validator_run="architecture-validator-run"
+architecture_validator_run_dir="$architecture_validator_repo/.ralph/runs/$architecture_validator_run"
+mkdir -p "$architecture_validator_repo/.ralph" \
+  "$architecture_validator_repo/docs/slices" \
+  "$architecture_validator_repo/docs/working" \
+  "$architecture_validator_repo/frontend" \
+  "$architecture_validator_run_dir"
+cat > "$architecture_validator_repo/.ralph/config.yaml" <<'EOF'
+project_dir: frontend
+backend_dir: backend
+build: true
+install: true
+typecheck: true
+lint: true
+unit_tests: true
+backend_check: true
+backend_tests: true
+backend_migrations: true
+backend_coverage: true
+max_changed_files: 30
+max_lines_changed: 2000
+EOF
+printf '%s\n' '{"completed_slices": []}' > "$architecture_validator_repo/.ralph/state.json"
+printf '%s\n' '{}' > "$architecture_validator_repo/.ralph/permissions.json"
+cat > "$architecture_validator_repo/docs/slices/001A-fixture.md" <<'EOF'
+## Status
+Complete
+
+## Depends On
+- None
+EOF
+printf 'baseline finding\n' > "$architecture_validator_repo/docs/working/REVIEW_FINDINGS.md"
+for artifact in prompt.md changed-files.txt final-summary.md; do
+  printf 'fixture\n' > "$architecture_validator_run_dir/$artifact"
+done
+printf '1. Exercise documentation-only review validation.\n' \
+  > "$architecture_validator_run_dir/execution-plan.md"
+printf 'Low risk fixture.\n' > "$architecture_validator_run_dir/risk-assessment.md"
+cat > "$architecture_validator_run_dir/review-packet.md" <<'EOF'
+## Result
+Ready to merge
+EOF
+git init -q "$architecture_validator_repo"
+git -C "$architecture_validator_repo" config user.name "Ralph Regression"
+git -C "$architecture_validator_repo" config user.email "ralph-regression@example.invalid"
+git -C "$architecture_validator_repo" add .
+git -C "$architecture_validator_repo" commit -qm fixture
+printf 'review finding\n' >> "$architecture_validator_repo/docs/working/REVIEW_FINDINGS.md"
+scripts/ralph-validate.sh \
+  --run-id "$architecture_validator_run" \
+  --worktree "$architecture_validator_repo" \
+  --mode architecture_review \
+  --slice architecture-review \
+  > "$fixture_dir/architecture-validator.stdout" \
+  2> "$fixture_dir/architecture-validator.stderr" \
+  || fail "documentation-only architecture-review validator lane did not complete"
+for skipped_gate in build install typecheck lint test e2e backend-check backend-test backend-migrations backend-coverage; do
+  grep -qF 'Skipped: documentation-only architecture review contains no product changes' \
+    "$architecture_validator_run_dir/${skipped_gate}-results.md" \
+    || fail "architecture-review lane did not skip $skipped_gate with an explicit reason"
+done
+
+# The shadow audit compares serial coverage against the shared bounded parallel
+# module and proves exact outcome and line-coverage equivalence.
+shadow_coverage="scripts/ralph-shadow-parallel-coverage.sh"
+[[ -x "$shadow_coverage" ]] || fail "missing executable parallel-coverage shadow pilot"
+rg -q 'manage.py.*test.*backend_dir.tests' "$shadow_coverage" \
+  || fail "shadow pilot does not run the same complete backend test label"
+rg -q 'ralph-parallel-backend-coverage.sh' "$shadow_coverage" \
+  || fail "shadow pilot does not exercise Django's bounded parallel runner"
+rg -q 'executed_lines' "$shadow_coverage" \
+  || fail "shadow pilot does not compare exact executed coverage lines"
+rg -q 'discovered_tests' "$shadow_coverage" \
+  || fail "shadow pilot does not compare discovered test counts"
+rg -q 'parallel_workers.*coverage_floor' "$shadow_coverage" \
+  || fail "shadow pilot does not enforce the configured coverage floor in both lanes"
+if rg -q 'ralph-shadow-parallel-coverage' scripts/ralph-validate.sh; then
+  fail "unproven parallel coverage was added to the authoritative validation gate"
+fi
+
+# Once the shadow proof passes, the authoritative lane uses the same bounded
+# multiprocessing implementation; it never drops the full-suite label or floor.
+parallel_coverage_gate="scripts/ralph-parallel-backend-coverage.sh"
+[[ -x "$parallel_coverage_gate" ]] \
+  || fail "missing executable authoritative parallel-coverage module"
+rg -q 'concurrency = multiprocessing' "$parallel_coverage_gate" \
+  || fail "authoritative parallel coverage does not collect worker subprocesses"
+rg -q -- '--parallel "\$workers"' "$parallel_coverage_gate" \
+  || fail "authoritative parallel coverage does not use its bounded worker count"
+rg -q 'coverage combine' "$parallel_coverage_gate" \
+  || fail "authoritative parallel coverage does not combine subprocess data"
+rg -q -- '--fail-under="\$coverage_floor"' "$parallel_coverage_gate" \
+  || fail "authoritative parallel coverage does not retain the configured floor"
+rg -q 'ralph-parallel-backend-coverage.sh' scripts/ralph-validate.sh \
+  || fail "validator does not invoke the proven parallel-coverage module"
+rg -q 'backend_coverage_parallel_workers: 2' .ralph/config.yaml \
+  || fail "authoritative coverage worker count is not explicitly bounded at two"
+
 [[ "$(tr -d '[:space:]' < .nvmrc)" == "20.19.6" ]] \
   || fail "repository Node version is not pinned to 20.19.6"
 python3 - <<'PY'

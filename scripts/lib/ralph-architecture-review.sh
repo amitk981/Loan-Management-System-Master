@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Ordinary architecture reviews may change documentation, queue metadata, and
+# Ralph bookkeeping only. Product changes in review mode are a workflow error:
+# fail closed instead of masking them behind the product gate suite.
+ralph_validate_architecture_review_change_scope() {
+  local worktree="${1:?worktree is required}"
+  local changed invalid=0
+
+  while IFS= read -r changed; do
+    [[ -n "$changed" ]] || continue
+    case "$changed" in
+      docs/*|.ralph/*)
+        ;;
+      *)
+        echo "Architecture review may not modify product path $changed." >&2
+        invalid=1
+        ;;
+    esac
+  done < <(
+    {
+      git -C "$worktree" diff --name-only --no-renames HEAD --
+      git -C "$worktree" ls-files --others --exclude-standard
+    } | sort -u
+  )
+
+  (( invalid == 0 ))
+}
