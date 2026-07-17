@@ -1,21 +1,20 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-18_004444_normal_run
+2026-07-18_013029_architecture_review
 
 ## Current Status
-CR-010 is complete pending independent orchestrator validation. The two approval-case stability
-tests now use explicit 10-to-11 and 2-to-3 second clock advances, compare all stable detail/queue
-fields exactly, and validate the intentionally live pending age separately and monotonically.
+Oversized 009H3 is Superseded after failed run `2026-07-18_010406_normal_run` measured 2,195 lines
+against the 2,000-line limit. The rejected candidate's focused advice-owner, migration, crash, and
+twice-run PostgreSQL evidence was retained and used to split the contract without retaining code.
 
-The development requirements now pin `tblib==3.1.0`, and a backend-infrastructure regression proves
-that Django's remote test result preserves the original assertion and traceback through a pickle
-round trip. The full 127-test approval routing class, all 7 backend infrastructure tests, Django
-check, dependency check, and migration sync pass serially. No production or frontend code changed;
-the authoritative complete parallel coverage run remains delegated to the orchestrator.
+009H3A now owns the one state-preserving communications migration, outbox/receipt model state,
+provider-key identity, adapters, and compatibility proof. 009H3B consumes that foundation to move
+the dispatcher, freeze payload truth before provider dispatch, close crash/template drift and
+five-caller races, and preserve 009H2 authority, secrecy, API, and no-financial-side-effect rules.
+No production, frontend, dependency, protected, or source file changed in this architecture lane.
 
 ## Next Run
-Run 009H3 to restore communications-owned durable outbox/provider idempotency. Then run 009G4 after
-both prerequisites to anchor legal migration state. Both files were rechecked and already contain
-concrete owner boundaries, fields, migration behavior, validation rules, and race contracts; no
-speculative sharpening was needed.
+Run 009H3A first, then terminal successor 009H3B. After both 009G3 and 009H3B are complete, run
+009G4 to anchor legal migration state; 009I follows G4 and H3B. Do not implement or salvage the
+oversized failed candidate as one slice.

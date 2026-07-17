@@ -1,5 +1,19 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H3 Oversized-Slice Queue Rewrite — 2026-07-18
+
+- Failed run `2026-07-18_010406_normal_run` passed its focused advice-owner, migration, and twice-
+  run PostgreSQL evidence but changed 2,195 lines against the configured 2,000-line limit. No
+  candidate production change was retained.
+- Parent 009H3 is Superseded. 009H3A inherits 009H2 and owns the single communications migration,
+  durable outbox/receipt model state, retained receipt table/ids/history, provider-key identity,
+  adapters, and compatibility proof. Its target delta is 700-1,050 lines.
+- 009H3B depends on 009H3A and owns the communications dispatcher, immutable disbursement context
+  seam, pre-provider outbox freeze, crash/template/payload conflict closure, safe final ledgers, and
+  twice-run five-caller races. Its target delta is 1,050-1,450 lines and it adds no migration.
+- 009G4 and 009I now depend on terminal successor 009H3B. Every original 009H3 requirement, test,
+  evidence category, and High-risk concern is allocated explicitly across the two successors.
+
 ## 009G3 Repair — Legacy Protected-Register Test Closure
 
 - Full parallel coverage found one retained documentation test that attempted to delete the exact

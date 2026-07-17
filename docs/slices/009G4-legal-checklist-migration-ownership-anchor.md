@@ -13,7 +13,7 @@ from a downstream disbursements migration, without replaying or weakening those 
 
 ## Depends On
 - 009G3
-- 009H3
+- 009H3B
 
 ## Source / Review References
 - `docs/source/codebase-design.md` §§6-8, 21, 36.1-36.2, and 42
@@ -22,7 +22,7 @@ from a downstream disbursements migration, without replaying or weakening those 
 
 ## Concrete Requirements
 1. Add one legal-documents-owned state anchor whose dependencies include the current legal leaf and
-   the disbursements migration that introduced the checklist constraints plus the current G3/H3
+   the disbursements migration that introduced the checklist constraints plus the current G3/H3B
    migration leaves. It emits no destructive table/data SQL and preserves exact live names.
 2. Prove forward/reverse migration state retains `checklist_finance_requires_sanction` and
    `checklist_ready_evidence_complete` once, with no resurrection of either Epic-009 placeholder

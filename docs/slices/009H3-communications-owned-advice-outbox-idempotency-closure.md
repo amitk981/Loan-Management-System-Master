@@ -1,7 +1,17 @@
 # Slice 009H3: Communications-Owned Advice Outbox and Idempotency Closure
 
 ## Status
-Not Started
+Superseded
+
+## Superseded By
+
+- 009H3A
+- 009H3B
+
+Failed run `2026-07-18_010406_normal_run` measured 2,195 changed lines against the configured
+2,000-line slice limit. The requirements below are preserved across the dependency-ordered
+successors: 009H3A owns the single persistence/owner-transfer migration and provider-identity
+foundation; 009H3B consumes it to close communications dispatch, crash recovery, and races.
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement

@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009G4-legal-checklist-migration-ownership-anchor.md
+ M docs/slices/009H3-communications-owned-advice-outbox-idempotency-closure.md
+ M docs/slices/009I-member-portal-disbursement-status.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-18_013029_architecture_review/
+?? docs/slices/009H3A-communications-advice-persistence-and-provider-identity.md
+?? docs/slices/009H3B-communications-dispatcher-crash-race-closure.md
