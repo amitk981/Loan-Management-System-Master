@@ -109,7 +109,10 @@ for cr in "$inbox"/*.md; do
   last=0
   for existing in docs/slices/CR-*.md; do
     n="$(basename "$existing" | sed -E 's/^CR-([0-9]+).*/\1/')"
-    [[ "$n" =~ ^[0-9]+$ ]] && (( n > last )) && last=$n
+    if [[ "$n" =~ ^[0-9]+$ ]]; then
+      decimal_n=$((10#$n))
+      (( decimal_n > last )) && last=$decimal_n
+    fi
   done
   next=$(printf 'CR-%03d' $((last + 1)))
 

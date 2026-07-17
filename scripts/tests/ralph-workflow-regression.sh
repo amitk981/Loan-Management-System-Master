@@ -1429,4 +1429,56 @@ if ralph_slice_transition_allowed architecture_review architecture-review 001Y-f
   fail "a review completing a slice was allowed"
 fi
 
+# Zero-padded CR identifiers are decimal identifiers, not shell octal values.
+# Intake after CR-008 must deterministically produce CR-009 without an
+# arithmetic diagnostic or a duplicate identifier.
+intake_repo="$fixture_dir/intake-repo"
+mkdir -p "$intake_repo/scripts" \
+  "$intake_repo/docs/change-requests/inbox" \
+  "$intake_repo/docs/change-requests/accepted" \
+  "$intake_repo/docs/slices"
+git init -q "$intake_repo"
+cp scripts/ralph-intake.sh "$intake_repo/scripts/ralph-intake.sh"
+cat > "$intake_repo/docs/slices/CR-008-existing.md" <<'EOF'
+# Slice CR-008: Existing
+
+## Status
+Complete
+EOF
+cat > "$intake_repo/docs/change-requests/inbox/decimal-numbering.md" <<'EOF'
+# Decimal numbering fixture
+
+## Type
+bug-backend
+
+## Severity
+Low
+
+## What Is Happening
+The fixture reproduces zero-padded CR numbering.
+
+## Expected Behaviour
+The next identifier is decimal CR-009.
+
+## Steps To Reproduce
+1. Run intake after CR-008.
+
+## Where It Appears
+Ralph intake.
+
+## Source Document Reference
+unknown
+
+## Acceptance Criteria
+CR-009 is created without an arithmetic warning.
+EOF
+(
+  cd "$intake_repo"
+  ./scripts/ralph-intake.sh --now > intake.stdout 2> intake.stderr
+)
+[[ -f "$intake_repo/docs/slices/CR-009-decimal-numbering.md" ]] \
+  || fail "intake did not treat zero-padded CR-008 as decimal when allocating CR-009"
+[[ ! -s "$intake_repo/intake.stderr" ]] \
+  || fail "intake emitted a zero-padded CR arithmetic diagnostic"
+
 echo "PASS: Ralph workflow regressions"
