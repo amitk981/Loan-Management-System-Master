@@ -1,7 +1,7 @@
 # Slice 009E5: Source-Bank Rationale Redaction Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -52,10 +52,10 @@ High
   encryption tokens, while safe reviewable reasons and all 009E4 integrity guarantees remain.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing test written first and RED/GREEN evidence saved
-- [ ] Shared safe-text boundary implemented
-- [ ] Public, audit, history, and PostgreSQL tests passed
-- [ ] API contracts updated, if needed
-- [ ] Risk assessment, handoff, state, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing test written first and RED/GREEN evidence saved
+- [x] Shared safe-text boundary implemented
+- [x] Public, audit, history, and PostgreSQL tests passed
+- [x] API contracts updated, if needed (no API shape changed)
+- [x] Risk assessment, handoff, state, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

@@ -1,5 +1,23 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009E5 Shared Safe Audit Text and Source-Bank Closure
+
+- `shared.audit_text.safe_audit_text` is now the single reusable seam for bounded human-reviewable
+  audit reasons. It rejects blanks, oversize/control text, contiguous or space/slash/hyphen/dot-
+  formatted eight-plus-digit identifiers, every `field:vN:` prefix, legacy encryption markers,
+  SHA-256-shaped lookup hashes, and caller-supplied protected ciphertext/hash values with one
+  generic no-echo error.
+- Public source-bank activation and replacement both use that seam before evidence writes; current
+  resolution also fails closed when retained rationale no longer passes the same policy. Safe text
+  remains exact across governance, version, and audit evidence with unchanged reason/context
+  digests, author/request/role/team/network attribution, false-approval protections, predecessor
+  history, unassigned Critical grant, and transaction behavior.
+- Fifteen focused audit/encryption/source-bank tests and the complete 18-test initiation class pass.
+  Both PostgreSQL five-caller first/replacement race methods pass in one authoritative run, each
+  method independently executing a first-activation and replacement race.
+- No API, schema, frontend, encryption, masking, permission, or business-authority change was made.
+  Already-concrete 009G3 and 009G4 requirements were rechecked; no speculative sharpening was needed.
+
 ## Architecture Review 2026-07-17 21:08 — Register, Checklist, and Advice Ownership
 
 - CR-009's deterministic malformed/authenticated-tamper split is substantive. 009E4, 009G2, and

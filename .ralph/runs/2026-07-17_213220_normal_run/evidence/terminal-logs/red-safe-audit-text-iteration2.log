@@ -1,0 +1,27 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text (sfpcl_credit.tests.test_safe_audit_text.SafeAuditTextTests.test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text) ... 
+  test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text (sfpcl_credit.tests.test_safe_audit_text.SafeAuditTextTests.test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text) (value='   ') ... FAIL
+  test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text (sfpcl_credit.tests.test_safe_audit_text.SafeAuditTextTests.test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text) (value='Account 123456789012') ... FAIL
+
+======================================================================
+FAIL: test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text (sfpcl_credit.tests.test_safe_audit_text.SafeAuditTextTests.test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text) (value='   ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_213220_normal_run/sfpcl_credit/tests/test_safe_audit_text.py", line 51, in test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text
+    self.assertNotIn(value.strip(), str(raised.exception))
+AssertionError: '' unexpectedly found in 'The reason contains unsafe or invalid audit text.'
+
+======================================================================
+FAIL: test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text (sfpcl_credit.tests.test_safe_audit_text.SafeAuditTextTests.test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text) (value='Account 123456789012')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_213220_normal_run/sfpcl_credit/tests/test_safe_audit_text.py", line 43, in test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text
+    with self.assertRaisesRegex(
+AssertionError: UnsafeAuditText not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=2)

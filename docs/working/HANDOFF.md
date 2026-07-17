@@ -1,25 +1,22 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_210855_architecture_review
+2026-07-17_213220_normal_run
 
 ## Current Status
-Architecture review independently examined CR-009, 009E4, 009G2, and 009H2 over
-`e6fd78d1...d0ae505e` in isolated Standards and Spec passes. Ten focused retained tests pass. Two
-review-only probes fail as expected: formatted bank identifiers/field tokens enter reviewable
-source-bank audit reasons, and a stable advice key can produce two provider identities when payload
-changes after acceptance but before durable receipt retention. No production code changed.
+009E5 is complete pending independent orchestrator validation. One reusable shared audit-text seam
+now rejects formatted/contiguous bank-like digit sequences, canonical or future `field:vN:` tokens,
+legacy encryption markers, SHA-256-shaped hashes, controls/blanks/oversize text, and exact caller-
+supplied protected values with a generic no-echo error. Source-bank activation, replacement, and
+current-resolution reconciliation all consume it without changing encryption, masking, authority,
+evidence digests, attribution, predecessor history, or false-approval behavior.
 
-The review also confirmed communications policy/receipt ownership has drifted into disbursements;
-Loan Register truth can outlive its deletable row; post-transfer checklist sign-off wrongly requires
-the historical initiating maker rather than current source Stage-5 Senior Finance scope; checklist
-replay checks only part of its immutable ledger; and a downstream migration owns legal checklist
-state. CR-009's deterministic tamper coverage and the major prior E4/G2/H2 corrections are otherwise
-substantive. Findings, requirement traceability, probes, and corrective ownership are retained in
-this run, `REVIEW_FINDINGS.md`, CONTEXT, and the Epic 009 digest.
+Fifteen focused tests, all 18 initiation-class tests, Django check, and migration sync pass. Both
+PostgreSQL first/replacement five-caller methods pass and retain one winner/four conflicts per race.
+No frontend, API, schema, dependency, or permission change was needed.
 
 ## Next Run
-Run 009E5 for shared safe audit text. Then 009G3 restores register/checklist integrity and current
-Senior Finance scope while 009H3 restores communications-owned durable outbox/provider idempotency;
-009G4 follows both to anchor the combined legal migration state. Sharpened 009I and 009J wait for those corrected
-owners before borrower MP14 and Loan Account 360 wiring.
+Run 009G3 to restore register/checklist integrity and current Senior Finance scope; 009H3 can run
+independently to restore communications-owned durable outbox/provider idempotency. 009G4 follows
+both to anchor legal migration state. The next corrective slices were rechecked and are already
+concrete, including exact fields, constraints, authority matrices, migrations, and race contracts.

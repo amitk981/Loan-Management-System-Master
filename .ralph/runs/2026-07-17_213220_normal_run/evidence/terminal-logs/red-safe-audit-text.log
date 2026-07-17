@@ -1,0 +1,17 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text (sfpcl_credit.tests.test_safe_audit_text.SafeAuditTextTests.test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text) ... ERROR
+
+======================================================================
+ERROR: test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text (sfpcl_credit.tests.test_safe_audit_text.SafeAuditTextTests.test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_213220_normal_run/sfpcl_credit/tests/test_safe_audit_text.py", line 6, in test_accepts_reviewable_text_and_rejects_sensitive_or_invalid_text
+    from sfpcl_credit.shared.audit_text import (
+ModuleNotFoundError: No module named 'sfpcl_credit.shared.audit_text'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import hashlib
 import json
-import re
 import uuid
 
 from django.db import IntegrityError, transaction
@@ -15,6 +14,11 @@ from sfpcl_credit.configurations.models import (
 from sfpcl_credit.identity.models import AuditLog, Permission, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.models import BankAccount
+from sfpcl_credit.shared.audit_text import (
+    SAFE_AUDIT_TEXT_ERROR,
+    UnsafeAuditText,
+    safe_audit_text,
+)
 
 
 ACTIVATE_PERMISSION = "config.source_bank_account.activate"
@@ -47,7 +51,7 @@ def activate_source_bank_account(
 ) -> SourceBankAccountDecision:
     clean_reason = _clean_reason(reason)
     clean_request_id = request_id.strip() if isinstance(request_id, str) else ""
-    if not clean_reason or not clean_request_id:
+    if not clean_request_id:
         raise SourceBankGovernanceDenied(
             "A reason and request identity are required for source-bank activation."
         )
@@ -65,10 +69,13 @@ def activate_source_bank_account(
             raise SourceBankGovernanceDenied(
                 "The source account is not an active verified SFPCL RBL account."
             )
-        if _contains_sensitive_bank_content(clean_reason, bank):
-            raise SourceBankGovernanceDenied(
-                "The reason must not contain bank numbers or protected token content."
-            )
+        clean_reason = _clean_reason(
+            clean_reason,
+            protected_values=(
+                bank.account_number_encrypted,
+                bank.account_number_hash,
+            ),
+        )
         current = SourceBankAccountGovernance.objects.select_for_update().filter(
             status=SourceBankAccountGovernance.STATUS_ACTIVE
         ).first()
@@ -327,38 +334,30 @@ def _source_facts_digest(bank):
     )
 
 
-def _clean_reason(value):
-    reason = value.strip() if isinstance(value, str) else ""
-    if not reason:
-        return ""
-    if len(reason) > MAX_REASON_LENGTH or not reason.isprintable():
-        raise SourceBankGovernanceDenied(
-            "The reason must be printable and at most 500 characters."
+def _clean_reason(value, *, protected_values=()):
+    try:
+        return safe_audit_text(
+            value,
+            max_length=MAX_REASON_LENGTH,
+            protected_values=protected_values,
         )
-    if re.search(r"(?<!\d)\d{8,}(?!\d)", reason):
-        raise SourceBankGovernanceDenied(
-            "The reason must not contain bank numbers or protected token content."
-        )
-    lowered = reason.casefold()
-    if any(marker in lowered for marker in ("enc:v", "aes-gcm", "ciphertext:")):
-        raise SourceBankGovernanceDenied(
-            "The reason must not contain bank numbers or protected token content."
-        )
-    return reason
+    except UnsafeAuditText:
+        raise SourceBankGovernanceDenied(SAFE_AUDIT_TEXT_ERROR) from None
 
 
-def _contains_sensitive_bank_content(reason, bank):
-    lowered = reason.casefold()
-    protected_values = (
-        bank.account_number_encrypted,
-        bank.account_number_hash,
-    )
-    return any(
-        isinstance(value, str)
-        and len(value.strip()) >= 4
-        and value.strip().casefold() in lowered
-        for value in protected_values
-    )
+def _reason_is_safe(row):
+    try:
+        clean = safe_audit_text(
+            row.reason,
+            max_length=MAX_REASON_LENGTH,
+            protected_values=(
+                row.bank_account.account_number_encrypted,
+                row.bank_account.account_number_hash,
+            ),
+        )
+    except UnsafeAuditText:
+        return False
+    return clean == row.reason
 
 
 def _change_context(
@@ -532,10 +531,7 @@ def _change_context_coherent(row):
     }
     return bool(
         set(context) == expected_keys
-        and isinstance(row.reason, str)
-        and row.reason
-        and len(row.reason) <= MAX_REASON_LENGTH
-        and row.reason.isprintable()
+        and _reason_is_safe(row)
         and context["action"] == "config.changed"
         and context["change_kind"]
         == ("replacement" if row.predecessor_id else "activation")

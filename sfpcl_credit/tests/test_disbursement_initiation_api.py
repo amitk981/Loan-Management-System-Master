@@ -617,7 +617,9 @@ class DisbursementInitiationApiTests(TestCase):
             SourceBankGovernanceDenied,
             activate_source_bank_account,
         )
+        from sfpcl_credit.approvals.models import ExceptionRegisterEntry
         from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.workflows.models import WorkflowEvent
 
         self.fixture._grant(self.actor, "config.source_bank_account.activate")
         invalid_reasons = (
@@ -625,9 +627,16 @@ class DisbursementInitiationApiTests(TestCase):
             "x" * 501,
             "Unsafe\ncontrol character",
             "Route funds to account 123456789012.",
+            "Route funds to account 1234-5678-9012.",
+            "Route funds to account 1234 5678 9012.",
+            "Route funds to account 1234/5678/9012.",
             "Retain encrypted-source in the ticket.",
             "Retain source-hash in the ticket.",
             "Copy enc:v2:protected-token into the reason.",
+            "Copy field:v1:k1:legacy-token into the reason.",
+            "Copy field:v2:k9:other-bank-token into the reason.",
+            "Copy field:v42:k9:future-token into the reason.",
+            "Copy 17f8b6a94f7bcafbcf0a8f73364d4a86eaa20b2eb8e6318104ff87cb7f1703b4.",
         )
         for index, reason in enumerate(invalid_reasons):
             with self.subTest(reason_index=index):
@@ -639,14 +648,21 @@ class DisbursementInitiationApiTests(TestCase):
                     AuditLog.objects.filter(
                         entity_type="source_bank_account_governance"
                     ).count(),
+                    WorkflowEvent.objects.count(),
+                    ExceptionRegisterEntry.objects.count(),
                 )
-                with self.assertRaises(SourceBankGovernanceDenied):
+                with self.assertRaisesRegex(
+                    SourceBankGovernanceDenied,
+                    "^The reason contains unsafe or invalid audit text\\.$",
+                ) as raised:
                     activate_source_bank_account(
                         actor=self.actor,
                         bank_account_id=self.source_bank_id,
                         reason=reason,
                         request_id=f"req-unsafe-reason-{index}",
                     )
+                if reason.strip():
+                    self.assertNotIn(reason.strip(), str(raised.exception))
                 after = (
                     SourceBankAccountGovernance.objects.count(),
                     VersionHistory.objects.filter(
@@ -655,8 +671,98 @@ class DisbursementInitiationApiTests(TestCase):
                     AuditLog.objects.filter(
                         entity_type="source_bank_account_governance"
                     ).count(),
+                    WorkflowEvent.objects.count(),
+                    ExceptionRegisterEntry.objects.count(),
                 )
                 self.assertEqual(after, before)
+
+    def test_source_bank_replacement_rejects_target_bank_secrets_without_writes(self):
+        from sfpcl_credit.configurations.models import (
+            SourceBankAccountGovernance,
+            VersionHistory,
+        )
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            SourceBankGovernanceDenied,
+            activate_source_bank_account,
+            resolve_source_bank_account,
+        )
+        from sfpcl_credit.approvals.models import ExceptionRegisterEntry
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.members.models import BankAccount
+        from sfpcl_credit.workflows.models import WorkflowEvent
+
+        self.fixture._grant(self.actor, "config.source_bank_account.activate")
+        current = activate_source_bank_account(
+            actor=self.actor,
+            bank_account_id=self.source_bank_id,
+            reason="Activate the verified operating settlement account.",
+            request_id="req-source-bank-safe-current",
+        )
+        replacement_token = "field:v2:k9:other-bank-ciphertext"
+        replacement_hash = (
+            "17f8b6a94f7bcafbcf0a8f73364d4a86"
+            "eaa20b2eb8e6318104ff87cb7f1703b4"
+        )
+        replacement_bank = BankAccount.objects.create(
+            owner_party_type="sfpcl",
+            owner_party_id=uuid4(),
+            account_holder_name="SFPCL replacement",
+            account_number_encrypted=replacement_token,
+            account_number_hash=replacement_hash,
+            account_number_last4="3333",
+            ifsc="RBLB0000003",
+            bank_name="RBL Bank",
+            verification_status="verified",
+            status="active",
+        )
+        invalid_reasons = (
+            "Replace with account 1234-5678-9012.",
+            f"Retain {replacement_token} for review.",
+            f"Retain {replacement_hash} for review.",
+        )
+
+        for index, reason in enumerate(invalid_reasons):
+            with self.subTest(reason_index=index):
+                before = (
+                    SourceBankAccountGovernance.objects.count(),
+                    VersionHistory.objects.filter(
+                        versioned_entity_type="source_bank_account_governance"
+                    ).count(),
+                    AuditLog.objects.filter(
+                        entity_type="source_bank_account_governance"
+                    ).count(),
+                    WorkflowEvent.objects.count(),
+                    ExceptionRegisterEntry.objects.count(),
+                )
+                with self.assertRaisesRegex(
+                    SourceBankGovernanceDenied,
+                    "^The reason contains unsafe or invalid audit text\\.$",
+                ) as raised:
+                    activate_source_bank_account(
+                        actor=self.actor,
+                        bank_account_id=replacement_bank.pk,
+                        reason=reason,
+                        request_id=f"req-unsafe-replacement-{index}",
+                    )
+                self.assertNotIn(reason, str(raised.exception))
+                self.assertEqual(
+                    (
+                        SourceBankAccountGovernance.objects.count(),
+                        VersionHistory.objects.filter(
+                            versioned_entity_type="source_bank_account_governance"
+                        ).count(),
+                        AuditLog.objects.filter(
+                            entity_type="source_bank_account_governance"
+                        ).count(),
+                        WorkflowEvent.objects.count(),
+                        ExceptionRegisterEntry.objects.count(),
+                    ),
+                    before,
+                )
+                self.assertEqual(
+                    resolve_source_bank_account().governance_id,
+                    current.governance_id,
+                )
 
     def test_source_bank_current_resolution_rejects_rationale_and_attribution_drift(self):
         from sfpcl_credit.configurations.models import (
