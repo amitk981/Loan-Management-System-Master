@@ -8,7 +8,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from django.db import close_old_connections, connection, connections
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 from unittest import skipUnless
 
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
@@ -479,7 +479,7 @@ class DisbursementInitiationApiTests(TestCase):
             activation_audit.new_value_json["request_id"], "req-source-bank-001"
         )
         self.assertEqual(
-            activation_audit.new_value_json["actor_role_codes"],
+            activation_audit.new_value_json["change_context"]["actor_role_codes"],
             ["senior_manager_finance"],
         )
         self.assertEqual(
@@ -544,6 +544,190 @@ class DisbursementInitiationApiTests(TestCase):
 
         BankAccount.objects.filter(pk=replacement_bank.pk).update(status="inactive")
         self.assertIsNone(resolve_source_bank_account())
+
+    def test_source_bank_activation_retains_reviewable_reason_without_false_approval(self):
+        from sfpcl_credit.configurations.models import SourceBankAccountGovernance
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            activate_source_bank_account,
+        )
+
+        self.fixture._grant(self.actor, "config.source_bank_account.activate")
+        request = RequestFactory().post(
+            "/source-bank/activate/",
+            REMOTE_ADDR="192.0.2.44",
+            HTTP_USER_AGENT="governance-review/1.0",
+        )
+        reason = "Move settlement routing to the verified operating account."
+
+        decision = activate_source_bank_account(
+            actor=self.actor,
+            bank_account_id=self.source_bank_id,
+            reason=reason,
+            request_id="req-source-bank-reviewable",
+            request=request,
+        )
+
+        row = SourceBankAccountGovernance.objects.select_related(
+            "version_history", "activation_audit"
+        ).get(pk=decision.governance_id)
+        expected_context = {
+            "action": "config.changed",
+            "change_kind": "activation",
+            "reason": reason,
+            "reason_digest": hashlib.sha256(reason.encode()).hexdigest(),
+            "request_id": "req-source-bank-reviewable",
+            "actor_user_id": str(self.actor.pk),
+            "actor_role_codes": ["senior_manager_finance"],
+            "actor_team_codes": [],
+            "ip_address": "192.0.2.44",
+            "user_agent": "governance-review/1.0",
+        }
+        self.assertEqual(row.reason, reason)
+        self.assertEqual(row.change_context_json, expected_context)
+        self.assertEqual(
+            row.change_context_digest,
+            hashlib.sha256(
+                json.dumps(expected_context, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest(),
+        )
+        self.assertEqual(
+            row.version_history.new_value_json["change_context"], expected_context
+        )
+        self.assertEqual(
+            row.activation_audit.new_value_json,
+            row.version_history.new_value_json,
+        )
+        self.assertEqual(row.version_history.author_user_id, self.actor.pk)
+        self.assertIsNone(row.version_history.reviewer_user_id)
+        self.assertIsNone(row.version_history.approver_user_id)
+        self.assertEqual(row.version_history.approval_reference, "")
+        self.assertIsNone(row.version_history.approved_at)
+        self.assertEqual(row.activation_audit.ip_address, "192.0.2.44")
+        self.assertEqual(row.activation_audit.user_agent, "governance-review/1.0")
+        protected_surface = json.dumps(row.version_history.new_value_json, sort_keys=True)
+        for forbidden in ("encrypted-source", "source-hash", "2002"):
+            self.assertNotIn(forbidden, protected_surface)
+
+    def test_source_bank_rejects_unsafe_rationale_without_governance_writes(self):
+        from sfpcl_credit.configurations.models import (
+            SourceBankAccountGovernance,
+            VersionHistory,
+        )
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            SourceBankGovernanceDenied,
+            activate_source_bank_account,
+        )
+        from sfpcl_credit.identity.models import AuditLog
+
+        self.fixture._grant(self.actor, "config.source_bank_account.activate")
+        invalid_reasons = (
+            "   ",
+            "x" * 501,
+            "Unsafe\ncontrol character",
+            "Route funds to account 123456789012.",
+            "Retain encrypted-source in the ticket.",
+            "Retain source-hash in the ticket.",
+            "Copy enc:v2:protected-token into the reason.",
+        )
+        for index, reason in enumerate(invalid_reasons):
+            with self.subTest(reason_index=index):
+                before = (
+                    SourceBankAccountGovernance.objects.count(),
+                    VersionHistory.objects.filter(
+                        versioned_entity_type="source_bank_account_governance"
+                    ).count(),
+                    AuditLog.objects.filter(
+                        entity_type="source_bank_account_governance"
+                    ).count(),
+                )
+                with self.assertRaises(SourceBankGovernanceDenied):
+                    activate_source_bank_account(
+                        actor=self.actor,
+                        bank_account_id=self.source_bank_id,
+                        reason=reason,
+                        request_id=f"req-unsafe-reason-{index}",
+                    )
+                after = (
+                    SourceBankAccountGovernance.objects.count(),
+                    VersionHistory.objects.filter(
+                        versioned_entity_type="source_bank_account_governance"
+                    ).count(),
+                    AuditLog.objects.filter(
+                        entity_type="source_bank_account_governance"
+                    ).count(),
+                )
+                self.assertEqual(after, before)
+
+    def test_source_bank_current_resolution_rejects_rationale_and_attribution_drift(self):
+        from sfpcl_credit.configurations.models import (
+            SourceBankAccountGovernance,
+            VersionHistory,
+        )
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            activate_source_bank_account,
+            resolve_source_bank_account,
+        )
+        from sfpcl_credit.identity.models import AuditLog
+
+        self.fixture._grant(self.actor, "config.source_bank_account.activate")
+        decision = activate_source_bank_account(
+            actor=self.actor,
+            bank_account_id=self.source_bank_id,
+            reason="Activate the verified operating settlement account.",
+            request_id="req-source-bank-tamper-proof",
+        )
+        row = SourceBankAccountGovernance.objects.select_related(
+            "version_history", "activation_audit"
+        ).get(pk=decision.governance_id)
+        context_mutations = []
+        for field, changed in (
+            ("reason", "Changed retained reason."),
+            ("request_id", "changed-request"),
+            ("actor_user_id", str(self.cfc.pk)),
+            ("actor_role_codes", ["chief_financial_controller"]),
+            ("actor_team_codes", ["unrelated-team"]),
+            ("ip_address", "198.51.100.9"),
+            ("user_agent", "changed-agent"),
+            ("action", "config.approved"),
+        ):
+            changed_context = deepcopy(row.change_context_json)
+            changed_context[field] = changed
+            context_mutations.append(changed_context)
+        mutation_cases = [
+            (SourceBankAccountGovernance, row.pk, "reason", "Changed row reason."),
+            (SourceBankAccountGovernance, row.pk, "reason_digest", "0" * 64),
+            (SourceBankAccountGovernance, row.pk, "request_id", "changed-row-request"),
+            (
+                SourceBankAccountGovernance,
+                row.pk,
+                "change_context_digest",
+                "1" * 64,
+            ),
+            *[
+                (SourceBankAccountGovernance, row.pk, "change_context_json", context)
+                for context in context_mutations
+            ],
+            (VersionHistory, row.version_history_id, "author_user_id", self.cfc.pk),
+            (VersionHistory, row.version_history_id, "approver_user_id", self.actor.pk),
+            (
+                VersionHistory,
+                row.version_history_id,
+                "approval_reference",
+                row.request_id,
+            ),
+            (VersionHistory, row.version_history_id, "approved_at", row.activated_at),
+            (AuditLog, row.activation_audit_id, "actor_user_id", self.cfc.pk),
+            (AuditLog, row.activation_audit_id, "ip_address", "198.51.100.10"),
+            (AuditLog, row.activation_audit_id, "user_agent", "changed-agent"),
+        ]
+        self.assertIsNotNone(resolve_source_bank_account())
+        for model, pk, field, changed in mutation_cases:
+            with self.subTest(model=model.__name__, field=field, changed=str(changed)):
+                original = model.objects.values_list(field, flat=True).get(pk=pk)
+                model.objects.filter(pk=pk).update(**{field: changed})
+                self.assertIsNone(resolve_source_bank_account())
+                model.objects.filter(pk=pk).update(**{field: original})
+        self.assertEqual(resolve_source_bank_account().governance_id, row.pk)
 
     def test_source_bank_activation_permission_and_proof_are_database_governed(self):
         from django.db import IntegrityError, transaction
@@ -624,6 +808,14 @@ class DisbursementInitiationApiTests(TestCase):
         ).get(pk=replacement.governance_id)
         self.assertEqual(new.predecessor_id, old.pk)
         self.assertEqual(old.status, SourceBankAccountGovernance.STATUS_INACTIVE)
+        self.assertEqual(
+            old.reason, "Treasury-approved initial settlement account."
+        )
+        self.assertEqual(
+            new.reason, "Treasury-approved replacement settlement account."
+        )
+        self.assertEqual(old.change_context_json["change_kind"], "activation")
+        self.assertEqual(new.change_context_json["change_kind"], "replacement")
         self.assertEqual(old.deactivated_at, new.activated_at)
         self.assertEqual(old.version_history.effective_to, new.activated_at.date())
         self.assertEqual(old.deactivation_version_history.version_number, "2")
@@ -635,9 +827,26 @@ class DisbursementInitiationApiTests(TestCase):
         )
         self.assertEqual(old.deactivation_audit.action, "config.changed")
         self.assertEqual(
+            old.deactivation_version_history.new_value_json["replacement_context"],
+            new.change_context_json,
+        )
+        self.assertEqual(
+            old.deactivation_audit.new_value_json,
+            old.deactivation_version_history.new_value_json,
+        )
+        self.assertEqual(
             new.version_history.old_value_json,
             old.deactivation_version_history.new_value_json,
         )
+        for history in (
+            old.version_history,
+            old.deactivation_version_history,
+            new.version_history,
+        ):
+            self.assertIsNone(history.reviewer_user_id)
+            self.assertIsNone(history.approver_user_id)
+            self.assertEqual(history.approval_reference, "")
+            self.assertIsNone(history.approved_at)
         self.assertEqual(
             AuditLog.objects.filter(
                 action="config.changed", entity_type="source_bank_account_governance"
@@ -1148,3 +1357,20 @@ class SourceBankGovernanceRaceTests(TransactionTestCase):
             ).count(),
             3,
         )
+        winner = SourceBankAccountGovernance.objects.select_related(
+            "version_history", "activation_audit"
+        ).get(pk=current.governance_id)
+        self.assertTrue(winner.reason.startswith("Governed replacement contender "))
+        self.assertEqual(winner.change_context_json["reason"], winner.reason)
+        self.assertEqual(winner.change_context_json["change_kind"], "replacement")
+        self.assertIsNone(winner.version_history.approver_user_id)
+        self.assertEqual(winner.version_history.approval_reference, "")
+        self.assertEqual(
+            winner.activation_audit.new_value_json,
+            winner.version_history.new_value_json,
+        )
+        winner_surface = json.dumps(
+            winner.version_history.new_value_json, sort_keys=True
+        )
+        for forbidden in ("protected-replacement", "hash-replacement"):
+            self.assertNotIn(forbidden, winner_surface)

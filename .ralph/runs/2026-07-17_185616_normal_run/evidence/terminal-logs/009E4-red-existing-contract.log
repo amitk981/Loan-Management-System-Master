@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+E..
+======================================================================
+ERROR: test_source_bank_requires_explicit_governed_activation_and_current_evidence (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_requires_explicit_governed_activation_and_current_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_185616_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 482, in test_source_bank_requires_explicit_governed_activation_and_current_evidence
+    activation_audit.new_value_json["actor_role_codes"],
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'actor_role_codes'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.224s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

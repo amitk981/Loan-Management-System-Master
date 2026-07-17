@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009E4-source-bank-rationale-and-approval-evidence-closure.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/configurations/models.py
+ M sfpcl_credit/configurations/modules/source_bank_governance.py
+ M sfpcl_credit/tests/test_disbursement_initiation_api.py
+?? .ralph/runs/2026-07-17_185616_normal_run/
+?? sfpcl_credit/configurations/migrations/0005_source_bank_reviewable_rationale.py

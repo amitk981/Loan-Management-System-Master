@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_source_bank_activation_retains_reviewable_reason_without_false_approval (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_activation_retains_reviewable_reason_without_false_approval)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_185616_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 585, in test_source_bank_activation_retains_reviewable_reason_without_false_approval
+    self.assertEqual(row.reason, reason)
+                     ^^^^^^^^^^
+AttributeError: 'SourceBankAccountGovernance' object has no attribute 'reason'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.038s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

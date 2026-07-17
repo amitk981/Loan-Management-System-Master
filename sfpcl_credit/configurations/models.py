@@ -105,6 +105,9 @@ class SourceBankAccountGovernance(models.Model):
     status = models.CharField(max_length=40, default=STATUS_ACTIVE, db_index=True)
     source_facts_digest = models.CharField(max_length=64)
     reason_digest = models.CharField(max_length=64)
+    reason = models.TextField(max_length=500, null=True, blank=True)
+    change_context_json = models.JSONField(null=True, blank=True)
+    change_context_digest = models.CharField(max_length=64, blank=True, default="")
     request_id = models.CharField(max_length=255, unique=True)
     activated_by_user = models.ForeignKey(
         "identity.User",

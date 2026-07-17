@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-17 - 2026-07-17_185616_normal_run
+
+- Agent tool used: codex with TDD and deep-module interface checks.
+- Slice completed: 009E4-source-bank-rationale-and-approval-evidence-closure.
+- Summary: Retained safe reviewable source-bank rationale and sealed request/author/role/team/network
+  context, removed false approval attribution, cleaned legacy false claims without fabricating
+  reasons, and preserved fail-closed history and race behavior.
+- Tests run: failing-first rationale probe; 6 focused source-bank tests; 21 impacted initiation
+  tests; 42 downstream/catalogue tests; both PostgreSQL five-caller first/replacement race methods;
+  Django check; migration sync; frontend build/typecheck/lint and 327 frontend tests.
+- Evidence saved: `.ralph/runs/2026-07-17_185616_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High; mitigated by bounded safe text, exact canonical ledgers, honest legacy handling,
+  unassigned Critical permission, fail-closed drift checks, and database-backed race proof.
+- Next action: Run 009G2, then 009H2.
+
 ## 2026-07-17 - 2026-07-17_164724_architecture_review
 
 - Agent tool used: codex with isolated Standards and Spec review passes plus review-only probes.
@@ -8488,6 +8504,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_174605_normal_run/.ralph/runs/2026-07-17_174605_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_174605_normal_run/.ralph/runs/2026-07-17_174605_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-17 19:20:09 - 2026-07-17_185616_normal_run
+- Agent tool used: codex
+- Slice attempted: 009E4-source-bank-rationale-and-approval-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_185616_normal_run/.ralph/runs/2026-07-17_185616_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_185616_normal_run/.ralph/runs/2026-07-17_185616_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

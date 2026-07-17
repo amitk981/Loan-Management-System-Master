@@ -159,8 +159,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   009H renders and accepts one protected borrower advice. Independent review found that source-bank
   rationale is hash-only/misattributed as approval, transfer success omits Loan Register, pending
   advice, post-disbursement checklist, and §45.2 replay truth, while advice authority/delivery/current
-  contact/rendered evidence remain incomplete. Corrective 009E4, 009G2, and 009H2 now precede the
-  borrower/status and Loan Account 360 screens.
+  contact/rendered evidence remain incomplete. Corrective 009E4 now retains safe reviewable
+  rationale and exact request/author context without false approval attribution, preserves the
+  unassigned Critical grant, and fails closed on evidence drift. Corrective 009G2 and 009H2 now
+  precede the borrower/status and Loan Account 360 screens.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

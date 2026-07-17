@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import hashlib
 import json
+import re
 import uuid
 
 from django.db import IntegrityError, transaction
@@ -18,6 +19,7 @@ from sfpcl_credit.members.models import BankAccount
 
 ACTIVATE_PERMISSION = "config.source_bank_account.activate"
 ENTITY_TYPE = "source_bank_account_governance"
+MAX_REASON_LENGTH = 500
 
 
 class SourceBankGovernanceDenied(Exception):
@@ -43,7 +45,7 @@ class SourceBankAccountDecision:
 def activate_source_bank_account(
     *, actor, bank_account_id, reason, request_id, request=None
 ) -> SourceBankAccountDecision:
-    clean_reason = reason.strip() if isinstance(reason, str) else ""
+    clean_reason = _clean_reason(reason)
     clean_request_id = request_id.strip() if isinstance(request_id, str) else ""
     if not clean_reason or not clean_request_id:
         raise SourceBankGovernanceDenied(
@@ -63,6 +65,10 @@ def activate_source_bank_account(
             raise SourceBankGovernanceDenied(
                 "The source account is not an active verified SFPCL RBL account."
             )
+        if _contains_sensitive_bank_content(clean_reason, bank):
+            raise SourceBankGovernanceDenied(
+                "The reason must not contain bank numbers or protected token content."
+            )
         current = SourceBankAccountGovernance.objects.select_for_update().filter(
             status=SourceBankAccountGovernance.STATUS_ACTIVE
         ).first()
@@ -77,6 +83,15 @@ def activate_source_bank_account(
         now = timezone.now()
         facts_digest = _source_facts_digest(bank)
         reason_digest = _digest(clean_reason)
+        change_context = _change_context(
+            actor=provisioner,
+            change_kind="replacement" if current is not None else "activation",
+            reason=clean_reason,
+            reason_digest=reason_digest,
+            request_id=clean_request_id,
+            request=request,
+        )
+        change_context_digest = _digest(change_context)
         row_id = uuid.uuid4()
         try:
             with transaction.atomic():
@@ -85,8 +100,8 @@ def activate_source_bank_account(
                     old_evidence = _deactivate_for_successor(
                         current,
                         successor_id=row_id,
-                        successor_request_id=clean_request_id,
-                        successor_reason_digest=reason_digest,
+                        successor_context=change_context,
+                        successor_context_digest=change_context_digest,
                         actor=provisioner,
                         changed_at=now,
                         request=request,
@@ -97,6 +112,9 @@ def activate_source_bank_account(
                     predecessor=current,
                     source_facts_digest=facts_digest,
                     reason_digest=reason_digest,
+                    reason=clean_reason,
+                    change_context_json=change_context,
+                    change_context_digest=change_context_digest,
                     request_id=clean_request_id,
                     activated_by_user=provisioner,
                     activated_at=now,
@@ -110,16 +128,10 @@ def activate_source_bank_account(
                         "Source-bank account activated through explicit authority."
                     ),
                     author_user=provisioner,
-                    approver_user=provisioner,
-                    approval_reference=clean_request_id,
-                    approved_at=now,
                     old_value_json=old_evidence,
                     new_value_json=safe_evidence,
                     effective_from=now.date(),
                     created_at=now,
-                )
-                audit_evidence = _audited_evidence(
-                    safe_evidence, provisioner, reason_digest
                 )
                 audit = AuditLog.objects.create(
                     actor_user=provisioner,
@@ -128,7 +140,7 @@ def activate_source_bank_account(
                     entity_type=ENTITY_TYPE,
                     entity_id=row.pk,
                     old_value_json=old_evidence,
-                    new_value_json=audit_evidence,
+                    new_value_json=safe_evidence,
                     ip_address=request_ip(request) if request else "",
                     user_agent=request_user_agent(request) if request else "",
                     created_at=now,
@@ -209,8 +221,8 @@ def _deactivate_for_successor(
     row,
     *,
     successor_id,
-    successor_request_id,
-    successor_reason_digest,
+    successor_context,
+    successor_context_digest,
     actor,
     changed_at,
     request,
@@ -218,16 +230,18 @@ def _deactivate_for_successor(
     old_evidence = _activation_evidence(row)
     row.status = SourceBankAccountGovernance.STATUS_INACTIVE
     row.deactivated_at = changed_at
-    new_evidence = _inactive_evidence(row, successor_id=successor_id)
+    new_evidence = _inactive_evidence(
+        row,
+        successor_id=successor_id,
+        replacement_context=successor_context,
+        replacement_context_digest=successor_context_digest,
+    )
     history = VersionHistory.objects.create(
         versioned_entity_type=ENTITY_TYPE,
         versioned_entity_id=row.pk,
         version_number="2",
         change_summary="Source-bank account deactivated by governed replacement.",
         author_user=actor,
-        approver_user=actor,
-        approval_reference=successor_request_id,
-        approved_at=changed_at,
         old_value_json=old_evidence,
         new_value_json=new_evidence,
         effective_from=changed_at.date(),
@@ -241,9 +255,7 @@ def _deactivate_for_successor(
         entity_type=ENTITY_TYPE,
         entity_id=row.pk,
         old_value_json=old_evidence,
-        new_value_json=_audited_evidence(
-            new_evidence, actor, successor_reason_digest
-        ),
+        new_value_json=new_evidence,
         ip_address=request_ip(request) if request else "",
         user_agent=request_user_agent(request) if request else "",
         created_at=changed_at,
@@ -315,6 +327,57 @@ def _source_facts_digest(bank):
     )
 
 
+def _clean_reason(value):
+    reason = value.strip() if isinstance(value, str) else ""
+    if not reason:
+        return ""
+    if len(reason) > MAX_REASON_LENGTH or not reason.isprintable():
+        raise SourceBankGovernanceDenied(
+            "The reason must be printable and at most 500 characters."
+        )
+    if re.search(r"(?<!\d)\d{8,}(?!\d)", reason):
+        raise SourceBankGovernanceDenied(
+            "The reason must not contain bank numbers or protected token content."
+        )
+    lowered = reason.casefold()
+    if any(marker in lowered for marker in ("enc:v", "aes-gcm", "ciphertext:")):
+        raise SourceBankGovernanceDenied(
+            "The reason must not contain bank numbers or protected token content."
+        )
+    return reason
+
+
+def _contains_sensitive_bank_content(reason, bank):
+    lowered = reason.casefold()
+    protected_values = (
+        bank.account_number_encrypted,
+        bank.account_number_hash,
+    )
+    return any(
+        isinstance(value, str)
+        and len(value.strip()) >= 4
+        and value.strip().casefold() in lowered
+        for value in protected_values
+    )
+
+
+def _change_context(
+    *, actor, change_kind, reason, reason_digest, request_id, request
+):
+    return {
+        "action": "config.changed",
+        "change_kind": change_kind,
+        "reason": reason,
+        "reason_digest": reason_digest,
+        "request_id": request_id,
+        "actor_user_id": str(actor.pk),
+        "actor_role_codes": sorted(auth_service.effective_role_codes(actor)),
+        "actor_team_codes": sorted(actor.team_codes()),
+        "ip_address": request_ip(request) if request else "",
+        "user_agent": request_user_agent(request) if request else "",
+    }
+
+
 def _activation_evidence(row):
     return {
         "governance_id": str(row.pk),
@@ -325,27 +388,28 @@ def _activation_evidence(row):
         "source_facts_digest": row.source_facts_digest,
         "reason_digest": row.reason_digest,
         "request_id": row.request_id,
+        "change_context": row.change_context_json,
+        "change_context_digest": row.change_context_digest,
         "status": SourceBankAccountGovernance.STATUS_ACTIVE,
         "activated_by_user_id": str(row.activated_by_user_id),
         "activated_at": row.activated_at.isoformat().replace("+00:00", "Z"),
     }
 
 
-def _inactive_evidence(row, *, successor_id):
+def _inactive_evidence(
+    row,
+    *,
+    successor_id,
+    replacement_context,
+    replacement_context_digest,
+):
     return {
         **_activation_evidence(row),
         "status": SourceBankAccountGovernance.STATUS_INACTIVE,
         "deactivated_at": row.deactivated_at.isoformat().replace("+00:00", "Z"),
         "successor_governance_id": str(successor_id),
-    }
-
-
-def _audited_evidence(evidence, actor, reason_digest):
-    return {
-        **evidence,
-        "actor_role_codes": sorted(auth_service.effective_role_codes(actor)),
-        "actor_team_codes": sorted(actor.team_codes()),
-        "reason": "sha256:" + reason_digest,
+        "replacement_context": replacement_context,
+        "replacement_context_digest": replacement_context_digest,
     }
 
 
@@ -355,7 +419,12 @@ def _activation_coherent(row):
     expected = _activation_evidence(row)
     predecessor = row.predecessor
     expected_old = (
-        _inactive_evidence(predecessor, successor_id=row.pk)
+        _inactive_evidence(
+            predecessor,
+            successor_id=row.pk,
+            replacement_context=row.change_context_json,
+            replacement_context_digest=row.change_context_digest,
+        )
         if predecessor is not None and predecessor.deactivated_at is not None
         else None
     )
@@ -364,12 +433,18 @@ def _activation_coherent(row):
     audit_evidence = audit.new_value_json or {}
     return bool(
         history.versioned_entity_type == ENTITY_TYPE
+        and _change_context_coherent(row)
         and history.versioned_entity_id == row.pk
         and history.version_number == "1"
+        and history.change_summary
+        == "Source-bank account activated through explicit authority."
         and history.author_user_id == row.activated_by_user_id
-        and history.approver_user_id == row.activated_by_user_id
-        and history.approval_reference == row.request_id
-        and history.approved_at == row.activated_at
+        and history.reviewer_user_id is None
+        and history.approver_user_id is None
+        and history.board_approval_reference is None
+        and history.approval_reference == ""
+        and history.approved_at is None
+        and history.created_at == row.activated_at
         and history.effective_from == row.activated_at.date()
         and history.effective_to
         == (row.deactivated_at.date() if row.deactivated_at else None)
@@ -379,11 +454,12 @@ def _activation_coherent(row):
         and audit.entity_type == ENTITY_TYPE
         and audit.entity_id == row.pk
         and audit.actor_user_id == row.activated_by_user_id
+        and audit.actor_type == "user"
+        and audit.created_at == row.activated_at
         and audit.old_value_json == expected_old
-        and all(audit_evidence.get(key) == value for key, value in expected.items())
-        and bool(audit_evidence.get("actor_role_codes"))
-        and isinstance(audit_evidence.get("actor_team_codes"), list)
-        and audit_evidence.get("reason") == "sha256:" + row.reason_digest
+        and audit_evidence == expected
+        and audit.ip_address == row.change_context_json["ip_address"]
+        and audit.user_agent == row.change_context_json["user_agent"]
     )
 
 
@@ -398,18 +474,29 @@ def _deactivation_coherent(row, successor):
     ):
         return False
     old_evidence = _activation_evidence(row)
-    expected = _inactive_evidence(row, successor_id=successor.pk)
+    expected = _inactive_evidence(
+        row,
+        successor_id=successor.pk,
+        replacement_context=successor.change_context_json,
+        replacement_context_digest=successor.change_context_digest,
+    )
     history = row.deactivation_version_history
     audit = row.deactivation_audit
     audit_evidence = audit.new_value_json or {}
     return bool(
         history.versioned_entity_type == ENTITY_TYPE
+        and _change_context_coherent(successor)
         and history.versioned_entity_id == row.pk
         and history.version_number == "2"
+        and history.change_summary
+        == "Source-bank account deactivated by governed replacement."
         and history.author_user_id == successor.activated_by_user_id
-        and history.approver_user_id == successor.activated_by_user_id
-        and history.approval_reference == successor.request_id
-        and history.approved_at == row.deactivated_at
+        and history.reviewer_user_id is None
+        and history.approver_user_id is None
+        and history.board_approval_reference is None
+        and history.approval_reference == ""
+        and history.approved_at is None
+        and history.created_at == row.deactivated_at
         and history.effective_from == row.deactivated_at.date()
         and history.effective_to == row.deactivated_at.date()
         and history.old_value_json == old_evidence
@@ -418,11 +505,50 @@ def _deactivation_coherent(row, successor):
         and audit.entity_type == ENTITY_TYPE
         and audit.entity_id == row.pk
         and audit.actor_user_id == successor.activated_by_user_id
+        and audit.actor_type == "user"
+        and audit.created_at == row.deactivated_at
         and audit.old_value_json == old_evidence
-        and all(audit_evidence.get(key) == value for key, value in expected.items())
-        and bool(audit_evidence.get("actor_role_codes"))
-        and isinstance(audit_evidence.get("actor_team_codes"), list)
-        and audit_evidence.get("reason") == "sha256:" + successor.reason_digest
+        and audit_evidence == expected
+        and audit.ip_address == successor.change_context_json["ip_address"]
+        and audit.user_agent == successor.change_context_json["user_agent"]
+    )
+
+
+def _change_context_coherent(row):
+    context = row.change_context_json
+    if not isinstance(context, dict):
+        return False
+    expected_keys = {
+        "action",
+        "change_kind",
+        "reason",
+        "reason_digest",
+        "request_id",
+        "actor_user_id",
+        "actor_role_codes",
+        "actor_team_codes",
+        "ip_address",
+        "user_agent",
+    }
+    return bool(
+        set(context) == expected_keys
+        and isinstance(row.reason, str)
+        and row.reason
+        and len(row.reason) <= MAX_REASON_LENGTH
+        and row.reason.isprintable()
+        and context["action"] == "config.changed"
+        and context["change_kind"]
+        == ("replacement" if row.predecessor_id else "activation")
+        and context["reason"] == row.reason
+        and context["reason_digest"] == row.reason_digest == _digest(row.reason)
+        and context["request_id"] == row.request_id
+        and context["actor_user_id"] == str(row.activated_by_user_id)
+        and isinstance(context["actor_role_codes"], list)
+        and bool(context["actor_role_codes"])
+        and isinstance(context["actor_team_codes"], list)
+        and isinstance(context["ip_address"], str)
+        and isinstance(context["user_agent"], str)
+        and row.change_context_digest == _digest(context)
     )
 
 

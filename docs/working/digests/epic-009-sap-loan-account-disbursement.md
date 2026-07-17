@@ -1,5 +1,25 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009E4 Source-Bank Rationale and Approval Evidence Closure
+
+- The existing `source_bank_governance` deep module now retains each accepted first activation or
+  replacement's exact printable rationale (maximum 500 characters) and a canonical sealed change
+  context: action/kind, reason/digest, request, author, role/team, and request-network facts. Numeric
+  bank-account content, protected bank tokens/hashes, control characters, blanks, and oversized
+  rationales fail before any governance/version/audit write.
+- Activation and predecessor-deactivation version rows identify the provisioner only as author;
+  reviewer, approver, board-approval reference, approval reference, and approval timestamp remain
+  empty. Migration 0005 clears the known false approval claim on legacy source-bank histories but
+  cannot recover their original reason, so legacy rows remain honestly non-current.
+- Current resolution exactly reconciles rationale/context digests, actor/request/network facts,
+  canonical version/audit bodies and identities, effective ranges, and predecessor/successor facts.
+  One-field rationale, digest, request, actor, role/team, network, version, audit, or false-approval
+  drift fails closed.
+- Six focused source-bank tests, 42 downstream/catalogue tests, and both PostgreSQL five-caller
+  first/replacement race methods pass. Each race retains one complete reviewable winner and four
+  clean conflicts. The Critical activation permission remains unassigned to every production role;
+  A-126 is closed only for evidence mechanics, not for the still-unnamed business provisioner.
+
 ## Architecture Review 2026-07-17 16:56 — Post-Transfer Completion and Advice Truth
 
 - 009E3 and 009F2 substantively close the prior amount/source-history/loan-owner and current bank/
