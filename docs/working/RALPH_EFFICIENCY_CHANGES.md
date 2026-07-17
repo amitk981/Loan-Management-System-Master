@@ -8,8 +8,9 @@ The largest static test fixture in `test_approval_case_routing_api.py` was moved
 
 - Test execution: 6.113s → 3.980s (35% faster)
 - Whole command: 20.825s → 18.068s (13% faster)
-- Current staging baseline: 80 `setUp()` methods and 0 `setUpTestData()` methods (the earlier 77-method audit predated intervening slices)
-- After this first incremental conversion: 79 `setUp()` methods and 1 `setUpTestData()` method; the separately audited 26 nested constructions are deferred to later, individually proved refactors
+- PostgreSQL transaction races: 2/2 passed with the shared fixture builder and per-test transaction isolation
+- Current staging baseline: 80 `setUp()` method definitions and 0 `setUpTestData()` methods (the earlier 77-method audit predated intervening slices)
+- After this first incremental conversion: 80 explicit `setUp()` definitions and 1 `setUpTestData()` method. The main 127-test class no longer rebuilds the fixture per test; one explicit `setUp()` was added for its two PostgreSQL `TransactionTestCase` races, which cannot use class-level data. The separately audited 26 nested constructions are deferred to later, individually proved refactors.
 
 Further fixture work should follow the same one-class-at-a-time pattern and prove identical test behavior before moving to the next hotspot.
 
