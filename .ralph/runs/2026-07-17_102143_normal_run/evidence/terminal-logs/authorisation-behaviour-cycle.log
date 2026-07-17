@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+..EE..
+======================================================================
+ERROR: test_governed_cfc_authority_on_non_finance_primary_role_can_act (sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationApiTests.test_governed_cfc_authority_on_non_finance_primary_role_can_act)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 223, in test_governed_cfc_authority_on_non_finance_primary_role_can_act
+    governed = self.fixture._user("field_officer", "Governed CFC")
+               ^^^^^^^^^^^^^^^^^^
+AttributeError: 'DisbursementInitiationApiTests' object has no attribute '_user'
+
+======================================================================
+ERROR: test_payload_permission_governance_and_maker_checker_fail_closed (sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationApiTests.test_payload_permission_governance_and_maker_checker_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 200, in test_payload_permission_governance_and_maker_checker_fail_closed
+    wrong_role = self.fixture._user("field_officer", "Wrong CFC Role")
+                 ^^^^^^^^^^^^^^^^^^
+AttributeError: 'DisbursementInitiationApiTests' object has no attribute '_user'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.325s
+
+FAILED (errors=2)
+Destroying test database for alias 'default'...

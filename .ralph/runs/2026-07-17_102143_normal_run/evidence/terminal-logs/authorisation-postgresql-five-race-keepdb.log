@@ -1,0 +1,29 @@
+Using existing test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_five_cfc_decisions_retain_one_complete_winner_run_one (sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationRaceTests.test_five_cfc_decisions_retain_one_complete_winner_run_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 292, in setUp
+    fixture.setUp()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 27, in setUp
+    self.assertEqual(initiated.status_code, 200, initiated.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "CONFLICT", "message": "A concurrent disbursement initiation already won.", "details": {}, "field_errors": {}}, "meta": {"request_id": "req-initiation-for-cfc", "timestamp": "2026-07-17T05:01:57.250395Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_five_cfc_decisions_retain_one_complete_winner_run_two (sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationRaceTests.test_five_cfc_decisions_retain_one_complete_winner_run_two)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 292, in setUp
+    fixture.setUp()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 27, in setUp
+    self.assertEqual(initiated.status_code, 200, initiated.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "CONFLICT", "message": "A concurrent disbursement initiation already won.", "details": {}, "field_errors": {}}, "meta": {"request_id": "req-initiation-for-cfc", "timestamp": "2026-07-17T05:01:57.830355Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.416s
+
+FAILED (failures=2)
+Preserving test database for alias 'default'...

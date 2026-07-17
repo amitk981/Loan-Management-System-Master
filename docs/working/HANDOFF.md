@@ -1,25 +1,27 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_092208_normal_run
+2026-07-17_102143_normal_run
 
 ## Current Status
-009E2 is complete pending independent Ralph validation and commit. Payment initiation now enters
-through `disbursements.modules.disbursement_workflow` and consumes one typed readiness decision with
-the exact 23-check digest and narrow SAP, borrower-bank, and source-bank governance identities. The
-public readiness response remains redacted, while API replay now follows §45.2 and blockers use the
-stable §7 vocabulary.
+009F is complete pending independent Ralph validation and commit. The exact §31.3 CFC endpoint now
+records one immutable approval or rejection through the existing `DisbursementWorkflow` owner. It
+requires an active governed CFC authority, Critical authorise permission, the exact pending 009E2
+relation, and a checker distinct from the Senior Manager Finance maker.
 
-A raw SFPCL/RBL-labelled bank row remains insufficient. One explicit unseeded Critical activation
-grant, reason/request evidence, unchanged source facts, and exact version/audit ledgers are required;
-A-126's provisioner role remains deliberately unassigned. Initiation freezes a supplied/generated
-request id and final-verification comment digest across audit/workflow/task evidence, and CFC scope
-reconciles the complete linked ledger. Genuine 008M7/009B3C/009D4 owners reach public initiation;
-changed required signers/source-bank facts deny without writes; unrelated signatures remain harmless.
-Seventy-four focused backend tests, two real-owner PostgreSQL five-caller races, Django/migration
-checks, frontend lint/typecheck/build, and all 327 Vitest tests pass.
+The owner locks and reconciles the initiated disbursement, account/application/member, beneficiary
+and source banks, initiation audit/workflow/task, request and final-verification digests, canonical
+readiness digest, and current source-bank governance/version/audit identities. One terminal action,
+safe audit, workflow transition, and task completion are atomic; coherent exact replay is zero-write,
+while changed/opposite/stale/concurrent attempts conflict. Approval and rejection both leave transfer
+pending and create no UTR, funding, activation, advice, register, schedule, repayment, checklist, or
+borrower communication truth.
+
+Nine focused public behavior tests and the 21-test initiation/authorisation regression set pass.
+Two real-owner PostgreSQL five-caller races pass twice. Django check, migration sync, Ruff, frontend
+lint/typecheck, all Vitest tests, and production build are recorded in the run evidence.
 
 ## Next Run
-Run sharpened 009F CFC authorisation/rejection through the same workflow owner, reconciling 009E2's
-request/comment digest and source-bank governance/version/audit identities. Then run sharpened 009G
-for unique UTR, evidence, atomic funding, and activation.
+The four-slice architecture-review threshold is due after 009F. Run the independent architecture
+review, then execute sharpened 009G. 009G must consume 009F's complete immutable terminal tuple—not
+the status label alone—before unique UTR/evidence, atomic funding, and account activation.

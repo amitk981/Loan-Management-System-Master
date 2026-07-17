@@ -91,6 +91,10 @@ URLs/capabilities, or legal/security payloads in ledgers. Replay and losers writ
 - Require exact current `initiated/approved/pending` 009E/009F state and reconcile the immutable
   initiation/authorisation/task/audit/workflow/readiness/bank evidence before success, including
   009E2 request/comment digests and the exact source-bank governance/version/audit identities.
+- Consume 009F's non-null `authorisation_action_id`, `authorisation_audit`,
+  `authorisation_workflow_event`, `authorisation_evidence_digest`, checker role/team, comments,
+  request/network, and decision-time facts as one exact terminal tuple. Never infer approval from
+  `authorisation_status` alone, and never rewrite those retained checker facts during transfer.
 - Require a non-empty normalized globally unique UTR/reference, an application/account-scoped
   restricted evidence document with current checksum, and a timezone-aware transfer time that is
   not before authorisation or materially in the future.

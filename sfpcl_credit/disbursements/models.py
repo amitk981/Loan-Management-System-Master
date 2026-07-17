@@ -48,6 +48,31 @@ class Disbursement(models.Model):
         on_delete=models.PROTECT,
         related_name="authorised_disbursements",
     )
+    authorised_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    authorisation_comments = models.TextField(null=True, blank=True)
+    checker_role_code = models.CharField(max_length=80, null=True, blank=True)
+    checker_team_codes_json = models.JSONField(null=True, blank=True)
+    authorisation_action_id = models.UUIDField(null=True, blank=True, unique=True)
+    authorisation_evidence_digest = models.CharField(
+        max_length=64, null=True, blank=True
+    )
+    authorisation_request_id = models.CharField(max_length=255, null=True, blank=True)
+    authorisation_ip_address = models.CharField(max_length=80, null=True, blank=True)
+    authorisation_user_agent = models.TextField(null=True, blank=True)
+    authorisation_audit = models.OneToOneField(
+        "identity.AuditLog",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="disbursement_authorisation",
+    )
+    authorisation_workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="disbursement_authorisation",
+    )
     initiation_status = models.CharField(max_length=60, default=INITIATED, db_index=True)
     authorisation_status = models.CharField(
         max_length=60, default=AUTHORISATION_PENDING, db_index=True
@@ -137,6 +162,27 @@ class Disbursement(models.Model):
                 check=Q(authorised_by_user__isnull=True)
                 | ~Q(authorised_by_user=models.F("initiated_by_user")),
                 name="disb_maker_checker_distinct",
+            ),
+            models.CheckConstraint(
+                check=(
+                    Q(
+                        authorisation_status="pending",
+                        authorised_by_user__isnull=True,
+                        authorised_at__isnull=True,
+                        authorisation_action_id__isnull=True,
+                        authorisation_audit__isnull=True,
+                        authorisation_workflow_event__isnull=True,
+                    )
+                    | Q(
+                        authorisation_status__in=("approved", "rejected"),
+                        authorised_by_user__isnull=False,
+                        authorised_at__isnull=False,
+                        authorisation_action_id__isnull=False,
+                        authorisation_audit__isnull=False,
+                        authorisation_workflow_event__isnull=False,
+                    )
+                ),
+                name="disb_auth_terminal_evidence",
             ),
             models.UniqueConstraint(
                 fields=["loan_account"],

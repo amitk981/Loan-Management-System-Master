@@ -3,6 +3,10 @@ from sfpcl_credit.disbursements.modules.disbursement_initiation import (
     DisbursementReadinessStale,
     _initiate,
 )
+from sfpcl_credit.disbursements.modules.disbursement_authorisation import (
+    DisbursementAuthorisationConflict,
+    _authorise,
+)
 from sfpcl_credit.disbursements.modules.disbursement_readiness import (
     DisbursementReadinessModule,
 )
@@ -13,10 +17,12 @@ class DisbursementWorkflow:
 
     readiness = DisbursementReadinessModule
     initiate = staticmethod(_initiate)
+    authorise = staticmethod(_authorise)
 
 
 __all__ = [
     "DisbursementConflict",
+    "DisbursementAuthorisationConflict",
     "DisbursementReadinessStale",
     "DisbursementWorkflow",
 ]

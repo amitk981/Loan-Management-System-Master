@@ -48,6 +48,34 @@ Changed key facts or a second active initiation return `409 CONFLICT`; readiness
 `DISBURSEMENT_EXCEEDS_SANCTION`, or `INVALID_STATE_TRANSITION`. Unknown/malformed fields return
 `400 VALIDATION_ERROR`; inaccessible ids return nondisclosing `403 OBJECT_ACCESS_DENIED`.
 
+## CFC disbursement authorisation (009F)
+
+`POST /api/v1/disbursements/{disbursement_id}/authorise/` implements source §31.3 without an
+`Idempotency-Key`. The JSON object contains exactly required `decision` (`approved` or `rejected`)
+and required trimmed `comments` of at most 2,000 characters. Unknown fields/query parameters and
+malformed values return `400 VALIDATION_ERROR`.
+
+Only an active persisted actor with an active governed `chief_financial_controller` authority, the
+Critical `finance.disbursement.authorise` grant, and the exact pending CFC-task/disbursement relation
+may act. Primary role, permission, intake assignment, or an unknown/inactive authority alone grants
+nothing; missing and inaccessible ids return nondisclosing `403 OBJECT_ACCESS_DENIED`. The checker
+must differ from the retained Senior Manager Finance maker.
+
+Success returns only the disbursement id, terminal authorisation status, still-pending bank-transfer
+status, UTC `authorised_at`, and server-owned `next_action` (`record_bank_transfer` after approval,
+`none` after rejection). It atomically freezes the checker role/team, comments digest, request and
+network context, exact initiation/readiness digest, action identity, audit, workflow transition, and
+CFC-task completion. It creates no bank transfer, UTR, disbursed timestamp, advice, register update,
+funded balance, account activation, schedule, repayment, checklist action, or borrower communication.
+
+Authorisation locks and reconciles the exact 009E2 initiation/audit/workflow/task ledger, beneficiary
+and source-account relations, unfunded sanctioned account, request/final-verification digests, and
+current governed source-bank account/governance/version/audit identities. It does not re-run legal,
+security, approval, SAP, checklist, or 23-check readiness owners. Changed/replaced/incoherent evidence
+returns zero-write `409 CONFLICT`. Exact terminal decision/comments replay returns the retained
+projection without writes only while the complete terminal ledger remains coherent; changed or
+opposite replay returns `409 CONFLICT`.
+
 ## Tri-party agreement verification (008G/008G2)
 
 `POST /api/v1/loan-documents/{loan_document_id}/verify/` implements source §26.6 only for a

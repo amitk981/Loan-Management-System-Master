@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_replaced_source_bank_governance_conflicts_without_decision_writes (sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationApiTests.test_replaced_source_bank_governance_conflicts_without_decision_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 111, in test_replaced_source_bank_governance_conflicts_without_decision_writes
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "1db66b4e-6b49-4336-a5fa-f7373c438c19", "authorisation_status": "approved", "bank_transfer_status": "pending", "authorised_at": "2026-07-17T04:57:20.956648Z", "next_action": "record_bank_transfer"}, "meta": {"request_id": "req-cfc-decision-001", "timestamp": "2026-07-17T04:57:20.957591Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.048s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

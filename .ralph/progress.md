@@ -8269,3 +8269,31 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-17 - 2026-07-17_102143_normal_run
+
+- Agent tool used: codex with TDD and deep-module design workflows.
+- Slice completed: 009F-cfc-authorization-rejection.
+- Summary: Added exact CFC approval/rejection behind the existing disbursement workflow owner with
+  governed authority, maker-checker separation, current initiation/source-bank reconciliation,
+  immutable terminal evidence, task completion, and zero-write replay/race behavior. Transfer,
+  funding, account activation, advice, register, and borrower truth remain absent.
+- Tests run: three retained RED/GREEN cycles; 9 focused public behavior tests; 21 impacted
+  initiation/authorisation tests; twice-run real-owner PostgreSQL five-caller races; Django check,
+  migration sync, Ruff, frontend lint/typecheck/tests/build.
+- Evidence saved: `.ralph/runs/2026-07-17_102143_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High; mitigated by exact row locks and database terminal-tuple constraint, active
+  governed CFC authority, distinct maker/checker, safe digested evidence, nondisclosure, and no
+  transfer-success side effects.
+- Next action: Architecture review is due, then run sharpened 009G transfer success/UTR.
+
+## 2026-07-17 10:56:01 - 2026-07-17_102143_normal_run
+- Agent tool used: codex
+- Slice attempted: 009F-cfc-authorization-rejection
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/.ralph/runs/2026-07-17_102143_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/.ralph/runs/2026-07-17_102143_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

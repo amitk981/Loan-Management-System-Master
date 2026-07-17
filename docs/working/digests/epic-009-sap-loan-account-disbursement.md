@@ -1,5 +1,21 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009F CFC Authorisation/Rejection — Retained Implementation Truth
+
+- `DisbursementWorkflow.authorise` is the only public terminal-decision interface. The exact §31.3
+  POST accepts only `approved`/`rejected` plus bounded comments and returns the safe terminal state,
+  still-pending transfer state, decision time, and server-owned next action.
+- The owner locks the active governed CFC, disbursement and every retained initiation relation,
+  reconciles the exact 009E2 request/comment/readiness and current source-bank governance/version/
+  audit identities, and requires a distinct Senior Finance maker. It does not re-run upstream legal,
+  security, approval, SAP, checklist, or readiness composition.
+- One terminal action identity, checker facts, comments/evidence digests, audit, workflow transition,
+  and CFC-task completion are retained atomically. Exact coherent replay writes nothing; changed,
+  opposite, stale, replaced, missing, or concurrent losing decisions conflict without success facts.
+- Approval/rejection leaves transfer pending and creates no UTR, transfer, funding, account status,
+  advice, register, checklist, repayment, schedule, or borrower communication truth. Nine focused
+  public behavior tests plus two real-owner PostgreSQL five-caller races run twice prove the contract.
+
 ## 009E2 Disbursement Contract and Owner-Proof Closure
 
 - `disbursements.modules.disbursement_workflow` is the single public mutation owner. Initiation
