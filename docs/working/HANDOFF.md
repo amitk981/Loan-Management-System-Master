@@ -1,27 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_102143_normal_run
+2026-07-17_105635_architecture_review
 
 ## Current Status
-009F is complete pending independent Ralph validation and commit. The exact §31.3 CFC endpoint now
-records one immutable approval or rejection through the existing `DisbursementWorkflow` owner. It
-requires an active governed CFC authority, Critical authorise permission, the exact pending 009E2
-relation, and a checker distinct from the Senior Manager Finance maker.
+Architecture review independently examined 008M7, 009D4, 009E2, and 009F over
+`24bfc4f4...277f6c8f` in isolated Standards and Spec passes. Four focused retained tests pass. Four
+review-only probes fail as expected: active source-bank governance accepts null proof, a positive
+lesser amount is rejected, beneficiary-bank drift still permits CFC approval, and pending rows with
+pre-existing UTR/disbursed/register truth can be approved. No production code changed.
 
-The owner locks and reconciles the initiated disbursement, account/application/member, beneficiary
-and source banks, initiation audit/workflow/task, request and final-verification digests, canonical
-readiness digest, and current source-bank governance/version/audit identities. One terminal action,
-safe audit, workflow transition, and task completion are atomic; coherent exact replay is zero-write,
-while changed/opposite/stale/concurrent attempts conflict. Approval and rejection both leave transfer
-pending and create no UTR, funding, activation, advice, register, schedule, repayment, checklist, or
-borrower communication truth.
-
-Nine focused public behavior tests and the 21-test initiation/authorisation regression set pass.
-Two real-owner PostgreSQL five-caller races pass twice. Django check, migration sync, Ruff, frontend
-lint/typecheck, all Vitest tests, and production build are recorded in the run evidence.
+The review also found incomplete source-bank effective history and a missing production permission-
+catalogue entry, under-constrained authorisation/transfer tuples, duplicated CFC scope/action
+reconciliation, a private source-shape test, and a genuine-owner fixture that directly inserts the
+loan account. 008M7/009D4 otherwise substantively meet their current-tail/role/signature targets.
+Findings, source traceability, severity, probe output, and corrective ownership are retained in this
+run and `REVIEW_FINDINGS.md`.
 
 ## Next Run
-The four-slice architecture-review threshold is due after 009F. Run the independent architecture
-review, then execute sharpened 009G. 009G must consume 009F's complete immutable terminal tuple—not
-the status label alone—before unique UTR/evidence, atomic funding, and account activation.
+Run 009E3 to restore lesser-amount behavior, real loan-owner proof, a grantable unassigned Critical
+source-bank permission, complete activation/deactivation history, and PostgreSQL race integrity.
+Then run 009F2 to restore current borrower/source-bank evidence, complete aggregate constraints,
+scope/action parity, and the full CFC role matrix. Only then run 009G, which now depends on 009F2 and
+must consume its exact typed current-evidence decision before UTR, funding, and activation.

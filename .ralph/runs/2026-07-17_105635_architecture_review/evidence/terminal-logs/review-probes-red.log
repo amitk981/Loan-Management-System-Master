@@ -1,0 +1,18 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test ../.ralph/runs/2026-07-17_105635_architecture_review/evidence/review-probes --verbosity 1
+
+Found 4 test(s).
+System check identified no issues (0 silenced).
+FFFF
+
+FAILED (failures=4)
+
+- Active SourceBankAccountGovernance accepted null version/audit evidence; expected IntegrityError.
+- CFC authorisation returned HTTP 200 after the borrower-bank IFSC changed; expected 409 CONFLICT.
+- Positive lesser disbursement 399999.99 returned HTTP 409 DISBURSEMENT_EXCEEDS_SANCTION;
+  expected HTTP 200 because S38/S39 permit a lesser amount within sanction.
+- CFC authorisation returned HTTP 200 when a pending row already held UTR/disbursed/register truth;
+  expected 409 CONFLICT.
+
+Ran 4 tests in 0.135s.
+

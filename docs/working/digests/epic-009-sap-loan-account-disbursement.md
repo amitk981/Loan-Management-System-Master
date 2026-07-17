@@ -1,5 +1,22 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-17 11:45 — Initiation, Governance, and CFC Integrity
+
+- 008M7 and 009D4 substantively close their current-tail/effective-role/applicable-signature targets.
+  Focused retained tests pass, and no new Epic 008 corrective issue was confirmed.
+- 009E2's typed owner and real legal/security/SAP/bank composition are substantive, but initiation
+  rejects S38/S39's positive lesser amount, its full-path fixture inserts raw loan rows, and its new
+  source-bank owner permits active rows without proof. Replacement mutates the prior status without
+  closing effective history, and the declared Critical activation permission is absent from the
+  production catalogue. `009E3` restores amount, loan-owner, catalogue, lifecycle, and race truth.
+- 009F records atomic CFC approval/rejection and preserves a clean fixture's later-state boundary,
+  but does not reconcile the current application-owned borrower-bank decision. It also allows a
+  pending row preloaded with UTR/disbursed/register truth to be approved, while database constraints
+  admit incomplete terminal and pending-success tuples. `009F2` restores current bank evidence,
+  aggregate invariants, scope/action parity, and the full governed role matrix.
+- Four review-only probes reproduce those gaps while four retained focused tests pass. 009G now waits
+  for 009F2 and consumes its typed current-evidence decision before UTR/funding/activation.
+
 ## 009F CFC Authorisation/Rejection — Retained Implementation Truth
 
 - `DisbursementWorkflow.authorise` is the only public terminal-decision interface. The exact §31.3

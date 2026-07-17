@@ -17,7 +17,7 @@ only when the exact approved instruction, amount, beneficiary, source account, U
 remain coherent.
 
 ## Depends On
-- 009F
+- 009F2
 
 ## Runtime Capabilities
 
@@ -44,7 +44,8 @@ None.
 ## Backend/API Scope
 1. Extend the source-defined `disbursements.modules.disbursement_workflow` public atomic interface.
    An internal transfer-success helper may remain private, but no parallel public workflow owner is
-   permitted. Lock the active actor, exact 009F approved disbursement/action,
+   permitted. Consume 009F2's typed current-evidence decision and lock the active actor, exact 009F
+   approved disbursement/action,
    account/application/member, beneficiary/
    source bank, current retained evidence document, and any UTR/idempotency winner.
 2. Require source Critical `finance.disbursement.mark_success` and exact pending-transfer scope for
@@ -90,7 +91,8 @@ URLs/capabilities, or legal/security payloads in ledgers. Replay and losers writ
 ## Validation Rules
 - Require exact current `initiated/approved/pending` 009E/009F state and reconcile the immutable
   initiation/authorisation/task/audit/workflow/readiness/bank evidence before success, including
-  009E2 request/comment digests and the exact source-bank governance/version/audit identities.
+  009E3 request/comment digests, the exact borrower-bank decision, and the complete current
+  source-bank activation/deactivation/version/audit lifecycle.
 - Consume 009F's non-null `authorisation_action_id`, `authorisation_audit`,
   `authorisation_workflow_event`, `authorisation_evidence_digest`, checker role/team, comments,
   request/network, and decision-time facts as one exact terminal tuple. Never infer approval from

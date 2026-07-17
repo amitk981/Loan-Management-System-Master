@@ -148,7 +148,13 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   mutable source-bank labels presented as governance. Corrective 008M7 now reopens historical
   corrections after any bare current successor while retaining coherent sequential correction
   cycles; 009D4 and 009E2 restore effective-role/signature scope and one source-contract-compliant
-  genuine owner-backed disbursement workflow before CFC authorisation.
+  typed disbursement workflow. 009F then records one immutable CFC approval/rejection without
+  claiming transfer success. Independent review found that positive lesser in-sanction amounts are
+  rejected, the source-bank activation permission/history/invariants remain incomplete, and the
+  real-owner fixture bypasses loan creation. It also reproduced CFC approval after beneficiary-bank
+  drift or pre-existing UTR/disbursed/register truth, with under-constrained aggregate state and
+  duplicated scope/action reconciliation. Corrective 009E3 and 009F2 now precede 009G transfer
+  success to close those amount, owner, lifecycle, current-evidence, and database contracts.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

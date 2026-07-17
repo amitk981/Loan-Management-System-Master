@@ -1,5 +1,20 @@
 # Ralph Progress Log
 
+## 2026-07-17 - 2026-07-17_105635_architecture_review
+
+- Agent tool used: codex with isolated Standards and Spec review passes.
+- Range reviewed: 008M7, 009D4, 009E2, and 009F over `24bfc4f4...277f6c8f`.
+- Summary: Confirmed lesser-amount rejection, incomplete source-bank permission/evidence/effective
+  history, raw loan-owner proof, stale beneficiary-bank authorisation, impossible pending/transfer
+  tuples, duplicated CFC reconciliation, and partial interface/authority tests. No production code
+  changed.
+- Tests run: four focused retained tests pass; four review-only probes fail as expected and are
+  retained as corrective evidence.
+- Result: Review complete pending independent Ralph validation. Corrective slices 009E3 and 009F2
+  are fully sharpened; 009G now waits for 009F2's typed current-evidence decision.
+- Risk level: High findings on both Standards and Spec axes; review delta is docs/state/evidence only.
+- Next action: Run 009E3, then 009F2, before 009G transfer success.
+
 ## 2026-07-17 - 2026-07-17_092208_normal_run
 
 - Agent tool used: codex with mandatory TDD and two-axis final review.
@@ -8294,6 +8309,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/.ralph/runs/2026-07-17_102143_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_102143_normal_run/.ralph/runs/2026-07-17_102143_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-17 11:27:47 - 2026-07-17_105635_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_105635_architecture_review/.ralph/runs/2026-07-17_105635_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_105635_architecture_review/.ralph/runs/2026-07-17_105635_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

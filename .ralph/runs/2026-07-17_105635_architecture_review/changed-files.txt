@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009G-utr-capture-and-transfer-success.md
+ M docs/slices/architecture-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-17_105635_architecture_review/
+?? docs/slices/009E3-disbursement-amount-and-source-bank-governance-closure.md
+?? docs/slices/009F2-cfc-authorisation-integrity-and-bank-evidence-closure.md

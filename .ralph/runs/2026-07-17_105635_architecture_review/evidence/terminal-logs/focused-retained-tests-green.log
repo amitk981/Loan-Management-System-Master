@@ -1,0 +1,15 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_two_sequential_corrections_retain_one_coherent_current_chain \
+  sfpcl_credit.tests.test_disbursement_readiness_api.DisbursementReadinessApiTests.test_active_governed_cfo_with_explicit_grant_receives_portfolio_scope \
+  sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_requires_explicit_governed_activation_and_current_evidence \
+  sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationApiTests.test_cfc_approval_is_terminal_evidence_but_not_bank_execution \
+  --verbosity 1
+
+Found 4 test(s).
+System check identified no issues (0 silenced).
+....
+
+Ran 4 tests in 0.593s.
+
+OK

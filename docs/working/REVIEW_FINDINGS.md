@@ -2,6 +2,140 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-17 11:45 - Architecture Review 2026-07-17_105635_architecture_review
+
+Reviewed completed work since architecture-review commit `24bfc4f4`:
+- `008M7-current-correction-tail-closure` (`f922298d`)
+- `009D4-readiness-effective-role-and-signature-scope-closure` (`29db0119`)
+- `009E2-disbursement-contract-and-owner-proof-closure` (`1cef8364`)
+- `009F-cfc-authorization-rejection` (`277f6c8f`)
+
+The review checked `git diff 24bfc4f4...277f6c8f`, all four slice contracts and retained packets,
+Epic 008/009 digests, cited source sections, production/test/migration diffs, requirement-ID
+traceability, queue dependencies, and CONTEXT truth. Standards and Spec ran as isolated parallel
+passes. Four focused retained tests pass. Four review-only probes fail as expected: active source-
+bank governance accepts no evidence, a positive lesser amount is rejected, changed beneficiary-bank
+facts still allow CFC approval, and pre-existing UTR/disbursed/register truth survives CFC approval.
+Probe source/output is retained in this run; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - Authorisation and transfer state is under-constrained at the database boundary
+
+`disbursements/models.py`'s `disb_auth_terminal_evidence` constraint permits approved/rejected rows
+with null comments, evidence digest, request/network, checker-role, or checker-team facts. It also
+permits `bank_transfer_status=successful` while authorisation is pending. A probe preloaded a pending
+row with UTR, disbursed time, and register truth; §31.3 approval still returned 200. This conflicts
+with codebase-design §6.5 and data-model §19.3's CFC-before-success invariant. `009F2` adds complete
+pending/terminal/transfer constraints and service-level later-state rejection before 009G.
+
+#### Finding 2 - High - Active source-bank governance can persist without its claimed proof
+
+`SourceBankAccountGovernance.version_history` and `activation_audit` are nullable, and no constraint
+requires an active row to carry both. The review probe directly created an active row without either
+relation. The resolver later returning null cannot preserve CFG-005's persistence invariant. The
+declared Critical `config.source_bank_account.activate` permission is also absent from
+`identity/catalogue.py`, so an ordinary production catalogue cannot grant the unseeded authority
+that A-126 says should unblock activation. `009E3` adds the unassigned Critical catalogue entry and
+an atomic database-valid activation tuple.
+
+#### Finding 3 - High - Source-bank replacement rewrites status without a historical transition
+
+`source_bank_governance.activate_source_bank_account` flips the prior row to inactive but creates no
+deactivation audit/version, leaves its `VersionHistory.effective_to` null, and leaves the retained
+snapshot saying active indefinitely. This violates auth-permissions CFG-003/CFG-004 and codebase-
+design §38's effective-dated historical configuration contract. `009E3` appends exact predecessor,
+deactivation, effective-range, audit, and race-safe current-winner evidence.
+
+#### Finding 4 - Medium - A source-shape test crosses the private workflow seam
+
+`test_disbursement_initiation_api.py` asserts `inspect.getsource`, `__all__`, `hasattr`, and private
+symbol spelling. Those checks can fail after a harmless refactor or pass while public behavior is
+wrong, contrary to codebase-design §§7.6/26.1. `009E3` replaces them with public workflow behavior
+and an executable dependency-boundary contract.
+
+#### Finding 5 - Medium - CFC scope and terminal mutation duplicate initiation reconciliation
+
+`disbursement_scope.py` and `disbursement_authorisation.py` carry near-copies of the initiation
+ledger predicate that already differ: scope omits account/bank/read-state checks that authorisation
+uses. That drift can grant a readiness view that the owning action rejects and makes 009G likely to
+copy the rules again. `009F2` centralises one typed current-evidence decision behind the existing
+deep `DisbursementWorkflow` owner.
+
+### Spec
+
+#### Finding 1 - High - A source-permitted lesser disbursement is rejected as an overage
+
+Screen S38 permits the sanctioned amount “or approved lesser amount”; S39 makes the amount editable
+within sanction limits and rejects only an excess. `_require_unfunded_account` instead requires
+exact equality with `LoanTerms.loan_amount` and reports `DISBURSEMENT_EXCEEDS_SANCTION` for
+₹399,999.99 against a ₹400,000 facility. The review probe reproduced HTTP 409. `009E3` accepts a
+positive 18,2 amount not exceeding terms/sanction while preserving exact frozen amount, CFC review,
+unfunded-state, replay, and race guards.
+
+#### Finding 2 - High - CFC authorisation does not consume current borrower-bank evidence
+
+009F requires the exact frozen beneficiary-bank decision to remain current. `_coherent_pending_
+initiation` checks mutable `BankAccount` owner/status labels and a copied non-empty decision id, but
+does not resolve or lock the application-owned decision/cheque/file/action/audit/workflow/version
+tuple. Changing the beneficiary IFSC after initiation still returned 200 approval in the review
+probe. `009F2` adds one narrow application-owner decision that authorisation consumes without
+recomposing legal/security/SAP/checklist readiness.
+
+#### Finding 3 - High - 009F accepts later transfer truth before the CFC decision
+
+009F explicitly requires UTR, disbursed time, evidence, advice, register, funding, and activation
+truth to remain absent. Neither `_coherent_pending_initiation` nor the model constraint checks those
+fields. The review probe installed UTR/disbursed/register facts on a pending instruction and CFC
+approval still succeeded. `009F2` makes impossible tuples database-invalid and zero-write conflicts.
+
+#### Finding 4 - Medium - The claimed genuine owner-composed initiation still bypasses loan ownership
+
+009E2's real-owner fixture crosses genuine legal/security/SAP/bank owners but directly inserts
+`LoanAccount` and `LoanTerms`. It therefore does not prove the promised public loan-owner seam, and
+readiness does not distinguish raw equivalent-looking rows from the account creation audit/workflow/
+status history. `009E3` constructs the full fixture through `loan_account_lifecycle` and reconciles
+the narrow creation evidence needed by downstream payment truth.
+
+#### Finding 5 - Medium - 009F's required authority and lifecycle matrices are partial
+
+The slice asks for approve and reject through primary/governed CFC roles, inactive/unknown governed
+denials, pre-initiation/pending/post-terminal scope, and actual borrower/source decision mutations.
+The retained suite proves governed approval only, checks unknown rather than the full inactive
+matrix, and mutates serialized source ids rather than current beneficiary decision evidence.
+`009F2` runs both decisions across the full role/scope/current-evidence matrix and the real-owner
+PostgreSQL race.
+
+No material scope creep was found. 008M7's current-tail rule and 009D4's effective-role/applicable-
+signature changes are substantive: their focused retained tests pass. The isolated Spec pass also
+flagged later tails carrying a different correction id; cross-checking the slice's explicit two-
+sequential-correction case showed that a later copy resolving the newer correction is intended,
+whereas a bare unlinked successor correctly reopens the blocker, so no corrective finding was filed.
+
+### Requirement Traceability
+
+- M06-FR-018/019: 008M7/009D4 preserve current correction, exact signer, mismatch, and approval
+  blockers; the two retained focused tests pass.
+- M07-FR-010 and M08-FR-001-006: SAP/readiness composition remains substantive, but initiation is
+  partial until 009E3 closes lesser-amount, source-governance, permission-catalogue, and loan-owner
+  proof; CFC routing is partial until 009F2 closes current bank/terminal integrity.
+- No reviewed requirement is silently deferred. A-126 remains open on the business provisioner and
+  is corrected to stop claiming its incomplete mechanism is resolved.
+
+### Corrective Queue
+
+- `009E3-disbursement-amount-and-source-bank-governance-closure` restores lesser-amount behavior,
+  public loan-owner proof, the grantable-but-unassigned permission, and complete versioned/race-safe
+  source-bank governance.
+- `009F2-cfc-authorisation-integrity-and-bank-evidence-closure` restores current beneficiary/source
+  evidence, impossible-state constraints, full authority/scope tests, and one shared current-evidence
+  decision. `009G` now depends on 009F2 and consumes that decision.
+
+Worst severity is High on both axes. Standards: 3 High, 2 Medium. Spec: 3 High, 2 Medium. No ADR is
+required: cited source documents already define the amount, configuration history, deep-module,
+bank-evidence, CFC-before-success, and persistence contracts; A-126 still owns the one unresolved
+business authority rather than inventing it.
+
 ## 2026-07-17 08:44 - Architecture Review 2026-07-17_075837_architecture_review
 
 Reviewed completed work since architecture-review commit `41df4f51`:
