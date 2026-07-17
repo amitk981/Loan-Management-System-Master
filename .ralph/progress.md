@@ -8142,3 +8142,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-17 - 2026-07-17_071512_normal_run
+
+- Agent tool used: codex with the TDD workflow.
+- Slice completed: 009E-payment-initiation-by-senior-manager-finance.
+- Summary: Added exact 23-check payment-gate consumption, governed SFPCL RBL source-bank truth,
+  replay-safe manual initiation, safe CFC role task/audit/workflow, and post-initiation CFC scope
+  without transfer/funding/activation side effects.
+- Tests run: failing-first public POST tracer; 20 focused readiness/initiation tests; 34 impacted
+  loan/readiness/initiation tests; 9 historical migration tests; two fresh PostgreSQL runs containing
+  two five-caller races each; Django check, migration sync, and compile.
+- Evidence saved: `.ralph/runs/2026-07-17_071512_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator coverage/frontend validation and commit.
+- Risk level: High; mitigated by exact owner evidence, atomic locks/constraints, hashed idempotency,
+  maker-checker role separation, no bank plaintext, and zero-write replay/denial/race behavior.
+- Next action: Architecture review is due, then run 009F CFC authorisation/rejection.
+
+## 2026-07-17 07:58:02 - 2026-07-17_071512_normal_run
+- Agent tool used: codex
+- Slice attempted: 009E-payment-initiation-by-senior-manager-finance
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_071512_normal_run/.ralph/runs/2026-07-17_071512_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_071512_normal_run/.ralph/runs/2026-07-17_071512_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

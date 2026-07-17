@@ -52,7 +52,7 @@ FIELD_LOOKUP_KEY = os.environ.get("SFPCL_FIELD_LOOKUP_KEY", _LOCAL_LOOKUP_KEY)
 DEBUG = env_bool("SFPCL_DEBUG", True)
 ALLOWED_HOSTS = env_csv("SFPCL_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "testserver"])
 CORS_ALLOWED_ORIGINS = env_csv("SFPCL_CORS_ORIGINS", ["http://localhost:5173"])
-CORS_ALLOW_HEADERS = (*default_headers, "x-request-id")
+CORS_ALLOW_HEADERS = (*default_headers, "x-request-id", "idempotency-key")
 
 ROOT_URLCONF = "sfpcl_credit.config.urls"
 WSGI_APPLICATION = "sfpcl_credit.config.wsgi.application"

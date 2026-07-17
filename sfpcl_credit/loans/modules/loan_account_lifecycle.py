@@ -74,7 +74,7 @@ class ReadinessAccountFacts:
     relationships_coherent: bool
 
 
-def resolve_readiness_account(*, actor, loan_account_id):
+def resolve_readiness_account(*, actor, loan_account_id, cfc_scope_resolver=None):
     """Resolve Stage-5 loan scope without reusing origination assignment."""
     actor = _locked_actor(actor)
     permissions = set(auth_service.effective_permission_codes(actor))
@@ -111,9 +111,10 @@ def resolve_readiness_account(*, actor, loan_account_id):
             actor_id=actor.pk,
         )
     elif "chief_financial_controller" in roles:
-        # A CFC obtains loan scope from the canonical initiated-disbursement
-        # relation owned by 009E. No such relation exists in this slice.
-        scoped = False
+        scoped = bool(
+            cfc_scope_resolver
+            and cfc_scope_resolver(actor_id=actor.pk, loan_account_id=account.pk)
+        )
     elif "credit_manager" in roles:
         # Credit owns the loan/monitoring domain, but an archived loan is no
         # longer part of its operational queue.
@@ -168,7 +169,7 @@ def create_loan_account(*, actor, application_id, payload, request=None, metadat
         if CREATE_PERMISSION not in permissions:
             raise DomainPermissionDenied("Loan account creation permission is required.")
         application = (
-            LoanApplication.objects.select_for_update()
+            LoanApplication.objects.select_for_update(of=("self",))
             .select_related("member", "nominee", "created_by_user", "received_by_user")
             .filter(pk=application_id)
             .first()
@@ -185,7 +186,7 @@ def create_loan_account(*, actor, application_id, payload, request=None, metadat
             raise DomainObjectAccessDenied(access)
 
         retained = (
-            LoanAccount.objects.select_for_update()
+            LoanAccount.objects.select_for_update(of=("self",))
             .select_related("terms")
             .filter(loan_application=application)
             .first()

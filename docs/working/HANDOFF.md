@@ -1,24 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-16_233638_normal_run
+2026-07-17_071512_normal_run
 
 ## Current Status
-009D3 is complete pending independent orchestrator validation. Readiness approvals now consume the
-exact current ordered completion/action/audit/workflow/version ledger; changed renderer, security,
-corrected-copy, completion body, order, or sibling evidence invalidates the full approval chain.
-Required signature paths use non-empty exact current signer sets, approval-owned S32 CFO/Director
-routing, and singular current mismatch-resolution evidence. Canonical Senior Finance, Credit
-Manager, CFO, and audit-scoped Auditor reads are restored; pre-009E CFC, intake assignment, missing
-ids, cross-object facts, and out-of-domain Credit states remain nondisclosing.
+009E is complete pending independent orchestrator validation. Senior Manager Finance can create one
+replay-safe manual-bank initiation only from the exact current 009D3 23-check decision and matching
+beneficiary/source-bank facts. The row freezes canonical readiness/SAP/bank evidence and maker facts,
+creates one safe CFC role task plus audit/workflow, and leaves CFC authorisation, transfer, UTR,
+funding, activation, advice, register, checklist, and borrower truth untouched.
 
-`disbursements.modules.disbursement_readiness.evaluate` is again the sole readiness composition
-interface. The genuine owner path reaches only A-126, stays zero-write under a 250-query bound, and
-returns all 23 passes only when the governed source-bank decision is present. Independent Standards
-and Spec review found no remaining hard/spec finding after corrections.
+A-126 is resolved through source-defined generic `bank_accounts`: one verified active SFPCL-owned
+RBL row produces a plaintext-free decision; zero or multiple rows fail closed. The initiated row and
+role task establish the first CFC readiness scope. Twice-run fresh PostgreSQL five-caller tests each
+retained one complete winner and four conflicts. Focused initiation/readiness tests, Django check,
+migration sync, and compilation are green; authoritative full coverage/frontend gates remain with
+the orchestrator.
 
 ## Next Run
-Run 009E payment initiation. It now declares `postgresql-five-race-acceptance` and must call only
-the 009D3 readiness interface, require the exact 23 ordered passing checks, and freeze a canonical
-check digest excluding `evaluated_at`. 009F is also sharpened with its PostgreSQL capability and
-must reconcile 009E's frozen readiness/initiation ledgers without re-querying lower-level owners.
+Architecture review is due after this fourth completed slice. Then run sharpened 009F CFC
+authorisation/rejection: consume only the frozen 009E initiation/readiness/task/audit/workflow facts,
+close the role-scoped CFC task, preserve maker-checker separation, and create no transfer truth.
+009G and 009H are now concrete for unique UTR/funding/activation and later borrower advice.

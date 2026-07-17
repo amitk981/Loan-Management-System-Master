@@ -745,7 +745,7 @@ class CancelledCheque(models.Model):
 
 
 class BankAccount(models.Model):
-    OWNER_PARTY_TYPES = {"member"}
+    OWNER_PARTY_TYPES = {"member", "sfpcl"}
     VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
     STATUSES = {"active", "inactive"}
 

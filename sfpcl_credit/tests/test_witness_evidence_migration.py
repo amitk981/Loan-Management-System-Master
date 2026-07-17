@@ -28,6 +28,7 @@ class WitnessEvidenceMigrationTests(TransactionTestCase):
                 "legal_documents",
                 "loans",
                 "sap_workflow",
+                "disbursements",
             }
         ] + self.migrate_from
         old_apps = executor.loader.project_state(legacy_targets).apps

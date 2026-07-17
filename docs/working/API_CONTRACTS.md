@@ -1,5 +1,46 @@
 # API Contracts
 
+## Payment initiation (009E)
+
+`POST /api/v1/loan-accounts/{loan_account_id}/disbursements/initiate/` implements source §31.2.
+It requires an `Idempotency-Key` header and a JSON object containing exactly:
+
+```json
+{
+  "disbursement_amount": "400000.00",
+  "borrower_bank_account_id": "uuid",
+  "source_bank_account_id": "uuid",
+  "final_verification_comments": "All current facts verified."
+}
+```
+
+Only an active persisted `senior_manager_finance` actor with the Critical
+`finance.disbursement.initiate` grant and newest-SAP-assignee loan scope may act. The owner calls
+only `DisbursementReadinessModule.evaluate(actor, loan_account_id)` for composite payment-gate
+truth, requires the exact 23 canonical ordered `pass` results, and freezes their code/status digest
+without `evaluated_at`. It separately locks the exact borrower bank verification decision and the
+single verified active SFPCL-owned RBL source account named by that readiness evidence.
+
+Success returns only:
+
+```json
+{
+  "disbursement_id": "uuid",
+  "initiation_status": "initiated",
+  "authorisation_status": "pending",
+  "bank_transfer_status": "pending"
+}
+```
+
+Creation atomically retains the manual-payment row, safe initiation audit/workflow, and one urgent
+role-scoped CFC task. It does not authorise or execute the transfer, create a UTR/advice, fund or
+activate the account, update a register, or communicate with the borrower. Exact key/payload/current
+evidence replay returns the same four-field projection without writes. Changed key facts or a second
+active initiation return `409 DISBURSEMENT_CONFLICT`; failed/stale/reordered/extra readiness,
+amount/account/bank drift, or missing source configuration returns `409 DISBURSEMENT_NOT_READY`;
+unknown/malformed fields return `400 VALIDATION_ERROR`; inaccessible ids return nondisclosing
+`403 OBJECT_ACCESS_DENIED`.
+
 ## Tri-party agreement verification (008G/008G2)
 
 `POST /api/v1/loan-documents/{loan_document_id}/verify/` implements source §26.6 only for a

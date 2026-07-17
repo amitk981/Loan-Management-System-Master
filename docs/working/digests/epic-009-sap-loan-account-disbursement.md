@@ -1,5 +1,29 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009E Payment Initiation
+
+- `disbursements.modules.disbursement_initiation` owns one atomic manual-bank initiation and exact
+  §31.2 POST. It requires active persisted Senior Manager Finance Critical authority/newest SAP
+  assignment scope, consumes only the 009D3 composition interface for payment-gate truth, freezes
+  the exact 23 ordered code/status digest (excluding `evaluated_at`), and locks the matching current
+  beneficiary/source-bank evidence before writing.
+- Generic source §12.3 bank ownership now admits `sfpcl`; the configuration selector exposes only one
+  verified active RBL decision and no plaintext. Missing or duplicate rows fail readiness closed,
+  resolving A-126 without an environment-derived or borrower-derived source id.
+- Success retains one positive protected disbursement with `initiated/pending/pending`, manual mode,
+  hashed idempotency identity, safe readiness/SAP/bank evidence ids, trimmed final verification,
+  maker role/team/time, one audit, one workflow event, and one urgent CFC role task. Exact replay
+  writes nothing; changed/stale/duplicate attempts conflict.
+- The initiated row and its CFC task are the first canonical CFC readiness scope. Intake assignment,
+  role, or permission alone remains insufficient. No CFC decision, transfer, UTR, advice, funding,
+  activation, register update, checklist signature, or borrower communication is created.
+- Two fresh PostgreSQL executions each ran both five-caller changed-request races: one complete
+  row/audit/workflow/task winner and four zero-artifact conflicts. PostgreSQL-only lock targets were
+  narrowed on nullable-join owner queries without changing their selected business rows.
+- 009F was already concrete. 009G and 009H are now sharpened from §§31.4-31.5/§9/§19: transfer
+  success owns unique UTR/evidence plus atomic funding/activation, while advice remains a later
+  adapter/template action and cannot mutate financial truth.
+
 ## 009D3 Readiness Approval, Reader, and Boundary Closure
 
 - Each ordered checklist approval now consumes the exact current ordered item-completion action

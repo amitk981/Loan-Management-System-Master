@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
+import hashlib
+import json
 
 from django.db import transaction
 from django.utils import timezone
@@ -28,6 +30,7 @@ from sfpcl_credit.processes.security_instrument_evidence import (
 from sfpcl_credit.security_instruments.modules.disbursement_readiness import (
     resolve_security_readiness,
 )
+from sfpcl_credit.disbursements.modules.disbursement_scope import has_cfc_scope
 
 
 @dataclass(frozen=True)
@@ -73,7 +76,11 @@ def _check(spec, passed, reason):
 def evaluate(*, actor, loan_account_id):
     """Return the current pre-initiation decision without writing workflow truth."""
     with transaction.atomic():
-        account = resolve_readiness_account(actor=actor, loan_account_id=loan_account_id)
+        account = resolve_readiness_account(
+            actor=actor,
+            loan_account_id=loan_account_id,
+            cfc_scope_resolver=has_cfc_scope,
+        )
         approval = resolve_approval_readiness(
             application_id=account.loan_application_id,
             sanction_decision_id=account.sanction_decision_id,
@@ -201,13 +208,43 @@ def evaluate(*, actor, loan_account_id):
                 (False, f"Current source evidence for {spec.label.lower()} is unavailable."),
             )
             checks.append(_check(spec, passed, reason))
-        return {
+        result = {
             "loan_account_id": str(account.loan_account_id),
             "loan_application_id": str(account.loan_application_id),
             "ready_for_disbursement": all(item["status"] == "pass" for item in checks),
             "evaluated_at": timezone.now().isoformat().replace("+00:00", "Z"),
             "checks": checks,
         }
+        canonical_checks = [
+            {"code": item["code"], "status": item["status"]} for item in checks
+        ]
+        result["_evidence"] = {
+            "check_digest": hashlib.sha256(
+                json.dumps(canonical_checks, separators=(",", ":")).encode()
+            ).hexdigest(),
+            "sap_customer_code_id": str(sap.customer_code_id) if sap_current else None,
+            "sap_profile_request_id": (
+                str(getattr(sap, "profile_request_id", "")) or None
+                if sap_current
+                else None
+            ),
+            "borrower_bank_account_id": (
+                str(getattr(bank, "bank_account_id", "")) or None
+                if bank.valid
+                else None
+            ),
+            "bank_verification_decision_id": (
+                str(getattr(bank, "bank_verification_decision_id", "")) or None
+                if bank.valid
+                else None
+            ),
+            "source_bank_account_id": (
+                str(getattr(source_bank, "source_bank_account_id", "")) or None
+                if source_bank and source_bank.active
+                else None
+            ),
+        }
+        return result
 
 
 class DisbursementReadinessModule:

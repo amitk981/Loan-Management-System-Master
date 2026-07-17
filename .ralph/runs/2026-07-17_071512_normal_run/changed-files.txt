@@ -1,0 +1,26 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009E-payment-initiation-by-senior-manager-finance.md
+ M docs/slices/009G-utr-capture-and-transfer-success.md
+ M docs/slices/009H-disbursement-advice-and-communication.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/configurations/modules/configuration_resolver.py
+ M sfpcl_credit/disbursements/modules/disbursement_readiness.py
+ M sfpcl_credit/disbursements/views.py
+ M sfpcl_credit/loans/modules/loan_account_lifecycle.py
+ M sfpcl_credit/members/models.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_profile.py
+ M sfpcl_credit/tests/test_credit_model_ownership_migration.py
+ M sfpcl_credit/tests/test_sap_model_ownership_migration.py
+ M sfpcl_credit/tests/test_witness_evidence_migration.py
+?? .ralph/runs/2026-07-17_071512_normal_run/
+?? sfpcl_credit/disbursements/migrations/
+?? sfpcl_credit/disbursements/models.py
+?? sfpcl_credit/disbursements/modules/disbursement_initiation.py
+?? sfpcl_credit/disbursements/modules/disbursement_scope.py
+?? sfpcl_credit/tests/test_disbursement_initiation_api.py

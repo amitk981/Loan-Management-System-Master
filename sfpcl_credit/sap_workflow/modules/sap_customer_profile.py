@@ -99,7 +99,7 @@ def get_customer_code_for_member(member_id, *, for_update=False):
     """Return only coherent SAP-owned linkage for trusted downstream modules."""
     request_queryset = SapCustomerProfileRequest.objects
     if for_update:
-        request_queryset = request_queryset.select_for_update()
+        request_queryset = request_queryset.select_for_update(of=("self",))
     request = (
         request_queryset.filter(member_id=member_id)
         .select_related(

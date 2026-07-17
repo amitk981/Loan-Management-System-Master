@@ -23,7 +23,8 @@ class CreditAssessmentModelOwnershipMigrationTests(TransactionTestCase):
             # Downstream loan-account and SAP ownership anchor current
             # approval/application state and must not outrun this historical
             # pre-move projection.
-            if node[0] not in {"credit", "approvals", "loans", "sap_workflow"}
+            if node[0]
+            not in {"credit", "approvals", "loans", "sap_workflow", "disbursements"}
         ]
         old_apps = self.executor.loader.project_state(pre_move_state_targets).apps
         self.identifiers = self._create_pre_move_rows(old_apps)
