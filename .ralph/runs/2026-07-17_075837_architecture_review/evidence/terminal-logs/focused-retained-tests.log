@@ -1,0 +1,14 @@
+Command (run from sfpcl_credit):
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_corrected_copy_and_review_ledger_mutations_fail_closed \
+  sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_disbursement_readiness_real_owners_reach_a126_then_all_pass \
+  sfpcl_credit.tests.test_sap_customer_profile_repair.SapCustomerProfileRepairTests.test_manual_fake_and_future_adapters_share_the_public_contract \
+  sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests \
+  --verbosity 2
+
+Result:
+System check identified no issues (0 silenced).
+Ran 9 tests in 1.797s
+OK
+
+The complete unabridged command output is retained in codex.log at lines 13848-14042.

@@ -1,5 +1,22 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-17 08:44 — Readiness and Initiation Closure
+
+- 009D3 restores the named readiness seam and primary-role reader matrix, but still branches on
+  `User.role_codes()`. An active governed CFO authority with the explicit readiness permission is
+  rejected, and multiple effective roles are not unioned through the central authority boundary.
+  Its signature owner also treats a valid signature on an unrelated current document as a failure.
+  `009D4` restores effective-role scope and the exact five applicable document families after 008M7.
+- 009E materially adds replay/race-safe manual initiation and a CFC task, but every success/race
+  test replaces readiness and both bank owners. Exact replay diverges from API §45.2, public errors
+  use private codes, initiation evidence omits request/comment traceability, and the workflow is
+  fragmenting around private readiness dictionaries. `009E2` establishes one typed
+  `disbursement_workflow` boundary and genuine owner-backed acceptance.
+- A raw `BankAccount` row with mutable `sfpcl`/`RBL Bank`/`verified`/`active` labels is not the
+  governed activation/verification owner that A-126 required. The assumption is reopened; 009E2
+  must keep source-bank readiness failed unless a singular current governed decision exists, and
+  must not invent the missing provisioner.
+
 ## 009E Payment Initiation
 
 - `disbursements.modules.disbursement_initiation` owns one atomic manual-bank initiation and exact
@@ -8,8 +25,9 @@
   the exact 23 ordered code/status digest (excluding `evaluated_at`), and locks the matching current
   beneficiary/source-bank evidence before writing.
 - Generic source §12.3 bank ownership now admits `sfpcl`; the configuration selector exposes only one
-  verified active RBL decision and no plaintext. Missing or duplicate rows fail readiness closed,
-  resolving A-126 without an environment-derived or borrower-derived source id.
+  verified active RBL decision and no plaintext. Missing or duplicate rows fail readiness closed.
+  009E treated that selector as resolving A-126, but the 2026-07-17 review reopened the assumption
+  because mutable labels do not prove governed activation/verification authority.
 - Success retains one positive protected disbursement with `initiated/pending/pending`, manual mode,
   hashed idempotency identity, safe readiness/SAP/bank evidence ids, trimmed final verification,
   maker role/team/time, one audit, one workflow event, and one urgent CFC role task. Exact replay

@@ -1,24 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_071512_normal_run
+2026-07-17_075837_architecture_review
 
 ## Current Status
-009E is complete pending independent orchestrator validation. Senior Manager Finance can create one
-replay-safe manual-bank initiation only from the exact current 009D3 23-check decision and matching
-beneficiary/source-bank facts. The row freezes canonical readiness/SAP/bank evidence and maker facts,
-creates one safe CFC role task plus audit/workflow, and leaves CFC authorisation, transfer, UTR,
-funding, activation, advice, register, checklist, and borrower truth untouched.
+Architecture review independently examined 008M6, 009B3C, 009D3, and 009E over
+`41df4f51...6d79db01` in isolated Standards and Spec passes. Nine focused retained tests pass, while
+three review-only probes confirm that a newer unlinked signed-copy tail leaves an old correction
+resolved, an unrelated valid signature poisons readiness, and a governed CFO reader is rejected.
+No production code changed.
 
-A-126 is resolved through source-defined generic `bank_accounts`: one verified active SFPCL-owned
-RBL row produces a plaintext-free decision; zero or multiple rows fail closed. The initiated row and
-role task establish the first CFC readiness scope. Twice-run fresh PostgreSQL five-caller tests each
-retained one complete winner and four conflicts. Focused initiation/readiness tests, Django check,
-migration sync, and compilation are green; authoritative full coverage/frontend gates remain with
-the orchestrator.
+The review also confirmed source-contract drift in payment replay/errors, private readiness/workflow
+coupling, incomplete request/comment audit attribution, and no real owner-backed initiation or race
+test. A-126 is reopened because mutable generic SFPCL/RBL bank labels are not a governed activation
+and verification decision. All findings and severity counts are in `REVIEW_FINDINGS.md`; probe and
+focused-test evidence is retained in the run packet.
 
 ## Next Run
-Architecture review is due after this fourth completed slice. Then run sharpened 009F CFC
-authorisation/rejection: consume only the frozen 009E initiation/readiness/task/audit/workflow facts,
-close the role-scoped CFC task, preserve maker-checker separation, and create no transfer truth.
-009G and 009H are now concrete for unique UTR/funding/activation and later borrower advice.
+Run 008M7 to make current-tail correction truth exact, then 009D4 to restore governed effective-role
+scope and applicable-document signature reconciliation. Run 009E2 next to establish one typed,
+source-contract-compliant, genuine owner-backed `disbursement_workflow` and honest source-bank
+governance. Only then run sharpened 009F CFC authorisation/rejection; 009G extends the same workflow
+owner for unique UTR, funding, and activation.

@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009F-cfc-authorization-rejection.md
+ M docs/slices/009G-utr-capture-and-transfer-success.md
+ M docs/slices/architecture-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-17_075837_architecture_review/
+?? docs/slices/008M7-current-correction-tail-closure.md
+?? docs/slices/009D4-readiness-effective-role-and-signature-scope-closure.md
+?? docs/slices/009E2-disbursement-contract-and-owner-proof-closure.md

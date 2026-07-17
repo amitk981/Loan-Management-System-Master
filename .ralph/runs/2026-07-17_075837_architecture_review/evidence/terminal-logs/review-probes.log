@@ -1,0 +1,22 @@
+Probe source: evidence/review-probes.py
+Interpreter: /Users/amitkallapa/LMS/.ralph/venv/bin/python
+
+Confirmed failures after fixture correction:
+
+1. test_new_nonresolving_tail_must_reopen_the_old_correction
+   Expected current-tail blocker: true
+   Actual: false
+
+2. test_unrelated_signature_history_must_not_poison_readiness
+   Expected signature_mismatch_resolved after unrelated valid signature: true
+   Actual: false
+
+3. test_governed_cfo_authority_is_a_source_readiness_role
+   Expected HTTP: 200
+   Actual: 403 FORBIDDEN
+
+The first combined execution had a setup error in the unrelated-signature probe. That probe was
+corrected to use the existing final-checklist document and fixture signature helper, then rerun in
+isolation: one test ran in 0.403s and failed at the intended assertion. The other two intended
+failures were already reproduced in the combined run. Full outputs are retained in codex.log at
+lines 14685-15178 and 16251-16265.

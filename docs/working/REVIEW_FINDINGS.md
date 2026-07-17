@@ -2,6 +2,127 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-17 08:44 - Architecture Review 2026-07-17_075837_architecture_review
+
+Reviewed completed work since architecture-review commit `41df4f51`:
+- `008M6-documentation-corrected-copy-and-stage-evidence-closure` (`417e25f9`)
+- `009B3C-sap-current-evidence-and-adapter-contract-closure` (`68fd1844`)
+- `009D3-readiness-approval-reader-and-boundary-closure` (`8a80a248`)
+- `009E-payment-initiation-by-senior-manager-finance` (`6d79db01`)
+
+The review checked `git diff 41df4f51...6d79db01`, all four slice contracts and run packets,
+Epic 008/009 digests, cited source sections, and production/test/migration diffs. Standards and
+Spec ran as isolated parallel passes. Nine focused retained tests pass. Three review-only probes
+fail as expected: a newer unlinked signed-copy tail leaves an old correction resolved, a valid
+unrelated signature poisons readiness, and an active governed CFO reader receives HTTP 403. Probe
+source and output are retained in this run; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - A historical corrected copy remains authoritative after a different current tail
+
+`legal_documents/modules/documentation_actions.py` lines 429-449 accepts the resolving copy anywhere
+in a coherent chain. The probe creates an initial copy, correction, linked corrected copy, then an
+ordinary unlinked successor; `has_open_blocker` still returns false. 008M6 requirement 1 says the
+current sole tail must match the resolution target. `008M7` makes the current tail carry the exact
+resolution or restores the blocker across workspace, completion, approval, and readiness consumers.
+
+#### Finding 2 - High - Payment replay and errors diverge from the source API contract
+
+`disbursements/modules/disbursement_initiation.py` lines 78-90 returns the ordinary four-field
+projection on exact replay, but API §45.2 requires `idempotency_replayed: true` plus the retained
+original response. `disbursements/views.py` lines 80-83 also publishes private
+`DISBURSEMENT_NOT_READY` and `DISBURSEMENT_CONFLICT` codes instead of §7's stable blocker/conflict
+vocabulary. The tests and `API_CONTRACTS.md` currently freeze the divergence. `009E2` restores the
+source response and touched error taxonomy.
+
+#### Finding 3 - High - Mutable bank labels were mistaken for governed source-account truth
+
+`configurations/modules/configuration_resolver.py` lines 70-91 treats one row labelled `sfpcl`,
+`RBL Bank`, `verified`, and `active` as a governed decision. There is no source-account activation
+authority or exact audit/version lifecycle behind those mutable fields, even though A-126 recorded
+that missing owner. 009E then marked A-126 resolved and its tests create the qualifying row directly.
+`009E2` reopens A-126 until a real source-backed governance decision exists and keeps readiness
+fail-closed where the source does not identify a provisioner.
+
+#### Finding 4 - Medium - The disbursement workflow is fragmenting around a private readiness shape
+
+Source codebase-design §§16.3-16.4 names one public `disbursement_readiness` decision and one public
+`disbursement_workflow`. Instead, initiation is a separate public module, imports `CHECK_SPECS`,
+consumes a private `_evidence` dictionary, and re-queries bank owners. Pending 009F/009G originally
+planned two more public mutation modules. `009E2` establishes the typed readiness-to-workflow seam;
+009F and 009G are sharpened to extend that deep owner rather than add parallel facades.
+
+#### Finding 5 - Medium - 009E's tests replace the business gate they claim to prove
+
+Every initiation success/denial helper patches readiness, borrower-bank, and source-bank owners in
+`test_disbursement_initiation_api.py` lines 422-437; both PostgreSQL race methods do the same at
+lines 559-574. Most denial loops assert only zero `Disbursement` rows, not unchanged task/audit/
+workflow/communication ledgers. The suite proves orchestration over fabricated DTOs, not composition
+of 008M7/009B3C/009D4 owners. `009E2` requires a real public success, owner-mutation denials, exact
+zero-artifact counts, and twice-run real-owner races.
+
+#### Finding 6 - Medium - Critical initiation audit attribution is incomplete
+
+`disbursement_initiation.py` lines 104-128 stores no final-verification comment/digest and accepts a
+null request id, while auth-permissions §30.2 requires request ID and reason/comment where required.
+Existing tests assert only action/entity/outcome. `009E2` retains or generates a request identity and
+reconciles a safe comment digest across the row, action, audit, workflow, and task.
+
+### Spec
+
+#### Finding 1 - High - Governed source roles are rejected by readiness
+
+The platform's central `effective_role_codes` includes active `approval_authority_type`, and auth
+§15.6 explicitly recognises separately assigned CFC authority. `resolve_readiness_account` lines
+79-132 instead checks and branches on primary-only `actor.role_codes()`. The executable probe gives
+an active user governed CFO authority plus the explicit readiness permission and receives HTTP 403.
+`009D4` uses the central effective-role boundary and unions each role's source-defined object scope.
+
+#### Finding 2 - Medium - Unrelated valid signature history can permanently fail readiness
+
+`legal_documents/modules/signatures.py` lines 76-105 loads every signature row for the application,
+then requires each row to match the five readiness document families. The probe adds a valid borrower
+signature to the final-checklist document after a genuine all-pass legal fixture; the signature
+readiness flag becomes false. 009D3 requirement 3 scopes this decision to current applicable Term
+Sheet, Loan Agreement, PoA, tri-party, and SH-4 documents. `009D4` filters that set while preserving
+fail-closed extra/wrong signer checks inside required documents.
+
+#### Finding 3 - High - 009E does not prove its promised owner-backed payment boundary
+
+009E test cases require public success from exact readiness/bank/source evidence and denial after
+changed SAP/legal/security/bank truth. No test crosses that boundary without replacing all three
+owners, including the PostgreSQL acceptance. Combined with the mutable-label A-126 shortcut, the
+retained evidence cannot demonstrate M06-FR-019, M07-FR-010, and M08-FR-001-006 composing into one
+real initiation. `009E2` supplies the genuine path before CFC authorisation begins.
+
+#### Finding 4 - Medium - 009E's retained action evidence omits required verification context
+
+The slice requires safe final-verification comments and request context in its atomic audit/workflow
+evidence. The row retains the comment, but the action evidence does not bind it and a missing
+`X-Request-ID` remains null. A later checker therefore cannot reconcile the exact verification
+statement from the immutable success tuple. `009E2` closes that traceability gap without exposing
+bank or legal/security payloads.
+
+No scope creep was found in 008M6, 009B3C, or 009D3, and the SAP shared negative adapter contract is
+substantive. The repository-wide fact that audit/history rows remain ORM-mutable is recorded as a
+systemic trust-root limitation, not attributed solely to these four slices; application UI exposes
+no edit/delete path, and later audit hardening should enforce append-only storage centrally rather
+than duplicating guards inside each workflow.
+
+### Corrective Queue
+
+- `008M7-current-correction-tail-closure` restores exact current-tail correction truth.
+- `009D4-readiness-effective-role-and-signature-scope-closure` restores governed reader roles and
+  exact applicable signature scope; it waits for 008M7 so readiness consumes the corrected owner.
+- `009E2-disbursement-contract-and-owner-proof-closure` restores the source API/deep-module/audit
+  contracts, honest source-bank governance, and real-owner acceptance. `009F` now depends on 009E2;
+  009F/009G extend one `disbursement_workflow` owner.
+
+Worst severity is High on both axes. Standards: 3 High, 3 Medium. Spec: 2 High, 2 Medium. No new ADR
+is required because the cited source already fixes the current-tail, role, API, and module contracts;
+source-bank provisioning authority remains explicitly ungranted rather than invented.
+
 ## 2026-07-16 21:37 - Architecture Review 2026-07-16_213746_architecture_review
 
 Reviewed completed work since architecture-review commit `0d90bc19`:

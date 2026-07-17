@@ -42,8 +42,10 @@ None directly.
 None.
 
 ## Backend/API Scope
-1. Implement `disbursements.modules.transfer_success` behind one public atomic interface. Lock the
-   active actor, exact 009F approved disbursement/action, account/application/member, beneficiary/
+1. Extend the source-defined `disbursements.modules.disbursement_workflow` public atomic interface.
+   An internal transfer-success helper may remain private, but no parallel public workflow owner is
+   permitted. Lock the active actor, exact 009F approved disbursement/action,
+   account/application/member, beneficiary/
    source bank, current retained evidence document, and any UTR/idempotency winner.
 2. Require source Critical `finance.disbursement.mark_success` and exact pending-transfer scope for
    an active CFC or operationally assigned Senior Manager Finance. Bare role/permission or intake

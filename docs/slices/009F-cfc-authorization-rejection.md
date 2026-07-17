@@ -17,7 +17,7 @@ readiness, beneficiary, source-bank, amount, and maker evidence, without conflat
 with execution in the external RBL portal.
 
 ## Depends On
-- 009E
+- 009E2
 
 ## Runtime Capabilities
 
@@ -42,8 +42,10 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-1. Implement `disbursements.modules.disbursement_authorisation` behind one public terminal-decision
-   interface. Lock the active CFC, initiated disbursement, account/application/member, 009E frozen
+1. Extend the source-defined `disbursements.modules.disbursement_workflow` public terminal-decision
+   interface established by 009E2. An internal authorisation helper may remain private, but no
+   second public workflow owner is permitted. Lock the active CFC, initiated disbursement,
+   account/application/member, 009E2 frozen
    initiation/readiness/bank evidence, and any existing decision before acting.
 2. Accept only source decisions `approved` or `rejected` with required bounded comments. Freeze the
    checker, decision time, safe CFC role/team/request/network facts, and exact initiated evidence.
@@ -93,7 +95,8 @@ Exact replay writes nothing; denied and concurrent losers create no success evid
   application, member, sanctioned amount, borrower/source bank, maker, and frozen readiness facts.
 - Approval/rejection must not re-evaluate readiness into a different evidence set or accept caller-
   supplied amount/bank/readiness/maker/time. Replaced or incoherent initiation evidence conflicts.
-- Reconcile the exact 009E frozen 23-check readiness digest and initiation action/audit/workflow/task
+- Reconcile the exact 009E2 typed readiness digest, governed source-bank decision, and initiation
+  action/audit/workflow/task
   identities; do not call legal, security, approval, SAP, or checklist owners from authorisation.
 - Enforce distinct maker/checker transactionally. A second CFC or simultaneous opposite decision
   has one winner; every loser returns the retained exact replay or a zero-write conflict.

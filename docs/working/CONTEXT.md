@@ -139,9 +139,15 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   under-tested. Corrective 008M6 now requires a coherent signed-copy predecessor/tail plus exact
   owner ledgers and freezes review actions to their actual stage and authorising primary/governed
   role. Corrective 009B3C now requires singular complete SAP send/completion evidence and one
-  negative as well as positive Manual/Fake/Future adapter contract. 009D3 still precedes 009E to
-  close the remaining approval, reader-scope, signer, and deep-boundary gaps before payment
-  initiation.
+  negative as well as positive Manual/Fake/Future adapter contract. 009D3 then closed the remaining
+  approval, primary-role reader-scope, signer, and deep-boundary gaps before 009E added manual-bank
+  payment initiation. The next independent review found a newer unlinked signed-copy tail can still
+  inherit historical correction resolution, governed Finance authorities are excluded from
+  readiness, unrelated signature history can poison the decision, and 009E's mocked owner tests do
+  not prove its boundary. It also found API replay/error drift, fragmented workflow ownership, and
+  mutable source-bank labels presented as governance. Corrective 008M7, 009D4, and 009E2 restore
+  current-tail truth, effective-role/signature scope, and one source-contract-compliant genuine
+  owner-backed disbursement workflow before CFC authorisation.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

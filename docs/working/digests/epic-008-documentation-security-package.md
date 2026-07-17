@@ -14,6 +14,16 @@ Sources:
 `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-17 08:44 — Current Correction Tail
+
+- 008M6 materially reconciles the corrected copy's file, checksum, predecessor, action, audit,
+  workflow, version, and stage evidence. A review probe nevertheless appended an ordinary signed
+  successor with no resolution link and found the historical corrected copy still cleared the
+  blocker because the owner accepts the resolving copy anywhere in the chain.
+- `008M7` requires the current sole tail itself to retain the exact correction resolution or makes
+  the correction open again. Workspace, completion, approvals, and readiness must consume that
+  same current-tail decision without deleting historical copies.
+
 ## Architecture Review 2026-07-16 21:37 — Corrected-Copy and Stage Evidence
 
 - 008M5 materially adds immutable signed-copy succession, durable correction/return/condition rows,
