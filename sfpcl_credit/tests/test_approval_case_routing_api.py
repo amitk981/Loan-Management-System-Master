@@ -94,7 +94,13 @@ class ApprovalCaseRoutingApiTests(TestCase):
         # tests. Django deep-copies class test data for each TestCase instance
         # and rolls every mutation back, so one class-level build preserves
         # isolation while removing the repeated inserts.
-        self = cls
+        cls._build_fixture(cls)
+
+    @staticmethod
+    def _build_fixture(self):
+        # TransactionTestCase cannot use setUpTestData. Its PostgreSQL-only
+        # race fixture calls this builder per test to retain transaction-level
+        # isolation while sharing the fixture definition.
         self.read_permission = self._permission("approvals.case.read")
         self.application_read_permission = self._permission(
             "applications.loan_application.read"
@@ -6240,7 +6246,10 @@ class ApprovalCaseRoutingApiTests(TestCase):
 @skipUnless(connection.vendor == "postgresql", "Authoritative approval action race requires PostgreSQL.")
 class ApprovalActionConcurrencyTests(TransactionTestCase):
     reset_sequences = True
-    setUp = ApprovalCaseRoutingApiTests.setUp
+
+    def setUp(self):
+        ApprovalCaseRoutingApiTests._build_fixture(self)
+
     _permission = staticmethod(ApprovalCaseRoutingApiTests._permission)
     _user = staticmethod(ApprovalCaseRoutingApiTests._user)
     _race = ApprovalCaseRoutingApiTests._race

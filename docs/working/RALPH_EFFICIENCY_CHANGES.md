@@ -28,7 +28,7 @@ Because every proof predicate matched, authoritative backend coverage is bounded
 
 ## Documentation-only architecture reviews
 
-Architecture reviews now have a fail-closed documentation lane. Candidate scope must remain entirely under `docs/` or `.ralph/`, while protected-path checks, queue validation, artifact checks, and the frozen-candidate hash still run. Product gates are skipped with an explicit reason only after that scope proof; any product path rejects the lane.
+Architecture reviews now have a fail-closed documentation lane. Candidate scope must remain under `docs/`, explicit state/progress bookkeeping, or the current review's own run-evidence directory, while protected-path checks, queue validation, artifact checks, and the frozen-candidate hash still run. Product gates are skipped with an explicit reason only after that scope proof; any product path, configuration edit, or historical run-evidence edit rejects the lane.
 
 ## Agent transcript retention
 

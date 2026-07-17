@@ -219,7 +219,7 @@ elif [[ "$mode" == "architecture_review" ]]; then
   {
     echo "# Architecture Review Scope Results"
     echo
-    if ralph_validate_architecture_review_change_scope "$worktree_dir"; then
+    if ralph_validate_architecture_review_change_scope "$worktree_dir" "$run_id"; then
       echo "PASS: documentation-only architecture review contains no product changes."
     else
       echo "FAIL: architecture review changed a product path."

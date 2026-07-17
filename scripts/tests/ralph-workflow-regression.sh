@@ -789,21 +789,33 @@ architecture_scope_helper="scripts/lib/ralph-architecture-review.sh"
 # shellcheck source=../lib/ralph-architecture-review.sh
 source "$architecture_scope_helper"
 architecture_repo="$fixture_dir/architecture-review-repo"
-mkdir -p "$architecture_repo/docs/working" "$architecture_repo/src" "$architecture_repo/.ralph"
+mkdir -p "$architecture_repo/docs/working" "$architecture_repo/src" \
+  "$architecture_repo/.ralph/runs/prior-review"
 git init -q "$architecture_repo"
 git -C "$architecture_repo" config user.name "Ralph Regression"
 git -C "$architecture_repo" config user.email "ralph-regression@example.invalid"
 printf 'baseline\n' > "$architecture_repo/docs/working/REVIEW_FINDINGS.md"
 printf 'product\n' > "$architecture_repo/src/product.py"
 printf '{}\n' > "$architecture_repo/.ralph/state.json"
+printf 'retained historical evidence\n' \
+  > "$architecture_repo/.ralph/runs/prior-review/evidence.md"
 git -C "$architecture_repo" add .
 git -C "$architecture_repo" commit -qm fixture
 printf 'review finding\n' >> "$architecture_repo/docs/working/REVIEW_FINDINGS.md"
 printf '{"architecture_review_due": false}\n' > "$architecture_repo/.ralph/state.json"
-ralph_validate_architecture_review_change_scope "$architecture_repo" \
+ralph_validate_architecture_review_change_scope "$architecture_repo" current-review \
   || fail "documentation-only architecture review was rejected"
+printf 'rewritten historical evidence\n' \
+  > "$architecture_repo/.ralph/runs/prior-review/evidence.md"
+if ralph_validate_architecture_review_change_scope \
+    "$architecture_repo" current-review >/dev/null 2>&1; then
+  fail "architecture-review lane accepted an edit to a prior run's evidence"
+fi
+printf 'retained historical evidence\n' \
+  > "$architecture_repo/.ralph/runs/prior-review/evidence.md"
 printf 'unsafe product edit\n' >> "$architecture_repo/src/product.py"
-if ralph_validate_architecture_review_change_scope "$architecture_repo" >/dev/null 2>&1; then
+if ralph_validate_architecture_review_change_scope \
+    "$architecture_repo" current-review >/dev/null 2>&1; then
   fail "architecture-review queue-only lane accepted a product change"
 fi
 rg -q 'ralph_validate_architecture_review_change_scope' scripts/ralph-validate.sh \
@@ -908,6 +920,29 @@ rg -q 'ralph-parallel-backend-coverage.sh' scripts/ralph-validate.sh \
   || fail "validator does not invoke the proven parallel-coverage module"
 rg -q 'backend_coverage_parallel_workers: 2' .ralph/config.yaml \
   || fail "authoritative coverage worker count is not explicitly bounded at two"
+
+# The PostgreSQL TransactionTestCase cannot share Django's class-level fixture.
+# It must retain an explicit per-test builder instead of inheriting the no-op
+# unittest setUp method after the primary class moves to setUpTestData.
+python3 - <<'PY'
+import ast
+from pathlib import Path
+
+tree = ast.parse(Path("sfpcl_credit/tests/test_approval_case_routing_api.py").read_text())
+classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+concurrency = classes["ApprovalActionConcurrencyTests"]
+setup = next(
+    (node for node in concurrency.body if isinstance(node, ast.FunctionDef) and node.name == "setUp"),
+    None,
+)
+if setup is None:
+    raise SystemExit("PostgreSQL concurrency tests inherited a no-op setUp")
+if not any(
+    isinstance(node, ast.Attribute) and node.attr == "_build_fixture"
+    for node in ast.walk(setup)
+):
+    raise SystemExit("PostgreSQL concurrency setUp does not build its fixture")
+PY
 
 [[ "$(tr -d '[:space:]' < .nvmrc)" == "20.19.6" ]] \
   || fail "repository Node version is not pinned to 20.19.6"
