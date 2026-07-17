@@ -86,9 +86,10 @@ def resolve_readiness_account(*, actor, loan_account_id, cfc_scope_resolver=None
         "cfo",
         "internal_auditor",
     }
-    if permission not in permissions or not set(actor.role_codes()).intersection(
+    roles = set(auth_service.effective_role_codes(actor)).intersection(
         readiness_roles
-    ):
+    )
+    if permission not in permissions or not roles:
         raise DomainPermissionDenied("Disbursement readiness permission is required.")
     account = (
         LoanAccount.objects.select_for_update()
@@ -103,34 +104,37 @@ def resolve_readiness_account(*, actor, loan_account_id, cfc_scope_resolver=None
     )
     if account is None:
         raise DomainObjectAccessDenied(None)
-    roles = set(actor.role_codes())
-    if "senior_manager_finance" in roles:
-        scoped = SapCustomerProfileModule.is_current_finance_assignee(
-            application_id=account.loan_application_id,
-            member_id=account.member_id,
-            actor_id=actor.pk,
-        )
-    elif "chief_financial_controller" in roles:
-        scoped = bool(
-            cfc_scope_resolver
-            and cfc_scope_resolver(actor_id=actor.pk, loan_account_id=account.pk)
-        )
-    elif "credit_manager" in roles:
-        # Credit owns the loan/monitoring domain, but an archived loan is no
-        # longer part of its operational queue.
-        scoped = account.loan_account_status in _CREDIT_MONITORING_STATUSES
-    elif "cfo" in roles:
-        # CFO has the source-defined portfolio detail scope.
-        scoped = True
-    else:
-        # Auditor scope is an explicit persisted read-only grant, not a role or
-        # application-assignment shortcut.
-        scoped = ApprovalCaseReadScopeGrant.objects.filter(
-            role=actor.primary_role,
-            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
-            status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
-        ).exists()
-    if not scoped:
+    scope_decisions = (
+        (
+            "senior_manager_finance" in roles
+            and SapCustomerProfileModule.is_current_finance_assignee(
+                application_id=account.loan_application_id,
+                member_id=account.member_id,
+                actor_id=actor.pk,
+            )
+        ),
+        (
+            "chief_financial_controller" in roles
+            and bool(
+                cfc_scope_resolver
+                and cfc_scope_resolver(actor_id=actor.pk, loan_account_id=account.pk)
+            )
+        ),
+        (
+            "credit_manager" in roles
+            and account.loan_account_status in _CREDIT_MONITORING_STATUSES
+        ),
+        "cfo" in roles,
+        (
+            "internal_auditor" in roles
+            and ApprovalCaseReadScopeGrant.objects.filter(
+                role__role_code="internal_auditor",
+                scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+                status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+            ).exists()
+        ),
+    )
+    if not any(scope_decisions):
         raise DomainObjectAccessDenied(None)
     if (
         account.loan_application.member_id != account.member_id

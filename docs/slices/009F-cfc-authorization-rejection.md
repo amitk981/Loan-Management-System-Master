@@ -77,10 +77,12 @@ None for this slice, except updating frontend documentation or fixtures if requi
   Reject unknown fields and query parameters.
 
 ## Permissions
-Require an active persisted `chief_financial_controller` with
+Require an active persisted effective `chief_financial_controller` through the central role
+boundary, including a valid active governed `approval_authority_type`, together with
 `finance.disbursement.authorise` and exact disbursement/account/application object scope inside the
-owner. Role strings, permission alone, or read scope do not grant the action. The checker must be
-different from 009E's Senior Manager Finance maker. Missing/inaccessible ids are nondisclosing.
+owner. A free-form authority string, inactive catalogue role/user, role alone, permission alone, or
+read scope grants nothing. The checker must be different from 009E's Senior Manager Finance maker.
+Missing/inaccessible ids are nondisclosing.
 
 ## Audit Requirements
 Atomically retain one immutable `disbursement.authorised` or `disbursement.rejected` action, audit,
@@ -109,6 +111,9 @@ Exact replay writes nothing; denied and concurrent losers create no success evid
 - Reject missing/wrong role or permission, inactive/checker-maker actor, cross-object/missing id,
   malformed/unknown decision/comments, non-pending/stale initiation, replaced readiness/bank facts,
   and caller-supplied outcome fields without partial writes.
+- Repeat the approval and rejection permission matrix for a primary non-finance user with active
+  governed CFC authority, and for inactive/unknown governed authority with otherwise identical
+  grants; only the exact active effective-role case may reach object scope.
 - Prove CFC readiness/read scope is absent before 009E initiation, present only for the exact pending
   assigned relation, and removed when that relation is terminal or incoherent.
 - Exact replay is zero-write; changed/opposite replay conflicts. Twice-run PostgreSQL five-caller

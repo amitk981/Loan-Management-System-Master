@@ -38,7 +38,9 @@ genuine owner-backed initiation from governed current source-bank and readiness 
 2. Give readiness one typed initiation decision containing the exact canonical check digest and
    narrow SAP/borrower-bank/source-bank identities required by its consumer. The public readiness
    API must continue to omit private evidence, and initiation must call only the typed readiness
-   interface for composite payment-gate truth.
+   interface for composite payment-gate truth. Preserve 009D4's exact applicable-document signature
+   scope: unrelated current signatures do not change the decision, while any required current
+   Term Sheet, Loan Agreement, PoA, tri-party, or SH-4 signer drift fails initiation closed.
 3. Implement API §45.2 exactly for a duplicate idempotency key: return
    `idempotency_replayed: true` with the retained original response, without writes. Align touched
    conflicts with the stable §7/§31 machine codes; do not keep private
@@ -60,7 +62,8 @@ genuine owner-backed initiation from governed current source-bank and readiness 
 
 - Build one genuine public path using real 008M7/009B3C/009D4 legal, security, approval, SAP,
   borrower-bank, source-bank, loan, and configuration owners; initiate successfully without mocking
-  readiness or bank/source decisions. Mutate each current owner fact and prove zero-write denial.
+  readiness or bank/source decisions. Add unrelated signature history and prove the same success;
+  mutate each required current signer and every other current owner fact and prove zero-write denial.
 - Repeat the twice-run PostgreSQL five-caller races through the real typed readiness and bank owners;
   assert one complete row/audit/workflow/task winner and no loser success identity.
 - Assert exact first-success §31.2 response, exact §45.2 replay envelope, stable §7 errors for each

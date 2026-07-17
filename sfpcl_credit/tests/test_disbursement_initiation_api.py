@@ -305,6 +305,18 @@ class DisbursementInitiationApiTests(TestCase):
                 self.assertEqual(Disbursement.objects.count(), 0)
 
     def test_cfc_readiness_scope_exists_only_after_exact_assigned_initiation(self):
+        from sfpcl_credit.identity.models import Role
+
+        primary_role = Role.objects.create(
+            role_code="cfc_readiness_non_finance_primary",
+            role_name="CFC Readiness Non-finance Primary",
+            status="active",
+        )
+        self.cfc.primary_role = primary_role
+        self.cfc.approval_authority_type = "chief_financial_controller"
+        self.cfc.save(
+            update_fields=["primary_role", "approval_authority_type"]
+        )
         self.fixture._grant(self.cfc, "finance.disbursement.readiness")
         before = self.client.get(
             f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",

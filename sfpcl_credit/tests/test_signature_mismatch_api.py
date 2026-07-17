@@ -770,6 +770,25 @@ class SignatureMismatchApiTests(TestCase):
             application_id=self.application.pk
         ))
 
+        unrelated_file = self._legal_document(
+            "final_checklist", "final-checklist.pdf", "d", self.actor
+        )
+        unrelated_document = LoanDocument.objects.get(document=unrelated_file)
+        SignatureRecord.objects.create(
+            loan_document=unrelated_document,
+            signer_party_type="borrower",
+            signer_party_id=self.application.member_id,
+            signer_name_snapshot=self.application.member.legal_name,
+            signature_method="wet_ink",
+            signature_status="signed",
+            signed_at="2026-06-22T12:00:00Z",
+            signature_mismatch_flag=False,
+            captured_by_user=self.actor,
+        )
+        self.assertTrue(signatures.all_current_signatures_resolved(
+            application_id=self.application.pk
+        ))
+
         SignatureRecord.objects.filter(pk=signature.pk).update(
             mismatch_resolution_remarks="Changed after resolution."
         )

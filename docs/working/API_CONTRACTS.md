@@ -4008,8 +4008,13 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
 - `GET /api/v1/loan-accounts/{loan_account_id}/disbursement-readiness/` accepts no query
   parameters. Unknown parameters return `400 VALIDATION_ERROR`. The actor must be active and
   persisted, hold `finance.disbursement.readiness`, have canonical loan-account/application object
-  scope, and be Senior Manager Finance or Chief Financial Controller. Missing and inaccessible ids
-  share `403 OBJECT_ACCESS_DENIED`; a grant or role string alone is insufficient.
+  scope, and have at least one active effective Senior Manager Finance, Chief Financial Controller,
+  Credit Manager, CFO, or explicitly audit-scoped Internal Auditor role. Effective roles include a
+  valid active governed `approval_authority_type`; the canonical scopes of all effective roles are
+  unioned. Senior Finance is limited to the newest SAP assignment, CFC to an exact pending initiated
+  disbursement, Credit to active/monitoring loan states, CFO to portfolio detail, and Auditor to its
+  active read-only grant. Missing and inaccessible ids share `403 OBJECT_ACCESS_DENIED`; an unknown
+  or inactive authority, role alone, permission alone, or intake assignment is insufficient.
 - Success returns `loan_account_id`, `loan_application_id`, `ready_for_disbursement`, UTC
   `evaluated_at`, and all ordered checks. Each check contains only stable `code`, `label`, `status`
   (`pass`/`fail`), plus a safe `reason` only when failed. The fixed order is sanction, sanctioned
@@ -4023,7 +4028,10 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   cross-object, inactive, non-terminal, or mixed relationships fail their named checks; no check is
   omitted. The SAP check compares the account link only to
   `SapCustomerProfileModule.get_customer_code_for_member(member_id)` and never reads raw/masked
-  codes, Annexure-I, adapter, delivery, or Finance model state.
+  codes, Annexure-I, adapter, delivery, or Finance model state. Signature resolution considers only
+  the latest current applicable Term Sheet, Loan Agreement, PoA, tri-party agreement, and SH-4;
+  unrelated signature history is ignored, while missing, extra, wrong, duplicate, or unresolved
+  current required signers fail closed against the approval-owned Term Sheet signer set.
 - `ready_for_disbursement` is true only when every check passes. Senior Manager Finance final
   verification/initiation and CFC authorisation are later actions and are not readiness checks.
   Under A-126 the source-bank check fails honestly until a governed owner exists. Evaluation writes

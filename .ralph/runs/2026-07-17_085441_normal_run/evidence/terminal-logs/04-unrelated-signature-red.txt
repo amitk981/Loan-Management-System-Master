@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata (sfpcl_credit.tests.test_signature_mismatch_api.SignatureMismatchApiTests.test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_085441_normal_run/sfpcl_credit/tests/test_signature_mismatch_api.py", line 788, in test_company_secretary_resolves_mismatch_with_retained_bank_letter_metadata
+    self.assertTrue(signatures.all_current_signatures_resolved(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.058s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

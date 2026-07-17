@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009D4-readiness-effective-role-and-signature-scope-closure.md
+ M docs/slices/009E2-disbursement-contract-and-owner-proof-closure.md
+ M docs/slices/009F-cfc-authorization-rejection.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/legal_documents/modules/signatures.py
+ M sfpcl_credit/loans/modules/loan_account_lifecycle.py
+ M sfpcl_credit/tests/test_disbursement_initiation_api.py
+ M sfpcl_credit/tests/test_disbursement_readiness_api.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+ M sfpcl_credit/tests/test_signature_mismatch_api.py
+?? .ralph/runs/2026-07-17_085441_normal_run/

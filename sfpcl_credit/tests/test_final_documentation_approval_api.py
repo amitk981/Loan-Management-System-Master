@@ -3018,24 +3018,51 @@ class FinalDocumentationApprovalApiTests(TestCase):
         self.assertTrue(security.cdsl_pledge_complete)
         self.assertTrue(security.blank_dated_cheque_received)
 
-    def test_disbursement_readiness_rejects_wrong_signer_and_rolled_back_chain(self):
-        self._complete_readiness_documentation()
-        poa = self.checklist.items.get(item_code="poa").loan_document
-        SignatureRecord.objects.create(
-            loan_document=poa,
-            signer_party_type="witness",
-            signer_party_id=self.witness.pk,
-            signer_name_snapshot=self.witness.witness_name,
+        final_checklist = self.checklist.items.get(
+            item_code="final_checklist"
+        ).loan_document
+        unrelated = SignatureRecord.objects.create(
+            loan_document=final_checklist,
+            signer_party_type="borrower",
+            signer_party_id=self.application.member_id,
+            signer_name_snapshot=self.application.member.legal_name,
             signature_method="wet_ink",
             signature_status="signed",
             signature_mismatch_flag=False,
             signed_at=timezone.now(),
             captured_by_user=self.compliance,
         )
-        self.assertFalse(self._legal_readiness().signature_mismatch_resolved)
-        SignatureRecord.objects.filter(
-            loan_document=poa, signer_party_type="witness"
-        ).delete()
+        self.assertTrue(self._legal_readiness().signature_mismatch_resolved)
+        unrelated.delete()
+
+    def test_disbursement_readiness_rejects_wrong_signer_and_rolled_back_chain(self):
+        self._complete_readiness_documentation()
+        for item_code in (
+            "poa",
+            "tri_party_agreement",
+            "sh4",
+            "term_sheet",
+            "loan_agreement",
+        ):
+            with self.subTest(item_code=item_code):
+                document = self.checklist.items.get(
+                    item_code=item_code
+                ).loan_document
+                extra_wrong_signer = SignatureRecord.objects.create(
+                    loan_document=document,
+                    signer_party_type="borrower",
+                    signer_party_id=uuid4(),
+                    signer_name_snapshot="Wrong duplicate borrower",
+                    signature_method="wet_ink",
+                    signature_status="signed",
+                    signature_mismatch_flag=False,
+                    signed_at=timezone.now(),
+                    captured_by_user=self.compliance,
+                )
+                self.assertFalse(
+                    self._legal_readiness().signature_mismatch_resolved
+                )
+                extra_wrong_signer.delete()
 
         term_sheet = self.checklist.items.get(item_code="term_sheet").loan_document
         unrelated_director = self.fixture._user(

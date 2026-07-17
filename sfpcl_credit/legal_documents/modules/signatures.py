@@ -37,6 +37,13 @@ CAPTURE_FIELDS = {
     "signed_at",
     "signature_mismatch_flag",
 }
+READINESS_DOCUMENT_TYPE_BY_ITEM = {
+    "poa": "power_of_attorney",
+    "tri_party_agreement": "tri_party_agreement",
+    "sh4": "sh4",
+    "term_sheet": "term_sheet",
+    "loan_agreement": "loan_agreement",
+}
 
 
 @dataclass(frozen=True)
@@ -84,9 +91,6 @@ def all_current_signatures_resolved(*, application_id):
         verification_status="verified",
         shareholder_verified_flag=True,
     ).values_list("witness_id", flat=True))
-    rows = list(SignatureRecord.objects.select_for_update().select_related(
-        "loan_document", "mismatch_resolution_workflow_event"
-    ).filter(loan_document__loan_application_id=application_id))
     required_item_codes = set(ChecklistItem.objects.filter(
         document_checklist__loan_application_id=application_id,
         required_flag=True,
@@ -95,9 +99,16 @@ def all_current_signatures_resolved(*, application_id):
             "poa", "tri_party_agreement", "sh4", "term_sheet", "loan_agreement"
         },
     ).values_list("item_code", flat=True))
+    current_required_document_ids = {
+        latest.get(READINESS_DOCUMENT_TYPE_BY_ITEM[item_code])
+        for item_code in required_item_codes
+    }
+    current_required_document_ids.discard(None)
+    rows = list(SignatureRecord.objects.select_for_update().select_related(
+        "loan_document", "mismatch_resolution_workflow_event"
+    ).filter(loan_document_id__in=current_required_document_ids))
     return bool(required_item_codes) and all(
-        row.loan_document_id == latest.get(row.loan_document.document_type)
-        and _expected_readiness_signer(row, application, witnesses)
+        _expected_readiness_signer(row, application, witnesses)
         and _readiness_row_resolved(row)
         for row in rows
     ) and _required_readiness_signers_present(
@@ -112,13 +123,6 @@ def all_current_signatures_resolved(*, application_id):
 def _required_readiness_signers_present(
     *, application, latest, rows, witnesses, required_item_codes
 ):
-    document_type_by_item = {
-        "poa": "power_of_attorney",
-        "tri_party_agreement": "tri_party_agreement",
-        "sh4": "sh4",
-        "term_sheet": "term_sheet",
-        "loan_agreement": "loan_agreement",
-    }
     required_parties_by_item = {
         "poa": {"borrower", "nominee"},
         "tri_party_agreement": {"borrower", "nominee"},
@@ -130,7 +134,7 @@ def _required_readiness_signers_present(
     for row in rows:
         rows_by_document.setdefault(row.loan_document_id, []).append(row)
     for item_code in required_item_codes:
-        document_id = latest.get(document_type_by_item[item_code])
+        document_id = latest.get(READINESS_DOCUMENT_TYPE_BY_ITEM[item_code])
         document_rows = rows_by_document.get(document_id, [])
         if not document_id or not document_rows:
             return False

@@ -1,5 +1,25 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009D4 Readiness Effective Roles and Signature Scope
+
+- Readiness now resolves the active persisted actor through the central effective-role boundary,
+  requires the explicit readiness permission, and ORs the source-defined scope of every effective
+  Senior Finance, CFC, Credit Manager, CFO, and Auditor role. A governed authority is recognized
+  only when its catalogue role and user are active; permission, intake assignment, an unknown
+  authority string, or any role alone remains insufficient.
+- Canonical scope remains source-specific: newest SAP assignee for Senior Finance, exact pending
+  initiated-disbursement relation for CFC, active/monitoring loan states for Credit, portfolio detail
+  for CFO, and the active explicit audit-read grant for Auditor. Multi-role actors receive the union,
+  so fixed branch precedence cannot accidentally deny a valid narrower relation or widen access.
+- Legal signature readiness now loads only the latest current documents named by applicable required
+  PoA, tri-party, SH-4, Term Sheet, and Loan Agreement items. Unrelated and superseded signature
+  history is ignored; every current required document still rejects missing, extra, wrong, duplicate,
+  unresolved, or provenance-incoherent signer rows, including the exact approval-owned Term Sheet
+  CFO/Director set.
+- Auth §§15.6-15.8/19.3/26.5 supply the reader roles and object scopes; screen S32-S35/S38 and
+  M06-FR-019/M08-FR-001-004 require exact signer/documentation blockers before payment. The public
+  envelope, 23 codes/order, safe reasons, zero-write behavior, and retained query bound are unchanged.
+
 ## Architecture Review 2026-07-17 08:44 — Readiness and Initiation Closure
 
 - 009D3 restores the named readiness seam and primary-role reader matrix, but still branches on

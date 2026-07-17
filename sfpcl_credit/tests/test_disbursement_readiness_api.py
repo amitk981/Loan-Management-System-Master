@@ -471,6 +471,103 @@ class DisbursementReadinessApiTests(TestCase):
         self.assertEqual(denied.status_code, 403, denied.content)
         self.assertEqual(denied.json()["error"]["code"], "FORBIDDEN")
 
+    def test_active_governed_cfo_with_explicit_grant_receives_portfolio_scope(self):
+        from sfpcl_credit.identity.models import Role
+
+        Role.objects.create(
+            role_code="cfo", role_name="Chief Financial Officer", status="active"
+        )
+        governed_cfo = self.fixture._user(
+            "field_officer", "Governed Readiness CFO"
+        )
+        governed_cfo.approval_authority_type = "cfo"
+        governed_cfo.save(update_fields=["approval_authority_type"])
+        self.fixture._grant(governed_cfo, "finance.disbursement.readiness")
+
+        response = self.client.get(
+            f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+            **self._auth_for(governed_cfo),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(
+            response.json()["data"]["loan_account_id"], self.account_id
+        )
+
+    def test_multi_role_scope_is_the_union_when_primary_senior_finance_is_unassigned(self):
+        from sfpcl_credit.identity.models import Role, User
+
+        Role.objects.create(
+            role_code="chief_financial_controller",
+            role_name="Chief Financial Controller",
+            status="active",
+        )
+        multi_role = User.objects.create(
+            full_name="Multi-role Readiness Reader",
+            email="multi-role-readiness@sfpcl.example",
+            status="active",
+            primary_role=self.actor.primary_role,
+            approval_authority_type="chief_financial_controller",
+        )
+        multi_role.set_password(self.password)
+        multi_role.save(update_fields=["password_hash"])
+
+        with patch(
+            "sfpcl_credit.disbursements.modules.disbursement_readiness.has_cfc_scope",
+            return_value=True,
+        ) as cfc_scope:
+            response = self.client.get(
+                f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+                **self._auth_for(multi_role),
+            )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        cfc_scope.assert_called_once_with(
+            actor_id=multi_role.pk, loan_account_id=self._account().pk
+        )
+
+    def test_governed_role_still_requires_active_catalogue_user_and_explicit_grant(self):
+        from sfpcl_credit.identity.models import Role
+
+        Role.objects.create(
+            role_code="cfo", role_name="Chief Financial Officer", status="active"
+        )
+        Role.objects.create(
+            role_code="chief_financial_controller",
+            role_name="Inactive Chief Financial Controller",
+            status="inactive",
+        )
+        missing_grant = self.fixture._user(
+            "readiness_missing_grant", "Governed CFO Missing Grant"
+        )
+        missing_grant.approval_authority_type = "cfo"
+        missing_grant.save(update_fields=["approval_authority_type"])
+        unknown_authority = self.fixture._user(
+            "readiness_unknown_authority", "Unknown Readiness Authority"
+        )
+        unknown_authority.approval_authority_type = "invented_finance_authority"
+        unknown_authority.save(update_fields=["approval_authority_type"])
+        self.fixture._grant(
+            unknown_authority, "finance.disbursement.readiness"
+        )
+        inactive_authority = self.fixture._user(
+            "readiness_inactive_authority", "Inactive Readiness Authority"
+        )
+        inactive_authority.approval_authority_type = "chief_financial_controller"
+        inactive_authority.save(update_fields=["approval_authority_type"])
+        self.fixture._grant(
+            inactive_authority, "finance.disbursement.readiness"
+        )
+
+        for actor in (missing_grant, unknown_authority, inactive_authority):
+            with self.subTest(actor=actor.email):
+                response = self.client.get(
+                    f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
+                    **self._auth_for(actor),
+                )
+                self.assertEqual(response.status_code, 403, response.content)
+                self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+
     def test_cross_member_account_and_sap_scope_fail_nondisclosing(self):
         from sfpcl_credit.members.models import Member
         from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest

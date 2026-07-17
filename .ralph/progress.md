@@ -1,5 +1,20 @@
 # Ralph Progress Log
 
+## 2026-07-17 - 2026-07-17_085441_normal_run
+
+- Agent tool used: codex with mandatory TDD.
+- Slice completed: 009D4-readiness-effective-role-and-signature-scope-closure.
+- Summary: Replaced primary-role precedence with active effective-role union scope for readiness,
+  retained the explicit permission and canonical Senior Finance/CFC/Credit/CFO/Auditor boundaries,
+  and limited legal signature reconciliation to the latest current applicable five document families
+  without weakening exact signer or mismatch evidence.
+- Tests run: two failing-first probes; 34 focused backend tests; named zero-write/query/scope proofs;
+  Django check and migration sync; frontend lint/typecheck/build and all 327 Vitest tests.
+- Evidence saved: `.ralph/runs/2026-07-17_085441_normal_run/evidence/`.
+- Result: Agent work complete pending independent backend coverage validation and orchestrator commit.
+- Risk level: High; authorization and legal readiness predicates changed fail-closed.
+- Next action: Run sharpened 009E2, then 009F.
+
 ## 2026-07-17 - 2026-07-17_075837_architecture_review
 
 - Agent tool used: codex with isolated Standards and Spec review passes.
@@ -8215,6 +8230,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/.ralph/runs/2026-07-17_083059_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/.ralph/runs/2026-07-17_083059_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-17 09:21:52 - 2026-07-17_085441_normal_run
+- Agent tool used: codex
+- Slice attempted: 009D4-readiness-effective-role-and-signature-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_085441_normal_run/.ralph/runs/2026-07-17_085441_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_085441_normal_run/.ralph/runs/2026-07-17_085441_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
