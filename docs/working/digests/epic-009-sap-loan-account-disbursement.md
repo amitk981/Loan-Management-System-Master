@@ -1,5 +1,32 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009G3 Repair — Legacy Protected-Register Test Closure
+
+- Full parallel coverage found one retained documentation test that attempted to delete the exact
+  `LoanRegisterUpdate` now protected by `Disbursement.register_update`; the intended
+  `ProtectedError` then surfaced as Django's secondary traceback-pickling error.
+- The test now directly asserts deletion protection and uses a reversible register checksum change
+  to retain its public checklist replay 409 assertion. Production models, migration 0007, transfer
+  policy, and checklist policy remain unchanged.
+- The exact red/green test, both impacted backend classes (61 tests), Django check, and migration
+  sync pass. Complete parallel coverage and twice-run PostgreSQL acceptance remain independent
+  orchestrator gates.
+- 009H3 and 009G4 remain concrete after recheck; no sharpening edit was needed.
+
+## 009G3 Repair — Protected Register Migration Closure
+
+- Independent validation found that the protected `Disbursement.register_update` model relation
+  had no migration, so migration drift failed and parallel coverage reached a schema without
+  `register_update_id`. Disbursements migration 0007 now owns that exact schema change.
+- Existing successful rows are linked only when their singular transfer, register, advice intent,
+  document checksum, account/application/member/amount, action/digest, audit, and workflow facts
+  agree. Missing, ambiguous, changed, or non-success register evidence aborts rather than receiving
+  fabricated completion truth; reverse migration clears only the new owner link.
+- Migration sync, fresh migration application, the exact prior coverage-crashing test, the protected
+  register test, all 11 transfer-success tests, and Django check pass. Complete coverage and declared
+  PostgreSQL validation remain independent orchestrator gates.
+- 009H3 and 009G4 were rechecked and remain concrete; no sharpening edit was required.
+
 ## 009E5 Shared Safe Audit Text and Source-Bank Closure
 
 - `shared.audit_text.safe_audit_text` is now the single reusable seam for bounded human-reviewable

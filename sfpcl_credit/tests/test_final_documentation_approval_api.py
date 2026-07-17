@@ -11,6 +11,7 @@ from uuid import uuid4
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import close_old_connections, connection, connections, transaction
+from django.db.models.deletion import ProtectedError
 from django.test import RequestFactory, TestCase
 from django.test import TransactionTestCase, override_settings
 from django.test.utils import CaptureQueriesContext
@@ -2531,17 +2532,22 @@ class FinalDocumentationApprovalApiTests(TestCase):
         ).update(transfer_evidence_digest=retained_digest)
 
         register = disbursement.loan_register_update
-        register_id = register.pk
-        register.delete()
-        missing_register = self._post_stage(
+        with self.assertRaises(ProtectedError), transaction.atomic():
+            register.delete()
+
+        retained_register_checksum = register.evidence_checksum_sha256
+        register.__class__.objects.filter(pk=register.pk).update(
+            evidence_checksum_sha256="f" * 64
+        )
+        changed_register = self._post_stage(
             "sign-disbursement-complete",
             self.finance,
             {"comments": "Loan has been disbursed to the applicant account."},
         )
-        self.assertEqual(missing_register.status_code, 409, missing_register.content)
-        register.pk = register_id
-        register._state.adding = True
-        register.save(force_insert=True)
+        self.assertEqual(changed_register.status_code, 409, changed_register.content)
+        register.__class__.objects.filter(pk=register.pk).update(
+            evidence_checksum_sha256=retained_register_checksum
+        )
 
         intent = disbursement.advice_intent
         intent.delete()

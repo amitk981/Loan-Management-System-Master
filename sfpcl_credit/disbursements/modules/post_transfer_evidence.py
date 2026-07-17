@@ -59,6 +59,7 @@ def resolve_post_transfer_evidence(*, application_id, for_update=False):
             "transfer_success_audit",
             "transfer_success_workflow_event",
             "transfer_success_loan_status_history",
+            "register_update",
             "loan_register_update",
             "advice_intent",
         )
@@ -86,4 +87,3 @@ def resolve_post_transfer_evidence(*, application_id, for_update=False):
         transfer_audit_id=row.transfer_success_audit_id,
         transfer_workflow_event_id=row.transfer_success_workflow_event_id,
     )
-

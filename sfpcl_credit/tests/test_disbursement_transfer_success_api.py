@@ -5,6 +5,7 @@ from unittest import skipUnless
 from uuid import UUID, uuid4
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models.deletion import ProtectedError
 from django.db import (
     IntegrityError,
     close_old_connections,
@@ -499,6 +500,21 @@ class DisbursementTransferSuccessApiTests(TestCase):
             Disbursement.objects.filter(pk=row.pk).update(
                 transfer_success_action_id=None
             )
+
+    def test_successful_disbursement_protects_its_exact_register_owner_relation(self):
+        accepted = self._post(
+            bank_reference_number="RBL-REGISTER-OWNER-0001",
+            disbursed_at=timezone.now(),
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        row = Disbursement.objects.select_related("register_update").get()
+        register = LoanRegisterUpdate.objects.get(disbursement=row)
+
+        self.assertEqual(row.register_update_id, register.pk)
+        with self.assertRaises(ProtectedError), transaction.atomic():
+            register.delete()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Disbursement.objects.filter(pk=row.pk).update(register_update=None)
 
     def test_rejected_instruction_and_forged_outcome_fields_are_zero_write(self):
         row = Disbursement.objects.get()

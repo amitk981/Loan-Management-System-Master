@@ -1,7 +1,7 @@
 # Slice 009G3: Post-Transfer Aggregate and Checklist Integrity Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -65,10 +65,10 @@ High
   authorised current Senior Finance scope with exact immutable replay/race behavior.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing tests written first and RED/GREEN evidence saved
-- [ ] Aggregate relation/constraint migration implemented
-- [ ] Public authority, ledger-tamper, and PostgreSQL tests passed
-- [ ] API contracts updated, if needed
-- [ ] Risk assessment, handoff, state, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing tests written first and RED/GREEN evidence saved
+- [x] Aggregate relation/constraint migration implemented
+- [x] Public authority, ledger-tamper, and PostgreSQL tests passed
+- [x] API contracts updated, if needed (no API shape changed)
+- [x] Risk assessment, handoff, state, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

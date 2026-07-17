@@ -170,6 +170,13 @@ class Disbursement(models.Model):
         related_name="advised_disbursements",
     )
     loan_register_updated_flag = models.BooleanField(default=False)
+    register_update = models.OneToOneField(
+        "LoanRegisterUpdate",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="owned_by_successful_disbursement",
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -288,6 +295,7 @@ class Disbursement(models.Model):
                         transfer_success_workflow_event__isnull=False,
                         transfer_success_loan_status_history__isnull=False,
                         loan_register_updated_flag=True,
+                        register_update__isnull=False,
                     )
                     | Q(
                         bank_transfer_status__in=(
@@ -311,6 +319,7 @@ class Disbursement(models.Model):
                         transfer_success_workflow_event__isnull=True,
                         transfer_success_loan_status_history__isnull=True,
                         loan_register_updated_flag=False,
+                        register_update__isnull=True,
                     )
                 ),
                 name="disb_success_evidence_complete",

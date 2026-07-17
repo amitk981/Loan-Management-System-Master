@@ -63,8 +63,9 @@ def _mark_transfer_successful(
                 "transfer_success_actor_user",
                 "transfer_success_audit",
                 "transfer_success_workflow_event",
-                "transfer_success_loan_status_history",
-                "loan_register_update",
+            "transfer_success_loan_status_history",
+            "register_update",
+            "loan_register_update",
                 "advice_intent",
             )
             .filter(
@@ -341,6 +342,7 @@ def _mark_transfer_successful(
         row.transfer_success_workflow_event = workflow
         row.transfer_success_loan_status_history_id = loan_status_history_id
         row.loan_register_updated_flag = True
+        row.register_update = register_update
         row.save(
             update_fields=[
                 "bank_transfer_status",
@@ -361,6 +363,7 @@ def _mark_transfer_successful(
                 "transfer_success_workflow_event",
                 "transfer_success_loan_status_history",
                 "loan_register_updated_flag",
+                "register_update",
             ]
         )
         row._state.fields_cache["loan_register_update"] = register_update
@@ -502,6 +505,7 @@ def _require_transferable_account(row, account):
         or row.bank_transfer_evidence_document_id is not None
         or row.disbursement_advice_communication_id is not None
         or row.loan_register_updated_flag
+        or row.register_update_id is not None
         or BankTransfer.objects.filter(disbursement=row).exists()
         or LoanStatusHistory.objects.filter(
             loan_account=account, from_status="sanctioned", to_status="active"
@@ -645,6 +649,7 @@ def completed_success_is_coherent(row):
         and row.transfer_success_actor_user_id
         and row.transfer_success_evidence_digest
         and row.loan_register_updated_flag
+        and row.register_update_id == register_update.pk
         and transfer.disbursement_id == row.pk
         and transfer.loan_account_id == row.loan_account_id
         and transfer.related_entity_id == row.pk

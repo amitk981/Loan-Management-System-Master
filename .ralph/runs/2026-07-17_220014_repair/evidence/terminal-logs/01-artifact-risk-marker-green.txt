@@ -1,0 +1,9 @@
+Command:
+if grep -qF 'To be completed by the selected agent' .ralph/runs/2026-07-17_215313_normal_run/risk-assessment.md; then echo 'FAIL: prior risk assessment still contains the unfilled-template marker'; exit 1; else echo 'PASS: prior risk assessment no longer contains the unfilled-template marker'; fi
+if grep -qF 'To be completed by the selected agent' .ralph/runs/2026-07-17_220014_repair/risk-assessment.md; then echo 'FAIL: repair risk assessment still contains the unfilled-template marker'; exit 1; else echo 'PASS: repair risk assessment no longer contains the unfilled-template marker'; fi
+
+Output:
+PASS: prior risk assessment no longer contains the unfilled-template marker
+PASS: repair risk assessment no longer contains the unfilled-template marker
+
+Exit code: 0

@@ -1,5 +1,22 @@
 # Ralph Progress Log
 
+## 2026-07-17 - 2026-07-17_220706_repair
+
+- Agent tool used: codex with the `diagnosing-bugs` feedback loop.
+- Slice repaired: 009G3-post-transfer-aggregate-and-checklist-integrity-closure.
+- Summary: Preserved the quarantined aggregate implementation and repaired the exact independent
+  schema failure by adding the missing disbursements migration. The migration adds the protected
+  register owner relation, links only singular coherent retained transfer/register/advice evidence,
+  fails closed on incomplete or cross-status legacy rows, and then reinstates the success-evidence
+  constraint.
+- Tests run: migration-sync RED/GREEN; protected-register regression; exact initiation test that
+  crashed in parallel coverage; all 11 transfer-success tests; Django check; migration plan/apply.
+- Evidence saved: `.ralph/runs/2026-07-17_220706_repair/evidence/terminal-logs/`.
+- Result: Repair complete pending independent full orchestrator validation and commit.
+- Risk level: High inherited financial aggregate risk; bounded repair delta is one data/schema
+  migration with fail-closed backfill and no API, frontend, dependency, or permission change.
+- Next action: Run independently grabbable 009H3, then 009G4 after both prerequisites are complete.
+
 ## 2026-07-17 - 2026-07-17_210855_architecture_review
 
 - Agent tool used: codex with the `review` skill, isolated Standards/Spec passes, and direct probes.
@@ -8619,6 +8636,42 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_213220_normal_run/.ralph/runs/2026-07-17_213220_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_213220_normal_run/.ralph/runs/2026-07-17_213220_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-17 22:25:44 - 2026-07-17_222100_repair
+
+- Agent tool used: codex with the diagnosing-bugs feedback-loop discipline.
+- Slice repaired: 009G3-post-transfer-aggregate-and-checklist-integrity-closure.
+- Summary: Replaced the failed repair's generated execution-plan and risk placeholders and completed
+  the current repair artifacts without changing executable product behavior.
+- Tests run: exact literal placeholder-marker check across both repair folders; product gates not
+  repeated because this repair is artifact-only.
+- Evidence saved: `.ralph/runs/2026-07-17_222100_repair/evidence/`.
+- Result: Artifact repair complete pending independent orchestrator validation.
+- Risk level: High inherited slice risk; Low incremental documentation-only repair risk.
+- Next action: Run independent validation, then 009H3 followed by 009G4.
+
+## 2026-07-17 - 2026-07-17_223410_repair
+
+- Agent tool used: codex with the diagnosing-bugs feedback-loop discipline.
+- Slice repaired: 009G3-post-transfer-aggregate-and-checklist-integrity-closure.
+- Summary: Updated the one obsolete documentation regression that tried to delete newly protected
+  Loan Register evidence; it now proves `PROTECT` behavior and retains a checksum-tamper 409 check.
+- Tests run: exact RED/GREEN test; 61 impacted backend tests; Django check; migration sync. Complete
+  coverage and twice-run PostgreSQL acceptance delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-17_223410_repair/evidence/`.
+- Result: Test-only repair complete pending independent orchestrator validation.
+- Risk level: High inherited slice risk; Low incremental test-only repair risk.
+- Next action: Run independent validation, then 009H3 followed by 009G4.
+
+## 2026-07-17 22:57:28 - 2026-07-17_223410_repair
+- Agent tool used: codex
+- Slice attempted: 009G3-post-transfer-aggregate-and-checklist-integrity-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_215313_normal_run/.ralph/runs/2026-07-17_223410_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_215313_normal_run/.ralph/runs/2026-07-17_223410_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
