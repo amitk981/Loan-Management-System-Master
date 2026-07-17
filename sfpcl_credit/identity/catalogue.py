@@ -191,6 +191,12 @@ PERMISSIONS = [
     ("finance.accrual.create", "Create monthly accrual", "high"),
     ("finance.accrual.bulk_generate", "Bulk-generate accruals", "high"),
     ("finance.interest_capitalise", "Capitalise unpaid interest", "critical"),
+    # A-126: source-bank configuration is deliberately grantable but no role owns it.
+    (
+        "config.source_bank_account.activate",
+        "Activate governed source bank account",
+        "critical",
+    ),
     # §12.10 Monitoring and Default
     ("monitoring.dpd.read", "View DPD status", "medium"),
     ("monitoring.dpd.calculate", "Calculate DPD", "high"),

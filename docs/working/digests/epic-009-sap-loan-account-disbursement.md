@@ -1,5 +1,23 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009E3 Disbursement Amount and Source-Bank Governance Closure
+
+- Public initiation now accepts any positive 18,2 amount no greater than immutable terms and
+  sanction, freezes the exact lesser amount across the row/audit/workflow/CFC task, preserves exact
+  changed-replay conflicts, and lets CFC approve that retained amount without claiming transfer.
+- Initiation consumes a narrow `loan_account_lifecycle` decision that reconciles singular creation
+  status-history/audit/workflow evidence. The full documentation/SAP/readiness/bank fixture now
+  creates its loan through the public owner; equivalent-looking or changed creation evidence writes
+  no disbursement.
+- `config.source_bank_account.activate` is a canonical unassigned Critical permission. Activation
+  pre-generates the governance identity and inserts an active row only with its version/audit proof.
+  Replacement retains activation evidence, appends predecessor/deactivation version/audit facts,
+  closes the effective range, and rejects incomplete, duplicate, changed, cross-linked, orphaned,
+  or temporally incoherent chains.
+- Two PostgreSQL tests each run five concurrent first activations and five replacements. Each round
+  retains one complete winner and stable conflicts with no orphan governance/version/audit facts.
+  A-126's mechanism is complete; the source-silent business provisioner remains intentionally open.
+
 ## Architecture Review 2026-07-17 11:45 — Initiation, Governance, and CFC Integrity
 
 - 008M7 and 009D4 substantively close their current-tail/effective-role/applicable-signature targets.

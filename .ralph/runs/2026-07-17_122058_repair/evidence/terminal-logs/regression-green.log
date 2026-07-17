@@ -1,0 +1,14 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_final_documentation_approval_api --verbosity 1
+Working directory: sfpcl_credit
+
+Run 1 exit code: 0
+Found 57 test(s).
+System check identified no issues (0 silenced).
+Ran 57 tests in 17.334s
+OK (skipped=8)
+
+Run 2 exit code: 0
+Found 57 test(s).
+System check identified no issues (0 silenced).
+Ran 57 tests in 16.921s
+OK (skipped=8)

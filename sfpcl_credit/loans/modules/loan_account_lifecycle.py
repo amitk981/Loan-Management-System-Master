@@ -32,6 +32,7 @@ from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
     SapCustomerProfileModule,
 )
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 CREATE_PERMISSION = "finance.loan_account.create"
@@ -72,6 +73,127 @@ class ReadinessAccountFacts:
     disbursement_amount: Decimal
     member_kyc_status: str
     relationships_coherent: bool
+
+
+@dataclass(frozen=True)
+class DisbursementAccountDecision:
+    loan_account_id: uuid.UUID
+    loan_application_id: uuid.UUID
+    member_id: uuid.UUID
+    sanction_decision_id: uuid.UUID
+    loan_terms_id: uuid.UUID
+    creation_status_history_id: uuid.UUID
+    creation_audit_id: uuid.UUID
+    creation_workflow_event_id: uuid.UUID
+    loan_account_status: str
+    sanctioned_amount: Decimal
+    loan_amount: Decimal
+    disbursed_amount: Decimal
+    principal_outstanding: Decimal
+    interest_outstanding: Decimal
+    charges_outstanding: Decimal
+    total_outstanding: Decimal
+
+
+def resolve_disbursement_account(*, loan_account_id):
+    """Return immutable initiation facts only for a genuine lifecycle-created account."""
+    account = (
+        LoanAccount.objects.select_for_update(of=("self",))
+        .select_related("terms", "loan_application", "member", "sanction_decision")
+        .filter(pk=loan_account_id)
+        .first()
+    )
+    if account is None:
+        return None
+    histories = list(
+        LoanStatusHistory.objects.select_for_update()
+        .filter(loan_account=account)
+        .order_by("changed_at", "loan_status_history_id")[:2]
+    )
+    audits = list(
+        AuditLog.objects.select_for_update()
+        .filter(
+            action=CREATED_ACTION,
+            entity_type="loan_account",
+            entity_id=account.pk,
+        )
+        .order_by("created_at", "audit_log_id")[:2]
+    )
+    workflows = list(
+        WorkflowEvent.objects.select_for_update()
+        .filter(
+            workflow_name="LoanAccountCreated",
+            entity_type="loan_account",
+            entity_id=account.pk,
+        )
+        .order_by("created_at", "workflow_event_id")[:2]
+    )
+    if len(histories) != 1 or len(audits) != 1 or len(workflows) != 1:
+        return None
+    history, audit, workflow = histories[0], audits[0], workflows[0]
+    evidence = audit.new_value_json or {}
+    expected = {
+        "loan_account_id": str(account.pk),
+        "loan_application_id": str(account.loan_application_id),
+        "member_id": str(account.member_id),
+        "sanction_decision_id": str(account.sanction_decision_id),
+        "sap_customer_code_id": (
+            str(account.sap_customer_code_id) if account.sap_customer_code_id else None
+        ),
+        "loan_terms_id": str(account.terms.pk),
+        "loan_account_status": LoanAccount.STATUS_SANCTIONED,
+        "replay": False,
+        "outcome": "created",
+    }
+    if (
+        account.loan_account_status != LoanAccount.STATUS_SANCTIONED
+        or account.loan_application.member_id != account.member_id
+        or account.sanction_decision.loan_application_id != account.loan_application_id
+        or account.terms.loan_account_id != account.pk
+        or history.from_status is not None
+        or history.to_status != LoanAccount.STATUS_SANCTIONED
+        or history.reason != "Created from exact current terminal sanction."
+        or history.changed_by_user_id != audit.actor_user_id
+        or history.changed_by_user_id != workflow.triggered_by_user_id
+        or history.loan_application_id_snapshot != account.loan_application_id
+        or history.member_id_snapshot != account.member_id
+        or history.sanction_decision_id_snapshot != account.sanction_decision_id
+        or history.sap_customer_code_id_snapshot != account.sap_customer_code_id
+        or history.loan_terms_id_snapshot != account.terms.pk
+        or history.replay_flag is not False
+        or history.outcome != "created"
+        or audit.old_value_json != {}
+        or set(evidence)
+        != set(expected) | {"actor_role_codes", "actor_team_codes", "request_id"}
+        or any(evidence.get(key) != value for key, value in expected.items())
+        or not isinstance(evidence.get("actor_role_codes"), list)
+        or not evidence.get("actor_role_codes")
+        or not isinstance(evidence.get("actor_team_codes"), list)
+        or evidence.get("request_id") is not None
+        and not isinstance(evidence.get("request_id"), str)
+        or workflow.from_state is not None
+        or workflow.to_state != LoanAccount.STATUS_SANCTIONED
+        or workflow.trigger_reason != "Created from exact current terminal sanction."
+    ):
+        return None
+    return DisbursementAccountDecision(
+        loan_account_id=account.pk,
+        loan_application_id=account.loan_application_id,
+        member_id=account.member_id,
+        sanction_decision_id=account.sanction_decision_id,
+        loan_terms_id=account.terms.pk,
+        creation_status_history_id=history.pk,
+        creation_audit_id=audit.pk,
+        creation_workflow_event_id=workflow.pk,
+        loan_account_status=account.loan_account_status,
+        sanctioned_amount=account.sanctioned_amount,
+        loan_amount=account.terms.loan_amount,
+        disbursed_amount=account.disbursed_amount,
+        principal_outstanding=account.principal_outstanding,
+        interest_outstanding=account.interest_outstanding,
+        charges_outstanding=account.charges_outstanding,
+        total_outstanding=account.total_outstanding,
+    )
 
 
 def resolve_readiness_account(*, actor, loan_account_id, cfc_scope_resolver=None):
@@ -445,11 +567,18 @@ def _locked_term_snapshots(application, case):
         else None
     )
     errors = {}
-    for field, actual, expected in (
-        ("borrower", borrower, frozen_borrower),
+    comparisons = (
+        (
+            "borrower",
+            {key: borrower.get(key) for key in frozen_borrower}
+            if isinstance(borrower, dict)
+            else borrower,
+            frozen_borrower,
+        ),
         ("nominee", nominee_facts, expected_nominee),
         ("shareholding", shareholding_facts, expected_shareholding),
-    ):
+    )
+    for field, actual, expected in comparisons:
         if expected is None or actual != expected:
             errors[field] = "Current facts do not match the frozen sanction review."
     if not purpose:
@@ -519,10 +648,12 @@ def _evidence(account, terms, actor, metadata):
 
 __all__ = [
     "CREATE_PERMISSION",
+    "DisbursementAccountDecision",
     "LoanAccountConflict",
     "RequestMetadata",
     "ReadinessAccountFacts",
     "create_loan_account",
     "resolve_readiness_account",
+    "resolve_disbursement_account",
     "serialize_loan_account",
 ]

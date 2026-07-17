@@ -1,25 +1,31 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_105635_architecture_review
+2026-07-17_122058_repair
 
 ## Current Status
-Architecture review independently examined 008M7, 009D4, 009E2, and 009F over
-`24bfc4f4...277f6c8f` in isolated Standards and Spec passes. Four focused retained tests pass. Four
-review-only probes fail as expected: active source-bank governance accepts null proof, a positive
-lesser amount is rejected, beneficiary-bank drift still permits CFC approval, and pending rows with
-pre-existing UTR/disbursed/register truth can be approved. No production code changed.
+009E3's independent coverage failure is repaired pending full orchestrator revalidation. The
+failure was test-only: a module-level specialized `TestCase` subclass caused Django to collect 13
+inherited checklist tests against fixture overrides intended only for the final-documentation
+setup. The helper now uses a non-test override mixin and constructs the concrete subclass inside a
+factory. The module collects 57 intended tests instead of 70 and passes twice; the original 13
+checklist tests and the 009E3 initiation/authorisation suites also pass. No production code changed
+in the repair.
 
-The review also found incomplete source-bank effective history and a missing production permission-
-catalogue entry, under-constrained authorisation/transfer tuples, duplicated CFC scope/action
-reconciliation, a private source-shape test, and a genuine-owner fixture that directly inserts the
-loan account. 008M7/009D4 otherwise substantively meet their current-tail/role/signature targets.
-Findings, source traceability, severity, probe output, and corrective ownership are retained in this
-run and `REVIEW_FINDINGS.md`.
+The retained 009E3 behavior remains complete. Payment initiation accepts positive
+18,2 lesser amounts within immutable terms/sanction and freezes the exact amount through CFC review.
+Initiation now reconciles and retains the public loan owner's creation history/audit/workflow ids;
+the genuine documentation/SAP/readiness/bank fixture no longer inserts raw loan rows.
+
+Source-bank activation is backed by a canonical unassigned Critical permission and database-required
+activation proof. Replacement retains the original proof, appends predecessor/deactivation version
+and audit facts, closes the effective range, and resolves only one complete coherent history. Twice-
+run PostgreSQL five-caller first/replacement races retain one winner and no orphan evidence. The
+normal run's focused backend, PostgreSQL, Django/migration, changed-scope Ruff, and frontend gates
+remain green; the repair's focused regression and Django/migration checks are green.
 
 ## Next Run
-Run 009E3 to restore lesser-amount behavior, real loan-owner proof, a grantable unassigned Critical
-source-bank permission, complete activation/deactivation history, and PostgreSQL race integrity.
-Then run 009F2 to restore current borrower/source-bank evidence, complete aggregate constraints,
-scope/action parity, and the full CFC role matrix. Only then run 009G, which now depends on 009F2 and
-must consume its exact typed current-evidence decision before UTR, funding, and activation.
+Run 009F2 to restore current borrower/source-bank evidence, complete aggregate constraints,
+scope/action parity, the full CFC role matrix, and reconciliation of 009E3's frozen loan-owner ids.
+Then run 009G, which depends on 009F2 and must consume that exact typed current-evidence decision
+before UTR, funding, and activation.

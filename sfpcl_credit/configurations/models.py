@@ -112,12 +112,34 @@ class SourceBankAccountGovernance(models.Model):
         related_name="activated_source_bank_accounts",
     )
     activated_at = models.DateTimeField(default=timezone.now, db_index=True)
+    predecessor = models.OneToOneField(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="successor",
+    )
     version_history = models.OneToOneField(
         VersionHistory,
         null=True,
         blank=True,
         on_delete=models.PROTECT,
         related_name="source_bank_governance",
+    )
+    deactivated_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    deactivation_version_history = models.OneToOneField(
+        VersionHistory,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="source_bank_governance_deactivation",
+    )
+    deactivation_audit = models.OneToOneField(
+        "identity.AuditLog",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="source_bank_governance_deactivation",
     )
     activation_audit = models.OneToOneField(
         "identity.AuditLog",
@@ -138,5 +160,33 @@ class SourceBankAccountGovernance(models.Model):
                 fields=["status"],
                 condition=models.Q(status="active"),
                 name="uniq_active_source_bank_governance",
-            )
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        status="active",
+                        version_history__isnull=False,
+                        activation_audit__isnull=False,
+                        deactivated_at__isnull=True,
+                        deactivation_version_history__isnull=True,
+                        deactivation_audit__isnull=True,
+                    )
+                    | models.Q(
+                        status="inactive",
+                        version_history__isnull=False,
+                        activation_audit__isnull=False,
+                        deactivated_at__isnull=False,
+                        deactivation_version_history__isnull=False,
+                        deactivation_audit__isnull=False,
+                    )
+                ),
+                name="source_bank_governance_complete_evidence",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(deactivated_at__isnull=True)
+                    | models.Q(deactivated_at__gte=models.F("activated_at"))
+                ),
+                name="source_bank_governance_time_order",
+            ),
         ]

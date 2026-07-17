@@ -22,7 +22,10 @@ def has_cfc_scope(*, actor_id, loan_account_id):
     evidence = row.initiation_audit.new_value_json or {}
     request_id = evidence.get("request_id")
     comment_digest = evidence.get("final_verification_comment_digest")
-    trace = f"request_id={request_id};verification_digest={comment_digest}"
+    trace = (
+        f"request_id={request_id};verification_digest={comment_digest};"
+        f"amount={row.disbursement_amount:.2f}"
+    )
     expected_comment_digest = hashlib.sha256(
         row.final_verification_comments.encode()
     ).hexdigest()

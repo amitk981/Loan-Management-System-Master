@@ -1,5 +1,36 @@
 # Ralph Progress Log
 
+## 2026-07-17 12:20:58 - 2026-07-17_122058_repair
+
+- Agent tool used: codex with the diagnosing-bugs feedback loop.
+- Slice repaired: 009E3-disbursement-amount-and-source-bank-governance-closure.
+- Summary: Removed accidental Django discovery of a specialized checklist `TestCase` fixture by
+  keeping its overrides in a non-test mixin and constructing the concrete fixture inside a factory.
+  No production code or business contract changed.
+- Tests run: deterministic red module twice; final-documentation module green twice (57 intended
+  tests each); 13 original checklist, 18 initiation, and 12 authorisation tests; Django check,
+  migration sync, Python compile, and diff/debug checks.
+- Evidence saved: `.ralph/runs/2026-07-17_122058_repair/evidence/terminal-logs/`.
+- Result: Repair complete pending full independent orchestrator revalidation and commit.
+- Risk level: High inherited slice risk; low repair delta confined to test collection.
+- Next action: Revalidate 009E3 fully, then run 009F2 before 009G.
+
+## 2026-07-17 12:01:26 - 2026-07-17_112800_normal_run
+
+- Agent tool used: codex with TDD.
+- Slice completed: 009E3-disbursement-amount-and-source-bank-governance-closure.
+- Summary: Restored positive lesser-amount initiation/CFC review, public loan-lifecycle evidence,
+  canonical unassigned Critical source-bank authority, database-required activation proof, complete
+  predecessor/deactivation history, and race-safe current resolution.
+- Tests run: retained RED/GREEN probes; 44 disbursement/loan tests; 49 documentation-owner tests;
+  16 catalogue tests; twice-run PostgreSQL five-caller source-bank and initiation races; Django
+  check, migration apply/sync, changed-scope Ruff; frontend lint/typecheck/build and 327 tests.
+- Evidence saved: `.ralph/runs/2026-07-17_112800_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High; mitigated by database constraints, immutable evidence, atomic savepoints,
+  fail-closed full-history resolution, exact replay, public-owner tests, and PostgreSQL races.
+- Next action: Run 009F2, then 009G.
+
 ## 2026-07-17 - 2026-07-17_105635_architecture_review
 
 - Agent tool used: codex with isolated Standards and Spec review passes.
@@ -8319,6 +8350,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_105635_architecture_review/.ralph/runs/2026-07-17_105635_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_105635_architecture_review/.ralph/runs/2026-07-17_105635_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-17 12:43:55 - 2026-07-17_122058_repair
+- Agent tool used: codex
+- Slice attempted: 009E3-disbursement-amount-and-source-bank-governance-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_112800_normal_run/.ralph/runs/2026-07-17_122058_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_112800_normal_run/.ralph/runs/2026-07-17_122058_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

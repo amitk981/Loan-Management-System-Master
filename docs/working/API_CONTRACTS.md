@@ -1,6 +1,6 @@
 # API Contracts
 
-## Payment initiation (009E/009E2)
+## Payment initiation (009E/009E2/009E3)
 
 `POST /api/v1/loan-accounts/{loan_account_id}/disbursements/initiate/` implements source §31.2.
 It requires an `Idempotency-Key` header and a JSON object containing exactly:
@@ -18,12 +18,15 @@ Only an active persisted `senior_manager_finance` actor with the Critical
 `finance.disbursement.initiate` grant and newest-SAP-assignee loan scope may act. The owner calls
 only `DisbursementReadinessModule.evaluate_for_initiation(actor, loan_account_id)` for one typed
 composite payment-gate decision; the ordinary GET projection never exposes its evidence identities.
-The decision freezes the exact canonical 23-check digest plus SAP, borrower-bank, and governed
-source-bank account/governance/version/audit identities. A mutable row merely labelled SFPCL/RBL/
+The decision freezes the exact canonical 23-check digest plus SAP, borrower-bank, governed
+source-bank account/governance/version/audit identities, and the loan owner's exact creation status-
+history/audit/workflow identities. A mutable row merely labelled SFPCL/RBL/
 verified/active never passes. Source-bank activation requires the unseeded Critical
 `config.source_bank_account.activate` grant, a reason and request id, and creates one singular
-versioned/audited current decision. Replacement retires the previous record while retaining its
-historical evidence; the mandatory audit action is `config.changed`.
+versioned/audited current decision. Replacement appends an exact predecessor link, deactivation
+version/audit, and closed effective range while retaining the original activation proof; malformed,
+duplicate, cross-linked, or incomplete history fails closed. The mandatory audit action is
+`config.changed` and no production role receives the activation grant by default.
 
 Success returns only:
 
@@ -36,7 +39,9 @@ Success returns only:
 }
 ```
 
-Creation atomically retains the manual-payment row, safe initiation audit/workflow, and one urgent
+The amount must be positive, fit numeric 18,2, and be no greater than both immutable loan terms and
+sanction; source-defined positive lesser amounts are valid and the exact accepted amount is frozen
+for CFC review. Creation atomically retains the manual-payment row, safe initiation audit/workflow, and one urgent
 role-scoped CFC task. It does not authorise or execute the transfer, create a UTR/advice, fund or
 activate the account, update a register, or communicate with the borrower. Exact key/payload/current
 request replay returns `{ "idempotency_replayed": true, "original_response": <four-field success> }`

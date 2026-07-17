@@ -37,7 +37,9 @@ database-valid pending/terminal aggregate with no pre-existing transfer-success 
    evidence conflicts. Do not recompose legal, security, SAP, approval, or checklist readiness.
 2. Consume 009E3's complete current governed source-bank lifecycle, including its activation and
    any predecessor/deactivation facts, under locks. The authorisation decision must bind the exact
-   borrower decision and source-governance identities already frozen by initiation.
+   borrower decision and source-governance identities already frozen by initiation. Also reconcile
+   the three frozen loan-owner creation identities (status history, audit, workflow) so a later
+   mutation invalidates CFC scope and mutation through the same typed decision.
 3. Before either approval or rejection, require UTR/reference, disbursed time, transfer evidence,
    advice, register flag, account funding/activation, and other 009G+ truth to remain absent/zero.
    A forged or stale pending row carrying any later-state truth conflicts without changing it.
@@ -102,4 +104,3 @@ High
 - [ ] Handoff updated
 - [ ] State updated
 - [ ] Commit delegated to the orchestrator only after passing configured gates
-

@@ -1,0 +1,26 @@
+All commands used /Users/amitkallapa/LMS/.ralph/venv/bin/python from sfpcl_credit.
+
+manage.py test sfpcl_credit.tests.test_document_checklist_api.DocumentChecklistApiTests --verbosity 1
+Exit code: 0; Found 13; Ran 13; OK.
+
+manage.py test sfpcl_credit.tests.test_disbursement_initiation_api --verbosity 1
+Exit code: 0; Found 18; Ran 18; OK (skipped=4 declared PostgreSQL tests).
+
+manage.py test sfpcl_credit.tests.test_disbursement_authorisation_api --verbosity 1
+Exit code: 0; Found 12; Ran 12; OK (skipped=2 declared PostgreSQL tests).
+
+manage.py check
+Exit code: 0; System check identified no issues (0 silenced).
+
+manage.py makemigrations --check --dry-run
+Exit code: 0; No changes detected.
+
+python -m py_compile tests/test_final_documentation_approval_api.py
+Exit code: 0.
+
+git diff --check and debug-marker search
+Exit code: 0; no whitespace errors or [DEBUG-*] markers.
+
+python -m ruff check tests/test_final_documentation_approval_api.py
+Not available: /Users/amitkallapa/LMS/.ralph/venv/bin/python3.11: No module named ruff.
+No install was attempted because the repair sandbox must not install dependencies.

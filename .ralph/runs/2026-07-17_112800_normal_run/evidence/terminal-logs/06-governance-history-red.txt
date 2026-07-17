@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_source_bank_replacement_retains_exact_closed_history_and_fails_closed (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_replacement_retains_exact_closed_history_and_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_112800_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 655, in test_source_bank_replacement_retains_exact_closed_history_and_fails_closed
+    self.assertIsNone(resolve_source_bank_account())
+AssertionError: SourceBankAccountDecision(source_bank_account_id=UUID('3f5c46d4-a0c8-4968-9712-ae769f2e21ba'), active=True, bank_name='RBL Bank', governance_id=UUID('39521127-6804-4aa1-8fab-ba48718565cd'), version_history_id=UUID('3da4b559-fee6-4bef-83b1-312bba963fae'), audit_log_id=UUID('0e1bf35a-e921-4dea-abb5-d22b6367329b'), request_id='req-source-bank-history-2', source_facts_digest='1a2662bb0358118dcd4bba4bcd7e958d9c309ede713a5b3366c9e62169400f5c') is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.049s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

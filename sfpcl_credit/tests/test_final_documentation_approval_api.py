@@ -69,6 +69,107 @@ from sfpcl_credit.tests import test_loan_document_generation_api as generation_f
 from sfpcl_credit.workflows.models import WorkflowEvent
 
 
+class _LoanReadyDocumentChecklistFixtureOverrides:
+    """Checklist fixture overrides whose terminal sanction satisfies the loan owner."""
+
+    def _application_case(
+        self, suffix, *, case_status, coherent, holding_mode, subsidiary
+    ):
+        application, case = super()._application_case(
+            suffix,
+            case_status=case_status,
+            coherent=coherent,
+            holding_mode=holding_mode,
+            subsidiary=subsidiary,
+        )
+        nominee = Nominee.objects.create(
+            member=application.member,
+            loan_application_id=application.pk,
+            nominee_name="Checklist Nominee",
+            relationship_to_borrower="nominee",
+            gender="female",
+            pan_encrypted="protected-nominee-pan",
+            pan_hash=f"{suffix}-nominee-pan",
+            aadhaar_encrypted="protected-nominee-aadhaar",
+            aadhaar_hash=f"{suffix}-nominee-aadhaar",
+            kyc_status="verified",
+        )
+        application.nominee = nominee
+        application.loan_type_requested = "short_term"
+        application.save(update_fields=["nominee", "loan_type_requested"])
+        shareholding = Shareholding.objects.create(
+            member=application.member,
+            folio_number=f"{suffix}-BORROWER-FOLIO",
+            number_of_shares=100,
+            holding_mode=holding_mode or "physical",
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        case.appraisal_facts_json = {
+            **(case.appraisal_facts_json or {}),
+            "borrower": {
+                **((case.appraisal_facts_json or {}).get("borrower") or {}),
+                "member_id": str(application.member_id),
+                "name": application.member.legal_name,
+                "member_type": application.member.member_type,
+                "folio_number": application.member.folio_number,
+                "loan_type": application.loan_type_requested,
+            },
+            "nominee": {
+                "nominee_id": str(nominee.pk),
+                "name": nominee.nominee_name,
+                "relationship": nominee.relationship_to_borrower,
+            },
+            "shareholding": {
+                "shareholding_id": str(shareholding.pk),
+                "folio_number": shareholding.folio_number,
+                "number_of_shares": shareholding.number_of_shares,
+                "holding_mode": shareholding.holding_mode,
+            },
+            "purpose": {
+                **((case.appraisal_facts_json or {}).get("purpose") or {}),
+                "category": application.purpose_category,
+                "description": application.declared_purpose,
+            },
+            "dispute_resolution": "SFPCL dispute policy applies.",
+        }
+        case.save(update_fields=["appraisal_facts_json"])
+        checklist_fixture.refresh_approval_case_projection(case)
+        return application, case
+
+    @staticmethod
+    def _decision(application, case):
+        decision = checklist_fixture.DocumentChecklistApiTests._decision(
+            application, case
+        )
+        decision.interest_rate_value = "9.0000"
+        decision.repayment_date = timezone.localdate()
+        decision.penal_interest_rate = "0.0000"
+        decision.charges_json = {"processing_fee": "0.00"}
+        decision.save(
+            update_fields=[
+                "interest_rate_value",
+                "repayment_date",
+                "penal_interest_rate",
+                "charges_json",
+            ]
+        )
+        return decision
+
+
+def _loan_ready_document_checklist_fixture():
+    class LoanReadyDocumentChecklistFixture(
+        _LoanReadyDocumentChecklistFixtureOverrides,
+        checklist_fixture.DocumentChecklistApiTests,
+    ):
+        pass
+
+    return LoanReadyDocumentChecklistFixture(
+        methodName="test_approved_sanction_creates_ordered_applicability_once_with_evidence"
+    )
+
+
 class FinalDocumentationApprovalApiTests(TestCase):
     def setUp(self):
         self.storage_directory = tempfile.TemporaryDirectory(prefix="sfpcl-final-doc-tests-")
@@ -78,9 +179,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
         )
         storage_override.enable()
         self.addCleanup(storage_override.disable)
-        self.fixture = checklist_fixture.DocumentChecklistApiTests(
-            methodName="test_approved_sanction_creates_ordered_applicability_once_with_evidence"
-        )
+        self.fixture = _loan_ready_document_checklist_fixture()
         self.fixture.setUp()
         self.client = self.fixture.client
         self.application = self.fixture.application
@@ -141,27 +240,9 @@ class FinalDocumentationApprovalApiTests(TestCase):
             application_id=self.application.pk,
             source_reason="008k_public_fixture",
         )
-        self.nominee = Nominee.objects.create(
-            member=self.application.member,
-            loan_application_id=self.application.pk,
-            nominee_name="Checklist Nominee",
-            gender="female",
-            pan_encrypted="protected-nominee-pan",
-            pan_hash="008k3-nominee-pan",
-            aadhaar_encrypted="protected-nominee-aadhaar",
-            aadhaar_hash="008k3-nominee-aadhaar",
-            kyc_status="verified",
-        )
-        self.application.nominee = self.nominee
-        self.application.save(update_fields=["nominee"])
-        borrower_holding = Shareholding.objects.create(
-            member=self.application.member,
-            folio_number="008K3-BORROWER-FOLIO",
-            number_of_shares=100,
-            holding_mode="physical",
-            pledged_share_count=0,
-            available_share_count=100,
-            status="active",
+        self.nominee = self.application.nominee
+        borrower_holding = Shareholding.objects.get(
+            member=self.application.member, status="active"
         )
         witness_member = Member.objects.create(
             member_number="008K3-WITNESS",
@@ -3215,7 +3296,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
             activate_source_bank_account,
         )
         from sfpcl_credit.disbursements.models import Disbursement
-        from sfpcl_credit.loans.models import LoanAccount, LoanTerms
+        from sfpcl_credit.loans.models import LoanAccount
 
         self._complete_readiness_documentation()
         self._grant(
@@ -3267,35 +3348,24 @@ class FinalDocumentationApprovalApiTests(TestCase):
             **self.fixture._auth(self.finance),
         )
         self.assertEqual(completed.status_code, 200, completed.content)
-        account = LoanAccount.objects.create(
-            loan_application=self.application,
-            loan_account_number="LN-REAL-OWNER-001",
-            loan_account_number_normalized="LN-REAL-OWNER-001",
-            member=member,
-            sap_customer_code_id=completed.json()["data"]["sap_customer_code_id"],
-            sanction_decision=self.case.sanction_decision,
-            sanctioned_amount=self.case.sanction_decision.sanctioned_amount,
-            loan_type="short_term",
-            interest_rate_type="floating",
-            current_interest_rate="9.0000",
-            repayment_date=timezone.localdate(),
+        self._grant(self.credit, "finance.loan_account.create")
+        created_account = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/create-loan-account/",
+            {
+                "sanction_decision_id": str(self.case.sanction_decision.pk),
+                "loan_account_number": "LN-REAL-OWNER-001",
+            },
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="readiness-real-owner-loan-create",
+            **self.fixture._auth(self.credit),
         )
-        LoanTerms.objects.create(
-            loan_account=account,
-            borrower_details_snapshot_json={},
-            nominee_details_snapshot_json={},
-            shareholding_snapshot_json={},
-            facility_type="short_term",
-            loan_amount=account.sanctioned_amount,
-            purpose="Crop production",
-            rate_of_interest="9.0000",
-            interest_rate_type="floating",
-            interest_tenure="12 months",
-            repayment_date=timezone.localdate(),
-            penalty_interest_rate="0.0000",
-            other_charges_fees_json={},
-            security_details_json={},
-            dispute_resolution_text="Governed clause.",
+        self.assertEqual(created_account.status_code, 200, created_account.content)
+        account = LoanAccount.objects.get(
+            pk=created_account.json()["data"]["loan_account_id"]
+        )
+        self.assertEqual(
+            str(account.sap_customer_code_id),
+            completed.json()["data"]["sap_customer_code_id"],
         )
         auth = self.fixture._auth(self.finance)
         with CaptureQueriesContext(connection) as queries:
@@ -3492,6 +3562,7 @@ class FinalDocumentationApprovalApiTests(TestCase):
                 before,
             )
 
+        governed_source = SourceBankAccountGovernance.objects.get(status="active")
         owner_mutations = (
             (Member, self.application.member_id, "kyc_status", "pending", "verified"),
             (self.case.sanction_decision.__class__, self.case.sanction_decision.pk,
@@ -3500,9 +3571,13 @@ class FinalDocumentationApprovalApiTests(TestCase):
             (SapCustomerCode, account.sap_customer_code_id, "status", "inactive", "active"),
             (BankAccount, fixture["borrower_bank_account_id"],
              "status", "inactive", "active"),
-            (SourceBankAccountGovernance,
-             SourceBankAccountGovernance.objects.get(status="active").pk,
-             "status", "inactive", "active"),
+            (
+                SourceBankAccountGovernance,
+                governed_source.pk,
+                "source_facts_digest",
+                "0" * 64,
+                governed_source.source_facts_digest,
+            ),
             (PowerOfAttorney,
              PowerOfAttorney.objects.get(security_package__loan_application=self.application).pk,
              "status", "draft", "active"),

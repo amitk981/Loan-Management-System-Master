@@ -1,0 +1,17 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_final_documentation_approval_api --verbosity 1
+Working directory: sfpcl_credit
+Exit code: 1
+
+Creating test database for alias 'default'...
+Found 70 test(s).
+System check identified no issues (0 silenced).
+FAIL: test_non_approved_or_incoherent_cases_create_nothing (sfpcl_credit.tests.test_final_documentation_approval_api.LoanReadyDocumentChecklistFixture) (status='approved', coherent=False)
+AssertionError: InvalidChecklistState not raised
+FAIL: test_non_approved_or_incoherent_cases_create_nothing (sfpcl_credit.tests.test_final_documentation_approval_api.LoanReadyDocumentChecklistFixture)
+AssertionError: 1 != 0
+FAIL: test_share_mode_variants_and_missing_or_conflicting_facts_do_not_guess (sfpcl_credit.tests.test_final_documentation_approval_api.LoanReadyDocumentChecklistFixture)
+AssertionError: True is not false
+Ran 70 tests in 17.236s
+FAILED (failures=3, skipped=8)
+
+The focused 13-test derived class reproduced the identical three failures twice before the repair.

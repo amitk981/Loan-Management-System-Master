@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_source_bank_activation_permission_and_proof_are_database_governed (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_activation_permission_and_proof_are_database_governed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_112800_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 532, in test_source_bank_activation_permission_and_proof_are_database_governed
+    permission = Permission.objects.get(
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.identity.models.Permission.DoesNotExist: Permission matching query does not exist.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.130s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -1,5 +1,4 @@
 import hashlib
-import inspect
 import json
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
@@ -179,7 +178,8 @@ class DisbursementInitiationApiTests(TestCase):
         self.assertEqual(workflow.triggered_by_user_id, self.actor.pk)
         trace = (
             f"request_id={audit.new_value_json['request_id']};"
-            f"verification_digest={comment_digest}"
+            f"verification_digest={comment_digest};"
+            "amount=400000.00"
         )
         self.assertEqual(workflow.trigger_reason, trace)
         self.assertIn(trace, task.message)
@@ -195,6 +195,21 @@ class DisbursementInitiationApiTests(TestCase):
             actor=AuditLog.objects.get(pk=row.initiation_audit_id).actor_user,
             loan_account_id=row.loan_account_id,
         )
+
+    def test_positive_lesser_amount_is_frozen_for_cfc_review(self):
+        from sfpcl_credit.disbursements.models import Disbursement
+
+        response = self._post(changes={"disbursement_amount": "399999.99"})
+
+        self.assertEqual(response.status_code, 200, response.content)
+        row = Disbursement.objects.get()
+        self.assertEqual(str(row.disbursement_amount), "399999.99")
+        self.assertEqual(
+            row.initiation_audit.new_value_json["disbursement_amount"],
+            "399999.99",
+        )
+        self.assertIn("amount=399999.99", row.initiation_workflow_event.trigger_reason)
+        self.assertIn("399999.99", row.cfc_task.message)
 
     def test_supplied_request_id_is_retained_in_exact_initiation_ledger(self):
         from sfpcl_credit.disbursements.models import Disbursement
@@ -254,6 +269,11 @@ class DisbursementInitiationApiTests(TestCase):
         changed = self._post(comments="Changed verification.")
         self.assertEqual(changed.status_code, 409, changed.content)
         self.assertEqual(changed.json()["error"]["code"], "CONFLICT")
+        changed_amount = self._post(
+            changes={"disbursement_amount": "399999.99"}
+        )
+        self.assertEqual(changed_amount.status_code, 409, changed_amount.content)
+        self.assertEqual(changed_amount.json()["error"]["code"], "CONFLICT")
         changed_evidence = self._readiness()
         changed_evidence["_evidence"]["sap_profile_request_id"] = str(uuid4())
         stale_replay = self._post(readiness=changed_evidence)
@@ -399,6 +419,25 @@ class DisbursementInitiationApiTests(TestCase):
         self.assertEqual(response.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
         self.assertEqual(Disbursement.objects.count(), 0)
 
+    def test_changed_public_loan_creation_evidence_blocks_initiation_without_writes(self):
+        from sfpcl_credit.disbursements.models import Disbursement
+        from sfpcl_credit.identity.models import AuditLog
+
+        creation = AuditLog.objects.get(
+            action="finance.loan_account.created", entity_id=self.account_id
+        )
+        changed = {
+            **creation.new_value_json,
+            "loan_terms_id": str(uuid4()),
+        }
+        AuditLog.objects.filter(pk=creation.pk).update(new_value_json=changed)
+
+        response = self._post()
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(Disbursement.objects.count(), 0)
+
     def test_source_bank_requires_explicit_governed_activation_and_current_evidence(self):
         from sfpcl_credit.configurations.models import VersionHistory
         from sfpcl_credit.configurations.modules.source_bank_governance import (
@@ -505,25 +544,168 @@ class DisbursementInitiationApiTests(TestCase):
         BankAccount.objects.filter(pk=replacement_bank.pk).update(status="inactive")
         self.assertIsNone(resolve_source_bank_account())
 
+    def test_source_bank_activation_permission_and_proof_are_database_governed(self):
+        from django.db import IntegrityError, transaction
+
+        from sfpcl_credit.configurations.models import SourceBankAccountGovernance
+        from sfpcl_credit.identity.catalogue import seed_catalogue
+        from sfpcl_credit.identity.models import Permission, RolePermission
+
+        seed_catalogue()
+        permission = Permission.objects.get(
+            permission_code="config.source_bank_account.activate"
+        )
+        self.assertEqual(permission.risk_level, Permission.RISK_CRITICAL)
+        self.assertFalse(
+            RolePermission.objects.filter(permission=permission).exists()
+        )
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            SourceBankAccountGovernance.objects.create(
+                bank_account_id=self.source_bank_id,
+                source_facts_digest="0" * 64,
+                reason_digest="1" * 64,
+                request_id="req-source-bank-incomplete",
+                activated_by_user=self.actor,
+            )
+        self.assertFalse(
+            SourceBankAccountGovernance.objects.filter(
+                request_id="req-source-bank-incomplete"
+            ).exists()
+        )
+
+    def test_source_bank_replacement_retains_exact_closed_history_and_fails_closed(self):
+        from sfpcl_credit.configurations.models import (
+            SourceBankAccountGovernance,
+            VersionHistory,
+        )
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            activate_source_bank_account,
+            resolve_source_bank_account,
+        )
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.members.models import BankAccount
+
+        self.fixture._grant(self.actor, "config.source_bank_account.activate")
+        first = activate_source_bank_account(
+            actor=self.actor,
+            bank_account_id=self.source_bank_id,
+            reason="Treasury-approved initial settlement account.",
+            request_id="req-source-bank-history-1",
+        )
+        replacement_bank = BankAccount.objects.create(
+            owner_party_type="sfpcl",
+            owner_party_id=uuid4(),
+            account_holder_name="SFPCL replacement",
+            account_number_encrypted="replacement-history-secret",
+            account_number_hash="replacement-history-hash",
+            account_number_last4="3333",
+            ifsc="RBLB0000003",
+            bank_name="RBL Bank",
+            verification_status="verified",
+            status="active",
+        )
+        replacement = activate_source_bank_account(
+            actor=self.actor,
+            bank_account_id=replacement_bank.pk,
+            reason="Treasury-approved replacement settlement account.",
+            request_id="req-source-bank-history-2",
+        )
+
+        old = SourceBankAccountGovernance.objects.select_related(
+            "version_history",
+            "activation_audit",
+            "deactivation_version_history",
+            "deactivation_audit",
+        ).get(pk=first.governance_id)
+        new = SourceBankAccountGovernance.objects.select_related(
+            "version_history", "activation_audit", "predecessor"
+        ).get(pk=replacement.governance_id)
+        self.assertEqual(new.predecessor_id, old.pk)
+        self.assertEqual(old.status, SourceBankAccountGovernance.STATUS_INACTIVE)
+        self.assertEqual(old.deactivated_at, new.activated_at)
+        self.assertEqual(old.version_history.effective_to, new.activated_at.date())
+        self.assertEqual(old.deactivation_version_history.version_number, "2")
+        self.assertEqual(
+            old.deactivation_version_history.new_value_json[
+                "successor_governance_id"
+            ],
+            str(new.pk),
+        )
+        self.assertEqual(old.deactivation_audit.action, "config.changed")
+        self.assertEqual(
+            new.version_history.old_value_json,
+            old.deactivation_version_history.new_value_json,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="config.changed", entity_type="source_bank_account_governance"
+            ).count(),
+            3,
+        )
+        self.assertEqual(resolve_source_bank_account().governance_id, new.pk)
+
+        mutation_cases = (
+            (VersionHistory, old.version_history_id, "effective_to", None),
+            (
+                VersionHistory,
+                old.deactivation_version_history_id,
+                "approval_reference",
+                "cross-linked-request",
+            ),
+            (
+                AuditLog,
+                old.deactivation_audit_id,
+                "new_value_json",
+                {"changed": True},
+            ),
+            (SourceBankAccountGovernance, new.pk, "predecessor_id", None),
+        )
+        for model, pk, field, changed in mutation_cases:
+            with self.subTest(field=field):
+                original = model.objects.values_list(field, flat=True).get(pk=pk)
+                model.objects.filter(pk=pk).update(**{field: changed})
+                self.assertIsNone(resolve_source_bank_account())
+                model.objects.filter(pk=pk).update(**{field: original})
+
+        VersionHistory.objects.create(
+            versioned_entity_type="source_bank_account_governance",
+            versioned_entity_id=new.pk,
+            version_number="duplicate",
+            change_summary="Duplicate evidence must fail closed.",
+            effective_from=new.activated_at.date(),
+        )
+        self.assertIsNone(resolve_source_bank_account())
+
     def test_single_public_workflow_consumes_typed_readiness_without_private_shape(self):
-        from sfpcl_credit.disbursements.modules import disbursement_initiation
+        from sfpcl_credit.disbursements.models import Disbursement
         from sfpcl_credit.disbursements.modules.disbursement_readiness import (
-            InitiationReadinessDecision,
+            DisbursementReadinessModule,
         )
         from sfpcl_credit.disbursements.modules.disbursement_workflow import (
+            DisbursementReadinessStale,
             DisbursementWorkflow,
         )
 
-        self.assertTrue(callable(DisbursementWorkflow.initiate))
-        self.assertTrue(
-            callable(DisbursementWorkflow.readiness.evaluate_for_initiation)
-        )
-        self.assertIn("check_digest", InitiationReadinessDecision.__dataclass_fields__)
-        implementation_source = inspect.getsource(disbursement_initiation)
-        self.assertNotIn("CHECK_SPECS", implementation_source)
-        self.assertNotIn('readiness.get("_evidence")', implementation_source)
-        self.assertNotIn("initiate", disbursement_initiation.__all__)
-        self.assertFalse(hasattr(disbursement_initiation, "initiate"))
+        payload = {
+            "disbursement_amount": "400000.00",
+            "borrower_bank_account_id": str(self.borrower_bank_id),
+            "source_bank_account_id": str(self.source_bank_id),
+            "final_verification_comments": "Public typed boundary check.",
+        }
+        with patch.object(
+            DisbursementReadinessModule,
+            "evaluate_for_initiation",
+            return_value={"ready_for_disbursement": True},
+        ):
+            with self.assertRaises(DisbursementReadinessStale):
+                DisbursementWorkflow.initiate(
+                    actor=self.actor,
+                    loan_account_id=self.account_id,
+                    payload=payload,
+                    idempotency_key="typed-public-boundary",
+                )
+        self.assertEqual(Disbursement.objects.count(), 0)
 
     def test_cfc_scope_reconciles_every_frozen_initiation_link(self):
         from sfpcl_credit.disbursements.models import Disbursement
@@ -829,4 +1011,128 @@ class DisbursementInitiationRaceTests(TransactionTestCase):
                 notification_type="disbursement_authorisation"
             ).count(),
             1,
+        )
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL five-race acceptance")
+class SourceBankGovernanceRaceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = DisbursementInitiationApiTests(
+            "test_source_bank_requires_explicit_governed_activation_and_current_evidence"
+        )
+        fixture.setUp()
+        fixture.fixture._grant(
+            fixture.actor, "config.source_bank_account.activate"
+        )
+        self.fixture = fixture
+        self.actor_id = fixture.actor.pk
+
+    def test_five_first_and_replacement_activations_have_one_winner_run_one(self):
+        self._run_first_and_replacement()
+
+    def test_five_first_and_replacement_activations_have_one_winner_run_two(self):
+        self._run_first_and_replacement()
+
+    def _run_first_and_replacement(self):
+        from sfpcl_credit.configurations.models import (
+            SourceBankAccountGovernance,
+            VersionHistory,
+        )
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            SourceBankGovernanceConflict,
+            activate_source_bank_account,
+            resolve_source_bank_account,
+        )
+        from sfpcl_credit.identity.models import AuditLog, User
+        from sfpcl_credit.members.models import BankAccount
+
+        def banks(prefix):
+            rows = []
+            for index in range(5):
+                rows.append(
+                    BankAccount.objects.create(
+                        owner_party_type="sfpcl",
+                        owner_party_id=uuid4(),
+                        account_holder_name=f"SFPCL {prefix} {index}",
+                        account_number_encrypted=f"protected-{prefix}-{index}",
+                        account_number_hash=f"hash-{prefix}-{index}",
+                        account_number_last4=f"{index:04d}",
+                        ifsc=f"RBLB{prefix[:2].upper()}{index:05d}",
+                        bank_name="RBL Bank",
+                        verification_status="verified",
+                        status="active",
+                    )
+                )
+            return rows
+
+        def race(rows, prefix):
+            gate = Barrier(5)
+
+            def contender(index):
+                close_old_connections()
+                try:
+                    actor = User.objects.get(pk=self.actor_id)
+                    gate.wait(timeout=15)
+                    try:
+                        decision = activate_source_bank_account(
+                            actor=actor,
+                            bank_account_id=rows[index].pk,
+                            reason=f"Governed {prefix} contender {index}.",
+                            request_id=f"req-{prefix}-{index}",
+                        )
+                        return ("won", str(decision.governance_id))
+                    except SourceBankGovernanceConflict:
+                        return ("conflict", None)
+                finally:
+                    connections["default"].close()
+
+            with ThreadPoolExecutor(max_workers=5) as pool:
+                results = list(pool.map(contender, range(5)))
+            self.assertEqual(
+                len([result for result in results if result[0] == "won"]),
+                1,
+                results,
+            )
+            self.assertEqual(
+                len([result for result in results if result[0] == "conflict"]),
+                4,
+                results,
+            )
+
+        race(banks("first"), "first")
+        first = resolve_source_bank_account()
+        self.assertIsNotNone(first)
+        self.assertEqual(SourceBankAccountGovernance.objects.count(), 1)
+        self.assertEqual(
+            VersionHistory.objects.filter(
+                versioned_entity_type="source_bank_account_governance"
+            ).count(),
+            1,
+        )
+
+        race(banks("replacement"), "replacement")
+        current = resolve_source_bank_account()
+        self.assertIsNotNone(current)
+        self.assertNotEqual(current.governance_id, first.governance_id)
+        self.assertEqual(SourceBankAccountGovernance.objects.count(), 2)
+        self.assertEqual(
+            SourceBankAccountGovernance.objects.filter(status="active").count(), 1
+        )
+        self.assertEqual(
+            SourceBankAccountGovernance.objects.filter(status="inactive").count(), 1
+        )
+        self.assertEqual(
+            VersionHistory.objects.filter(
+                versioned_entity_type="source_bank_account_governance"
+            ).count(),
+            3,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="config.changed",
+                entity_type="source_bank_account_governance",
+            ).count(),
+            3,
         )

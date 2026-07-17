@@ -22,6 +22,9 @@ from sfpcl_credit.domain_errors import DomainObjectAccessDenied, DomainPermissio
 from sfpcl_credit.identity.models import AuditLog, Permission, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.models import LoanAccount
+from sfpcl_credit.loans.modules.loan_account_lifecycle import (
+    resolve_disbursement_account,
+)
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -63,14 +66,23 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
         readiness_digest, readiness_evidence = _require_current_readiness(
             readiness, loan_account_id
         )
-        account = (
-            LoanAccount.objects.select_for_update(of=("self",))
-            .select_related("terms", "loan_application", "member", "sanction_decision")
-            .filter(pk=loan_account_id)
-            .first()
-        )
+        account = resolve_disbursement_account(loan_account_id=loan_account_id)
         if account is None:
-            raise DomainObjectAccessDenied(None)
+            if not LoanAccount.objects.filter(pk=loan_account_id).exists():
+                raise DomainObjectAccessDenied(None)
+            raise DisbursementReadinessStale(
+                "The loan account creation evidence is no longer current."
+            )
+        readiness_evidence = {
+            **readiness_evidence,
+            "loan_creation_status_history_id": str(
+                account.creation_status_history_id
+            ),
+            "loan_creation_audit_id": str(account.creation_audit_id),
+            "loan_creation_workflow_event_id": str(
+                account.creation_workflow_event_id
+            ),
+        }
         _require_unfunded_account(account, cleaned["disbursement_amount"])
         bank = document_checklist_facts.resolve_blank_cheque_bank_fact(
             application_id=account.loan_application_id
@@ -84,7 +96,7 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             readiness_evidence=readiness_evidence,
         )
         if Disbursement.objects.select_for_update().filter(
-            loan_account=account,
+            loan_account_id=account.loan_account_id,
             authorisation_status__in=("pending", "approved"),
             bank_transfer_status__in=("pending", "processing"),
         ).exists():
@@ -105,11 +117,12 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
         ).hexdigest()
         trace = (
             f"request_id={request_id};"
-            f"verification_digest={comment_digest}"
+            f"verification_digest={comment_digest};"
+            f"amount={cleaned['disbursement_amount']:.2f}"
         )
         safe_evidence = {
             "disbursement_id": str(disbursement_id),
-            "loan_account_id": str(account.pk),
+            "loan_account_id": str(account.loan_account_id),
             "loan_application_id": str(account.loan_application_id),
             "member_id": str(account.member_id),
             "disbursement_amount": f"{cleaned['disbursement_amount']:.2f}",
@@ -162,6 +175,7 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             title="Disbursement awaiting CFC authorisation",
             message=(
                 "A verified manual-bank instruction is awaiting independent review. "
+                f"Amount: {cleaned['disbursement_amount']:.2f}. "
                 f"{trace}"
             ),
             related_entity_type="disbursement",
@@ -174,7 +188,7 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
         try:
             row = Disbursement.objects.create(
                 disbursement_id=disbursement_id,
-                loan_account=account,
+                loan_account_id=account.loan_account_id,
                 loan_application_id=account.loan_application_id,
                 member_id=account.member_id,
                 disbursement_amount=cleaned["disbursement_amount"],
@@ -308,11 +322,8 @@ def _require_unfunded_account(account, amount):
     )
     if (
         account.loan_account_status != LoanAccount.STATUS_SANCTIONED
-        or account.loan_application.member_id != account.member_id
-        or account.sanction_decision.loan_application_id != account.loan_application_id
-        or account.terms.loan_account_id != account.pk
         or any(value != 0 for value in zero_fields)
-        or amount != account.terms.loan_amount
+        or amount > account.loan_amount
         or amount > account.sanctioned_amount
     ):
         raise DisbursementReadinessStale(
@@ -320,7 +331,7 @@ def _require_unfunded_account(account, amount):
             (
                 "DISBURSEMENT_EXCEEDS_SANCTION"
                 if amount > account.sanctioned_amount
-                or amount != account.terms.loan_amount
+                or amount > account.loan_amount
                 else "INVALID_STATE_TRANSITION"
             ),
         )

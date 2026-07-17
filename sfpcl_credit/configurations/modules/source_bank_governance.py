@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 import hashlib
 import json
+import uuid
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
@@ -48,6 +49,13 @@ def activate_source_bank_account(
         raise SourceBankGovernanceDenied(
             "A reason and request identity are required for source-bank activation."
         )
+    observed_current_id = (
+        SourceBankAccountGovernance.objects.filter(
+            status=SourceBankAccountGovernance.STATUS_ACTIVE
+        )
+        .values_list("pk", flat=True)
+        .first()
+    )
     with transaction.atomic():
         provisioner = _locked_provisioner(actor)
         bank = BankAccount.objects.select_for_update().filter(pk=bank_account_id).first()
@@ -58,105 +66,203 @@ def activate_source_bank_account(
         current = SourceBankAccountGovernance.objects.select_for_update().filter(
             status=SourceBankAccountGovernance.STATUS_ACTIVE
         ).first()
+        if getattr(current, "pk", None) != observed_current_id:
+            raise SourceBankGovernanceConflict(
+                "The governed source-bank decision changed concurrently."
+            )
         if current is not None and current.bank_account_id == bank.pk:
             raise SourceBankGovernanceConflict(
                 "A governed source-bank account is already active."
             )
         now = timezone.now()
-        old_evidence = _safe_evidence(current) if current is not None else {}
-        if current is not None:
-            current.status = SourceBankAccountGovernance.STATUS_INACTIVE
-            current.save(update_fields=["status"])
         facts_digest = _source_facts_digest(bank)
         reason_digest = _digest(clean_reason)
-        row = SourceBankAccountGovernance.objects.create(
-            bank_account=bank,
-            source_facts_digest=facts_digest,
-            reason_digest=reason_digest,
-            request_id=clean_request_id,
-            activated_by_user=provisioner,
-            activated_at=now,
-        )
-        safe_evidence = _safe_evidence(row)
-        history = VersionHistory.objects.create(
-            versioned_entity_type=ENTITY_TYPE,
-            versioned_entity_id=row.pk,
-            version_number="1",
-            change_summary="Source-bank account activated through explicit authority.",
-            author_user=provisioner,
-            approver_user=provisioner,
-            approval_reference=clean_request_id,
-            approved_at=now,
-            old_value_json=None,
-            new_value_json=safe_evidence,
-            effective_from=now.date(),
-            created_at=now,
-        )
-        audit_evidence = {
-            **safe_evidence,
-            "actor_role_codes": sorted(auth_service.effective_role_codes(provisioner)),
-            "actor_team_codes": sorted(provisioner.team_codes()),
-            "reason": "sha256:" + reason_digest,
-        }
-        audit = AuditLog.objects.create(
-            actor_user=provisioner,
-            actor_type="user",
-            action="config.changed",
-            entity_type=ENTITY_TYPE,
-            entity_id=row.pk,
-            old_value_json=old_evidence,
-            new_value_json=audit_evidence,
-            ip_address=request_ip(request) if request else "",
-            user_agent=request_user_agent(request) if request else "",
-        )
-        row.version_history = history
-        row.activation_audit = audit
-        row.save(update_fields=["version_history", "activation_audit"])
+        row_id = uuid.uuid4()
+        try:
+            with transaction.atomic():
+                old_evidence = None
+                if current is not None:
+                    old_evidence = _deactivate_for_successor(
+                        current,
+                        successor_id=row_id,
+                        successor_request_id=clean_request_id,
+                        successor_reason_digest=reason_digest,
+                        actor=provisioner,
+                        changed_at=now,
+                        request=request,
+                    )
+                row = SourceBankAccountGovernance(
+                    source_bank_account_governance_id=row_id,
+                    bank_account=bank,
+                    predecessor=current,
+                    source_facts_digest=facts_digest,
+                    reason_digest=reason_digest,
+                    request_id=clean_request_id,
+                    activated_by_user=provisioner,
+                    activated_at=now,
+                )
+                safe_evidence = _activation_evidence(row)
+                history = VersionHistory.objects.create(
+                    versioned_entity_type=ENTITY_TYPE,
+                    versioned_entity_id=row.pk,
+                    version_number="1",
+                    change_summary=(
+                        "Source-bank account activated through explicit authority."
+                    ),
+                    author_user=provisioner,
+                    approver_user=provisioner,
+                    approval_reference=clean_request_id,
+                    approved_at=now,
+                    old_value_json=old_evidence,
+                    new_value_json=safe_evidence,
+                    effective_from=now.date(),
+                    created_at=now,
+                )
+                audit_evidence = _audited_evidence(
+                    safe_evidence, provisioner, reason_digest
+                )
+                audit = AuditLog.objects.create(
+                    actor_user=provisioner,
+                    actor_type="user",
+                    action="config.changed",
+                    entity_type=ENTITY_TYPE,
+                    entity_id=row.pk,
+                    old_value_json=old_evidence,
+                    new_value_json=audit_evidence,
+                    ip_address=request_ip(request) if request else "",
+                    user_agent=request_user_agent(request) if request else "",
+                    created_at=now,
+                )
+                row.version_history = history
+                row.activation_audit = audit
+                row.save(force_insert=True)
+        except IntegrityError as exc:
+            raise SourceBankGovernanceConflict(
+                "A concurrent source-bank activation already won."
+            ) from exc
         return _decision(row)
 
 
 def resolve_source_bank_account(*, for_update=False):
     queryset = SourceBankAccountGovernance.objects.select_related(
-        "bank_account", "version_history", "activation_audit"
+        "bank_account",
+        "version_history",
+        "activation_audit",
+        "predecessor",
+        "deactivation_version_history",
+        "deactivation_audit",
     )
     if for_update:
         queryset = queryset.select_for_update(of=("self", "bank_account"))
-    rows = list(
-        queryset.filter(status=SourceBankAccountGovernance.STATUS_ACTIVE).order_by(
-            "source_bank_account_governance_id"
-        )[:2]
-    )
-    if len(rows) != 1:
+    rows = list(queryset.order_by("activated_at", "source_bank_account_governance_id"))
+    active_rows = [
+        row for row in rows if row.status == SourceBankAccountGovernance.STATUS_ACTIVE
+    ]
+    if len(active_rows) != 1:
         return None
-    row = rows[0]
+    row = active_rows[0]
+    by_id = {item.pk: item for item in rows}
+    visited = set()
+    successor = None
+    cursor = row
+    while cursor is not None:
+        expected_history_ids = {cursor.version_history_id}
+        expected_audit_ids = {cursor.activation_audit_id}
+        if cursor.status == SourceBankAccountGovernance.STATUS_INACTIVE:
+            expected_history_ids.add(cursor.deactivation_version_history_id)
+            expected_audit_ids.add(cursor.deactivation_audit_id)
+        retained_history_ids = set(
+            VersionHistory.objects.filter(
+                versioned_entity_type=ENTITY_TYPE,
+                versioned_entity_id=cursor.pk,
+            ).values_list("pk", flat=True)
+        )
+        retained_audit_ids = set(
+            AuditLog.objects.filter(
+                action="config.changed",
+                entity_type=ENTITY_TYPE,
+                entity_id=cursor.pk,
+            ).values_list("pk", flat=True)
+        )
+        if (
+            cursor.pk in visited
+            or cursor.source_facts_digest != _source_facts_digest(cursor.bank_account)
+            or retained_history_ids != expected_history_ids
+            or retained_audit_ids != expected_audit_ids
+            or not _activation_coherent(cursor)
+        ):
+            return None
+        visited.add(cursor.pk)
+        if successor is not None and not _deactivation_coherent(cursor, successor):
+            return None
+        successor = cursor
+        cursor = by_id.get(cursor.predecessor_id) if cursor.predecessor_id else None
+    if len(visited) != len(rows):
+        return None
     bank = row.bank_account
-    expected = _safe_evidence(row)
-    audit_evidence = row.activation_audit.new_value_json or {}
-    if (
-        not _eligible_bank(bank)
-        or row.version_history_id is None
-        or row.activation_audit_id is None
-        or row.source_facts_digest != _source_facts_digest(bank)
-        or row.version_history.versioned_entity_type != ENTITY_TYPE
-        or row.version_history.versioned_entity_id != row.pk
-        or row.version_history.version_number != "1"
-        or row.version_history.author_user_id != row.activated_by_user_id
-        or row.version_history.approver_user_id != row.activated_by_user_id
-        or row.version_history.approval_reference != row.request_id
-        or row.version_history.approved_at != row.activated_at
-        or row.version_history.old_value_json is not None
-        or row.version_history.new_value_json != expected
-        or row.activation_audit.action != "config.changed"
-        or row.activation_audit.entity_type != ENTITY_TYPE
-        or row.activation_audit.entity_id != row.pk
-        or row.activation_audit.actor_user_id != row.activated_by_user_id
-        or any(audit_evidence.get(key) != value for key, value in expected.items())
-        or not audit_evidence.get("actor_role_codes")
-        or not isinstance(audit_evidence.get("actor_team_codes"), list)
-        or audit_evidence.get("reason") != "sha256:" + row.reason_digest
-    ):
+    if not _eligible_bank(bank) or row.source_facts_digest != _source_facts_digest(bank):
         return None
     return _decision(row)
+
+
+def _deactivate_for_successor(
+    row,
+    *,
+    successor_id,
+    successor_request_id,
+    successor_reason_digest,
+    actor,
+    changed_at,
+    request,
+):
+    old_evidence = _activation_evidence(row)
+    row.status = SourceBankAccountGovernance.STATUS_INACTIVE
+    row.deactivated_at = changed_at
+    new_evidence = _inactive_evidence(row, successor_id=successor_id)
+    history = VersionHistory.objects.create(
+        versioned_entity_type=ENTITY_TYPE,
+        versioned_entity_id=row.pk,
+        version_number="2",
+        change_summary="Source-bank account deactivated by governed replacement.",
+        author_user=actor,
+        approver_user=actor,
+        approval_reference=successor_request_id,
+        approved_at=changed_at,
+        old_value_json=old_evidence,
+        new_value_json=new_evidence,
+        effective_from=changed_at.date(),
+        effective_to=changed_at.date(),
+        created_at=changed_at,
+    )
+    audit = AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action="config.changed",
+        entity_type=ENTITY_TYPE,
+        entity_id=row.pk,
+        old_value_json=old_evidence,
+        new_value_json=_audited_evidence(
+            new_evidence, actor, successor_reason_digest
+        ),
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+        created_at=changed_at,
+    )
+    row.deactivation_version_history = history
+    row.deactivation_audit = audit
+    row.save(
+        update_fields=[
+            "status",
+            "deactivated_at",
+            "deactivation_version_history",
+            "deactivation_audit",
+        ]
+    )
+    VersionHistory.objects.filter(pk=row.version_history_id).update(
+        effective_to=changed_at.date()
+    )
+    row.version_history.effective_to = changed_at.date()
+    return new_evidence
 
 
 def _locked_provisioner(actor):
@@ -166,7 +272,11 @@ def _locked_provisioner(actor):
         .filter(pk=getattr(actor, "pk", None), status=User.ACTIVE_STATUS)
         .first()
     )
-    permission = Permission.objects.filter(permission_code=ACTIVATE_PERMISSION).first()
+    permission = (
+        Permission.objects.select_for_update()
+        .filter(permission_code=ACTIVATE_PERMISSION)
+        .first()
+    )
     if (
         user is None
         or not user.can_authenticate()
@@ -205,17 +315,115 @@ def _source_facts_digest(bank):
     )
 
 
-def _safe_evidence(row):
+def _activation_evidence(row):
     return {
         "governance_id": str(row.pk),
         "source_bank_account_id": str(row.bank_account_id),
+        "predecessor_governance_id": (
+            str(row.predecessor_id) if row.predecessor_id else None
+        ),
         "source_facts_digest": row.source_facts_digest,
         "reason_digest": row.reason_digest,
         "request_id": row.request_id,
-        "status": row.status,
+        "status": SourceBankAccountGovernance.STATUS_ACTIVE,
         "activated_by_user_id": str(row.activated_by_user_id),
         "activated_at": row.activated_at.isoformat().replace("+00:00", "Z"),
     }
+
+
+def _inactive_evidence(row, *, successor_id):
+    return {
+        **_activation_evidence(row),
+        "status": SourceBankAccountGovernance.STATUS_INACTIVE,
+        "deactivated_at": row.deactivated_at.isoformat().replace("+00:00", "Z"),
+        "successor_governance_id": str(successor_id),
+    }
+
+
+def _audited_evidence(evidence, actor, reason_digest):
+    return {
+        **evidence,
+        "actor_role_codes": sorted(auth_service.effective_role_codes(actor)),
+        "actor_team_codes": sorted(actor.team_codes()),
+        "reason": "sha256:" + reason_digest,
+    }
+
+
+def _activation_coherent(row):
+    if row.version_history_id is None or row.activation_audit_id is None:
+        return False
+    expected = _activation_evidence(row)
+    predecessor = row.predecessor
+    expected_old = (
+        _inactive_evidence(predecessor, successor_id=row.pk)
+        if predecessor is not None and predecessor.deactivated_at is not None
+        else None
+    )
+    history = row.version_history
+    audit = row.activation_audit
+    audit_evidence = audit.new_value_json or {}
+    return bool(
+        history.versioned_entity_type == ENTITY_TYPE
+        and history.versioned_entity_id == row.pk
+        and history.version_number == "1"
+        and history.author_user_id == row.activated_by_user_id
+        and history.approver_user_id == row.activated_by_user_id
+        and history.approval_reference == row.request_id
+        and history.approved_at == row.activated_at
+        and history.effective_from == row.activated_at.date()
+        and history.effective_to
+        == (row.deactivated_at.date() if row.deactivated_at else None)
+        and history.old_value_json == expected_old
+        and history.new_value_json == expected
+        and audit.action == "config.changed"
+        and audit.entity_type == ENTITY_TYPE
+        and audit.entity_id == row.pk
+        and audit.actor_user_id == row.activated_by_user_id
+        and audit.old_value_json == expected_old
+        and all(audit_evidence.get(key) == value for key, value in expected.items())
+        and bool(audit_evidence.get("actor_role_codes"))
+        and isinstance(audit_evidence.get("actor_team_codes"), list)
+        and audit_evidence.get("reason") == "sha256:" + row.reason_digest
+    )
+
+
+def _deactivation_coherent(row, successor):
+    if (
+        row.status != SourceBankAccountGovernance.STATUS_INACTIVE
+        or row.deactivated_at is None
+        or row.deactivation_version_history_id is None
+        or row.deactivation_audit_id is None
+        or successor.predecessor_id != row.pk
+        or successor.activated_at != row.deactivated_at
+    ):
+        return False
+    old_evidence = _activation_evidence(row)
+    expected = _inactive_evidence(row, successor_id=successor.pk)
+    history = row.deactivation_version_history
+    audit = row.deactivation_audit
+    audit_evidence = audit.new_value_json or {}
+    return bool(
+        history.versioned_entity_type == ENTITY_TYPE
+        and history.versioned_entity_id == row.pk
+        and history.version_number == "2"
+        and history.author_user_id == successor.activated_by_user_id
+        and history.approver_user_id == successor.activated_by_user_id
+        and history.approval_reference == successor.request_id
+        and history.approved_at == row.deactivated_at
+        and history.effective_from == row.deactivated_at.date()
+        and history.effective_to == row.deactivated_at.date()
+        and history.old_value_json == old_evidence
+        and history.new_value_json == expected
+        and audit.action == "config.changed"
+        and audit.entity_type == ENTITY_TYPE
+        and audit.entity_id == row.pk
+        and audit.actor_user_id == successor.activated_by_user_id
+        and audit.old_value_json == old_evidence
+        and all(audit_evidence.get(key) == value for key, value in expected.items())
+        and bool(audit_evidence.get("actor_role_codes"))
+        and isinstance(audit_evidence.get("actor_team_codes"), list)
+        and audit_evidence.get("reason") == "sha256:" + successor.reason_digest
+    )
 
 
 def _digest(value):

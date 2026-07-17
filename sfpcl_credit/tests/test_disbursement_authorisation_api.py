@@ -36,7 +36,14 @@ class DisbursementAuthorisationApiTests(TestCase):
         fixture.source_governance_id = source.governance_id
         fixture.source_version_id = source.version_history_id
         fixture.source_audit_id = source.audit_log_id
-        initiated = fixture._post(request_id="req-initiation-for-cfc")
+        changes = (
+            {"disbursement_amount": "250000.00"}
+            if self._testMethodName == "test_cfc_approves_exact_frozen_lesser_amount"
+            else None
+        )
+        initiated = fixture._post(
+            changes=changes, request_id="req-initiation-for-cfc"
+        )
         self.assertEqual(initiated.status_code, 200, initiated.content)
         self.fixture = fixture
         self.disbursement_id = initiated.json()["data"]["disbursement_id"]
@@ -44,6 +51,22 @@ class DisbursementAuthorisationApiTests(TestCase):
         self.cfc.approval_authority_type = "chief_financial_controller"
         self.cfc.save(update_fields=["approval_authority_type"])
         self.client = Client()
+
+    def test_cfc_approves_exact_frozen_lesser_amount(self):
+        from sfpcl_credit.disbursements.models import Disbursement
+
+        response = self._post(
+            "approved", "The lesser instruction amount is independently approved."
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        row = Disbursement.objects.get(pk=self.disbursement_id)
+        self.assertEqual(str(row.disbursement_amount), "250000.00")
+        self.assertEqual(row.authorisation_status, "approved")
+        self.assertEqual(
+            row.authorisation_audit.new_value_json["disbursement_amount"],
+            "250000.00",
+        )
 
     def test_cfc_approval_is_terminal_evidence_but_not_bank_execution(self):
         from sfpcl_credit.communications.models import Communication, Notification

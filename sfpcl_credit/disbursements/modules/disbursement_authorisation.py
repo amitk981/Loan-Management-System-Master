@@ -278,7 +278,10 @@ def _coherent_pending_initiation(row):
     evidence = row.initiation_audit.new_value_json or {}
     request_id = evidence.get("request_id")
     comment_digest = evidence.get("final_verification_comment_digest")
-    trace = f"request_id={request_id};verification_digest={comment_digest}"
+    trace = (
+        f"request_id={request_id};verification_digest={comment_digest};"
+        f"amount={row.disbursement_amount:.2f}"
+    )
     readiness = row.readiness_evidence_json or {}
     account = row.loan_account
     borrower_bank = row.borrower_bank_account
@@ -293,7 +296,8 @@ def _coherent_pending_initiation(row):
         and row.loan_application_id == account.loan_application_id
         and row.member_id == account.member_id
         and account.loan_account_status == "sanctioned"
-        and row.disbursement_amount == account.terms.loan_amount
+        and row.disbursement_amount > 0
+        and row.disbursement_amount <= account.terms.loan_amount
         and row.disbursement_amount <= account.sanctioned_amount
         and all(
             value == 0

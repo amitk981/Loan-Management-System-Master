@@ -1,0 +1,21 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009E3-disbursement-amount-and-source-bank-governance-closure.md
+ M docs/slices/009F2-cfc-authorisation-integrity-and-bank-evidence-closure.md
+ M docs/slices/009G-utr-capture-and-transfer-success.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/configurations/models.py
+ M sfpcl_credit/configurations/modules/source_bank_governance.py
+ M sfpcl_credit/disbursements/modules/disbursement_authorisation.py
+ M sfpcl_credit/disbursements/modules/disbursement_initiation.py
+ M sfpcl_credit/disbursements/modules/disbursement_scope.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/loans/modules/loan_account_lifecycle.py
+ M sfpcl_credit/tests/test_disbursement_authorisation_api.py
+ M sfpcl_credit/tests/test_disbursement_initiation_api.py
+ M sfpcl_credit/tests/test_final_documentation_approval_api.py
+?? .ralph/runs/2026-07-17_112800_normal_run/
+?? sfpcl_credit/configurations/migrations/0004_source_bank_governance_history.py
