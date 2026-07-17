@@ -1,0 +1,15 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_parallel_test_failures_preserve_the_original_traceback (sfpcl_credit.tests.test_backend_infrastructure.BackendInfrastructureTests.test_parallel_test_failures_preserve_the_original_traceback)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_004444_normal_run/sfpcl_credit/tests/test_backend_infrastructure.py", line 43, in test_parallel_test_failures_preserve_the_original_traceback
+    self.assertIn("tblib==3.1.0", development_requirements)
+AssertionError: 'tblib==3.1.0' not found in ['# Development/test dependencies for sfpcl_credit (pinned).', '-r requirements.txt', 'coverage==7.14.3']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)

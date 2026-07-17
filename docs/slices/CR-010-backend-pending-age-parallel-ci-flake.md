@@ -1,7 +1,7 @@
 # Slice CR-010: Pending-age clock makes parallel backend CI intermittently fail
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-17 from docs/change-requests/accepted/CR-010-backend-pending-age-parallel-ci-flake.md.
@@ -74,3 +74,12 @@ Validation fails this run if impact-analysis.md is missing.
   stable detail/queue fields exactly, and assert the live age separately and monotonically.
 - Regression tests added for every module named in the impact analysis.
 - All quality gates pass.
+
+## Done Checklist
+- [x] Impact analysis and execution plan written before code changes
+- [x] Deterministic pending-age RED/GREEN evidence saved
+- [x] Both known approval-case regressions isolate only the live age
+- [x] Parallel traceback dependency and pickle round-trip regression added
+- [x] Focused serial tests, Django check, dependency check, and migration sync pass
+- [x] Risk assessment, review packet, handoff, state, progress, and evidence updated
+- [x] Complete parallel coverage delegated to the orchestrator

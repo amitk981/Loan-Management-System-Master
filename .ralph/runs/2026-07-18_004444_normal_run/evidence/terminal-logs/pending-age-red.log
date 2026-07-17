@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_live_appraisal_policy_change_preserves_pending_case_reads_and_action (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_live_appraisal_policy_change_preserves_pending_case_reads_and_action)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_004444_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 940, in test_live_appraisal_policy_change_preserves_pending_case_reads_and_action
+    self.assertEqual(detail_after.json()["data"], detail_before.json()["data"])
+AssertionError: {'app[5833 chars]s': 11, 'display': '0m'}}, 'available_actions'[579 chars]e'}]} != {'app[5833 chars]s': 10, 'display': '0m'}}, 'available_actions'[579 chars]e'}]}
+Diff is 10680 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_detail_is_unchanged_when_live_configuration_rows_change (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_detail_is_unchanged_when_live_configuration_rows_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_004444_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 5350, in test_detail_is_unchanged_when_live_configuration_rows_change
+    self.assertEqual(second, first)
+AssertionError: {'app[5832 chars]ds': 3, 'display': '0m'}}, 'available_actions'[579 chars]e'}]} != {'app[5832 chars]ds': 2, 'display': '0m'}}, 'available_actions'[579 chars]e'}]}
+Diff is 10676 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.058s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

@@ -896,6 +896,20 @@ class ApprovalCaseRoutingApiTests(TestCase):
             projection_before,
         )
 
+    def _isolate_valid_pending_age(self, case_payload):
+        stable_payload = deepcopy(case_payload)
+        pending_age = stable_payload["workbench_summary"].pop("pending_age")
+        self.assertIsNotNone(pending_age)
+        self.assertEqual(pending_age["label"], "Elapsed pending time")
+        self.assertIsInstance(pending_age["elapsed_seconds"], int)
+        self.assertGreaterEqual(pending_age["elapsed_seconds"], 0)
+        self.assertIsInstance(pending_age["display"], str)
+        self.assertTrue(pending_age["display"])
+        return stable_payload, pending_age
+
+    def _assert_pending_age_is_nondecreasing(self, before, after):
+        self.assertGreaterEqual(after["elapsed_seconds"], before["elapsed_seconds"])
+
     def test_live_appraisal_policy_change_preserves_pending_case_reads_and_action(self):
         projection_before = list(
             ApprovalCaseRequiredApprover.objects.filter(
@@ -907,12 +921,16 @@ class ApprovalCaseRoutingApiTests(TestCase):
         frozen_provenance = dict(self.case.loan_limit_provenance_json)
         frozen_appraisal_facts = dict(self.case.appraisal_facts_json)
         headers = self._auth(self.cfo)
-        detail_before = self.client.get(
-            f"/api/v1/approval-cases/{self.case.pk}/", **headers
-        )
-        queue_before = self.client.get(
-            "/api/v1/approval-cases/?assigned_to_me=true", **headers
-        )
+        pending_clock = self.case.submitted_at + timedelta(seconds=10)
+        with patch.object(
+            approval_case_engine.timezone, "now", return_value=pending_clock
+        ):
+            detail_before = self.client.get(
+                f"/api/v1/approval-cases/{self.case.pk}/", **headers
+            )
+            queue_before = self.client.get(
+                "/api/v1/approval-cases/?assigned_to_me=true", **headers
+            )
         self.assertEqual(detail_before.status_code, 200, detail_before.json())
         self.assertEqual(queue_before.json()["pagination"]["total_count"], 1)
         snapshot = dict(self.note.loan_limit_snapshot_json)
@@ -921,18 +939,40 @@ class ApprovalCaseRoutingApiTests(TestCase):
 
         self.note.save(update_fields=["loan_limit_snapshot_json"])
 
-        detail_after = self.client.get(
-            f"/api/v1/approval-cases/{self.case.pk}/", **headers
-        )
-        queue_after = self.client.get(
-            "/api/v1/approval-cases/?assigned_to_me=true", **headers
-        )
+        with patch.object(
+            approval_case_engine.timezone,
+            "now",
+            return_value=pending_clock + timedelta(seconds=1),
+        ):
+            detail_after = self.client.get(
+                f"/api/v1/approval-cases/{self.case.pk}/", **headers
+            )
+            queue_after = self.client.get(
+                "/api/v1/approval-cases/?assigned_to_me=true", **headers
+            )
         self.assertEqual(detail_after.status_code, 200, detail_after.json())
-        self.assertEqual(detail_after.json()["data"], detail_before.json()["data"])
-        self.assertEqual(queue_after.json()["data"], queue_before.json()["data"])
+        stable_detail_before, detail_age_before = self._isolate_valid_pending_age(
+            detail_before.json()["data"]
+        )
+        stable_detail_after, detail_age_after = self._isolate_valid_pending_age(
+            detail_after.json()["data"]
+        )
+        stable_queue_before, queue_age_before = self._isolate_valid_pending_age(
+            queue_before.json()["data"][0]
+        )
+        stable_queue_after, queue_age_after = self._isolate_valid_pending_age(
+            queue_after.json()["data"][0]
+        )
+
+        self.assertEqual(stable_detail_after, stable_detail_before)
+        self.assertEqual(stable_queue_after, stable_queue_before)
         self.assertEqual(
             queue_after.json()["pagination"], queue_before.json()["pagination"]
         )
+        self._assert_pending_age_is_nondecreasing(
+            detail_age_before, detail_age_after
+        )
+        self._assert_pending_age_is_nondecreasing(queue_age_before, queue_age_after)
         approved = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/approve/",
             {"version": 2},
@@ -5310,10 +5350,15 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(self.case.required_approvers_json, frozen_required)
 
     def test_detail_is_unchanged_when_live_configuration_rows_change(self):
-        first = self.client.get(
-            f"/api/v1/approval-cases/{self.case.pk}/",
-            **self._auth(self.cfo),
-        ).json()["data"]
+        pending_clock = self.case.submitted_at + timedelta(seconds=2)
+        headers = self._auth(self.cfo)
+        with patch.object(
+            approval_case_engine.timezone, "now", return_value=pending_clock
+        ):
+            first = self.client.get(
+                f"/api/v1/approval-cases/{self.case.pk}/",
+                **headers,
+            ).json()["data"]
 
         ApprovalMatrixRule.objects.filter(pk=self.rule.pk).update(
             version_number="live-rule-v99",
@@ -5323,12 +5368,23 @@ class ApprovalCaseRoutingApiTests(TestCase):
             version_number="live-committee-v99",
             committee_name="Changed Live Committee",
         )
-        second = self.client.get(
-            f"/api/v1/approval-cases/{self.case.pk}/",
-            **self._auth(self.cfo),
-        ).json()["data"]
+        with patch.object(
+            approval_case_engine.timezone,
+            "now",
+            return_value=pending_clock + timedelta(seconds=1),
+        ):
+            second = self.client.get(
+                f"/api/v1/approval-cases/{self.case.pk}/",
+                **headers,
+            ).json()["data"]
 
-        self.assertEqual(second, first)
+        stable_first, first_pending_age = self._isolate_valid_pending_age(first)
+        stable_second, second_pending_age = self._isolate_valid_pending_age(second)
+
+        self.assertEqual(stable_second, stable_first)
+        self._assert_pending_age_is_nondecreasing(
+            first_pending_age, second_pending_age
+        )
         self.assertEqual(second["approval_matrix_rule_version"], "lower-v1")
         self.assertEqual(second["sanction_committee_version"], "committee-v1")
 

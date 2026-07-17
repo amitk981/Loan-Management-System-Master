@@ -1,5 +1,19 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## CR-010 Pending-Age Parallel-CI Determinism
+
+- Approval-case detail and assigned-queue responses intentionally calculate
+  `workbench_summary.pending_age` at serialization time. Stable routing, provenance, review facts,
+  queue membership, pagination, and available actions remain frozen, but elapsed seconds are live.
+- Both live-configuration stability regressions now drive the public endpoints across an explicit
+  one-second clock advance, remove only pending age from deep-copied payloads, compare every stable
+  field exactly, and validate the canonical label, non-empty display, and non-decreasing elapsed
+  value separately.
+- The development test environment pins `tblib==3.1.0`. A backend-infrastructure regression proves
+  Django's remote test result can pickle/unpickle an original assertion exception with its traceback,
+  preventing worker failures from collapsing into traceback-pickling noise.
+- No production serializer, endpoint, model, API shape, frontend contract, or UI changed.
+
 ## 007T Register Null Contract and Action Order Closure
 
 - S23's frontend DTO, component fixture, and trusted-browser route now match the retained backend

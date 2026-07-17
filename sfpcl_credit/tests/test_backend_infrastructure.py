@@ -1,9 +1,11 @@
 import os
+import pickle
 import subprocess
 import sys
 from pathlib import Path
 
 from django.test import Client, SimpleTestCase
+from django.test.runner import RemoteTestResult
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -34,6 +36,26 @@ def settings_value_with_env(env_overrides, expression):
 
 
 class BackendInfrastructureTests(SimpleTestCase):
+    def test_parallel_test_failures_preserve_the_original_traceback(self):
+        development_requirements = (
+            REPO_ROOT / "sfpcl_credit" / "requirements-dev.txt"
+        ).read_text(encoding="utf-8").splitlines()
+        self.assertIn("tblib==3.1.0", development_requirements)
+
+        remote_result = RemoteTestResult()
+        remote_result.startTest(self)
+        try:
+            raise AssertionError("parallel failure sentinel")
+        except AssertionError:
+            remote_result.addFailure(self, sys.exc_info())
+
+        transported_events = pickle.loads(pickle.dumps(remote_result.events))
+        _, _, transported_error = transported_events[-1]
+        exception_type, exception, traceback = transported_error
+        self.assertIs(exception_type, AssertionError)
+        self.assertEqual(str(exception), "parallel failure sentinel")
+        self.assertIsNotNone(traceback)
+
     def test_secret_key_comes_from_environment_with_dev_fallback(self):
         self.assertEqual(
             settings_value_with_env(

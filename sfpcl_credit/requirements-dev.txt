@@ -1,3 +1,4 @@
 # Development/test dependencies for sfpcl_credit (pinned).
 -r requirements.txt
 coverage==7.14.3
+tblib==3.1.0

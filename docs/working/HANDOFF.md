@@ -1,19 +1,18 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_223410_repair
+2026-07-18_004444_normal_run
 
 ## Current Status
-009G3 remains complete pending independent orchestrator validation. The latest full parallel
-coverage run exposed one legacy documentation test that still deleted `LoanRegisterUpdate`; 009G3's
-new protected aggregate owner relation correctly raised `ProtectedError`, which Django's parallel
-runner then obscured with a traceback-pickling error.
+CR-010 is complete pending independent orchestrator validation. The two approval-case stability
+tests now use explicit 10-to-11 and 2-to-3 second clock advances, compare all stable detail/queue
+fields exactly, and validate the intentionally live pending age separately and monotonically.
 
-The repair changed only that test. It now asserts deletion protection and uses a reversible register
-checksum mutation for its 409 current-evidence assertion. The exact test and both impacted backend
-classes pass (61 tests), as do Django check and migration sync. The quarantined production and
-migration implementation remains unchanged; complete coverage and twice-run PostgreSQL acceptance
-remain delegated to the orchestrator.
+The development requirements now pin `tblib==3.1.0`, and a backend-infrastructure regression proves
+that Django's remote test result preserves the original assertion and traceback through a pickle
+round trip. The full 127-test approval routing class, all 7 backend infrastructure tests, Django
+check, dependency check, and migration sync pass serially. No production or frontend code changed;
+the authoritative complete parallel coverage run remains delegated to the orchestrator.
 
 ## Next Run
 Run 009H3 to restore communications-owned durable outbox/provider idempotency. Then run 009G4 after
