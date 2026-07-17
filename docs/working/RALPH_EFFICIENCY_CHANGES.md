@@ -1,6 +1,6 @@
 # Ralph Efficiency Changes — 2026-07-17
 
-These changes cap recurring work without weakening slice acceptance. Normal and repair runs still validate the complete candidate; only proven duplication, fixture setup, artifact retention, and documentation-only work are treated differently.
+These changes reduce safe sources of recurring work without weakening Ralph's binding full-gate acceptance policy. Candidate-scope selection remains in shadow measurement until its evidence and the quality policy support activation.
 
 ## Fixture pilot
 
@@ -41,6 +41,20 @@ Because every proof predicate matched and six had the best measured wall time, a
 ## Documentation-only architecture reviews
 
 Architecture reviews now have a fail-closed documentation lane. Candidate scope must remain under `docs/`, explicit state/progress bookkeeping, or the current review's own run-evidence directory, while protected-path checks, queue validation, artifact checks, and the frozen-candidate hash still run. Product gates are skipped with an explicit reason only after that scope proof; any product path, configuration edit, or historical run-evidence edit rejects the lane.
+
+## Backend validation shadow
+
+Normal and repair runs classify the frozen candidate and record a future lane recommendation, reason, backend paths, and test labels in `backend-validation-lane-results.md`. The recommendation is deliberately non-authoritative: full configured backend gates still execute for every candidate, including frontend/docs-only changes.
+
+The shadow selector recommends full coverage for High risk, every fourth slice, schema/infrastructure/shared/package-root work, multiple or broad backend modules, deletions/renames, missing changed tests, or tests that do not import the one changed backend module. Unknown policy values and malformed inputs also resolve to full. This preserves the current quality contract while collecting the data needed to decide whether a later policy change is justified.
+
+## Pending-age CI flake
+
+The failed 1,116-test GitHub run compared two otherwise identical approval queue payloads across separate requests. `workbench_summary.pending_age.elapsed_seconds` advanced from 12 to 13, which is correct live behavior, but the regression expected the entire payload to remain byte-identical. A forced one-second boundary reproduced the failure. The test now compares the stable historical routing payload separately and asserts that the dynamic pending age keeps its label, non-empty display, and monotonic elapsed seconds. The focused test and the complete 1,117-test suite pass.
+
+## GitHub CI controls
+
+The regular backend CI job continues to run the complete `sfpcl_credit.tests` label and enforce the 85% floor, but now uses the already-proved multiprocessing coverage helper with four workers, matching GitHub's public Linux runner allocation. Setup-python caches pinned pip dependencies, superseded runs on the same ref are cancelled, and the job has a 30-minute hard timeout. A separate 75-minute serial canary runs nightly against `staging` and can be dispatched for epic or release checkpoints. This preserves serial/order-sensitive detection without charging every slice for a second slow lane.
 
 ## Agent transcript retention
 

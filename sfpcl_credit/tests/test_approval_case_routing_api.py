@@ -5338,6 +5338,10 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "/api/v1/approval-cases/?assigned_to_me=true",
             **self._auth(self.cfo),
         ).json()["data"]
+        stable_first_queue = deepcopy(first_queue)
+        first_pending_age = stable_first_queue[0]["workbench_summary"].pop(
+            "pending_age"
+        )
         self.assertEqual(
             [item["approval_case_id"] for item in first_queue],
             [str(self.case.pk)],
@@ -5465,7 +5469,17 @@ class ApprovalCaseRoutingApiTests(TestCase):
             **self._auth(current_cfo),
         ).json()["data"]
 
-        self.assertEqual(historical_queue, first_queue)
+        stable_historical_queue = deepcopy(historical_queue)
+        historical_pending_age = stable_historical_queue[0]["workbench_summary"].pop(
+            "pending_age"
+        )
+        self.assertEqual(stable_historical_queue, stable_first_queue)
+        self.assertEqual(historical_pending_age["label"], first_pending_age["label"])
+        self.assertGreaterEqual(
+            historical_pending_age["elapsed_seconds"],
+            first_pending_age["elapsed_seconds"],
+        )
+        self.assertTrue(historical_pending_age["display"])
         self.assertEqual(unprojected_current_queue, [])
         self.assertEqual(
             [item["approval_case_id"] for item in current_queue],

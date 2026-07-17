@@ -581,6 +581,74 @@ grep -qF 'PASS: candidate content remained frozen throughout validation.' \
   "$validator_success_run_dir/candidate-hash-results.md" \
   || fail "all-green validator did not verify the frozen candidate"
 
+# A configured backend gate with no manage.py is an unsafe repository/config
+# condition. It must fail instead of being mislabeled as a no-backend skip.
+missing_backend_repo="$fixture_dir/missing-backend-repo"
+missing_backend_run="missing-backend-run"
+missing_backend_run_dir="$missing_backend_repo/.ralph/runs/$missing_backend_run"
+mkdir -p "$missing_backend_repo/.ralph" "$missing_backend_repo/docs/slices" \
+  "$missing_backend_repo/frontend" "$missing_backend_run_dir"
+cat > "$missing_backend_repo/.ralph/config.yaml" <<'EOF'
+project_dir: frontend
+backend_dir: missing-backend
+build: false
+install: false
+typecheck: false
+lint: false
+unit_tests: false
+backend_check: true
+backend_tests: false
+backend_migrations: false
+backend_coverage: false
+max_changed_files: 30
+max_lines_changed: 2000
+EOF
+printf '%s\n' '{"completed_slices": []}' > "$missing_backend_repo/.ralph/state.json"
+printf '%s\n' '{}' > "$missing_backend_repo/.ralph/permissions.json"
+cat > "$missing_backend_repo/docs/slices/999X-missing-backend.md" <<'EOF'
+# Slice 999X: Missing backend fixture
+
+## Status
+Not Started
+
+## Depends On
+- None
+
+## Risk Level
+Medium
+EOF
+for artifact in prompt.md changed-files.txt final-summary.md; do
+  printf 'fixture\n' > "$missing_backend_run_dir/$artifact"
+done
+printf '1. Exercise missing backend failure.\n' \
+  > "$missing_backend_run_dir/execution-plan.md"
+printf 'Medium risk fixture.\n' > "$missing_backend_run_dir/risk-assessment.md"
+cat > "$missing_backend_run_dir/review-packet.md" <<'EOF'
+## Result
+Ready to merge
+EOF
+git init -q "$missing_backend_repo"
+git -C "$missing_backend_repo" config user.name "Ralph Regression"
+git -C "$missing_backend_repo" config user.email "ralph-regression@example.invalid"
+git -C "$missing_backend_repo" add .
+git -C "$missing_backend_repo" commit -qm fixture
+printf 'candidate\n' > "$missing_backend_repo/frontend/change.txt"
+set +e
+scripts/ralph-validate.sh \
+  --run-id "$missing_backend_run" \
+  --worktree "$missing_backend_repo" \
+  --mode normal_run \
+  --slice 999X-missing-backend \
+  > "$fixture_dir/missing-backend.stdout" \
+  2> "$fixture_dir/missing-backend.stderr"
+missing_backend_rc=$?
+set -e
+[[ "$missing_backend_rc" == "1" ]] \
+  || fail "configured missing backend returned $missing_backend_rc instead of failure"
+grep -qF 'FAIL: configured backend is missing at missing-backend/manage.py' \
+  "$missing_backend_run_dir/backend-validation-lane-results.md" \
+  || fail "missing backend did not leave fail-closed lane evidence"
+
 oversized_run="oversized-candidate-run"
 oversized_run_dir="$validator_success_repo/.ralph/runs/$oversized_run"
 mkdir -p "$oversized_run_dir"
@@ -885,6 +953,135 @@ for skipped_gate in build install typecheck lint test e2e backend-check backend-
     || fail "architecture-review lane did not skip $skipped_gate with an explicit reason"
 done
 
+# A shadow selector records potential future backend lanes without changing the
+# authoritative full gate. Its recommendations fail closed for high-risk,
+# shared-schema, ambiguous, and periodic-checkpoint candidates.
+backend_policy_helper="scripts/lib/ralph-backend-validation.sh"
+[[ -f "$backend_policy_helper" ]] || fail "missing backend validation policy helper"
+# shellcheck source=../lib/ralph-backend-validation.sh
+source "$backend_policy_helper"
+backend_policy_repo="$fixture_dir/backend-policy-repo"
+mkdir -p "$backend_policy_repo/.ralph" \
+  "$backend_policy_repo/docs/slices" \
+  "$backend_policy_repo/frontend" \
+  "$backend_policy_repo/backend/payments" \
+  "$backend_policy_repo/backend/shared" \
+  "$backend_policy_repo/backend/tests" \
+  "$backend_policy_repo/backend/loans/migrations"
+cat > "$backend_policy_repo/.ralph/config.yaml" <<'EOF'
+backend_validation_policy: shadow
+backend_full_suite_every_completed_slices: 4
+backend_impacted_parallel_workers: 3
+EOF
+printf '%s\n' '{"completed_slices": []}' > "$backend_policy_repo/.ralph/state.json"
+cat > "$backend_policy_repo/docs/slices/100A-medium.md" <<'EOF'
+## Risk Level
+Medium
+EOF
+cat > "$backend_policy_repo/docs/slices/100B-high.md" <<'EOF'
+## Risk Level
+High
+EOF
+printf 'baseline\n' > "$backend_policy_repo/frontend/app.ts"
+printf 'baseline\n' > "$backend_policy_repo/backend/loans/service.py"
+printf 'from backend.loans import service\n' > "$backend_policy_repo/backend/tests/test_loans.py"
+printf 'baseline\n' > "$backend_policy_repo/backend/payments/service.py"
+printf 'baseline\n' > "$backend_policy_repo/backend/shared/encryption.py"
+printf 'from backend.payments import service\n' \
+  > "$backend_policy_repo/backend/tests/test_unrelated.py"
+printf 'baseline\n' > "$backend_policy_repo/backend/loans/migrations/0001_initial.py"
+git init -q "$backend_policy_repo"
+git -C "$backend_policy_repo" config user.name "Ralph Regression"
+git -C "$backend_policy_repo" config user.email "ralph-regression@example.invalid"
+git -C "$backend_policy_repo" add .
+git -C "$backend_policy_repo" commit -qm fixture
+
+printf 'frontend candidate\n' >> "$backend_policy_repo/frontend/app.ts"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "skip" ]] \
+  || fail "frontend-only candidate did not receive the shadow skip recommendation"
+git -C "$backend_policy_repo" add .
+git -C "$backend_policy_repo" commit -qm frontend-candidate
+
+printf 'localized backend candidate\n' >> "$backend_policy_repo/backend/loans/service.py"
+printf 'localized test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "impacted" ]] \
+  || fail "localized medium-risk backend candidate did not receive the impacted recommendation"
+[[ " ${RALPH_BACKEND_TEST_LABELS[*]} " == *" backend.tests.test_loans "* ]] \
+  || fail "impacted backend lane omitted its changed test module"
+[[ "$RALPH_BACKEND_IMPACTED_WORKERS" == "3" ]] \
+  || fail "impacted backend lane ignored its bounded worker count"
+
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100B-high.md" 100B-high \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "high-risk backend candidate did not retain full coverage"
+git -C "$backend_policy_repo" add .
+git -C "$backend_policy_repo" commit -qm localized-candidate
+
+printf 'schema candidate\n' >> "$backend_policy_repo/backend/loans/migrations/0001_initial.py"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "migration candidate did not retain full coverage"
+git -C "$backend_policy_repo" add .
+git -C "$backend_policy_repo" commit -qm schema-candidate
+
+printf 'shared candidate\n' >> "$backend_policy_repo/backend/shared/encryption.py"
+printf 'unrelated test candidate\n' >> "$backend_policy_repo/backend/tests/test_unrelated.py"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "shared backend candidate received a selective shadow recommendation"
+git -C "$backend_policy_repo" add .
+git -C "$backend_policy_repo" commit -qm shared-candidate
+
+printf 'second module candidate\n' >> "$backend_policy_repo/backend/payments/service.py"
+printf 'first module candidate\n' >> "$backend_policy_repo/backend/loans/service.py"
+printf 'multi-module test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "multi-module backend candidate received a selective shadow recommendation"
+git -C "$backend_policy_repo" add .
+git -C "$backend_policy_repo" commit -qm multi-module-candidate
+
+rm "$backend_policy_repo/backend/payments/service.py"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "deleted backend path received a selective shadow recommendation"
+printf 'baseline\nsecond module candidate\n' \
+  > "$backend_policy_repo/backend/payments/service.py"
+
+printf '%s\n' '{"completed_slices": ["097A", "098A", "099A"]}' \
+  > "$backend_policy_repo/.ralph/state.json"
+printf 'checkpoint backend candidate\n' >> "$backend_policy_repo/backend/loans/service.py"
+printf 'checkpoint test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "fourth completed-slice checkpoint did not retain full coverage"
+
 # The shadow audit compares serial coverage against the shared bounded parallel
 # module and proves exact outcome and line-coverage equivalence.
 shadow_coverage="scripts/ralph-shadow-parallel-coverage.sh"
@@ -920,6 +1117,39 @@ rg -q 'ralph-parallel-backend-coverage.sh' scripts/ralph-validate.sh \
   || fail "validator does not invoke the proven parallel-coverage module"
 rg -q 'backend_coverage_parallel_workers: 6' .ralph/config.yaml \
   || fail "authoritative coverage worker count is not explicitly bounded at the proven six"
+rg -q 'backend_validation_policy: shadow' .ralph/config.yaml \
+  || fail "shadow backend validation classification is not enabled explicitly"
+rg -q 'backend_full_suite_every_completed_slices: 4' .ralph/config.yaml \
+  || fail "periodic full backend checkpoint is not explicitly bounded at four slices"
+rg -q 'ralph_select_backend_validation_lane' scripts/ralph-validate.sh \
+  || fail "validator does not classify backend work before selecting its suite"
+rg -q 'backend-validation-lane-results.md' scripts/ralph-validate.sh \
+  || fail "backend validation selection does not leave reviewable evidence"
+if rg -q 'backend_validation_lane.*==.*(skip|impacted)' scripts/ralph-validate.sh; then
+  fail "shadow backend recommendation can bypass an authoritative full gate"
+fi
+
+# GitHub keeps a complete-suite backstop even when a local slice selects its
+# impacted modules. Public Linux runners receive four workers; serial execution
+# remains a separate scheduled/manual canary instead of taxing every push.
+rg -q 'cancel-in-progress: true' .github/workflows/ci.yml \
+  || fail "CI does not cancel superseded runs on the same ref"
+rg -q 'cache: pip' .github/workflows/ci.yml \
+  || fail "backend CI does not cache pinned pip dependencies"
+rg -q 'ralph-parallel-backend-coverage.sh.*sfpcl_credit 4 85' \
+  .github/workflows/ci.yml \
+  || fail "backend CI does not run complete coverage with four workers and the floor"
+rg -q 'timeout-minutes: 30' .github/workflows/ci.yml \
+  || fail "backend CI does not enforce its runtime cap"
+serial_canary='.github/workflows/backend-serial-canary.yml'
+[[ -f "$serial_canary" ]] || fail "missing serial backend canary workflow"
+rg -q "cron: '30 18 \* \* \*'" "$serial_canary" \
+  || fail "serial backend canary is not scheduled nightly"
+rg -q 'workflow_dispatch:' "$serial_canary" \
+  || fail "serial backend canary cannot be run at epic/release checkpoints"
+rg -q 'coverage run --source=sfpcl_credit.*test sfpcl_credit.tests --timing' \
+  "$serial_canary" \
+  || fail "serial backend canary does not retain the complete serial test label"
 
 # The PostgreSQL TransactionTestCase cannot share Django's class-level fixture.
 # It must retain an explicit per-test builder instead of inheriting the no-op

@@ -180,9 +180,11 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   configurations, SAP workflow, loans, disbursements, finance, dashboard, scheduler, tracer)
   with JWT auth, role and object-level permissions, audit/workflow events, versioned
   configuration, document storage adapter, and seeded demo users.
-- Quality gates run on every slice: frontend build, typecheck, ESLint, vitest; backend Django
-  check, migration sync, and the full test suite under coverage with a hard floor
-  (`coverage_fail_under` in `.ralph/config.yaml`). Playwright e2e + visual regression harness
+- Quality gates run on every slice: frontend build, typecheck, ESLint, and vitest; backend Django
+  check, migration sync, and the full test suite under coverage with the hard floor
+  (`coverage_fail_under` in `.ralph/config.yaml`). A shadow classifier records potential future
+  scope/risk lanes but cannot skip gates. GitHub CI runs the same full suite with four workers and
+  a separate nightly serial canary. Playwright e2e + visual regression harness
   lives in `sfpcl-lms/e2e/`. Concurrency-critical credit paths have an authoritative PostgreSQL
   acceptance harness (`sfpcl_credit.config.postgres_test_settings`); the routine gate suite runs
   SQLite until the planned PostgreSQL flip at the Epic 009 boundary.

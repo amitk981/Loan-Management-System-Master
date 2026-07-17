@@ -10,6 +10,7 @@ source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 source "$repo_root/scripts/lib/ralph-fast-candidate-checks.sh"
 source "$repo_root/scripts/lib/ralph-oversized-slice.sh"
 source "$repo_root/scripts/lib/ralph-architecture-review.sh"
+source "$repo_root/scripts/lib/ralph-backend-validation.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -256,6 +257,72 @@ if [[ -n "$queue_only_reason" ]]; then
   echo "Validation passed: $queue_only_label." >> "$artifact_file"
   echo "Ralph specialized validation passed ($queue_only_label): $run_dir"
   exit 0
+fi
+
+backend_validation_lane="full"
+backend_validation_recommendation="full"
+backend_validation_reason="full backend gates remain authoritative"
+backend_configuration_failed=0
+backend_gates_requested=0
+for backend_gate_key in backend_check backend_tests backend_migrations backend_coverage; do
+  if [[ "$(enabled "$backend_gate_key")" == "true" ]]; then
+    backend_gates_requested=1
+  fi
+done
+if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
+  ralph_select_backend_validation_lane \
+    "$worktree_dir" "$backend_dir" "$slice_file" "$slice_id" \
+    "$config" "$worktree_dir/.ralph/state.json"
+  backend_validation_recommendation="$RALPH_BACKEND_VALIDATION_LANE"
+  backend_validation_reason="$RALPH_BACKEND_VALIDATION_REASON"
+  {
+    echo "# Backend Validation Lane Results"
+    echo
+    echo "- Authoritative lane: $backend_validation_lane"
+    echo "- Shadow recommendation: $backend_validation_recommendation"
+    echo "- Recommendation reason: $backend_validation_reason"
+    echo "- Enforcement: full configured backend gates remain mandatory"
+    echo "- Slice risk: $RALPH_BACKEND_SLICE_RISK"
+    echo "- Candidate completion ordinal: $RALPH_BACKEND_COMPLETION_ORDINAL"
+    echo "- Impacted-test workers: $RALPH_BACKEND_IMPACTED_WORKERS"
+    echo
+    echo "Backend changed paths:"
+    if (( RALPH_BACKEND_CHANGED_COUNT > 0 )); then
+      printf -- '- `%s`\n' \
+        ${RALPH_BACKEND_CHANGED_PATHS[@]+"${RALPH_BACKEND_CHANGED_PATHS[@]}"}
+    else
+      echo "- None"
+    fi
+    echo
+    echo "Impacted test labels:"
+    if (( RALPH_BACKEND_TEST_LABEL_COUNT > 0 )); then
+      printf -- '- `%s`\n' \
+        ${RALPH_BACKEND_TEST_LABELS[@]+"${RALPH_BACKEND_TEST_LABELS[@]}"}
+    else
+      echo "- None"
+    fi
+  } > "$run_dir/backend-validation-lane-results.md"
+elif (( backend_gates_requested == 1 )); then
+  backend_validation_lane="configuration-error"
+  backend_validation_reason="configured backend is missing at ${backend_dir:-<unset>}/manage.py"
+  backend_configuration_failed=1
+  failures=$((failures + 1))
+  failed_gate_logs+=("backend-validation-lane-results.md")
+  {
+    echo "# Backend Validation Lane Results"
+    echo
+    echo "- Authoritative lane: $backend_validation_lane"
+    echo "- FAIL: $backend_validation_reason"
+  } > "$run_dir/backend-validation-lane-results.md"
+else
+  backend_validation_lane="disabled"
+  backend_validation_reason="all backend gates are disabled"
+  {
+    echo "# Backend Validation Lane Results"
+    echo
+    echo "- Authoritative lane: $backend_validation_lane"
+    echo "- Reason: $backend_validation_reason"
+  } > "$run_dir/backend-validation-lane-results.md"
 fi
 
 run_postgresql_acceptance_once() {
@@ -518,6 +585,11 @@ if (( required_browser_failed == 1 )); then
   write_skipped backend-test "required trusted browser acceptance failed; deferred until repair"
   write_skipped backend-migrations "required trusted browser acceptance failed; deferred until repair"
   write_skipped backend-coverage "required trusted browser acceptance failed; deferred until repair"
+elif (( backend_configuration_failed == 1 )); then
+  write_skipped backend-check "$backend_validation_reason"
+  write_skipped backend-test "$backend_validation_reason"
+  write_skipped backend-migrations "$backend_validation_reason"
+  write_skipped backend-coverage "$backend_validation_reason"
 elif [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
   if [[ "$(enabled backend_check)" == "true" ]]; then
     run_backend_gate backend-check "\"$venv_python\" $backend_dir/manage.py check" || failures=$((failures + 1))
@@ -566,6 +638,8 @@ elif [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
 else
   write_skipped backend-check "no backend detected at ${backend_dir:-<unset>}/manage.py"
   write_skipped backend-test "no backend detected at ${backend_dir:-<unset>}/manage.py"
+  write_skipped backend-migrations "no backend detected at ${backend_dir:-<unset>}/manage.py"
+  write_skipped backend-coverage "no backend detected at ${backend_dir:-<unset>}/manage.py"
 fi
 
 candidate_hash_after="$(ralph_candidate_hash "$worktree_dir")"

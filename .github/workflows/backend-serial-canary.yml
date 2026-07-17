@@ -1,0 +1,49 @@
+name: Backend Serial Canary
+
+on:
+  schedule:
+    # 00:00 Asia/Kolkata. Scheduled runs exercise the staging integration head.
+    - cron: '30 18 * * *'
+  workflow_dispatch:
+    inputs:
+      purpose:
+        description: Why the serial canary is being run
+        required: true
+        default: epic-checkpoint
+        type: choice
+        options:
+          - epic-checkpoint
+          - release-candidate
+          - investigation
+
+concurrency:
+  group: backend-serial-canary
+  cancel-in-progress: false
+
+jobs:
+  backend-serial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'staging' || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            sfpcl_credit/requirements.txt
+            sfpcl_credit/requirements-dev.txt
+      - name: Install legal PDF Unicode fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fonts-noto-core
+          test -f /usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf
+      - run: pip install -r sfpcl_credit/requirements-dev.txt
+      - run: python sfpcl_credit/manage.py check
+      - run: python sfpcl_credit/manage.py makemigrations --check --dry-run
+      - name: Run serial full backend coverage
+        run: |
+          python -m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests --timing
+          python -m coverage report --fail-under=85

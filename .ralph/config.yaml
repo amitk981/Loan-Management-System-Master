@@ -122,6 +122,12 @@ quality_gates:
   backend_tests: false
   backend_migrations: true
   backend_coverage: true
+  # Shadow classification measures which slices could safely use impacted tests
+  # without changing acceptance: every candidate still runs full coverage. Do
+  # not enable selective execution until the binding quality policy is amended.
+  backend_validation_policy: shadow
+  backend_full_suite_every_completed_slices: 4
+  backend_impacted_parallel_workers: 6
   # Enabled at six workers after corrected 2026-07-17 shadow pilots proved
   # exact equivalence at six and eight; six was faster on this 8-core host.
   # Set to 1 for the serial fallback without changing suite scope or the floor.
