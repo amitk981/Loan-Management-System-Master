@@ -2,10 +2,10 @@ from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_http_methods
 
 from sfpcl_credit.api import error_response, parse_json_body, success_response
-from sfpcl_credit.disbursements.modules.disbursement_initiation import (
+from sfpcl_credit.disbursements.modules.disbursement_workflow import (
     DisbursementConflict,
     DisbursementReadinessStale,
-    initiate,
+    DisbursementWorkflow,
 )
 from sfpcl_credit.disbursements.modules.disbursement_readiness import evaluate
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied, DomainPermissionDenied
@@ -28,7 +28,6 @@ def readiness(request, loan_account_id):
         )
     try:
         data = evaluate(actor=actor, loan_account_id=loan_account_id)
-        data.pop("_evidence", None)
         return success_response(data, request)
     except DomainPermissionDenied as exc:
         return error_response(request, 403, "FORBIDDEN", exc.message)
@@ -60,7 +59,7 @@ def initiate_disbursement(request, loan_account_id):
         )
     try:
         payload = parse_json_body(request)
-        data = initiate(
+        data = DisbursementWorkflow.initiate(
             actor=actor,
             loan_account_id=loan_account_id,
             payload=payload,
@@ -78,9 +77,9 @@ def initiate_disbursement(request, loan_account_id):
             "The loan account was not found or is inaccessible.",
         )
     except DisbursementReadinessStale as exc:
-        return error_response(request, 409, "DISBURSEMENT_NOT_READY", str(exc))
+        return error_response(request, 409, exc.code, str(exc))
     except DisbursementConflict as exc:
-        return error_response(request, 409, "DISBURSEMENT_CONFLICT", str(exc))
+        return error_response(request, 409, exc.code, str(exc))
     except ValidationError as exc:
         fields = exc.message_dict if hasattr(exc, "message_dict") else {
             "non_field_errors": exc.messages[0]

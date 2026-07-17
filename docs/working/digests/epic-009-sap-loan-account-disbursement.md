@@ -1,5 +1,23 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009E2 Disbursement Contract and Owner-Proof Closure
+
+- `disbursements.modules.disbursement_workflow` is the single public mutation owner. Initiation
+  consumes `evaluate_for_initiation`, a typed decision carrying the canonical 23-check digest and
+  narrow SAP, borrower-bank, and governed source-bank identities; the readiness GET remains redacted.
+- Source-bank truth now requires one explicit Critical activation grant, reason/request evidence,
+  immutable version/`config.changed` audit links, and unchanged exact SFPCL RBL source facts.
+  Replacement retires and retains the old record while installing one singular current decision.
+  No role is seeded with the authority, so A-126 remains fail-closed until governance explicitly
+  grants a provisioner.
+- API §45.2 replay returns the retained original response under `idempotency_replayed: true` without
+  writes. Public blockers use the stable §7 classes, and generated/supplied request identity plus
+  final-verification comment digest reconcile across the initiation audit, workflow, and CFC task.
+- Genuine 008M7/009B3C/009D4 owners now reach public initiation without readiness/bank mocks.
+  Unrelated signatures remain harmless; changed required signer or source-bank facts deny with zero
+  initiation artifacts. Two PostgreSQL five-caller runs traverse the same real owners and retain one
+  complete row/audit/workflow/task winner each.
+
 ## 009D4 Readiness Effective Roles and Signature Scope
 
 - Readiness now resolves the active persisted actor through the central effective-role boundary,
@@ -37,17 +55,16 @@
   must keep source-bank readiness failed unless a singular current governed decision exists, and
   must not invent the missing provisioner.
 
-## 009E Payment Initiation
+## 009E Payment Initiation (superseded contract details closed by 009E2)
 
-- `disbursements.modules.disbursement_initiation` owns one atomic manual-bank initiation and exact
+- The original `disbursement_initiation` helper implements atomic manual-bank initiation behind the
+  009E2 `disbursement_workflow` public owner and exact
   §31.2 POST. It requires active persisted Senior Manager Finance Critical authority/newest SAP
   assignment scope, consumes only the 009D3 composition interface for payment-gate truth, freezes
   the exact 23 ordered code/status digest (excluding `evaluated_at`), and locks the matching current
   beneficiary/source-bank evidence before writing.
-- Generic source §12.3 bank ownership now admits `sfpcl`; the configuration selector exposes only one
-  verified active RBL decision and no plaintext. Missing or duplicate rows fail readiness closed.
-  009E treated that selector as resolving A-126, but the 2026-07-17 review reopened the assumption
-  because mutable labels do not prove governed activation/verification authority.
+- Generic source §12.3 bank ownership admits `sfpcl`, but its mutable labels alone never pass after
+  009E2. The governed source-bank activation decision above is now required.
 - Success retains one positive protected disbursement with `initiated/pending/pending`, manual mode,
   hashed idempotency identity, safe readiness/SAP/bank evidence ids, trimmed final verification,
   maker role/team/time, one audit, one workflow event, and one urgent CFC role task. Exact replay

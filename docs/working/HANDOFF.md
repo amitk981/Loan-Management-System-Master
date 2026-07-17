@@ -1,25 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-17_085441_normal_run
+2026-07-17_092208_normal_run
 
 ## Current Status
-009D4 is complete pending independent Ralph validation and commit. Readiness now uses the central
-active effective-role boundary, requires the explicit grant, and unions the canonical Senior
-Finance, governed/primary CFC, Credit Manager, governed/primary CFO, and explicit Auditor scopes.
-Unknown/inactive governed authority, missing grant, intake assignment, and cross-object facts remain
-denied or nondisclosing.
+009E2 is complete pending independent Ralph validation and commit. Payment initiation now enters
+through `disbursements.modules.disbursement_workflow` and consumes one typed readiness decision with
+the exact 23-check digest and narrow SAP, borrower-bank, and source-bank governance identities. The
+public readiness response remains redacted, while API replay now follows §45.2 and blockers use the
+stable §7 vocabulary.
 
-Legal signature readiness now considers only the latest current applicable PoA, tri-party, SH-4,
-Term Sheet, and Loan Agreement documents. Unrelated or superseded signature history cannot poison
-the decision; missing, extra, wrong, duplicate, unresolved, or provenance-incoherent signers on a
-required current document still fail closed against the exact approval-owned Term Sheet signer set.
-Thirty-four focused backend tests plus named zero-write/query proofs, Django check, migration sync,
-frontend lint/typecheck/build, and all 327 Vitest tests pass. No schema, route, envelope, permission
-catalogue, frontend, or write-side behavior changed.
+A raw SFPCL/RBL-labelled bank row remains insufficient. One explicit unseeded Critical activation
+grant, reason/request evidence, unchanged source facts, and exact version/audit ledgers are required;
+A-126's provisioner role remains deliberately unassigned. Initiation freezes a supplied/generated
+request id and final-verification comment digest across audit/workflow/task evidence, and CFC scope
+reconciles the complete linked ledger. Genuine 008M7/009B3C/009D4 owners reach public initiation;
+changed required signers/source-bank facts deny without writes; unrelated signatures remain harmless.
+Seventy-four focused backend tests, two real-owner PostgreSQL five-caller races, Django/migration
+checks, frontend lint/typecheck/build, and all 327 Vitest tests pass.
 
 ## Next Run
-Run sharpened 009E2 next to establish one typed, source-contract-compliant, genuine owner-backed
-`disbursement_workflow` and honest source-bank governance while consuming 009D4's exact signer
-scope. Then run sharpened 009F CFC authorisation/rejection through the same effective governed-role
-boundary; 009G extends that workflow owner for unique UTR, funding, and activation.
+Run sharpened 009F CFC authorisation/rejection through the same workflow owner, reconciling 009E2's
+request/comment digest and source-bank governance/version/audit identities. Then run sharpened 009G
+for unique UTR, evidence, atomic funding, and activation.

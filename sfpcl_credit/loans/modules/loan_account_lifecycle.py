@@ -92,7 +92,7 @@ def resolve_readiness_account(*, actor, loan_account_id, cfc_scope_resolver=None
     if permission not in permissions or not roles:
         raise DomainPermissionDenied("Disbursement readiness permission is required.")
     account = (
-        LoanAccount.objects.select_for_update()
+        LoanAccount.objects.select_for_update(of=("self",))
         .select_related(
             "loan_application",
             "member",

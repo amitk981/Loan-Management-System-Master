@@ -61,7 +61,7 @@ def resolve_term_sheet_signer_requirement(*, application_id):
 def resolve_approval_readiness(*, application_id, sanction_decision_id):
     """Project current approval-owned pre-initiation facts only."""
     case = (
-        ApprovalCase.objects.select_for_update()
+        ApprovalCase.objects.select_for_update(of=("self",))
         .select_related(
             "loan_application",
             "loan_appraisal_note",

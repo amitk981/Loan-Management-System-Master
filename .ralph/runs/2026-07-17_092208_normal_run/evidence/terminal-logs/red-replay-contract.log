@@ -1,0 +1,32 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 199, in test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts
+    self.assertEqual(
+AssertionError: {'disbursement_id': '10a3b000-2fae-4f44-a91[115 chars]ing'} != {'idempotency_replayed': True, 'original_re[168 chars]ng'}}
++ {'idempotency_replayed': True,
+- {'authorisation_status': 'pending',
++  'original_response': {'authorisation_status': 'pending',
+? ++++++++++++++++++++++
+
+-  'bank_transfer_status': 'pending',
++                        'bank_transfer_status': 'pending',
+? ++++++++++++++++++++++
+
+-  'disbursement_id': '10a3b000-2fae-4f44-a91b-b325c8a97ff6',
++                        'disbursement_id': '10a3b000-2fae-4f44-a91b-b325c8a97ff6',
+? ++++++++++++++++++++++
+
+-  'initiation_status': 'initiated'}
++                        'initiation_status': 'initiated'}}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

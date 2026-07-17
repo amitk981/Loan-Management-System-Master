@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_disbursement_readiness_real_owners_reach_a126_then_all_pass (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_disbursement_readiness_real_owners_reach_a126_then_all_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 3357, in test_disbursement_readiness_real_owners_reach_a126_then_all_pass
+    self.assertTrue(ready.json()["data"]["ready_for_disbursement"])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.435s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -15,7 +15,7 @@ from sfpcl_credit.approvals.modules.disbursement_readiness import (
 from sfpcl_credit.legal_documents.modules.disbursement_readiness import (
     resolve_legal_readiness,
 )
-from sfpcl_credit.configurations.modules.configuration_resolver import (
+from sfpcl_credit.configurations.modules.source_bank_governance import (
     resolve_source_bank_account,
 )
 from sfpcl_credit.loans.modules.loan_account_lifecycle import (
@@ -37,6 +37,46 @@ from sfpcl_credit.disbursements.modules.disbursement_scope import has_cfc_scope
 class CheckSpec:
     code: str
     label: str
+
+
+@dataclass(frozen=True)
+class InitiationReadinessDecision:
+    loan_account_id: object
+    loan_application_id: object
+    ready_for_disbursement: bool
+    blocker_error_code: str | None
+    check_digest: str
+    sap_customer_code_id: object | None
+    sap_profile_request_id: object | None
+    borrower_bank_account_id: object | None
+    bank_verification_decision_id: object | None
+    source_bank_account_id: object | None
+    source_bank_governance_id: object | None
+    source_bank_version_history_id: object | None
+    source_bank_audit_log_id: object | None
+
+    def safe_evidence(self):
+        return {
+            "check_digest": self.check_digest,
+            "sap_customer_code_id": _string_or_none(self.sap_customer_code_id),
+            "sap_profile_request_id": _string_or_none(self.sap_profile_request_id),
+            "borrower_bank_account_id": _string_or_none(
+                self.borrower_bank_account_id
+            ),
+            "bank_verification_decision_id": _string_or_none(
+                self.bank_verification_decision_id
+            ),
+            "source_bank_account_id": _string_or_none(self.source_bank_account_id),
+            "source_bank_governance_id": _string_or_none(
+                self.source_bank_governance_id
+            ),
+            "source_bank_version_history_id": _string_or_none(
+                self.source_bank_version_history_id
+            ),
+            "source_bank_audit_log_id": _string_or_none(
+                self.source_bank_audit_log_id
+            ),
+        }
 
 
 CHECK_SPECS = (
@@ -74,7 +114,22 @@ def _check(spec, passed, reason):
 
 
 def evaluate(*, actor, loan_account_id):
-    """Return the current pre-initiation decision without writing workflow truth."""
+    """Return the redacted current pre-initiation projection without workflow writes."""
+    result, _ = _evaluate(
+        actor=actor, loan_account_id=loan_account_id, for_initiation=False
+    )
+    return result
+
+
+def evaluate_for_initiation(*, actor, loan_account_id):
+    """Return the narrow typed decision consumed by the payment workflow."""
+    _, decision = _evaluate(
+        actor=actor, loan_account_id=loan_account_id, for_initiation=True
+    )
+    return decision
+
+
+def _evaluate(*, actor, loan_account_id, for_initiation):
     with transaction.atomic():
         account = resolve_readiness_account(
             actor=actor,
@@ -98,7 +153,7 @@ def evaluate(*, actor, loan_account_id):
             application_id=account.loan_application_id
         )
         sap = resolve_sap_code(account.member_id, for_update=True)
-        source_bank = resolve_source_bank_account()
+        source_bank = resolve_source_bank_account(for_update=for_initiation)
         sap_current = bool(
             sap
             and account.sap_customer_code_id
@@ -218,37 +273,114 @@ def evaluate(*, actor, loan_account_id):
         canonical_checks = [
             {"code": item["code"], "status": item["status"]} for item in checks
         ]
-        result["_evidence"] = {
-            "check_digest": hashlib.sha256(
-                json.dumps(canonical_checks, separators=(",", ":")).encode()
-            ).hexdigest(),
-            "sap_customer_code_id": str(sap.customer_code_id) if sap_current else None,
-            "sap_profile_request_id": (
-                str(getattr(sap, "profile_request_id", "")) or None
-                if sap_current
-                else None
+        check_digest = hashlib.sha256(
+            json.dumps(canonical_checks, separators=(",", ":")).encode()
+        ).hexdigest()
+        decision = InitiationReadinessDecision(
+            loan_account_id=account.loan_account_id,
+            loan_application_id=account.loan_application_id,
+            ready_for_disbursement=result["ready_for_disbursement"],
+            blocker_error_code=_blocker_error_code(checks),
+            check_digest=check_digest,
+            sap_customer_code_id=sap.customer_code_id if sap_current else None,
+            sap_profile_request_id=(
+                getattr(sap, "profile_request_id", None) if sap_current else None
             ),
-            "borrower_bank_account_id": (
-                str(getattr(bank, "bank_account_id", "")) or None
+            borrower_bank_account_id=(
+                getattr(bank, "bank_account_id", None) if bank.valid else None
+            ),
+            bank_verification_decision_id=(
+                getattr(bank, "bank_verification_decision_id", None)
                 if bank.valid
                 else None
             ),
-            "bank_verification_decision_id": (
-                str(getattr(bank, "bank_verification_decision_id", "")) or None
-                if bank.valid
-                else None
-            ),
-            "source_bank_account_id": (
-                str(getattr(source_bank, "source_bank_account_id", "")) or None
+            source_bank_account_id=(
+                getattr(source_bank, "source_bank_account_id", None)
                 if source_bank and source_bank.active
                 else None
             ),
-        }
-        return result
+            source_bank_governance_id=(
+                getattr(source_bank, "governance_id", None)
+                if source_bank and source_bank.active
+                else None
+            ),
+            source_bank_version_history_id=(
+                getattr(source_bank, "version_history_id", None)
+                if source_bank and source_bank.active
+                else None
+            ),
+            source_bank_audit_log_id=(
+                getattr(source_bank, "audit_log_id", None)
+                if source_bank and source_bank.active
+                else None
+            ),
+        )
+        return result, decision
 
 
 class DisbursementReadinessModule:
     evaluate = staticmethod(evaluate)
+    evaluate_for_initiation = staticmethod(evaluate_for_initiation)
 
 
-__all__ = ["CHECK_SPECS", "DisbursementReadinessModule", "evaluate"]
+def _string_or_none(value):
+    return str(value) if value else None
+
+
+def _blocker_error_code(checks):
+    failed = {item["code"] for item in checks if item["status"] == "fail"}
+    categories = (
+        (
+            {
+                "sanction_approved",
+                "exception_approval_complete",
+                "general_meeting_approval_complete",
+                "appraisal_complete",
+            },
+            "APPROVAL_PENDING",
+        ),
+        (
+            {
+                "documentation_complete",
+                "company_secretary_approval",
+                "credit_manager_approval",
+                "sanction_committee_approval",
+                "term_sheet_complete",
+                "loan_agreement_complete",
+                "signature_mismatch_resolved",
+            },
+            "DOCUMENTATION_INCOMPLETE",
+        ),
+        (
+            {
+                "security_package_complete",
+                "poa_complete",
+                "sh4_complete",
+                "cdsl_pledge_complete",
+                "blank_dated_cheque_received",
+            },
+            "SECURITY_PACKAGE_INCOMPLETE",
+        ),
+        ({"sap_customer_code_present"}, "SAP_CUSTOMER_CODE_REQUIRED"),
+        (
+            {
+                "cancelled_cheque_verified",
+                "bank_account_verified",
+                "source_bank_account_configured",
+            },
+            "BANK_ACCOUNT_NOT_VERIFIED",
+        ),
+        ({"amount_within_sanction"}, "DISBURSEMENT_EXCEEDS_SANCTION"),
+    )
+    for codes, error_code in categories:
+        if failed & codes:
+            return error_code
+    return "INVALID_STATE_TRANSITION" if failed else None
+
+
+__all__ = [
+    "DisbursementReadinessModule",
+    "InitiationReadinessDecision",
+    "evaluate",
+    "evaluate_for_initiation",
+]

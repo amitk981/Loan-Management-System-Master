@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_source_bank_requires_explicit_governed_activation_and_current_evidence (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_requires_explicit_governed_activation_and_current_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 393, in test_source_bank_requires_explicit_governed_activation_and_current_evidence
+    from sfpcl_credit.configurations.modules.source_bank_governance import (
+ModuleNotFoundError: No module named 'sfpcl_credit.configurations.modules.source_bank_governance'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

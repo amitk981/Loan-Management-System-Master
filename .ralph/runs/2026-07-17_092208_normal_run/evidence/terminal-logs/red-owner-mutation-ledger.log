@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_public_initiation_denies_every_current_owner_drift_without_writes (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_public_initiation_denies_every_current_owner_drift_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 3496, in test_public_initiation_denies_every_current_owner_drift_without_writes
+    (self.case.sanction_decision.__class__, self.case.sanction_decision_id,
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ApprovalCase' object has no attribute 'sanction_decision_id'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.437s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

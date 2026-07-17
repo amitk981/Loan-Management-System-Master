@@ -28,7 +28,7 @@ class LegalReadinessFacts:
 def resolve_legal_readiness(*, application_id, terminal_security_evidence=None):
     """Project current legal/checklist facts without refreshing or completing them."""
     checklist = (
-        DocumentChecklist.objects.select_for_update()
+        DocumentChecklist.objects.select_for_update(of=("self",))
         .select_related(
             "company_secretary_signature",
             "credit_manager_signature",

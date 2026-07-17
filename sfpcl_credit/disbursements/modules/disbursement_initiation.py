@@ -10,11 +10,13 @@ from django.utils import timezone
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.applications.modules import document_checklist_facts
 from sfpcl_credit.communications.models import Notification
-from sfpcl_credit.configurations.modules import configuration_resolver
+from sfpcl_credit.configurations.modules.source_bank_governance import (
+    resolve_source_bank_account,
+)
 from sfpcl_credit.disbursements.models import Disbursement
 from sfpcl_credit.disbursements.modules.disbursement_readiness import (
-    CHECK_SPECS,
     DisbursementReadinessModule,
+    InitiationReadinessDecision,
 )
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied, DomainPermissionDenied
 from sfpcl_credit.identity.models import AuditLog, Permission, User
@@ -27,18 +29,35 @@ INITIATE_PERMISSION = "finance.disbursement.initiate"
 
 
 class DisbursementConflict(Exception):
-    pass
+    code = "CONFLICT"
 
 
 class DisbursementReadinessStale(Exception):
-    pass
+    def __init__(self, message, code="INVALID_STATE_TRANSITION"):
+        self.code = code
+        super().__init__(message)
 
 
-def initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
+def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
     cleaned = _validate_payload(payload, idempotency_key)
     with transaction.atomic():
         maker = _locked_maker(actor)
-        readiness = DisbursementReadinessModule.evaluate(
+        payload_digest = _payload_digest(
+            loan_account_id=loan_account_id, maker=maker, cleaned=cleaned
+        )
+        retained = Disbursement.objects.select_for_update().filter(
+            idempotency_key_digest=cleaned["idempotency_key_digest"]
+        ).first()
+        if retained is not None:
+            if retained.payload_digest == payload_digest:
+                return {
+                    "idempotency_replayed": True,
+                    "original_response": serialize_disbursement(retained),
+                }
+            raise DisbursementConflict(
+                "The idempotency key is already bound to a different request."
+            )
+        readiness = DisbursementReadinessModule.evaluate_for_initiation(
             actor=maker, loan_account_id=loan_account_id
         )
         readiness_digest, readiness_evidence = _require_current_readiness(
@@ -56,7 +75,7 @@ def initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
         bank = document_checklist_facts.resolve_blank_cheque_bank_fact(
             application_id=account.loan_application_id
         )
-        source = configuration_resolver.resolve_source_bank_account(for_update=True)
+        source = resolve_source_bank_account(for_update=True)
         _require_bank_facts(
             account=account,
             cleaned=cleaned,
@@ -64,30 +83,6 @@ def initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
             source=source,
             readiness_evidence=readiness_evidence,
         )
-        payload_digest = _digest(
-            {
-                "loan_account_id": str(account.pk),
-                "actor_user_id": str(maker.pk),
-                **{
-                    key: str(value) if isinstance(value, (uuid.UUID, Decimal)) else value
-                    for key, value in cleaned.items()
-                    if key != "idempotency_key_digest"
-                },
-            }
-        )
-        retained = Disbursement.objects.select_for_update().filter(
-            idempotency_key_digest=cleaned["idempotency_key_digest"]
-        ).first()
-        if retained is not None:
-            if (
-                retained.payload_digest == payload_digest
-                and retained.readiness_digest == readiness_digest
-                and retained.readiness_evidence_json == readiness_evidence
-            ):
-                return serialize_disbursement(retained)
-            raise DisbursementConflict(
-                "The idempotency key is already bound to different or stale facts."
-            )
         if Disbursement.objects.select_for_update().filter(
             loan_account=account,
             authorisation_status__in=("pending", "approved"),
@@ -101,6 +96,17 @@ def initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
         initiated_at = timezone.now()
         roles = sorted(auth_service.effective_role_codes(maker))
         teams = sorted(maker.team_codes())
+        supplied_request_id = request.headers.get("X-Request-ID", "") if request else ""
+        request_id = supplied_request_id.strip() or f"req_disbursement_{uuid.uuid4().hex}"
+        if len(request_id) > 255:
+            request_id = f"req_disbursement_{uuid.uuid4().hex}"
+        comment_digest = hashlib.sha256(
+            cleaned["final_verification_comments"].encode()
+        ).hexdigest()
+        trace = (
+            f"request_id={request_id};"
+            f"verification_digest={comment_digest}"
+        )
         safe_evidence = {
             "disbursement_id": str(disbursement_id),
             "loan_account_id": str(account.pk),
@@ -120,7 +126,8 @@ def initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
             "readiness_digest": readiness_digest,
             "readiness_evidence": readiness_evidence,
             "idempotency_digest": cleaned["idempotency_key_digest"],
-            "request_id": request.headers.get("X-Request-ID") if request else None,
+            "request_id": request_id,
+            "final_verification_comment_digest": comment_digest,
             "ip_address": request_ip(request) if request else "",
             "user_agent": request_user_agent(request) if request else "",
             "initiated_at": initiated_at.isoformat().replace("+00:00", "Z"),
@@ -144,7 +151,7 @@ def initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
             entity_id=disbursement_id,
             from_state=None,
             to_state=Disbursement.INITIATED,
-            trigger_reason="disbursement.initiated",
+            trigger_reason=trace,
             action_code="disbursement.initiated",
             metadata=safe_evidence,
         )
@@ -153,7 +160,10 @@ def initiate(*, actor, loan_account_id, payload, idempotency_key, request=None):
             category="Finance",
             severity=Notification.SEVERITY_URGENT,
             title="Disbursement awaiting CFC authorisation",
-            message="A verified manual-bank instruction is awaiting independent review.",
+            message=(
+                "A verified manual-bank instruction is awaiting independent review. "
+                f"{trace}"
+            ),
             related_entity_type="disbursement",
             related_entity_id=disbursement_id,
             action_label="Review disbursement",
@@ -272,40 +282,20 @@ def _locked_maker(actor):
 
 
 def _require_current_readiness(readiness, loan_account_id):
-    expected_codes = [spec.code for spec in CHECK_SPECS]
-    checks = readiness.get("checks") if isinstance(readiness, dict) else None
-    if not isinstance(checks, list):
+    if not isinstance(readiness, InitiationReadinessDecision):
         raise DisbursementReadinessStale("Current readiness evidence is unavailable.")
-    canonical = [
-        {"code": item.get("code"), "status": item.get("status")}
-        for item in checks
-        if isinstance(item, dict)
-    ]
-    digest = _digest(canonical)
-    evidence = readiness.get("_evidence")
+    evidence = readiness.safe_evidence()
     if (
-        str(readiness.get("loan_account_id")) != str(loan_account_id)
-        or readiness.get("ready_for_disbursement") is not True
-        or len(canonical) != len(checks)
-        or [item["code"] for item in canonical] != expected_codes
-        or any(item["status"] != "pass" for item in canonical)
-        or not isinstance(evidence, dict)
-        or set(evidence)
-        != {
-            "check_digest",
-            "sap_customer_code_id",
-            "sap_profile_request_id",
-            "borrower_bank_account_id",
-            "bank_verification_decision_id",
-            "source_bank_account_id",
-        }
-        or evidence.get("check_digest") != digest
-        or any(not evidence.get(key) for key in set(evidence) - {"check_digest"})
+        str(readiness.loan_account_id) != str(loan_account_id)
+        or readiness.ready_for_disbursement is not True
+        or len(readiness.check_digest) != 64
+        or any(not value for value in evidence.values())
     ):
         raise DisbursementReadinessStale(
-            "All 23 exact current readiness checks must pass in canonical order."
+            "All 23 exact current readiness checks must pass in canonical order.",
+            readiness.blocker_error_code or "INVALID_STATE_TRANSITION",
         )
-    return digest, evidence
+    return readiness.check_digest, evidence
 
 
 def _require_unfunded_account(account, amount):
@@ -326,7 +316,13 @@ def _require_unfunded_account(account, amount):
         or amount > account.sanctioned_amount
     ):
         raise DisbursementReadinessStale(
-            "The loan account amount or unfunded sanctioned state has changed."
+            "The loan account amount or unfunded sanctioned state has changed.",
+            (
+                "DISBURSEMENT_EXCEEDS_SANCTION"
+                if amount > account.sanctioned_amount
+                or amount != account.terms.loan_amount
+                else "INVALID_STATE_TRANSITION"
+            ),
         )
 
 
@@ -344,9 +340,16 @@ def _require_bank_facts(*, account, cleaned, bank, source, readiness_evidence):
         or source.source_bank_account_id != cleaned["source_bank_account_id"]
         or str(source.source_bank_account_id)
         != readiness_evidence["source_bank_account_id"]
+        or str(source.governance_id)
+        != readiness_evidence["source_bank_governance_id"]
+        or str(source.version_history_id)
+        != readiness_evidence["source_bank_version_history_id"]
+        or str(source.audit_log_id)
+        != readiness_evidence["source_bank_audit_log_id"]
     ):
         raise DisbursementReadinessStale(
-            "The verified beneficiary or governed source-bank evidence has changed."
+            "The verified beneficiary or governed source-bank evidence has changed.",
+            "BANK_ACCOUNT_NOT_VERIFIED",
         )
 
 
@@ -356,13 +359,21 @@ def _digest(value):
     ).hexdigest()
 
 
-class DisbursementInitiationModule:
-    initiate = staticmethod(initiate)
+def _payload_digest(*, loan_account_id, maker, cleaned):
+    return _digest(
+        {
+            "loan_account_id": str(loan_account_id),
+            "actor_user_id": str(maker.pk),
+            **{
+                key: str(value) if isinstance(value, (uuid.UUID, Decimal)) else value
+                for key, value in cleaned.items()
+                if key != "idempotency_key_digest"
+            },
+        }
+    )
 
 
 __all__ = [
     "DisbursementConflict",
-    "DisbursementInitiationModule",
     "DisbursementReadinessStale",
-    "initiate",
 ]

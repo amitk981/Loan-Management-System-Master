@@ -3209,10 +3209,12 @@ class FinalDocumentationApprovalApiTests(TestCase):
                 self.assertFalse(readiness.sanction_committee_approval)
                 duplicate.delete()
 
-    def test_disbursement_readiness_real_owners_reach_a126_then_all_pass(self):
-        from types import SimpleNamespace
-        from unittest.mock import patch
-
+    def _real_owner_initiation_fixture(self, *, stop_before_initiation=False):
+        from sfpcl_credit.communications.models import Notification
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            activate_source_bank_account,
+        )
+        from sfpcl_credit.disbursements.models import Disbursement
         from sfpcl_credit.loans.models import LoanAccount, LoanTerms
 
         self._complete_readiness_documentation()
@@ -3311,19 +3313,234 @@ class FinalDocumentationApprovalApiTests(TestCase):
              if row["status"] == "fail"],
             ["source_bank_account_configured"],
         )
-        with patch(
-            "sfpcl_credit.disbursements.modules.disbursement_readiness."
-            "resolve_source_bank_account",
-            return_value=SimpleNamespace(active=True),
-        ):
-            ready = self.client.get(
-                f"/api/v1/loan-accounts/{account.pk}/disbursement-readiness/", **auth
-            )
+        source_bank = BankAccount.objects.create(
+            owner_party_type="sfpcl",
+            owner_party_id=uuid4(),
+            account_holder_name="SFPCL",
+            account_number_encrypted="protected-source-account",
+            account_number_hash="real-owner-source-hash",
+            account_number_last4="9001",
+            ifsc="RBLB0000001",
+            bank_name="RBL Bank",
+            verification_status="verified",
+            status="active",
+        )
+        self._grant(
+            self.finance,
+            "config.source_bank_account.activate",
+            "finance.disbursement.initiate",
+        )
+        activate_source_bank_account(
+            actor=self.finance,
+            bank_account_id=source_bank.pk,
+            reason="Explicit test Treasury approval.",
+            request_id="readiness-real-owner-source-bank",
+        )
+        ready = self.client.get(
+            f"/api/v1/loan-accounts/{account.pk}/disbursement-readiness/", **auth
+        )
         self.assertEqual(ready.status_code, 200, ready.content)
-        self.assertTrue(ready.json()["data"]["ready_for_disbursement"])
+        self.assertTrue(
+            ready.json()["data"]["ready_for_disbursement"], ready.json()
+        )
         self.assertTrue(all(
             row["status"] == "pass" for row in ready.json()["data"]["checks"]
         ))
+        final_checklist = self.checklist.items.get(
+            item_code="final_checklist"
+        ).loan_document
+        unrelated = SignatureRecord.objects.create(
+            loan_document=final_checklist,
+            signer_party_type="borrower",
+            signer_party_id=self.application.member_id,
+            signer_name_snapshot=self.application.member.legal_name,
+            signature_method="wet_ink",
+            signature_status="signed",
+            signature_mismatch_flag=False,
+            signed_at=timezone.now(),
+            captured_by_user=self.compliance,
+        )
+        with transaction.atomic():
+            bank = document_checklist_facts.resolve_blank_cheque_bank_fact(
+                application_id=self.application.pk
+            )
+        payload = {
+            "disbursement_amount": str(account.sanctioned_amount),
+            "borrower_bank_account_id": str(bank.bank_account_id),
+            "source_bank_account_id": str(source_bank.pk),
+            "final_verification_comments": "All current owner evidence verified.",
+        }
+        if stop_before_initiation:
+            return {
+                "account": account,
+                "source_bank": source_bank,
+                "borrower_bank_account_id": bank.bank_account_id,
+                "payload": payload,
+                "actor": self.finance,
+            }
+        counts = (
+            Disbursement.objects.count(),
+            Notification.objects.filter(
+                notification_type="disbursement_authorisation"
+            ).count(),
+            AuditLog.objects.filter(action="disbursement.initiated").count(),
+            WorkflowEvent.objects.filter(workflow_name="DisbursementInitiated").count(),
+        )
+        BankAccount.objects.filter(pk=source_bank.pk).update(status="inactive")
+        denied = self.client.post(
+            f"/api/v1/loan-accounts/{account.pk}/disbursements/initiate/",
+            payload,
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="real-owner-source-changed",
+            **auth,
+        )
+        self.assertEqual(denied.status_code, 409, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "BANK_ACCOUNT_NOT_VERIFIED")
+        self.assertEqual(
+            (
+                Disbursement.objects.count(),
+                Notification.objects.filter(
+                    notification_type="disbursement_authorisation"
+                ).count(),
+                AuditLog.objects.filter(action="disbursement.initiated").count(),
+                WorkflowEvent.objects.filter(
+                    workflow_name="DisbursementInitiated"
+                ).count(),
+            ),
+            counts,
+        )
+        BankAccount.objects.filter(pk=source_bank.pk).update(status="active")
+        wrong_signature = SignatureRecord.objects.create(
+            loan_document=self.checklist.items.get(item_code="term_sheet").loan_document,
+            signer_party_type="user",
+            signer_party_id=uuid4(),
+            signer_name_snapshot="Wrong current signer",
+            signature_method="wet_ink",
+            signature_status="signed",
+            signature_mismatch_flag=False,
+            signed_at=timezone.now(),
+            captured_by_user=self.compliance,
+        )
+        denied = self.client.post(
+            f"/api/v1/loan-accounts/{account.pk}/disbursements/initiate/",
+            payload,
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="real-owner-signer-changed",
+            **auth,
+        )
+        self.assertEqual(denied.status_code, 409, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "DOCUMENTATION_INCOMPLETE")
+        self.assertEqual(Disbursement.objects.count(), 0)
+        wrong_signature.delete()
+        initiated = self.client.post(
+            f"/api/v1/loan-accounts/{account.pk}/disbursements/initiate/",
+            payload,
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="real-owner-initiation",
+            HTTP_X_REQUEST_ID="real-owner-initiation-request",
+            **auth,
+        )
+        self.assertEqual(initiated.status_code, 200, initiated.content)
+        self.assertEqual(initiated.json()["data"]["initiation_status"], "initiated")
+        self.assertEqual(Disbursement.objects.count(), 1)
+        self.assertTrue(unrelated.pk)
+
+    def test_disbursement_readiness_real_owners_reach_a126_then_all_pass(self):
+        self._real_owner_initiation_fixture()
+
+    def test_public_initiation_denies_every_current_owner_drift_without_writes(self):
+        from sfpcl_credit.communications.models import Notification
+        from sfpcl_credit.configurations.models import SourceBankAccountGovernance
+        from sfpcl_credit.disbursements.models import Disbursement
+        from sfpcl_credit.loans.models import LoanAccount
+        from sfpcl_credit.sap_workflow.models import SapCustomerCode
+
+        fixture = self._real_owner_initiation_fixture(stop_before_initiation=True)
+        account = fixture["account"]
+        auth = self.fixture._auth(fixture["actor"])
+
+        def post(label):
+            before = (
+                Disbursement.objects.count(),
+                Notification.objects.filter(
+                    notification_type="disbursement_authorisation"
+                ).count(),
+                AuditLog.objects.filter(action="disbursement.initiated").count(),
+                WorkflowEvent.objects.filter(
+                    workflow_name="DisbursementInitiated"
+                ).count(),
+            )
+            response = self.client.post(
+                f"/api/v1/loan-accounts/{account.pk}/disbursements/initiate/",
+                fixture["payload"],
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"owner-drift-{label}",
+                **auth,
+            )
+            self.assertEqual(response.status_code, 409, response.content)
+            self.assertEqual(
+                (
+                    Disbursement.objects.count(),
+                    Notification.objects.filter(
+                        notification_type="disbursement_authorisation"
+                    ).count(),
+                    AuditLog.objects.filter(action="disbursement.initiated").count(),
+                    WorkflowEvent.objects.filter(
+                        workflow_name="DisbursementInitiated"
+                    ).count(),
+                ),
+                before,
+            )
+
+        owner_mutations = (
+            (Member, self.application.member_id, "kyc_status", "pending", "verified"),
+            (self.case.sanction_decision.__class__, self.case.sanction_decision.pk,
+             "decision", "rejected", "sanctioned"),
+            (LoanAccount, account.pk, "loan_account_status", "active", "sanctioned"),
+            (SapCustomerCode, account.sap_customer_code_id, "status", "inactive", "active"),
+            (BankAccount, fixture["borrower_bank_account_id"],
+             "status", "inactive", "active"),
+            (SourceBankAccountGovernance,
+             SourceBankAccountGovernance.objects.get(status="active").pk,
+             "status", "inactive", "active"),
+            (PowerOfAttorney,
+             PowerOfAttorney.objects.get(security_package__loan_application=self.application).pk,
+             "status", "draft", "active"),
+        )
+        for index, (model, pk, field, changed, original) in enumerate(owner_mutations):
+            with self.subTest(owner=model.__name__, field=field):
+                model.objects.filter(pk=pk).update(**{field: changed})
+                post(f"fact-{index}")
+                model.objects.filter(pk=pk).update(**{field: original})
+
+        required_signers = {
+            "term_sheet": ("borrower", "nominee", "cfo"),
+            "loan_agreement": ("borrower", "witness"),
+            "power_of_attorney": ("borrower", "nominee"),
+            "tri_party_agreement": ("borrower", "nominee"),
+            "sh4": ("borrower", "witness"),
+        }
+        for document_type, parties in required_signers.items():
+            document = LoanDocument.objects.filter(
+                loan_application=self.application,
+                document_type=document_type,
+            ).order_by("-created_at", "-loan_document_id").first()
+            self.assertIsNotNone(document, document_type)
+            for party in parties:
+                with self.subTest(document=document_type, signer=party):
+                    changed = SignatureRecord.objects.create(
+                        loan_document=document,
+                        signer_party_type="user" if party == "cfo" else party,
+                        signer_party_id=uuid4(),
+                        signer_name_snapshot="Changed current signer",
+                        signature_method="wet_ink",
+                        signature_status="signed",
+                        signature_mismatch_flag=False,
+                        signed_at=timezone.now(),
+                        captured_by_user=self.compliance,
+                    )
+                    post(f"signer-{document_type}-{party}")
+                    changed.delete()
 
     def _complete_readiness_documentation(self):
         self._complete_all_applicable_items()

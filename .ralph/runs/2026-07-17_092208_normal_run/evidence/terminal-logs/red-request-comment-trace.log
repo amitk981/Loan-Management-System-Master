@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_current_ready_payment_is_recorded_once_without_transfer_side_effects (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_current_ready_payment_is_recorded_once_without_transfer_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 168, in test_current_ready_payment_is_recorded_once_without_transfer_side_effects
+    self.assertTrue(audit.new_value_json["request_id"])
+AssertionError: None is not true
+
+======================================================================
+FAIL: test_supplied_request_id_is_retained_in_exact_initiation_ledger (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_supplied_request_id_is_retained_in_exact_initiation_ledger)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 204, in test_supplied_request_id_is_retained_in_exact_initiation_ledger
+    self.assertIn("req-disbursement-supplied", row.initiation_workflow_event.trigger_reason)
+AssertionError: 'req-disbursement-supplied' not found in 'disbursement.initiated'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.066s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

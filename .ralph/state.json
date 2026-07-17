@@ -244,14 +244,15 @@
     "009D3-readiness-approval-reader-and-boundary-closure",
     "009E-payment-initiation-by-senior-manager-finance",
     "008M7-current-correction-tail-closure",
-    "009D4-readiness-effective-role-and-signature-scope-closure"
+    "009D4-readiness-effective-role-and-signature-scope-closure",
+    "009E2-disbursement-contract-and-owner-proof-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6d79db01",
-  "last_run_id": "2026-07-17_085441_normal_run",
+  "last_run_id": "2026-07-17_092208_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

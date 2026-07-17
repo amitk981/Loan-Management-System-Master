@@ -1,6 +1,6 @@
 # API Contracts
 
-## Payment initiation (009E)
+## Payment initiation (009E/009E2)
 
 `POST /api/v1/loan-accounts/{loan_account_id}/disbursements/initiate/` implements source §31.2.
 It requires an `Idempotency-Key` header and a JSON object containing exactly:
@@ -16,10 +16,14 @@ It requires an `Idempotency-Key` header and a JSON object containing exactly:
 
 Only an active persisted `senior_manager_finance` actor with the Critical
 `finance.disbursement.initiate` grant and newest-SAP-assignee loan scope may act. The owner calls
-only `DisbursementReadinessModule.evaluate(actor, loan_account_id)` for composite payment-gate
-truth, requires the exact 23 canonical ordered `pass` results, and freezes their code/status digest
-without `evaluated_at`. It separately locks the exact borrower bank verification decision and the
-single verified active SFPCL-owned RBL source account named by that readiness evidence.
+only `DisbursementReadinessModule.evaluate_for_initiation(actor, loan_account_id)` for one typed
+composite payment-gate decision; the ordinary GET projection never exposes its evidence identities.
+The decision freezes the exact canonical 23-check digest plus SAP, borrower-bank, and governed
+source-bank account/governance/version/audit identities. A mutable row merely labelled SFPCL/RBL/
+verified/active never passes. Source-bank activation requires the unseeded Critical
+`config.source_bank_account.activate` grant, a reason and request id, and creates one singular
+versioned/audited current decision. Replacement retires the previous record while retaining its
+historical evidence; the mandatory audit action is `config.changed`.
 
 Success returns only:
 
@@ -35,11 +39,14 @@ Success returns only:
 Creation atomically retains the manual-payment row, safe initiation audit/workflow, and one urgent
 role-scoped CFC task. It does not authorise or execute the transfer, create a UTR/advice, fund or
 activate the account, update a register, or communicate with the borrower. Exact key/payload/current
-evidence replay returns the same four-field projection without writes. Changed key facts or a second
-active initiation return `409 DISBURSEMENT_CONFLICT`; failed/stale/reordered/extra readiness,
-amount/account/bank drift, or missing source configuration returns `409 DISBURSEMENT_NOT_READY`;
-unknown/malformed fields return `400 VALIDATION_ERROR`; inaccessible ids return nondisclosing
-`403 OBJECT_ACCESS_DENIED`.
+request replay returns `{ "idempotency_replayed": true, "original_response": <four-field success> }`
+without writes. The supplied `X-Request-ID`, or a generated non-empty id when absent, and the SHA-256
+digest of trimmed final-verification comments reconcile across the audit, workflow, and CFC task.
+Changed key facts or a second active initiation return `409 CONFLICT`; readiness blockers use stable
+`APPROVAL_PENDING`, `DOCUMENTATION_INCOMPLETE`, `SECURITY_PACKAGE_INCOMPLETE`,
+`SAP_CUSTOMER_CODE_REQUIRED`, `BANK_ACCOUNT_NOT_VERIFIED`,
+`DISBURSEMENT_EXCEEDS_SANCTION`, or `INVALID_STATE_TRANSITION`. Unknown/malformed fields return
+`400 VALIDATION_ERROR`; inaccessible ids return nondisclosing `403 OBJECT_ACCESS_DENIED`.
 
 ## Tri-party agreement verification (008G/008G2)
 

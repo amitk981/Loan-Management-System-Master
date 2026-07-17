@@ -1,0 +1,82 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+FFFFFFEF
+======================================================================
+ERROR: test_cfc_scope_reconciles_every_frozen_initiation_link (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_cfc_scope_reconciles_every_frozen_initiation_link)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 296, in _setup_and_call
+    self._post_teardown()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 1102, in _post_teardown
+    self._fixture_teardown()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 1333, in _fixture_teardown
+    connections[db_name].check_constraints()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 276, in check_constraints
+    raise IntegrityError(
+django.db.utils.IntegrityError: The row in table 'notifications' with primary key '357f926bee484edea5fc82b6fbbda997' has an invalid foreign key: notifications.sender_user_id contains a value '2a745b2e1bf2404e816ae03b83ae8618' that does not have a corresponding value in users.user_id.
+
+======================================================================
+FAIL: test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 260, in test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts
+    self.assertEqual(stale_replay.status_code, 200, stale_replay.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "CONFLICT", "message": "The idempotency key is already bound to different or stale facts.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T04:28:45.694766Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_single_public_workflow_consumes_typed_readiness_without_private_shape (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_single_public_workflow_consumes_typed_readiness_without_private_shape)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 525, in test_single_public_workflow_consumes_typed_readiness_without_private_shape
+    self.assertNotIn("initiate", disbursement_initiation.__all__)
+AssertionError: 'initiate' unexpectedly found in ['DisbursementConflict', 'DisbursementReadinessStale', 'initiate']
+
+======================================================================
+FAIL: test_cfc_scope_reconciles_every_frozen_initiation_link (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_cfc_scope_reconciles_every_frozen_initiation_link) (field='actor_user_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 561, in test_cfc_scope_reconciles_every_frozen_initiation_link
+    self.assertFalse(
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_cfc_scope_reconciles_every_frozen_initiation_link (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_cfc_scope_reconciles_every_frozen_initiation_link) (field='to_state')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 561, in test_cfc_scope_reconciles_every_frozen_initiation_link
+    self.assertFalse(
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_cfc_scope_reconciles_every_frozen_initiation_link (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_cfc_scope_reconciles_every_frozen_initiation_link) (field='sender_user_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 561, in test_cfc_scope_reconciles_every_frozen_initiation_link
+    self.assertFalse(
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_cfc_scope_reconciles_every_frozen_initiation_link (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_cfc_scope_reconciles_every_frozen_initiation_link) (field='action_url')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 561, in test_cfc_scope_reconciles_every_frozen_initiation_link
+    self.assertFalse(
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_source_bank_requires_explicit_governed_activation_and_current_evidence (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_requires_explicit_governed_activation_and_current_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 437, in test_source_bank_requires_explicit_governed_activation_and_current_evidence
+    self.assertEqual(activation_audit.action, "config.changed")
+AssertionError: 'config.source_bank_account.activated' != 'config.changed'
+- config.source_bank_account.activated
++ config.changed
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.137s
+
+FAILED (failures=7, errors=1)
+Destroying test database for alias 'default'...

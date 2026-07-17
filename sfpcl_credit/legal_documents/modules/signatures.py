@@ -104,7 +104,7 @@ def all_current_signatures_resolved(*, application_id):
         for item_code in required_item_codes
     }
     current_required_document_ids.discard(None)
-    rows = list(SignatureRecord.objects.select_for_update().select_related(
+    rows = list(SignatureRecord.objects.select_for_update(of=("self",)).select_related(
         "loan_document", "mismatch_resolution_workflow_event"
     ).filter(loan_document_id__in=current_required_document_ids))
     return bool(required_item_codes) and all(

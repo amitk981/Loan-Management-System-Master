@@ -98,8 +98,9 @@ Exact replay writes nothing; denied and concurrent losers create no success evid
 - Approval/rejection must not re-evaluate readiness into a different evidence set or accept caller-
   supplied amount/bank/readiness/maker/time. Replaced or incoherent initiation evidence conflicts.
 - Reconcile the exact 009E2 typed readiness digest, governed source-bank decision, and initiation
-  action/audit/workflow/task
-  identities; do not call legal, security, approval, SAP, or checklist owners from authorisation.
+  action/audit/workflow/task identities, including the non-empty request id, final-verification
+  comment digest, and source-bank governance/version/audit ids; do not call legal, security,
+  approval, SAP, or checklist owners from authorisation.
 - Enforce distinct maker/checker transactionally. A second CFC or simultaneous opposite decision
   has one winner; every loser returns the retained exact replay or a zero-write conflict.
 - CFC approval authorises the instruction only. 009G owns bank transfer success, UTR/evidence,

@@ -88,3 +88,55 @@ class VersionHistory(models.Model):
     class Meta:
         db_table = "version_histories"
         ordering = ["-created_at", "-version_history_id"]
+
+
+class SourceBankAccountGovernance(models.Model):
+    STATUS_ACTIVE = "active"
+    STATUS_INACTIVE = "inactive"
+
+    source_bank_account_governance_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    bank_account = models.ForeignKey(
+        "members.BankAccount",
+        on_delete=models.PROTECT,
+        related_name="source_bank_governance_records",
+    )
+    status = models.CharField(max_length=40, default=STATUS_ACTIVE, db_index=True)
+    source_facts_digest = models.CharField(max_length=64)
+    reason_digest = models.CharField(max_length=64)
+    request_id = models.CharField(max_length=255, unique=True)
+    activated_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="activated_source_bank_accounts",
+    )
+    activated_at = models.DateTimeField(default=timezone.now, db_index=True)
+    version_history = models.OneToOneField(
+        VersionHistory,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="source_bank_governance",
+    )
+    activation_audit = models.OneToOneField(
+        "identity.AuditLog",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="source_bank_governance",
+    )
+
+    class Meta:
+        db_table = "source_bank_account_governance"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=("active", "inactive")),
+                name="source_bank_governance_status_valid",
+            ),
+            models.UniqueConstraint(
+                fields=["status"],
+                condition=models.Q(status="active"),
+                name="uniq_active_source_bank_governance",
+            )
+        ]

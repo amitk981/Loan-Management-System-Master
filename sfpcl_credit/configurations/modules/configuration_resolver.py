@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from django.db.models import Q
 
 from sfpcl_credit.configurations.models import LoanPolicyConfig
@@ -58,34 +56,3 @@ def resolve_effective_loan_policy(*, calculation_date, for_update=False):
             }
         )
     return policy
-
-
-@dataclass(frozen=True)
-class SourceBankAccountDecision:
-    source_bank_account_id: object
-    active: bool
-    bank_name: str
-
-
-def resolve_source_bank_account(*, for_update=False):
-    """Resolve one verified active SFPCL-owned RBL account without plaintext."""
-    from sfpcl_credit.members.models import BankAccount
-
-    queryset = BankAccount.objects
-    if for_update:
-        queryset = queryset.select_for_update()
-    rows = list(
-        queryset.filter(
-            owner_party_type="sfpcl",
-            bank_name__iexact="RBL Bank",
-            verification_status="verified",
-            status="active",
-        ).order_by("bank_account_id")[:2]
-    )
-    if len(rows) != 1:
-        return None
-    return SourceBankAccountDecision(
-        source_bank_account_id=rows[0].pk,
-        active=True,
-        bank_name=rows[0].bank_name,
-    )

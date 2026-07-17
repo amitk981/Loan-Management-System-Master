@@ -574,17 +574,28 @@ def _terminal_evidence(*, item, document, terminal_security_evidence=None):
             str(document.verified_by_user_id) if document.verified_by_user_id else None
         ),
     }
-    signatures = list(
-        SignatureRecord.objects.filter(loan_document=document).values(
-            "signature_record_id",
-            "signer_party_type",
-            "signer_party_id",
-            "signature_status",
-            "signature_mismatch_flag",
-            "mismatch_resolution_type",
-            "signed_at",
-            "captured_by_user_id",
+    required_parties = {
+        "poa": {"borrower", "nominee"},
+        "tri_party_agreement": {"borrower", "nominee"},
+        "sh4": {"borrower", "witness"},
+        "term_sheet": {"borrower", "nominee"},
+        "loan_agreement": {"borrower", "witness"},
+    }.get(item.item_code, set())
+    signatures = (
+        list(
+            SignatureRecord.objects.filter(loan_document=document).values(
+                "signature_record_id",
+                "signer_party_type",
+                "signer_party_id",
+                "signature_status",
+                "signature_mismatch_flag",
+                "mismatch_resolution_type",
+                "signed_at",
+                "captured_by_user_id",
+            )
         )
+        if required_parties
+        else []
     )
     if any(
         row["signature_status"] != "signed"
@@ -595,13 +606,6 @@ def _terminal_evidence(*, item, document, terminal_security_evidence=None):
     ):
         raise EvidenceBlocked("Every retained document signature must be terminal and mismatch-free.")
     party_types = {row["signer_party_type"] for row in signatures}
-    required_parties = {
-        "poa": {"borrower", "nominee"},
-        "tri_party_agreement": {"borrower", "nominee"},
-        "sh4": {"borrower", "witness"},
-        "term_sheet": {"borrower", "nominee"},
-        "loan_agreement": {"borrower", "witness"},
-    }.get(item.item_code, set())
     if not required_parties <= party_types:
         raise EvidenceBlocked(
             f"{item.item_label} requires its exact canonical signatures."

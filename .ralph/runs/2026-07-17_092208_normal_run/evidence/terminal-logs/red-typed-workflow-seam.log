@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_single_public_workflow_consumes_typed_readiness_without_private_shape (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_single_public_workflow_consumes_typed_readiness_without_private_shape)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 444, in test_single_public_workflow_consumes_typed_readiness_without_private_shape
+    from sfpcl_credit.disbursements.modules.disbursement_readiness import (
+ImportError: cannot import name 'InitiationReadinessDecision' from 'sfpcl_credit.disbursements.modules.disbursement_readiness' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_092208_normal_run/sfpcl_credit/disbursements/modules/disbursement_readiness.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
