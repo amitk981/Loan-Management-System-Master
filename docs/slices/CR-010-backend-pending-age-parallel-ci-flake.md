@@ -54,7 +54,23 @@ Before changing ANY code, write impact-analysis.md in the run folder covering:
 - FRONTEND_DESIGN_RULES compliance note for any UI change.
 Validation fails this run if impact-analysis.md is missing.
 
+## Observed Follow-up Failure And Run Discipline
+- The complete six-worker gate also reproduced the same defect in
+  `ApprovalCaseRoutingApiTests.test_detail_is_unchanged_when_live_configuration_rows_change`:
+  `pending_age.elapsed_seconds` advanced from 2 to 3 while the remaining detail payload stayed
+  unchanged. Correct this known assertion as part of the same deterministic public-API regression
+  treatment; do not hide changes to any stable field.
+- Coding-agent feedback for the focused approval-routing class must run serially (omit `--parallel`
+  or use `--parallel 1`). A coding-agent `--parallel 4` probe under the Rosetta-hosted sandbox caused
+  spawned x86_64 workers to import the arm64 `_cffi_backend`, crash before test execution, and leave
+  Django's parent pool waiting for dead workers. Do not repeat that non-authoritative probe.
+- The orchestrator-owned `scripts/ralph-parallel-backend-coverage.sh` gate remains the only
+  authoritative parallel proof. It must still run the complete configured suite and coverage floor
+  before the slice can merge.
+
 ## Acceptance Criteria
 - The change request's own acceptance criteria are met.
+- Both known live-configuration before/after regressions isolate only `pending_age`, compare all
+  stable detail/queue fields exactly, and assert the live age separately and monotonically.
 - Regression tests added for every module named in the impact analysis.
 - All quality gates pass.
