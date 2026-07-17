@@ -10,6 +10,17 @@ KEYS = {
 LOOKUP_KEY = base64.urlsafe_b64encode(b"L" * 32).decode("ascii")
 
 
+def _noncanonical_ciphertext_token(token: str) -> str:
+    prefix, ciphertext = token.rsplit(":", 1)
+    return f"{prefix}:{ciphertext}="
+
+
+def _canonical_ciphertext_tamper(token: str) -> str:
+    prefix, ciphertext = token.rsplit(":", 1)
+    replacement = "A" if ciphertext[0] != "A" else "B"
+    return f"{prefix}:{replacement}{ciphertext[1:]}"
+
+
 @override_settings(
     FIELD_ENCRYPTION_CURRENT_VERSION="k2",
     FIELD_ENCRYPTION_KEYS=KEYS,
@@ -20,7 +31,9 @@ class FieldEncryptionTests(SimpleTestCase):
     def test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable(self):
         from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
 
-        encrypted = FieldEncryption.encrypt("cdsl.pledgor_bo_account", "1234567890123456")
+        encrypted = FieldEncryption.encrypt(
+            "cdsl.pledgor_bo_account", "1234567890123456"
+        )
 
         self.assertTrue(encrypted.startswith("field:v2:k2:"))
         self.assertNotIn("1234567890123456", encrypted)
@@ -44,18 +57,43 @@ class FieldEncryptionTests(SimpleTestCase):
         with self.assertRaises(InvalidCiphertext):
             FieldEncryption.decrypt("cdsl.pledgee_bo_account", encrypted)
 
-    def test_tamper_wrong_key_and_inactive_version_fail_closed(self):
+    def test_noncanonical_base64_tamper_is_rejected_as_malformed(self):
+        from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
+
+        encrypted = FieldEncryption.encrypt(
+            "cdsl.pledgor_bo_account", "1234567890123456"
+        )
+
+        with self.assertRaisesRegex(InvalidCiphertext, "Ciphertext is malformed"):
+            FieldEncryption.decrypt(
+                "cdsl.pledgor_bo_account",
+                _noncanonical_ciphertext_token(encrypted),
+            )
+
+    def test_canonical_ciphertext_tamper_is_rejected_by_authentication(self):
+        from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
+
+        encrypted = FieldEncryption.encrypt(
+            "cdsl.pledgor_bo_account", "1234567890123456"
+        )
+
+        with self.assertRaisesRegex(
+            InvalidCiphertext, "Ciphertext authentication failed"
+        ):
+            FieldEncryption.decrypt(
+                "cdsl.pledgor_bo_account",
+                _canonical_ciphertext_tamper(encrypted),
+            )
+
+    def test_wrong_key_and_inactive_version_fail_closed(self):
         from sfpcl_credit.shared.encryption import (
             FieldEncryption,
             InvalidCiphertext,
         )
 
-        encrypted = FieldEncryption.encrypt("cdsl.pledgor_bo_account", "1234567890123456")
-        replacement = "A" if encrypted[-1] != "A" else "B"
-        with self.assertRaises(InvalidCiphertext):
-            FieldEncryption.decrypt(
-                "cdsl.pledgor_bo_account", encrypted[:-1] + replacement
-            )
+        encrypted = FieldEncryption.encrypt(
+            "cdsl.pledgor_bo_account", "1234567890123456"
+        )
         with override_settings(
             FIELD_ENCRYPTION_KEYS={**KEYS, "k2": KEYS["k1"]}
         ):

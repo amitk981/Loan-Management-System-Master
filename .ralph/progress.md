@@ -8467,3 +8467,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-17 - 2026-07-17_174605_normal_run
+
+- Agent tool used: codex with TDD and deep-module interface checks.
+- Slice completed: CR-009-deterministic-field-encryption-tamper-coverage.
+- Summary: Replaced the random field-ciphertext tail mutation with explicit noncanonical-Base64 and
+  canonical AES-GCM tamper cases; retained wrong-key/inactive-version coverage and changed no
+  production behavior.
+- Tests run: two failing-first focused cycles; 7 focused passing tests; five exact stable coverage
+  runs; Django check; migration sync; frontend build/typecheck/lint; 327 frontend tests.
+- Evidence saved: `.ralph/runs/2026-07-17_174605_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator backend coverage validation and commit.
+- Risk level: Medium; test-only change with exact branch assertions and identical repeated line sets.
+- Next action: Run 009E4, then 009G2.
+
+## 2026-07-17 18:04:27 - 2026-07-17_174605_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-009-deterministic-field-encryption-tamper-coverage
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_174605_normal_run/.ralph/runs/2026-07-17_174605_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_174605_normal_run/.ralph/runs/2026-07-17_174605_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

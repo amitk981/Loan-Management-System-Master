@@ -250,14 +250,15 @@
     "009E3-disbursement-amount-and-source-bank-governance-closure",
     "009F2-cfc-authorisation-integrity-and-bank-evidence-closure",
     "009G-utr-capture-and-transfer-success",
-    "009H-disbursement-advice-and-communication"
+    "009H-disbursement-advice-and-communication",
+    "CR-009-deterministic-field-encryption-tamper-coverage"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "dbccea9c",
-  "last_run_id": "2026-07-17_164724_architecture_review",
+  "last_run_id": "2026-07-17_174605_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

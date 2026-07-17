@@ -1,0 +1,6 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/CR-009-deterministic-field-encryption-tamper-coverage.md
+ M docs/working/HANDOFF.md
+ M sfpcl_credit/tests/test_field_encryption.py
+?? .ralph/runs/2026-07-17_174605_normal_run/

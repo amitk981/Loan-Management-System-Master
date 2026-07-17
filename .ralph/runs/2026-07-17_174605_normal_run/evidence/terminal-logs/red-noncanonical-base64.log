@@ -1,0 +1,18 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_noncanonical_base64_tamper_is_rejected_as_malformed (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_noncanonical_base64_tamper_is_rejected_as_malformed) ... ERROR
+
+======================================================================
+ERROR: test_noncanonical_base64_tamper_is_rejected_as_malformed (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_noncanonical_base64_tamper_is_rejected_as_malformed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_174605_normal_run/sfpcl_credit/tests/test_field_encryption.py", line 55, in test_noncanonical_base64_tamper_is_rejected_as_malformed
+    _noncanonical_ciphertext_token(encrypted),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '_noncanonical_ciphertext_token' is not defined
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (errors=1)

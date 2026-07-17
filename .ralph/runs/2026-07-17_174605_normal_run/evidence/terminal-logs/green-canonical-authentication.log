@@ -1,0 +1,9 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_canonical_ciphertext_tamper_is_rejected_by_authentication (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_canonical_ciphertext_tamper_is_rejected_by_authentication) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+OK

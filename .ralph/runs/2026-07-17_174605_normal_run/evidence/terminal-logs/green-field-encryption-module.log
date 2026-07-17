@@ -1,0 +1,15 @@
+Found 7 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_canonical_ciphertext_tamper_is_rejected_by_authentication (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_canonical_ciphertext_tamper_is_rejected_by_authentication) ... ok
+test_missing_dedicated_keys_never_fall_back_to_django_secret_key (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_missing_dedicated_keys_never_fall_back_to_django_secret_key) ... ok
+test_noncanonical_base64_tamper_is_rejected_as_malformed (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_noncanonical_base64_tamper_is_rejected_as_malformed) ... ok
+test_previous_key_remains_readable_during_rotation (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_previous_key_remains_readable_during_rotation) ... ok
+test_random_ciphertext_and_field_specific_hashes_do_not_expose_plaintext (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_random_ciphertext_and_field_specific_hashes_do_not_expose_plaintext) ... ok
+test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable) ... ok
+test_wrong_key_and_inactive_version_fail_closed (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_wrong_key_and_inactive_version_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.008s
+
+OK

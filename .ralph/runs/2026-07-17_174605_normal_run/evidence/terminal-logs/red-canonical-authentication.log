@@ -1,0 +1,18 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_canonical_ciphertext_tamper_is_rejected_by_authentication (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_canonical_ciphertext_tamper_is_rejected_by_authentication) ... ERROR
+
+======================================================================
+ERROR: test_canonical_ciphertext_tamper_is_rejected_by_authentication (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_canonical_ciphertext_tamper_is_rejected_by_authentication)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_174605_normal_run/sfpcl_credit/tests/test_field_encryption.py", line 71, in test_canonical_ciphertext_tamper_is_rejected_by_authentication
+    _canonical_ciphertext_tamper(encrypted),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '_canonical_ciphertext_tamper' is not defined
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (errors=1)

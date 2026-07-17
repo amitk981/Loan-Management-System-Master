@@ -1,0 +1,40 @@
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.011s
+
+OK
+Wrote JSON report to ../.ralph/runs/2026-07-17_174605_normal_run/evidence/field-encryption-coverage-run-1.json
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.004s
+
+OK
+Wrote JSON report to ../.ralph/runs/2026-07-17_174605_normal_run/evidence/field-encryption-coverage-run-2.json
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.004s
+
+OK
+Wrote JSON report to ../.ralph/runs/2026-07-17_174605_normal_run/evidence/field-encryption-coverage-run-3.json
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.004s
+
+OK
+Wrote JSON report to ../.ralph/runs/2026-07-17_174605_normal_run/evidence/field-encryption-coverage-run-4.json
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.004s
+
+OK
+Wrote JSON report to ../.ralph/runs/2026-07-17_174605_normal_run/evidence/field-encryption-coverage-run-5.json
