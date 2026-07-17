@@ -1,5 +1,38 @@
 # Ralph Progress Log
 
+## 2026-07-18 - 2026-07-18_020218_repair
+
+- Agent tool used: codex with the diagnosing-bugs feedback-loop discipline.
+- Slice repaired: 009H3A-communications-advice-persistence-and-provider-identity.
+- Summary: Updated the two retained historical migration-test projections that the new
+  communications-to-disbursements migration dependency made current-state-aware. Production
+  models, migration, adapters, and advice behavior remain unchanged from the preserved candidate.
+- Tests run: exact two-test RED/GREEN order repro; all 6 implicated migration tests; 23 focused
+  advice foundation/public API tests with two expected PostgreSQL skips; Django check; migration
+  sync; migration-graph diagnosis; whitespace/debug-marker review.
+- Evidence saved: `.ralph/runs/2026-07-18_020218_repair/evidence/terminal-logs/`.
+- Result: Test-only repair complete pending independent orchestrator coverage validation.
+- Risk level: High inherited slice risk; Low incremental test-only repair risk.
+- Next action: Run independent validation, then execute already-concrete 009H3B followed by 009G4.
+
+## 2026-07-18 - 2026-07-18_013956_normal_run
+
+- Agent tool used: codex with mandatory TDD and deep-module seam checks.
+- Slice completed: 009H3A-communications-advice-persistence-and-provider-identity.
+- Summary: Moved retained advice-receipt model state to communications without receipt-table SQL,
+  added the complete durable outbox/provider-result schema, made Manual/Fake/Future provider
+  identity stable-key-owned, and retained a policy-free legacy alias while leaving public 009H2
+  orchestration unchanged.
+- Tests run: ownership, import-direction, shared adapter, rejection/retry, and genuine forward/
+  reverse/reapply migration contracts; 24 total focused foundation/009H2 tests with two expected
+  PostgreSQL skips; Django check; migration sync; SQL plan; Python compile; whitespace review.
+- Evidence saved: `.ralph/runs/2026-07-18_013956_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High persistence/idempotency risk, bounded by one state-only owner transfer, exact
+  schema/row preservation, database constraints, deterministic adapter identity, and retained public
+  behavior tests.
+- Next action: Run already-concrete 009H3B, then 009G4 and 009I in dependency order.
+
 ## 2026-07-18 - 2026-07-18_013029_architecture_review
 
 - Agent tool used: codex in the architecture-review documentation lane.
@@ -8725,6 +8758,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013029_architecture_review/.ralph/runs/2026-07-18_013029_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013029_architecture_review/.ralph/runs/2026-07-18_013029_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 02:23:54 - 2026-07-18_020218_repair
+- Agent tool used: codex
+- Slice attempted: 009H3A-communications-advice-persistence-and-provider-identity
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/.ralph/runs/2026-07-18_020218_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/.ralph/runs/2026-07-18_020218_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -572,32 +572,6 @@ class DisbursementAdviceIntent(models.Model):
         ]
 
 
-class DisbursementAdviceDeliveryReceipt(models.Model):
-    delivery_receipt_id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    advice_intent = models.OneToOneField(
-        DisbursementAdviceIntent,
-        on_delete=models.PROTECT,
-        related_name="delivery_receipt",
-    )
-    idempotency_key = models.CharField(max_length=255, unique=True)
-    payload_digest = models.CharField(max_length=64)
-    external_message_id = models.CharField(max_length=120, unique=True)
-    delivery_status = models.CharField(max_length=40)
-    accepted_at = models.DateTimeField()
-    created_at = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        db_table = "disbursement_advice_delivery_receipts"
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    ~Q(idempotency_key="")
-                    & ~Q(payload_digest="")
-                    & ~Q(external_message_id="")
-                    & Q(delivery_status="sent")
-                ),
-                name="advice_delivery_receipt_complete",
-            ),
-        ]
+from sfpcl_credit.communications.models import (  # noqa: E402
+    DisbursementAdviceDeliveryReceipt,
+)

@@ -1,0 +1,8 @@
+state-json-and-completion: PASS
+No changes detected
+System check identified no issues (0 silenced).
+protected-paths: PASS
+non-run-files: 12 / 30
+non-run-lines: 684 / 2000
+new-dependencies: 0 / 4
+database-migrations: 1 / 1

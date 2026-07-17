@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.utils import timezone
 
 
 class ContentTemplate(models.Model):
@@ -75,6 +76,120 @@ class Communication(models.Model):
         ordering = ["communication_id"]
         indexes = [
             models.Index(fields=["related_entity_type", "related_entity_id"]),
+        ]
+
+
+class CommunicationDeliveryOutbox(models.Model):
+    DELIVERY_PENDING = "pending"
+    DELIVERY_SENT = "sent"
+
+    outbox_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    advice_intent = models.OneToOneField(
+        "disbursements.DisbursementAdviceIntent",
+        on_delete=models.PROTECT,
+        related_name="communication_outbox",
+    )
+    communication_id = models.UUIDField(unique=True)
+    idempotency_key = models.CharField(max_length=255, unique=True)
+    channel = models.CharField(max_length=40)
+    recipient_address = models.CharField(max_length=255)
+    recipient_digest = models.CharField(max_length=64)
+    content_template = models.ForeignKey(
+        ContentTemplate,
+        on_delete=models.PROTECT,
+        related_name="delivery_outboxes",
+    )
+    template_code_snapshot = models.CharField(max_length=120)
+    template_version_snapshot = models.CharField(max_length=40)
+    template_checksum_sha256 = models.CharField(max_length=64)
+    subject_snapshot = models.CharField(max_length=255)
+    body_snapshot = models.TextField()
+    payload_digest = models.CharField(max_length=64)
+    related_entity_type = models.CharField(max_length=80)
+    related_entity_id = models.UUIDField()
+    delivery_status = models.CharField(max_length=40, default=DELIVERY_PENDING)
+    provider_external_message_id = models.CharField(
+        max_length=120, blank=True, null=True, unique=True
+    )
+    provider_delivery_status = models.CharField(max_length=40, blank=True, null=True)
+    provider_accepted_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "communication_delivery_outboxes"
+        indexes = [
+            models.Index(fields=["related_entity_type", "related_entity_id"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(idempotency_key="")
+                    & ~models.Q(channel="")
+                    & ~models.Q(recipient_address="")
+                    & ~models.Q(recipient_digest="")
+                    & ~models.Q(template_code_snapshot="")
+                    & ~models.Q(template_version_snapshot="")
+                    & ~models.Q(template_checksum_sha256="")
+                    & ~models.Q(subject_snapshot="")
+                    & ~models.Q(body_snapshot="")
+                    & ~models.Q(payload_digest="")
+                    & ~models.Q(related_entity_type="")
+                    & models.Q(delivery_status__in=("pending", "sent"))
+                ),
+                name="communication_outbox_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        delivery_status="pending",
+                        provider_external_message_id__isnull=True,
+                        provider_delivery_status__isnull=True,
+                        provider_accepted_at__isnull=True,
+                    )
+                    | (
+                        models.Q(
+                            delivery_status="sent",
+                            provider_external_message_id__isnull=False,
+                            provider_delivery_status__isnull=False,
+                            provider_accepted_at__isnull=False,
+                        )
+                        & ~models.Q(provider_external_message_id="")
+                        & ~models.Q(provider_delivery_status="")
+                    )
+                ),
+                name="communication_outbox_provider_result_complete",
+            ),
+        ]
+
+
+class DisbursementAdviceDeliveryReceipt(models.Model):
+    delivery_receipt_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    advice_intent = models.OneToOneField(
+        "disbursements.DisbursementAdviceIntent",
+        on_delete=models.PROTECT,
+        related_name="delivery_receipt",
+    )
+    idempotency_key = models.CharField(max_length=255, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    external_message_id = models.CharField(max_length=120, unique=True)
+    delivery_status = models.CharField(max_length=40)
+    accepted_at = models.DateTimeField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "disbursement_advice_delivery_receipts"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(idempotency_key="")
+                    & ~models.Q(payload_digest="")
+                    & ~models.Q(external_message_id="")
+                    & models.Q(delivery_status="sent")
+                ),
+                name="advice_delivery_receipt_complete",
+            ),
         ]
 
 

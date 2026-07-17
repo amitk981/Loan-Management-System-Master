@@ -1,0 +1,28 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_receipt_row_and_schema_survive_forward_reverse_and_reapply (sfpcl_credit.tests.test_communication_receipt_owner_migration.CommunicationReceiptOwnerMigrationTests.test_receipt_row_and_schema_survive_forward_reverse_and_reapply)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/sfpcl_credit/tests/test_communication_receipt_owner_migration.py", line 45, in test_receipt_row_and_schema_survive_forward_reverse_and_reapply
+    moved_apps = self._migrate(self.migrate_to)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/sfpcl_credit/tests/test_communication_receipt_owner_migration.py", line 71, in _migrate
+    executor.migrate(targets)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 110, in migrate
+    plan = self.migration_plan(targets)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 67, in migration_plan
+    for migration in self.loader.graph.forwards_plan(target):
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/graph.py", line 207, in forwards_plan
+    raise NodeNotFoundError("Node %r not a valid node" % (target,), target)
+django.db.migrations.exceptions.NodeNotFoundError: Node ('communications', '0004_advice_outbox_and_receipt_owner') not a valid node
+
+----------------------------------------------------------------------
+Ran 1 test in 0.732s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -1,7 +1,7 @@
 # Slice 009H3A: Communications Advice Persistence and Provider Identity
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `009H3`
@@ -112,10 +112,10 @@ High
 - Existing 009H2 behavior remains independently green, ready for terminal dispatcher closure.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing ownership/migration/adapter tests written first
-- [ ] Communications models and adapter identity implemented
-- [ ] State-only receipt transfer and outbox migration proved forward/reverse
-- [ ] Existing 009H2 public behavior preserved
-- [ ] Risk assessment, handoff, state, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing ownership/migration/adapter tests written first
+- [x] Communications models and adapter identity implemented
+- [x] State-only receipt transfer and outbox migration proved forward/reverse
+- [x] Existing 009H2 public behavior preserved
+- [x] Risk assessment, handoff, state, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

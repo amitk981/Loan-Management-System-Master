@@ -1,0 +1,20 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_communication_advice_persistence (unittest.loader._FailedTest.test_communication_advice_persistence)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_communication_advice_persistence
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/sfpcl_credit/tests/test_communication_advice_persistence.py", line 5, in <module>
+    from sfpcl_credit.communications.adapters import (
+ImportError: cannot import name 'FutureEmailDeliveryAdapter' from 'sfpcl_credit.communications.adapters' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/sfpcl_credit/communications/adapters.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

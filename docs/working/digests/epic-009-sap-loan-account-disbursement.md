@@ -1,5 +1,35 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H3A Repair — Historical Migration Projection Closure
+
+- Complete coverage exposed five retained migration-test errors after communications 0004 became a
+  required downstream leaf of disbursements 0007 and therefore current application/credit state.
+  Two old app-registry projections excluded finance/loan/SAP/disbursement descendants but not the
+  newly downstream communications leaf, so projected models outran their correctly reversed schema.
+- The credit-ownership and witness-evidence migration tests now exclude communications from those
+  historical projections. The exact ordered failure is green, all six implicated migration tests
+  pass, and the 23-test advice foundation/public API set remains green with two expected PostgreSQL
+  skips. Production models, migration operations, adapters, and public behavior are unchanged.
+
+## 009H3A Communications Advice Persistence and Provider Identity
+
+- Communications now owns one complete advice outbox schema and the retained receipt Django model
+  state. The outbox uniquely binds advice intent, communication identity, stable key, channel,
+  frozen recipient/digest, template/version/checksum, rendered snapshots, payload digest, related
+  entity, status, and an all-or-none provider-result tuple.
+- Communications migration 0004 creates only `communication_delivery_outboxes`; its custom state
+  operation transfers `DisbursementAdviceDeliveryReceipt` without database SQL. A genuine sent
+  receipt keeps the exact physical table, constraint signature, and primary key through forward,
+  reverse, and reapply, while the outbox schema appears exactly once only in the forward state.
+- Manual and Fake adapters derive provider identity from only the stable idempotency key. Future is
+  a replaceable transport adapter that forwards the same key contract. Changed payload and fresh
+  instances preserve one identity/status; a provider rejection can be retried without fabricating
+  an accepted result.
+- A policy-free disbursements alias preserves legacy receipt imports, while the live 009H2 advice
+  module uses the canonical communications model. Twenty-four focused foundation/009H2 tests pass
+  with two expected PostgreSQL skips; public HTTP, authority, audit/secrecy, upstream, receipt, and
+  financial-side-effect behavior remains unchanged. 009H3B owns all dispatcher/crash/race work.
+
 ## 009H3 Oversized-Slice Queue Rewrite — 2026-07-18
 
 - Failed run `2026-07-18_010406_normal_run` passed its focused advice-owner, migration, and twice-

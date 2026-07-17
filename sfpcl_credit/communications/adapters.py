@@ -43,10 +43,7 @@ class ManualEmailDeliveryAdapter:
 
     def send_email(self, payload, idempotency_key):
         _validate_payload(payload, idempotency_key)
-        fingerprint = delivery_payload_digest(payload)
-        identity = uuid.uuid5(
-            self._NAMESPACE, f"{idempotency_key}:{fingerprint}"
-        )
+        identity = uuid.uuid5(self._NAMESPACE, idempotency_key)
         return EmailDeliveryResult(
             external_message_id=f"manual:{identity}",
             delivery_status="sent",
@@ -58,6 +55,17 @@ class FakeEmailDeliveryAdapter(ManualEmailDeliveryAdapter):
     """Deterministic test adapter satisfying the production acceptance contract."""
 
     _NAMESPACE = uuid.UUID("6d961c69-61d4-40f3-95e0-d45666922321")
+
+
+class FutureEmailDeliveryAdapter:
+    """Future provider adapter preserving caller-owned idempotency identity."""
+
+    def __init__(self, *, transport):
+        self.transport = transport
+
+    def send_email(self, payload, idempotency_key):
+        _validate_payload(payload, idempotency_key)
+        return self.transport.send_email(payload, idempotency_key)
 
 
 def validate_delivery_result(result):
@@ -106,6 +114,7 @@ __all__ = [
     "EmailDeliveryPayload",
     "EmailDeliveryResult",
     "FakeEmailDeliveryAdapter",
+    "FutureEmailDeliveryAdapter",
     "ManualEmailDeliveryAdapter",
     "delivery_payload_digest",
     "validate_delivery_result",

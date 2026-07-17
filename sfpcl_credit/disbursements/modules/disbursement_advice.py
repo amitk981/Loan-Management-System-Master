@@ -17,11 +17,14 @@ from sfpcl_credit.communications.adapters import (
     delivery_payload_digest,
     validate_delivery_result,
 )
-from sfpcl_credit.communications.models import Communication, ContentTemplate
+from sfpcl_credit.communications.models import (
+    Communication,
+    ContentTemplate,
+    DisbursementAdviceDeliveryReceipt,
+)
 from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
-    DisbursementAdviceDeliveryReceipt,
     DisbursementAdviceIntent,
     LoanRegisterUpdate,
 )
