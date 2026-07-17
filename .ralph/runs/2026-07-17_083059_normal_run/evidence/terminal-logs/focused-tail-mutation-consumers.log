@@ -1,0 +1,48 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+EEE...
+======================================================================
+ERROR: test_corrected_copy_and_review_ledger_mutations_fail_closed (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_corrected_copy_and_review_ledger_mutations_fail_closed) (label='signed resolution identity')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 1279, in test_corrected_copy_and_review_ledger_mutations_fail_closed
+    mutate()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 1180, in <lambda>
+    lambda: StaffSignedDocumentCopy.objects.filter(pk=successor.pk).update(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/legal_documents/models.py", line 856, in update
+    raise ValidationError({"staff_documentation": "Staff documentation evidence is immutable."})
+django.core.exceptions.ValidationError: {'staff_documentation': ['Staff documentation evidence is immutable.']}
+
+======================================================================
+ERROR: test_corrected_copy_and_review_ledger_mutations_fail_closed (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_corrected_copy_and_review_ledger_mutations_fail_closed) (label='signed predecessor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 1279, in test_corrected_copy_and_review_ledger_mutations_fail_closed
+    mutate()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 1189, in <lambda>
+    lambda: StaffSignedDocumentCopy.objects.filter(pk=successor.pk).update(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/legal_documents/models.py", line 856, in update
+    raise ValidationError({"staff_documentation": "Staff documentation evidence is immutable."})
+django.core.exceptions.ValidationError: {'staff_documentation': ['Staff documentation evidence is immutable.']}
+
+======================================================================
+ERROR: test_corrected_copy_and_review_ledger_mutations_fail_closed (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_corrected_copy_and_review_ledger_mutations_fail_closed) (label='signed uploader')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 1279, in test_corrected_copy_and_review_ledger_mutations_fail_closed
+    mutate()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 1201, in <lambda>
+    lambda: StaffSignedDocumentCopy.objects.filter(pk=successor.pk).update(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/legal_documents/models.py", line 856, in update
+    raise ValidationError({"staff_documentation": "Staff documentation evidence is immutable."})
+django.core.exceptions.ValidationError: {'staff_documentation': ['Staff documentation evidence is immutable.']}
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.692s
+
+FAILED (errors=3)
+Destroying test database for alias 'default'...

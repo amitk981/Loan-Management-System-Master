@@ -242,14 +242,15 @@
     "008M6-documentation-corrected-copy-and-stage-evidence-closure",
     "009B3C-sap-current-evidence-and-adapter-contract-closure",
     "009D3-readiness-approval-reader-and-boundary-closure",
-    "009E-payment-initiation-by-senior-manager-finance"
+    "009E-payment-initiation-by-senior-manager-finance",
+    "008M7-current-correction-tail-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6d79db01",
-  "last_run_id": "2026-07-17_075837_architecture_review",
+  "last_run_id": "2026-07-17_083059_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

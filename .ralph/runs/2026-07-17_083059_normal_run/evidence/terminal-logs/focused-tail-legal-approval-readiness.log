@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+......F..
+======================================================================
+FAIL: test_two_sequential_corrections_retain_one_coherent_current_chain (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_two_sequential_corrections_retain_one_coherent_current_chain)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 1386, in test_two_sequential_corrections_retain_one_coherent_current_chain
+    self.assertFalse(documentation_actions.has_open_blocker(self.checklist, item))
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 9 tests in 4.719s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

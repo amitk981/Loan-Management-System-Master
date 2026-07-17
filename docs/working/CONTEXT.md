@@ -145,9 +145,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   inherit historical correction resolution, governed Finance authorities are excluded from
   readiness, unrelated signature history can poison the decision, and 009E's mocked owner tests do
   not prove its boundary. It also found API replay/error drift, fragmented workflow ownership, and
-  mutable source-bank labels presented as governance. Corrective 008M7, 009D4, and 009E2 restore
-  current-tail truth, effective-role/signature scope, and one source-contract-compliant genuine
-  owner-backed disbursement workflow before CFC authorisation.
+  mutable source-bank labels presented as governance. Corrective 008M7 now reopens historical
+  corrections after any bare current successor while retaining coherent sequential correction
+  cycles; 009D4 and 009E2 restore effective-role/signature scope and one source-contract-compliant
+  genuine owner-backed disbursement workflow before CFC authorisation.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

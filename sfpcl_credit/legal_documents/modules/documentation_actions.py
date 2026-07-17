@@ -438,10 +438,18 @@ def _review_is_resolved(row):
         application_id=row.document_checklist.loan_application_id,
         document_types={row.loan_document.document_type},
     )
+    resolved_index = next(
+        (index for index, copy in enumerate(chain or []) if copy.pk == resolved.pk),
+        None,
+    )
     return bool(
         chain
         and latest.get(row.loan_document.document_type) == row.loan_document_id
-        and resolved.pk in {copy.pk for copy in chain}
+        and resolved_index is not None
+        and all(
+            copy.resolves_review_action_id is not None
+            for copy in chain[resolved_index + 1:]
+        )
         and resolved.resolves_review_action_id == row.pk
         and resolved.loan_application_id == row.document_checklist.loan_application_id
         and resolved.loan_document_id == row.loan_document_id

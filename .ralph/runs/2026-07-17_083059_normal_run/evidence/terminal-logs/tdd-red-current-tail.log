@@ -1,0 +1,24 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_new_unlinked_signed_copy_tail_reopens_historical_correction (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_new_unlinked_signed_copy_tail_reopens_historical_correction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_083059_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 849, in test_new_unlinked_signed_copy_tail_reopens_historical_correction
+    self.assertEqual(
+AssertionError: Tuples differ: ('pending', None) != ('blocked', 'correction_requested')
+
+First differing element 0:
+'pending'
+'blocked'
+
+- ('pending', None)
++ ('blocked', 'correction_requested')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.400s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

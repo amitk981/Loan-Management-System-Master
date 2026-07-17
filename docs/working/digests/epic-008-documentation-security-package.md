@@ -14,6 +14,16 @@ Sources:
 `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008M7 Current Correction Tail Closure (2026-07-17)
+
+The legal-document owner now resolves a correction only through the unique fully reconciled signed-
+copy chain when every successor after that correction's exact resolving copy carries its own exact
+correction identity. A later ordinary successor with no resolution identity therefore reopens all
+affected historical corrections, while a genuine later correction cycle preserves the earlier
+immutable resolution chain. Workspace, item completion, ordered approval availability and
+disbursement readiness continue to consume the same `has_open_blocker` owner decision. No external
+API, schema, renderer, download, permission or frontend composition changed.
+
 ## Architecture Review 2026-07-17 08:44 — Current Correction Tail
 
 - 008M6 materially reconciles the corrected copy's file, checksum, predecessor, action, audit,

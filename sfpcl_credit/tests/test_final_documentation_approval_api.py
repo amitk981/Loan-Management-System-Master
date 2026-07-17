@@ -792,6 +792,154 @@ class FinalDocumentationApprovalApiTests(TestCase):
         )
         self.assertNotEqual(refetched["blocker"], "correction_requested")
 
+    def test_new_unlinked_signed_copy_tail_reopens_historical_correction(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.file.upload",
+        )
+        self._current_document("term_sheet")
+        initial = self._upload_workspace_signed_copy(
+            "term_sheet", "tail-initial.pdf", b"tail initial",
+            "Initial signed copy.",
+        )
+        self.assertEqual(initial.status_code, 200, initial.content)
+
+        item = next(
+            row for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        correction = next(
+            action for action in item["available_actions"]
+            if action["action_code"] == "request_correction"
+        )
+        requested = self.client.post(
+            correction["action_url"],
+            {"remarks": "Replace the signed copy."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(requested.status_code, 200, requested.content)
+
+        corrected = self._upload_workspace_signed_copy(
+            "term_sheet", "tail-corrected.pdf", b"tail corrected",
+            "Correction supplied.",
+        )
+        self.assertEqual(corrected.status_code, 200, corrected.content)
+        corrected_row = StaffSignedDocumentCopy.objects.get(
+            pk=corrected.json()["data"]["signed_copy_id"]
+        )
+        self.assertIsNotNone(corrected_row.resolves_review_action_id)
+
+        later = self._upload_workspace_signed_copy(
+            "term_sheet", "tail-later.pdf", b"later ordinary upload",
+            "Later ordinary signed copy.",
+        )
+        self.assertEqual(later.status_code, 200, later.content)
+        later_row = StaffSignedDocumentCopy.objects.get(
+            pk=later.json()["data"]["signed_copy_id"]
+        )
+        self.assertEqual(later_row.supersedes_id, corrected_row.pk)
+        self.assertIsNone(later_row.resolves_review_action_id)
+
+        current = next(
+            row for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        self.assertEqual(
+            (current["status"], current["blocker"]),
+            ("blocked", "correction_requested"),
+        )
+        self.assertTrue(
+            documentation_actions.has_open_blocker(
+                self.checklist,
+                self.checklist.items.get(item_code="term_sheet"),
+            )
+        )
+
+    def test_unlinked_tail_invalidates_completion_approvals_and_readiness_without_writes(self):
+        self._grant(
+            self.compliance,
+            "documents.checklist.read",
+            "documents.file.upload",
+        )
+        self._current_document("term_sheet")
+        initial = self._upload_workspace_signed_copy(
+            "term_sheet", "consumer-tail-initial.pdf", b"consumer tail initial",
+            "Initial signed copy before completion.",
+        )
+        self.assertEqual(initial.status_code, 200, initial.content)
+
+        item = next(
+            row for row in self._workspace(self.compliance).json()["data"]["items"]
+            if row["item_code"] == "term_sheet"
+        )
+        correction = next(
+            action for action in item["available_actions"]
+            if action["action_code"] == "request_correction"
+        )
+        requested = self.client.post(
+            correction["action_url"],
+            {"remarks": "Replace the signed copy before completion."},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(requested.status_code, 200, requested.content)
+        corrected = self._upload_workspace_signed_copy(
+            "term_sheet", "consumer-tail-corrected.pdf", b"consumer tail corrected",
+            "Correction supplied before completion.",
+        )
+        self.assertEqual(corrected.status_code, 200, corrected.content)
+        later = self._upload_workspace_signed_copy(
+            "term_sheet", "consumer-tail-later.pdf", b"consumer tail later",
+            "Later ordinary signed copy.",
+        )
+        self.assertEqual(later.status_code, 200, later.content)
+        self.assertIsNone(
+            StaffSignedDocumentCopy.objects.get(
+                pk=later.json()["data"]["signed_copy_id"]
+            ).resolves_review_action_id
+        )
+
+        before = self._evidence_counts()
+        item = self.checklist.items.get(item_code="term_sheet")
+        completion = checklist_actions.item_completion_decision(
+            actor=self.compliance,
+            checklist_item_id=item.pk,
+            loan_document_id=item.loan_document_id,
+        )
+        approval = checklist_actions.available_approval_action(
+            actor=self.cs,
+            checklist=self.checklist,
+            completed_item_ids={
+                row.pk for row in self.checklist.items.all()
+                if row.required_flag and row.applicable_flag
+            },
+        )
+        completed_codes = checklist_actions.reconciled_completed_item_codes(
+            application_id=self.application.pk,
+            terminal_security_evidence=(
+                security_instrument_evidence.terminal_checklist_evidence
+            ),
+        )
+        readiness = self._legal_readiness()
+
+        self.assertFalse(completion.enabled)
+        self.assertEqual(
+            completion.disabled_reason,
+            "A correction must be resolved first.",
+        )
+        self.assertIsNone(approval)
+        self.assertNotIn("term_sheet", completed_codes)
+        self.assertFalse(readiness.documentation_complete)
+        self.assertFalse(readiness.company_secretary_approval)
+        self.assertFalse(readiness.credit_manager_approval)
+        self.assertFalse(readiness.sanction_committee_approval)
+        self.assertFalse(ChecklistAction.objects.filter(
+            document_checklist=self.checklist,
+        ).exists())
+        self.assertEqual(self._evidence_counts(), before)
+
     def test_corrected_signed_copy_requires_current_file_and_owner_ledgers(self):
         self._grant(
             self.compliance,
@@ -1027,6 +1175,38 @@ class FinalDocumentationApprovalApiTests(TestCase):
                 lambda: model.objects.filter(pk=pk).update(**{field: original}),
             )
 
+        def signed_copy_storage_mutation(column, changed, original):
+            def write(value):
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f"UPDATE staff_signed_document_copies SET {column} = %s "
+                        "WHERE staff_signed_document_copy_id = %s",
+                        [value, successor.pk.hex],
+                    )
+
+            return lambda: write(changed), lambda: write(original)
+
+        mutations.append((
+            "signed resolution identity",
+            *signed_copy_storage_mutation(
+                "resolves_review_action_id", None, review.pk.hex
+            ),
+        ))
+        mutations.append((
+            "signed predecessor",
+            *signed_copy_storage_mutation(
+                "supersedes_id", None, successor.supersedes_id.hex
+            ),
+        ))
+        other_uploader = self.fixture._user(
+            "compliance_team_member", "Changed Signed Copy Uploader"
+        )
+        mutations.append((
+            "signed uploader",
+            *signed_copy_storage_mutation(
+                "uploader_user_id", other_uploader.pk.hex, successor.uploader_user_id.hex
+            ),
+        ))
         mutations.append((
             "signed action identity",
             *json_mutation(
@@ -1060,13 +1240,13 @@ class FinalDocumentationApprovalApiTests(TestCase):
                 "resolves_review_action_id", str(uuid4()),
             ),
         ))
-        other_uploader = self.fixture._user(
+        other_upload_auditor = self.fixture._user(
             "compliance_team_member", "Changed Upload Audit Actor"
         )
         mutations.append((
             "upload audit actor",
             lambda: AuditLog.objects.filter(pk=upload_audit.pk).update(
-                actor_user=other_uploader
+                actor_user=other_upload_auditor
             ),
             lambda: AuditLog.objects.filter(pk=upload_audit.pk).update(
                 actor_user=successor.uploader_user
