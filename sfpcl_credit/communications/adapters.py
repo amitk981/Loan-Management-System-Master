@@ -41,28 +41,17 @@ class ManualEmailDeliveryAdapter:
 
     _NAMESPACE = uuid.UUID("49d745c9-b464-4a4a-a51c-75691409f572")
 
-    def __init__(self):
-        self._accepted = {}
-
     def send_email(self, payload, idempotency_key):
         _validate_payload(payload, idempotency_key)
-        fingerprint = _fingerprint(payload)
-        retained = self._accepted.get(idempotency_key)
-        if retained is not None:
-            retained_fingerprint, result = retained
-            if retained_fingerprint != fingerprint:
-                raise ValueError("Email delivery facts cannot change on replay.")
-            return result
+        fingerprint = delivery_payload_digest(payload)
         identity = uuid.uuid5(
             self._NAMESPACE, f"{idempotency_key}:{fingerprint}"
         )
-        result = EmailDeliveryResult(
+        return EmailDeliveryResult(
             external_message_id=f"manual:{identity}",
             delivery_status="sent",
             accepted_at=timezone.now(),
         )
-        self._accepted[idempotency_key] = (fingerprint, result)
-        return result
 
 
 class FakeEmailDeliveryAdapter(ManualEmailDeliveryAdapter):
@@ -98,7 +87,7 @@ def _validate_payload(payload, idempotency_key):
         raise ValueError("Email delivery payload is invalid.")
 
 
-def _fingerprint(payload):
+def delivery_payload_digest(payload):
     facts = {
         "communication_id": str(payload.communication_id),
         "recipient_email": payload.recipient_email,
@@ -118,5 +107,6 @@ __all__ = [
     "EmailDeliveryResult",
     "FakeEmailDeliveryAdapter",
     "ManualEmailDeliveryAdapter",
+    "delivery_payload_digest",
     "validate_delivery_result",
 ]

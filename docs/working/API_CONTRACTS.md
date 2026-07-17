@@ -121,7 +121,7 @@ stable conflict. Missing, duplicate, cross-linked, or changed register/advice-in
 fails closed. The action sends no advice, signs no checklist, and creates no repayment, schedule,
 interest, or borrower-visible truth; 009H2 owns delivery of the stable pending identity.
 
-## Disbursement advice (009H)
+## Disbursement advice (009H/009H2)
 
 `POST /api/v1/disbursements/{disbursement_id}/send-advice/` implements source §31.5 with exactly
 `channel` and `recipient_email`; query parameters and unknown fields are rejected. MVP accepts only
@@ -129,10 +129,12 @@ normalized `email`, and the address must equal the exact member's current canoni
 text, recipient identity, template, transfer facts, and delivery outcome are never accepted from
 the request.
 
-Only an active persisted exact Senior Manager Finance initiating maker or exact CFC checker with
-the High `finance.disbursement.send_advice` grant may act. Missing or out-of-scope ids use
-nondisclosing `403 OBJECT_ACCESS_DENIED`; role, permission, borrower contact, or intake scope alone
-is insufficient.
+Only an active persisted Senior Manager Finance user who is both the exact initiating maker and the
+current exact SAP assignee, or an active Credit Manager in the canonical active-loan/application
+scope, may act with the High `finance.disbursement.send_advice` grant. CFC-only authority is denied.
+An effective multi-role user acts only through a source-authorised role. Missing or out-of-scope ids
+use nondisclosing `403 OBJECT_ACCESS_DENIED`; role, permission, raw ids, borrower contact, or intake
+scope alone are insufficient.
 
 The workflow locks and reconciles the complete current 009G transfer/audit/workflow/history,
 unique transfer, active exactly funded account, member/application/account relation, and canonical
@@ -141,14 +143,27 @@ used variables are exactly borrower name, application reference, account number,
 disbursed amounts, date, and masked bank reference. Missing, ambiguous, stale, unfunded, or
 malformed evidence returns zero-write `409 CONFLICT`.
 
-After the idempotent email adapter accepts, the workflow atomically retains one `sent`
-communication snapshot/link plus one `disbursement.advice_sent` audit and
-`DisbursementAdviceSent` workflow event. The response contains only `disbursement_id`,
-`disbursement_advice_communication_id`, `delivery_status`, and UTC `sent_at`. Exact actor/channel/
-recipient replay returns that projection with no write or adapter invocation; changed replay or
-changed retained evidence conflicts. Adapter rejection returns `409 DELIVERY_FAILED` without a
-sent communication/link. The action never changes money, transfer/CFC state, loan status/terms,
-Loan Register, checklist, repayment, schedule, or interest truth.
+The workflow consumes the exact pending advice/outbox UUID created by transfer success as the
+communication id and adapter idempotency identity; it never creates a second communication identity.
+The canonical adapter payload and manual/fake provider receipt are stable across fresh adapter
+instances and a transaction rollback after provider acceptance. Adapter rejection leaves the intent
+pending and creates no sent/link/audit/workflow truth.
+
+After acceptance, the workflow atomically marks that intent `sent`, retains one protected `sent`
+communication snapshot/link, and records one `disbursement.advice_sent` audit and
+`DisbursementAdviceSent` workflow event. The protected communication is the only retained row
+containing the full recipient address. General audit evidence stores only a masked address and
+SHA-256 digest plus protected owner/communication, template/provider, sender role/team,
+request/network, and upstream evidence identities.
+
+The response contains only `disbursement_id`, `disbursement_advice_communication_id`,
+`delivery_status`, and UTC `sent_at`. Exact actor/channel/recipient replay returns that projection
+without writes only while the current canonical email, approved/effective template identity/version/
+variables, freshly rendered subject/body, provider id/status/time, sender role/team, transfer/
+register/intent, audit, action, and workflow facts remain exact. Any drift returns zero-write
+`409 CONFLICT`; historical delivery is never returned as current. The action never changes money,
+transfer/CFC state, loan status/terms, Loan Register, checklist, repayment, schedule, or interest
+truth.
 
 ## Tri-party agreement verification (008G/008G2)
 

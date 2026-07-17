@@ -1,15 +1,22 @@
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from threading import Barrier
 from unittest import skipUnless
 from unittest.mock import patch
 
-from django.db import close_old_connections, connection, connections
+from django.db import IntegrityError, close_old_connections, connection, connections
+from django.db import transaction
 from django.test import Client, TestCase, TransactionTestCase
 from django.utils import timezone
 
 from sfpcl_credit.communications.adapters import FakeEmailDeliveryAdapter
 from sfpcl_credit.communications.models import Communication, ContentTemplate
-from sfpcl_credit.disbursements.models import BankTransfer, Disbursement
+from sfpcl_credit.disbursements.models import (
+    BankTransfer,
+    Disbursement,
+    DisbursementAdviceDeliveryReceipt,
+    LoanRegisterUpdate,
+)
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
     DisbursementWorkflow,
 )
@@ -44,14 +51,15 @@ class DisbursementAdviceApiTests(TestCase):
             disbursed_at=timezone.now(),
         )
         self.assertEqual(transferred.status_code, 200, transferred.content)
+        finance_actor = owner.owner.fixture.actor
         owner.owner.fixture.fixture._grant(
-            owner.actor, "finance.disbursement.send_advice"
+            finance_actor, "finance.disbursement.send_advice"
         )
         Permission.objects.filter(
             permission_code="finance.disbursement.send_advice"
         ).update(risk_level=Permission.RISK_HIGH)
         self.owner = owner
-        self.actor = owner.actor
+        self.actor = finance_actor
         self.client = Client()
         self.row = Disbursement.objects.select_related(
             "member", "loan_application", "loan_account"
@@ -59,6 +67,46 @@ class DisbursementAdviceApiTests(TestCase):
         self.row.member.email = "Borrower.Advice@Example.com"
         self.row.member.save(update_fields=["email"])
         self.setUp_template()
+
+    def test_public_role_matrix_allows_scoped_credit_manager_and_denies_cfc_only(
+        self,
+    ):
+        credit_manager = self.owner.owner.fixture.fixture._user(
+            "credit_manager", "Advice Credit Manager"
+        )
+        self.owner.owner.fixture.fixture._grant(
+            credit_manager, "finance.disbursement.send_advice"
+        )
+        cfc = self.owner.owner.cfc
+        self.owner.owner.fixture.fixture._grant(
+            cfc, "finance.disbursement.send_advice"
+        )
+
+        denied = self._post(actor=cfc)
+
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+
+        LoanAccount.objects.filter(pk=self.row.loan_account_id).update(
+            loan_account_status="sanctioned"
+        )
+        wrong_active_loan_scope = self._post(actor=credit_manager)
+        self.assertEqual(wrong_active_loan_scope.status_code, 403)
+        LoanAccount.objects.filter(pk=self.row.loan_account_id).update(
+            loan_account_status="active"
+        )
+
+        credit_manager.approval_authority_type = "chief_financial_controller"
+        credit_manager.save(update_fields=["approval_authority_type"])
+        accepted = self._post(actor=credit_manager)
+
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        self.assertEqual(accepted.json()["data"]["delivery_status"], "sent")
+        self.assertEqual(
+            AuditLog.objects.get(action="disbursement.advice_sent")
+            .new_value_json["actor_role_code"],
+            "credit_manager",
+        )
 
     def test_public_success_sends_exact_advice_without_financial_side_effects(self):
         account_before = LoanAccount.objects.values().get(pk=self.row.loan_account_id)
@@ -110,6 +158,35 @@ class DisbursementAdviceApiTests(TestCase):
         self.assertEqual(list(DocumentChecklist.objects.values()), checklist_before)
         self.assertEqual(Repayment.objects.count(), repayment_count)
         self.assertTrue(self.row.loan_register_updated_flag)
+
+    def test_send_consumes_stable_pending_identity_and_keeps_ledgers_recipient_safe(self):
+        intent = self.row.advice_intent
+
+        response = self._post()
+
+        self.assertEqual(response.status_code, 200, response.content)
+        communication = Communication.objects.get(pk=intent.pk)
+        intent.refresh_from_db()
+        self.assertEqual(
+            response.json()["data"]["disbursement_advice_communication_id"],
+            str(intent.pk),
+        )
+        self.assertEqual(intent.delivery_status, "sent")
+        expected_subject = self.template.subject_template.replace(
+            "{{application_reference_number}}",
+            self.row.loan_application.application_reference_number,
+        ).replace(
+            "{{loan_account_number}}", self.row.loan_account.loan_account_number
+        )
+        self.assertEqual(communication.subject_snapshot, expected_subject)
+        audit = AuditLog.objects.get(action="disbursement.advice_sent")
+        workflow = WorkflowEvent.objects.get(workflow_name="DisbursementAdviceSent")
+        self.assertNotIn("borrower.advice@example.com", str(audit.new_value_json))
+        self.assertNotIn("borrower.advice@example.com", workflow.trigger_reason)
+        self.assertEqual(
+            audit.new_value_json["recipient_masked"], "b***@example.com"
+        )
+        self.assertEqual(len(audit.new_value_json["recipient_digest"]), 64)
 
     def test_exact_replay_is_zero_write_and_changed_replay_conflicts(self):
         class CountingAdapter(FakeEmailDeliveryAdapter):
@@ -163,6 +240,83 @@ class DisbursementAdviceApiTests(TestCase):
             counts,
         )
 
+    def test_replay_conflicts_when_current_canonical_email_changes(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        counts = self._advice_counts()
+        self.row.member.email = "new.current.address@example.com"
+        self.row.member.save(update_fields=["email"])
+
+        replay = self._post()
+
+        self.assertEqual(replay.status_code, 409, replay.content)
+        self.assertEqual(self._advice_counts(), counts)
+
+    def test_replay_conflicts_when_rendered_subject_snapshot_changes(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        counts = self._advice_counts()
+        Communication.objects.filter(
+            pk=first.json()["data"]["disbursement_advice_communication_id"]
+        ).update(subject_snapshot="Changed delivered subject")
+
+        replay = self._post()
+
+        self.assertEqual(replay.status_code, 409, replay.content)
+        self.assertEqual(self._advice_counts(), counts)
+
+    def test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback(
+        self,
+    ):
+        class RecordingAdapter(FakeEmailDeliveryAdapter):
+            receipts = []
+
+            def send_email(self, payload, idempotency_key):
+                result = super().send_email(payload, idempotency_key)
+                self.receipts.append(result)
+                return result
+
+        with patch(
+            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "AuditLog.objects.create",
+            side_effect=RuntimeError("forced rollback after provider acceptance"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "forced rollback"):
+                DisbursementWorkflow.send_advice(
+                    actor=self.actor,
+                    disbursement_id=self.row.pk,
+                    payload={
+                        "channel": "email",
+                        "recipient_email": "borrower.advice@example.com",
+                    },
+                    adapter=RecordingAdapter(),
+                )
+        self._assert_no_advice_truth()
+        self.row.advice_intent.refresh_from_db()
+        self.assertEqual(self.row.advice_intent.delivery_status, "pending")
+        receipt = DisbursementAdviceDeliveryReceipt.objects.get(
+            advice_intent=self.row.advice_intent
+        )
+
+        accepted = DisbursementWorkflow.send_advice(
+            actor=self.actor,
+            disbursement_id=self.row.pk,
+            payload={
+                "channel": "email",
+                "recipient_email": "borrower.advice@example.com",
+            },
+            adapter=RecordingAdapter(),
+        )
+
+        self.assertEqual(len(RecordingAdapter.receipts), 1)
+        self.assertEqual(
+            accepted["sent_at"], receipt.accepted_at.isoformat().replace("+00:00", "Z")
+        )
+        self.assertEqual(
+            accepted["disbursement_advice_communication_id"],
+            str(self.row.advice_intent.pk),
+        )
+
     def test_replay_fails_closed_when_retained_advice_evidence_changes(self):
         first = self._post()
         self.assertEqual(first.status_code, 200, first.content)
@@ -180,6 +334,128 @@ class DisbursementAdviceApiTests(TestCase):
         self.assertEqual(
             AuditLog.objects.filter(action="disbursement.advice_sent").count(), 1
         )
+
+    def test_replay_conflicts_on_coordinated_provider_and_audit_drift(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        communication = Communication.objects.get(
+            pk=first.json()["data"]["disbursement_advice_communication_id"]
+        )
+        audit = AuditLog.objects.get(action="disbursement.advice_sent")
+        evidence = dict(audit.new_value_json)
+        changed_provider_id = "manual:coordinated-provider-drift"
+        Communication.objects.filter(pk=communication.pk).update(
+            external_message_id=changed_provider_id
+        )
+        AuditLog.objects.filter(pk=audit.pk).update(
+            new_value_json={
+                **evidence,
+                "external_message_id": changed_provider_id,
+            }
+        )
+
+        self.assertEqual(self._post().status_code, 409)
+
+    def test_replay_conflicts_on_extra_unsafe_audit_evidence(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        audit = AuditLog.objects.get(action="disbursement.advice_sent")
+        AuditLog.objects.filter(pk=audit.pk).update(
+            new_value_json={
+                **audit.new_value_json,
+                "recipient_email": "borrower.advice@example.com",
+                "bank_reference_number": "RBL-ADVICE-9876",
+            }
+        )
+
+        self.assertEqual(self._post().status_code, 409)
+
+    def test_replay_conflicts_when_workflow_timestamp_changes(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        workflow = WorkflowEvent.objects.get(workflow_name="DisbursementAdviceSent")
+        WorkflowEvent.objects.filter(pk=workflow.pk).update(
+            created_at=workflow.created_at + timedelta(seconds=1)
+        )
+
+        self.assertEqual(self._post().status_code, 409)
+
+    def test_database_rejects_incomplete_stable_intent_delivery_truth(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        counts = self._advice_counts()
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.row.advice_intent.delivery_status = "pending"
+                self.row.advice_intent.save(update_fields=["delivery_status"])
+
+        replay = self._post()
+
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(self._advice_counts(), counts)
+
+    def test_replay_conflicts_for_each_recipient_rendered_and_provider_drift(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        communication = Communication.objects.get(
+            pk=first.json()["data"]["disbursement_advice_communication_id"]
+        )
+        cases = {
+            "recipient_address": "changed.recipient@example.com",
+            "subject_snapshot": "Changed subject snapshot",
+            "body_snapshot": "Changed body snapshot",
+            "content_template_id": None,
+            "delivery_status": "delivered",
+            "external_message_id": "manual:changed-provider-id",
+            "sent_at": communication.sent_at + timedelta(seconds=1),
+        }
+        for field, changed in cases.items():
+            with self.subTest(field=field):
+                original = getattr(communication, field)
+                Communication.objects.filter(pk=communication.pk).update(
+                    **{field: changed}
+                )
+                self.assertEqual(self._post().status_code, 409)
+                Communication.objects.filter(pk=communication.pk).update(
+                    **{field: original}
+                )
+
+    def test_replay_conflicts_for_each_template_upstream_and_ledger_drift(self):
+        first = self._post()
+        self.assertEqual(first.status_code, 200, first.content)
+        template_cases = {
+            "template_version": "2.0",
+            "variables_json": [*ADVICE_VARIABLES, "unexpected"],
+            "effective_to": timezone.localdate() - timedelta(days=1),
+        }
+        for field, changed in template_cases.items():
+            with self.subTest(field=field):
+                original = getattr(self.template, field)
+                ContentTemplate.objects.filter(pk=self.template.pk).update(
+                    **{field: changed}
+                )
+                self.assertEqual(self._post().status_code, 409)
+                ContentTemplate.objects.filter(pk=self.template.pk).update(
+                    **{field: original}
+                )
+
+        register = LoanRegisterUpdate.objects.get(disbursement=self.row)
+        LoanRegisterUpdate.objects.filter(pk=register.pk).update(
+            amount=register.amount + 1
+        )
+        self.assertEqual(self._post().status_code, 409)
+        LoanRegisterUpdate.objects.filter(pk=register.pk).update(amount=register.amount)
+
+        transfer = BankTransfer.objects.get(disbursement=self.row)
+        BankTransfer.objects.filter(pk=transfer.pk).update(amount=transfer.amount + 1)
+        self.assertEqual(self._post().status_code, 409)
+        BankTransfer.objects.filter(pk=transfer.pk).update(amount=transfer.amount)
+
+        workflow = WorkflowEvent.objects.get(workflow_name="DisbursementAdviceSent")
+        WorkflowEvent.objects.filter(pk=workflow.pk).update(
+            trigger_reason="changed retained workflow evidence"
+        )
+        self.assertEqual(self._post().status_code, 409)
 
     def test_validation_template_and_delivery_failures_create_no_advice_truth(self):
         unknown = self.client.post(
@@ -339,11 +615,14 @@ class DisbursementAdviceApiTests(TestCase):
     def _assert_no_advice_truth(self):
         self.row.refresh_from_db()
         self.assertIsNone(self.row.disbursement_advice_communication_id)
+        self.row.advice_intent.refresh_from_db()
+        self.assertEqual(self.row.advice_intent.delivery_status, "pending")
         self.assertFalse(
             Communication.objects.filter(
                 related_entity_type="disbursement", related_entity_id=self.row.pk
             ).exists()
         )
+
         self.assertFalse(
             AuditLog.objects.filter(action="disbursement.advice_sent").exists()
         )
@@ -351,6 +630,19 @@ class DisbursementAdviceApiTests(TestCase):
             WorkflowEvent.objects.filter(
                 workflow_name="DisbursementAdviceSent"
             ).exists()
+        )
+
+    def _advice_counts(self):
+        return (
+            Communication.objects.filter(
+                related_entity_type="disbursement", related_entity_id=self.row.pk
+            ).count(),
+            AuditLog.objects.filter(
+                action="disbursement.advice_sent", entity_id=self.row.pk
+            ).count(),
+            WorkflowEvent.objects.filter(
+                workflow_name="DisbursementAdviceSent", entity_id=self.row.pk
+            ).count(),
         )
 
     def _post(self, *, email="borrower.advice@example.com", actor=None):
@@ -374,7 +666,7 @@ class PendingDisbursementAdviceApiTests(TestCase):
         )
         self.assertEqual(approved.status_code, 200, approved.content)
         self.pending.fixture.fixture._grant(
-            self.pending.cfc, "finance.disbursement.send_advice"
+            self.pending.fixture.actor, "finance.disbursement.send_advice"
         )
         Permission.objects.filter(
             permission_code="finance.disbursement.send_advice"
@@ -392,7 +684,7 @@ class PendingDisbursementAdviceApiTests(TestCase):
                 "recipient_email": "pending.borrower@example.com",
             },
             content_type="application/json",
-            **self.pending.fixture._auth(self.pending.cfc),
+            **self.pending.fixture._auth(self.pending.fixture.actor),
         )
 
         self.assertEqual(response.status_code, 409, response.content)
@@ -456,7 +748,13 @@ class DisbursementAdviceRaceTests(TransactionTestCase):
             results = list(pool.map(contender, range(5)))
 
         self.assertEqual(len(set(results)), 1)
-        self.assertEqual(adapter.calls, 1)
+        self.assertGreaterEqual(adapter.calls, 1)
+        self.assertEqual(
+            DisbursementAdviceDeliveryReceipt.objects.filter(
+                advice_intent_id=results[0]
+            ).count(),
+            1,
+        )
         row = Disbursement.objects.get(pk=self.disbursement_id)
         self.assertEqual(str(row.disbursement_advice_communication_id), results[0])
         self.assertEqual(

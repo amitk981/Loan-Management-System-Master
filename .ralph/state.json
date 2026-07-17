@@ -253,15 +253,16 @@
     "009H-disbursement-advice-and-communication",
     "CR-009-deterministic-field-encryption-tamper-coverage",
     "009E4-source-bank-rationale-and-approval-evidence-closure",
-    "009G2-post-disbursement-register-checklist-and-replay-closure"
+    "009G2-post-disbursement-register-checklist-and-replay-closure",
+    "009H2-advice-authority-current-truth-and-delivery-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "dbccea9c",
-  "last_run_id": "2026-07-17_192021_normal_run",
+  "last_run_id": "2026-07-17_201120_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

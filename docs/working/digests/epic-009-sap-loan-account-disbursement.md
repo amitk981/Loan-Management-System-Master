@@ -1,5 +1,29 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H2 Advice Authority, Current Truth, and Delivery Closure
+
+- `DisbursementWorkflow.send_advice` now consumes the exact 009G2 pending advice UUID as the
+  protected communication id and provider/outbox idempotency key. Manual/Fake adapter payload and
+  receipt identity/status/time remain stable across fresh instances and a post-acceptance database
+  rollback; rejection leaves the same intent pending with no sent ledger.
+- Auth §26.5 is restored in both catalogue and action scope: active Senior Manager Finance requires
+  the exact initiating-maker plus current SAP-assignee relation; Credit Manager requires the
+  canonical active-loan/application relation; CFC-only authority is denied. Effective multi-role
+  users act only under a source-authorised role.
+- First send and replay reconcile current canonical email, approved/effective template identity,
+  version, variables and tokens, freshly rendered subject/body, provider id/status/time, sender
+  role/team, transfer/register/intent, audit/action/workflow, and request/network evidence. Drift is
+  zero-write conflict and cannot bless a historical delivery.
+- Only the protected communication row retains the full recipient address. General audit evidence
+  carries `b***@domain`, a SHA-256 recipient digest, protected owner/communication ids, and safe
+  provider/upstream/request facts; neither full email nor full UTR enters audit/workflow evidence.
+- The four architecture-defect probes plus Credit Manager coverage pass, the fresh-adapter rollback
+  trace passes, 43 impacted backend tests pass, and both PostgreSQL five-caller race methods pass in
+  two independent executions. No model migration or frontend change is required.
+- The already-sharpened 009I and 009J Not Started slices were rechecked against this retained owner
+  truth. Their exact 009H2 advice-currentness and 009G2 pending-or-sent identity dependencies remain
+  concrete, so no speculative requirement edits were made.
+
 ## 009G2 Post-Disbursement Register, Checklist, and Replay Closure
 
 - The public transfer-success transaction now creates one exact Loan Register update and one stable

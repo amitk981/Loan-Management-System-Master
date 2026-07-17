@@ -66,6 +66,20 @@ REPRESENTATIVE_PERMISSIONS_BY_GROUP = {
 
 
 class CatalogueSeedTests(TestCase):
+    def test_disbursement_advice_grant_matches_stage_five_role_matrix(self):
+        seed_catalogue()
+        permission_code = "finance.disbursement.send_advice"
+
+        granted_roles = set(
+            RolePermission.objects.filter(
+                permission__permission_code=permission_code
+            ).values_list("role__role_code", flat=True)
+        )
+
+        self.assertIn("credit_manager", granted_roles)
+        self.assertIn("senior_manager_finance", granted_roles)
+        self.assertNotIn("chief_financial_controller", granted_roles)
+
     def test_seed_creates_standard_role_and_team_codes(self):
         seed_catalogue()
 

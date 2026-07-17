@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 12 test(s).
+System check identified no issues (0 silenced).
+...........F
+======================================================================
+FAIL: test_pending_transfer_cannot_send_advice (sfpcl_credit.tests.test_disbursement_advice_api.PendingDisbursementAdviceApiTests.test_pending_transfer_cannot_send_advice)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_201120_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 542, in test_pending_transfer_cannot_send_advice
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 403 != 409 : b'{"success": false, "error": {"code": "OBJECT_ACCESS_DENIED", "message": "The disbursement was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T14:56:39.535445Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 12 tests in 7.377s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

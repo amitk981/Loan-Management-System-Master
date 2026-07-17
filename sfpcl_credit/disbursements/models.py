@@ -507,6 +507,22 @@ class DisbursementAdviceIntent(models.Model):
         related_name="disbursement_advice_intents",
     )
     delivery_status = models.CharField(max_length=40, default=DELIVERY_PENDING)
+    delivery_action_id = models.UUIDField(blank=True, null=True, unique=True)
+    delivery_evidence_digest = models.CharField(max_length=64, blank=True, default="")
+    delivery_audit = models.ForeignKey(
+        "identity.AuditLog",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="delivered_disbursement_advice_intents",
+    )
+    delivery_workflow_event = models.ForeignKey(
+        "workflows.WorkflowEvent",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="delivered_disbursement_advice_intents",
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -522,5 +538,57 @@ class DisbursementAdviceIntent(models.Model):
             models.CheckConstraint(
                 check=~Q(bank_reference_digest="") & ~Q(evidence_checksum_sha256=""),
                 name="advice_intent_evidence_present",
+            ),
+            models.CheckConstraint(
+                check=(
+                    Q(
+                        delivery_status="pending",
+                        delivery_action_id__isnull=True,
+                        delivery_evidence_digest="",
+                        delivery_audit__isnull=True,
+                        delivery_workflow_event__isnull=True,
+                    )
+                    | (
+                        Q(
+                            delivery_status="sent",
+                            delivery_action_id__isnull=False,
+                            delivery_audit__isnull=False,
+                            delivery_workflow_event__isnull=False,
+                        )
+                        & ~Q(delivery_evidence_digest="")
+                    )
+                ),
+                name="advice_intent_delivery_evidence_complete",
+            ),
+        ]
+
+
+class DisbursementAdviceDeliveryReceipt(models.Model):
+    delivery_receipt_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    advice_intent = models.OneToOneField(
+        DisbursementAdviceIntent,
+        on_delete=models.PROTECT,
+        related_name="delivery_receipt",
+    )
+    idempotency_key = models.CharField(max_length=255, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    external_message_id = models.CharField(max_length=120, unique=True)
+    delivery_status = models.CharField(max_length=40)
+    accepted_at = models.DateTimeField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "disbursement_advice_delivery_receipts"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    ~Q(idempotency_key="")
+                    & ~Q(payload_digest="")
+                    & ~Q(external_message_id="")
+                    & Q(delivery_status="sent")
+                ),
+                name="advice_delivery_receipt_complete",
             ),
         ]

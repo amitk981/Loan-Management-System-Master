@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_replay_conflicts_when_rendered_subject_snapshot_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_rendered_subject_snapshot_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_201120_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 236, in test_replay_conflicts_when_rendered_subject_snapshot_changes
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "c3418adc-6e2a-4f4c-909f-11c0ec20ab85", "disbursement_advice_communication_id": "554be6fb-cca9-4b5e-aaf1-ca77cf2ed0fe", "delivery_status": "sent", "sent_at": "2026-07-17T14:52:12.731095Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-17T14:52:12.743294Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.598s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

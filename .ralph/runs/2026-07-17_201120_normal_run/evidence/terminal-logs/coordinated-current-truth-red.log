@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+FFF
+======================================================================
+FAIL: test_replay_conflicts_on_coordinated_provider_and_audit_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_coordinated_provider_and_audit_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_201120_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 350, in test_replay_conflicts_on_coordinated_provider_and_audit_drift
+    self.assertEqual(self._post().status_code, 409)
+AssertionError: 200 != 409
+
+======================================================================
+FAIL: test_replay_conflicts_on_extra_unsafe_audit_evidence (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_extra_unsafe_audit_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_201120_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 364, in test_replay_conflicts_on_extra_unsafe_audit_evidence
+    self.assertEqual(self._post().status_code, 409)
+AssertionError: 200 != 409
+
+======================================================================
+FAIL: test_replay_conflicts_when_workflow_timestamp_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_workflow_timestamp_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_201120_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 374, in test_replay_conflicts_when_workflow_timestamp_changes
+    self.assertEqual(self._post().status_code, 409)
+AssertionError: 200 != 409
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.795s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

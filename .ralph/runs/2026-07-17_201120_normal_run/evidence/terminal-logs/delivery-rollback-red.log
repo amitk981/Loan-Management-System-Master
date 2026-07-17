@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_201120_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 278, in test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback
+    self.assertEqual(RecordingAdapter.receipts[0], RecordingAdapter.receipts[1])
+AssertionError: Email[136 chars]2026, 7, 17, 14, 53, 59, 734336, tzinfo=datetime.timezone.utc)) != Email[136 chars]2026, 7, 17, 14, 53, 59, 744396, tzinfo=datetime.timezone.utc))
+
+----------------------------------------------------------------------
+Ran 1 test in 0.607s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

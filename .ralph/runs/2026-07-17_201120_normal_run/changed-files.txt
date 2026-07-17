@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009H2-advice-authority-current-truth-and-delivery-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/communications/adapters.py
+ M sfpcl_credit/disbursements/models.py
+ M sfpcl_credit/disbursements/modules/disbursement_advice.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/tests/test_catalogue_seed.py
+ M sfpcl_credit/tests/test_disbursement_advice_api.py
+?? .ralph/runs/2026-07-17_201120_normal_run/
+?? sfpcl_credit/disbursements/migrations/0006_disbursementadvicedeliveryreceipt_and_more.py
