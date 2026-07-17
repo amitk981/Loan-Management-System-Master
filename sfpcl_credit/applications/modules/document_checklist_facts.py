@@ -155,6 +155,29 @@ def resolve_blank_cheque_bank_fact(*, application_id):
     )
 
 
+def reconcile_authorisation_bank_fact(*, application_id, frozen_evidence):
+    """Resolve only the exact application-owned bank decision frozen at initiation."""
+    fact = resolve_blank_cheque_bank_fact(application_id=application_id)
+    expected = {
+        "borrower_bank_account_id": fact.bank_account_id,
+        "bank_verification_decision_id": fact.bank_verification_decision_id,
+        "bank_cancelled_cheque_id": fact.cancelled_cheque_id,
+        "bank_cancelled_cheque_document_id": fact.cancelled_cheque_document_id,
+        "bank_cancelled_cheque_checksum_sha256": fact.cancelled_cheque_checksum_sha256,
+        "bank_verifier_user_id": fact.verifier_user_id,
+        "bank_request_id": fact.request_id,
+        "bank_workflow_event_id": fact.workflow_event_id,
+        "bank_audit_log_id": fact.audit_log_id,
+        "bank_version_history_id": fact.version_history_id,
+    }
+    if not fact.valid or any(
+        frozen_evidence.get(key) != (str(value) if value is not None else None)
+        for key, value in expected.items()
+    ):
+        return BlankChequeBankFact(False, "bank_verification_decision_changed")
+    return fact
+
+
 def resolve_cancelled_cheque_signature_fact(*, application_id, member_id):
     """Return a decision only when every related cheque row is valid and verified."""
     rows = list(

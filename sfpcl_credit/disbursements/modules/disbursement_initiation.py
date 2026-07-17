@@ -95,6 +95,23 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             source=source,
             readiness_evidence=readiness_evidence,
         )
+        readiness_evidence = {
+            **readiness_evidence,
+            "bank_cancelled_cheque_id": _string_fact(bank, "cancelled_cheque_id"),
+            "bank_cancelled_cheque_document_id": _string_fact(
+                bank, "cancelled_cheque_document_id"
+            ),
+            "bank_cancelled_cheque_checksum_sha256": getattr(
+                bank, "cancelled_cheque_checksum_sha256", None
+            ),
+            "bank_verifier_user_id": _string_fact(bank, "verifier_user_id"),
+            "bank_request_id": getattr(bank, "request_id", None),
+            "bank_workflow_event_id": _string_fact(bank, "workflow_event_id"),
+            "bank_audit_log_id": _string_fact(bank, "audit_log_id"),
+            "bank_version_history_id": _string_fact(bank, "version_history_id"),
+            "source_bank_request_id": getattr(source, "request_id", None),
+            "source_bank_facts_digest": getattr(source, "source_facts_digest", None),
+        }
         if Disbursement.objects.select_for_update().filter(
             loan_account_id=account.loan_account_id,
             authorisation_status__in=("pending", "approved"),
@@ -299,11 +316,22 @@ def _require_current_readiness(readiness, loan_account_id):
     if not isinstance(readiness, InitiationReadinessDecision):
         raise DisbursementReadinessStale("Current readiness evidence is unavailable.")
     evidence = readiness.safe_evidence()
+    required_keys = (
+        "check_digest",
+        "sap_customer_code_id",
+        "sap_profile_request_id",
+        "borrower_bank_account_id",
+        "bank_verification_decision_id",
+        "source_bank_account_id",
+        "source_bank_governance_id",
+        "source_bank_version_history_id",
+        "source_bank_audit_log_id",
+    )
     if (
         str(readiness.loan_account_id) != str(loan_account_id)
         or readiness.ready_for_disbursement is not True
         or len(readiness.check_digest) != 64
-        or any(not value for value in evidence.values())
+        or any(not evidence.get(key) for key in required_keys)
     ):
         raise DisbursementReadinessStale(
             "All 23 exact current readiness checks must pass in canonical order.",
@@ -368,6 +396,11 @@ def _digest(value):
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+
+
+def _string_fact(value, field):
+    fact = getattr(value, field, None)
+    return str(fact) if fact is not None else None
 
 
 def _payload_digest(*, loan_account_id, maker, cleaned):

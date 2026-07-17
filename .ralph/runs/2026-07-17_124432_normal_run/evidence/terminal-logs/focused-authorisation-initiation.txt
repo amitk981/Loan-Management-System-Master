@@ -1,0 +1,65 @@
+Creating test database for alias 'default'...
+Found 33 test(s).
+System check identified no issues (0 silenced).
+.............FF.FFFF......Fssssss
+======================================================================
+FAIL: test_cfc_readiness_scope_exists_only_after_exact_assigned_initiation (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_cfc_readiness_scope_exists_only_after_exact_assigned_initiation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 378, in test_cfc_readiness_scope_exists_only_after_exact_assigned_initiation
+    self.assertEqual(initiated.status_code, 200, initiated.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "All 23 exact current readiness checks must pass in canonical order.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T07:26:47.932589Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_cfc_scope_reconciles_every_frozen_initiation_link (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_cfc_scope_reconciles_every_frozen_initiation_link)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 715, in test_cfc_scope_reconciles_every_frozen_initiation_link
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "All 23 exact current readiness checks must pass in canonical order.", "details": {}, "field_errors": {}}, "meta": {"request_id": "req-cfc-exact", "timestamp": "2026-07-17T07:26:47.957958Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_current_ready_payment_is_recorded_once_without_transfer_side_effects (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_current_ready_payment_is_recorded_once_without_transfer_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 119, in test_current_ready_payment_is_recorded_once_without_transfer_side_effects
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "All 23 exact current readiness checks must pass in canonical order.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T07:26:48.005885Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 239, in test_exact_replay_writes_nothing_and_changed_replay_or_duplicate_conflicts
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "All 23 exact current readiness checks must pass in canonical order.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T07:26:48.029194Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_inaccessible_or_changed_account_and_source_configuration_are_zero_write (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_inaccessible_or_changed_account_and_source_configuration_are_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 418, in test_inaccessible_or_changed_account_and_source_configuration_are_zero_write
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 409 != 403 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "All 23 exact current readiness checks must pass in canonical order.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T07:26:48.063613Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_positive_lesser_amount_is_frozen_for_cfc_review (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_positive_lesser_amount_is_frozen_for_cfc_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 204, in test_positive_lesser_amount_is_frozen_for_cfc_review
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "All 23 exact current readiness checks must pass in canonical order.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-17T07:26:48.088086Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_supplied_request_id_is_retained_in_exact_initiation_ledger (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_supplied_request_id_is_retained_in_exact_initiation_ledger)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_initiation_api.py", line 218, in test_supplied_request_id_is_retained_in_exact_initiation_ledger
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "All 23 exact current readiness checks must pass in canonical order.", "details": {}, "field_errors": {}}, "meta": {"request_id": "req-disbursement-supplied", "timestamp": "2026-07-17T07:26:48.423059Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 33 tests in 7.901s
+
+FAILED (failures=7, skipped=6)
+Destroying test database for alias 'default'...

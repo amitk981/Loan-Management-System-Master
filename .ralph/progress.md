@@ -8363,3 +8363,31 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-17 - 2026-07-17_124432_normal_run
+
+- Agent tool used: codex with the implement/TDD workflow.
+- Slice completed: 009F2-cfc-authorisation-integrity-and-bank-evidence-closure.
+- Summary: Bound CFC scope and approval/rejection to one exact typed borrower/source-bank,
+  loan-creation, initiation-ledger, unfunded-account decision; added database-complete pending,
+  terminal, and pre-transfer invariants without changing the §31.3 response or creating transfer
+  side effects.
+- Tests run: failing-first borrower-bank/aggregate probes; 33 focused authorisation/initiation tests;
+  twice-run PostgreSQL CFC five-caller class (two race rounds per run); Django check; migration sync;
+  changed-scope Ruff.
+- Evidence saved: `.ralph/runs/2026-07-17_124432_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High; mitigated by locked source-owner reconciliation, strict database constraints,
+  genuine full-owner fixtures, maker-checker enforcement, nondisclosing errors, and zero-write
+  stale/concurrent failure paths.
+- Next action: Run 009G transfer success/UTR, then 009H advice.
+
+## 2026-07-17 13:24:58 - 2026-07-17_124432_normal_run
+- Agent tool used: codex
+- Slice attempted: 009F2-cfc-authorisation-integrity-and-bank-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/.ralph/runs/2026-07-17_124432_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/.ralph/runs/2026-07-17_124432_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

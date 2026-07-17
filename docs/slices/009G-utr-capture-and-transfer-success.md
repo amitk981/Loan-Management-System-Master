@@ -44,8 +44,10 @@ None.
 ## Backend/API Scope
 1. Extend the source-defined `disbursements.modules.disbursement_workflow` public atomic interface.
    An internal transfer-success helper may remain private, but no parallel public workflow owner is
-   permitted. Consume 009F2's typed current-evidence decision and lock the active actor, exact 009F
-   approved disbursement/action,
+   permitted. Consume 009F2's typed
+   `current_disbursement_evidence.resolve_current_disbursement_evidence` decision with
+   `allowed_authorisation_statuses=("approved",)` and lock the active actor, exact 009F approved
+   disbursement/action,
    account/application/member, beneficiary/
    source bank, current retained evidence document, and any UTR/idempotency winner.
 2. Require source Critical `finance.disbursement.mark_success` and exact pending-transfer scope for
@@ -99,6 +101,10 @@ URLs/capabilities, or legal/security payloads in ledgers. Replay and losers writ
   `authorisation_workflow_event`, `authorisation_evidence_digest`, checker role/team, comments,
   request/network, and decision-time facts as one exact terminal tuple. Never infer approval from
   `authorisation_status` alone, and never rewrite those retained checker facts during transfer.
+- The shared 009F2 decision already reconciles the frozen application bank decision, complete
+  source-bank lifecycle, loan-creation identities, and initiation ledger. 009G must extend that
+  decision with exact terminal-authorisation and transfer-evidence checks rather than copying its
+  predicates into a second scope helper.
 - Require a non-empty normalized globally unique UTR/reference, an application/account-scoped
   restricted evidence document with current checksum, and a timezone-aware transfer time that is
   not before authorisation or materially in the future.

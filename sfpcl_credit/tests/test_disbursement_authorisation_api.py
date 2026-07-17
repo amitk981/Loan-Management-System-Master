@@ -1,6 +1,7 @@
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.db import close_old_connections, connection, connections
@@ -14,40 +15,57 @@ class DisbursementAuthorisationApiTests(TestCase):
     password = "LoanAccountPass123!"
 
     def setUp(self):
-        from sfpcl_credit.tests.test_disbursement_initiation_api import (
-            DisbursementInitiationApiTests,
+        from sfpcl_credit.tests.test_final_documentation_approval_api import (
+            FinalDocumentationApprovalApiTests,
         )
 
-        fixture = DisbursementInitiationApiTests(
-            "test_current_ready_payment_is_recorded_once_without_transfer_side_effects"
+        owner = FinalDocumentationApprovalApiTests(
+            "test_disbursement_readiness_real_owners_reach_a126_then_all_pass"
         )
-        fixture.setUp()
-        from sfpcl_credit.configurations.modules.source_bank_governance import (
-            activate_source_bank_account,
-        )
-
-        fixture.fixture._grant(fixture.actor, "config.source_bank_account.activate")
-        source = activate_source_bank_account(
-            actor=fixture.actor,
-            bank_account_id=fixture.source_bank_id,
-            reason="Treasury-approved test settlement account.",
-            request_id=f"req-source-for-cfc-{id(self)}",
-        )
-        fixture.source_governance_id = source.governance_id
-        fixture.source_version_id = source.version_history_id
-        fixture.source_audit_id = source.audit_log_id
-        changes = (
-            {"disbursement_amount": "250000.00"}
-            if self._testMethodName == "test_cfc_approves_exact_frozen_lesser_amount"
-            else None
-        )
-        initiated = fixture._post(
-            changes=changes, request_id="req-initiation-for-cfc"
+        owner.setUp()
+        facts = owner._real_owner_initiation_fixture(stop_before_initiation=True)
+        payload = dict(facts["payload"])
+        if self._testMethodName == "test_cfc_approves_exact_frozen_lesser_amount":
+            payload["disbursement_amount"] = "250000.00"
+        client = Client()
+        initiated = client.post(
+            f"/api/v1/loan-accounts/{facts['account'].pk}/disbursements/initiate/",
+            payload,
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=f"cfc-initiation-{id(self)}",
+            HTTP_X_REQUEST_ID="req-initiation-for-cfc",
+            **owner.fixture._auth(facts["actor"]),
         )
         self.assertEqual(initiated.status_code, 200, initiated.content)
-        self.fixture = fixture
+        from sfpcl_credit.identity.models import User
+
+        def user_on_role(role, full_name):
+            user = User.objects.create(
+                full_name=full_name,
+                email=f"{full_name.lower().replace(' ', '.')}@sfpcl.example",
+                status="active",
+                primary_role=role,
+            )
+            user.set_password(self.password)
+            user.save()
+            return user
+
+        self.fixture = SimpleNamespace(
+            fixture=SimpleNamespace(
+                _user=owner.fixture._user,
+                _user_on_role=user_on_role,
+                _grant=owner._grant,
+            ),
+            actor=facts["actor"],
+            application=owner.application,
+            _auth=owner.fixture._auth,
+            _user_on_role=user_on_role,
+        )
         self.disbursement_id = initiated.json()["data"]["disbursement_id"]
-        self.cfc = fixture.cfc
+        self.cfc = owner.fixture._user(
+            "chief_financial_controller", "CFC Authoriser"
+        )
+        owner._grant(self.cfc, "finance.disbursement.authorise")
         self.cfc.approval_authority_type = "chief_financial_controller"
         self.cfc.save(update_fields=["approval_authority_type"])
         self.client = Client()
@@ -385,6 +403,69 @@ class DisbursementAuthorisationApiTests(TestCase):
                 )
                 model.objects.filter(pk=pk).update(**{field: original})
 
+    def test_changed_current_borrower_bank_decision_denies_scope_and_both_decisions(self):
+        from sfpcl_credit.disbursements.models import Disbursement
+        from sfpcl_credit.disbursements.modules.disbursement_scope import has_cfc_scope
+        from sfpcl_credit.members.models import BankAccount
+
+        row = Disbursement.objects.get()
+        self.assertTrue(
+            has_cfc_scope(actor_id=self.cfc.pk, loan_account_id=row.loan_account_id)
+        )
+        original_ifsc = row.borrower_bank_account.ifsc
+        BankAccount.objects.filter(pk=row.borrower_bank_account_id).update(
+            ifsc="RBLB0000999"
+        )
+
+        self.assertFalse(
+            has_cfc_scope(actor_id=self.cfc.pk, loan_account_id=row.loan_account_id)
+        )
+        for decision in ("approved", "rejected"):
+            with self.subTest(decision=decision):
+                response = self._post(decision, "Independent current-bank review.")
+                self.assertEqual(response.status_code, 409, response.content)
+                row.refresh_from_db()
+                self.assertEqual(row.authorisation_status, "pending")
+                self.assertIsNone(row.authorisation_audit_id)
+        BankAccount.objects.filter(pk=row.borrower_bank_account_id).update(
+            ifsc=original_ifsc
+        )
+
+    def test_pending_row_with_later_transfer_truth_cannot_be_authorised_or_rejected(self):
+        from django.db import IntegrityError, transaction
+        from django.utils import timezone
+
+        from sfpcl_credit.disbursements.models import Disbursement
+
+        row = Disbursement.objects.get()
+        forged_cases = (
+            {"bank_reference_number": "UTR-FORGED"},
+            {"disbursed_at": timezone.now()},
+            {"loan_register_updated_flag": True},
+            {"bank_transfer_status": "processing"},
+        )
+        for changed in forged_cases:
+            with self.subTest(changed=tuple(changed)):
+                with self.assertRaises(IntegrityError), transaction.atomic():
+                    Disbursement.objects.filter(pk=row.pk).update(**changed)
+
+    def test_pending_and_terminal_authorisation_aggregate_constraints_are_complete(self):
+        from django.db import IntegrityError, transaction
+
+        from sfpcl_credit.disbursements.models import Disbursement
+
+        row = Disbursement.objects.get()
+        invalid_pending = (
+            {"authorisation_comments": "orphan"},
+            {"checker_role_code": "chief_financial_controller"},
+            {"authorisation_request_id": "orphan-request"},
+            {"authorisation_evidence_digest": "0" * 64},
+        )
+        for changed in invalid_pending:
+            with self.subTest(changed=tuple(changed)):
+                with self.assertRaises(IntegrityError), transaction.atomic():
+                    Disbursement.objects.filter(pk=row.pk).update(**changed)
+
     def _post(self, decision, comments, *, actor=None, query="", source="real"):
         if source == "real":
             return self.client.post(
@@ -396,7 +477,7 @@ class DisbursementAuthorisationApiTests(TestCase):
             )
         with patch(
             "sfpcl_credit.disbursements.modules.disbursement_authorisation."
-            "resolve_source_bank_account",
+            "resolve_current_disbursement_evidence",
             return_value=source,
         ):
             return self.client.post(

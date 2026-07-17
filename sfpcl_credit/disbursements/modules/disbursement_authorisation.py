@@ -6,10 +6,10 @@ from django.db import transaction
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.configurations.modules.source_bank_governance import (
-    resolve_source_bank_account,
-)
 from sfpcl_credit.disbursements.models import Disbursement
+from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
+    resolve_current_disbursement_evidence,
+)
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied, DomainPermissionDenied
 from sfpcl_credit.identity.models import AuditLog, Permission, User
 from sfpcl_credit.identity.modules import auth_service
@@ -50,10 +50,10 @@ def _authorise(*, actor, disbursement_id, payload, request=None):
             raise DisbursementAuthorisationConflict(
                 "The disbursement already has a different terminal authorisation decision."
             )
-        source = resolve_source_bank_account(for_update=True)
-        if not _coherent_pending_initiation(row) or not _current_source_matches(
-            row, source
-        ):
+        current = resolve_current_disbursement_evidence(
+            disbursement_id=row.pk, for_update=True
+        )
+        if current is None:
             raise DisbursementAuthorisationConflict(
                 "The pending disbursement initiation evidence is stale or incoherent."
             )
@@ -272,109 +272,6 @@ def _locked_checker(actor):
             "Active governed CFC disbursement authorisation authority is required."
         )
     return checker
-
-
-def _coherent_pending_initiation(row):
-    evidence = row.initiation_audit.new_value_json or {}
-    request_id = evidence.get("request_id")
-    comment_digest = evidence.get("final_verification_comment_digest")
-    trace = (
-        f"request_id={request_id};verification_digest={comment_digest};"
-        f"amount={row.disbursement_amount:.2f}"
-    )
-    readiness = row.readiness_evidence_json or {}
-    account = row.loan_account
-    borrower_bank = row.borrower_bank_account
-    source_bank = row.source_bank_account
-    return bool(
-        row.initiation_status == Disbursement.INITIATED
-        and row.authorisation_status == Disbursement.AUTHORISATION_PENDING
-        and row.bank_transfer_status == Disbursement.TRANSFER_PENDING
-        and row.authorised_by_user_id is None
-        and row.authorised_at is None
-        and row.authorisation_action_id is None
-        and row.loan_application_id == account.loan_application_id
-        and row.member_id == account.member_id
-        and account.loan_account_status == "sanctioned"
-        and row.disbursement_amount > 0
-        and row.disbursement_amount <= account.terms.loan_amount
-        and row.disbursement_amount <= account.sanctioned_amount
-        and all(
-            value == 0
-            for value in (
-                account.disbursed_amount,
-                account.principal_outstanding,
-                account.interest_outstanding,
-                account.charges_outstanding,
-                account.total_outstanding,
-            )
-        )
-        and borrower_bank.owner_party_type == "member"
-        and borrower_bank.owner_party_id == row.member_id
-        and borrower_bank.verification_status == "verified"
-        and borrower_bank.status == "active"
-        and source_bank.owner_party_type == "sfpcl"
-        and request_id
-        and comment_digest == _sha256(row.final_verification_comments)
-        and readiness.get("check_digest") == row.readiness_digest
-        and readiness.get("borrower_bank_account_id")
-        == str(row.borrower_bank_account_id)
-        and readiness.get("source_bank_account_id") == str(row.source_bank_account_id)
-        and readiness.get("source_bank_governance_id")
-        and readiness.get("source_bank_version_history_id")
-        and readiness.get("source_bank_audit_log_id")
-        and evidence.get("disbursement_id") == str(row.pk)
-        and evidence.get("loan_account_id") == str(row.loan_account_id)
-        and evidence.get("loan_application_id") == str(row.loan_application_id)
-        and evidence.get("member_id") == str(row.member_id)
-        and evidence.get("disbursement_amount") == f"{row.disbursement_amount:.2f}"
-        and evidence.get("borrower_bank_account_id")
-        == str(row.borrower_bank_account_id)
-        and evidence.get("source_bank_account_id") == str(row.source_bank_account_id)
-        and evidence.get("maker_user_id") == str(row.initiated_by_user_id)
-        and evidence.get("maker_role_codes") == [row.maker_role_code]
-        and evidence.get("maker_team_codes") == row.maker_team_codes_json
-        and evidence.get("readiness_digest") == row.readiness_digest
-        and evidence.get("readiness_evidence") == readiness
-        and evidence.get("idempotency_digest") == row.idempotency_key_digest
-        and row.initiation_audit.action == "disbursement.initiated"
-        and row.initiation_audit.entity_type == "disbursement"
-        and row.initiation_audit.entity_id == row.pk
-        and row.initiation_audit.actor_user_id == row.initiated_by_user_id
-        and row.initiation_workflow_event.workflow_name == "DisbursementInitiated"
-        and row.initiation_workflow_event.entity_type == "disbursement"
-        and row.initiation_workflow_event.entity_id == row.pk
-        and row.initiation_workflow_event.from_state is None
-        and row.initiation_workflow_event.to_state == Disbursement.INITIATED
-        and row.initiation_workflow_event.triggered_by_user_id
-        == row.initiated_by_user_id
-        and row.initiation_workflow_event.trigger_reason == trace
-        and row.cfc_task.notification_type == "disbursement_authorisation"
-        and row.cfc_task.category == "Finance"
-        and row.cfc_task.severity == row.cfc_task.SEVERITY_URGENT
-        and row.cfc_task.related_entity_type == "disbursement"
-        and row.cfc_task.related_entity_id == row.pk
-        and row.cfc_task.recipient_role_code == CFC_ROLE
-        and row.cfc_task.sender_user_id == row.initiated_by_user_id
-        and row.cfc_task.action_label == "Review disbursement"
-        and row.cfc_task.action_url == f"/api/v1/disbursements/{row.pk}/authorise/"
-        and row.cfc_task.read_at is None
-        and row.cfc_task.read_by_user_id is None
-        and trace in row.cfc_task.message
-    )
-
-
-def _current_source_matches(row, source):
-    evidence = row.readiness_evidence_json or {}
-    return bool(
-        source
-        and source.active
-        and source.source_bank_account_id == row.source_bank_account_id
-        and str(source.governance_id) == evidence.get("source_bank_governance_id")
-        and str(source.version_history_id)
-        == evidence.get("source_bank_version_history_id")
-        and str(source.audit_log_id) == evidence.get("source_bank_audit_log_id")
-    )
 
 
 def _is_complete_terminal_replay(row, cleaned):

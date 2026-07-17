@@ -54,6 +54,16 @@ class InitiationReadinessDecision:
     source_bank_governance_id: object | None
     source_bank_version_history_id: object | None
     source_bank_audit_log_id: object | None
+    bank_cancelled_cheque_id: object | None = None
+    bank_cancelled_cheque_document_id: object | None = None
+    bank_cancelled_cheque_checksum_sha256: str | None = None
+    bank_verifier_user_id: object | None = None
+    bank_request_id: str | None = None
+    bank_workflow_event_id: object | None = None
+    bank_audit_log_id: object | None = None
+    bank_version_history_id: object | None = None
+    source_bank_request_id: str | None = None
+    source_bank_facts_digest: str | None = None
 
     def safe_evidence(self):
         return {
@@ -66,6 +76,20 @@ class InitiationReadinessDecision:
             "bank_verification_decision_id": _string_or_none(
                 self.bank_verification_decision_id
             ),
+            "bank_cancelled_cheque_id": _string_or_none(
+                self.bank_cancelled_cheque_id
+            ),
+            "bank_cancelled_cheque_document_id": _string_or_none(
+                self.bank_cancelled_cheque_document_id
+            ),
+            "bank_cancelled_cheque_checksum_sha256": (
+                self.bank_cancelled_cheque_checksum_sha256
+            ),
+            "bank_verifier_user_id": _string_or_none(self.bank_verifier_user_id),
+            "bank_request_id": self.bank_request_id,
+            "bank_workflow_event_id": _string_or_none(self.bank_workflow_event_id),
+            "bank_audit_log_id": _string_or_none(self.bank_audit_log_id),
+            "bank_version_history_id": _string_or_none(self.bank_version_history_id),
             "source_bank_account_id": _string_or_none(self.source_bank_account_id),
             "source_bank_governance_id": _string_or_none(
                 self.source_bank_governance_id
@@ -76,6 +100,8 @@ class InitiationReadinessDecision:
             "source_bank_audit_log_id": _string_or_none(
                 self.source_bank_audit_log_id
             ),
+            "source_bank_request_id": self.source_bank_request_id,
+            "source_bank_facts_digest": self.source_bank_facts_digest,
         }
 
 
@@ -294,6 +320,32 @@ def _evaluate(*, actor, loan_account_id, for_initiation):
                 if bank.valid
                 else None
             ),
+            bank_cancelled_cheque_id=(
+                getattr(bank, "cancelled_cheque_id", None) if bank.valid else None
+            ),
+            bank_cancelled_cheque_document_id=(
+                getattr(bank, "cancelled_cheque_document_id", None)
+                if bank.valid
+                else None
+            ),
+            bank_cancelled_cheque_checksum_sha256=(
+                getattr(bank, "cancelled_cheque_checksum_sha256", None)
+                if bank.valid
+                else None
+            ),
+            bank_verifier_user_id=(
+                getattr(bank, "verifier_user_id", None) if bank.valid else None
+            ),
+            bank_request_id=(getattr(bank, "request_id", None) if bank.valid else None),
+            bank_workflow_event_id=(
+                getattr(bank, "workflow_event_id", None) if bank.valid else None
+            ),
+            bank_audit_log_id=(
+                getattr(bank, "audit_log_id", None) if bank.valid else None
+            ),
+            bank_version_history_id=(
+                getattr(bank, "version_history_id", None) if bank.valid else None
+            ),
             source_bank_account_id=(
                 getattr(source_bank, "source_bank_account_id", None)
                 if source_bank and source_bank.active
@@ -311,6 +363,16 @@ def _evaluate(*, actor, loan_account_id, for_initiation):
             ),
             source_bank_audit_log_id=(
                 getattr(source_bank, "audit_log_id", None)
+                if source_bank and source_bank.active
+                else None
+            ),
+            source_bank_request_id=(
+                getattr(source_bank, "request_id", None)
+                if source_bank and source_bank.active
+                else None
+            ),
+            source_bank_facts_digest=(
+                getattr(source_bank, "source_facts_digest", None)
                 if source_bank and source_bank.active
                 else None
             ),

@@ -1,5 +1,24 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009F2 CFC Authorisation Integrity and Bank-Evidence Closure
+
+- Initiation now freezes the exact application-owned beneficiary-bank decision manifest (bank,
+  cancelled cheque, retained file/checksum, verifier, request, audit, workflow, and version) plus
+  governed source-bank request/facts identities. The application owner re-resolves that immutable
+  decision under locks; changed bank facts, a newer decision, duplicate/conflicting ledger, or
+  changed terminal sanction fails closed.
+- One typed `current_disbursement_evidence` decision now reconciles the singular initiation ledger,
+  genuine loan-creation status/audit/workflow identities, complete current source-bank lifecycle,
+  beneficiary-bank truth, unfunded account, and absence of later transfer/advice/register truth.
+  CFC readiness scope and authorisation consume this same decision; 009G must request its approved
+  form and extend it with the terminal-authorisation/transfer tuple instead of copying predicates.
+- Database constraints now reject partial pending/terminal checker tuples, empty or overlong
+  terminal comments, non-CFC terminal roles, same maker/checker, and any transfer/reference/time/
+  advice/register truth before approval. Public responses and exact replay remain unchanged.
+- Focused authorisation/initiation tests use a genuine legal/security/SAP/bank/loan initiation path.
+  Borrower-bank drift denies scope and both decisions with zero writes; twice-run PostgreSQL
+  five-caller approve/reject races retain one complete winner and no loser evidence.
+
 ## 009E3 Disbursement Amount and Source-Bank Governance Closure
 
 - Public initiation now accepts any positive 18,2 amount no greater than immutable terms and

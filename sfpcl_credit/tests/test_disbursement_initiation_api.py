@@ -351,7 +351,7 @@ class DisbursementInitiationApiTests(TestCase):
         self.assertEqual(response.json()["error"]["code"], "APPROVAL_PENDING")
         self.assertEqual(Disbursement.objects.count(), 0)
 
-    def test_cfc_readiness_scope_exists_only_after_exact_assigned_initiation(self):
+    def test_cfc_readiness_scope_rejects_initiation_without_real_bank_owner_manifest(self):
         from sfpcl_credit.disbursements.models import Disbursement
         from sfpcl_credit.identity.models import AuditLog
         from sfpcl_credit.identity.models import Role
@@ -394,7 +394,8 @@ class DisbursementInitiationApiTests(TestCase):
             f"/api/v1/loan-accounts/{self.account_id}/disbursement-readiness/",
             **self._auth(self.cfc),
         )
-        self.assertEqual(after.status_code, 200, after.content)
+        self.assertEqual(after.status_code, 403, after.content)
+        self.assertEqual(after.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
 
     def test_inaccessible_or_changed_account_and_source_configuration_are_zero_write(self):
         from sfpcl_credit.configurations.modules.source_bank_governance import (
@@ -707,14 +708,14 @@ class DisbursementInitiationApiTests(TestCase):
                 )
         self.assertEqual(Disbursement.objects.count(), 0)
 
-    def test_cfc_scope_reconciles_every_frozen_initiation_link(self):
+    def test_synthetic_initiation_links_never_create_cfc_scope(self):
         from sfpcl_credit.disbursements.models import Disbursement
         from sfpcl_credit.disbursements.modules.disbursement_scope import has_cfc_scope
 
         response = self._post(request_id="req-cfc-exact")
         self.assertEqual(response.status_code, 200, response.content)
         row = Disbursement.objects.get()
-        self.assertTrue(
+        self.assertFalse(
             has_cfc_scope(actor_id=uuid4(), loan_account_id=row.loan_account_id)
         )
 
@@ -822,15 +823,24 @@ class DisbursementInitiationApiTests(TestCase):
             source_bank_version_history_id=self.source_version_id,
             source_bank_audit_log_id=self.source_audit_id,
         )
+        retained_bank = getattr(self, "authorisation_bank_fact", None)
         bank = SimpleNamespace(
             valid=True,
             member_id=self.application.member_id,
             bank_account_id=self.borrower_bank_id,
-            cancelled_cheque_id=uuid4(),
+            cancelled_cheque_id=getattr(retained_bank, "cancelled_cheque_id", uuid4()),
+            cancelled_cheque_document_id=getattr(
+                retained_bank, "cancelled_cheque_document_id", uuid4()
+            ),
+            cancelled_cheque_checksum_sha256=getattr(
+                retained_bank, "cancelled_cheque_checksum_sha256", "f" * 64
+            ),
             bank_verification_decision_id=self.bank_decision_id,
-            audit_log_id=uuid4(),
-            workflow_event_id=uuid4(),
-            version_history_id=uuid4(),
+            verifier_user_id=getattr(retained_bank, "verifier_user_id", uuid4()),
+            request_id=getattr(retained_bank, "request_id", "req-bank-fixture"),
+            audit_log_id=getattr(retained_bank, "audit_log_id", uuid4()),
+            workflow_event_id=getattr(retained_bank, "workflow_event_id", uuid4()),
+            version_history_id=getattr(retained_bank, "version_history_id", uuid4()),
         )
         source = SimpleNamespace(
             source_bank_account_id=self.source_bank_id,
@@ -839,6 +849,8 @@ class DisbursementInitiationApiTests(TestCase):
             governance_id=self.source_governance_id,
             version_history_id=self.source_version_id,
             audit_log_id=self.source_audit_id,
+            request_id=getattr(self, "source_request_id", "req-source-fixture"),
+            source_facts_digest=getattr(self, "source_facts_digest", "e" * 64),
         )
         with (
             patch(

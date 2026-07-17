@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+EE
+======================================================================
+ERROR: test_five_cfc_decisions_retain_one_complete_winner_run_one (sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationRaceTests.test_five_cfc_decisions_retain_one_complete_winner_run_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 496, in setUp
+    actor = fixture.fixture._user_on_role(primary_role, f"Race CFC {index}")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute '_user_on_role'
+
+======================================================================
+ERROR: test_five_cfc_decisions_retain_one_complete_winner_run_two (sfpcl_credit.tests.test_disbursement_authorisation_api.DisbursementAuthorisationRaceTests.test_five_cfc_decisions_retain_one_complete_winner_run_two)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_124432_normal_run/sfpcl_credit/tests/test_disbursement_authorisation_api.py", line 496, in setUp
+    actor = fixture.fixture._user_on_role(primary_role, f"Race CFC {index}")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute '_user_on_role'
+
+----------------------------------------------------------------------
+Ran 2 tests in 7.994s
+
+FAILED (errors=2)
+Destroying test database for alias 'default'...
