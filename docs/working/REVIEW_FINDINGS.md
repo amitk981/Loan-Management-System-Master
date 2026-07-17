@@ -2,6 +2,132 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-17 16:56 - Architecture Review 2026-07-17_164724_architecture_review
+
+Reviewed the four product slices merged after architecture-review commit `f35e0fc7` and before the
+later Ralph-maintenance commits:
+- `009E3-disbursement-amount-and-source-bank-governance-closure` (`c56b0802`)
+- `009F2-cfc-authorisation-integrity-and-bank-evidence-closure` (`8a9c4439`)
+- `009G-utr-capture-and-transfer-success` (`bd6d89e5`)
+- `009H-disbursement-advice-and-communication` (`dbccea9c`)
+
+The review checked `git diff f35e0fc7...dbccea9c`, all four slice contracts/run packets, the Epic
+009 digest/epic, cited source sections, production/test/migration diffs, M08 requirement traceability,
+queue dependencies, blocked slices, and CONTEXT truth. Standards and Spec ran as isolated parallel
+passes. Four review-only tests fail as expected while 14 retained public transfer/advice tests pass
+in the same isolated database: §45.2 replay lacks its replay wrapper, a CFC-only actor sends advice,
+changed canonical email remains replayable, and changed rendered advice content remains replayable.
+Probe source/output is retained in this run; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - Successful transfer leaves required post-disbursement truth outside its transaction
+
+`disbursement_transfer_success.py` atomically creates the transfer and activates/funds the loan, but
+explicitly keeps `loan_register_updated_flag=false` and creates no communication/advice intent;
+`test_disbursement_transfer_success_api.py` asserts both absences. The later checklist route remains
+hard-blocked on `DISBURSEMENT_EVIDENCE_UNAVAILABLE`. This conflicts with data-model §34's
+disbursement-success transaction, codebase-design §16.4's workflow-owned advice trigger, and the
+source post-disbursement register/signature sequence. `009G2` adds one exact register identity,
+stable pending advice/outbox identity, and the public Senior Finance signature seam without claiming
+provider delivery prematurely.
+
+#### Finding 2 - High - Advice delivery idempotency is process-local and cannot survive rollback
+
+`disbursement_advice._send_advice` calls the provider before the `Communication` and link commit.
+Every ordinary request constructs a new `ManualEmailDeliveryAdapter`, whose accepted-key ledger is
+only an instance dictionary; its fingerprint also includes a newly random communication id. If the
+provider accepts and the database transaction then rolls back, retry can logically send again and
+retain a different provider identity. The tests reuse one shared fake, so they prove row-lock
+concurrency but not acceptance-followed-by-rollback/retry. This violates codebase-design §§22.2 and
+42.4's durable email idempotency/retry rule. `009G2` creates the stable intent; `009H2` proves a fresh
+adapter and post-acceptance rollback reuse the same logical delivery identity.
+
+#### Finding 3 - High - Critical source-bank rationale is not reviewable and approval attribution is overstated
+
+009E3 retains only `reason_digest`; neither the governance row, version, nor audit can recover the
+human rationale that CFG-001 and auth §30.2 require. The writer also puts the request id in
+`approval_reference` and records the provisioner as both author and approver, although A-126 says
+the source does not name a business provisioner/approver. Integrity hashes are useful but are not an
+auditable reason or independent approval. `009E4` retains safe bounded rationale, keeps request and
+approval concepts distinct, removes false approval claims, and preserves the unassigned Critical
+grant until governance names the authority.
+
+#### Finding 4 - Medium - Advice audit duplicates the full borrower email
+
+The protected `Communication` legitimately needs its delivery address, but `disbursement_advice.py`
+also copies the full canonical email into general audit/workflow evidence. That broadens PII exposure
+contrary to AUD-005 and the slice's safe-ledger requirement; communication id plus masked/digested
+recipient is sufficient for reconciliation. `009H2` narrows audit evidence without weakening the
+protected delivery record.
+
+### Spec
+
+#### Finding 1 - High - M08-FR-009 and M08-FR-011 have no executable success path
+
+Functional-spec M08 requires Loan Register update and Senior Manager Finance checklist sign-off
+after actual disbursement. 009G cites through M08-FR-009 but explicitly forbids register/checklist
+truth; 009H repeats the exclusion. Production has no writer for the register flag, and the existing
+§27.7 public checklist action unconditionally reports `DISBURSEMENT_EVIDENCE_UNAVAILABLE` unless a
+signature somehow already exists. Existing tests bless those absences. `009G2` supplies both source-
+owned paths and binds them to current successful-transfer evidence.
+
+#### Finding 2 - High - Advice authority is the reverse of one source role edge
+
+Auth §26.5 allows Credit Manager/Finance and Senior Manager Finance to send advice and explicitly
+marks CFC as `No`. 009H/catalogue code grants CFC, omits Credit Manager, and accepts only the exact
+initiating Senior Finance actor or authorising CFC. A review probe confirmed the CFC path returns
+HTTP 200; retained tests cover neither disputed role edge. `009H2` grants only the source roles with
+their canonical active-loan/application scope and denies CFC-only authority.
+
+#### Finding 3 - High - Transfer-success replay contradicts API §45.2
+
+009G cites §45, but exact replay returns the ordinary four fields again. API §45.2 requires
+`idempotency_replayed: true` and the retained `original_response`. The retained test explicitly
+asserts equality with the first plain response; the review probe fails on the missing field.
+`009G2` restores the source shape while preserving zero writes and the original pending-advice id.
+
+#### Finding 4 - Medium - Advice replay accepts stale contact and changed rendered content
+
+009H requires the supplied email to match the current canonical member address and stale retained
+advice evidence to conflict. The implementation computes the current email but checks an existing
+communication before comparing it; after first send, changing `Member.email` still lets the old
+recipient replay return 200. Retained coherence also ignores `subject_snapshot`/`body_snapshot`, so
+mutating delivered content still returns 200. Both probes reproduced the gaps. `009H2` reconciles
+current contact, template/rendered/provider evidence before every first send or replay.
+
+No material scope creep was found. 009E3's positive-lesser amount, public loan-owner proof,
+versioned source history, and PostgreSQL races are substantive; 009F2's current bank/loan/source
+decision and aggregate constraints are substantive; 009G's transfer/account atomicity and 009H's
+basic template/recipient/ledger checks have meaningful public assertions and repeated races. The
+blind spots are the source completion edges and durable/current replay semantics above.
+
+### Requirement Traceability
+
+- M08-FR-001-006: earlier SAP/readiness/initiation/CFC owners remain composed and 009E3/009F2 close
+  the reviewed amount, source-bank, loan-owner, beneficiary-bank, and aggregate-integrity gaps.
+- M08-FR-007-008: 009G captures a unique UTR/current evidence and atomically funds/activates the
+  exact sanctioned loan; retained public and PostgreSQL tests are substantive.
+- M08-FR-009 and M08-FR-011: not implemented or honestly deferred in ASSUMPTIONS; `009G2` now owns
+  the required register and post-disbursement Senior Finance signature paths.
+- M08-FR-010: 009H sends a real protected communication, but authority, durable provider replay,
+  current contact, and rendered snapshot truth remain partial until `009H2`.
+
+### Corrective Queue
+
+- `009E4-source-bank-rationale-and-approval-evidence-closure` restores reviewable CFG-001 rationale
+  and honest author/request/approval attribution without inventing A-126's provisioner.
+- `009G2-post-disbursement-register-checklist-and-replay-closure` restores M08-FR-009/011, the
+  atomic pending-advice identity, and §45.2 replay; it waits for 009E4's current source evidence.
+- `009H2-advice-authority-current-truth-and-delivery-closure` restores the source role matrix,
+  durable adapter idempotency, current canonical/rendered truth, and audit minimisation.
+- `009I` and `009J` are re-sharpened to consume 009H2/009G2 rather than the reviewed partial facts.
+
+Worst severity is High on both axes. Standards: 3 High, 1 Medium. Spec: 3 High, 1 Medium. No ADR is
+required because cited source documents already fix rationale, transaction, roles, idempotency,
+register, checklist, and current-recipient behavior; the slices implement those decisions without
+inventing the still-unnamed source-bank provisioner.
+
 ## 2026-07-17 11:45 - Architecture Review 2026-07-17_105635_architecture_review
 
 Reviewed completed work since architecture-review commit `24bfc4f4`:

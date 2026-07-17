@@ -154,14 +154,20 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   real-owner fixture bypasses loan creation. It also reproduced CFC approval after beneficiary-bank
   drift or pre-existing UTR/disbursed/register truth, with under-constrained aggregate state and
   duplicated scope/action reconciliation. Corrective 009E3 and 009F2 now precede 009G transfer
-  success to close those amount, owner, lifecycle, current-evidence, and database contracts.
+  success to close those amount, owner, lifecycle, current-evidence, and database contracts. 009G
+  now records one unique evidenced manual transfer and atomically funds/activates the exact loan;
+  009H renders and accepts one protected borrower advice. Independent review found that source-bank
+  rationale is hash-only/misattributed as approval, transfer success omits Loan Register, pending
+  advice, post-disbursement checklist, and §45.2 replay truth, while advice authority/delivery/current
+  contact/rendered evidence remain incomplete. Corrective 009E4, 009G2, and 009H2 now precede the
+  borrower/status and Loan Account 360 screens.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and
   `PROTOTYPE_INVENTORY.md` are the authoritative ledger.
 - Backend: `sfpcl_credit/` — Django modular monolith (identity, members, applications, credit,
-  approvals, documents, legal_documents, security_instruments, workflows, communications, finance,
-  dashboard, configurations, scheduler, tracer)
+  approvals, documents, legal_documents, security_instruments, workflows, communications,
+  configurations, SAP workflow, loans, disbursements, finance, dashboard, scheduler, tracer)
   with JWT auth, role and object-level permissions, audit/workflow events, versioned
   configuration, document storage adapter, and seeded demo users.
 - Quality gates run on every slice: frontend build, typecheck, ESLint, vitest; backend Django

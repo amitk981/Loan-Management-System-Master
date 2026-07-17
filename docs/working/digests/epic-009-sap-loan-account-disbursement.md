@@ -1,5 +1,26 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-17 16:56 — Post-Transfer Completion and Advice Truth
+
+- 009E3 and 009F2 substantively close the prior amount/source-history/loan-owner and current bank/
+  aggregate-integrity findings. The retained tests and twice-run PostgreSQL contracts are meaningful.
+  Review found one remaining configuration-audit gap: source-bank changes retain only a reason hash
+  and label the request/provisioner as approval. `009E4` restores reviewable safe rationale and honest
+  author/request/approval attribution without assigning A-126's still-unknown provisioner role.
+- 009G genuinely records one unique manual transfer and atomically funds/activates the loan, but its
+  tests intentionally keep Loan Register, post-disbursement Senior Finance checklist, and advice
+  intent absent. M08-FR-009/011 therefore have no executable path, data-model §34's post-success
+  transaction is partial, and exact replay omits API §45.2's replay wrapper. `009G2` adds register
+  evidence, stable pending advice/outbox identity, the public checklist signature, and exact replay.
+- 009H genuinely renders/sends one protected advice, but the provider idempotency ledger is a fresh
+  in-memory adapter instance and cannot survive acceptance followed by rollback. CFC-only authority
+  is allowed while source-authorised Credit Manager is omitted; changed canonical email or rendered
+  communication content still replays as 200; the full email is copied into audit evidence. `009H2`
+  closes authority, stable delivery identity, current contact/rendered/provider truth, and masking.
+- Four review-only probes reproduce §45.2, CFC role, canonical-email, and rendered-snapshot defects;
+  14 retained public transfer/advice tests pass in the same isolated database. 009I/009J now consume
+  the corrected 009H2/009G2 boundaries.
+
 ## 009H Disbursement Advice and Communication
 
 - `DisbursementWorkflow.send_advice` owns source §31.5 behind one deep module. It requires the exact

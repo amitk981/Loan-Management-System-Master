@@ -26,8 +26,8 @@ Low
 
 ## Last Review
 
-Run `2026-07-17_105635_architecture_review` independently reviewed 008M7, 009D4, 009E2, and 009F
-over `24bfc4f4...277f6c8f` across separate Standards and Spec passes. Four review-only probes fail
-as expected while four focused retained tests pass. Findings are recorded newest-first in
-`docs/working/REVIEW_FINDINGS.md`; fully sharpened corrective slices 009E3 and 009F2 are queued,
-and 009G now depends on 009F2. No production code changed.
+Run `2026-07-17_164724_architecture_review` independently reviewed 009E3, 009F2, 009G, and 009H
+over `f35e0fc7...dbccea9c` across separate Standards and Spec passes. Four review-only probes fail
+as expected while 14 retained public transfer/advice tests pass. Findings are recorded newest-first
+in `docs/working/REVIEW_FINDINGS.md`; corrective slices 009E4, 009G2, and 009H2 are queued, and
+009I/009J now consume their corrected boundaries. No production code changed.

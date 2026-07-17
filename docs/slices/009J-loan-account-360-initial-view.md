@@ -9,7 +9,7 @@ Epic file: `docs/epics/009-sap-loan-account-disbursement.md`
 
 ## Goal
 Replace the Loan Account 360 list, header, KPI row, and Summary tab's hard-coded account facts with
-one scoped projection of exact 009C creation and 009G funding/activation truth.
+one scoped projection of exact 009C creation and 009G2 funding/activation/register truth.
 
 ## User Value
 Staff can open a real loan account and see its canonical borrower, application, immutable terms,
@@ -49,15 +49,16 @@ funding status, balances, and dates without mistaking later repayment/interest f
    `GET /api/v1/loan-accounts/{loan_account_id}/` reads behind the existing
    `finance.loan_account.read` and canonical loan-account scope module. Missing/inaccessible detail
    ids are nondisclosing; reject unknown filters/query parameters.
-2. Compose exact 009C account/terms/status-history and, when applicable, exact 009G transfer and
-   activation evidence. Return safe account id/number, application id/reference, member id/display
+2. Compose exact 009C account/terms/status-history and, when applicable, exact 009G2 transfer,
+   activation, and register evidence. Return safe account id/number, application id/reference,
+   member id/display
    name, loan/facility/rate type, sanctioned/disbursed/principal/interest/charges/total amounts,
    status, tenure dates, repayment date/tenure, safe SAP setup display, and created/activated date.
 3. Fail closed or return honest nullable values when creation, terms, SAP, transfer, balance, or
    activation ledgers are missing, duplicate, cross-object, or incoherent. Reads are zero-write.
 
 ## Database/Model Impact
-None. Reuse 009C/009G protected account, terms, status history, SAP, disbursement, and transfer
+None. Reuse 009C/009G2 protected account, terms, status history, SAP, disbursement, and transfer
 evidence; no cached display/status table.
 
 ## API Contracts
@@ -77,8 +78,9 @@ download audits remain unchanged because the initial view exposes no sensitive v
 
 ## Validation Rules
 - A sanctioned account projects zero disbursed/outstanding balances and no activation date.
-- An active account requires the exact singular 009G transfer, amount-equal funding, current
-  transfer evidence, and sanctioned-to-active history; copied status or balance labels never pass.
+- An active account requires the exact singular 009G2 transfer, amount-equal funding, current
+  transfer/register evidence, pending-or-sent advice identity, and sanctioned-to-active history;
+  copied status or balance labels never pass. Do not expose internal register/advice identities.
 - Immutable terms and member/application/SAP links must match the account's creation evidence.
 - Pagination is deterministic and bounded; no client-side money/status calculation is authoritative.
 
@@ -106,7 +108,7 @@ view has no client-owned money/status calculation; and four real-backend screens
 High
 
 ## Acceptance Criteria
-- The account list/header/KPI/Summary initial view is driven only by scoped current 009C/009G truth.
+- The account list/header/KPI/Summary initial view is driven only by scoped current 009C/009G2 truth.
 - Stale, forged, duplicated, or cross-object evidence cannot project an active/funded account, and
   no sensitive bank/UTR/member/internal evidence leaks.
 - Existing prototype composition and all configured gates/real-backend visuals pass.

@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009I-member-portal-disbursement-status.md
+ M docs/slices/009J-loan-account-360-initial-view.md
+ M docs/slices/architecture-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-17_164724_architecture_review/
+?? docs/slices/009E4-source-bank-rationale-and-approval-evidence-closure.md
+?? docs/slices/009G2-post-disbursement-register-checklist-and-replay-closure.md
+?? docs/slices/009H2-advice-authority-current-truth-and-delivery-closure.md

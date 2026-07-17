@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-17 - 2026-07-17_164724_architecture_review
+
+- Agent tool used: codex with isolated Standards and Spec review passes plus review-only probes.
+- Range reviewed: 009E3, 009F2, 009G, and 009H over `f35e0fc7...dbccea9c`.
+- Summary: Confirmed missing M08-FR-009/011 paths, incomplete post-success transaction/advice intent,
+  non-durable delivery idempotency, hash-only/misattributed source-bank rationale, wrong advice role
+  matrix, §45.2 replay drift, stale canonical-email/rendered-content replay, and full-email audit
+  duplication. No production code changed.
+- Tests run: four review-only probes fail as expected; 14 retained public transfer/advice tests pass
+  in the same isolated Django database. Product gates are intentionally delegated to the specialized
+  architecture-review documentation lane because product code is unchanged.
+- Result: Review complete pending independent Ralph validation. Corrective slices 009E4, 009G2,
+  and 009H2 are fully sharpened; 009I/009J now consume the corrected boundaries.
+- Risk level: High findings on both Standards and Spec axes; review delta is docs/state/evidence only.
+- Next action: Run 009E4, then 009G2 and 009H2 before 009I/009J.
+
 ## 2026-07-17 12:20:58 - 2026-07-17_122058_repair
 
 - Agent tool used: codex with the diagnosing-bugs feedback loop.
@@ -8438,6 +8454,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_143710_normal_run/.ralph/runs/2026-07-17_143710_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_143710_normal_run/.ralph/runs/2026-07-17_143710_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-17 17:06:02 - 2026-07-17_164724_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_164724_architecture_review/.ralph/runs/2026-07-17_164724_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-17_164724_architecture_review/.ralph/runs/2026-07-17_164724_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
