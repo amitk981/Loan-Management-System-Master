@@ -1,24 +1,27 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-18_101754_repair
+2026-07-18_104345_architecture_review
 
 ## Current Status
-009G4 remains complete. Independent coverage exposed that its new current legal migration leaf made
-the retained credit-ownership migration test's historical pre-move projection inherit the current
-credit state. The repair excludes `legal_documents` alongside the already excluded downstream
-approval/loan/SAP/disbursement/communications leaves, so the fixture again sees application-owned
-eligibility and loan-limit assessments at `applications.0010`.
+Independent review covered 009H3A, 009H3BA, 009H3BB, and 009G4 over
+`1be0a281...4a0c03ad`. The four slices contain substantive new-row delivery, crash, race, masking,
+state-transfer, and legal-anchor work; 34 retained focused tests pass. Three review-only probes
+nevertheless fail: terminal/migrated advice without an outbox calls the provider and commits a new
+outbox before conflicting; a different syntactically valid provider id/time becomes terminal
+delivery truth after a pre-receipt crash; and module-level target constants evade the legal
+migration-state guard.
 
-The exact failure was reproduced before the test-only fix. Both credit-ownership migration cases
-then passed in three runs total, and the combined 15-test 009G4/credit/communications/document/SAP
-migration set passed. Django check, migration sync, and compilation are green. Production migrations,
-models, APIs, checklist rows/statuses, ownership guard, and the 009G3 aggregate are unchanged; full
-coverage remains the independent repair gate. 009I and 009J were rechecked and remain concrete, so
-no speculative sharpening edit was made.
+The review also confirmed source-boundary drift: template/render policy remains duplicated,
+provider calls remain synchronous with no queued/failed/retrying job, communications and
+disbursements retain two-way persistence/runtime edges, full template provenance is checksum-only,
+and private-helper crash/schema tests do not prove the exact promised boundary. Findings and M08/
+INT-COMM traceability are newest-first in REVIEW_FINDINGS. Corrective slices 009G5, 009H4, and 009H5
+are dependency ordered; 009I now waits for G5/H5, and 009J remains transitively behind 009I. No
+production code changed, no Blocked slice was stale, and CONTEXT now reflects this truth.
 
 ## Next Run
-Run 009I for the borrower-safe MP14 projection and advice download flow. Then run 009J for the
-initial Loan Account 360 projection after 009I completes. Because four product slices have completed
-since the last architecture review, Ralph state now schedules that review before the next normal
-slice if the orchestrator's review cadence applies first.
+Run 009G5 first to replace the bypassable shared migration heuristic while preserving legal 0015.
+Then run independently grabbable 009H4 for immutable provider/provenance and coherent legacy replay,
+followed by 009H5 for the canonical asynchronous dispatcher/job and acyclic process seam. Run 009I
+and then 009J only after those corrective owners are complete.

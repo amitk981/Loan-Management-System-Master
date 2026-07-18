@@ -1,5 +1,33 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-18 10:43 — Advice Evidence, Jobs, and Migration Guard
+
+- 009H3A/BA/BB substantively move new advice template/provider/finalization policy into
+  communications, retain one stable-key outbox/provider identity, mask general evidence, and prove
+  the two intended crash families plus twice-run PostgreSQL races. Thirty-four retained focused
+  tests pass. The source-defined generic dispatcher and queued/failed/retrying job lifecycle remain
+  absent, however; template/render policy is duplicated in `communications/services.py`, provider
+  calls run synchronously in HTTP, and the communications/disbursements persistence/runtime edges
+  remain circular. `009H5` supplies one canonical dispatcher, top-level coordinator, durable async
+  job, bounded retry, integration truth, and acyclic dependency direction.
+- Review probes exposed two harder current-evidence gaps. A terminal advice row without an outbox
+  calls the provider and commits a replacement outbox before conflicting, which is also the natural
+  shape of every coherent pre-009H3A delivered row because migration 0004 did not backfill outboxes.
+  Separately, changing a pre-receipt accepted outbox to another syntactically valid provider id/time
+  lets replay create the receipt/Communication/audit/workflow chain from fabricated truth. The
+  outbox also freezes only a template FK/code/version/checksum rather than all named provenance.
+  `009H4` adds immutable provider/provenance evidence, honest legacy backfill/non-dispatch, protected
+  terminal linkage, primitive cross-owner ids, exact schema manifests, and the real pre-commit crash.
+- 009G4's legal-owned zero-operation state anchor and full checklist schema/row manifest are
+  substantive. Its `shared` AST guard nevertheless contains business policy and misses ordinary
+  module-level target constants because it recognizes only literal strings inside a top-level
+  custom class. `009G5` evaluates actual legal model-state transitions at the legal/test owner seam
+  while retaining only the exact historical 0005 exception and leaving migration 0015 unchanged.
+- BR-054/M08-FR-010 are partial until H4/H5 close legacy/provider/job truth. INT-COMM-002/003 remain
+  open for the async queue/retry owner. 009I now depends on G5/H5 and projects advice as issued only
+  after the terminal communications owner proves accepted finalization; 009J remains dependent on
+  009I. No new business rule or ADR was needed because the cited sources decide these boundaries.
+
 ## 009G4 Repair — Historical Credit Projection Isolation
 
 - The new legal 0015 leaf depends on current disbursement/communications state, so a retained

@@ -1,5 +1,23 @@
 # Ralph Progress Log
 
+## 2026-07-18 - 2026-07-18_104345_architecture_review
+
+- Agent tool used: codex with the `review` skill's isolated Standards/Spec passes and `to-issues`
+  tracer-bullet discipline for corrective queue design.
+- Range reviewed: 009H3A, 009H3BA, 009H3BB, and 009G4 over
+  `1be0a281...4a0c03ad`; two owner Ralph-maintenance commits were inspected separately.
+- Summary: Confirmed coherent pre-outbox advice can redispatch, a changed valid provider tuple can
+  become terminal truth, the legal migration guard is bypassable, the communications dispatcher/
+  job contract remains duplicated and synchronous, dependency direction remains circular, and
+  full provenance/crash/schema proof is partial. No production code changed.
+- Tests run: three review-only probes fail as expected; 34 retained communications/advice/migration
+  tests pass. Product gates remain delegated to the architecture-review docs-only validation lane.
+- Result: Review complete pending independent Ralph validation. Corrective slices 009G5, 009H4,
+  and 009H5 are concrete; 009I/009J consume their terminal boundaries.
+- Risk level: High findings on both Standards and Spec axes; review changes are docs/state/current-
+  run evidence only.
+- Next action: Run 009G5, then 009H4 and dependent 009H5 before 009I/009J.
+
 ## 2026-07-18 - 2026-07-18_101754_repair
 
 - Agent tool used: codex with the `diagnosing-bugs` feedback-loop discipline.
@@ -8902,6 +8920,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_095146_normal_run/.ralph/runs/2026-07-18_101754_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_095146_normal_run/.ralph/runs/2026-07-18_101754_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 11:14:42 - 2026-07-18_104345_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_104345_architecture_review/.ralph/runs/2026-07-18_104345_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_104345_architecture_review/.ralph/runs/2026-07-18_104345_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -1,0 +1,13 @@
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_advice_persistence sfpcl_credit.tests.test_communication_receipt_owner_migration sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests sfpcl_credit.tests.test_legal_checklist_migration_anchor --verbosity 1
+exit_code=0
+
+Creating test database for alias 'default'...
+Found 34 test(s).
+System check identified no issues (0 silenced).
+..................................
+----------------------------------------------------------------------
+Ran 34 tests in 25.174s
+
+OK
+Destroying test database for alias 'default'...
+

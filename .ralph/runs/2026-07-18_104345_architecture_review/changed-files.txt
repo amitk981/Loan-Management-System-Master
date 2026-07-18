@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009I-member-portal-disbursement-status.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-18_104345_architecture_review/
+?? docs/slices/009G5-legal-migration-state-guard-closure.md
+?? docs/slices/009H4-communications-advice-evidence-and-legacy-replay-closure.md
+?? docs/slices/009H5-communications-dispatcher-job-and-dependency-closure.md

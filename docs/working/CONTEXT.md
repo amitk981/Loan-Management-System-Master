@@ -169,8 +169,13 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   found four residual seams: unsafe formatted/token rationale text, deletable register truth plus
   initiator-only/partial checklist reconciliation, downstream ownership of legal migration state,
   and advice delivery/template policy outside communications with an unretained-acceptance crash
-  window. Corrective 009E5, 009G3, 009G4, and 009H3 now precede the borrower/status and Loan Account
-  360 screens.
+  window. Corrective 009E5, 009G3, 009G4, and the split 009H3A/BA/BB now close most of those facts.
+  The next independent review reproduced three residual integrity gaps: coherent pre-outbox advice
+  history can re-enter the provider path, a changed valid provider tuple can become terminal truth,
+  and the literal-only legal migration guard is bypassable. It also confirmed that the source
+  communications dispatcher remains duplicated/synchronous and that communications/disbursements
+  still form a two-way owner seam. Corrective 009G5, 009H4, and 009H5 now precede the borrower/status
+  and Loan Account 360 screens.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

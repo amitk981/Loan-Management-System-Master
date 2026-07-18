@@ -2,6 +2,153 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-18 10:43 - Architecture Review 2026-07-18_104345_architecture_review
+
+Reviewed the four completed product slices merged after architecture-review commit `1be0a281`:
+- `009H3A-communications-advice-persistence-and-provider-identity` (`f099dd63`)
+- `009H3BA-communications-dispatcher-outbox-freeze` (`85e158f2`)
+- `009H3BB-communications-finalization-and-race-closure` (`7780b9bb`)
+- `009G4-legal-checklist-migration-ownership-anchor` (`4a0c03ad`)
+
+The full range `git diff 1be0a281...4a0c03ad` also contains the dependency-ordered 009H3B queue
+split (`1887f4d1`) and an owner-authored Ralph self-healing maintenance commit (`f81a4260`). They
+were inspected separately and are not treated as product-slice findings. The review read all four
+slice contracts and run packets, the Epic 009 digest/epic, cited source sections, complete product/
+test/migration diffs, M08/communication requirement ids, CONTEXT, queue dependencies, and blocked
+state. Standards and Spec ran as isolated parallel passes. Thirty-four retained focused tests pass.
+Three review-only probes fail as expected: terminal advice without an outbox re-enters the provider
+and rewrites the outbox, a changed but syntactically valid provider tuple becomes terminal delivery
+truth, and module-level constants bypass the migration owner guard. Probe source/output is retained
+in this run; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - The source communications dispatcher/job boundary is still duplicated and synchronous
+
+`communications.modules.communication_dispatcher` now owns the advice-specific template/provider/
+finalization path, but `communications/services.py` retains a separate approved-template, merge,
+render, Communication, and audit implementation. The new class exposes advice-specific
+`dispatch/finalize` methods rather than the source §40.1 `create_from_template/send/retry_failed`
+interface. The HTTP request calls the provider synchronously, the outbox supports only pending/sent,
+there is no bounded failed/retrying job lifecycle, and accepted provider status is not retained as
+an integration event. This is contrary to codebase-design §§20.2/20.6/22.2/40.1-40.2/42.4 and
+integrations §§10.2/10.5/10.6/21. `009H5` consolidates the duplicated policy, queues one durable
+job, supplies bounded worker retry, and makes the top-level process coordinator the cross-owner seam.
+
+#### Finding 2 - High - Communications and disbursements still form a two-way owner dependency
+
+The communications outbox and receipt have database FKs to `DisbursementAdviceIntent`, while
+disbursements imports the communications receipt alias and advice module imports the communications
+dispatcher. Communications migration 0004 also takes the current disbursement migration as a
+parent. This leaves the foundation/business direction circular even though codebase-design
+§§8.1-8.2/36.1-36.2 say cycles mean the seam is misplaced. `009H4` removes persistent cross-app FKs
+and the alias while retaining primitive ids/tables/history; `009H5` moves runtime composition to the
+established top-level process-coordinator pattern.
+
+#### Finding 3 - Medium - 009G4's shared guard is business-specific and not fail closed
+
+`shared/migration_state_guard.py` contains legal/disbursement filenames, model names, and allowlist
+policy, violating the `shared -> business apps` prohibition in codebase-design §36.1. It detects only
+top-level custom classes that contain both literal target strings. A normal module-level target
+constant bypasses it, as the review probe demonstrates; imported/helper/inherited operations are
+equally outside the heuristic. `009G5` replaces it with a legal-owned/test-infrastructure check over
+actual Django migration state transitions and preserves only the exact historical exception.
+
+#### Finding 4 - Medium - Some acceptance evidence tests the implementation seam rather than the promised boundary
+
+The ownership tests parse source and ban private symbol names, while both crash tests patch private
+helpers. The “before protected Communication commit” case fails before creating Communication, so
+it does not prove rollback after Communication/audit/workflow writes immediately before commit.
+The receipt migration “signature” compares only table/column/constraint names, not column types,
+null/defaults, FK/unique/check/index definitions. This falls short of codebase-design §§7.6/26.1-
+26.3 and the slices' exact preservation/crash claims. `009H4` requires public-owner mutation tests,
+the real pre-commit failure point, and complete physical/state manifests.
+
+### Spec
+
+#### Finding 1 - High - Preserved pre-outbox deliveries can call the provider again
+
+009H3A requirement 2 preserves every historical receipt, and requirement 6 preserves exact 009H2
+replay. Migration 0004 creates no outbox for those delivered rows. On replay, `dispatch()` treats the
+absent outbox as a new send: it commits a new pending row, invokes the adapter, commits accepted
+provider truth, and only later conflicts with the retained receipt. The review reproduced the same
+terminal shape by deleting an outbox: the expected `(provider calls, new outboxes) = (0, 0)` was
+actually `(1, 1)`. This violates integrations §21 duplicate prevention and 009H3BB's zero-write/
+one-message contract. `009H4` backfills coherent legacy truth and rejects every terminal missing-
+outbox case before dispatch.
+
+#### Finding 2 - High - A changed valid provider tuple is accepted as delivery truth
+
+009H3BB requirement 3 says a changed provider tuple is a zero-write conflict. Before receipt
+finalization, however, the sent outbox is the only provider fact. `_decision()` checks syntax, then
+`_retained_receipt()` creates the immutable-looking receipt from whatever valid id/status/time is
+currently present. The retained test mutates only to an invalid-format id. The review changed both
+id and time to a different valid tuple after an accepted pre-receipt crash; replay returned success
+instead of raising conflict and finalized the fabricated tuple. `009H4` adds an immutable accepted-
+attempt owner and reconciles outbox/receipt/finalization against it.
+
+#### Finding 3 - Medium - Complete frozen template provenance is represented only by a mutable row plus checksum
+
+009H3BA requirement 3 explicitly names template name/type/language/audience/version/approval/
+effective range/declared variables/source templates as durable pre-dispatch facts. The outbox stores
+only template FK, code, version, checksum, and rendered snapshots. Later decisions reconstruct the
+other facts from the current mutable template row. Drift is detected, which is useful, but the
+accepted original values cannot be independently reviewed or recovered. `009H4` persists and
+reconciles the complete provenance snapshot.
+
+#### Finding 4 - Medium - 009G4's promised future-state guard is bypassable
+
+009G4 requirement 3 says the executable guard prevents future migrations outside the legal app
+from mutating legal checklist state. The review's module-constant custom operation returns no
+violation. The retained test proves only the simplest literal-in-class form, so the acceptance
+criterion is partial. `009G5` closes the demonstrated bypass and an indirection matrix without
+changing legal 0015 or checklist behavior.
+
+#### Finding 5 - High - Advice delivery has no source-required queued/retry lifecycle
+
+The Epic 009 backend scope calls for a disbursement-advice communication job. Integrations §§10.2,
+10.5, and 10.6 require asynchronous sending, queued/sending/failed/retrying states, and retry with
+backoff. Current HTTP success depends on a synchronous adapter call and only pending/sent outbox
+states exist. Provider timeout or a non-ValueError transport exception is not converted into
+durable retry truth. A-027 deferred worker infrastructure until a future owning slice; it does not
+mark M08 advice delivery complete without that owner. `009H5` supplies the job/worker/retry boundary
+before the portal treats advice as issued.
+
+No material unrelated product scope creep was found. 009H3A's state-preserving receipt move and
+stable-key adapter identity, 009H3BA's pre-provider outbox/template drift checks, 009H3BB's redacted
+final chain/current role matrix/twice-run PostgreSQL evidence, and 009G4's zero-operation legal
+anchor are substantive. The issues above are residual legacy, tamper, ownership, retry, and proof
+gaps rather than wholesale non-delivery.
+
+### Requirement Traceability
+
+- BR-054 / M08-FR-010: current new-row advice generation and safe final evidence exist, but legacy
+  replay, immutable provider truth, and the source job/retry lifecycle remain partial until
+  `009H4`/`009H5`.
+- INT-COMM-001: versioned approved templates exist; complete accepted provenance remains partial
+  until `009H4`.
+- INT-COMM-002/003: asynchronous queue and failed-notification retry are missing until `009H5`.
+- INT-COMM-004/005: current communications are linked and new general evidence is masked/digested;
+  the 34 retained tests substantively cover role, current-truth, secrecy, and no-financial-write
+  behavior.
+- 009G4 has no M08 functional id. Its anchor/schema preservation is implemented, while its review-
+  specific guard criterion remains partial until `009G5`.
+
+### Corrective Queue
+
+- `009G5-legal-migration-state-guard-closure` replaces the shared literal heuristic with a genuine
+  state-transition guard and preserves the legal anchor unchanged.
+- `009H4-communications-advice-evidence-and-legacy-replay-closure` closes legacy redispatch,
+  provider-tuple fabrication, full provenance, non-circular persistence, deletion protection, and
+  the exact migration/crash proof.
+- `009H5-communications-dispatcher-job-and-dependency-closure` consolidates the source dispatcher,
+  queues/retries advice asynchronously, records integration truth, and removes the runtime cycle.
+- `009I` now waits for `009G5` and terminal `009H5`; `009J` remains transitively blocked by 009I.
+
+Worst severity is High on both axes. Standards: 2 High, 2 Medium. Spec: 3 High, 2 Medium. No ADR is
+needed because the cited source documents already decide module ownership, dependency direction,
+provider evidence, duplicate prevention, asynchronous retry, and migration locality.
+
 ## 2026-07-17 21:08 - Architecture Review 2026-07-17_210855_architecture_review
 
 Reviewed the four completed slices merged after architecture-review commit `e6fd78d1`:

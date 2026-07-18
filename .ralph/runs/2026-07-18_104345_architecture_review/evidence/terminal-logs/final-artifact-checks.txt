@@ -1,0 +1,43 @@
+$ final artifact checks
+exit_code=0
+
+ARTIFACT_PASS execution-plan.md
+ARTIFACT_PASS changed-files.txt
+ARTIFACT_PASS risk-assessment.md
+ARTIFACT_PASS review-packet.md
+ARTIFACT_PASS final-summary.md
+ARTIFACT_PASS preflight-results.md
+ARTIFACT_PASS prompt.md
+ARTIFACT_PASS codex-settings.md
+EVIDENCE_PASS evidence/README.md
+EVIDENCE_PASS evidence/review_probes.py
+EVIDENCE_PASS evidence/standards-review.md
+EVIDENCE_PASS evidence/spec-review.md
+EVIDENCE_PASS evidence/terminal-logs/red-legacy-advice-outbox-replay.txt
+EVIDENCE_PASS evidence/terminal-logs/red-provider-tuple-mutation.txt
+EVIDENCE_PASS evidence/terminal-logs/red-migration-owner-guard-bypass.txt
+EVIDENCE_PASS evidence/terminal-logs/green-retained-focused-final.txt
+EVIDENCE_PASS evidence/terminal-logs/final-docs-queue-scope-checks.txt
+DIFF_LIMITS candidate_files=11 tracked_plus_new_slice_lines=541 configured_files=30 configured_lines=2000
+FINAL_DIFF_CHECK_PASS
+.ralph/progress.md
+.ralph/state.json
+docs/slices/009I-member-portal-disbursement-status.md
+docs/slices/architecture-review.md
+docs/working/CONTEXT.md
+docs/working/HANDOFF.md
+docs/working/REVIEW_FINDINGS.md
+docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009I-member-portal-disbursement-status.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-18_104345_architecture_review/
+?? docs/slices/009G5-legal-migration-state-guard-closure.md
+?? docs/slices/009H4-communications-advice-evidence-and-legacy-replay-closure.md
+?? docs/slices/009H5-communications-dispatcher-job-and-dependency-closure.md
+

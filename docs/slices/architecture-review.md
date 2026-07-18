@@ -26,8 +26,8 @@ Low
 
 ## Last Review
 
-Run `2026-07-17_210855_architecture_review` independently reviewed CR-009, 009E4, 009G2, and 009H2
-over `e6fd78d1...d0ae505e` across separate Standards and Spec passes. Two review-only probes fail as
-expected while ten focused retained tests pass. Findings are recorded newest-first in
-`docs/working/REVIEW_FINDINGS.md`; corrective slices 009E5, 009G3, 009G4, and 009H3 are queued, and
-009I/009J now consume their corrected boundaries. No production code changed.
+Run `2026-07-18_104345_architecture_review` independently reviewed 009H3A, 009H3BA, 009H3BB, and
+009G4 over `1be0a281...4a0c03ad` across separate Standards and Spec passes. Three review-only probes
+fail as expected while 34 focused retained tests pass. Findings are recorded newest-first in
+`docs/working/REVIEW_FINDINGS.md`; corrective slices 009G5, 009H4, and 009H5 are queued, and 009I/
+009J now consume their terminal boundaries. No production code changed.

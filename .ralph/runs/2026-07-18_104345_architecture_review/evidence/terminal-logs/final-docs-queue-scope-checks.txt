@@ -1,0 +1,27 @@
+$ validation checks
+exit_code=0
+
+QUEUE_LINT_PASS
+STATE_JSON_PASS
+DIFF_CHECK_PASS
+DOCS_ONLY_SCOPE_PASS
+PROTECTED_PATH_PASS
+NO_BLOCKED_SLICES
+docs/slices/009G5-legal-migration-state-guard-closure.md status=Not Started deps=009G4
+docs/slices/009H4-communications-advice-evidence-and-legacy-replay-closure.md status=Not Started deps=009H3BB
+docs/slices/009H5-communications-dispatcher-job-and-dependency-closure.md status=Not Started deps=009H4
+docs/slices/009I-member-portal-disbursement-status.md status=Not Started deps=009G5,009H5
+docs/slices/009J-loan-account-360-initial-view.md status=Not Started deps=009I
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009I-member-portal-disbursement-status.md
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-18_104345_architecture_review/
+?? docs/slices/009G5-legal-migration-state-guard-closure.md
+?? docs/slices/009H4-communications-advice-evidence-and-legacy-replay-closure.md
+?? docs/slices/009H5-communications-dispatcher-job-and-dependency-closure.md
+

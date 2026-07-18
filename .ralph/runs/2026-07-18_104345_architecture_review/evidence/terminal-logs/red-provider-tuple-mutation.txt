@@ -1,0 +1,21 @@
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py shell -c 'import importlib.util, sys; p="/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_104345_architecture_review/.ralph/runs/2026-07-18_104345_architecture_review/evidence/review_probes.py"; s=importlib.util.spec_from_file_location("ralph_review_probes", p); m=importlib.util.module_from_spec(s); sys.modules[s.name]=m; s.loader.exec_module(m); from django.test.runner import DiscoverRunner; r=DiscoverRunner(verbosity=1); raise SystemExit(bool(r.run_tests(["ralph_review_probes.ProviderTupleMutationProbe.test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth"])))'
+exit_code=1
+
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth (ralph_review_probes.ProviderTupleMutationProbe.test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_104345_architecture_review/.ralph/runs/2026-07-18_104345_architecture_review/evidence/review_probes.py", line 99, in test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth
+    with self.assertRaises(DisbursementAdviceConflict):
+AssertionError: DisbursementAdviceConflict not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 3.583s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+

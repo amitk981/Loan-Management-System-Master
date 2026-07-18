@@ -9,15 +9,15 @@ Epic file: `docs/epics/009-sap-loan-account-disbursement.md`
 
 ## Goal
 Replace MP14's hard-coded finance outcome with one borrower-safe, own-application projection of the
-exact SAP/disbursement/advice workflow delivered by 009A-009H3B.
+exact SAP/disbursement/advice workflow delivered by 009A-009H5.
 
 ## User Value
 The signed-in borrower can see an honest processing/disbursed state, masked destination/reference,
 amount/date, and their issued advice without internal bank, approver, or evidence leakage.
 
 ## Depends On
-- 009G4
-- 009H3BB
+- 009G5
+- 009H5
 
 ## Source References
 - docs/source/implementation-roadmap.md section 14
@@ -47,7 +47,7 @@ amount/date, and their issued advice without internal bank, approver, or evidenc
    unauthorized/session-expired, processing, disbursed, and advice-download states using existing
    portal alert/empty/button patterns; never add styling/components or runtime fixtures.
 3. Download advice only through the portal-owned short-lived capability/content boundary. Disable
-   or omit the action until the projection says the exact 009H2 advice is available; never accept a
+   or omit the action until the projection says the exact 009H5 advice is available; never accept a
    document/communication id, URL, recipient, or capability from static/client-owned data.
 
 ## Backend/API Scope
@@ -57,7 +57,7 @@ amount/date, and their issued advice without internal bank, approver, or evidenc
    use the shared `401` contract. The read is zero-write.
 2. Compose only current owner decisions: terminal sanction/amount; current SAP request/code setup;
    exact 009E initiation; exact 009F terminal decision; exact 009G3 transfer/account/register and
-   pending-advice identity; and exact 009H3B communications-owned accepted delivery. Missing, stale,
+   pending-advice identity; and exact 009H5 communications-owned accepted delivery. Missing, stale,
    duplicate, cross-object, or incoherent evidence must project the last safely provable borrower stage or
    `disbursement_blocked`, never infer success from copied application/account labels or expose the
    internal register/checklist action identities.
@@ -68,14 +68,14 @@ amount/date, and their issued advice without internal bank, approver, or evidenc
    documentation complete, SAP setup, payment initiated, CFC authorisation, transfer completed, and
    advice issued; pending/blocked rows expose no internal reason or actor.
 4. Implement an empty-body POST capability route and authenticated GET content route for the exact
-   current 009H2 borrower advice if that owner does not already expose equivalent portal-safe seams.
+   current 009H5 borrower advice if that owner does not already expose equivalent portal-safe seams.
    Bind capability to portal account/member/application/communication/file/checksum, expire it
    after a short duration, consume it once, and audit accepted/denied download without token/content
    leakage. Return the retained borrower advice bytes with attachment and `nosniff` headers.
 
 ## Database/Model Impact
-None expected. Reuse the existing portal account, 009A-009H2 owner evidence, communication/advice
-artifact, and central capability/audit patterns; at most one migration only if 009H2 lacks a truthful
+None expected. Reuse the existing portal account, 009A-009H5 owner evidence, communication/advice
+artifact, and central capability/audit patterns; at most one migration only if 009H5 lacks a truthful
 protected advice-file identity.
 
 ## API Contracts
@@ -98,7 +98,7 @@ PAN/Aadhaar, storage key, or internal authoriser facts.
 ## Validation Rules
 - `disbursed` requires the exact unique 009G3 successful transfer, funded active matching account,
   current evidence checksum, sanctioned-to-active history, and coherent protected register/advice-
-  intent owner links. Advice is available only when the exact 009H3B accepted communication/artifact
+  intent owner links. Advice is available only when the exact 009H5 accepted communication/artifact
   remains coherent for that transfer and member.
 - Earlier states follow source order and cannot skip forward: documentation complete, SAP pending/
   complete, payment initiated, CFC pending/approved, transfer complete, advice issued. Rejection,
@@ -132,7 +132,7 @@ backend screenshots above.
 High
 
 ## Acceptance Criteria
-- MP14 shows only current borrower-owned 009A-009H3B truth and can download only the exact issued
+- MP14 shows only current borrower-owned 009A-009H5 truth and can download only the exact issued
   advice through a one-use portal boundary.
 - No full bank/UTR/SAP value, internal actor/comment/status, evidence id, storage/capability value, or
   cross-member existence leaks through the API, UI, audit, or errors.

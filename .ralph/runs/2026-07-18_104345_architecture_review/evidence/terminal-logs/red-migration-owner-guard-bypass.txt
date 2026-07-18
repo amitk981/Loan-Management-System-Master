@@ -1,0 +1,28 @@
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py shell -c 'import importlib.util, sys; p="/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_104345_architecture_review/.ralph/runs/2026-07-18_104345_architecture_review/evidence/review_probes.py"; s=importlib.util.spec_from_file_location("ralph_review_probes", p); m=importlib.util.module_from_spec(s); sys.modules[s.name]=m; s.loader.exec_module(m); from django.test.runner import DiscoverRunner; r=DiscoverRunner(verbosity=2); raise SystemExit(bool(r.run_tests(["ralph_review_probes.MigrationOwnershipGuardProbe.test_module_level_target_constants_cannot_bypass_cross_app_guard"])))'
+exit_code=1
+
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_module_level_target_constants_cannot_bypass_cross_app_guard (ralph_review_probes.MigrationOwnershipGuardProbe.test_module_level_target_constants_cannot_bypass_cross_app_guard) ... FAIL
+
+======================================================================
+FAIL: test_module_level_target_constants_cannot_bypass_cross_app_guard (ralph_review_probes.MigrationOwnershipGuardProbe.test_module_level_target_constants_cannot_bypass_cross_app_guard)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_104345_architecture_review/.ralph/runs/2026-07-18_104345_architecture_review/evidence/review_probes.py", line 73, in test_module_level_target_constants_cannot_bypass_cross_app_guard
+    self.assertEqual(
+AssertionError: Lists differ: [] != ['future_app/migrations/0001_bad.py:BadChecklistMutation']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'future_app/migrations/0001_bad.py:BadChecklistMutation'
+
+- []
++ ['future_app/migrations/0001_bad.py:BadChecklistMutation']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)
+
