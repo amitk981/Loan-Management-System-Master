@@ -2,6 +2,138 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-18 20:56 - Architecture Review 2026-07-18_204305_architecture_review
+
+Reviewed the five completed slices merged after architecture-review commit `fb380227`:
+- `009G6-legal-migration-exception-fingerprint-closure` (`056c6cfc`)
+- `009H6-legacy-advice-template-provenance-closure` (`5ec24d77`)
+- `009H7-communications-dispatcher-interface-and-idempotency-closure` (`7c577686`)
+- `009H8-communications-worker-runtime-and-crash-recovery-closure` (`c3c9cc0a`)
+- `CR-011-github-ci-migration-test-schema-isolation` (`6f447a49`, `e3d965ad`)
+
+The exact range was `git diff fb380227...e3d965ad`. The review read all five slice/CR contracts,
+their run packets and changed product/test/migration files, the Epic 009 epic/digest, cited source
+sections, requirement ids, CONTEXT, queue dependencies, and blocked state. Standards and Spec ran
+as isolated parallel passes. Forty-three focused retained tests pass. Three independent review
+probes fail as expected: a coherent queued H5 job blocks migration 0009 after 0008 strips its
+provenance, a final-attempt worker crash is returned as due instead of becoming terminal, and SMS
+is accepted then delivered through `send_email`. Probe source/output is retained in this run; no
+production code changed.
+
+### Standards
+
+#### Finding 1 - High - Generic SMS, phone, and courier are all routed through the Email adapter
+
+`communications/services.py:778-785` accepts four channels. The worker nevertheless always builds
+`EmailDeliveryPayload` and invokes `send_email` (`communication_dispatcher.py:920-940`), with no
+channel/template/recipient coherence and no SMS-specific sensitive-variable/value validation.
+The review probe submits an approved SMS template and observes one Email-adapter call and a false
+`sent` result. This violates codebase-design §§20.6/40.1-40.2 and integrations INT-COMM-005.
+`009H9C` supplies separate Email/SMS seams, fail-closed phone/courier behavior, and the complete
+SMS redaction matrix.
+
+#### Finding 2 - High - Retry recovery can exceed its own cap and has no source exception queue
+
+`CommunicationDispatcher.retry_failed` converts every expired running job to `retrying` without
+checking `attempts >= max_attempts` (`communication_dispatcher.py:700-739`). `start_job` then
+increments again (`:649-682`), violating the database `attempts <= max_attempts` constraint and
+stranding the row. Existing tests recover only attempt 1. The probe expires attempt 3 of 3 and gets
+the job back as due. Exhaustion currently creates only a `Notification` (`:847-884`), not the
+provider/job/entity/error/retry/owner/resolution ledger required by integrations §22.3. `009H9B`
+makes cap recovery terminal, fenced, singular, and operator-reviewable.
+
+#### Finding 3 - Medium - The claimed source facade and replay/evidence contracts remain partial
+
+Source §40.1 defines a small `create_from_template` / `send(communication_id, idempotency_key)` /
+`retry_failed(actor=None)` facade, but the implementation exposes request metadata, raw template/
+recipient fields, advice-private hooks, batching, and job ids on that public class. Its contract
+test checks only `hasattr`. Exact generic/advice replays return the ordinary resource/job body,
+not API §45.2's `{idempotency_replayed, original_response}` shape. Generic provider acceptance is
+stored only as mutable job fields, not immutable integration/attempt evidence as codebase-design
+§42.4 requires. `docs/working/API_CONTRACTS.md` also retains a later 003I section saying generic
+send is a no-provider shell, contradicting its newer asynchronous contract. `009H9C` closes the
+facade, replay, immutable-evidence, and contract-document seams.
+
+#### Finding 4 - Low - The periodic Celery task contains owner policy
+
+`processes/tasks.py:20-45` selects/iterates jobs, filters blocked evidence, and shapes the operator
+result inside the task instead of delegating one module operation. This is a judgement-call drift
+from codebase-design §34.1's thin-task rule and amplifies the public-facade issue. `009H9C` moves
+iteration and evidence shaping behind the communications owner while retaining task registration.
+
+### Spec
+
+#### Finding 1 - Critical - A valid queued H5 job can make the release migration fail
+
+H6 requires post-0005 facts frozen before dispatch to remain verified and explicitly calls for
+pending coverage. Migration 0008 recognizes a row as new only when a non-legacy provider attempt
+already exists (`0008_legacy_template_provenance_closure.py:55-93`). A genuine queued H5 outbox has
+no attempt, so 0008 labels it ambiguous and clears its complete snapshot. Migration 0009 then
+raises because the retained job points at legacy-partial provenance (`0009_generic_delivery_job_identity.py:
+5-15`), contrary to H7 requirement 3 to preserve every H5 row/id/status/attempt. The retained H6
+test creates two attempt-less rows but attaches no job and expects both to become legacy, so it
+cannot detect the deployment blocker. `009H9A` preserves only a singular, fully coherent queued
+job/snapshot and leaves unlinked or malformed attempt-less history ambiguous.
+
+#### Finding 2 - High - H8 strands a crash on the final allowed attempt
+
+H8 requirements 2-4 promise bounded recovery and say exhaustion creates one reachable task without
+stranding a row. The cap-blind recovery described in Standards Finding 2 breaks that exact path:
+the replacement claim would increment from 3 to 4 and fail its database constraint before provider
+or terminal evidence can progress. `009H9B` adds the missing exact-cap, repeated-scan, stale-loser,
+exception-queue, and PostgreSQL race contracts.
+
+#### Finding 3 - High - H7's promised Email/SMS interface implements Email only
+
+H7 requirement 2 explicitly applies the generic idempotency/send contract to Email and SMS. All
+retained H7/H8 fixtures use `channel: email`; there is no SMS adapter or negative channel matrix.
+The review probe proves an SMS job crosses and succeeds through the Email adapter. `009H9C` adds
+source-shaped channel dispatch, template/recipient coherence, SMS sensitive-value blocking, and
+channel-specific concurrency/replay evidence.
+
+#### Finding 4 - Medium - H7's exact interface and API §45 replay promises are under-tested
+
+H7 requirement 1 calls the §40.1 facade exact, while its only direct assertion is that `send`
+exists. Requirement 2 cites API §45, but exact replays are asserted as an unchanged ordinary body
+rather than the source replay envelope. These are observable contract gaps, not cosmetic typing.
+`009H9C` freezes production-callable signatures and replay results through the same facade used by
+HTTP/advice/worker callers.
+
+No material scope creep was found. 009G6's deep-copy before-state and complete model fingerprint,
+H6's honest legacy exclusion for rows it can identify, H7's explicit key and acyclic composition,
+H8's registered/on-commit worker plus ordinary crash fencing, and CR-011's current-leaf setup/
+teardown are substantive. The legal fingerprint and CR-011 order/isolation acceptance appear
+complete in this range.
+
+### Requirement Traceability
+
+- 009G6 is complete against its review-specific migration-owner contract and changes no M08 rule.
+- BR-054 / M08-FR-010 retain one current Email advice path, but release-safe queued migration and
+  final-attempt recovery remain partial until `009H9A`/`009H9B`.
+- M16-FR-001/004/007 and INT-COMM-002 are substantive for Email/template/linkage/queueing.
+  M16-FR-002 and INT-COMM-005 are partial because SMS has no channel seam or sensitive-content
+  guard; M16-FR-005 and INT-COMM-003 are partial because generic provider evidence is mutable and
+  exact-cap recovery is broken.
+- CR-011 has no product functional id. Its formerly failing/reverse serial orders and all sixteen
+  migration-test leaf-restoration checks are retained green; the independent full parallel gate
+  remains the orchestrator's acceptance authority.
+- No source-silent business rule was added or deferred in this review.
+
+### Corrective Queue
+
+- `009H9A-queued-advice-migration-provenance-closure` fixes the critical 0007-to-current queued-job
+  upgrade without weakening H6 legacy honesty.
+- `009H9B-communication-final-attempt-and-exception-queue-closure` makes retry-cap crash recovery
+  terminal and implements the source exception ledger/resolution contract.
+- `009H9C-communication-channel-interface-and-provider-evidence-closure` supplies Email/SMS channel
+  seams, the stable source facade, immutable provider evidence, §45.2 replay, and thin tasks.
+- These numeric/dependency-ordered corrections run before `009I2`; `009J` remains behind `009I2`.
+
+No ADR is needed because the cited source already fixes migration honesty, retry caps/exception
+handling, channel separation, facade shape, immutable provider evidence, and replay behavior.
+Worst severity is High on Standards and Critical on Spec. Standards: 2 High, 1 Medium, 1 Low.
+Spec: 1 Critical, 2 High, 1 Medium.
+
 ## 2026-07-18 15:45 - Architecture Review 2026-07-18_152831_architecture_review
 
 Reviewed the four completed product slices merged after architecture-review commit `e1908b1f`:

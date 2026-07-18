@@ -26,8 +26,10 @@ Low
 
 ## Last Review
 
-Run `2026-07-18_152831_architecture_review` independently reviewed 009G5, 009H4, 009H5, and 009I
-over `e1908b1f...56501b5e` across separate Standards and Spec passes. Five review-only probes fail
-as expected while 32 focused retained backend tests and three MP14 frontend tests pass. Findings
-are recorded newest-first in `docs/working/REVIEW_FINDINGS.md`; corrective slices 009G6, 009H6,
-009H7, 009H8, and 009I2 are dependency-ordered before 009J. No production code changed.
+Run `2026-07-18_204305_architecture_review` independently reviewed 009G6, 009H6, 009H7, 009H8,
+and CR-011 over `fb380227...e3d965ad` across separate Standards and Spec passes. Forty-three
+focused retained backend tests pass. Three review-only probes fail on the intended source
+assertions: a valid queued H5 job blocks migration 0009, a final-attempt worker crash is returned
+as due, and SMS is sent through the Email adapter. Findings are recorded newest-first in
+`docs/working/REVIEW_FINDINGS.md`; corrective slices 009H9A, 009H9B, and 009H9C are dependency-
+ordered before 009I2 and 009J. No production code changed.

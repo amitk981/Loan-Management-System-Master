@@ -2,27 +2,29 @@
 
 ## Last Run
 
-2026-07-18_200752_normal_run
+2026-07-18_204305_architecture_review
 
 ## Current Status
 
-CR-011 is complete pending independent validation. `ApprovalReadScopeMigrationTests` now restores
-the worker database to all current leaf migrations during cleanup, and
-`GenericCommunicationJobMigrationTests` explicitly starts each test from the current leaf schema as
-well as restoring it afterwards. No production migration, model, endpoint, service, frontend, or
-business behavior changed.
+Architecture review independently inspected 009G6, 009H6, 009H7, 009H8, and CR-011 over
+`fb380227...e3d965ad` in separate Standards and Spec passes. Forty-three focused retained tests
+pass. Three review-only probes fail on the intended source assertions:
 
-The exact formerly failing same-process order reproduced the missing
-`approval_cases.appraisal_review_decision_id` error before the fix, then passed all three tests after
-the fix. The reverse order also passes. An AST audit found all 16 transaction test classes that
-directly change migrations now have current-leaf cleanup. Django check and migration sync pass.
-The local four-worker attempt reached Django spawning but child imports failed because the x86_64
-child interpreter could not load the mandated virtualenv's arm64 `_cffi_backend`; the independent
-Ralph/GitHub four-worker environment remains the authoritative acceptance gate.
+- a complete attempt-less outbox bound to a valid queued H5 job is downgraded by communications
+  0008, causing 0009 to abort the 0007-to-current upgrade;
+- an expired worker claim at attempt 3 of 3 is returned as due, so the next claim would exceed the
+  database cap instead of creating terminal exception truth; and
+- a generic SMS job calls `send_email` and becomes sent with no SMS adapter or sensitive-content
+  guard.
+
+The legal complete-state fingerprint and CR-011 migration-test cleanup appear complete. Secondary
+findings cover the source §40.1 facade, API §45.2 replay shape, immutable generic provider evidence,
+the source §22.3 exception ledger, thin Celery tasks, and contradictory old/current generic-send
+text in API_CONTRACTS. Findings are newest-first in REVIEW_FINDINGS; no production code changed.
 
 ## Next Run
 
-The architecture-review cadence remains overdue and should run next. After that review, run 009I2
-before 009J and 009K. 009I2 and 009J were re-read; both remain concrete and dependency-correct with
-exact owner truth, permissions, validation, frontend fidelity, and browser/evidence requirements, so
-no speculative sharpening edit was made.
+Run `009H9A-queued-advice-migration-provenance-closure`, then dependency-ordered `009H9B` and
+`009H9C`. They are concrete High-risk corrective slices for the queued upgrade, retry-cap/exception
+queue, and channel/facade/provider-evidence contracts. Their filenames and dependencies place them
+before 009I2; after they complete, run 009I2 before 009J and 009K.

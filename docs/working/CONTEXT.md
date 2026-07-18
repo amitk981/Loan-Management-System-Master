@@ -188,7 +188,12 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   provenance plus the generic/idempotent dispatcher. 009H8 now supplies the registered Celery
   runtime, commit-only enqueue, periodic bounded retry, fenced leases, stale-worker recovery,
   accepted-evidence replay, legacy exclusion, safe operator evidence, and twice-run PostgreSQL
-  claim/recovery proof. 009I2 remains dependency-ordered before 009J.
+  claim/recovery proof. The next independent review found that a valid attempt-less queued H5 job
+  can still block the 0008-to-0009 migration, a crash on the final allowed worker attempt requeues
+  past the database cap without the source exception ledger, and generic SMS/phone/courier jobs all
+  cross the Email adapter while the source facade/replay/provider-evidence contracts remain partial.
+  Corrective 009H9A-H9C now close those migration, retry-cap, channel, interface, and evidence seams
+  before 009I2; 009I2 remains dependency-ordered before 009J.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

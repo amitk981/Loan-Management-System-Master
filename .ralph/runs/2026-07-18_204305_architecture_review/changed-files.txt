@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/architecture-review.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-18_204305_architecture_review/
+?? docs/slices/009H9A-queued-advice-migration-provenance-closure.md
+?? docs/slices/009H9B-communication-final-attempt-and-exception-queue-closure.md
+?? docs/slices/009H9C-communication-channel-interface-and-provider-evidence-closure.md

@@ -1,5 +1,26 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-18 20:56 — Queued Migration, Retry Cap, and Channel Truth
+
+- Independent review of 009G6, 009H6, 009H7, 009H8, and CR-011 found that communications 0008
+  treats every attempt-less pending outbox as ambiguous even when a complete frozen snapshot is
+  bound to a genuine queued H5 job. Migration 0009 then refuses that job, so a valid 0007 database
+  can fail to upgrade. `009H9A` preserves only the singular coherent queued-job/snapshot shape and
+  leaves unlinked or malformed pending history honestly legacy-partial.
+- H8 recovers every expired running job without comparing attempts to `max_attempts`. A crash on
+  attempt 3 of 3 becomes due again and its next claim violates the database cap, while the source
+  §22.3 exception ledger is represented only by a notification. `009H9B` makes exact-cap recovery
+  terminal, fenced, and singular and adds the protected operator exception/resolution owner.
+- Generic HTTP accepts Email, SMS, phone, and courier, but the worker creates only
+  `EmailDeliveryPayload` and invokes `send_email`; no SMS-specific recipient or sensitive-content
+  contract exists. The public dispatcher and replay response also remain wider/different than
+  codebase-design §40.1 and API §45.2, and generic provider acceptance lacks immutable attempt
+  evidence. `009H9C` closes channel, facade, replay, evidence, and thin-task contracts.
+- Forty-three retained focused tests pass. Three review-only probes fail on the exact queued
+  migration, final-attempt recovery, and SMS-through-Email paths. 009G6's full state fingerprint and
+  CR-011's migration-test leaf restoration appear complete. Full traceability and evidence are in
+  the newest `docs/working/REVIEW_FINDINGS.md` entry and run folder.
+
 ## 009H8 Communications Worker Runtime and Crash Recovery Closure
 
 - The pinned Celery app now loads environment-driven broker/result/provider/runtime settings,
