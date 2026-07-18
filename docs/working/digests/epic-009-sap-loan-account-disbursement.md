@@ -1,5 +1,35 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009G4 Repair — Historical Credit Projection Isolation
+
+- The new legal 0015 leaf depends on current disbursement/communications state, so a retained
+  credit-ownership migration test that projected every leaf except known downstream apps silently
+  pulled `credit.0001` into its intended pre-move `applications.0010` registry.
+- The test now also excludes `legal_documents`; the projected registry again contains application-
+  owned `EligibilityAssessment` and `LoanLimitAssessment`. Production migrations, models, rows,
+  constraints, APIs, checklist behavior, and the 009G3 aggregate are unchanged.
+- The exact coverage failure was reproduced. The two-test credit migration class passed repeatedly,
+  the combined 15-test 009G4/credit/communications/document/SAP migration set passed, and Django
+  check, migration sync, and compilation are green. Full coverage remains the independent gate.
+
+## 009G4 Legal Checklist Migration Ownership Anchor
+
+- Legal documents migration 0015 is an empty, zero-SQL state anchor over the current legal 0014,
+  historical disbursements 0005 checklist replacement, current disbursements 0007, and current
+  communications 0004 leaves. Future legal migrations therefore inherit the exact live checklist
+  constraint state without rewriting applied history or replaying schema/data operations.
+- The retained migration proof starts before disbursements 0005, preserves exact checklist/action
+  ids and values, and compares the complete physical checklist-table schema through forward,
+  reverse-to-the-anchor-dependencies, and reapply. Each live constraint is present exactly once;
+  both Epic-009 placeholders remain absent.
+- `shared.migration_state_guard` rejects custom downstream operations that target
+  `legal_documents.DocumentChecklist`; only the two reviewed disbursements 0005 operation classes
+  are allowlisted. A synthetic future-app mutation proves the guard fails closed.
+- Six focused tests, seven adjacent migration-isolation tests, Django check, migration sync,
+  compilation, pinned-Node frontend typecheck/lint/327 tests/build, and the zero-operation SQL
+  manifest pass. Checklist behavior, APIs, rows, ids, statuses, and the 009G3 aggregate are
+  unchanged. 009I and 009J were rechecked and remain concrete without speculative sharpening.
+
 ## 009H3BB Communications Finalization and Race Closure
 
 - Source BR-054/M08-FR-010 requires borrower advice after disbursement; integrations §§10, 19.3,

@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009G4-legal-checklist-migration-ownership-anchor.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/tests/test_legal_checklist_migration_anchor.py
+?? .ralph/runs/2026-07-18_095146_normal_run/
+?? sfpcl_credit/legal_documents/migrations/0015_checklist_constraint_state_owner_anchor.py
+?? sfpcl_credit/shared/migration_state_guard.py

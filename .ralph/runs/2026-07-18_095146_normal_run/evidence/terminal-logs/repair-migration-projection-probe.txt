@@ -1,0 +1,4 @@
+included_legal_leaf [('legal_documents', '0015_checklist_constraint_state_owner_anchor')]
+application_models []
+excluded_legal_leaf []
+fixed_application_models ['EligibilityAssessment', 'LoanLimitAssessment']

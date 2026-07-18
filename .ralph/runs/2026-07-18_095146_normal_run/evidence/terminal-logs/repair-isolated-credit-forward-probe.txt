@@ -1,0 +1,34 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_forward_move_preserves_rows_relationships_and_evidence_references (sfpcl_credit.tests.test_credit_model_ownership_migration.CreditAssessmentModelOwnershipMigrationTests.test_forward_move_preserves_rows_relationships_and_evidence_references)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/config.py", line 235, in get_model
+    return self.models[model_name.lower()]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'eligibilityassessment'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_095146_normal_run/sfpcl_credit/tests/test_credit_model_ownership_migration.py", line 37, in setUp
+    self.identifiers = self._create_pre_move_rows(old_apps)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_095146_normal_run/sfpcl_credit/tests/test_credit_model_ownership_migration.py", line 141, in _create_pre_move_rows
+    EligibilityAssessment = old_apps.get_model("applications", "EligibilityAssessment")
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/registry.py", line 213, in get_model
+    return app_config.get_model(model_name, require_ready=require_ready)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/config.py", line 237, in get_model
+    raise LookupError(
+LookupError: App 'applications' doesn't have a 'EligibilityAssessment' model.
+
+----------------------------------------------------------------------
+Ran 1 test in 27.973s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

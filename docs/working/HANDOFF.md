@@ -1,37 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-18_090956_normal_run
+2026-07-18_101754_repair
 
 ## Current Status
-009H3BB is complete. `communications.modules.communication_dispatcher` now owns the complete advice
-lifecycle behind two narrow interfaces: dispatch freezes/reconciles BA's outbox and provider result;
-finalize retains/reconciles the communications-owned receipt, protected Communication, safe audit,
-workflow event, and delivery digest under the financial context owner's transaction. Communications
-imports no disbursement code and never saves supplied financial objects.
+009G4 remains complete. Independent coverage exposed that its new current legal migration leaf made
+the retained credit-ownership migration test's historical pre-move projection inherit the current
+credit state. The repair excludes `legal_documents` alongside the already excluded downstream
+approval/loan/SAP/disbursement/communications leaves, so the fixture again sees application-owned
+eligibility and loan-limit assessments at `applications.0010`.
 
-Disbursements retains the public endpoint, payload validation, role/object authority, locked current
-transfer/register/intent/account/member/template context, and its immutable delivery action/link. It
-atomically consumes the ordinary frozen finalization decision and contains no duplicate receipt,
-Communication, communication-audit, workflow, digest, or replay-finalization policy.
-
-Both post-provider crash windows are proven failing-first: before receipt retention and after receipt
-creation but before protected Communication commit. Each local transaction rolls back cleanly while
-the frozen accepted outbox survives; exact fresh-adapter retry uses the same provider identity and
-finishes one chain, while changed facts conflict. General audit/workflow evidence retains only
-masked/digested recipient, advice, provider, amount, and bank-reference facts.
-
-The complete 30-test owner/public matrix passes with the two PostgreSQL methods skipped only in the
-routine SQLite lane. The retained 009H3A migration proof passes. Both declared five-caller methods
-then passed in two separate PostgreSQL final runs; every method logged one winner, four clean losers,
-one provider identity, and one outbox/receipt/Communication/action/audit/workflow chain. Django
-check, migration sync, compile, dependency direction, protected paths, whitespace, and the 878-line
-product/test diff all pass. No migration, API-shape, frontend, or financial/downstream truth changed.
-
-009G4 and 009I were rechecked against the terminal communications identity and remain concrete;
-neither needed speculative sharpening.
+The exact failure was reproduced before the test-only fix. Both credit-ownership migration cases
+then passed in three runs total, and the combined 15-test 009G4/credit/communications/document/SAP
+migration set passed. Django check, migration sync, and compilation are green. Production migrations,
+models, APIs, checklist rows/statuses, ownership guard, and the 009G3 aggregate are unchanged; full
+coverage remains the independent repair gate. 009I and 009J were rechecked and remain concrete, so
+no speculative sharpening edit was made.
 
 ## Next Run
-Run 009G4, which is now unblocked by 009G3 and 009H3BB and restores legal-document migration-state
-ownership without changing behavior. Then run 009I for the borrower-safe MP14 projection and advice
-download flow. Independent orchestrator complete coverage remains authoritative for this run.
+Run 009I for the borrower-safe MP14 projection and advice download flow. Then run 009J for the
+initial Loan Account 360 projection after 009I completes. Because four product slices have completed
+since the last architecture review, Ralph state now schedules that review before the next normal
+slice if the orchestrator's review cadence applies first.

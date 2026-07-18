@@ -1,7 +1,7 @@
 # Slice 009G4: Legal Checklist Migration Ownership Anchor
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -54,9 +54,9 @@ High
   guardrails prevent recurrence without rewriting applied migration history.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing migration/guard tests written first
-- [ ] Legal state anchor added without destructive SQL
-- [ ] Forward/reverse/state and migration-sync evidence saved
-- [ ] Risk assessment, handoff, state, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing migration/guard tests written first
+- [x] Legal state anchor added without destructive SQL
+- [x] Forward/reverse/state and migration-sync evidence saved
+- [x] Risk assessment, handoff, state, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

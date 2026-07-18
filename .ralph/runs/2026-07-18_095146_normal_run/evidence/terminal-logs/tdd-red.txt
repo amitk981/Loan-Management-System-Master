@@ -1,0 +1,22 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_legal_checklist_migration_anchor (unittest.loader._FailedTest.test_legal_checklist_migration_anchor) ... ERROR
+
+======================================================================
+ERROR: test_legal_checklist_migration_anchor (unittest.loader._FailedTest.test_legal_checklist_migration_anchor)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_legal_checklist_migration_anchor
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_095146_normal_run/sfpcl_credit/tests/test_legal_checklist_migration_anchor.py", line 8, in <module>
+    from sfpcl_credit.shared.migration_state_guard import (
+ModuleNotFoundError: No module named 'sfpcl_credit.shared.migration_state_guard'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

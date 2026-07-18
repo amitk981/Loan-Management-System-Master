@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-18 - 2026-07-18_101754_repair
+
+- Agent tool used: codex with the `diagnosing-bugs` feedback-loop discipline.
+- Slice repaired: 009G4-legal-checklist-migration-ownership-anchor.
+- Summary: Excluded the new current legal migration leaf from a retained historical credit-model
+  projection that must stop before credit ownership moves. This restores the exact pre-move
+  application models without changing the preserved 009G4 implementation or production behavior.
+- Tests run: exact independent-validation RED/GREEN test; credit-ownership class twice; combined
+  15-test 009G4/credit/communications/document/SAP migration set; Django check; migration sync;
+  Python compile; migration-graph diagnosis; protected-path/debug-marker/whitespace review.
+- Evidence saved: `.ralph/runs/2026-07-18_101754_repair/evidence/terminal-logs/`.
+- Result: Test-only repair complete pending independent orchestrator revalidation.
+- Risk level: High inherited slice risk; Low incremental test-isolation repair risk.
+- Next action: Run independent complete coverage. Then perform the due architecture review before
+  the already-concrete 009I and dependent 009J slices.
+
 ## 2026-07-18 - 2026-07-18_090956_normal_run
 
 - Agent tool used: codex with mandatory TDD and deep-module seam checks.
@@ -8860,6 +8876,32 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/.ralph/runs/2026-07-18_090956_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/.ralph/runs/2026-07-18_090956_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 - 2026-07-18_095146_normal_run
+
+- Agent tool used: codex with the TDD skill.
+- Slice completed: 009G4-legal-checklist-migration-ownership-anchor.
+- Summary: Added one zero-SQL legal-owned checklist constraint-state anchor and an executable guard
+  against future downstream custom state mutation, preserving exact live constraints and retained
+  checklist/action facts through forward, reverse, and reapply.
+- Tests run: failing-first focused test; 6 focused migration/guard tests; 7 adjacent migration-
+  isolation tests; Django check; migration sync; compile; pinned Node 20 typecheck, lint, 327 tests,
+  and build. Complete backend coverage remains delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_095146_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High because migration graph/state integrity is involved; production mutation risk is
+  minimized by an empty migration and exact forward/reverse/schema/row proof.
+- Next action: Run the due architecture review, then 009I and 009J in dependency order.
+
+## 2026-07-18 10:43:31 - 2026-07-18_101754_repair
+- Agent tool used: codex
+- Slice attempted: 009G4-legal-checklist-migration-ownership-anchor
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_095146_normal_run/.ralph/runs/2026-07-18_101754_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_095146_normal_run/.ralph/runs/2026-07-18_101754_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
