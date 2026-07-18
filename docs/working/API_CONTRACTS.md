@@ -4309,3 +4309,32 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   safe identity, request/network context, and `issued`/`accepted`/`denied` outcomes. Audit payloads
   never retain the capability, advice bytes, recipient, full UTR/account/SAP values, storage keys,
   or internal authorisation facts.
+
+## Loan Account 360 initial reads (009J)
+
+- `GET /api/v1/loan-accounts/?page=1&page_size=20` returns the standard strict pagination envelope.
+  Only `page` and `page_size` are accepted; both are positive integers, `page_size` is at most 100,
+  and an out-of-range page returns `400 VALIDATION_ERROR`. Results are deterministically ordered by
+  newest account creation and UUID. Scope is applied before pagination and incoherent accounts are
+  excluded rather than projected from mutable labels.
+- `GET /api/v1/loan-accounts/{loan_account_id}/` returns the same item projection as the list.
+  Missing, out-of-scope, and evidence-incoherent identifiers share `404 NOT_FOUND`; neither route
+  reveals whether a denied account exists. Missing authentication retains the shared `401` contract,
+  while an active actor lacking either the effective source role or `finance.loan_account.read`
+  receives `403 FORBIDDEN`.
+- Both reads require an active persisted effective role and permission plus the canonical account
+  scope. Accounts Head and explicitly granted CFO roles receive portfolio scope; Credit Manager is
+  limited to active/monitoring statuses; Senior Manager Finance uses the current SAP assignment;
+  CFC uses exact current initiation or post-transfer evidence; Company Secretary uses the terminal
+  sanctioned-documentation parent; Internal Auditor additionally requires its active audit-read
+  grant. Intake assignment, raw ids, permission alone, and role alone grant nothing.
+- Each item contains only account/application ids and display references, member id/display name,
+  safe SAP customer code or null, loan/facility/rate types, exact decimal amount/balance strings,
+  stable `sanctioned`/`active` status, tenure/repayment dates and months, and UTC creation/activation
+  timestamps. A sanctioned account must have zero funding and balances with no activation date. An
+  active account must reconcile the immutable 009C creation ledger and exact singular 009G3
+  transfer, activation history, register, advice-intent, and amount/balance evidence.
+- Full bank/UTR values, destination/source accounts, evidence/checksum/storage ids, internal actors,
+  comments, request/network/idempotency facts, member identity/contact values, register identities,
+  and advice/provider identities are never returned. Both reads are transactionally zero-write and
+  create no audit or workflow event.

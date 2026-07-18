@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ArrowRight, FileText, CheckCircle2, Banknote, Calendar, Check, AlertOctagon, Shield, Lock, Download, AlertTriangle } from 'lucide-react';
 import Tabs from '../../components/ui/Tabs';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
-import { loanAccounts, loanApplications, documents, securities, auditEvents, repaymentRecords } from '../../data/mockData';
-import { useRole } from '../../contexts/RoleContext';
+import { loanAccounts, documents, securities, auditEvents, repaymentRecords } from '../../data/mockData';
+import { AuthSessionError } from '../../services/authSession';
+import {
+  fetchLoanAccount,
+  fetchLoanAccounts,
+  type LoanAccountProjection,
+} from '../../services/loanAccountsApi';
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
+const fmtDecimal = (value: string) => `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const formatDate = (dateStr: string | undefined) => {
   if (!dateStr) return '—';
@@ -54,6 +60,8 @@ const mapStatus = (status: string) => {
   return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 };
 
+const mapInitialStatus = (status: string) => status === 'active' ? 'Active' : mapStatus(status);
+
 interface LoanAccount360Props {
   loanAccountId: string | null;
   onSelect: (id: string) => void;
@@ -62,18 +70,32 @@ interface LoanAccount360Props {
 
 const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect, onBack }) => {
   const [activeTab, setActiveTab] = useState(0);
-  const { currentUser } = useRole();
-  const role = currentUser.role;
+  const [accounts, setAccounts] = useState<LoanAccountProjection[]>([]);
+  const [account, setAccount] = useState<LoanAccountProjection | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<{ message: string; unauthorized: boolean } | null>(null);
 
-  const isAllowed = ['admin', 'credit_manager', 'senior_manager_finance', 'deputy_manager_finance', 'accounts_team', 'cfo', 'auditor', 'sales', 'field_officer', 'compliance_team', 'accounts'].includes(role);
+  useEffect(() => {
+    let current = true;
+    setLoading(true);
+    setLoadError(null);
+    setAccount(null);
+    const request = loanAccountId
+      ? fetchLoanAccount(loanAccountId).then(value => { if (current) setAccount(value); })
+      : fetchLoanAccounts(1, 20).then(result => { if (current) setAccounts(result.items); });
+    void request.catch(error => {
+      if (!current) return;
+      const unauthorized = error instanceof AuthSessionError && [401, 403].includes(error.status || 0);
+      setLoadError({
+        message: error instanceof Error ? error.message : 'Loan accounts could not be loaded.',
+        unauthorized,
+      });
+    }).finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
+  }, [loanAccountId]);
 
-  if (!isAllowed) {
-    return (
-      <div className="p-6">
-        <AlertBanner type="error" title="Access Denied" message="You do not have permission to view Loan Accounts." />
-      </div>
-    );
-  }
+  if (loading) return <div className="p-6"><div className="card text-sm text-slate-500">{loanAccountId ? 'Loading loan account summary…' : 'Loading loan accounts…'}</div></div>;
+  if (loadError) return <div className="p-6"><AlertBanner type="error" title={loadError.unauthorized ? 'Access Denied' : 'Loan Accounts Unavailable'} message={loadError.message} /></div>;
 
   if (!loanAccountId) {
     return (
@@ -94,39 +116,30 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loanAccounts.map(l => {
-                const isClosed = l.status === 'closed' || l.status === 'recovered';
-                let dpdLabel = DPD_BUCKET_LABELS[l.dpdBucket] || l.dpdBucket;
-                if (isClosed) dpdLabel = 'Closed';
-                else if (l.dpd === 0) dpdLabel = 'Current';
+              {accounts.length === 0 && <tr><td colSpan={8} className="table-cell py-12 text-center text-slate-400">No loan accounts are available in your scope.</td></tr>}
+              {accounts.map(l => {
                 return (
-                  <tr key={l.id} onClick={() => onSelect(l.id)} className="hover:bg-slate-50 cursor-pointer transition-colors">
+                  <tr key={l.loan_account_id} onClick={() => onSelect(l.loan_account_id)} className="hover:bg-slate-50 cursor-pointer transition-colors">
                     <td className="table-cell">
-                      <div className="font-semibold text-green-700 hover:underline num">{l.accountNumber}</div>
-                      <div className="text-xs text-slate-400 num">{l.applicationNumber}</div>
-                      <div className="text-xs text-slate-400 num mt-0.5">SAP: {l.sapCustomerCode || 'Pending'}</div>
+                      <div className="font-semibold text-green-700 hover:underline num">{l.loan_account_number}</div>
+                      <div className="text-xs text-slate-400 num">{l.application_reference_number || '—'}</div>
+                      <div className="text-xs text-slate-400 num mt-0.5">SAP: {l.sap_customer_code || 'Pending'}</div>
                     </td>
-                    <td className="table-cell font-medium text-slate-900">{l.memberName}</td>
-                    <td className="table-cell text-right num">{fmt(l.disbursedAmount)}</td>
+                    <td className="table-cell font-medium text-slate-900">{l.member.display_name}</td>
+                    <td className="table-cell text-right num">{fmtDecimal(l.disbursed_amount)}</td>
                     <td className="table-cell text-right">
-                       <div className="num font-semibold">{fmt(l.outstandingPrincipal)}</div>
-                       <div className="text-xs text-slate-500 num mt-0.5">Interest: {fmt(l.accruedInterest)}</div>
+                       <div className="num font-semibold">{fmtDecimal(l.principal_outstanding)}</div>
+                       <div className="text-xs text-slate-500 num mt-0.5">Interest: {fmtDecimal(l.interest_outstanding)}</div>
                     </td>
-                    <td className="table-cell text-right">{l.interestRate}%</td>
+                    <td className="table-cell text-right">{l.current_interest_rate}%</td>
                     <td className="table-cell">
-                       <StatusBadge label={mapStatus(l.status)} size="sm" />
+                       <StatusBadge label={mapInitialStatus(l.loan_account_status)} size="sm" />
                     </td>
                     <td className="table-cell">
-                      <span className={`font-semibold ${isClosed ? 'text-slate-400' : l.dpd > 90 ? 'text-red-600' : l.dpd > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                        {isClosed ? '—' : l.dpd}
-                      </span>
-                      <div className="text-xs text-slate-400">{dpdLabel}</div>
+                      <span className="font-semibold text-slate-400">—</span>
+                      <div className="text-xs text-slate-400">Not available</div>
                     </td>
-                    <td className="table-cell text-sm text-slate-600">
-                      {isClosed ? (
-                        <span className="text-slate-500 text-xs">Closed on {formatDate(l.lastRepaymentDate || l.repaymentDueDate)}</span>
-                      ) : formatDate(l.repaymentDueDate)}
-                    </td>
+                    <td className="table-cell text-sm text-slate-600">{formatDate(l.repayment_date)}</td>
                   </tr>
                 );
               })}
@@ -137,20 +150,17 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
     );
   }
 
+  if (!account) return <div className="p-6"><AlertBanner type="error" title="Loan Account Unavailable" message="The loan account was not found or is inaccessible." /></div>;
+
   const loan = loanAccounts.find(l => l.id === loanAccountId) || loanAccounts[0];
-  const app = loanApplications.find(a => a.id === loan.applicationId);
   const loanDocs = documents.filter(d => d.applicationId === loan.applicationId);
   const loanSecurities = securities.filter(s => s.applicationId === loan.applicationId);
   const loanAuditEvents = auditEvents.filter(e => e.entityId === loan.applicationNumber || e.entityId === loan.accountNumber);
   const loanRepayments = repaymentRecords.filter(r => r.loanAccountId === loan.id);
 
-  const isClosed = loan.status === 'closed' || loan.status === 'recovered';
   let dpdLabelDetail = DPD_BUCKET_LABELS[loan.dpdBucket] || loan.dpdBucket;
-  if (isClosed) dpdLabelDetail = 'Closed';
+  if (loan.status === 'closed' || loan.status === 'recovered') dpdLabelDetail = 'Closed';
   else if (loan.dpd === 0) dpdLabelDetail = 'Current';
-
-  const monthlyEMI = Math.round((loan.disbursedAmount * (loan.interestRate / 100 / 12)) /
-    (1 - Math.pow(1 + loan.interestRate / 100 / 12, -12)));
 
   const TABS = [
     { id: 'summary', label: 'Summary' },
@@ -220,41 +230,27 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
         )}
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-slate-900 num">{loan.accountNumber}</h1>
-            <StatusBadge label={mapStatus(loan.status)} size="md" />
+            <h1 className="text-xl font-bold text-slate-900 num">{account.loan_account_number}</h1>
+            <StatusBadge label={mapInitialStatus(account.loan_account_status)} size="md" />
           </div>
           <div className="flex items-center gap-3 mt-0.5 text-sm text-slate-500">
-            <span>{loan.memberName}</span>
+            <span>{account.member.display_name}</span>
             <span>·</span>
-            <span className="num">{fmt(loan.disbursedAmount)} disbursed</span>
+            <span className="num">{fmtDecimal(account.disbursed_amount)} disbursed</span>
             <span>·</span>
-            <span>SAP: <span className="num font-medium text-slate-900">{loan.sapCustomerCode || 'Pending'}</span></span>
+            <span>SAP: <span className="num font-medium text-slate-900">{account.sap_customer_code || 'Pending'}</span></span>
           </div>
         </div>
       </div>
 
-      {/* Alerts */}
-      {loan.status === 'overdue' && (
-        <AlertBanner type="error" title={`Loan Overdue — DPD: ${loan.dpd} days`}
-          message={`Overdue since ${formatDate(loan.repaymentDueDate)}. Please initiate recovery communication.`} />
-      )}
-      {loan.status === 'grace_period' && loan.gracePeriodEnd && (
-        <AlertBanner type="warning" title={`Grace Period Active — ends ${formatDate(loan.gracePeriodEnd)}`}
-          message="Repayment expected before grace period expiry to avoid default classification." />
-      )}
-      {(loan.status === 'extended' || loan.status === 'extension') && (
-        <AlertBanner type="warning" title="Extension Granted by Sanction Committee"
-          message={`Extension period ends ${formatDate(loan.extensionEnd || loan.repaymentDueDate)}. Monitor repayments during extension.`} />
-      )}
-
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Sanctioned', value: fmt(loan.sanctionedAmount), color: 'slate' },
-          { label: 'Outstanding Principal', value: fmt(loan.outstandingPrincipal), color: loan.outstandingPrincipal > 0 ? 'amber' : 'green' },
-          { label: 'Accrued Interest', value: fmt(loan.accruedInterest), color: loan.accruedInterest > 0 ? 'amber' : 'slate' },
-          { label: 'Interest Rate', value: `${loan.interestRate}% p.a.`, color: 'slate' },
-          { label: 'DPD', value: isClosed ? '—' : String(loan.dpd), color: isClosed ? 'slate' : loan.dpd > 90 ? 'red' : loan.dpd > 0 ? 'amber' : 'green' },
+          { label: 'Sanctioned', value: fmtDecimal(account.sanctioned_amount), color: 'slate' },
+          { label: 'Disbursed', value: fmtDecimal(account.disbursed_amount), color: account.loan_account_status === 'active' ? 'green' : 'slate' },
+          { label: 'Outstanding Principal', value: fmtDecimal(account.principal_outstanding), color: 'slate' },
+          { label: 'Outstanding Interest', value: fmtDecimal(account.interest_outstanding), color: 'slate' },
+          { label: 'Total Outstanding', value: fmtDecimal(account.total_outstanding), color: 'slate' },
         ].map(({ label, value, color }) => (
           <div key={label} className={`rounded-lg border p-3 ${
             color === 'red' ? 'bg-red-50 border-red-200' :
@@ -277,21 +273,19 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
         <div className="card space-y-5">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
-              { label: 'Account Number', value: loan.accountNumber },
-              { label: 'Application Number', value: loan.applicationNumber },
-              { label: 'Loan Type', value: loan.loanType === 'short_term' ? 'Short Term' : 'Long Term' },
-              { label: 'Disbursement Date', value: formatDate(loan.disbursementDate) },
-              { label: 'Repayment Due', value: formatDate(loan.repaymentDueDate) },
-              { label: 'Scheduled Instalment', value: fmt(monthlyEMI) },
-              { label: 'Last Repayment', value: loan.lastRepaymentDate ? formatDate(loan.lastRepaymentDate) : 'None' },
-              { label: 'Last Amount', value: loan.lastRepaymentAmount ? fmt(loan.lastRepaymentAmount) : '—' },
-              { label: 'SAP Customer Code', value: loan.sapCustomerCode || 'Pending' },
-              { label: 'DPD Bucket', value: dpdLabelDetail },
-              { label: 'Current Owner', value: 'Accounts / Credit Manager' },
-              { label: 'Next Action', value: loan.outstandingPrincipal === 0 ? 'Issue NOC' : 'Monitor repayment' },
-              { label: 'Monitoring Status', value: loan.dpd > 0 ? `DPD ${loan.dpd} — Action required` : 'Current' },
-              ...(loan.gracePeriodEnd ? [{ label: 'Grace Period End', value: formatDate(loan.gracePeriodEnd) }] : []),
-              ...(loan.extensionEnd ? [{ label: 'Extension End', value: formatDate(loan.extensionEnd) }] : []),
+              { label: 'Account Number', value: account.loan_account_number },
+              { label: 'Application Number', value: account.application_reference_number || '—' },
+              { label: 'Member', value: account.member.display_name },
+              { label: 'Loan Type', value: mapStatus(account.loan_type) },
+              { label: 'Facility Type', value: mapStatus(account.facility_type) },
+              { label: 'Interest Rate', value: `${account.current_interest_rate}% ${mapStatus(account.interest_rate_type)}` },
+              { label: 'Tenure', value: `${account.tenure_months} months` },
+              { label: 'Tenure Start', value: formatDate(account.tenure_start_date || undefined) },
+              { label: 'Tenure End', value: formatDate(account.tenure_end_date || undefined) },
+              { label: 'Repayment Due', value: formatDate(account.repayment_date) },
+              { label: 'SAP Customer Code', value: account.sap_customer_code || 'Pending' },
+              { label: 'Created', value: formatTime(account.created_at) },
+              { label: 'Activated', value: account.activated_at ? formatTime(account.activated_at) : 'Not activated' },
             ].map(({ label, value }) => (
               <div key={label} className="bg-slate-50 rounded-lg p-3">
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</p>
@@ -299,16 +293,14 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
               </div>
             ))}
           </div>
-          {app && (
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Linked Application:</span>
-                <button className="text-green-600 hover:underline flex items-center gap-1 font-medium num">
-                  {app.applicationNumber} <ArrowRight size={12} />
-                </button>
-              </div>
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500">Linked Application:</span>
+              <span className="text-green-600 flex items-center gap-1 font-medium num">
+                {account.application_reference_number || account.loan_application_id} <ArrowRight size={12} />
+              </span>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Tab 1: Loan Ledger */}

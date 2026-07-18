@@ -98,6 +98,21 @@ class DisbursementAccountDecision:
 
 def resolve_disbursement_account(*, loan_account_id):
     """Return immutable initiation facts only for a genuine lifecycle-created account."""
+    return _resolve_created_account(
+        loan_account_id=loan_account_id,
+        require_unfunded_sanctioned=True,
+    )
+
+
+def resolve_loan_account_creation(*, loan_account_id):
+    """Return immutable 009C creation truth while allowing a genuine later transition."""
+    return _resolve_created_account(
+        loan_account_id=loan_account_id,
+        require_unfunded_sanctioned=False,
+    )
+
+
+def _resolve_created_account(*, loan_account_id, require_unfunded_sanctioned):
     account = (
         LoanAccount.objects.select_for_update(of=("self",))
         .select_related("terms", "loan_application", "member", "sanction_decision")
@@ -106,10 +121,17 @@ def resolve_disbursement_account(*, loan_account_id):
     )
     if account is None:
         return None
+    history_query = LoanStatusHistory.objects.select_for_update().filter(
+        loan_account=account
+    )
+    if not require_unfunded_sanctioned:
+        history_query = history_query.filter(
+            from_status__isnull=True,
+            to_status=LoanAccount.STATUS_SANCTIONED,
+            outcome="created",
+        )
     histories = list(
-        LoanStatusHistory.objects.select_for_update()
-        .filter(loan_account=account)
-        .order_by("changed_at", "loan_status_history_id")[:2]
+        history_query.order_by("changed_at", "loan_status_history_id")[:2]
     )
     audits = list(
         AuditLog.objects.select_for_update()
@@ -147,7 +169,10 @@ def resolve_disbursement_account(*, loan_account_id):
         "outcome": "created",
     }
     if (
-        account.loan_account_status != LoanAccount.STATUS_SANCTIONED
+        (
+            require_unfunded_sanctioned
+            and account.loan_account_status != LoanAccount.STATUS_SANCTIONED
+        )
         or account.loan_application.member_id != account.member_id
         or account.sanction_decision.loan_application_id != account.loan_application_id
         or account.terms.loan_account_id != account.pk
@@ -657,5 +682,6 @@ __all__ = [
     "create_loan_account",
     "resolve_readiness_account",
     "resolve_disbursement_account",
+    "resolve_loan_account_creation",
     "serialize_loan_account",
 ]

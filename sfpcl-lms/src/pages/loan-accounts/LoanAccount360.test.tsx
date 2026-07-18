@@ -1,0 +1,109 @@
+// @vitest-environment jsdom
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import LoanAccount360 from './LoanAccount360';
+import {
+  fetchLoanAccount,
+  fetchLoanAccounts,
+  type LoanAccountProjection,
+} from '../../services/loanAccountsApi';
+import { AuthSessionError } from '../../services/authSession';
+import pageSource from './LoanAccount360.tsx?raw';
+import apiSource from '../../services/loanAccountsApi.ts?raw';
+
+vi.mock('../../services/loanAccountsApi', () => ({
+  fetchLoanAccounts: vi.fn(),
+  fetchLoanAccount: vi.fn(),
+}));
+
+const account: LoanAccountProjection = {
+  loan_account_id: 'account-1', loan_account_number: 'LN-API-001',
+  loan_application_id: 'application-1', application_reference_number: 'LO-API-001',
+  member: { member_id: 'member-1', display_name: 'API Borrower' },
+  sap_customer_code: 'SAP-API-001', loan_type: 'short_term', facility_type: 'short_term',
+  interest_rate_type: 'floating', current_interest_rate: '9.2500',
+  sanctioned_amount: '400000.00', disbursed_amount: '400000.00',
+  principal_outstanding: '400000.00', interest_outstanding: '0.00',
+  charges_outstanding: '0.00', total_outstanding: '400000.00',
+  loan_account_status: 'active', tenure_start_date: '2026-06-22', tenure_end_date: null,
+  repayment_date: '2027-06-22', tenure_months: 12,
+  created_at: '2026-06-20T10:00:00Z', activated_at: '2026-06-22T14:00:00Z',
+};
+
+const pagination = {
+  page: 1, page_size: 20, total_count: 1, total_pages: 1,
+  has_next: false, has_previous: false,
+};
+
+describe('009J Loan Account 360 initial API view', () => {
+  beforeEach(() => {
+    vi.mocked(fetchLoanAccounts).mockResolvedValue({ items: [account], pagination });
+    vi.mocked(fetchLoanAccount).mockResolvedValue(account);
+  });
+  afterEach(() => { cleanup(); vi.clearAllMocks(); });
+
+  it('loads the scoped account list and routes the selected server identity', async () => {
+    const onSelect = vi.fn();
+    render(<LoanAccount360 loanAccountId={null} onSelect={onSelect} />);
+
+    expect(screen.getByText('Loading loan accounts…')).toBeTruthy();
+    expect(await screen.findByText('LN-API-001')).toBeTruthy();
+    expect(screen.getByText('API Borrower')).toBeTruthy();
+    expect(screen.getAllByText('₹4,00,000.00')).toHaveLength(2);
+    expect(fetchLoanAccounts).toHaveBeenCalledWith(1, 20);
+
+    await userEvent.click(screen.getByText('LN-API-001'));
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith('account-1'));
+  });
+
+  it('renders the header, KPI row, and Summary from exact active server values', async () => {
+    render(<LoanAccount360 loanAccountId="account-1" onSelect={vi.fn()} />);
+
+    expect(screen.getByText('Loading loan account summary…')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'LN-API-001' })).toBeTruthy();
+    expect(fetchLoanAccount).toHaveBeenCalledWith('account-1');
+    expect(screen.getAllByText('₹4,00,000.00').length).toBeGreaterThanOrEqual(4);
+    expect(screen.getByText('9.2500% Floating')).toBeTruthy();
+    expect(screen.getByText('12 months')).toBeTruthy();
+    expect(screen.getByText('22 Jun 2026')).toBeTruthy();
+    expect(screen.getByText(/22 Jun 2026 at/i)).toBeTruthy();
+    expect(screen.queryByText('Scheduled Instalment')).toBeNull();
+    expect(screen.queryByText('DPD Bucket')).toBeNull();
+    expect(screen.queryByText('Next Action')).toBeNull();
+  });
+
+  it('shows honest empty, failure, and unauthorized states without mock fallback', async () => {
+    vi.mocked(fetchLoanAccounts).mockResolvedValueOnce({
+      items: [], pagination: { ...pagination, total_count: 0 },
+    });
+    const empty = render(<LoanAccount360 loanAccountId={null} onSelect={vi.fn()} />);
+    expect(await screen.findByText('No loan accounts are available in your scope.')).toBeTruthy();
+    empty.unmount();
+
+    vi.mocked(fetchLoanAccounts).mockRejectedValueOnce(new Error('Account service unavailable.'));
+    const failed = render(<LoanAccount360 loanAccountId={null} onSelect={vi.fn()} />);
+    expect(await screen.findByText('Account service unavailable.')).toBeTruthy();
+    expect(screen.getByText('Loan Accounts Unavailable')).toBeTruthy();
+    failed.unmount();
+
+    vi.mocked(fetchLoanAccount).mockRejectedValueOnce(
+      new AuthSessionError('FORBIDDEN', 'Loan account scope denied.', 403),
+    );
+    render(<LoanAccount360 loanAccountId="account-1" onSelect={vi.fn()} />);
+    expect(await screen.findByText('Loan account scope denied.')).toBeTruthy();
+    expect(screen.getByText('Access Denied')).toBeTruthy();
+    expect(screen.queryByText('Ganesh Thorat')).toBeNull();
+  });
+
+  it('uses only the shared authenticated boundary for the initial API projection', () => {
+    expect(apiSource).toContain('authenticatedPaginatedRequest');
+    expect(apiSource).toContain('authenticatedRequest');
+    expect(apiSource).not.toContain('mockData');
+    expect(apiSource).not.toContain('fetch(');
+    expect(pageSource).toContain('fetchLoanAccounts');
+    expect(pageSource).toContain('fetchLoanAccount');
+    expect(pageSource.match(/from '..\/..\/data\/mockData'/g)).toHaveLength(1);
+    expect(pageSource).not.toContain('monthlyEMI');
+  });
+});

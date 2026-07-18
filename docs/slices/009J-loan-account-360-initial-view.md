@@ -1,7 +1,7 @@
 # Slice 009J: Loan Account 360 Initial View
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement

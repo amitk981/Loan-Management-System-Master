@@ -275,14 +275,15 @@
     "009H9B-communication-final-attempt-and-exception-queue-closure",
     "009H9C-communication-channel-interface-and-provider-evidence-closure",
     "009I2-portal-disbursement-stage-and-visual-closure",
-    "009H9D-communications-provenance-and-operator-boundary-closure"
+    "009H9D-communications-provenance-and-operator-boundary-closure",
+    "009J-loan-account-360-initial-view"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-19_020758_normal_run",
+  "last_run_id": "2026-07-19_024941_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
