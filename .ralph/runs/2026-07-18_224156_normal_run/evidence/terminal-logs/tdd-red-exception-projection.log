@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_exception_evidence_exposes_only_safe_review_facts -v 1
+Exit: 1
+
+AttributeError: type object 'CommunicationDispatcher' has no attribute
+'exception_evidence'
+
+Ran 1 test in 0.026s
+FAILED (errors=1)

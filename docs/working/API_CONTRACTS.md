@@ -1,5 +1,59 @@
 # API Contracts
 
+## Communication exception queue (009H9B)
+
+`GET /api/v1/communication-exceptions/`
+
+`GET /api/v1/communication-exceptions/{communication_exception_id}/`
+
+`POST /api/v1/communication-exceptions/{communication_exception_id}/resolve/`
+
+These protected operator routes expose only exceptions assigned to the current user. The actor must
+retain the source send authority for the exhausted job type:
+`communications.communication.send` for generic communications or
+`finance.disbursement.send_advice` for advice. The dispatcher applies the assigned-owner filter in
+addition to that permission, so another operator's exception is never projected.
+
+The collection/detail item is deliberately redacted:
+
+```json
+{
+  "communication_exception_id": "uuid",
+  "provider_code": "configured-adapter-identity",
+  "job_type": "generic",
+  "related_entity_type": "loan_application",
+  "related_entity_id": "uuid",
+  "last_error_code": "worker_crash",
+  "retry_count": 3,
+  "assigned_owner": "current_user",
+  "resolution_action": null,
+  "resolved_by": null,
+  "resolved_at": null,
+  "resolution_version": 1
+}
+```
+
+Recipient/address, subject/body/content, provider external id/error/secret, bank/UTR, idempotency
+key, payload/digest, request id, actor identity/role/team, IP address, and user agent are absent. One
+urgent assigned notification links to the protected detail route.
+
+Resolution accepts exactly:
+
+```json
+{
+  "resolution_action": "manual_closed",
+  "resolution_version": 1
+}
+```
+
+The version is a positive stale-write token. Unknown/malformed fields return
+`400 VALIDATION_ERROR`; missing authority returns `403 FORBIDDEN`; an unsupported `retry`, stale
+version, wrong owner, already-resolved row, or changed/missing exhausted-job evidence returns
+`409 CONFLICT`. Since the job has reached its retained `max_attempts`, this contract does not grant
+another attempt. Manual closure leaves the job `failed`, preserves its attempts and provider
+evidence, does not mutate the Communication to sent, and appends one audit/workflow resolution
+chain. The opening terminalisation likewise appends one singular exception/audit/workflow chain.
+
 ## Payment initiation (009E/009E2/009E3)
 
 `POST /api/v1/loan-accounts/{loan_account_id}/disbursements/initiate/` implements source §31.2.

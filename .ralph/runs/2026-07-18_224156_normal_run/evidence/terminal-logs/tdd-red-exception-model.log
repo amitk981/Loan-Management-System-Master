@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_final_attempt_crash_becomes_failed_with_operator_task -v 1
+Exit: 1
+
+ImportError: cannot import name 'CommunicationException' from
+'sfpcl_credit.communications.models'
+
+Ran 1 test in 0.000s
+FAILED (errors=1)

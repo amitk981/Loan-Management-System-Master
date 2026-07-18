@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_already_exhausted_retrying_job_is_terminalised_once -v 1
+Exit: 1
+
+AssertionError: [communication_job_id] != []
+
+The already exhausted retrying job was still returned as due.
+Ran 1 test in 0.022s
+FAILED (failures=1)

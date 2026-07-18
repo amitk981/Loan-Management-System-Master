@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_assigned_owner_can_manually_resolve_without_fabricating_delivery -v 1
+Exit: 1
+
+AttributeError: type object 'CommunicationDispatcher' has no attribute
+'resolve_exception'
+
+Ran 1 test in 0.026s
+FAILED (errors=1)

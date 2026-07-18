@@ -8,7 +8,7 @@ import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
@@ -23,6 +23,7 @@ from sfpcl_credit.communications.models import (
     Communication,
     CommunicationDeliveryJob,
     CommunicationDeliveryOutbox,
+    CommunicationException,
     CommunicationProviderAttempt,
     ContentTemplate,
     DisbursementAdviceDeliveryReceipt,
@@ -683,8 +684,8 @@ class CommunicationDispatcher:
             )
             return cls._job_execution(job)
 
-    @staticmethod
-    def retry_failed(*, actor=None, limit=100):
+    @classmethod
+    def retry_failed(cls, *, actor=None, limit=100):
         del actor
         bounded_limit = max(1, min(int(limit), settings.COMMUNICATION_JOB_BATCH_LIMIT))
         now = timezone.now()
@@ -698,6 +699,34 @@ class CommunicationDispatcher:
             ),
         )
         with transaction.atomic():
+            already_exhausted = list(
+                CommunicationDeliveryJob.objects.select_for_update(of=("self",))
+                .filter(
+                    eligible,
+                    status__in=(
+                        CommunicationDeliveryJob.STATUS_QUEUED,
+                        CommunicationDeliveryJob.STATUS_RETRYING,
+                    ),
+                    attempts__gte=F("max_attempts"),
+                )
+                .order_by("next_attempt_at", "communication_job_id")[:bounded_limit]
+            )
+            for job in already_exhausted:
+                job.status = CommunicationDeliveryJob.STATUS_FAILED
+                job.completed_at = now
+                job.last_failure_code = job.last_failure_code or "worker_crash"
+                job.claim_token = None
+                job.lease_expires_at = None
+                job.save(
+                    update_fields=[
+                        "status",
+                        "completed_at",
+                        "last_failure_code",
+                        "claim_token",
+                        "lease_expires_at",
+                    ]
+                )
+                cls._create_exception(job)
             stale = list(
                 CommunicationDeliveryJob.objects.select_for_update(of=("self",))
                 .filter(
@@ -705,12 +734,20 @@ class CommunicationDispatcher:
                     status=CommunicationDeliveryJob.STATUS_RUNNING,
                     lease_expires_at__lte=now,
                 )
-                .order_by("lease_expires_at", "communication_job_id")[:bounded_limit]
+                .order_by("lease_expires_at", "communication_job_id")[
+                    : max(0, bounded_limit - len(already_exhausted))
+                ]
             )
             for job in stale:
-                job.status = CommunicationDeliveryJob.STATUS_RETRYING
+                exhausted = job.attempts >= job.max_attempts
+                job.status = (
+                    CommunicationDeliveryJob.STATUS_FAILED
+                    if exhausted
+                    else CommunicationDeliveryJob.STATUS_RETRYING
+                )
                 job.next_attempt_at = now
                 job.last_failure_code = "worker_crash"
+                job.completed_at = now if exhausted else None
                 job.claim_token = None
                 job.lease_expires_at = None
                 job.recovery_count += 1
@@ -720,12 +757,15 @@ class CommunicationDispatcher:
                         "status",
                         "next_attempt_at",
                         "last_failure_code",
+                        "completed_at",
                         "claim_token",
                         "lease_expires_at",
                         "recovery_count",
                         "last_recovered_at",
                     ]
                 )
+                if exhausted:
+                    cls._create_exception(job)
             return list(
                 CommunicationDeliveryJob.objects.filter(
                     eligible,
@@ -784,6 +824,132 @@ class CommunicationDispatcher:
                 }
             )
         return evidence
+
+    @staticmethod
+    def exception_evidence(*, actor, exception_id=None, limit=100):
+        bounded_limit = max(1, min(int(limit), settings.COMMUNICATION_JOB_BATCH_LIMIT))
+        rows = CommunicationException.objects.filter(
+            assigned_owner=actor,
+            job__status=CommunicationDeliveryJob.STATUS_FAILED,
+            job__attempts=F("retry_count"),
+            job__attempts__gte=F("job__max_attempts"),
+            job__last_failure_code=F("last_error_code"),
+            job__job_kind=F("job_type"),
+            job__actor_id=F("assigned_owner_id"),
+            job__claim_token__isnull=True,
+            job__lease_expires_at__isnull=True,
+        )
+        if exception_id is not None:
+            rows = rows.filter(pk=exception_id)
+        rows = rows.order_by("-created_at", "-communication_exception_id")[
+            :bounded_limit
+        ]
+        return [
+            {
+                "communication_exception_id": str(row.pk),
+                "provider_code": row.provider_code,
+                "job_type": row.job_type,
+                "related_entity_type": row.related_entity_type,
+                "related_entity_id": str(row.related_entity_id),
+                "last_error_code": row.last_error_code,
+                "retry_count": row.retry_count,
+                "assigned_owner": "current_user",
+                "resolution_action": row.resolution_action or None,
+                "resolved_by": "current_user" if row.resolved_by_id else None,
+                "resolved_at": _iso_or_none(row.resolved_at),
+                "resolution_version": row.resolution_version,
+            }
+            for row in rows
+        ]
+
+    @classmethod
+    def resolve_exception(
+        cls,
+        *,
+        actor,
+        exception_id,
+        expected_version,
+        resolution_action,
+        request,
+    ):
+        if resolution_action != CommunicationException.ACTION_MANUAL_CLOSED:
+            raise CommunicationDispatchConflict(
+                "The exhausted communication retry policy does not permit another attempt."
+            )
+        with transaction.atomic():
+            try:
+                exception = (
+                    CommunicationException.objects.select_for_update()
+                    .select_related("job")
+                    .get(pk=exception_id, assigned_owner=actor)
+                )
+            except CommunicationException.DoesNotExist as exc:
+                raise CommunicationDispatchConflict(
+                    "The communication exception is unavailable for this operator."
+                ) from exc
+            if (
+                exception.resolution_version != expected_version
+                or exception.resolved_at is not None
+            ):
+                raise CommunicationDispatchConflict(
+                    "The communication exception changed. Refresh and try again."
+                )
+            job = exception.job
+            if not (
+                job.status == CommunicationDeliveryJob.STATUS_FAILED
+                and job.attempts == exception.retry_count
+                and job.attempts >= job.max_attempts
+                and job.claim_token is None
+                and job.lease_expires_at is None
+            ):
+                raise CommunicationDispatchConflict(
+                    "The exhausted communication job evidence is stale or incomplete."
+                )
+            resolved_at = timezone.now()
+            exception.resolution_action = resolution_action
+            exception.resolved_by = actor
+            exception.resolved_at = resolved_at
+            exception.resolution_version += 1
+            exception.save(
+                update_fields=[
+                    "resolution_action",
+                    "resolved_by",
+                    "resolved_at",
+                    "resolution_version",
+                ]
+            )
+            AuditLog.objects.create(
+                actor_user=actor,
+                actor_type="user",
+                action="communications.exception.resolved",
+                entity_type="communication_exception",
+                entity_id=exception.pk,
+                old_value_json={
+                    "resolution_action": None,
+                    "resolution_version": expected_version,
+                },
+                new_value_json={
+                    "resolution_action": resolution_action,
+                    "resolution_version": exception.resolution_version,
+                    "retry_count": exception.retry_count,
+                    "last_error_code": exception.last_error_code,
+                },
+                ip_address=request_ip(request),
+                user_agent=request_user_agent(request),
+            )
+            record_workflow_event(
+                actor=actor,
+                workflow_name="CommunicationExceptionResolution",
+                entity_type="communication_exception",
+                entity_id=exception.pk,
+                from_state="open",
+                to_state="resolved",
+                trigger_reason="Manual closure after the configured retry limit.",
+                action_code="communications.exception.resolved",
+            )
+        return cls.exception_evidence(
+            actor=actor, exception_id=exception.pk, limit=1
+        )[0]
 
     @classmethod
     def complete_job(cls, job_id, *, claim_token):
@@ -868,21 +1034,89 @@ class CommunicationDispatcher:
                 ]
             )
             if exhausted:
-                Notification.objects.get_or_create(
-                    notification_type="communication_job_failed",
-                    related_entity_type="communication_job",
-                    related_entity_id=job.pk,
-                    defaults={
-                        "category": "Operations",
-                        "severity": Notification.SEVERITY_URGENT,
-                        "title": "Communication delivery needs attention",
-                        "message": "A communication job exhausted its safe retry limit.",
-                        "action_label": "Review communication job",
-                        "action_url": "/notifications",
-                        "recipient_user_id": job.actor_id,
-                    },
-                )
+                cls._create_exception(job)
             return job
+
+    @staticmethod
+    def _create_exception(job):
+        if job.job_kind == CommunicationDeliveryJob.KIND_ADVICE:
+            outbox = job.outbox or CommunicationDeliveryOutbox.objects.get(
+                pk=job.outbox_id
+            )
+            related_entity_type = outbox.related_entity_type
+            related_entity_id = outbox.related_entity_id
+            provider_code = (
+                outbox.accepted_provider_attempt.adapter_kind
+                if outbox.accepted_provider_attempt_id
+                else settings.COMMUNICATION_EMAIL_ADAPTER
+            )
+        else:
+            communication = Communication.objects.get(pk=job.communication_id)
+            related_entity_type = communication.related_entity_type
+            related_entity_id = communication.related_entity_id
+            provider_code = settings.COMMUNICATION_EMAIL_ADAPTER
+        expected = {
+            "provider_code": provider_code,
+            "job_type": job.job_kind,
+            "related_entity_type": related_entity_type,
+            "related_entity_id": related_entity_id,
+            "last_error_code": job.last_failure_code,
+            "retry_count": job.attempts,
+            "assigned_owner_id": job.actor_id,
+        }
+        exception, created = CommunicationException.objects.get_or_create(
+            job=job,
+            defaults=expected,
+        )
+        if not created and any(
+            getattr(exception, field) != value for field, value in expected.items()
+        ):
+            raise CommunicationDispatchConflict(
+                "The retained communication exception conflicts with exhausted job truth."
+            )
+        if created:
+            actor = User.objects.get(pk=job.actor_id)
+            AuditLog.objects.create(
+                actor_user=actor,
+                actor_type="user",
+                action="communications.exception.created",
+                entity_type="communication_exception",
+                entity_id=exception.pk,
+                old_value_json=None,
+                new_value_json={
+                    "provider_code": exception.provider_code,
+                    "job_type": exception.job_type,
+                    "related_entity_type": exception.related_entity_type,
+                    "related_entity_id": str(exception.related_entity_id),
+                    "last_error_code": exception.last_error_code,
+                    "retry_count": exception.retry_count,
+                },
+            )
+            record_workflow_event(
+                actor=actor,
+                workflow_name="CommunicationExceptionResolution",
+                entity_type="communication_exception",
+                entity_id=exception.pk,
+                from_state="failed",
+                to_state="open",
+                trigger_reason="Configured communication retry limit exhausted.",
+                action_code="communications.exception.created",
+            )
+        Notification.objects.get_or_create(
+            notification_type="communication_job_failed",
+            related_entity_type="communication_exception",
+            related_entity_id=exception.pk,
+            defaults={
+                "category": "Operations",
+                "severity": Notification.SEVERITY_URGENT,
+                "title": "Communication delivery needs attention",
+                "message": "A communication job exhausted its safe retry limit.",
+                "action_label": "Review communication exception",
+                "action_url": f"/api/v1/communication-exceptions/{exception.pk}/",
+                "recipient_user_id": job.actor_id,
+            },
+        )
+        return exception
 
     @staticmethod
     def _job_execution(job):

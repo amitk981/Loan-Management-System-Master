@@ -18,6 +18,7 @@ CONTENT_TEMPLATE_READ_PERMISSION = "communications.content_template.read"
 CONTENT_TEMPLATE_MANAGE_PERMISSION = "communications.content_template.manage"
 COMMUNICATION_READ_PERMISSION = "communications.communication.read"
 COMMUNICATION_SEND_PERMISSION = "communications.communication.send"
+DISBURSEMENT_ADVICE_SEND_PERMISSION = "finance.disbursement.send_advice"
 NOTIFICATION_READ_PERMISSION = "communications.notification.read"
 CONTENT_TEMPLATE_ENTITY_TYPE = "content_template"
 COMMUNICATION_ENTITY_TYPE = "communication"
@@ -125,6 +126,17 @@ def user_can_read_communications(user):
 
 def user_can_send_communications(user):
     return COMMUNICATION_SEND_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_manage_communication_exceptions(user):
+    permissions = set(auth_service.effective_permission_codes(user))
+    return bool(
+        {
+            COMMUNICATION_SEND_PERMISSION,
+            DISBURSEMENT_ADVICE_SEND_PERMISSION,
+        }
+        & permissions
+    )
 
 
 def user_can_read_notifications(user):

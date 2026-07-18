@@ -1,0 +1,9 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_final_attempt_crash_becomes_failed_with_operator_task -v 2
+Exit: 1
+
+test_final_attempt_crash_becomes_failed_with_operator_task ... FAIL
+
+AssertionError: Lists differ: [UUID('95c4fdff-d1ca-4e92-8d14-5ddad6abdbff')] != []
+
+Ran 1 test in 0.082s
+FAILED (failures=1)

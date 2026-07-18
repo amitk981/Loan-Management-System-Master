@@ -1051,3 +1051,23 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
   idempotency, snapshot, and timestamp through 0007-to-current, safe reverse, and reapply. No later
   migration, schema, provider/receipt/Communication, action/audit/workflow, API, or frontend change
   is part of this closure.
+
+## 009H9B communication final-attempt and exception-queue closure
+
+- `CommunicationDispatcher.retry_failed` now locks and terminalises both an expired running claim
+  at its retained `max_attempts` and an already-exhausted queued/retrying row left by the prior
+  recovery behaviour. Attempts never increment during recovery; exact-cap terminalisation sets
+  `failed`/`worker_crash`, clears the claim/lease, retains provider acceptance, records recovery at
+  most once, and never returns the row as due.
+- One protected communications-owned exception row freezes the configured provider adapter, job
+  type, related entity, safe failure code, exact retry count, assigned original actor, and nullable
+  resolution facts. One urgent task points to the current-owner-only detail route. Projection omits
+  recipient/content, provider id/error/secret, bank/UTR, key/payload/request, and actor-network facts.
+- Current assigned generic/advice senders can list/detail their rows and manually close them with a
+  version token. Unsupported post-cap retry, stale/foreign/resolved requests, and changed exhausted
+  job evidence fail closed. Closure preserves failed attempts and accepted provider truth, never
+  calls a provider or marks delivery sent, and appends one audit/workflow chain.
+- Local focused tests cover exact/below/already-exhausted recovery, repeated scans, stale claims,
+  generic/advice failure classes, redaction, authority/staleness, changed evidence, and accepted
+  provider crash closure. Two PostgreSQL executions of the five-scanner/five-worker terminal race
+  retain one job/exception/task/audit/workflow winner, no fourth attempt, and no provider call.

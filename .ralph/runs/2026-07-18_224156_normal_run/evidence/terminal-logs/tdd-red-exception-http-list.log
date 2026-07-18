@@ -1,0 +1,7 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_assigned_owner_can_reach_redacted_exception_queue_over_http -v 1
+Exit: 1
+
+AssertionError: 404 != 200
+
+Ran 1 test in 0.026s
+FAILED (failures=1)

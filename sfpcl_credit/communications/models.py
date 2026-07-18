@@ -393,6 +393,74 @@ class CommunicationDeliveryJob(models.Model):
         ]
 
 
+class CommunicationException(models.Model):
+    ACTION_MANUAL_CLOSED = "manual_closed"
+
+    communication_exception_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    job = models.OneToOneField(
+        CommunicationDeliveryJob,
+        on_delete=models.PROTECT,
+        related_name="delivery_exception",
+    )
+    provider_code = models.CharField(max_length=255)
+    job_type = models.CharField(max_length=40)
+    related_entity_type = models.CharField(max_length=80)
+    related_entity_id = models.UUIDField()
+    last_error_code = models.CharField(max_length=80)
+    retry_count = models.PositiveSmallIntegerField()
+    assigned_owner = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="assigned_communication_exceptions",
+    )
+    resolution_action = models.CharField(max_length=80, blank=True)
+    resolved_by = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="resolved_communication_exceptions",
+        blank=True,
+        null=True,
+    )
+    resolved_at = models.DateTimeField(blank=True, null=True)
+    resolution_version = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "communication_exceptions"
+        ordering = ["-created_at", "-communication_exception_id"]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(provider_code="")
+                    & ~models.Q(job_type="")
+                    & ~models.Q(related_entity_type="")
+                    & ~models.Q(last_error_code="")
+                    & models.Q(retry_count__gte=1)
+                ),
+                name="communication_exception_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        resolution_action="",
+                        resolved_by__isnull=True,
+                        resolved_at__isnull=True,
+                    )
+                    | (
+                        ~models.Q(resolution_action="")
+                        & models.Q(
+                            resolved_by__isnull=False,
+                            resolved_at__isnull=False,
+                        )
+                    )
+                ),
+                name="communication_exception_resolution_complete",
+            ),
+        ]
+
+
 class ImmutableProviderAttemptQuerySet(models.QuerySet):
     def update(self, **kwargs):
         raise TypeError("Provider-attempt evidence is immutable.")

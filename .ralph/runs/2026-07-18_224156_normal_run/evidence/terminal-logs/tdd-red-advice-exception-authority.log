@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.AdviceWorkerQueueTests.test_final_attempt_advice_crash_creates_one_advice_exception -v 1
+Exit: 1
+
+AssertionError: 403 != 200
+
+The assigned advice owner could not reach the protected exception row.
+Ran 1 test in 0.654s
+FAILED (failures=1)

@@ -589,6 +589,21 @@ urlpatterns = [
         name="communication-send",
     ),
     path(
+        "api/v1/communication-exceptions/",
+        communication_views.communication_exception_collection,
+        name="communication-exception-list",
+    ),
+    path(
+        "api/v1/communication-exceptions/<uuid:communication_exception_id>/",
+        communication_views.communication_exception_detail,
+        name="communication-exception-detail",
+    ),
+    path(
+        "api/v1/communication-exceptions/<uuid:communication_exception_id>/resolve/",
+        communication_views.communication_exception_resolve,
+        name="communication-exception-resolve",
+    ),
+    path(
         "api/v1/notifications/",
         communication_views.notification_collection,
         name="notification-list",

@@ -1,0 +1,6 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_resolution_rejects_changed_exhausted_job_evidence -v 1
+Exit: 1
+
+The ordinary exception projection returned a row whose exhausted job status had changed.
+Ran 1 test in 0.066s
+FAILED (failures=1)

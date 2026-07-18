@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_final_attempt_crash_becomes_failed_with_operator_task -v 1
+Exit: 1
+
+AssertionError: 0 != 1
+
+The terminal exception had no append-only creation audit/workflow chain.
+Ran 1 test in 0.025s
+FAILED (failures=1)

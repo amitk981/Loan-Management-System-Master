@@ -271,16 +271,18 @@
     "009H7-communications-dispatcher-interface-and-idempotency-closure",
     "009H8-communications-worker-runtime-and-crash-recovery-closure",
     "CR-011-github-ci-migration-test-schema-isolation",
-    "009H9A-queued-advice-migration-provenance-closure"
+    "009H9A-queued-advice-migration-provenance-closure",
+    "009H9B-communication-final-attempt-and-exception-queue-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-18_210357_normal_run",
+  "last_run_id": "2026-07-18_224156_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
-  "active_worktree": null
+  "active_worktree": null,
+  "architecture_review_interval": 4
 }
