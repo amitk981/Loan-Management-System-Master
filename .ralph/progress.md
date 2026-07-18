@@ -2672,6 +2672,36 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+## 2026-07-18 - 2026-07-18_114316_normal_run
+
+- Agent tool used: codex with TDD, implement, codebase-design, and review skills.
+- Slice completed: 009H4-communications-advice-evidence-and-legacy-replay-closure.
+- Summary: Added complete communications-owned template/provider/final-chain evidence, coherent
+  legacy replay without resend, primitive cross-owner UUIDs, and safe migration reversal.
+- Tests run: copied red probes; focused advice/persistence/migration regressions; Django check;
+  migration sync; compile; diff check; PostgreSQL five-caller acceptance twice. Complete backend
+  coverage remains delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_114316_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; exact retained-history and safe-boundary migration behavior are explicitly
+  tested and documented.
+- Next action: Run 009H5, then 009I and 009J.
+
+## 2026-07-18 - 2026-07-18_125746_repair
+
+- Agent tool used: codex with the diagnosing-bugs feedback loop.
+- Slice repaired: 009H4-communications-advice-evidence-and-legacy-replay-closure.
+- Demonstrated failure: an approval migration class followed by the receipt-owner migration test
+  exposed SQLite's order-changing table rebuild through an ordinal-only column assertion.
+- Repair: compare the exact receipt column-name set deterministically; production code, migration
+  operations, data, API, frontend, and provider behavior are unchanged.
+- Tests run: exact validator-compatible RED/GREEN sequence; 40 focused migration/persistence/advice
+  tests; Django check; migration sync; compile; diff/protected/debug audit.
+- Evidence saved: `.ralph/runs/2026-07-18_125746_repair/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator revalidation and commit.
+- Risk level: High inherited slice risk; Low incremental test-only repair risk.
+- Next action: Run complete independent validation, then 009H5, 009I, and 009J in dependency order.
+
 ## 2026-07-16 - 2026-07-16_172426_repair
 
 - Agent tool used: codex with the diagnosing-bugs feedback loop.
@@ -8956,6 +8986,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_111454_normal_run/.ralph/runs/2026-07-18_111454_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_111454_normal_run/.ralph/runs/2026-07-18_111454_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 13:23:59 - 2026-07-18_125746_repair
+- Agent tool used: codex
+- Slice attempted: 009H4-communications-advice-evidence-and-legacy-replay-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_114316_normal_run/.ralph/runs/2026-07-18_125746_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_114316_normal_run/.ralph/runs/2026-07-18_125746_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

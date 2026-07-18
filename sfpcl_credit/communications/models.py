@@ -82,13 +82,11 @@ class Communication(models.Model):
 class CommunicationDeliveryOutbox(models.Model):
     DELIVERY_PENDING = "pending"
     DELIVERY_SENT = "sent"
+    PROVENANCE_VERIFIED = "verified"
+    PROVENANCE_LEGACY_PARTIAL = "legacy_partial"
 
     outbox_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    advice_intent = models.OneToOneField(
-        "disbursements.DisbursementAdviceIntent",
-        on_delete=models.PROTECT,
-        related_name="communication_outbox",
-    )
+    advice_intent = models.UUIDField(unique=True, db_column="advice_intent_id")
     communication_id = models.UUIDField(unique=True)
     idempotency_key = models.CharField(max_length=255, unique=True)
     channel = models.CharField(max_length=40)
@@ -100,7 +98,20 @@ class CommunicationDeliveryOutbox(models.Model):
         related_name="delivery_outboxes",
     )
     template_code_snapshot = models.CharField(max_length=120)
+    template_provenance_status = models.CharField(max_length=40)
+    template_name_snapshot = models.CharField(max_length=255, blank=True, null=True)
+    template_type_snapshot = models.CharField(max_length=60, blank=True, null=True)
+    template_language_code_snapshot = models.CharField(
+        max_length=20, blank=True, null=True
+    )
+    template_audience_snapshot = models.CharField(max_length=80, blank=True, null=True)
     template_version_snapshot = models.CharField(max_length=40)
+    template_approval_status_snapshot = models.CharField(max_length=60, blank=True, null=True)
+    template_effective_from_snapshot = models.DateField(blank=True, null=True)
+    template_effective_to_snapshot = models.DateField(blank=True, null=True)
+    template_variables_snapshot = models.JSONField(blank=True, null=True)
+    subject_template_snapshot = models.CharField(max_length=255, blank=True, null=True)
+    body_template_snapshot = models.TextField(blank=True, null=True)
     template_checksum_sha256 = models.CharField(max_length=64)
     subject_snapshot = models.CharField(max_length=255)
     body_snapshot = models.TextField()
@@ -113,6 +124,27 @@ class CommunicationDeliveryOutbox(models.Model):
     )
     provider_delivery_status = models.CharField(max_length=40, blank=True, null=True)
     provider_accepted_at = models.DateTimeField(blank=True, null=True)
+    accepted_provider_attempt = models.OneToOneField(
+        "CommunicationProviderAttempt",
+        on_delete=models.PROTECT,
+        related_name="accepted_outbox",
+        blank=True,
+        null=True,
+    )
+    delivery_receipt = models.OneToOneField(
+        "DisbursementAdviceDeliveryReceipt",
+        on_delete=models.PROTECT,
+        related_name="protected_outbox",
+        blank=True,
+        null=True,
+    )
+    final_communication = models.OneToOneField(
+        Communication,
+        on_delete=models.PROTECT,
+        related_name="protected_delivery_outbox",
+        blank=True,
+        null=True,
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -128,6 +160,7 @@ class CommunicationDeliveryOutbox(models.Model):
                     & ~models.Q(recipient_address="")
                     & ~models.Q(recipient_digest="")
                     & ~models.Q(template_code_snapshot="")
+                    & models.Q(template_provenance_status__in=("verified", "legacy_partial"))
                     & ~models.Q(template_version_snapshot="")
                     & ~models.Q(template_checksum_sha256="")
                     & ~models.Q(subject_snapshot="")
@@ -141,10 +174,35 @@ class CommunicationDeliveryOutbox(models.Model):
             models.CheckConstraint(
                 check=(
                     models.Q(
+                        template_provenance_status="verified",
+                        template_name_snapshot__isnull=False,
+                        template_type_snapshot__isnull=False,
+                        template_audience_snapshot__isnull=False,
+                        template_approval_status_snapshot__isnull=False,
+                        template_effective_from_snapshot__isnull=False,
+                        template_variables_snapshot__isnull=False,
+                        subject_template_snapshot__isnull=False,
+                        body_template_snapshot__isnull=False,
+                    )
+                    | models.Q(template_provenance_status="legacy_partial")
+                ),
+                name="communication_outbox_provenance_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(delivery_receipt__isnull=True, final_communication__isnull=True)
+                    | models.Q(delivery_receipt__isnull=False, final_communication__isnull=False)
+                ),
+                name="communication_outbox_final_chain_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
                         delivery_status="pending",
                         provider_external_message_id__isnull=True,
                         provider_delivery_status__isnull=True,
                         provider_accepted_at__isnull=True,
+                        accepted_provider_attempt__isnull=True,
                     )
                     | (
                         models.Q(
@@ -152,6 +210,7 @@ class CommunicationDeliveryOutbox(models.Model):
                             provider_external_message_id__isnull=False,
                             provider_delivery_status__isnull=False,
                             provider_accepted_at__isnull=False,
+                            accepted_provider_attempt__isnull=False,
                         )
                         & ~models.Q(provider_external_message_id="")
                         & ~models.Q(provider_delivery_status="")
@@ -162,15 +221,93 @@ class CommunicationDeliveryOutbox(models.Model):
         ]
 
 
+class ImmutableProviderAttemptQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise TypeError("Provider-attempt evidence is immutable.")
+
+    def delete(self):
+        raise TypeError("Provider-attempt evidence is immutable.")
+
+
+class CommunicationProviderAttempt(models.Model):
+    OUTCOME_ACCEPTED = "accepted"
+    OUTCOME_REJECTED = "rejected"
+
+    provider_attempt_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    outbox = models.ForeignKey(
+        CommunicationDeliveryOutbox,
+        on_delete=models.PROTECT,
+        related_name="provider_attempts",
+    )
+    advice_intent_id = models.UUIDField()
+    communication_id = models.UUIDField()
+    idempotency_key = models.CharField(max_length=255)
+    payload_digest = models.CharField(max_length=64)
+    adapter_kind = models.CharField(max_length=255)
+    outcome = models.CharField(max_length=20)
+    provider_external_message_id = models.CharField(
+        max_length=120, blank=True, null=True, unique=True
+    )
+    provider_delivery_status = models.CharField(
+        max_length=40, blank=True, null=True
+    )
+    provider_accepted_at = models.DateTimeField(blank=True, null=True)
+    attempted_at = models.DateTimeField(default=timezone.now)
+    evidence_digest = models.CharField(max_length=64)
+    objects = ImmutableProviderAttemptQuerySet.as_manager()
+
+    class Meta:
+        db_table = "communication_provider_attempts"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["outbox"],
+                condition=models.Q(outcome="accepted"),
+                name="one_accepted_provider_attempt_per_outbox",
+            ),
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(idempotency_key="")
+                    & ~models.Q(payload_digest="")
+                    & ~models.Q(adapter_kind="")
+                    & ~models.Q(evidence_digest="")
+                    & (
+                        (
+                            models.Q(
+                                outcome="accepted",
+                                provider_external_message_id__isnull=False,
+                                provider_delivery_status="sent",
+                                provider_accepted_at__isnull=False,
+                            )
+                            & ~models.Q(provider_external_message_id="")
+                        )
+                        | models.Q(
+                            outcome="rejected",
+                            provider_external_message_id__isnull=True,
+                            provider_delivery_status__isnull=True,
+                            provider_accepted_at__isnull=True,
+                        )
+                    )
+                ),
+                name="communication_provider_attempt_complete",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise TypeError("Provider-attempt evidence is immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise TypeError("Provider-attempt evidence is immutable.")
+
+
 class DisbursementAdviceDeliveryReceipt(models.Model):
     delivery_receipt_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    advice_intent = models.OneToOneField(
-        "disbursements.DisbursementAdviceIntent",
-        on_delete=models.PROTECT,
-        related_name="delivery_receipt",
-    )
+    advice_intent = models.UUIDField(unique=True, db_column="advice_intent_id")
     idempotency_key = models.CharField(max_length=255, unique=True)
     payload_digest = models.CharField(max_length=64)
     external_message_id = models.CharField(max_length=120, unique=True)

@@ -19,6 +19,7 @@ from sfpcl_credit.communications.adapters import (
 from sfpcl_credit.communications.models import (
     Communication,
     CommunicationDeliveryOutbox,
+    CommunicationProviderAttempt,
     ContentTemplate,
     DisbursementAdviceDeliveryReceipt,
 )
@@ -58,6 +59,7 @@ class AdviceDeliveryDecision:
     recipient_address: str
     recipient_digest: str
     template_id: uuid.UUID
+    template_provenance_status: str
     template_code: str
     template_name: str
     template_type: str
@@ -113,45 +115,66 @@ class CommunicationDispatcher:
     @classmethod
     def dispatch(cls, *, context, adapter=None):
         with transaction.atomic():
+            retained = (
+                CommunicationDeliveryOutbox.objects.select_for_update()
+                .filter(advice_intent=context.advice_intent_id)
+                .first()
+            )
+            if (
+                retained is not None
+                and retained.delivery_status == "sent"
+                and retained.delivery_receipt_id is not None
+                and retained.final_communication_id is not None
+            ):
+                cls._require_context_identity(retained, context)
+                return cls._decision(retained)
             prepared = cls._prepare(context)
             outbox = cls._freeze_or_reconcile(context, prepared)
             if outbox.delivery_status == CommunicationDeliveryOutbox.DELIVERY_SENT:
-                return cls._decision(outbox, prepared.template)
+                return cls._decision(outbox)
 
+        delivery_adapter = adapter or ManualEmailDeliveryAdapter()
+        adapter_kind = cls._adapter_kind(delivery_adapter)
         try:
-            result = (adapter or ManualEmailDeliveryAdapter()).send_email(
+            result = delivery_adapter.send_email(
                 prepared.delivery_payload,
                 prepared.proposed["idempotency_key"],
             )
             validate_delivery_result(result)
         except (TypeError, ValueError) as exc:
+            cls._record_rejected_attempt(outbox.pk, prepared, adapter_kind)
             raise CommunicationDeliveryFailed(
                 "The disbursement advice was not accepted for delivery."
             ) from exc
 
         with transaction.atomic():
             outbox = CommunicationDeliveryOutbox.objects.select_for_update().get(
-                advice_intent_id=context.advice_intent_id
+                advice_intent=context.advice_intent_id
             )
             cls._require_match(outbox, prepared.proposed)
             if outbox.delivery_status == CommunicationDeliveryOutbox.DELIVERY_PENDING:
+                accepted_attempt = cls._record_accepted_attempt(
+                    outbox, prepared, result, adapter_kind
+                )
                 outbox.delivery_status = CommunicationDeliveryOutbox.DELIVERY_SENT
                 outbox.provider_external_message_id = result.external_message_id
                 outbox.provider_delivery_status = result.delivery_status
                 outbox.provider_accepted_at = result.accepted_at
+                outbox.accepted_provider_attempt = accepted_attempt
                 outbox.save(
                     update_fields=[
                         "delivery_status",
                         "provider_external_message_id",
                         "provider_delivery_status",
                         "provider_accepted_at",
+                        "accepted_provider_attempt",
                     ]
                 )
             elif not cls._provider_matches(outbox, result):
                 raise CommunicationDispatchConflict(
                     "The retained provider acceptance is stale or incoherent."
                 )
-            return cls._decision(outbox, prepared.template)
+            return cls._decision(outbox)
 
     @classmethod
     def finalize(cls, *, context, decision, request=None):
@@ -197,7 +220,7 @@ class CommunicationDispatcher:
         )
         template_checksum = cls._template_checksum(template)
         proposed = {
-            "advice_intent_id": context.advice_intent_id,
+            "advice_intent": context.advice_intent_id,
             "communication_id": context.communication_id,
             "idempotency_key": f"disbursement-advice:{context.advice_intent_id}",
             "channel": "email",
@@ -207,7 +230,18 @@ class CommunicationDispatcher:
             ).hexdigest(),
             "content_template_id": template.pk,
             "template_code_snapshot": template.template_code,
+            "template_provenance_status": "verified",
+            "template_name_snapshot": template.template_name,
+            "template_type_snapshot": template.template_type,
+            "template_language_code_snapshot": template.language_code,
+            "template_audience_snapshot": template.audience,
             "template_version_snapshot": template.template_version,
+            "template_approval_status_snapshot": template.approval_status,
+            "template_effective_from_snapshot": template.effective_from,
+            "template_effective_to_snapshot": template.effective_to,
+            "template_variables_snapshot": sorted(template.variables_json or []),
+            "subject_template_snapshot": template.subject_template or "",
+            "body_template_snapshot": template.body_template,
             "template_checksum_sha256": template_checksum,
             "subject_snapshot": subject,
             "body_snapshot": body,
@@ -225,10 +259,16 @@ class CommunicationDispatcher:
     def _freeze_or_reconcile(cls, context, prepared):
         outbox = (
             CommunicationDeliveryOutbox.objects.select_for_update()
-            .filter(advice_intent_id=context.advice_intent_id)
+            .filter(advice_intent=context.advice_intent_id)
             .first()
         )
         if outbox is None:
+            if Communication.objects.select_for_update().filter(
+                pk=context.communication_id
+            ).exists():
+                raise CommunicationDispatchConflict(
+                    "A terminal communication cannot replace missing outbox evidence."
+                )
             return CommunicationDeliveryOutbox.objects.create(**prepared.proposed)
         cls._require_match(outbox, prepared.proposed)
         return outbox
@@ -238,10 +278,22 @@ class CommunicationDispatcher:
         if any(
             getattr(outbox, field) != value
             for field, value in proposed.items()
-            if field != "advice_intent_id"
-        ) or outbox.advice_intent_id != proposed["advice_intent_id"]:
+        ):
             raise CommunicationDispatchConflict(
                 "The frozen communication outbox conflicts with current advice facts."
+            )
+
+    @staticmethod
+    def _require_context_identity(outbox, context):
+        if not (
+            outbox.advice_intent == context.advice_intent_id
+            and outbox.communication_id == context.communication_id
+            and outbox.recipient_address == context.recipient_address
+            and outbox.related_entity_type == context.related_entity_type
+            and outbox.related_entity_id == context.related_entity_id
+        ):
+            raise CommunicationDispatchConflict(
+                "The retained communication outbox conflicts with current advice facts."
             )
 
     @staticmethod
@@ -345,7 +397,9 @@ class CommunicationDispatcher:
         ).hexdigest()
 
     @staticmethod
-    def _decision(outbox, template):
+    def _decision(outbox):
+        CommunicationDispatcher._validate_outbox_evidence(outbox)
+        attempt = CommunicationDispatcher._accepted_attempt(outbox)
         if (
             outbox.delivery_status != CommunicationDeliveryOutbox.DELIVERY_SENT
             or not outbox.provider_external_message_id
@@ -358,9 +412,9 @@ class CommunicationDispatcher:
         try:
             validate_delivery_result(
                 EmailDeliveryResult(
-                    external_message_id=outbox.provider_external_message_id,
-                    delivery_status=outbox.provider_delivery_status,
-                    accepted_at=outbox.provider_accepted_at,
+                    external_message_id=attempt.provider_external_message_id,
+                    delivery_status=attempt.provider_delivery_status,
+                    accepted_at=attempt.provider_accepted_at,
                 )
             )
         except ValueError as exc:
@@ -369,41 +423,254 @@ class CommunicationDispatcher:
             ) from exc
         return AdviceDeliveryDecision(
             outbox_id=outbox.pk,
-            advice_intent_id=outbox.advice_intent_id,
+            advice_intent_id=outbox.advice_intent,
             communication_id=outbox.communication_id,
             idempotency_key=outbox.idempotency_key,
             recipient_address=outbox.recipient_address,
             recipient_digest=outbox.recipient_digest,
-            template_id=template.pk,
-            template_code=template.template_code,
-            template_name=template.template_name,
-            template_type=template.template_type,
-            template_language_code=template.language_code,
-            template_audience=template.audience,
-            template_version=template.template_version,
-            template_approval_status=template.approval_status,
-            template_effective_from=template.effective_from,
-            template_effective_to=template.effective_to,
-            template_variables=tuple(sorted(template.variables_json or [])),
-            subject_template=template.subject_template or "",
-            body_template=template.body_template,
+            template_id=outbox.content_template_id,
+            template_provenance_status=outbox.template_provenance_status,
+            template_code=outbox.template_code_snapshot,
+            template_name=outbox.template_name_snapshot,
+            template_type=outbox.template_type_snapshot,
+            template_language_code=outbox.template_language_code_snapshot,
+            template_audience=outbox.template_audience_snapshot,
+            template_version=outbox.template_version_snapshot,
+            template_approval_status=outbox.template_approval_status_snapshot,
+            template_effective_from=outbox.template_effective_from_snapshot,
+            template_effective_to=outbox.template_effective_to_snapshot,
+            template_variables=tuple(outbox.template_variables_snapshot or ()),
+            subject_template=outbox.subject_template_snapshot,
+            body_template=outbox.body_template_snapshot,
             template_checksum=outbox.template_checksum_sha256,
             subject=outbox.subject_snapshot,
             body=outbox.body_snapshot,
             payload_digest=outbox.payload_digest,
             related_entity_type=outbox.related_entity_type,
             related_entity_id=outbox.related_entity_id,
-            external_message_id=outbox.provider_external_message_id,
-            delivery_status=outbox.provider_delivery_status,
-            accepted_at=outbox.provider_accepted_at,
+            external_message_id=attempt.provider_external_message_id,
+            delivery_status=attempt.provider_delivery_status,
+            accepted_at=attempt.provider_accepted_at,
         )
+
+    @staticmethod
+    def _validate_outbox_evidence(outbox):
+        template_facts = {
+            "content_template_id": str(outbox.content_template_id),
+            "template_code": outbox.template_code_snapshot,
+            "template_name": outbox.template_name_snapshot,
+            "template_type": outbox.template_type_snapshot,
+            "language_code": outbox.template_language_code_snapshot,
+            "audience": outbox.template_audience_snapshot,
+            "template_version": outbox.template_version_snapshot,
+            "approval_status": outbox.template_approval_status_snapshot,
+            "effective_from": outbox.template_effective_from_snapshot.isoformat(),
+            "effective_to": (
+                outbox.template_effective_to_snapshot.isoformat()
+                if outbox.template_effective_to_snapshot else None
+            ),
+            "variables": sorted(outbox.template_variables_snapshot or []),
+            "subject_template": outbox.subject_template_snapshot,
+            "body_template": outbox.body_template_snapshot,
+        }
+        payload = EmailDeliveryPayload(
+            communication_id=outbox.communication_id,
+            recipient_email=outbox.recipient_address,
+            subject=outbox.subject_snapshot,
+            body_text=outbox.body_snapshot,
+            related_entity_type=outbox.related_entity_type,
+            related_entity_id=outbox.related_entity_id,
+        )
+        checksum = hashlib.sha256(
+            json.dumps(template_facts, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        if not (
+            outbox.template_provenance_status == "verified"
+            and checksum == outbox.template_checksum_sha256
+            and delivery_payload_digest(payload) == outbox.payload_digest
+            and hashlib.sha256(outbox.recipient_address.encode()).hexdigest()
+            == outbox.recipient_digest
+        ):
+            raise CommunicationDispatchConflict(
+                "The frozen communication outbox conflicts with retained evidence."
+            )
+
+    @staticmethod
+    def _adapter_kind(adapter):
+        cls = type(adapter)
+        return f"{cls.__module__}.{cls.__qualname__}"
+
+    @classmethod
+    def _record_accepted_attempt(cls, outbox, prepared, result, adapter_kind):
+        if CommunicationProviderAttempt.objects.select_for_update().filter(
+            outbox=outbox, outcome=CommunicationProviderAttempt.OUTCOME_ACCEPTED
+        ).exists():
+            raise CommunicationDispatchConflict(
+                "The retained provider acceptance is stale or incoherent."
+            )
+        attempted_at = timezone.now()
+        proposed = {
+            "outbox": outbox,
+            "advice_intent_id": outbox.advice_intent,
+            "communication_id": outbox.communication_id,
+            "idempotency_key": outbox.idempotency_key,
+            "payload_digest": prepared.proposed["payload_digest"],
+            "adapter_kind": adapter_kind,
+            "outcome": CommunicationProviderAttempt.OUTCOME_ACCEPTED,
+            "provider_external_message_id": result.external_message_id,
+            "provider_delivery_status": result.delivery_status,
+            "provider_accepted_at": result.accepted_at,
+            "attempted_at": attempted_at,
+        }
+        siblings = list(
+            CommunicationProviderAttempt.objects.select_for_update()
+            .filter(outbox=outbox)
+            .order_by("attempted_at", "provider_attempt_id")
+        )
+        cls._require_rejected_attempts(outbox, siblings)
+        proposed["evidence_digest"] = cls._attempt_digest(
+            proposed, prior_attempt_digests=[row.evidence_digest for row in siblings]
+        )
+        return CommunicationProviderAttempt.objects.create(**proposed)
+
+    @classmethod
+    def _record_rejected_attempt(cls, outbox_id, prepared, adapter_kind):
+        with transaction.atomic():
+            outbox = CommunicationDeliveryOutbox.objects.select_for_update().get(
+                pk=outbox_id
+            )
+            if CommunicationProviderAttempt.objects.filter(
+                outbox=outbox,
+                outcome=CommunicationProviderAttempt.OUTCOME_ACCEPTED,
+            ).exists():
+                raise CommunicationDispatchConflict(
+                    "An accepted provider result cannot receive a sibling attempt."
+                )
+            attempted_at = timezone.now()
+            proposed = {
+                "outbox": outbox,
+                "advice_intent_id": outbox.advice_intent,
+                "communication_id": outbox.communication_id,
+                "idempotency_key": outbox.idempotency_key,
+                "payload_digest": prepared.proposed["payload_digest"],
+                "adapter_kind": adapter_kind,
+                "outcome": CommunicationProviderAttempt.OUTCOME_REJECTED,
+                "provider_external_message_id": None,
+                "provider_delivery_status": None,
+                "provider_accepted_at": None,
+                "attempted_at": attempted_at,
+            }
+            proposed["evidence_digest"] = cls._attempt_digest(proposed)
+            CommunicationProviderAttempt.objects.create(**proposed)
+
+    @classmethod
+    def _accepted_attempt(cls, outbox):
+        attempts = list(
+            CommunicationProviderAttempt.objects.select_for_update()
+            .filter(outbox=outbox)
+            .order_by("attempted_at", "provider_attempt_id")
+        )
+        accepted = [
+            row
+            for row in attempts
+            if row.outcome == CommunicationProviderAttempt.OUTCOME_ACCEPTED
+        ]
+        rejected = [row for row in attempts if row.outcome == "rejected"]
+        cls._require_rejected_attempts(outbox, rejected)
+        if (
+            len(accepted) != 1
+            or attempts[-1].pk != accepted[0].pk
+            or outbox.accepted_provider_attempt_id != accepted[0].pk
+            or accepted[0].advice_intent_id != outbox.advice_intent
+            or accepted[0].communication_id != outbox.communication_id
+            or accepted[0].idempotency_key != outbox.idempotency_key
+            or accepted[0].payload_digest != outbox.payload_digest
+            or accepted[0].provider_external_message_id
+            != outbox.provider_external_message_id
+            or accepted[0].provider_delivery_status
+            != outbox.provider_delivery_status
+            or accepted[0].provider_accepted_at != outbox.provider_accepted_at
+            or accepted[0].evidence_digest
+            != cls._attempt_digest(
+                {
+                    "outbox": outbox,
+                    "advice_intent_id": accepted[0].advice_intent_id,
+                    "communication_id": accepted[0].communication_id,
+                    "idempotency_key": accepted[0].idempotency_key,
+                    "payload_digest": accepted[0].payload_digest,
+                    "adapter_kind": accepted[0].adapter_kind,
+                    "outcome": accepted[0].outcome,
+                    "provider_external_message_id": accepted[0].provider_external_message_id,
+                    "provider_delivery_status": accepted[0].provider_delivery_status,
+                    "provider_accepted_at": accepted[0].provider_accepted_at,
+                    "attempted_at": accepted[0].attempted_at,
+                },
+                prior_attempt_digests=[row.evidence_digest for row in rejected],
+            )
+        ):
+            raise CommunicationDispatchConflict(
+                "The retained provider acceptance is stale or incoherent."
+            )
+        return accepted[0]
+
+    @classmethod
+    def _require_rejected_attempts(cls, outbox, attempts):
+        for row in attempts:
+            facts = {
+                "outbox": outbox,
+                "advice_intent_id": row.advice_intent_id,
+                "communication_id": row.communication_id,
+                "idempotency_key": row.idempotency_key,
+                "payload_digest": row.payload_digest,
+                "adapter_kind": row.adapter_kind,
+                "outcome": row.outcome,
+                "provider_external_message_id": row.provider_external_message_id,
+                "provider_delivery_status": row.provider_delivery_status,
+                "provider_accepted_at": row.provider_accepted_at,
+                "attempted_at": row.attempted_at,
+            }
+            if not (
+                row.outcome == CommunicationProviderAttempt.OUTCOME_REJECTED
+                and row.advice_intent_id == outbox.advice_intent
+                and row.communication_id == outbox.communication_id
+                and row.idempotency_key == outbox.idempotency_key
+                and row.payload_digest == outbox.payload_digest
+                and row.evidence_digest == cls._attempt_digest(facts)
+            ):
+                raise CommunicationDispatchConflict(
+                    "The retained provider acceptance is stale or incoherent."
+                )
+
+    @staticmethod
+    def _attempt_digest(facts, *, prior_attempt_digests=()):
+        stable = {
+            "outbox_id": str(facts["outbox"].pk),
+            "advice_intent_id": str(facts["advice_intent_id"]),
+            "communication_id": str(facts["communication_id"]),
+            "idempotency_key": facts["idempotency_key"],
+            "payload_digest": facts["payload_digest"],
+            "adapter_kind": facts["adapter_kind"],
+            "outcome": facts["outcome"],
+            "provider_external_message_id": facts["provider_external_message_id"],
+            "provider_delivery_status": facts["provider_delivery_status"],
+            "provider_accepted_at": (
+                _iso(facts["provider_accepted_at"])
+                if facts["provider_accepted_at"]
+                else None
+            ),
+            "attempted_at": _iso(facts["attempted_at"]),
+            "prior_attempt_digests": list(prior_attempt_digests),
+        }
+        return hashlib.sha256(
+            json.dumps(stable, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
 
 
 def _retained_receipt(decision):
     with transaction.atomic():
         receipt, _created = (
             DisbursementAdviceDeliveryReceipt.objects.select_for_update().get_or_create(
-                advice_intent_id=decision.advice_intent_id,
+                advice_intent=decision.advice_intent_id,
                 defaults={
                     "idempotency_key": decision.idempotency_key,
                     "payload_digest": decision.payload_digest,
@@ -422,7 +689,7 @@ def _retained_receipt(decision):
 
 def _receipt_matches(receipt, decision):
     return bool(
-        receipt.advice_intent_id == decision.advice_intent_id
+        receipt.advice_intent == decision.advice_intent_id
         and receipt.idempotency_key == decision.idempotency_key
         and receipt.payload_digest == decision.payload_digest
         and receipt.delivery_status == decision.delivery_status == "sent"
@@ -472,6 +739,7 @@ def _create_finalization(context, receipt, decision, request):
         audit=audit,
         workflow=workflow,
     )
+    _protect_final_chain(decision, receipt, communication)
     return AdviceFinalizationDecision(
         communication_id=communication.pk,
         receipt_id=receipt.pk,
@@ -559,6 +827,9 @@ def _reconcile_finalization(context, receipt, decision, communication):
         audit=audit,
         workflow=workflow,
     )
+    outbox = CommunicationDeliveryOutbox.objects.select_for_update().get(
+        pk=decision.outbox_id
+    )
     if not (
         communication.pk == decision.communication_id == context.communication_id
         and communication.related_entity_type == decision.related_entity_type
@@ -588,6 +859,8 @@ def _reconcile_finalization(context, receipt, decision, communication):
         and workflow.triggered_by_user_id == context.actor_id
         and workflow.trigger_reason
         == _workflow_trigger(action_id, communication.pk, request.request_id)
+        and outbox.delivery_receipt_id == receipt.pk
+        and outbox.final_communication_id == communication.pk
     ):
         raise CommunicationDispatchConflict(
             "The retained communication finalization is stale or incoherent."
@@ -602,6 +875,19 @@ def _reconcile_finalization(context, receipt, decision, communication):
         delivery_status=communication.delivery_status,
         sent_at=communication.sent_at,
     )
+
+
+def _protect_final_chain(decision, receipt, communication):
+    outbox = CommunicationDeliveryOutbox.objects.select_for_update().get(
+        pk=decision.outbox_id
+    )
+    if outbox.delivery_receipt_id or outbox.final_communication_id:
+        raise CommunicationDispatchConflict(
+            "The retained communication finalization is stale or incoherent."
+        )
+    outbox.delivery_receipt = receipt
+    outbox.final_communication = communication
+    outbox.save(update_fields=["delivery_receipt", "final_communication"])
 
 
 def _safe_delivery_evidence(context, receipt, decision, *, action_id, request):

@@ -570,8 +570,3 @@ class DisbursementAdviceIntent(models.Model):
                 name="advice_intent_delivery_evidence_complete",
             ),
         ]
-
-
-from sfpcl_credit.communications.models import (  # noqa: E402
-    DisbursementAdviceDeliveryReceipt,
-)

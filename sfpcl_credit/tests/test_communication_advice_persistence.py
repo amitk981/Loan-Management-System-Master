@@ -4,6 +4,7 @@ import inspect
 import uuid
 
 from django.apps import apps
+from django.db import models
 from django.test import SimpleTestCase
 
 from sfpcl_credit.communications.adapters import (
@@ -17,10 +18,8 @@ from sfpcl_credit.communications import adapters as communication_adapters
 from sfpcl_credit.communications import models as communication_models
 from sfpcl_credit.communications.models import (
     CommunicationDeliveryOutbox,
+    CommunicationProviderAttempt,
     DisbursementAdviceDeliveryReceipt,
-)
-from sfpcl_credit.disbursements.models import (
-    DisbursementAdviceDeliveryReceipt as LegacyDeliveryReceipt,
 )
 
 
@@ -90,7 +89,7 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
         outbox = CommunicationDeliveryOutbox._meta
         self.assertEqual(outbox.app_label, "communications")
         self.assertEqual(outbox.db_table, "communication_delivery_outboxes")
-        self.assertTrue(outbox.get_field("advice_intent").one_to_one)
+        self.assertIsInstance(outbox.get_field("advice_intent"), models.UUIDField)
         self.assertTrue(outbox.get_field("communication_id").unique)
         self.assertTrue(outbox.get_field("idempotency_key").unique)
         self.assertEqual(
@@ -99,7 +98,17 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
                 "recipient_address",
                 "recipient_digest",
                 "template_code_snapshot",
+                "template_name_snapshot",
+                "template_type_snapshot",
+                "template_language_code_snapshot",
+                "template_audience_snapshot",
                 "template_version_snapshot",
+                "template_approval_status_snapshot",
+                "template_effective_from_snapshot",
+                "template_effective_to_snapshot",
+                "template_variables_snapshot",
+                "subject_template_snapshot",
+                "body_template_snapshot",
                 "template_checksum_sha256",
                 "subject_snapshot",
                 "body_snapshot",
@@ -110,6 +119,7 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
                 "provider_external_message_id",
                 "provider_delivery_status",
                 "provider_accepted_at",
+                "accepted_provider_attempt",
             }
             - {field.name for field in outbox.fields},
             set(),
@@ -119,14 +129,13 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
         self.assertEqual(receipt.app_label, "communications")
         self.assertEqual(receipt.db_table, "disbursement_advice_delivery_receipts")
         self.assertEqual(receipt.pk.name, "delivery_receipt_id")
-        self.assertTrue(receipt.get_field("advice_intent").one_to_one)
+        self.assertIsInstance(receipt.get_field("advice_intent"), models.UUIDField)
         self.assertTrue(receipt.get_field("idempotency_key").unique)
         self.assertTrue(receipt.get_field("external_message_id").unique)
         self.assertIn(
             "advice_delivery_receipt_complete",
             {constraint.name for constraint in receipt.constraints},
         )
-        self.assertIs(LegacyDeliveryReceipt, DisbursementAdviceDeliveryReceipt)
         self.assertIs(
             apps.get_model("communications", "DisbursementAdviceDeliveryReceipt"),
             DisbursementAdviceDeliveryReceipt,
@@ -134,6 +143,14 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
         self.assertNotIn(
             "disbursementadvicedeliveryreceipt",
             apps.all_models["disbursements"],
+        )
+        self.assertEqual(
+            CommunicationProviderAttempt._meta.db_table,
+            "communication_provider_attempts",
+        )
+        self.assertEqual(
+            CommunicationProviderAttempt._meta.get_field("advice_intent_id").remote_field,
+            None,
         )
 
     def test_communications_persistence_and_adapters_have_no_disbursement_import(self):

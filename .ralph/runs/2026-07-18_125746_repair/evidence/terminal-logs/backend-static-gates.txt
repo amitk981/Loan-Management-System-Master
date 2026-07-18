@@ -1,0 +1,18 @@
+Django check
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check
+Result: GREEN (exit 0)
+Output: System check identified no issues (0 silenced).
+
+Migration sync
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run
+Result: GREEN (exit 0)
+Output: No changes detected
+
+Python compilation
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python -m compileall -q sfpcl_credit/communications sfpcl_credit/processes sfpcl_credit/tests/test_communication_receipt_owner_migration.py
+Working directory: repository worktree root
+Result: GREEN (exit 0, no output)
+
+An initial compile invocation used repository-relative paths from inside the backend directory and
+reported that those duplicated paths could not be listed. It was not treated as a gate result; the
+correct repository-root invocation above compiled the intended files successfully.

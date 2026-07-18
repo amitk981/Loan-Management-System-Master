@@ -1,0 +1,16 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009H4-communications-advice-evidence-and-legacy-replay-closure.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/communications/models.py
+ M sfpcl_credit/communications/modules/communication_dispatcher.py
+ M sfpcl_credit/disbursements/models.py
+ M sfpcl_credit/tests/test_communication_advice_persistence.py
+ M sfpcl_credit/tests/test_communication_receipt_owner_migration.py
+ M sfpcl_credit/tests/test_disbursement_advice_api.py
+?? .ralph/runs/2026-07-18_114316_normal_run/
+?? changed-files.txt
+?? sfpcl_credit/communications/migrations/0005_advice_evidence_and_legacy_replay_closure.py
+?? sfpcl_credit/processes/advice_evidence_migration.py

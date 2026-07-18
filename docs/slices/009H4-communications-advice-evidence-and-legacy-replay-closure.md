@@ -1,7 +1,7 @@
 # Slice 009H4: Communications Advice Evidence and Legacy Replay Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -90,11 +90,11 @@ High
   nondispatching; both crash windows and twice-run races retain one logical delivery.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Review probes and migration cases written failing first
-- [ ] Immutable provider/provenance owner and legacy backfill implemented
-- [ ] Cross-app persistence dependency and compatibility alias removed
-- [ ] Exact migration manifests and PostgreSQL races green twice
-- [ ] Public authority/secrecy/current-truth regressions green
-- [ ] Risk assessment, handoff, state, digest, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Review probes and migration cases written failing first
+- [x] Immutable provider/provenance owner and legacy backfill implemented
+- [x] Cross-app persistence dependency and compatibility alias removed
+- [x] Exact migration manifests and PostgreSQL races green twice
+- [x] Public authority/secrecy/current-truth regressions green
+- [x] Risk assessment, handoff, state, digest, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

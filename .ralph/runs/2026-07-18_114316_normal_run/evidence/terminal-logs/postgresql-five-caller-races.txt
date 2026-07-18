@@ -1,0 +1,6 @@
+PostgreSQL five-caller acceptance (2026-07-18)
+
+Run one: 1 winner, 4 clean losers, 1 adapter result, 1 provider identity; 1 test passed in 5.329s.
+Run two: 1 winner, 4 clean losers, 1 adapter result, 1 provider identity; 1 test passed in 5.091s.
+
+Both runs retained one accepted provider attempt, one receipt, one Communication, one audit, one workflow event, and one linked final outbox chain.

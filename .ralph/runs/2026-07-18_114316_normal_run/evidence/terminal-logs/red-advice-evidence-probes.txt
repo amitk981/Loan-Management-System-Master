@@ -1,0 +1,16 @@
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_terminal_advice_without_outbox_never_reinvokes_provider_or_rewrites_outbox sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth --verbosity 2
+exit_code=1
+
+Found 2 test(s).
+System check identified no issues (0 silenced).
+test_terminal_advice_without_outbox_never_reinvokes_provider_or_rewrites_outbox ... FAIL
+test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth ... FAIL
+
+FAIL: test_terminal_advice_without_outbox_never_reinvokes_provider_or_rewrites_outbox
+AssertionError: Tuples differ: (1, 1) != (0, 0)
+
+FAIL: test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth
+AssertionError: DisbursementAdviceConflict not raised
+
+Ran 2 tests in 1.359s
+FAILED (failures=2)

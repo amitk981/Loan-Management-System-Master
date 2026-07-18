@@ -1,5 +1,20 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H4 Repair — Order-Independent Receipt Schema Proof
+
+- Independent parallel coverage ran the receipt-owner migration test after an older approval
+  migration boundary and reproduced a SQLite-only physical column-order change after reversing
+  communications 0005. Receipt rows, ids, column names, constraint names, and the detailed 009H4
+  type/null/default/FK/unique/check/index/definition manifests remained exact.
+- The legacy 009H3A receipt signature now compares its exact column-name set in deterministic sorted
+  order instead of treating ordinal position as a persistence contract. No production model,
+  migration operation, schema value, API, frontend, provider, or financial behavior changed.
+- The validator-compatible two-test sequence failed first and now passes. Forty focused migration,
+  persistence, adapter, and public advice tests pass with only the two expected PostgreSQL skips;
+  Django check, migration sync, compile, diff, protected-path, and debug-instrumentation audits pass.
+- 009H5 and 009I were rechecked and already contain concrete fields, owner seams, role/current-truth
+  rules, job/download contracts, failure cases, races, and browser evidence requirements.
+
 ## 009G5 Legal Migration State Guard Closure
 
 - The legal-owned `migration_state_guard` now evaluates real Django `ProjectState` transitions for
@@ -832,3 +847,18 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - §45 does not list authorisation as an idempotency-header endpoint. Exact terminal replay may return
   the retained result with no writes; changed/opposite decisions conflict. PostgreSQL races must
   retain one complete CFC decision/audit/workflow/task winner and no loser success evidence.
+
+## 009H4 retained implementation truth
+
+- Communications stores advice-intent identity as a primitive unique UUID and owns the canonical
+  outbox, provider-attempt, receipt, and terminal Communication chain without a persistent import or
+  FK to disbursement policy.
+- Every dispatch freezes the complete template source/provenance/checksum and rendered payload.
+  Accepted provider evidence is immutable and seals all ordered rejected sibling digests; replay
+  rejects any changed, missing, duplicate, extra, or cross-linked retained fact.
+- One communications migration preserves exact physical UUID columns/history, backfills singular
+  coherent pre-outbox deliveries without calling transport, and leaves incomplete/ambiguous legacy
+  history non-current. Its reverse refuses after runtime provider evidence exists.
+- Finalization links the outbox to its receipt and Communication with protected one-to-one edges in
+  the same transaction. Both crash windows and two PostgreSQL five-caller races recover to one
+  provider acceptance and one complete local chain.

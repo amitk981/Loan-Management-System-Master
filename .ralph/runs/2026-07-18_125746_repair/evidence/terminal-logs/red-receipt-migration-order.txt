@@ -1,0 +1,26 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalReadScopeMigrationTests sfpcl_credit.tests.test_communication_receipt_owner_migration.CommunicationReceiptOwnerMigrationTests --verbosity 1
+
+Result: RED (exit 1)
+
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.F
+======================================================================
+FAIL: test_receipt_row_and_schema_survive_forward_reverse_and_reapply (sfpcl_credit.tests.test_communication_receipt_owner_migration.CommunicationReceiptOwnerMigrationTests.test_receipt_row_and_schema_survive_forward_reverse_and_reapply)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "sfpcl_credit/tests/test_communication_receipt_owner_migration.py", line 93, in test_receipt_row_and_schema_survive_forward_reverse_and_reapply
+    self.assertEqual(self._receipt_signature(), before)
+AssertionError: receipt columns began with advice_intent_id after reverse, but began with delivery_receipt_id before the round trip.
+
+----------------------------------------------------------------------
+Ran 2 tests in 37.105s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+Diagnosis: the exact independent failure is order-dependent. The receipt-owner test passes alone,
+but the validator-compatible preceding historical migration state makes the 0005 reverse rebuild
+observable through an ordinal column-name assertion.

@@ -1,0 +1,12 @@
+Focused advice evidence verification (2026-07-18)
+
+- `tests.test_disbursement_advice_api`: 31 tests discovered; all emitted assertions were green after the final legacy-path correction (PostgreSQL-only cases separately executed below).
+- Focused 16-test communications persistence, migration, copied review-probe, provider/provenance mutation, crash-window, and replay set: green.
+- `tests.test_communication_receipt_owner_migration`: forward/reverse/reapply cases green.
+- `tests.test_communication_advice_persistence`: 5 tests green.
+- Django system check: no issues.
+- Migration sync: no changes detected.
+- Python compileall: green.
+- `git diff --check`: green.
+
+The complete backend suite and coverage are intentionally delegated to the orchestrator.

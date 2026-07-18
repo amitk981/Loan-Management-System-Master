@@ -1,0 +1,17 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalReadScopeMigrationTests sfpcl_credit.tests.test_communication_receipt_owner_migration sfpcl_credit.tests.test_communication_advice_persistence sfpcl_credit.tests.test_disbursement_advice_api --verbosity 1
+
+Result: GREEN (exit 0)
+
+Creating test database for alias 'default'...
+Found 40 test(s).
+System check identified no issues (0 silenced).
+......................................ss
+----------------------------------------------------------------------
+Ran 40 tests in 72.347s
+
+OK (skipped=2)
+Destroying test database for alias 'default'...
+
+The two skipped tests are the declared PostgreSQL-only race methods; the normal run already saved
+their two successful PostgreSQL executions, and this test-only repair does not change race behavior.
