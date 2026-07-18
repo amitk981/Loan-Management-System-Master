@@ -17,6 +17,7 @@ funding status, balances, and dates without mistaking later repayment/interest f
 
 ## Depends On
 - 009I2
+- 009H9D
 
 ## Source References
 - docs/source/implementation-roadmap.md section 14

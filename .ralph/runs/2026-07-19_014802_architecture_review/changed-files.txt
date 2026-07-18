@@ -1,0 +1,6 @@
+ M docs/slices/009J-loan-account-360-initial-view.md
+ M docs/slices/architecture-review.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-19_014802_architecture_review/
+?? docs/slices/009H9D-communications-provenance-and-operator-boundary-closure.md

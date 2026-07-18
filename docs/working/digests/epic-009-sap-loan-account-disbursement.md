@@ -1,5 +1,20 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H9D communications provenance and operator-boundary closure
+
+- Architecture review `2026-07-19_014802_architecture_review` proves migration 0008 accepts a blank
+  required queued-template fact when its checksum is recomputed. Complete provenance must validate
+  required fact content, not only non-null presence and checksum equality.
+- Exception list/detail/resolve currently authorise the union of generic/advice send permissions;
+  the exact retained job kind must choose the required current permission in addition to assigned
+  ownership. Provider vocabulary is `email`/`sms`, not a dotted adapter implementation path.
+- The corrective also owns real exception pagination, channel/adapter selection inside the deep
+  communications owner, observable public-interface tests, and cross-channel idempotency coverage.
+  It preserves H6 legacy exclusion, H8/H9B leases and exact-cap recovery, H9C immutable provider
+  replay, and the existing advice finalization seam.
+- MP14 uses the explicit selected id and exact owner stages, but its required two-finance-record
+  opposite-order regression remains an Epic 009 closure evidence gap rather than a new leaf slice.
+
 ## 009H9C communication channel, interface, and provider-evidence closure
 
 - Generic HTTP now rejects channel/template mismatch, malformed Email/SMS recipients, unsupported

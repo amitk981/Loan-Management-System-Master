@@ -19,42 +19,64 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
-## Open findings from 2026-07-18_204305_architecture_review
+## Open findings from 2026-07-19_014802_architecture_review
 
-Reviewed range: `fb380227...e3d965ad`. Full evidence and detailed code/source citations are in the
-historical ledger linked above.
+Reviewed product commits: `35dd95ce` (009H9A), `4bdff96c` (009H9B), `9b1113af` (009H9C), and
+`4bebe1af` (009I2), relative to the prior reviewed product boundary `e3d965ad`. The chronological
+range also contains owner-maintenance commit `4fb0a5af`; it changed Ralph/docs preparation rather
+than these product slices and is not attributed to them.
 
-### 009H9B — final-attempt recovery and exception queue
+### 009H9D — communications provenance and operator boundary
 
-- **High:** an expired running job at its final allowed attempt can be returned to retry and then
-  violate the database attempt cap instead of becoming terminal.
-- **High:** exhausted provider/job/entity/error/retry facts need one reachable, singular operator
-  exception and resolution ledger.
-- Closure requires exact-cap recovery, repeated-scan idempotency, fenced stale-worker behavior,
-  operator scope, and PostgreSQL winner/loser evidence.
+- **High — incomplete provenance can be promoted:** communications migration 0008 treats required
+  snapshot strings as complete when they are merely non-null. A queued row with a blank required
+  template fact and a recomputed checksum becomes `verified / frozen_before_dispatch`, contrary to
+  009H9A requirement 2. The review probe fails with `verified` instead of `legacy_partial`.
+- **High — cross-kind exception authority:** the exception routes accept either generic-send or
+  advice-send permission before returning every assigned exception. An assigned advice-only actor
+  can read and resolve a generic exception, contrary to the exact job-kind authority documented in
+  `API_CONTRACTS.md`; both read and resolution review probes return 200 instead of 403.
+- **Medium — exception contract fidelity:** `provider_code` stores a dotted adapter class path
+  instead of the source `email`/`sms` provider vocabulary, and the collection hard-codes its first
+  100 rows instead of implementing standard pagination. Tests assert field presence but not
+  provider semantics or reachability beyond the first batch.
+- **Medium — communications boundary/test drift:** the process coordinator reads `Communication`
+  to choose Email/SMS adapters and Celery calls underscore-prefixed dispatcher methods even though
+  source §40.1 says the communications owner hides channel/adapter selection. A static test checks
+  implementation strings while the required cross-channel idempotency behavior has no assertion.
+- One root-owner corrective, `009H9D`, covers these related migration, permission, provider,
+  pagination, module-boundary, and test-interface symptoms.
 
-### 009H9C — channel interface and immutable provider evidence
+### Epic 009 closure — MP14 selection regression evidence
 
-- **High:** generic SMS/phone/courier jobs currently cross the Email adapter; SMS requires its own
-  adapter and sensitive-content matrix, while unsupported channels must fail closed.
-- **Medium:** the public communications facade, API replay envelope, immutable attempt/provider
-  evidence, and thin periodic-task boundary remain partial.
-- Closure requires production-callable interface tests, channel/template/recipient coherence,
-  stable replay, immutable provider facts, concurrency evidence, and contract-document alignment.
+- **Medium:** 009I2 correctly passes the parent-selected application id and the real route selects
+  a deterministic application, but its binding test requirement called for two finance-relevant
+  applications in opposite list orders. The list test uses one finance-relevant and one returned
+  application; the MP14 unit/browser tests request one selected id. Record this edge-coverage gap
+  for Epic 009 closure rather than creating another immediate leaf correction.
 
-### 009I2 — member disbursement-status contract
+## Closed in this review
 
-- **High:** MP14 must use an explicit selected application and server-owned workflow truth rather
-  than client ordering/ranking.
-- **High:** documentation, SAP, initiation, CFC, transfer, and advice stages must expose their own
-  retained timestamps or honest nulls; timestamps may not be fabricated from later events.
-- **Medium:** restore existing portal composition and produce declared real-Django visual evidence.
+- `009H9B` makes exact-cap stale recovery terminal, singular, fenced, and operator-reviewable; the
+  retained tests and twice-run PostgreSQL race evidence cover exact/below/already-exhausted paths.
+- `009H9C` separates Email and SMS adapters, rejects unsupported/unsafe channel requests before
+  writes, and retains immutable generic provider acceptance with replay reconciliation.
+- `009I2` removes client application ranking and consumes the explicit selected application id.
+- `009I2` projects independent documentation, SAP, initiation, CFC, transfer, and advice times or
+  honest nulls from their current owners.
+- `009I2` restores the approved portal composition and supplies the three declared screenshots plus
+  two independently passing trusted-browser runs.
 
-## Closed since the latest review
+## Review evidence
 
-- `009H9A` completed the Critical queued-job migration provenance closure. Its implementation and
-  independent validation evidence live in `.ralph/runs/2026-07-18_210357_normal_run/`.
+- Focused retained backend suites: 74 tests pass; six PostgreSQL-only races skip locally. The
+  accepted slices retain their independent twice-run PostgreSQL evidence.
+- Three review-only contract probes fail on the intended assertions: incomplete frozen provenance,
+  cross-kind exception read authority, and cross-kind resolution authority.
+- Evidence: `.ralph/runs/2026-07-19_014802_architecture_review/evidence/terminal-logs/` and the
+  adjacent `evidence/review-probes/review_contract_probes.py`.
+- No epic completed in the reviewed range, so no newly completed epic's M##-FR matrix required a
+  closure audit. `CONTEXT.md` remains truthful, and no slice is currently marked `Blocked`.
 
-Older findings whose corrective slices are Complete remain searchable in the historical ledger;
-they are not repeated here. A future review may restore an archived item to this active file only
-when current code or evidence reproduces it.
+Older findings and exact prior citations remain searchable in the historical ledger; they are not
+repeated here unless current code reproduces them.

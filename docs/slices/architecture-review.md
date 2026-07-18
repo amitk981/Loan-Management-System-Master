@@ -26,10 +26,10 @@ Low
 
 ## Last Review
 
-Run `2026-07-18_204305_architecture_review` independently reviewed 009G6, 009H6, 009H7, 009H8,
-and CR-011 over `fb380227...e3d965ad` across separate Standards and Spec passes. Forty-three
-focused retained backend tests pass. Three review-only probes fail on the intended source
-assertions: a valid queued H5 job blocks migration 0009, a final-attempt worker crash is returned
-as due, and SMS is sent through the Email adapter. Findings are recorded newest-first in
-`docs/working/REVIEW_FINDINGS.md`; corrective slices 009H9A, 009H9B, and 009H9C are dependency-
-ordered before 009I2 and 009J. No production code changed.
+Run `2026-07-19_014802_architecture_review` independently reviewed 009H9A, 009H9B, 009H9C, and
+009I2 after product boundary `e3d965ad` across separate Standards and Spec passes. Seventy-four
+focused backend and ten focused frontend tests pass. Three review-only probes fail on the intended
+assertions: incomplete checksummed provenance becomes verified, and advice-only authority can read
+and resolve generic exceptions. Findings are recorded newest-first in
+`docs/working/REVIEW_FINDINGS.md`; root-owner corrective 009H9D is dependency-ordered before 009J.
+No production code changed.
