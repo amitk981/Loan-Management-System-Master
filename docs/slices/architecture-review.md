@@ -26,8 +26,8 @@ Low
 
 ## Last Review
 
-Run `2026-07-18_104345_architecture_review` independently reviewed 009H3A, 009H3BA, 009H3BB, and
-009G4 over `1be0a281...4a0c03ad` across separate Standards and Spec passes. Three review-only probes
-fail as expected while 34 focused retained tests pass. Findings are recorded newest-first in
-`docs/working/REVIEW_FINDINGS.md`; corrective slices 009G5, 009H4, and 009H5 are queued, and 009I/
-009J now consume their terminal boundaries. No production code changed.
+Run `2026-07-18_152831_architecture_review` independently reviewed 009G5, 009H4, 009H5, and 009I
+over `e1908b1f...56501b5e` across separate Standards and Spec passes. Five review-only probes fail
+as expected while 32 focused retained backend tests and three MP14 frontend tests pass. Findings
+are recorded newest-first in `docs/working/REVIEW_FINDINGS.md`; corrective slices 009G6, 009H6,
+009H7, 009H8, and 009I2 are dependency-ordered before 009J. No production code changed.

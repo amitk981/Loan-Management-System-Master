@@ -1,0 +1,28 @@
+Command:
+PYTHONPATH=<run>/evidence/review-probes /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test review_contract_probes -v 1
+
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+FFFFF
+
+FAIL: test_async_task_has_a_discoverable_runtime_registration
+AssertionError: Queued rows have no Celery app/configuration, enqueue call, or beat schedule.
+
+FAIL: test_historical_guard_rejects_extra_same_model_mutation
+AssertionError: The exact historical exception blessed an extra mutation on DocumentChecklist.
+
+FAIL: test_legacy_template_provenance_is_not_upgraded_from_current_template
+AssertionError: observed 'verified', expected 'legacy_partial'; 009H4 forbids reconstructing missing historical provenance from a later template row.
+
+FAIL: test_pre_initiation_portal_stage_consumes_current_sap_truth
+AssertionError: observed SAP timeline status 'pending', expected 'complete' from the retained SAP-backed loan-creation fixture.
+
+FAIL: test_source_dispatcher_exposes_idempotent_send
+AssertionError: Source §40.1 requires CommunicationDispatcher.send(..., idempotency_key).
+
+Ran 5 tests in 0.051s
+FAILED (failures=5)
+Destroying test database for alias 'default'...
+
+This is intentional red architecture-review evidence. Production code was not changed.

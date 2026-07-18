@@ -3992,7 +3992,7 @@ facts, so it reports `submitted_for_review` after resubmission while the staff-o
 continues to report `open`. Deficiency uploads and downloads likewise retain exactly one central
 `portal.document.uploaded` or `portal.document.downloaded` event with safe portal scope and document
 metadata, without a parallel generic event or checksum/storage disclosure. The
-borrower timeline shows `Application resubmitted` (A-095). Empty, partially responded, or
+borrower timeline shows `Application resubmitted` (A-129). Empty, partially responded, or
 non-returned applications fail before any transition. Deficiency actions never create or change
 Stage-4 checklist items/actions/history, approvals, verifier/role/remarks, legal/security evidence,
 readiness, loan-account, or disbursement truth.

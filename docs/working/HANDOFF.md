@@ -2,29 +2,24 @@
 
 ## Last Run
 
-2026-07-18_143253_normal_run
+2026-07-18_152831_architecture_review
 
 ## Current Status
 
-009I is complete pending independent validation. MP14 is API-backed through one active-portal-member
-self-scope and projects only current sanction, initiation, CFC, transfer, and finalized advice owner
-truth. The fixed timeline, decimal amounts, UTC dates, and masked destination/reference last four
-replace all hard-coded fixture values. Status reads are zero-write and stale/mixed chains fail back
-to a safely provable processing stage or borrower-safe blocked copy.
+Independent Standards and Spec review covered 009G5, 009H4, 009H5, and 009I over
+`e1908b1f...56501b5e`. Thirty-two retained backend tests and three MP14 frontend tests pass; five
+review-only probes reproduce significant architecture/spec gaps. The full newest-first record is
+in `docs/working/REVIEW_FINDINGS.md`. No production code changed.
 
-The exact finalized communications artifact is available through a 15-minute signed replacement
-capability bound to portal/member/application/account/advice/file/checksum/version and consumed once.
-Issued, accepted, and denied actions share safe audit vocabulary without token/content/bank leakage.
-Ten focused portal tests, 39 impacted advice tests, all 331 frontend tests, typecheck, lint, build,
-Django check, migration sync, and compile checks pass.
-
-Authenticated processing/disbursed/error envelopes are saved. No screenshot was fabricated: the
-browser runtime exposed no browser and the sandbox denied localhost listeners; external browser
-acceptance remains for the orchestrator. 009J is already concrete. 009K was reviewed as the second
-next slice and already names exact endpoints/screens, role rules, validation, mock removals, and
-evidence, so no speculative sharpening edit was needed.
+The correction chain is concrete: 009G6 closes the same-model migration exception fingerprint;
+009H6 restores honest legacy advice provenance; 009H7 restores the generic dispatcher, explicit
+idempotency, honest adapter truth, and acyclic seam; 009H8 supplies discoverable worker execution
+and dead-worker recovery; 009I2 restores exact SAP/stage timestamps, parent-owned application
+selection, existing visual patterns, and trusted-browser evidence. 009J now depends on 009I2.
+Duplicate later assumption IDs were renumbered A-129 through A-133 with direct references updated;
+the decisions themselves did not change. No stale blocked slice was found.
 
 ## Next Run
 
-Run 009J for the scoped Loan Account 360 initial list/detail projection, then 009K for staff
-disbursement/CFC frontend wiring.
+Run 009G6 first, then 009H6. Continue in dependency order through 009H7, 009H8, and 009I2 before
+009J and 009K.

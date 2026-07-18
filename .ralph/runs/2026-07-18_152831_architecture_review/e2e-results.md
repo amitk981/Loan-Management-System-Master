@@ -1,0 +1,3 @@
+# e2e Results
+
+Skipped: documentation-only architecture review contains no product changes

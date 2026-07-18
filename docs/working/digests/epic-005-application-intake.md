@@ -467,7 +467,7 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   `ApplicationDocument` version make evidence visible to staff verification, while immutable response
   successor rows belong to `ApplicationDeficiency`; `PortalDocumentationSubmission` is never reused.
 - Every open deficiency needs a current response before resubmission. Canonical storage returns
-  `incomplete_returned` to source-defined `submitted` (A-095), resets completeness to `not_started`,
+  `incomplete_returned` to source-defined `submitted` (A-129), resets completeness to `not_started`,
   and thereby reopens the existing Deputy Manager completeness queue. Portal audit/workflow facts and
   timeline presentation identify the action as resubmission.
 - Cross-member attempts are nondisclosing and audited; suspended sessions, invalid type/size/category,

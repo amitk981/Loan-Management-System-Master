@@ -1,0 +1,21 @@
+Backend command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests \
+  sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests \
+  sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests \
+  sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests \
+  sfpcl_credit.tests.test_communication_receipt_owner_migration.CommunicationAdviceEvidenceMigrationTests -v 0
+
+Result: PASS (exit 0)
+Found 32 retained tests. Django system check identified no issues (0 silenced).
+
+Frontend command:
+npm test -- --run src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx
+
+Result: PASS (exit 0)
+Test Files  1 passed (1)
+Tests       3 passed (3)
+Duration    1.26s
+
+Interpretation: the retained focused suites are green, but none asserts the five red review
+contracts recorded in `review-contract-probes.txt`.

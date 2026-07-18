@@ -1,5 +1,28 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## Architecture Review 2026-07-18 15:45 — Migration, Communications Runtime, and MP14 Truth
+
+- Independent review of 009G5, 009H4, 009H5, and 009I found that the legal migration exception
+  checks only the expected constraint-name delta and can admit another mutation on the same model.
+  `009G6` freezes the complete before/after `DocumentChecklist` model-state fingerprint.
+- H4's legacy migration copies facts from the current mutable template and labels them verified,
+  although the slice explicitly forbids reconstructing missing historical provenance that way.
+  `009H6` labels copied history `legacy_partial` and keeps it outside current replay/portal truth.
+- H5 retains useful durable jobs and bounded state, but it has no discoverable Celery application,
+  enqueue hook, broker/schedule configuration, or dead-worker recovery. Its public surface also lacks
+  the source `send` method and explicit `Idempotency-Key`; the default manual adapter reports sent
+  without delivery, and a lazy import hides a `disbursements -> processes -> disbursements` cycle.
+  `009H7` closes the interface/idempotency/adapter/dependency seams before `009H8` supplies the real
+  worker runtime, on-commit scheduling, leasing, retry, and crash recovery.
+- MP14 does not consume SAP completion, copies initiation/transfer timestamps onto unrelated stages,
+  and chooses the first finance-like application in the browser. It also bypasses existing portal
+  visual patterns and retained no promised real-browser screenshots. `009I2` restores explicit
+  parent-owned application selection, exact owner stage truth, existing composition, and a declared
+  trusted-browser contract. 009J now waits for this terminal correction.
+- Thirty-two retained backend tests and three MP14 frontend tests pass. Five review-only probes
+  reproduce the significant defects. Full evidence and traceability are in the newest entry of
+  `docs/working/REVIEW_FINDINGS.md`; no production code changed in the review.
+
 ## 009H5 Communications Dispatcher Job and Dependency Closure
 
 - `CommunicationDispatcher` is now the single owner for generic approved/effective template
@@ -894,5 +917,5 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - Finalized advice is downloadable only through a 15-minute signed replacement capability bound to
   portal/member/application/account/advice/file/checksum/version and consumed once. Issuance and
   accepted/denied reads share the safe `portal.document.downloaded` audit vocabulary.
-- Under A-099 the retained communications subject/body is the exact UTF-8 advice attachment until a
+- Under A-133 the retained communications subject/body is the exact UTF-8 advice attachment until a
   governed document-template owner defines another artifact format.

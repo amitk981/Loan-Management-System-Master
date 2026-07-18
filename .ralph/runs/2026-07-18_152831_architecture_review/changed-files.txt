@@ -1,0 +1,18 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009H5-communications-dispatcher-job-and-dependency-closure.md
+ M docs/slices/009J-loan-account-360-initial-view.md
+ M docs/slices/architecture-review.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+?? .ralph/runs/2026-07-18_152831_architecture_review/
+?? docs/slices/009G6-legal-migration-exception-fingerprint-closure.md
+?? docs/slices/009H6-legacy-advice-template-provenance-closure.md
+?? docs/slices/009H7-communications-dispatcher-interface-and-idempotency-closure.md
+?? docs/slices/009H8-communications-worker-runtime-and-crash-recovery-closure.md
+?? docs/slices/009I2-portal-disbursement-stage-and-visual-closure.md

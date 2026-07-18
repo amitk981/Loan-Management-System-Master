@@ -179,7 +179,12 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   business policy from `shared`. Corrective 009H4 now retains complete communications-owned
   template/provider/final-chain evidence, preserves coherent pre-outbox delivery without resend,
   and removes the persistent communications-to-disbursements FK/alias seam. Corrective 009H5 still
-  precedes the borrower/status and Loan Account 360 screens.
+  precedes the borrower/status and Loan Account 360 screens. Independent review of G5/H4/H5/I then
+  found a same-model migration-fingerprint bypass; reconstructed legacy template facts labelled as
+  verified history; an advice-specific, implicit-idempotency dispatcher with no runnable/recoverable
+  worker and a false-success manual adapter; and MP14 application-selection, SAP-stage, timestamp,
+  visual-reuse, and browser-evidence drift. Corrective 009G6, 009H6, 009H7, 009H8, and 009I2 are
+  dependency-ordered before 009J.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

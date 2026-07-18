@@ -20,7 +20,7 @@ make disbursement advice a durable asynchronous communication job without a runt
 - `docs/source/integrations.md` §§10.2-10.6, 19.3, 21, and 33.3
 - `docs/source/codebase-design.md` §§8, 16.4, 20.2-20.6, 22.2, 26.3, 36.1-36.2,
   40.1-40.2, and 42.4
-- `docs/working/ASSUMPTIONS.md` A-027 and A-098
+- `docs/working/ASSUMPTIONS.md` A-027 and A-132
 - `docs/working/REVIEW_FINDINGS.md` entry for
   `2026-07-18_104345_architecture_review`
 

@@ -16,7 +16,7 @@ Staff can open a real loan account and see its canonical borrower, application, 
 funding status, balances, and dates without mistaking later repayment/interest fixtures for truth.
 
 ## Depends On
-- 009I
+- 009I2
 
 ## Source References
 - docs/source/implementation-roadmap.md section 14

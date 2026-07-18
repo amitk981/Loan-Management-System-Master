@@ -2,6 +2,173 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-18 15:45 - Architecture Review 2026-07-18_152831_architecture_review
+
+Reviewed the four completed product slices merged after architecture-review commit `e1908b1f`:
+- `009G5-legal-migration-state-guard-closure` (`b8e6193a`)
+- `009H4-communications-advice-evidence-and-legacy-replay-closure` (`2ff67e77`)
+- `009H5-communications-dispatcher-job-and-dependency-closure` (`998d7811`)
+- `009I-member-portal-disbursement-status` (`56501b5e`)
+
+The review used the exact range `git diff e1908b1f...56501b5e`, all four slice contracts/run
+packets, the Epic 009 epic/digest, cited BR-054/M08-FR-010/INT-COMM/MP14 source sections, complete
+changed product/test/migration files, CONTEXT, assumptions, queue dependencies, and blocked state.
+Standards and Spec ran as isolated parallel passes. Thirty-two focused retained backend tests and
+three MP14 frontend tests pass. Five review-only probes fail as expected: no discoverable worker
+runtime, no source `send` interface, mutable-current template facts labelled verified history, an
+extra same-model mutation accepted by the migration exception, and retained SAP completion shown
+as pending. Probe source/output is retained in this run; no production code changed.
+
+### Standards
+
+#### Finding 1 - High - Queued advice has no runnable worker, while the default adapter fabricates delivery
+
+`processes/tasks.py:22-27` defines a decorated function, but the project has no Celery application,
+task import/autodiscovery, broker/runtime configuration, beat schedule, `.delay()`, `apply_async()`,
+or commit hook. `processes` is not an installed Django app (`config/settings.py:61-81`). The retained
+test calls the decorated function directly, so a production job can remain queued forever. If it is
+invoked manually, `communication_dispatcher.py:569-575` selects `ManualEmailDeliveryAdapter`, whose
+entire implementation returns `sent`/accepted without SMTP, an email API, or a user confirmation
+(`communications/adapters.py:39-51`). That conflicts with integrations §§10.2/10.5-10.6/21/22 and
+can make BR-054/M08-FR-010 and MP14 advice availability true when no borrower communication
+occurred. The manual-acceptance sentence in A-132 is now explicitly superseded; `009H8` supplies the
+real runtime/recovery and `009H7` restores honest adapter truth.
+
+#### Finding 2 - High - The dispatcher remains advice-specific and its seam is circular
+
+Source §40.1 defines one deep `create_from_template` / idempotent `send` / `retry_failed` interface.
+The implemented class has no generic `send`; generic `services.send_communication` merely creates a
+pending row (`communications/services.py:322-336`), while provider behavior lives behind the
+advice-only `dispatch/finalize/queue/start/complete/defer` surface. `retry_failed` selects only
+`CommunicationDeliveryJob` rows containing advice-intent facts. The §31.5 request also ignores
+integrations §21.1's required `Idempotency-Key` and silently derives an internal value. Finally,
+`disbursements.modules.disbursement_advice` lazily imports the top-level coordinator that imports the
+same disbursement module; the static test checks only direct communications↔disbursements imports
+and misses this `disbursements -> processes -> disbursements` cycle. `009H7` deepens the interface,
+generalises the retained job, binds explicit idempotency, and restores acyclic composition.
+
+#### Finding 3 - High - MP14 makes a client-owned application/workflow decision
+
+`MP14_DisbursementStatus.tsx:12-41` hard-codes four finance statuses and chooses the first matching
+row from the first applications response. This is a server-owned workflow/object-selection rule,
+forbidden by the frontend mock-surface ratchet, and it is order-dependent for a member with more
+than one relevant application. The three component tests contain only one application and cannot
+detect the defect. `009I2` passes the parent portal's explicit selected application identity and
+adds the two-application/order matrix without inventing a ranking rule.
+
+#### Finding 4 - Medium - MP14 bypasses the binding visual reuse contract and lacks reviewable visual evidence
+
+The page introduces a local `PortalMessage` component and bespoke alert/empty classes
+(`MP14_DisbursementStatus.tsx:169-172`) instead of the existing portal/`AlertBanner` patterns, with
+no approved exception in ASSUMPTIONS. The slice required three real-Django screenshots but its run
+contains only `visual-acceptance-limitation.md`; no MP14 e2e spec or screenshot exists. `009I2`
+restores existing composition and declares the exact trusted-browser spec, three output paths, and
+two external runs.
+
+#### Finding 5 - Medium - G5's retained migration exception is not an exact model-state fingerprint
+
+`migration_state_guard._is_retained_transition` verifies path/module/class/index, that only the
+checklist model changed, and the expected constraint-name delta (`migration_state_guard.py:209-240`).
+It does not compare the rest of that same model. The review probe adds the expected constraint plus
+another checklist option mutation and is incorrectly accepted. `009G6` fingerprints fields,
+complete constraint/index definitions, options, bases, and managers while leaving all migrations
+and product behavior unchanged.
+
+#### Finding 6 - Medium - Durable assumption identifiers were ambiguous
+
+ASSUMPTIONS contained duplicate A-095 through A-099 identifiers, so H5's `A-098` reference and the
+Epic 009 digest's `A-099` reference resolved to two unrelated decisions. This review renumbered only
+the later duplicate rows to A-129 through A-133 and updated their direct references. No business
+decision changed; A-132's false manual-acceptance clause is separately superseded by Finding 1.
+
+### Spec
+
+#### Finding 1 - High - H4 reconstructs missing historical template provenance from a later row
+
+009H4 requirement 2 explicitly says not to reconstruct missing provenance from a later mutable
+template row. Migration helper `_template_values` reads the current FK target and returns
+`template_provenance_status="verified"` (`processes/advice_evidence_migration.py:15-46`); migration
+0005 applies those values to every pre-existing outbox (`:96-102`) and does the same for coherent
+pre-outbox deliveries. The retained migration test uses an unchanged template, so it proves value
+copying rather than historical provenance. The review probe observes `verified` instead of honest
+`legacy_partial`. `009H6` adds a non-destructive provenance correction: retained delivery stays
+nondispatching history, but reconstructed facts cannot satisfy replay/portal current truth.
+
+#### Finding 2 - High - H5's promised asynchronous queue/retry lifecycle is inert
+
+H5 requirements 3-4 require durable queueing through the pinned worker boundary, bounded backoff,
+restart, and crash recovery. A database row and directly callable function are present, but no
+runtime can discover or schedule it; `retry_failed` also considers only queued/retrying rows, so a
+process death after `start_advice_job` leaves `running` truth stranded indefinitely
+(`communication_dispatcher.py:448-461`). Existing crash tests exercise caught Python exceptions or
+the older direct-send seam, not worker-process death/restart. `009H8` owns real registration,
+on-commit enqueue, periodic recovery, an explicit claim lease, and twice-run worker races.
+
+#### Finding 3 - High - H5 does not deliver its source-shaped generic send/idempotency contract
+
+H5 requirement 1 asks generic communication APIs and advice to traverse the same source interface;
+its acceptance says one source-shaped dispatcher owns generic/advice template/send/retry policy.
+Generic send remains pending-only, the public source `send` method does not exist, the job schema is
+advice-specific, and the §21.1 header matrix is absent. The retained generic test asserts pending
+creation rather than provider/idempotency/retry behavior. `009H7` owns this missing contract before
+the runtime correction.
+
+#### Finding 4 - High - MP14 omits SAP-stage resolution and fabricates timeline timestamps
+
+009I requires exact current documentation, SAP, initiation, CFC, transfer, and advice decisions.
+The projection imports no SAP owner. Before initiation, even a retained SAP-backed loan-account
+fixture returns every stage pending; the review probe reproduces this. After initiation it stamps
+the same `initiated_at` onto documentation, SAP, and initiation (`portal_disbursement_status.py:
+455-480`); after transfer it stamps the same `disbursed_at` onto all first five stages (`:191-205`).
+Those are fabricated historical facts, and retained tests assert only stage codes/statuses. `009I2`
+consumes each owner timestamp or honest null and covers SAP-complete/no-initiation plus drift cases.
+
+#### Finding 5 - Medium - 009I's visual acceptance/evidence contract is incomplete
+
+The slice requires processing, disbursed-with-advice, and safe-error screenshots using real
+authenticated Django responses. None exists, and there is no browser spec for the orchestrator to
+run. The component tests mock both application and status services, so they cannot substitute for
+the promised boundary. `009I2` declares `localhost-e2e-server` and exact spec/screenshot outputs.
+
+No material unrelated production scope creep was found. G5's real-state transition inspection,
+H4's immutable provider ledger/non-circular persistence, H5's durable job rows/backoff state, and
+009I's self-scope/masking/one-use capability are substantive. A-133 remains the explicit,
+source-silent decision to expose retained subject/body as deterministic UTF-8 advice; the
+correction only makes its artifact vocabulary and evidence unambiguous.
+
+### Requirement Traceability
+
+- 009G5's review-specific exact historical exception remains partial until `009G6`; it has no M08
+  functional id and does not alter checklist business behavior.
+- BR-054 / M08-FR-010 remain partial: H4/H5 retain substantial current delivery evidence, but
+  legacy provenance, real provider acceptance, generic send/idempotency, worker discovery, and
+  crash recovery require `009H6`-`009H8`.
+- INT-COMM-001 is partial for legacy provenance; INT-COMM-002/003 are partial until a runnable async
+  queue/retry/recovery boundary exists; INT-COMM-004/005 retained linkage/redaction remain
+  substantively implemented.
+- MP14 own-scope/masking/download capability are substantive, but exact SAP/stage timestamps,
+  multi-application selection, prototype-pattern reuse, and real-browser evidence require `009I2`.
+- No Epic 009 functional requirement was silently deferred to a new assumption in this review.
+  A-132 is narrowed because the cited source already decides provider/manual acceptance truth;
+  A-133 remains explicit pending a governed advice-document format.
+
+### Corrective Queue
+
+- `009G6-legal-migration-exception-fingerprint-closure` closes the same-model exception bypass.
+- `009H6-legacy-advice-template-provenance-closure` restores honest legacy provenance.
+- `009H7-communications-dispatcher-interface-and-idempotency-closure` supplies the source-shaped
+  generic interface, explicit key, honest adapter result, generic job, and acyclic seam.
+- `009H8-communications-worker-runtime-and-crash-recovery-closure` makes committed jobs executable
+  and recoverable by the deployed worker.
+- `009I2-portal-disbursement-stage-and-visual-closure` fixes explicit application selection,
+  owner-stage timestamps, existing-pattern fidelity, and trusted-browser evidence.
+- `009J` now depends on terminal `009I2`; 009K remains transitively ordered after all corrections.
+
+No ADR is needed because the cited source already fixes migration locality, communications
+interface/idempotency/provider semantics, asynchronous retry, dependency direction, and MP14
+ownership/visual rules. Worst severity is High on both axes. Standards: 3 High, 3 Medium. Spec:
+4 High, 1 Medium.
+
 ## 2026-07-18 10:43 - Architecture Review 2026-07-18_104345_architecture_review
 
 Reviewed the four completed product slices merged after architecture-review commit `1be0a281`:
