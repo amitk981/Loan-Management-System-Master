@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_advice_runtime_dependency_is_composed_only_in_processes (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_advice_runtime_dependency_is_composed_only_in_processes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_communication_dispatcher_jobs.py", line 169, in test_advice_runtime_dependency_is_composed_only_in_processes
+    self.assertEqual(violations, [])
+AssertionError: Lists differ: ['disbursements/modules/disbursement_autho[108 chars].py'] != []
+
+First list contains 3 additional elements.
+First extra element 0:
+'disbursements/modules/disbursement_authorisation.py'
+
++ []
+- ['disbursements/modules/disbursement_authorisation.py',
+-  'disbursements/modules/disbursement_initiation.py',
+-  'disbursements/modules/disbursement_advice.py']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.657s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

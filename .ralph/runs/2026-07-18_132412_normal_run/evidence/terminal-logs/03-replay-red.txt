@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_queue_exact_replay_returns_same_job_and_changed_replay_conflicts (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_queue_exact_replay_returns_same_job_and_changed_replay_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_communication_dispatcher_jobs.py", line 71, in test_queue_exact_replay_returns_same_job_and_changed_replay_conflicts
+    self.assertEqual(changed.status_code, 409, changed.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"recipient_email": ["Must match the member\'s current email address."]}}, "meta": {"request_id": null, "timestamp": "2026-07-18T08:03:27.766771Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.630s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

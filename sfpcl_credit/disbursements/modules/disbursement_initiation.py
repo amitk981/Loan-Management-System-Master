@@ -3,13 +3,13 @@ import json
 import uuid
 from decimal import Decimal, InvalidOperation
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.applications.modules import document_checklist_facts
-from sfpcl_credit.communications.models import Notification
 from sfpcl_credit.configurations.modules.source_bank_governance import (
     resolve_source_bank_account,
 )
@@ -185,10 +185,11 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             action_code="disbursement.initiated",
             metadata=safe_evidence,
         )
+        Notification = apps.get_model("communications", "Notification")
         task = Notification.objects.create(
             notification_type="disbursement_authorisation",
             category="Finance",
-            severity=Notification.SEVERITY_URGENT,
+            severity="urgent",
             title="Disbursement awaiting CFC authorisation",
             message=(
                 "A verified manual-bank instruction is awaiting independent review. "

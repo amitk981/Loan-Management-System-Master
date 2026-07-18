@@ -1,7 +1,7 @@
 # Slice 009H5: Communications Dispatcher Job and Dependency Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -84,12 +84,12 @@ High
   safe lifecycle/audit evidence and complete public/current-truth regressions.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing dispatcher/dependency/job/retry tests written first
-- [ ] Canonical dispatcher and shallow process coordinator implemented
-- [ ] Durable asynchronous job and bounded retry lifecycle implemented
-- [ ] API contract and downstream 009I projection updated
-- [ ] Twice-run queue and worker PostgreSQL races green
-- [ ] Backend checks, migration sync, and relevant worker/task tests green
-- [ ] Risk assessment, handoff, state, digest, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing dispatcher/dependency/job/retry tests written first
+- [x] Canonical dispatcher and shallow process coordinator implemented
+- [x] Durable asynchronous job and bounded retry lifecycle implemented
+- [x] API contract and downstream 009I projection updated
+- [x] Twice-run queue and worker PostgreSQL races green
+- [x] Backend checks, migration sync, and relevant worker/task tests green
+- [x] Risk assessment, handoff, state, digest, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

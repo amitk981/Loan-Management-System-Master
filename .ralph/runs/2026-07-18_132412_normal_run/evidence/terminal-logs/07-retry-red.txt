@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_provider_timeout_retries_with_backoff_then_fails_safely (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_provider_timeout_retries_with_backoff_then_fails_safely)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_communication_dispatcher_jobs.py", line 144, in test_provider_timeout_retries_with_backoff_then_fails_safely
+    task = Notification.objects.get(notification_type="communication_job_failed")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.communications.models.Notification.DoesNotExist: Notification matching query does not exist.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.632s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

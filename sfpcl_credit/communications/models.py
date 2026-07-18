@@ -221,6 +221,65 @@ class CommunicationDeliveryOutbox(models.Model):
         ]
 
 
+class CommunicationDeliveryJob(models.Model):
+    STATUS_QUEUED = "queued"
+    STATUS_RUNNING = "running"
+    STATUS_RETRYING = "retrying"
+    STATUS_SENT = "sent"
+    STATUS_FAILED = "failed"
+    STATUSES = {
+        STATUS_QUEUED,
+        STATUS_RUNNING,
+        STATUS_RETRYING,
+        STATUS_SENT,
+        STATUS_FAILED,
+    }
+
+    communication_job_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    outbox = models.OneToOneField(
+        CommunicationDeliveryOutbox,
+        on_delete=models.PROTECT,
+        related_name="delivery_job",
+    )
+    advice_intent_id = models.UUIDField(unique=True)
+    actor_id = models.UUIDField()
+    actor_role_code = models.CharField(max_length=80)
+    actor_team_codes = models.JSONField(default=list)
+    request_id = models.CharField(max_length=255)
+    ip_address = models.CharField(max_length=64, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    request_payload_digest = models.CharField(max_length=64)
+    status = models.CharField(max_length=40, default=STATUS_QUEUED, db_index=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=3)
+    next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
+    last_failure_code = models.CharField(max_length=80, blank=True)
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "communication_delivery_jobs"
+        indexes = [models.Index(fields=["status", "next_attempt_at"])]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(actor_role_code="")
+                    & ~models.Q(request_id="")
+                    & ~models.Q(request_payload_digest="")
+                    & models.Q(
+                        status__in=("queued", "running", "retrying", "sent", "failed")
+                    )
+                    & models.Q(max_attempts__gte=1)
+                    & models.Q(attempts__lte=models.F("max_attempts"))
+                ),
+                name="communication_delivery_job_complete",
+            )
+        ]
+
+
 class ImmutableProviderAttemptQuerySet(models.QuerySet):
     def update(self, **kwargs):
         raise TypeError("Provider-attempt evidence is immutable.")

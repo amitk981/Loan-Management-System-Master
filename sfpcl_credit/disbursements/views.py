@@ -204,7 +204,7 @@ def send_disbursement_advice(request, disbursement_id):
             {field: "Unknown query parameter." for field in sorted(request.GET)},
         )
     try:
-        data = DisbursementWorkflow.send_advice(
+        data = DisbursementWorkflow.queue_advice(
             actor=actor,
             disbursement_id=disbursement_id,
             payload=parse_json_body(request),

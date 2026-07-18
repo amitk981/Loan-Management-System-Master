@@ -220,8 +220,8 @@ def _validate_payload(payload):
 
 
 def _lock_related_evidence(row):
+    from django.apps import apps
     from sfpcl_credit.applications.models import LoanApplication
-    from sfpcl_credit.communications.models import Notification
     from sfpcl_credit.identity.models import AuditLog
     from sfpcl_credit.loans.models import LoanAccount
     from sfpcl_credit.members.models import BankAccount, Member
@@ -235,7 +235,9 @@ def _lock_related_evidence(row):
         .filter(pk__in=(row.borrower_bank_account_id, row.source_bank_account_id))
         .order_by("bank_account_id")
     )
-    Notification.objects.select_for_update().get(pk=row.cfc_task_id)
+    apps.get_model("communications", "Notification").objects.select_for_update().get(
+        pk=row.cfc_task_id
+    )
     AuditLog.objects.select_for_update().get(pk=row.initiation_audit_id)
     WorkflowEvent.objects.select_for_update().get(pk=row.initiation_workflow_event_id)
     if row.authorisation_audit_id:

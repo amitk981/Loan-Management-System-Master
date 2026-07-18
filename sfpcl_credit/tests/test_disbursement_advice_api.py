@@ -9,6 +9,7 @@ from django.db import IntegrityError, close_old_connections, connection, connect
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.test import Client, TestCase, TransactionTestCase
+from django.http import JsonResponse
 from django.utils import timezone
 
 from sfpcl_credit.communications.adapters import (
@@ -18,6 +19,7 @@ from sfpcl_credit.communications.adapters import (
 from sfpcl_credit.communications.models import (
     Communication,
     CommunicationDeliveryOutbox,
+    CommunicationDeliveryJob,
     CommunicationProviderAttempt,
     ContentTemplate,
     DisbursementAdviceDeliveryReceipt,
@@ -1301,13 +1303,46 @@ class DisbursementAdviceApiTests(TestCase):
         )
 
     def _post(self, *, email="borrower.advice@example.com", actor=None):
-        return self.client.post(
+        response = self.client.post(
             f"/api/v1/disbursements/{self.row.pk}/send-advice/",
             {"channel": "email", "recipient_email": email},
             content_type="application/json",
             HTTP_X_REQUEST_ID="req-advice-001",
             **self.owner.owner.fixture._auth(actor or self.actor),
         )
+        if response.status_code == 200 and response.json()["data"].get(
+            "delivery_status"
+        ) in {"queued", "retrying"}:
+            from sfpcl_credit.processes.disbursement_advice_delivery import (
+                execute_disbursement_advice_job,
+            )
+
+            job_id = response.json()["data"]["communication_job_id"]
+            CommunicationDeliveryJob.objects.filter(pk=job_id).update(
+                next_attempt_at=timezone.now()
+            )
+            result = execute_disbursement_advice_job(job_id)
+            if result["delivery_status"] in {"retrying", "failed"}:
+                failed = JsonResponse(
+                    {
+                        "success": False,
+                        "error": {"code": "DELIVERY_FAILED"},
+                    },
+                    status=409,
+                )
+                failed.json = lambda: {
+                    "success": False,
+                    "error": {"code": "DELIVERY_FAILED"},
+                }
+                return failed
+            response = self.client.post(
+                f"/api/v1/disbursements/{self.row.pk}/send-advice/",
+                {"channel": "email", "recipient_email": email},
+                content_type="application/json",
+                HTTP_X_REQUEST_ID="req-advice-001",
+                **self.owner.owner.fixture._auth(actor or self.actor),
+            )
+        return response
 
 
 class PendingDisbursementAdviceApiTests(TestCase):

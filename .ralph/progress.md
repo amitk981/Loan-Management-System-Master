@@ -8999,3 +8999,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-18 - 2026-07-18_132412_normal_run
+
+- Agent tool used: codex with the TDD skill.
+- Slice completed: 009H5-communications-dispatcher-job-and-dependency-closure.
+- Summary: Consolidated generic/advice template and delivery policy in the canonical dispatcher,
+  changed §31.5 to durable queue-first behavior, added a pinned worker task plus bounded safe retry,
+  and moved cross-owner advice composition behind an acyclic top-level process coordinator.
+- Tests run: red/green queue, replay, forged-terminal, worker, retry, and dependency tracers; 8 focused job/task tests;
+  retained generic/advice/migration/scheduler tests; two PostgreSQL five-caller queue races and two
+  five-worker execution races; Django check; migration sync; compile; diff check. Complete backend
+  coverage remains delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_132412_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High because borrower communication, financial-current evidence, asynchronous retry,
+  and one schema migration are involved.
+- Next action: Run 009I, then 009J.
+
+## 2026-07-18 14:32:44 - 2026-07-18_132412_normal_run
+- Agent tool used: codex
+- Slice attempted: 009H5-communications-dispatcher-job-and-dependency-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/.ralph/runs/2026-07-18_132412_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/.ralph/runs/2026-07-18_132412_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

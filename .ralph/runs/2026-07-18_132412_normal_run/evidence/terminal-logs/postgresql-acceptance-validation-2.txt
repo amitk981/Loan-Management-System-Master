@@ -1,0 +1,151 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_2_2026_07_18_132412_normal_run /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+
+Working directory: sfpcl_credit/
+
+Creating test database for alias 'default' ('test_sfpcl_credit_2_2026_07_18_132412_normal_run')...
+Found 5 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, disbursements, documents, finance, identity, legal_documents, loans, members, sap_workflow, scheduler, security_instruments, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying members.0009_member_identity_governance... OK
+  Applying members.0010_member_identity_change_request... OK
+  Applying members.0011_producesupplyrecord... OK
+  Applying members.0012_memberserviceevidence_activememberstatus_and_more... OK
+  Applying members.0013_memberserviceevidence_maker_users_and_more... OK
+  Applying members.0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more... OK
+  Applying documents.0002_documenttemplate... OK
+  Applying documents.0003_documenttemplateidentity... OK
+  Applying applications.0001_initial... OK
+  Applying documents.0004_loandocument... OK
+  Applying legal_documents.0001_transfer_loan_document_owner... OK
+  Applying legal_documents.0002_document_checklists... OK
+  Applying legal_documents.0003_loan_document_renderer_provenance... OK
+  Applying legal_documents.0004_checklistitem_notarisation_status_and_more... OK
+  Applying legal_documents.0005_signature_records... OK
+  Applying legal_documents.0006_stamp_notary_preparer_identity... OK
+  Applying legal_documents.0007_signature_capture_maker... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying legal_documents.0008_securitypackage_powerofattorney_and_more... OK
+  Applying legal_documents.0009_loandocument_verification_remarks... OK
+  Applying legal_documents.0010_stage4_maker_checker_constraints... OK
+  Applying legal_documents.0011_final_documentation_approval_sequence... OK
+  Applying legal_documents.0012_portal_documentation_submission... OK
+  Applying configurations.0001_initial... OK
+  Applying configurations.0002_version_history_approval_evidence... OK
+  Applying applications.0011_witness... OK
+  Applying applications.0012_witness_verification_evidence... OK
+  Applying applications.0013_witness_correction... OK
+  Applying applications.0014_witness_contact_fields... OK
+  Applying applications.0015_applicationdeficiencyresponse... OK
+  Applying applications.0016_bankverificationdecision_and_more... OK
+  Applying applications.0017_bank_decision_terminal_sanction_snapshots... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying credit.0006_legacy_appraisal_history_remediation... OK
+  Applying credit.0007_eligibility_active_member_snapshot... OK
+  Applying approvals.0001_initial... OK
+  Applying approvals.0002_approvalcase_workflow_event... OK
+  Applying approvals.0003_approvalmatrixrule_sanctioncommittee... OK
+  Applying approvals.0004_approval_configuration_history_constraints... OK
+  Applying approvals.0005_approvalconfigurationproposal... OK
+  Applying approvals.0006_approvalcase_configuration_snapshot... OK
+  Applying approvals.0007_approvalcase_enrichment_snapshot... OK
+  Applying approvals.0008_approvalaction... OK
+  Applying approvals.0009_sanction_decision_and_case_closure... OK
+  Applying approvals.0010_approvalcasereadscopegrant_and_more... OK
+  Applying approvals.0011_approvalcase_appraisal_facts_json_and_more... OK
+  Applying approvals.0012_approvalconflictdeclaration_and_more... OK
+  Applying approvals.0013_conflict_projection_scope_closure... OK
+  Applying approvals.0014_exceptionregisterentry_and_more... OK
+  Applying approvals.0015_generalmeetingapproval_and_more... OK
+  Applying approvals.0016_creditsanctionregisterentry... OK
+  Applying approvals.0017_exceptionregisterentry_supporting_documents_json... OK
+  Applying approvals.0018_creditsanctionregisterentry_source_review_facts_json... OK
+  Applying approvals.0019_register_source_facts... OK
+  Applying approvals.0020_approvalaction_approver_display_name... OK
+  Applying documents.0005_deterministic_document_template_constraints... OK
+  Applying finance.0001_initial... OK
+  Applying finance.0002_sap_customer_code_confirmation... OK
+  Applying finance.0003_sap_delivery_replay_contract... OK
+  Applying loans.0001_initial... OK
+  Applying legal_documents.0013_application_evidence_state_anchor... OK
+  Applying legal_documents.0014_staff_documentation_durable_actions... OK
+  Applying disbursements.0001_initial... OK
+  Applying disbursements.0002_cfc_authorisation_evidence... OK
+  Applying disbursements.0003_authorisation_aggregate_integrity... OK
+  Applying disbursements.0004_transfer_success... OK
+  Applying disbursements.0005_disbursementadviceintent_loanregisterupdate_and_more... OK
+  Applying disbursements.0006_disbursementadvicedeliveryreceipt_and_more... OK
+  Applying disbursements.0007_remove_disbursement_disb_success_evidence_complete_and_more... OK
+  Applying communications.0004_advice_outbox_and_receipt_owner... OK
+  Applying communications.0005_advice_evidence_and_legacy_replay_closure... OK
+  Applying communications.0006_communication_delivery_job... OK
+  Applying configurations.0003_source_bank_account_governance... OK
+  Applying configurations.0004_source_bank_governance_history... OK
+  Applying configurations.0005_source_bank_reviewable_rationale... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying legal_documents.0015_checklist_constraint_state_owner_anchor... OK
+  Applying sap_workflow.0001_sap_model_owner_state... OK
+  Rendering model states... DONE
+  Applying scheduler.0001_initial... OK
+  Applying security_instruments.0001_transfer_security_ownership... OK
+  Applying security_instruments.0002_sh4sharetransferform_and_more... OK
+  Applying security_instruments.0003_cdslsharepledge_and_more... OK
+  Applying security_instruments.0004_migrate_cdsl_field_encryption... OK
+  Applying security_instruments.0005_blankdatedcheque_and_more... OK
+  Applying security_instruments.0006_migrate_opaque_field_tokens... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_competing_valid_and_invalid_calculations_preserve_valid_snapshot (sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests.test_competing_valid_and_invalid_calculations_preserve_valid_snapshot) ... ok
+database_backend=postgresql ordering=valid_locked_application -> invalid_attempting_application_lock -> valid_released -> invalid_locked_application
+test_competing_valid_reruns_serialize_complete_snapshots_and_evidence (sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests.test_competing_valid_reruns_serialize_complete_snapshots_and_evidence) ... ok
+database_backend=postgresql ordering=first_locked_application -> second_attempting_application_lock -> first_released -> second_locked_application
+test_duplicate_terminal_reviews_append_one_complete_decision_and_no_loser_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests.test_duplicate_terminal_reviews_append_one_complete_decision_and_no_loser_evidence) ... ok
+database_backend=postgresql ordering=winner_locked_application_appraisal_and_history -> loser_attempting_application_lock -> winner_released
+test_rejected_review_serializes_before_stale_draft_patch_without_deadlock (sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests.test_rejected_review_serializes_before_stale_draft_patch_without_deadlock) ... ok
+database_backend=postgresql ordering=review_locked_application_and_appraisal -> patch_attempting_application_lock -> review_released -> patch_locked_application
+test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests.test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 5.469s
+
+OK
+Destroying test database for alias 'default' ('test_sfpcl_credit_2_2026_07_18_132412_normal_run')...
+
+Duration milliseconds: 23495
+Exit code: 0
+Cleanup exit code: 0

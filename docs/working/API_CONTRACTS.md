@@ -121,7 +121,7 @@ stable conflict. Missing, duplicate, cross-linked, or changed register/advice-in
 fails closed. The action sends no advice, signs no checklist, and creates no repayment, schedule,
 interest, or borrower-visible truth; 009H2 owns delivery of the stable pending identity.
 
-## Disbursement advice (009H/009H2)
+## Disbursement advice (009H-009H5)
 
 `POST /api/v1/disbursements/{disbursement_id}/send-advice/` implements source §31.5 with exactly
 `channel` and `recipient_email`; query parameters and unknown fields are rejected. MVP accepts only
@@ -143,11 +143,19 @@ used variables are exactly borrower name, application reference, account number,
 disbursed amounts, date, and masked bank reference. Missing, ambiguous, stale, unfunded, or
 malformed evidence returns zero-write `409 CONFLICT`.
 
-The workflow consumes the exact pending advice/outbox UUID created by transfer success as the
-communication id and adapter idempotency identity; it never creates a second communication identity.
-The canonical adapter payload and manual/fake provider receipt are stable across fresh adapter
-instances and a transaction rollback after provider acceptance. Adapter rejection leaves the intent
-pending and creates no sent/link/audit/workflow truth.
+The request consumes the exact pending advice UUID created by transfer success, freezes the current
+actor/role/team/request/network and rendered-template identity, and creates or reconciles one durable
+communications-owned job without invoking a provider. Its initial response contains only
+`disbursement_id`, `communication_job_id`, `delivery_status: queued`, and UTC `queued_at`. Exact
+actor/channel/recipient replay returns the same job; changed replay conflicts. Queuing alone does not
+create a Communication, mark advice sent, or make advice borrower-visible.
+
+The pinned asynchronous worker re-authorises the frozen actor against current disbursement truth and
+uses the same canonical dispatcher contract for Manual, Fake, and Future adapters. Job lifecycle is
+`queued` → `running` → `retrying`/`sent` or terminal `failed`; provider timeouts, rejection, malformed
+results, and crashes retain only a bounded safe failure code and exponential backoff for at most three
+attempts. Exhaustion creates an operator task but no fabricated sent advice. Provider identity remains
+stable across fresh worker instances and a transaction rollback after acceptance.
 
 After acceptance, the workflow atomically marks that intent `sent`, retains one protected `sent`
 communication snapshot/link, and records one `disbursement.advice_sent` audit and
@@ -156,14 +164,14 @@ containing the full recipient address. General audit evidence stores only a mask
 SHA-256 digest plus protected owner/communication, template/provider, sender role/team,
 request/network, and upstream evidence identities.
 
-The response contains only `disbursement_id`, `disbursement_advice_communication_id`,
-`delivery_status`, and UTC `sent_at`. Exact actor/channel/recipient replay returns that projection
-without writes only while the current canonical email, approved/effective template identity/version/
-variables, freshly rendered subject/body, provider id/status/time, sender role/team, transfer/
-register/intent, audit, action, and workflow facts remain exact. Any drift returns zero-write
-`409 CONFLICT`; historical delivery is never returned as current. The action never changes money,
-transfer/CFC state, loan status/terms, Loan Register, checklist, repayment, schedule, or interest
-truth.
+After worker acceptance, exact replay includes `communication_job_id` with the terminal
+`disbursement_id`, `disbursement_advice_communication_id`, `delivery_status: sent`, and UTC `sent_at`
+projection without writes only while the current canonical email, approved/effective template
+identity/version/variables, freshly rendered subject/body, provider id/status/time, sender role/team,
+transfer/register/intent, audit, action, workflow, outbox, and job facts remain exact. Any drift
+returns zero-write `409 CONFLICT`; historical delivery is never returned as current. The action never
+changes money, transfer/CFC state, loan status/terms, Loan Register, checklist, repayment, schedule,
+or interest truth. MP14 must treat advice as issued only from this terminal accepted/finalized chain.
 
 ## Tri-party agreement verification (008G/008G2)
 
@@ -362,7 +370,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Sanction and approvals | Approval workflow, workbench, registers, settings, frozen legacy history, strict pagination, and action-order closure implemented through 007T | Sanction workbench, registers, approval settings | `auth-permissions.md`, `api-contracts.md` §25/§44, `screen-spec.md` S21-S25 | Approval matrix is high-control; case reads/actions use frozen actor-scoped projections. Historical S23 `purpose`/`risk` are top-level nullable, and S21 queue/detail/action/decision refreshes share newest-request authority. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
-| Communication templates and communication history | Content-template metadata shell implemented in 003F; communication send/list shell implemented in 003I; real delivery and notification-center UI remain draft | None directly | `api-contracts.md` §39.1-§39.3; `data-model.md` §24.1-§24.2; `functional-spec.md` M16-FR-001-M16-FR-007/M18-FR-006 | `content_templates` and `communications` are persisted. `GET/POST/PATCH /api/v1/content-templates/` is protected by narrow A-022 content-template permissions. `POST /api/v1/communications/send/` renders approved/effective template snapshots, persists a pending communication record, and audits metadata only; `GET /api/v1/communications/` lists records for a supplied related entity with standard pagination. No real email/SMS/courier/phone provider is called yet. |
+| Communication templates and communication history | Canonical dispatcher and asynchronous advice job implemented through 009H5 | None directly | `api-contracts.md` §39.1-§39.3; `integrations.md` §§10/21/33.3; `data-model.md` §24.1-§24.2 | `content_templates`, `communications`, protected advice outboxes/provider attempts, and communication jobs are persisted. Generic `POST /api/v1/communications/send/` and disbursement advice share the dispatcher-owned approved/effective template, exact merge/render, Communication, and safe-audit policy. Generic send remains a pending no-provider shell; disbursement advice runs through the bounded asynchronous worker contract. |
 | SAP and disbursement | SAP request/delivery/completion/reuse implemented through 009B3B; loan-account/readiness implemented through 009D | Disbursement and CFC | `api-contracts.md` §§29-31; `integrations.md` §8 | SAP is manual/adapter-first for MVP and owned by the public `sap_workflow` module; Finance retains only the model-identity compatibility import. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |

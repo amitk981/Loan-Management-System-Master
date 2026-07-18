@@ -1,5 +1,25 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H5 Communications Dispatcher Job and Dependency Closure
+
+- `CommunicationDispatcher` is now the single owner for generic approved/effective template
+  preparation, exact merge/render, pending Communication creation/audit, disbursement outbox,
+  provider dispatch, finalization, durable job state, and retry selection. The legacy communication
+  service delegates instead of retaining a second render/send policy.
+- The §31.5 request now freezes one communications-owned job and returns queued truth with zero
+  provider calls. Exact request replay resolves the same job; changed replay conflicts. Only the
+  shallow `processes.disbursement_advice_delivery` coordinator composes locked disbursement
+  authority/current facts with communications job/provider/final evidence; static proof rejects
+  direct communications↔disbursements Python imports.
+- Jobs expose queued/running/retrying/sent/failed, freeze actor/role/team/request/network and the
+  009H4 outbox identity, retry safe timeout/rejection/malformed/crash outcomes at most three times
+  with bounded exponential backoff, and create one operator task on honest exhaustion. General job
+  evidence retains only safe failure codes, not recipient/render/provider/error/financial payloads.
+- Manual, Fake, and Future adapters continue through the same idempotent provider seam. Accepted
+  009H4 outbox truth finalizes once before the job becomes sent; queue creation alone cannot make
+  MP14 advice available. Two five-caller queue races and two five-worker execution races passed on
+  PostgreSQL with one job, one provider attempt, and one terminal chain.
+
 ## 009H4 Repair — Order-Independent Receipt Schema Proof
 
 - Independent parallel coverage ran the receipt-owner migration test after an older approval

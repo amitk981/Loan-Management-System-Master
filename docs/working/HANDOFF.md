@@ -1,23 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-18_125746_repair
+2026-07-18_132412_normal_run
 
 ## Current Status
-009H4 is repaired and complete pending independent revalidation. Communications owns primitive advice UUIDs,
-complete frozen template provenance, an immutable provider-attempt ledger whose accepted digest
-seals ordered rejected siblings, and protected outbox/receipt/Communication links. One reversible
-migration preserves coherent pre-outbox delivery without transport and refuses unsafe reversal once
-runtime provider evidence exists. Cross-owner legacy classification sits in a top-level process
-coordinator; the disbursement compatibility receipt alias is gone.
+009H5 is complete pending independent validation. The source-shaped communications dispatcher now
+owns generic template preparation/render/persistence plus durable advice outbox, provider, finalization,
+job, and retry policy. The §31.5 HTTP request creates/reconciles one queued job without provider I/O;
+the top-level process coordinator re-authorises current disbursement truth and finalizes only after
+Manual/Fake/Future provider acceptance. Three bounded attempts expose queued/running/retrying/sent/
+failed safely, with one operator task on exhaustion and no raw recipient/render/provider/error facts.
 
-Independent coverage exposed one order-sensitive legacy schema assertion: SQLite's reverse table
-rebuild retained the exact receipt column set and constraints but changed ordinal column position.
-The repaired assertion compares the column set deterministically. The validator-compatible RED/GREEN
-sequence and 40 focused migration/persistence/advice tests pass; Django check, migration sync, and
-compile are green. The next two Not Started slices, 009H5 and 009I, were rechecked and remain
-concrete; no speculative edit was made.
+Direct communications↔disbursements Python imports are eliminated and static-tested. Eight focused
+job/task/dependency tests, retained generic/advice/migration/scheduler tests, Django check, migration
+sync, compile, and two PostgreSQL queue plus two PostgreSQL worker races pass. Celery 5.5.3 is newly
+pinned as the source-required worker boundary but is not importable in the isolated agent venv; the
+task module's business-free entry point and fallback-call contract were exercised locally, and the
+orchestrator installs pinned requirements before independent validation. 009I and 009J were rechecked
+and remain concrete; no speculative sharpening edit was needed.
 
 ## Next Run
-Run 009H5 for the canonical asynchronous dispatcher/job and acyclic process seam. Then run 009I
-and 009J in dependency order.
+Run 009I for borrower-safe MP14 status/advice availability, then 009J for the initial Loan Account
+360 projection.

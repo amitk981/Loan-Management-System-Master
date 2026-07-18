@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 44 test(s).
+System check identified no issues (0 silenced).
+....................................FFF...ssss
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='template_version')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 721, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='variables_json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 721, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='effective_to')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 721, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+----------------------------------------------------------------------
+Ran 44 tests in 22.585s
+
+FAILED (failures=3, skipped=4)
+Destroying test database for alias 'default'...

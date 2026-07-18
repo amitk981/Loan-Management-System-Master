@@ -1,0 +1,123 @@
+Creating test database for alias 'default'...
+Found 65 test(s).
+System check identified no issues (0 silenced).
+..............FFE.........FFF..F..............FFE...........FFF...F......
+======================================================================
+ERROR: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 857, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    outbox.refresh_from_db()
+    ^^^^^^
+UnboundLocalError: cannot access local variable 'outbox' where it is not associated with a value
+
+======================================================================
+ERROR: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 857, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    outbox.refresh_from_db()
+    ^^^^^^
+UnboundLocalError: cannot access local variable 'outbox' where it is not associated with a value
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='RejectingAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 835, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "05314e3c-d979-4c1f-880c-e7e005c689ad", "communication_job_id": "06d3d92c-66ef-421c-adfb-47f8701713d4", "delivery_status": "retrying", "queued_at": "2026-07-18T08:15:56.806844Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T08:15:56.832588Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='MalformedAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 835, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "05314e3c-d979-4c1f-880c-e7e005c689ad", "communication_job_id": "06d3d92c-66ef-421c-adfb-47f8701713d4", "delivery_status": "retrying", "queued_at": "2026-07-18T08:15:56.806844Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T08:15:56.847638Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='template_version')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 719, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='variables_json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 719, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='effective_to')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 719, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_validation_template_and_delivery_failures_create_no_advice_truth (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_validation_template_and_delivery_failures_create_no_advice_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 812, in test_validation_template_and_delivery_failures_create_no_advice_truth
+    self.assertEqual(rejected.status_code, 409, rejected.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "03a3cc79-68bb-456e-b390-6a471ad236a9", "communication_job_id": "3ac49b55-b1b4-4545-8cd0-56552aa7fb00", "delivery_status": "retrying", "queued_at": "2026-07-18T08:16:05.544277Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T08:16:05.569525Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='RejectingAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 835, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "b9f1375b-d23f-40c7-b1fe-0d4ded490906", "communication_job_id": "873cd02c-bc82-4f9c-9d85-8fe53147a2e4", "delivery_status": "retrying", "queued_at": "2026-07-18T08:16:15.309342Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T08:16:15.334942Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='MalformedAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 835, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "b9f1375b-d23f-40c7-b1fe-0d4ded490906", "communication_job_id": "873cd02c-bc82-4f9c-9d85-8fe53147a2e4", "delivery_status": "retrying", "queued_at": "2026-07-18T08:16:15.309342Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T08:16:15.348608Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='template_version')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 719, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='variables_json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 719, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift) (field='effective_to')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 719, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 200)
+AssertionError: 409 != 200
+
+======================================================================
+FAIL: test_validation_template_and_delivery_failures_create_no_advice_truth (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_validation_template_and_delivery_failures_create_no_advice_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 812, in test_validation_template_and_delivery_failures_create_no_advice_truth
+    self.assertEqual(rejected.status_code, 409, rejected.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "f584c0ef-1bb1-4106-9b2e-6114d2190743", "communication_job_id": "4ce53c0c-5a4c-4de9-99fd-952aef79ede2", "delivery_status": "retrying", "queued_at": "2026-07-18T08:16:25.792821Z"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T08:16:25.818078Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 65 tests in 39.314s
+
+FAILED (failures=12, errors=2)
+Destroying test database for alias 'default'...

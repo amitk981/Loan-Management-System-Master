@@ -3,15 +3,7 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.db import transaction
 
-from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.communications.modules.communication_dispatcher import (
-    AdviceFinalizationRequest,
-    CommunicationDeliveryFailed,
-    CommunicationDispatcher,
-    CommunicationDispatchConflict,
-)
 from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
@@ -55,6 +47,10 @@ class DisbursementAdviceConflict(Exception):
 class DisbursementAdviceDeliveryFailed(DisbursementAdviceConflict):
     code = "DELIVERY_FAILED"
 
+    def __init__(self, message, *, failure_code="provider_rejected"):
+        super().__init__(message)
+        self.failure_code = failure_code
+
 
 @dataclass(frozen=True)
 class _AdviceContext:
@@ -66,52 +62,31 @@ class _AdviceContext:
     dispatch_context: DisbursementAdviceContext
 
 
+def _queue_advice(*, actor, disbursement_id, payload, request=None):
+    from sfpcl_credit.processes.disbursement_advice_delivery import (
+        queue_disbursement_advice,
+    )
+
+    return queue_disbursement_advice(
+        actor=actor,
+        disbursement_id=disbursement_id,
+        payload=payload,
+        request=request,
+    )
+
+
 def _send_advice(*, actor, disbursement_id, payload, request=None, adapter=None):
-    cleaned = _validate_payload(payload)
-    with transaction.atomic():
-        context = _locked_advice_context(actor, disbursement_id)
-        started_without_finalization = (
-            context.row.disbursement_advice_communication_id is None
-        )
-        if started_without_finalization:
-            _validate_request_context(context, cleaned)
-            _require_pending_delivery(context)
-    try:
-        decision = CommunicationDispatcher.dispatch(
-            context=context.dispatch_context,
-            adapter=adapter,
-        )
-    except CommunicationDeliveryFailed as exc:
-        raise DisbursementAdviceDeliveryFailed(str(exc)) from exc
-    except CommunicationDispatchConflict as exc:
-        raise DisbursementAdviceConflict(str(exc)) from exc
-    with transaction.atomic():
-        context = _locked_advice_context(actor, disbursement_id)
-        try:
-            decision = CommunicationDispatcher.dispatch(
-                context=context.dispatch_context,
-            )
-        except CommunicationDispatchConflict as exc:
-            raise DisbursementAdviceConflict(str(exc)) from exc
-        is_replay = context.row.disbursement_advice_communication_id is not None
-        if is_replay and started_without_finalization:
-            raise DisbursementAdviceConflict(
-                "Another caller finalized the accepted disbursement advice."
-            )
-        if not is_replay:
-            _validate_request_context(context, cleaned)
-            _require_pending_delivery(context)
-        try:
-            finalization = CommunicationDispatcher.finalize(
-                context=context.dispatch_context,
-                decision=decision,
-                request=None if is_replay else _finalization_request(request),
-            )
-        except CommunicationDispatchConflict as exc:
-            raise DisbursementAdviceConflict(str(exc)) from exc
-        if is_replay:
-            return _current_replay(context, cleaned, finalization)
-        return _consume_finalization(context, finalization)
+    from sfpcl_credit.processes.disbursement_advice_delivery import (
+        send_disbursement_advice_now,
+    )
+
+    return send_disbursement_advice_now(
+        actor=actor,
+        disbursement_id=disbursement_id,
+        payload=payload,
+        request=request,
+        adapter=adapter,
+    )
 
 
 def _locked_advice_context(actor, disbursement_id):
@@ -259,14 +234,6 @@ def serialize_advice(disbursement_id, decision):
         "delivery_status": decision.delivery_status,
         "sent_at": _iso(decision.sent_at),
     }
-
-
-def _finalization_request(request):
-    return AdviceFinalizationRequest(
-        request_id=_request_id(request),
-        ip_address=request_ip(request) if request else "",
-        user_agent=request_user_agent(request) if request else "",
-    )
 
 
 def _validate_payload(payload):

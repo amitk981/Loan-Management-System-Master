@@ -1,5 +1,4 @@
 from math import ceil
-import re
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -12,6 +11,7 @@ from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.communications.models import Communication, ContentTemplate, Notification
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.communications.modules.communication_dispatcher import CommunicationDispatcher
 
 
 CONTENT_TEMPLATE_READ_PERMISSION = "communications.content_template.read"
@@ -97,12 +97,6 @@ _COMMUNICATION_LIST_PARAMS = {
 }
 _NOTIFICATION_LIST_PARAMS = {"page", "page_size", "read_status", "severity", "category"}
 _READ_STATUSES = {"all", "read", "unread"}
-_USER_RECIPIENT_TYPES = {"user", "staff_user", "internal_user"}
-_ROLE_RECIPIENT_TYPES = {"role", "role_code"}
-_TEAM_RECIPIENT_TYPES = {"team", "team_code"}
-_TEMPLATE_VARIABLE_RE = re.compile(r"{{\s*([A-Za-z0-9_]+)\s*}}")
-
-
 class StaleWriteError(Exception):
     pass
 
@@ -327,29 +321,18 @@ def create_content_template(user, request, payload):
 
 def send_communication(user, request, payload):
     cleaned = _validate_send_payload(payload)
-    template = _approved_effective_template(cleaned["content_template_id"])
-    subject_snapshot = _render_template(
-        template.subject_template, template.variables_json or [], cleaned["merge_data"]
+    row = CommunicationDispatcher.create_from_template(
+        actor=user,
+        request=request,
+        content_template_id=cleaned["content_template_id"],
+        merge_data=cleaned["merge_data"],
+        related_entity_type=cleaned["related_entity_type"],
+        related_entity_id=cleaned["related_entity_id"],
+        recipient_party_type=cleaned["recipient_party_type"],
+        recipient_party_id=cleaned.get("recipient_party_id"),
+        recipient_address=cleaned.get("recipient_address"),
+        channel=cleaned["channel"],
     )
-    body_snapshot = _render_template(
-        template.body_template, template.variables_json or [], cleaned["merge_data"]
-    )
-    with transaction.atomic():
-        row = Communication.objects.create(
-            related_entity_type=cleaned["related_entity_type"],
-            related_entity_id=cleaned["related_entity_id"],
-            recipient_party_type=cleaned["recipient_party_type"],
-            recipient_party_id=cleaned.get("recipient_party_id"),
-            recipient_address=cleaned.get("recipient_address"),
-            channel=cleaned["channel"],
-            content_template=template,
-            subject_snapshot=subject_snapshot,
-            body_snapshot=body_snapshot,
-            sent_by_user=user,
-            delivery_status=Communication.DELIVERY_PENDING,
-        )
-        _create_notification_from_communication(row)
-        _record_communication_audit(user=user, request=request, row=row)
     return serialize_communication(row)
 
 
@@ -616,35 +599,6 @@ def _record_content_template_audit(*, user, request, action, row, old_value, new
     )
 
 
-def _record_communication_audit(*, user, request, row):
-    AuditLog.objects.create(
-        actor_user=user,
-        actor_type="user",
-        action=COMMUNICATION_CREATED_ACTION,
-        entity_type=COMMUNICATION_ENTITY_TYPE,
-        entity_id=row.communication_id,
-        old_value_json=None,
-        new_value_json={
-            "communication_id": str(row.communication_id),
-            "related_entity_type": row.related_entity_type,
-            "related_entity_id": str(row.related_entity_id),
-            "recipient_party_type": row.recipient_party_type,
-            "recipient_party_id": (
-                str(row.recipient_party_id) if row.recipient_party_id else None
-            ),
-            "recipient_address": row.recipient_address,
-            "channel": row.channel,
-            "content_template_id": (
-                str(row.content_template_id) if row.content_template_id else None
-            ),
-            "sent_by_user_id": str(row.sent_by_user_id) if row.sent_by_user_id else None,
-            "delivery_status": row.delivery_status,
-        },
-        ip_address=request_ip(request),
-        user_agent=request_user_agent(request),
-    )
-
-
 def _record_notification_marked_read_audit(*, user, request, row, old_value, new_value):
     AuditLog.objects.create(
         actor_user=user,
@@ -689,66 +643,6 @@ def _serialized_notification_recipient(row):
     if row.recipient_team_code:
         return {"type": "team", "team_code": row.recipient_team_code}
     return {"type": "unknown"}
-
-
-def _create_notification_from_communication(row):
-    recipient = _notification_recipient(row)
-    if recipient is None:
-        return None
-    return Notification.objects.create(
-        communication=row,
-        notification_type=_notification_type_for(row.related_entity_type),
-        category=_notification_category_for(row.related_entity_type),
-        severity=Notification.SEVERITY_INFO,
-        title=row.subject_snapshot or "Communication notification",
-        message=row.body_snapshot,
-        related_entity_type=row.related_entity_type,
-        related_entity_id=row.related_entity_id,
-        action_label="Open related record",
-        action_url=_action_url_for(row.related_entity_type),
-        sender_user=row.sent_by_user,
-        **recipient,
-    )
-
-
-def _notification_recipient(row):
-    party_type = row.recipient_party_type.strip().lower()
-    if party_type in _USER_RECIPIENT_TYPES and row.recipient_party_id:
-        try:
-            return {"recipient_user": User.objects.get(user_id=row.recipient_party_id)}
-        except User.DoesNotExist:
-            return None
-    if party_type in _ROLE_RECIPIENT_TYPES and row.recipient_address:
-        return {"recipient_role_code": row.recipient_address.strip()}
-    if party_type in _TEAM_RECIPIENT_TYPES and row.recipient_address:
-        return {"recipient_team_code": row.recipient_address.strip()}
-    return None
-
-
-def _notification_type_for(related_entity_type):
-    if related_entity_type == "loan_application":
-        return "application"
-    return related_entity_type or "system"
-
-
-def _notification_category_for(related_entity_type):
-    categories = {
-        "loan_application": "Application",
-        "loan_account": "Repayment",
-        "document": "Documents",
-        "compliance_task": "Compliance",
-    }
-    return categories.get(related_entity_type, "System")
-
-
-def _action_url_for(related_entity_type):
-    urls = {
-        "loan_application": "/applications/detail",
-        "loan_account": "/loan-accounts/detail",
-        "document": "/documentation",
-        "compliance_task": "/compliance",
-    }
-    return urls.get(related_entity_type, "/notifications")
 
 
 def _validate_notification_list_query(query_params):
@@ -835,43 +729,6 @@ def _validate_send_payload(payload):
     if field_errors:
         raise ValidationError(field_errors)
     return cleaned
-
-
-def _approved_effective_template(content_template_id):
-    try:
-        template = ContentTemplate.objects.get(content_template_id=content_template_id)
-    except ContentTemplate.DoesNotExist as exc:
-        raise ValidationError({"content_template_id": "Content template was not found."}) from exc
-    today = timezone.localdate()
-    if template.approval_status != ContentTemplate.STATUS_APPROVED:
-        raise ValidationError({"content_template_id": "Content template must be approved."})
-    if template.effective_from > today:
-        raise ValidationError({"content_template_id": "Content template is not effective yet."})
-    if template.effective_to and template.effective_to < today:
-        raise ValidationError({"content_template_id": "Content template is no longer effective."})
-    return template
-
-
-def _render_template(template_text, declared_variables, merge_data):
-    if template_text is None:
-        return None
-    declared = set(declared_variables)
-    provided = set(merge_data.keys())
-    missing = declared - provided
-    extra = provided - declared
-    if missing:
-        raise ValidationError(
-            {"merge_data": f"Missing template variables: {', '.join(sorted(missing))}."}
-        )
-    if extra:
-        raise ValidationError(
-            {"merge_data": f"Unknown template variables: {', '.join(sorted(extra))}."}
-        )
-
-    def replace(match):
-        return str(merge_data[match.group(1)])
-
-    return _TEMPLATE_VARIABLE_RE.sub(replace, template_text)
 
 
 def _clean_required_string(field, value, field_errors):

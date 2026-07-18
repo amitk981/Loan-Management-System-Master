@@ -1,14 +1,16 @@
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import hashlib
 import json
 import re
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.communications.adapters import (
     EmailDeliveryPayload,
     EmailDeliveryResult,
@@ -18,10 +20,12 @@ from sfpcl_credit.communications.adapters import (
 )
 from sfpcl_credit.communications.models import (
     Communication,
+    CommunicationDeliveryJob,
     CommunicationDeliveryOutbox,
     CommunicationProviderAttempt,
     ContentTemplate,
     DisbursementAdviceDeliveryReceipt,
+    Notification,
 )
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.workflows.events import record_workflow_event
@@ -40,6 +44,10 @@ _SENSITIVE_VARIABLE_PARTS = (
 )
 _ADVICE_ACTION = "disbursement.advice_sent"
 _ADVICE_WORKFLOW = "DisbursementAdviceSent"
+_GENERIC_ACTION = "communications.communication.created"
+_USER_RECIPIENT_TYPES = {"user", "staff_user", "internal_user"}
+_ROLE_RECIPIENT_TYPES = {"role", "role_code"}
+_TEAM_RECIPIENT_TYPES = {"team", "team_code"}
 
 
 class CommunicationDispatchConflict(Exception):
@@ -47,7 +55,9 @@ class CommunicationDispatchConflict(Exception):
 
 
 class CommunicationDeliveryFailed(CommunicationDispatchConflict):
-    pass
+    def __init__(self, message, *, failure_code="provider_rejected"):
+        super().__init__(message)
+        self.failure_code = failure_code
 
 
 @dataclass(frozen=True)
@@ -103,6 +113,19 @@ class AdviceFinalizationDecision:
 
 
 @dataclass(frozen=True)
+class AdviceJobExecution:
+    job_id: uuid.UUID
+    actor_id: uuid.UUID
+    related_entity_id: uuid.UUID
+    recipient_address: str
+    request_id: str
+    ip_address: str
+    user_agent: str
+    attempts: int
+    status: str
+
+
+@dataclass(frozen=True)
 class _PreparedAdvice:
     proposed: dict
     delivery_payload: EmailDeliveryPayload
@@ -111,6 +134,345 @@ class _PreparedAdvice:
 
 class CommunicationDispatcher:
     """Own template, render, durable outbox, and provider dispatch policy."""
+
+    @classmethod
+    def create_from_template(
+        cls,
+        *,
+        actor,
+        request,
+        content_template_id,
+        merge_data,
+        related_entity_type,
+        related_entity_id,
+        recipient_party_type,
+        recipient_party_id,
+        recipient_address,
+        channel,
+    ):
+        with transaction.atomic():
+            template = cls._approved_effective_template(content_template_id)
+            subject = cls._render_generic(
+                template.subject_template, template.variables_json or [], merge_data
+            )
+            body = cls._render_generic(
+                template.body_template, template.variables_json or [], merge_data
+            )
+            row = Communication.objects.create(
+                related_entity_type=related_entity_type,
+                related_entity_id=related_entity_id,
+                recipient_party_type=recipient_party_type,
+                recipient_party_id=recipient_party_id,
+                recipient_address=recipient_address,
+                channel=channel,
+                content_template=template,
+                subject_snapshot=subject,
+                body_snapshot=body,
+                sent_by_user=actor,
+                delivery_status=Communication.DELIVERY_PENDING,
+            )
+            cls._create_notification(row)
+            cls._record_generic_audit(actor, request, row)
+            return row
+
+    @staticmethod
+    def _approved_effective_template(content_template_id):
+        try:
+            template = ContentTemplate.objects.select_for_update().get(
+                content_template_id=content_template_id
+            )
+        except ContentTemplate.DoesNotExist as exc:
+            raise ValidationError(
+                {"content_template_id": "Content template was not found."}
+            ) from exc
+        today = timezone.localdate()
+        if template.approval_status != ContentTemplate.STATUS_APPROVED:
+            raise ValidationError(
+                {"content_template_id": "Content template must be approved."}
+            )
+        if template.effective_from > today:
+            raise ValidationError(
+                {"content_template_id": "Content template is not effective yet."}
+            )
+        if template.effective_to and template.effective_to < today:
+            raise ValidationError(
+                {"content_template_id": "Content template is no longer effective."}
+            )
+        return template
+
+    @staticmethod
+    def _render_generic(source, declared_variables, merge_data):
+        if source is None:
+            return None
+        declared = set(declared_variables)
+        provided = set(merge_data)
+        if declared - provided:
+            missing = ", ".join(sorted(declared - provided))
+            raise ValidationError({"merge_data": f"Missing template variables: {missing}."})
+        if provided - declared:
+            extra = ", ".join(sorted(provided - declared))
+            raise ValidationError({"merge_data": f"Unknown template variables: {extra}."})
+        return _TOKEN_RE.sub(lambda match: str(merge_data[match.group(1)]), source)
+
+    @staticmethod
+    def _create_notification(row):
+        party_type = row.recipient_party_type.strip().lower()
+        recipient = None
+        if party_type in _USER_RECIPIENT_TYPES and row.recipient_party_id:
+            user = User.objects.filter(pk=row.recipient_party_id).first()
+            recipient = {"recipient_user": user} if user else None
+        elif party_type in _ROLE_RECIPIENT_TYPES and row.recipient_address:
+            recipient = {"recipient_role_code": row.recipient_address.strip()}
+        elif party_type in _TEAM_RECIPIENT_TYPES and row.recipient_address:
+            recipient = {"recipient_team_code": row.recipient_address.strip()}
+        if recipient is None:
+            return
+        categories = {
+            "loan_application": "Application",
+            "loan_account": "Repayment",
+            "document": "Documents",
+            "compliance_task": "Compliance",
+        }
+        urls = {
+            "loan_application": "/applications/detail",
+            "loan_account": "/loan-accounts/detail",
+            "document": "/documentation",
+            "compliance_task": "/compliance",
+        }
+        Notification.objects.create(
+            communication=row,
+            notification_type=(
+                "application"
+                if row.related_entity_type == "loan_application"
+                else row.related_entity_type or "system"
+            ),
+            category=categories.get(row.related_entity_type, "System"),
+            severity=Notification.SEVERITY_INFO,
+            title=row.subject_snapshot or "Communication notification",
+            message=row.body_snapshot,
+            related_entity_type=row.related_entity_type,
+            related_entity_id=row.related_entity_id,
+            action_label="Open related record",
+            action_url=urls.get(row.related_entity_type, "/notifications"),
+            sender_user=row.sent_by_user,
+            **recipient,
+        )
+
+    @staticmethod
+    def _record_generic_audit(actor, request, row):
+        AuditLog.objects.create(
+            actor_user=actor,
+            actor_type="user",
+            action=_GENERIC_ACTION,
+            entity_type="communication",
+            entity_id=row.pk,
+            old_value_json=None,
+            new_value_json={
+                "communication_id": str(row.pk),
+                "related_entity_type": row.related_entity_type,
+                "related_entity_id": str(row.related_entity_id),
+                "recipient_party_type": row.recipient_party_type,
+                "recipient_party_id": str(row.recipient_party_id) if row.recipient_party_id else None,
+                "recipient_address": row.recipient_address,
+                "channel": row.channel,
+                "content_template_id": str(row.content_template_id),
+                "sent_by_user_id": str(row.sent_by_user_id),
+                "delivery_status": row.delivery_status,
+            },
+            ip_address=request_ip(request),
+            user_agent=request_user_agent(request),
+        )
+
+    @classmethod
+    def queue_advice(cls, *, context, request):
+        """Freeze one advice outbox and durable worker job without provider I/O."""
+        with transaction.atomic():
+            job = (
+                CommunicationDeliveryJob.objects.select_for_update()
+                .select_related("outbox")
+                .filter(advice_intent_id=context.advice_intent_id)
+                .first()
+            )
+            if job is not None and job.status == CommunicationDeliveryJob.STATUS_SENT:
+                if not (
+                    job.outbox.delivery_status
+                    == CommunicationDeliveryOutbox.DELIVERY_SENT
+                    and job.outbox.delivery_receipt_id
+                    and job.outbox.final_communication_id
+                ):
+                    raise CommunicationDispatchConflict(
+                        "The terminal communication job lacks final delivery evidence."
+                    )
+                cls._require_context_identity(job.outbox, context)
+                cls._require_job_match(job, context, job.outbox)
+                return job
+            prepared = cls._prepare(context)
+            outbox = cls._freeze_or_reconcile(context, prepared)
+            expected = {
+                "outbox_id": outbox.pk,
+                "actor_id": context.actor_id,
+                "actor_role_code": context.actor_role_code,
+                "actor_team_codes": list(context.actor_team_codes),
+                "request_payload_digest": outbox.payload_digest,
+            }
+            if job is None:
+                return CommunicationDeliveryJob.objects.create(
+                    advice_intent_id=context.advice_intent_id,
+                    request_id=request.request_id,
+                    ip_address=request.ip_address,
+                    user_agent=request.user_agent,
+                    **expected,
+                )
+            if any(getattr(job, field) != value for field, value in expected.items()):
+                raise CommunicationDispatchConflict(
+                    "The retained communication job conflicts with current advice facts."
+                )
+            return job
+
+    @staticmethod
+    def _require_job_match(job, context, outbox):
+        if not (
+            job.outbox_id == outbox.pk
+            and job.actor_id == context.actor_id
+            and job.actor_role_code == context.actor_role_code
+            and job.actor_team_codes == list(context.actor_team_codes)
+            and job.request_payload_digest == outbox.payload_digest
+        ):
+            raise CommunicationDispatchConflict(
+                "The retained communication job conflicts with current advice facts."
+            )
+
+    @staticmethod
+    def advice_is_queued(advice_intent_id):
+        return CommunicationDeliveryJob.objects.filter(
+            advice_intent_id=advice_intent_id
+        ).exists()
+
+    @classmethod
+    def start_advice_job(cls, job_id):
+        with transaction.atomic():
+            job = (
+                CommunicationDeliveryJob.objects.select_for_update()
+                .select_related("outbox")
+                .get(pk=job_id)
+            )
+            if job.status == CommunicationDeliveryJob.STATUS_SENT:
+                return cls._job_execution(job)
+            if job.status not in {
+                CommunicationDeliveryJob.STATUS_QUEUED,
+                CommunicationDeliveryJob.STATUS_RETRYING,
+            } or job.next_attempt_at > timezone.now():
+                raise CommunicationDispatchConflict(
+                    "The communication job is not ready for execution."
+                )
+            job.status = CommunicationDeliveryJob.STATUS_RUNNING
+            job.attempts += 1
+            job.started_at = timezone.now()
+            job.last_failure_code = ""
+            job.save(
+                update_fields=["status", "attempts", "started_at", "last_failure_code"]
+            )
+            return cls._job_execution(job)
+
+    @staticmethod
+    def retry_failed(*, actor=None, limit=100):
+        del actor
+        return list(
+            CommunicationDeliveryJob.objects.filter(
+                status__in=(
+                    CommunicationDeliveryJob.STATUS_QUEUED,
+                    CommunicationDeliveryJob.STATUS_RETRYING,
+                ),
+                next_attempt_at__lte=timezone.now(),
+            )
+            .order_by("next_attempt_at", "communication_job_id")
+            .values_list("communication_job_id", flat=True)[:limit]
+        )
+
+    @classmethod
+    def complete_advice_job(cls, job_id):
+        with transaction.atomic():
+            job = (
+                CommunicationDeliveryJob.objects.select_for_update()
+                .select_related("outbox")
+                .get(pk=job_id)
+            )
+            outbox = job.outbox
+            if not (
+                job.status == CommunicationDeliveryJob.STATUS_RUNNING
+                and outbox.delivery_status == CommunicationDeliveryOutbox.DELIVERY_SENT
+                and outbox.delivery_receipt_id
+                and outbox.final_communication_id
+            ):
+                raise CommunicationDispatchConflict(
+                    "The communication job cannot complete without final delivery evidence."
+                )
+            job.status = CommunicationDeliveryJob.STATUS_SENT
+            job.completed_at = timezone.now()
+            job.last_failure_code = ""
+            job.save(update_fields=["status", "completed_at", "last_failure_code"])
+            return job
+
+    @classmethod
+    def defer_advice_job(cls, job_id, failure_code):
+        safe_codes = {"provider_timeout", "provider_rejected", "provider_malformed", "worker_crash"}
+        if failure_code not in safe_codes:
+            failure_code = "worker_crash"
+        with transaction.atomic():
+            job = CommunicationDeliveryJob.objects.select_for_update().get(pk=job_id)
+            if job.status != CommunicationDeliveryJob.STATUS_RUNNING:
+                raise CommunicationDispatchConflict(
+                    "The communication job is not running."
+                )
+            exhausted = job.attempts >= job.max_attempts
+            job.status = (
+                CommunicationDeliveryJob.STATUS_FAILED
+                if exhausted
+                else CommunicationDeliveryJob.STATUS_RETRYING
+            )
+            job.last_failure_code = failure_code
+            job.completed_at = timezone.now() if exhausted else None
+            if not exhausted:
+                seconds = min(900, 60 * (2 ** (job.attempts - 1)))
+                job.next_attempt_at = timezone.now() + timedelta(seconds=seconds)
+            job.save(
+                update_fields=[
+                    "status",
+                    "last_failure_code",
+                    "completed_at",
+                    "next_attempt_at",
+                ]
+            )
+            if exhausted:
+                Notification.objects.get_or_create(
+                    notification_type="communication_job_failed",
+                    related_entity_type="communication_job",
+                    related_entity_id=job.pk,
+                    defaults={
+                        "category": "Operations",
+                        "severity": Notification.SEVERITY_URGENT,
+                        "title": "Communication delivery needs attention",
+                        "message": "A communication job exhausted its safe retry limit.",
+                        "action_label": "Review communication job",
+                        "action_url": "/notifications",
+                        "recipient_user_id": job.actor_id,
+                    },
+                )
+            return job
+
+    @staticmethod
+    def _job_execution(job):
+        return AdviceJobExecution(
+            job_id=job.pk,
+            actor_id=job.actor_id,
+            related_entity_id=job.outbox.related_entity_id,
+            recipient_address=job.outbox.recipient_address,
+            request_id=job.request_id,
+            ip_address=job.ip_address,
+            user_agent=job.user_agent,
+            attempts=job.attempts,
+            status=job.status,
+        )
 
     @classmethod
     def dispatch(cls, *, context, adapter=None):
@@ -140,11 +502,19 @@ class CommunicationDispatcher:
                 prepared.delivery_payload,
                 prepared.proposed["idempotency_key"],
             )
+        except (TypeError, ValueError) as exc:
+            cls._record_rejected_attempt(outbox.pk, prepared, adapter_kind)
+            raise CommunicationDeliveryFailed(
+                "The disbursement advice was not accepted for delivery.",
+                failure_code="provider_rejected",
+            ) from exc
+        try:
             validate_delivery_result(result)
         except (TypeError, ValueError) as exc:
             cls._record_rejected_attempt(outbox.pk, prepared, adapter_kind)
             raise CommunicationDeliveryFailed(
-                "The disbursement advice was not accepted for delivery."
+                "The disbursement advice provider result was malformed.",
+                failure_code="provider_malformed",
             ) from exc
 
         with transaction.atomic():

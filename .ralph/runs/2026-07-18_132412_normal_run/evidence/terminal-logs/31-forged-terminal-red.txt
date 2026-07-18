@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_forged_terminal_job_cannot_move_provider_call_back_into_request (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_forged_terminal_job_cannot_move_provider_call_back_into_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_132412_normal_run/sfpcl_credit/tests/test_communication_dispatcher_jobs.py", line 124, in test_forged_terminal_job_cannot_move_provider_call_back_into_request
+    provider.assert_not_called()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 894, in assert_not_called
+    raise AssertionError(msg)
+AssertionError: Expected 'send_email' to not have been called. Called 1 times.
+Calls: [call(EmailDeliveryPayload(communication_id=UUID('992681b4-a988-48d2-bd29-720a36774baf'), recipient_email='borrower.advice@example.com', subject='Disbursement advice LO-CHECK-001 / LN-REAL-OWNER-001', body_text='Dear Checklist Borrower 001, application LO-CHECK-001 and loan LN-REAL-OWNER-001 were sanctioned for 400000.00. We transferred 400000.00 on 2026-07-18 under reference ***********9876.', related_entity_type='disbursement', related_entity_id=UUID('7968d90d-b157-421d-beae-d3f3989b2033')), 'disbursement-advice:992681b4-a988-48d2-bd29-720a36774baf')].
+
+----------------------------------------------------------------------
+Ran 1 test in 0.627s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -25,6 +25,11 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
         ),
     ]
 
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
     def test_receipt_row_and_schema_survive_forward_reverse_and_reapply(self):
         from sfpcl_credit.tests.test_disbursement_advice_api import (
             DisbursementAdviceApiTests,
@@ -157,6 +162,11 @@ class CommunicationAdviceEvidenceMigrationTests(TransactionTestCase):
     migrate_to = [
         ("communications", "0005_advice_evidence_and_legacy_replay_closure")
     ]
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
 
     def test_coherent_legacy_delivery_survives_forward_reverse_and_reapply(self):
         from sfpcl_credit.tests.test_disbursement_advice_api import (
