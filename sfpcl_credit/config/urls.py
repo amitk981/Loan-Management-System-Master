@@ -32,6 +32,11 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/disbursement-workspaces/",
+        disbursement_views.workspace_list,
+        name="disbursement-workspace-list",
+    ),
+    path(
         "api/v1/loan-accounts/",
         loan_views.account_list,
         name="loan-account-list",

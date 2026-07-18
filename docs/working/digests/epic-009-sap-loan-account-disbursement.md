@@ -1,5 +1,18 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009K Staff Disbursement Workspace and Frontend Wiring
+
+- S36-S41 require a walkable staff workflow, while the retained §§29-31 APIs supply mutations and
+  account/readiness fragments but no safe finance/CFC queue or source-bank selection contract.
+  009K therefore adds one strict, paginated `/api/v1/disbursement-workspaces/` projection over the
+  existing SAP, loan, readiness, disbursement, bank, and advice owners.
+- Rows are scoped to effective Senior Finance initiation or CFC authorisation authority, mask
+  protected bank/SAP/reference values, preserve Money strings, and expose only server-owned action
+  descriptors. The browser never infers readiness, permission, payment state, bank identifiers, or
+  next actions. Initiation/transfer/advice retries use stable §45 idempotency keys.
+- A CFC lacking readiness-read permission sees the retained at-initiation readiness fact only; the
+  authorisation mutation still revalidates the exact current evidence before accepting a decision.
+
 ## 009H9D communications provenance and operator-boundary closure
 
 - Migration 0008 now validates every required frozen fact for type/content, checksum, channel, and

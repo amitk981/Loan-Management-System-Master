@@ -331,18 +331,27 @@ const authenticatedHeaders = (accessToken: string, jsonBody = false): Record<str
   ...(jsonBody ? { 'Content-Type': 'application/json' } : {}),
 });
 
-const authenticatedEnvelopeRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<ApiEnvelope<T>> => {
+interface AuthenticatedRequestOptions {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+}
+
+const authenticatedEnvelopeRequest = async <T>(path: string, options: AuthenticatedRequestOptions = {}): Promise<ApiEnvelope<T>> => {
   const session = loadStoredAuthSession();
   if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? 'GET',
-    headers: authenticatedHeaders(session.accessToken, options.body !== undefined),
+    headers: {
+      ...authenticatedHeaders(session.accessToken, options.body !== undefined),
+      ...options.headers,
+    },
     ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
   });
   return parseAuthenticatedEnvelope<T>(response);
 };
 
-export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
+export const authenticatedRequest = async <T>(path: string, options: AuthenticatedRequestOptions = {}): Promise<T> => {
   const envelope = await authenticatedEnvelopeRequest<T>(path, options);
   return envelope.data as T;
 };

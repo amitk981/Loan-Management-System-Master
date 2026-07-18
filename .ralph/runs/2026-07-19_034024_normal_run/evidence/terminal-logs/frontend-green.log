@@ -1,0 +1,17 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/disbursementApi.test.ts src/pages/disbursement/DisbursementHub.test.tsx src/pages/disbursement/PaymentAuthorisationHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_034024_normal_run/sfpcl-lms
+
+ ✓ src/services/disbursementApi.test.ts (2 tests) 6ms
+ ✓ src/pages/disbursement/DisbursementHub.test.tsx (4 tests) 231ms
+ ✓ src/pages/disbursement/PaymentAuthorisationHub.test.tsx (4 tests) 464ms
+
+ Test Files  3 passed (3)
+      Tests  10 passed (10)
+   Start at  03:54:54
+   Duration  1.67s (transform 192ms, setup 0ms, collect 677ms, tests 701ms, environment 888ms, prepare 131ms)
+

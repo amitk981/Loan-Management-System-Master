@@ -1,267 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Banknote, ChevronRight, Check, AlertTriangle, ShieldCheck, Download, FileText, Upload, Lock, RotateCcw, XCircle, Send, CheckCircle2 } from 'lucide-react';
-import StatusBadge from '../../components/ui/StatusBadge';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, Banknote, Check, FileText, Lock, ShieldCheck } from 'lucide-react';
 import AlertBanner from '../../components/ui/AlertBanner';
-import { loanApplications, members } from '../../data/mockData';
-import { useRole } from '../../contexts/RoleContext';
+import StatusBadge from '../../components/ui/StatusBadge';
+import { AuthSessionError } from '../../services/authSession';
+import { fetchDisbursementWorkspace, submitDisbursementAction, type DisbursementAction, type DisbursementWorkspaceRow } from '../../services/disbursementApi';
 
-const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
-
-interface PaymentAuthorisationHubProps {
-  onOpenApplication: (id: string) => void;
-  initialSelectedId?: string;
-}
-
-type AuthStage = 'cfc_pending' | 'completed';
-
-const STAGE_LABELS: Record<AuthStage, string> = {
-  cfc_pending: 'Payment Initiated',
-  completed: 'Transfer Executed',
-};
-
-const isTransferExecuted = (app: { status: string; disbursementStatus: string }) =>
-  ['completed', 'disbursed', 'transfer_executed'].includes(app.disbursementStatus) ||
-  ['disbursed', 'transfer_executed'].includes(app.status);
-
-const getAuthorisationStatus = (app: { status: string; disbursementStatus: string }, stage?: AuthStage) => {
-  if (stage === 'completed' || isTransferExecuted(app)) return 'transfer_executed';
-  if (app.status === 'payment_authorized' || app.disbursementStatus === 'payment_authorized') return 'payment_authorized';
-  return 'payment_initiated';
-};
+interface PaymentAuthorisationHubProps { onOpenApplication: (id: string) => void; initialSelectedId?: string; }
+type LoadState = 'loading' | 'ready' | 'unauthorized' | 'error';
 
 const PaymentAuthorisationHub: React.FC<PaymentAuthorisationHubProps> = ({ onOpenApplication, initialSelectedId }) => {
-  const cfcQueue = loanApplications.filter(a =>
-    ['pending_cfc_approval', 'payment_authorized', 'transfer_executed', 'completed', 'disbursed'].includes(a.disbursementStatus) ||
-    ['payment_initiated', 'payment_authorized', 'transfer_executed', 'disbursed'].includes(a.status)
-  );
-  
-  const initialApp = initialSelectedId ? cfcQueue.find(a => a.id === initialSelectedId || a.applicationNumber === initialSelectedId) : null;
-  const [selected, setSelected] = useState<string | null>(
-    initialApp?.id || cfcQueue.find(a => a.disbursementStatus === 'pending_cfc_approval' || a.status === 'payment_initiated')?.id || cfcQueue[0]?.id || null
-  );
-
-  const { currentUser, can } = useRole();
-  const isAdmin = currentUser.role === 'admin';
-  const isCfc = currentUser.role === 'cfc' || isAdmin;
-
-  const app = cfcQueue.find(a => a.id === selected);
-  const member = app ? members.find(m => m.id === app.memberId) : null;
-
-  // CFC State
-  const [stage, setStage] = useState<AuthStage>('cfc_pending');
-  const [cfcComment, setCfcComment] = useState('');
-  const [utrReference, setUtrReference] = useState('');
-  const [cfcBankEvidence, setCfcBankEvidence] = useState(false);
-
-  useEffect(() => {
-    if (app) {
-      if (isTransferExecuted(app)) {
-        setStage('completed');
-        setUtrReference('UTR202606241234'); // dummy
-        setCfcBankEvidence(true);
-      } else {
-        setStage('cfc_pending');
-        setCfcComment('');
-        setUtrReference('');
-        setCfcBankEvidence(false);
-      }
-    }
-  }, [app]);
-
-  const auditLog = (action: string, reason?: string) => {
-    console.log({
-      action,
-      actor: currentUser.role,
-      time: new Date().toISOString(),
-      app_id: app?.id,
-      reason,
-    });
-  };
-
-  return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Payment Authorisation Queue</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Payment requests awaiting CFC action</p>
-        </div>
-      </div>
-
-      {cfcQueue.length === 0 ? (
-        <div className="card text-center py-8">
-          <Check size={32} className="text-green-500 mx-auto mb-3" />
-          <p className="text-slate-600 font-semibold">No payment requests pending authorisation</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Queue */}
-          <div className="card p-0 overflow-hidden lg:col-span-1 h-[calc(100vh-160px)] overflow-y-auto">
-            <div className="p-4 bg-slate-50 border-b border-slate-200">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CFC Authorisation Queue ({cfcQueue.length})</p>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {cfcQueue.map(a => (
-                <button
-                  key={a.id}
-                  onClick={() => setSelected(a.id)}
-                  className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left ${selected === a.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
-                >
-                  <ShieldCheck size={16} className={`${isTransferExecuted(a) ? 'text-green-600' : 'text-amber-600'} flex-shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-900 num text-sm">{a.applicationNumber}</div>
-                    <div className="text-xs text-slate-500 truncate">{a.memberName}</div>
-                    <div className="text-xs text-green-700 num font-medium">{fmt(a.requestedAmount)}</div>
-                  </div>
-                  <StatusBadge label={getAuthorisationStatus(a)} size="sm" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Detail */}
-          {app ? (
-            <div className="lg:col-span-2 space-y-4">
-              <div className="card">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-bold text-slate-900 num">{app.applicationNumber}</h2>
-                      <StatusBadge label={getAuthorisationStatus(app, stage)} size="sm" />
-                    </div>
-                    <p className="text-sm text-slate-500">{app.memberName} · {fmt(app.requestedAmount)}</p>
-                  </div>
-                  <button onClick={() => onOpenApplication(app.id)} className="btn-secondary flex items-center gap-2 flex-shrink-0">
-                    <FileText size={14} /> Full Application
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mb-4 max-w-sm">
-                  {(Object.entries(STAGE_LABELS) as Array<[AuthStage, string]>).map(([s, label]) => (
-                    <div
-                      key={s}
-                      className={`rounded-lg p-2 text-center text-xs font-medium ${
-                        stage === s ? 'bg-green-100 text-green-700 border border-green-300' :
-                        (Object.keys(STAGE_LABELS).indexOf(s) < Object.keys(STAGE_LABELS).indexOf(stage))
-                          ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400'
-                      }`}
-                    >
-                      {label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* CFC Authorisation panel */}
-              {(stage === 'cfc_pending' || stage === 'completed') && (
-                <div className="card">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                    <ShieldCheck size={14} /> CFC Authorisation
-                  </h3>
-                  {stage === 'completed' ? (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-lg p-3 text-sm">
-                        <Check size={16} /> Payment authorised and released successfully.
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-2">
-                         <div><p className="text-xs text-slate-500">UTR / Bank Ref</p><p className="font-medium font-mono">{utrReference}</p></div>
-                         <div><p className="text-xs text-slate-500">Bank Confirmation Attachment</p><p className="font-medium text-blue-600 hover:underline cursor-pointer">confirmation_pdf</p></div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                        <div><p className="text-xs text-slate-500">Payment Request ID</p><p className="font-medium">REQ-2948</p></div>
-                        <div><p className="text-xs text-slate-500">Borrower</p><p className="font-medium">{app.memberName}</p></div>
-                        <div><p className="text-xs text-slate-500">Application Reference</p><p className="font-medium">{app.applicationNumber}</p></div>
-                        <div><p className="text-xs text-slate-500">Amount</p><p className="font-medium">{fmt(app.requestedAmount)}</p></div>
-                        <div><p className="text-xs text-slate-500">Masked Bank Details</p><p className="font-medium">XXXX1234 / SBIN0001234</p></div>
-                        <div><p className="text-xs text-slate-500">Initiated By</p><p className="font-medium">Senior Manager</p></div>
-                        <div><p className="text-xs text-slate-500">Initiated Date</p><p className="font-medium">{new Date().toLocaleDateString('en-IN')}</p></div>
-                        <div><p className="text-xs text-slate-500">Readiness Status</p><p className="font-medium text-green-600">All Gates Cleared</p></div>
-                        <div className="col-span-2"><p className="text-xs text-slate-500">Supporting Documents</p><p className="font-medium text-blue-600 hover:underline cursor-pointer">View Package</p></div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="field-label">UTR / Bank Reference (Required for Auth)</label>
-                          <input type="text" value={utrReference} onChange={e => setUtrReference(e.target.value.toUpperCase())} className="field-input" placeholder="e.g. UTR202606241234" />
-                        </div>
-                        <div>
-                          <label className="field-label">Bank Confirmation Attachment</label>
-                          <button onClick={() => setCfcBankEvidence(true)} className={`w-full flex items-center justify-center gap-2 border rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${cfcBankEvidence ? 'border-green-200 bg-green-50 text-green-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
-                            {cfcBankEvidence ? <Check size={14} /> : <Upload size={14} />} {cfcBankEvidence ? 'Evidence Uploaded' : 'Upload Bank Confirmation'}
-                          </button>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="field-label">Comment</label>
-                          <input type="text" value={cfcComment} onChange={e => setCfcComment(e.target.value)} className="field-input" placeholder="Mandatory for return or reject..." />
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-3">
-                        {isCfc ? (
-                          <>
-                            <button className="btn-primary text-sm flex-[2]" disabled={!utrReference || !cfcBankEvidence} onClick={() => { setStage('completed'); auditLog('AUTHORISED_TRANSFER', utrReference); }}>Approve and mark transferred</button>
-                            <button className="btn-secondary text-sm flex-1" disabled={!cfcComment} onClick={() => auditLog('RETURNED_TO_SM_FINANCE', cfcComment)}>Return to Senior Manager</button>
-                            <button className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg text-sm flex-1 disabled:opacity-50" disabled={!cfcComment} onClick={() => auditLog('REJECTED_PAYMENT', cfcComment)}>Reject payment request</button>
-                          </>
-                        ) : (
-                          <div className="w-full bg-slate-50 border border-slate-200 text-slate-500 text-sm px-4 py-2.5 rounded-lg flex items-center gap-2">
-                            <Lock size={14} /> CFC Authorisation required
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 6. Disbursed panel */}
-              {stage === 'completed' && (
-                <div className="card">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                    <FileText size={14} /> Post-Disbursement & Borrower Advice
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">
-                    <div><p className="text-xs text-slate-500">Loan Account Number</p><p className="font-medium">L-003294</p></div>
-                    <div><p className="text-xs text-slate-500">Disbursed Amount</p><p className="font-medium">{fmt(app.requestedAmount)}</p></div>
-                    <div><p className="text-xs text-slate-500">Disbursement Date</p><p className="font-medium">{new Date().toLocaleDateString('en-IN')}</p></div>
-                    <div><p className="text-xs text-slate-500">Borrower Communication Mode</p><p className="font-medium">Email + SMS</p></div>
-                    <div><p className="text-xs text-slate-500">UTR / Bank Reference</p><p className="font-medium font-mono">{utrReference}</p></div>
-                    <div><p className="text-xs text-slate-500">Bank Evidence</p><p className="font-medium text-blue-600 hover:underline cursor-pointer">confirmation_pdf</p></div>
-                    <div><p className="text-xs text-slate-500">Disbursement Advice Status</p><p className="font-medium text-amber-600">Pending Generation</p></div>
-                  </div>
-                  <div className="space-y-2 mb-4">
-                     {[
-                       'Loan register updated',
-                       'Monitoring schedule started',
-                       'Senior Manager post-disbursement checklist signature'
-                     ].map(item => (
-                       <div key={item} className="flex items-center gap-2 text-sm text-slate-700">
-                         <CheckCircle2 size={14} className="text-green-600" /> {item}
-                       </div>
-                     ))}
-                  </div>
-                  <div className="flex gap-3 flex-wrap">
-                    <button className="btn-primary text-sm flex items-center gap-2 flex-[2] justify-center" onClick={() => auditLog('GENERATED_ADVICE')}><FileText size={14}/> Generate disbursement advice</button>
-                    <button className="btn-secondary text-sm flex items-center gap-2 flex-1 justify-center" onClick={() => auditLog('DOWNLOAD_ADVICE')}><Download size={14}/> Download PDF</button>
-                    <button className="btn-secondary text-sm flex items-center gap-2 flex-1 justify-center" onClick={() => auditLog('SENT_EMAIL')}><Send size={14}/> Send Email</button>
-                    <button className="btn-secondary text-sm flex items-center gap-2 flex-1 justify-center" onClick={() => auditLog('SENT_SMS_SUMMARY')}><Send size={14}/> Send SMS summary</button>
-                    <button className="btn-secondary text-sm flex items-center gap-2 flex-1 justify-center" onClick={() => auditLog('MARKED_HARD_COPY')}><Check size={14}/> Mark hard copy dispatched</button>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          ) : (
-            <div className="lg:col-span-2 space-y-4">
-               <div className="card text-center py-8">
-                  <p className="text-slate-600 font-semibold">Select a payment request from the queue.</p>
-               </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const [rows, setRows] = useState<DisbursementWorkspaceRow[]>([]); const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
+  const [loadState, setLoadState] = useState<LoadState>('loading'); const [message, setMessage] = useState(''); const [form, setForm] = useState<Record<string, string>>({}); const [submitting, setSubmitting] = useState(false);
+  const idempotencyKeys = useRef<Record<string, string>>({});
+  const load = async () => { setLoadState('loading'); try { const result = await fetchDisbursementWorkspace(); setRows(result.items); setSelectedId(current => result.items.some(row => row.workspace_id === current || row.disbursement_id === current) ? current : result.items[0]?.workspace_id ?? null); setLoadState('ready'); } catch (error) { setRows([]); setLoadState(error instanceof AuthSessionError && [401, 403].includes(error.status ?? 0) ? 'unauthorized' : 'error'); setMessage(error instanceof Error ? error.message : 'Payment authorisation workspace could not be loaded.'); } };
+  useEffect(() => { void load(); }, []);
+  const selected = rows.find(row => row.workspace_id === selectedId || row.disbursement_id === selectedId) ?? rows[0] ?? null;
+  const authorise = selected?.available_actions.find(action => action.action_code === 'authorise_disbursement'); const reject = selected?.available_actions.find(action => action.action_code === 'reject_disbursement'); const transfer = selected?.available_actions.find(action => action.action_code === 'mark_transfer_successful'); const advice = selected?.available_actions.find(action => action.action_code === 'send_disbursement_advice');
+  const visibleFields = useMemo(() => authorise?.fields ?? reject?.fields ?? transfer?.fields ?? advice?.fields ?? [], [authorise, reject, transfer, advice]);
+  useEffect(() => { setForm(Object.fromEntries(visibleFields.map(field => [field.name, field.value ?? '']))); setMessage(''); }, [selected?.workspace_id, visibleFields]);
+  const run = async (action: DisbursementAction, extra: Record<string, string> = {}) => { setSubmitting(true); setMessage(''); try { const payload = { ...form, ...extra }; const idempotent = ['mark_transfer_successful', 'send_disbursement_advice'].includes(action.action_code); const keySlot = `${selected?.workspace_id}:${action.action_code}`; if (idempotent && !idempotencyKeys.current[keySlot]) idempotencyKeys.current[keySlot] = `${action.action_code}-${selected?.workspace_id}-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`; await submitDisbursementAction(action, payload, idempotent ? idempotencyKeys.current[keySlot] : undefined); const successMessage = action.action_code === 'mark_transfer_successful' ? 'Transfer recorded successfully.' : 'Action recorded successfully.'; await load(); setMessage(successMessage); } catch (error) { setMessage(error instanceof Error ? error.message : 'Payment action failed.'); } finally { setSubmitting(false); } };
+  if (loadState === 'loading') return <div className="p-6"><div className="card text-sm text-slate-500">Loading payment authorisations…</div></div>;
+  if (loadState !== 'ready') return <div className="p-6"><AlertBanner type="error" title={loadState === 'unauthorized' ? 'Access Denied' : 'Payment Authorisations Unavailable'} message={message} /></div>;
+  return <div className="p-6 space-y-4"><div><h1 className="text-xl font-bold text-slate-900">Payment Authorisation</h1><p className="text-sm text-slate-500 mt-0.5">Independent CFC decision, manual bank transfer evidence, and advice status</p></div>{rows.length === 0 ? <div className="card text-center py-8"><Check size={32} className="text-green-500 mx-auto mb-3" /><p className="text-slate-600 font-semibold">No payment authorisations in your scope</p></div> : <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="card p-0 overflow-hidden"><div className="p-4 bg-slate-50 border-b border-slate-200"><p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Authorisation Queue ({rows.length})</p></div><div className="divide-y divide-slate-100">{rows.map(row => <button key={row.workspace_id} type="button" onClick={() => setSelectedId(row.workspace_id)} className={`w-full flex items-center gap-3 p-4 text-left hover:bg-slate-50 ${selected?.workspace_id === row.workspace_id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}><Banknote size={16} className="text-green-600" /><div className="flex-1 min-w-0"><p className="font-semibold text-sm text-slate-900 num">{row.application_reference_number || row.loan_account_number}</p><p className="text-xs text-slate-500 truncate">{row.member.display_name}</p><p className="text-xs text-green-700 font-medium">{money(row.disbursement_amount)}</p></div><StatusBadge label={row.bank_transfer_status === 'successful' ? 'transfer_executed' : row.authorisation_status || 'pending'} size="sm" /></button>)}</div></div>{selected && <div className="lg:col-span-2 space-y-4"><div className="card"><div className="flex items-start justify-between"><div><div className="flex items-center gap-2"><h2 className="text-lg font-bold text-slate-900 num">{selected.loan_account_number || selected.application_reference_number}</h2><StatusBadge label={selected.authorisation_status || 'pending'} size="sm" /></div><p className="text-sm text-slate-500">{selected.member.display_name} · {money(selected.disbursement_amount)}</p></div><button type="button" className="btn-secondary flex items-center gap-2" onClick={() => onOpenApplication(selected.loan_application_id)}><FileText size={14} /> Full Application</button></div><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4"><Info label="Initiated by" value={selected.initiated_by?.full_name || '—'} /><Info label="Beneficiary" value={selected.beneficiary_bank?.account_number_masked || '—'} /><Info label="Source bank" value={selected.source_bank?.bank_name || '—'} /><Info label="Advice" value={label(selected.advice_status)} /></div></div><div className="card"><h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><ShieldCheck size={15} /> Payment decision and evidence</h3>{visibleFields.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">{visibleFields.map(field => <Field key={field.name} field={field} value={form[field.name] ?? ''} onChange={value => setForm(current => ({ ...current, [field.name]: value }))} />)}</div>}{message && <div className="mb-4"><AlertBanner type={message.includes('success') ? 'success' : 'error'} title="Payment action" message={message} /></div>}<div className="flex flex-wrap gap-3">{authorise && <button type="button" className="btn-primary flex-1" disabled={!authorise.enabled || submitting} onClick={() => void run(authorise, { decision: 'approved' })}>{authorise.label}</button>}{reject && <button type="button" className="btn-secondary flex-1" disabled={!reject.enabled || submitting || !(form.comments || '').trim()} onClick={() => void run(reject, { decision: 'rejected' })}>{reject.label}</button>}{transfer && <button type="button" className="btn-primary flex-1" disabled={!transfer.enabled || submitting} onClick={() => void run(transfer)}>{transfer.label}</button>}{advice && <button type="button" className="btn-primary flex-1" disabled={!advice.enabled || submitting} onClick={() => void run(advice)}>{advice.label}</button>}{!authorise && !reject && !transfer && !advice && <div className="w-full bg-slate-50 border border-slate-200 text-slate-500 text-sm px-4 py-2.5 rounded-lg flex items-center gap-2"><Lock size={14} /> No action is available for your role or the current payment state.</div>}</div>{[authorise, reject, transfer, advice].filter(Boolean).some(action => action?.disabled_reason) && <div className="mt-3 flex items-center gap-2 text-xs text-amber-700"><AlertTriangle size={14} />{[authorise, reject, transfer, advice].find(action => action?.disabled_reason)?.disabled_reason}</div>}</div></div>}</div>}</div>;
 };
 
+const Info = ({ label: key, value }: { label: string; value: string }) => <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">{key}</p><p className="text-sm font-medium text-slate-900 truncate">{value}</p></div>;
+const Field = ({ field, value, onChange }: { field: DisbursementAction['fields'][number]; value: string; onChange: (value: string) => void }) => <div className={field.type === 'textarea' ? 'sm:col-span-2' : ''}><label className="field-label" htmlFor={`cfc-${field.name}`}>{field.label}</label>{field.type === 'textarea' ? <textarea id={`cfc-${field.name}`} className="field-input min-h-[90px]" value={value} required={field.required} onChange={event => onChange(event.target.value)} /> : <input id={`cfc-${field.name}`} className="field-input" type={field.type === 'money' ? 'text' : field.type} value={value} required={field.required} onChange={event => onChange(event.target.value)} />}</div>;
+const money = (value: string) => `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const label = (value: string) => value.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase());
 export default PaymentAuthorisationHub;

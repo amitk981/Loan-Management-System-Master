@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_http_methods
 
-from sfpcl_credit.api import error_response, parse_json_body, success_response
+from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
     DisbursementAuthorisationConflict,
     DisbursementConflict,
@@ -19,6 +19,27 @@ from sfpcl_credit.processes.disbursement_advice_delivery import (
 from sfpcl_credit.disbursements.modules.disbursement_readiness import evaluate
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied, DomainPermissionDenied
 from sfpcl_credit.identity.modules import http_auth
+from sfpcl_credit.processes.disbursement_workspace import (
+    DisbursementWorkspaceValidation,
+    list_workspace,
+)
+
+
+@require_http_methods(["GET"])
+def workspace_list(request):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data, pagination = list_workspace(actor=actor, query_params=request.GET)
+        return list_response(data, pagination, request)
+    except DomainPermissionDenied as exc:
+        return error_response(request, 403, "FORBIDDEN", exc.message)
+    except DisbursementWorkspaceValidation as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR",
+            "Disbursement workspace query failed validation.", exc.field_errors,
+        )
 
 
 @require_http_methods(["GET"])

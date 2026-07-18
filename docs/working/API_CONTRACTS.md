@@ -4338,3 +4338,28 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   comments, request/network/idempotency facts, member identity/contact values, register identities,
   and advice/provider identities are never returned. Both reads are transactionally zero-write and
   create no audit or workflow event.
+
+## Staff disbursement workspace (009K)
+
+- `GET /api/v1/disbursement-workspaces/?page=1&page_size=20` returns the standard strict pagination
+  envelope. It accepts only positive `page` and `page_size` values, caps page size at 100, and
+  rejects out-of-range pages and unknown parameters with `400 VALIDATION_ERROR`.
+- The collection requires an active effective Senior Manager Finance role with
+  `finance.disbursement.initiate`, or current CFC authority with
+  `finance.disbursement.authorise`. Role alone, permission alone, intake assignment, or a raw id
+  grants no row. Senior Finance rows reuse the canonical scoped Loan Account read owner; CFC rows
+  require the retained CFC-task relation created by the exact initiation owner.
+- Each item contains safe account/application/member display facts, Money strings, masked SAP code,
+  the canonical current readiness projection when the actor can read it, masked beneficiary/source
+  bank display, payment/advice statuses and timestamps, and server-owned `available_actions`.
+  Action descriptors carry the exact URL, method, required permission, enabled/disabled reason,
+  form fields, and protected fixed identifiers needed by an existing mutation contract. The client
+  never derives an action from a status or role label.
+- A CFC without readiness-read authority sees only the frozen fact that the accepted initiation
+  passed readiness at `initiated_at`; the §31.3 authorisation owner still revalidates current
+  initiation/readiness/bank evidence before accepting a decision. This projection cannot authorize
+  a payment or substitute for the mutation guard.
+- Full account numbers, unmasked SAP/UTR values, encrypted values, checksums, storage/capability
+  values, idempotency digests, network context, audit bodies, and provider internals are excluded.
+  The collection is transactionally read-only and writes no audit, workflow, task, payment,
+  account, register, advice, or borrower truth.
