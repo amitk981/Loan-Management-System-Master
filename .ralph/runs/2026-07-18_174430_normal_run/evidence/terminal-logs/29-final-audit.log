@@ -1,0 +1,50 @@
+System check identified no issues (0 silenced).
+No changes detected
+protected_diff_count=
+tracked_diff_stat
+ .ralph/progress.md                                 |  17 +
+ .ralph/state.json                                  |   7 +-
+ ...dispatcher-interface-and-idempotency-closure.md |   2 +-
+ docs/working/API_CONTRACTS.md                      |  12 +-
+ docs/working/HANDOFF.md                            |  29 +-
+ .../epic-009-sap-loan-account-disbursement.md      |  25 ++
+ sfpcl_credit/communications/adapters.py            |  20 +-
+ sfpcl_credit/communications/models.py              |  50 ++-
+ .../modules/communication_dispatcher.py            | 368 +++++++++++++++++++--
+ sfpcl_credit/communications/services.py            |  33 +-
+ sfpcl_credit/communications/views.py               |   5 +
+ .../disbursements/modules/disbursement_advice.py   |  27 --
+ .../disbursements/modules/disbursement_workflow.py |   6 -
+ sfpcl_credit/disbursements/views.py                |  10 +-
+ .../processes/disbursement_advice_delivery.py      |  16 +-
+ sfpcl_credit/processes/tasks.py                    |   6 +-
+ .../tests/test_communication_advice_persistence.py |   6 +-
+ .../tests/test_communication_dispatcher_jobs.py    | 129 +++++++-
+ sfpcl_credit/tests/test_communications_api.py      | 134 +++++++-
+ sfpcl_credit/tests/test_disbursement_advice_api.py |  83 +++--
+ 20 files changed, 832 insertions(+), 153 deletions(-)
+worktree_status
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009H7-communications-dispatcher-interface-and-idempotency-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/communications/adapters.py
+ M sfpcl_credit/communications/models.py
+ M sfpcl_credit/communications/modules/communication_dispatcher.py
+ M sfpcl_credit/communications/services.py
+ M sfpcl_credit/communications/views.py
+ M sfpcl_credit/disbursements/modules/disbursement_advice.py
+ M sfpcl_credit/disbursements/modules/disbursement_workflow.py
+ M sfpcl_credit/disbursements/views.py
+ M sfpcl_credit/processes/disbursement_advice_delivery.py
+ M sfpcl_credit/processes/tasks.py
+ M sfpcl_credit/tests/test_communication_advice_persistence.py
+ M sfpcl_credit/tests/test_communication_dispatcher_jobs.py
+ M sfpcl_credit/tests/test_communications_api.py
+ M sfpcl_credit/tests/test_disbursement_advice_api.py
+?? .ralph/runs/2026-07-18_174430_normal_run/
+?? sfpcl_credit/communications/migrations/0009_generic_delivery_job_identity.py
+?? sfpcl_credit/processes/communication_delivery.py
+?? sfpcl_credit/tests/test_communication_job_migration.py

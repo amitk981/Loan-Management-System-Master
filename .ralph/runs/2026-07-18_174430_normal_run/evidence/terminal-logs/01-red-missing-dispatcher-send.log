@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_source_dispatcher_exposes_idempotent_send (sfpcl_credit.tests.test_communications_api.CommunicationApiTests.test_source_dispatcher_exposes_idempotent_send)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_communications_api.py", line 109, in test_source_dispatcher_exposes_idempotent_send
+    self.assertTrue(
+AssertionError: False is not true : Source §40.1 requires CommunicationDispatcher.send(..., idempotency_key).
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

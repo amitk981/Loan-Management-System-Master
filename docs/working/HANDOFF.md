@@ -2,25 +2,31 @@
 
 ## Last Run
 
-2026-07-18_162512_normal_run
+2026-07-18_184623_repair
 
 ## Current Status
 
-009H6 is complete pending independent validation. Communications migration 0008 now preserves only
-provable post-0005 frozen provenance as `verified`; deterministic 0005 attempts are
-`legacy_0005/legacy_partial`, while attempt-less or checksum-incoherent rows remain honestly
-`ambiguous_legacy/legacy_partial`. Partial rows retain rendered/provider/receipt/Communication/
-action/audit/workflow truth but clear the mutable template FK, every reconstructed source fact, and
-checksum. Database constraints bind origin, status, and full-versus-null snapshot shape.
+009H7 is complete pending independent repair validation. Generic communication and disbursement
+advice now cross the source-shaped communications dispatcher and one retained generic job identity.
+Both HTTP sends require a bounded explicit `Idempotency-Key`, bind it to exact
+object/payload/actor truth, and return zero-write exact replay while rejecting changed, cross-actor,
+or cross-object use.
 
-Current replay/finalization and portal/download truth require verified frozen provenance and reject
-both legacy adapter identities with zero provider calls. Genuine legacy reversal refuses before
-losing the origin marker; clean verified rows reverse/reapply exactly. RED/GREEN evidence, 41
-impacted public tests, every migration fixture, Django check, migration sync, compile, and both
-PostgreSQL five-caller methods in two final executions pass. Independent Standards review found no
-production/test violation, and Spec re-review found no remaining fidelity issue.
+Migration 0009 preserves existing H5 job ids/history and excludes H6 legacy-partial provenance.
+The disbursement owner no longer imports/registers the process coordinator. Manual/no-provider mode
+cannot fabricate provider acceptance; Fake/configured adapters retain provider truth, and generic
+acceptance is frozen before final Communication mutation. Fifty-seven focused tests, six H6
+migration regressions, required backend checks, frontend gates, and all six PostgreSQL five-caller
+races in two final executions pass.
+
+The first independent complete-coverage run found one stale pre-H7 notification integration test:
+it called the generic send endpoint without the now-required key and expected HTTP 200. Repair
+`2026-07-18_184623_repair` reproduced the exact 400, supplied one stable explicit key in that test,
+and passed the exact test plus all 14 notification/generic-communications API tests. Production
+dispatcher code and its fail-closed missing-key contract were not changed.
 
 ## Next Run
 
-Run 009H7 next, then 009H8 and 009I2 before 009J and 009K. H7/H8 now explicitly preserve and
-exclude H6's provenance origins during generic-job migration and worker claim/recovery.
+Run 009H8 next, then 009I2 before 009J and 009K. H8 is already sharpened to register the Celery
+runtime, on-commit scheduling, leases, stale-running recovery, accepted-evidence replay, and H6
+legacy exclusion; I2 is already sharpened for exact owner timestamps and real-browser evidence.

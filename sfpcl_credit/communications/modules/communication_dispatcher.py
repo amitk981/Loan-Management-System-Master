@@ -6,7 +6,7 @@ import re
 import uuid
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -188,8 +188,10 @@ def resolve_finalized_advice_artifact(*, context):
 
 
 @dataclass(frozen=True)
-class AdviceJobExecution:
+class DeliveryJobExecution:
     job_id: uuid.UUID
+    job_kind: str
+    communication_id: uuid.UUID
     actor_id: uuid.UUID
     related_entity_id: uuid.UUID
     recipient_address: str
@@ -224,8 +226,11 @@ class CommunicationDispatcher:
         recipient_party_id,
         recipient_address,
         channel,
+        idempotency_key=None,
     ):
         with transaction.atomic():
+            key = cls._validated_idempotency_key(idempotency_key)
+            cls._lock_idempotency_key(key)
             template = cls._approved_effective_template(content_template_id)
             subject = cls._render_generic(
                 template.subject_template, template.variables_json or [], merge_data
@@ -233,6 +238,38 @@ class CommunicationDispatcher:
             body = cls._render_generic(
                 template.body_template, template.variables_json or [], merge_data
             )
+            proposed_digest = cls._generic_payload_digest(
+                communication_id=None,
+                related_entity_type=related_entity_type,
+                related_entity_id=related_entity_id,
+                recipient_party_type=recipient_party_type,
+                recipient_party_id=recipient_party_id,
+                recipient_address=recipient_address,
+                channel=channel,
+                content_template_id=template.pk,
+                subject=subject,
+                body=body,
+            )
+            retained = (
+                CommunicationDeliveryJob.objects.select_for_update(of=("self",))
+                .filter(idempotency_key=key)
+                .first()
+            )
+            if retained is not None:
+                if not (
+                    retained.job_kind == CommunicationDeliveryJob.KIND_GENERIC
+                    and retained.actor_id == actor.pk
+                    and retained.request_payload_digest == proposed_digest
+                ):
+                    raise CommunicationDispatchConflict(
+                        "The idempotency key is already bound to another communication request."
+                    )
+                try:
+                    return Communication.objects.get(pk=retained.communication_id)
+                except Communication.DoesNotExist as exc:
+                    raise CommunicationDispatchConflict(
+                        "The retained communication job has no communication snapshot."
+                    ) from exc
             row = Communication.objects.create(
                 related_entity_type=related_entity_type,
                 related_entity_id=related_entity_id,
@@ -249,6 +286,177 @@ class CommunicationDispatcher:
             cls._create_notification(row)
             cls._record_generic_audit(actor, request, row)
             return row
+
+    @classmethod
+    def send(
+        cls,
+        *,
+        communication_id,
+        idempotency_key,
+        actor=None,
+        request=None,
+        _advice_context=None,
+        _outbox=None,
+    ):
+        """Queue an existing communication through the canonical delivery seam."""
+        key = cls._validated_idempotency_key(idempotency_key)
+        if _advice_context is not None:
+            return cls._send_advice_job(
+                communication_id=communication_id,
+                idempotency_key=key,
+                context=_advice_context,
+                outbox=_outbox,
+                request=request,
+            )
+        with transaction.atomic():
+            cls._lock_idempotency_key(key)
+            try:
+                row = Communication.objects.select_for_update(of=("self",)).select_related(
+                    "sent_by_user__primary_role"
+                ).get(pk=communication_id)
+            except (Communication.DoesNotExist, ValueError, TypeError) as exc:
+                raise CommunicationDispatchConflict(
+                    "The communication was not found or conflicts with retained delivery truth."
+                ) from exc
+            operator = actor or row.sent_by_user
+            if operator is None or row.sent_by_user_id != operator.pk:
+                raise CommunicationDispatchConflict(
+                    "The communication actor conflicts with retained delivery truth."
+                )
+            payload_digest = cls._generic_payload_digest_from_row(row)
+            retained = (
+                CommunicationDeliveryJob.objects.select_for_update(of=("self",))
+                .filter(Q(idempotency_key=key) | Q(communication_id=row.pk))
+                .first()
+            )
+            if retained is not None:
+                cls._require_generic_job_match(
+                    retained, row, operator, key, payload_digest
+                )
+                return row
+            role = getattr(operator, "primary_role", None)
+            request_id = ""
+            if request is not None:
+                request_id = request.headers.get("X-Request-ID", "").strip()
+            CommunicationDeliveryJob.objects.create(
+                communication_id=row.pk,
+                job_kind=CommunicationDeliveryJob.KIND_GENERIC,
+                idempotency_key=key,
+                actor_id=operator.pk,
+                actor_role_code=getattr(role, "role_code", None) or "unassigned",
+                actor_team_codes=sorted(operator.team_codes()),
+                request_id=request_id or f"req_communication_{uuid.uuid4().hex}",
+                ip_address=request_ip(request) if request else "",
+                user_agent=request_user_agent(request) if request else "",
+                request_payload_digest=payload_digest,
+            )
+            return row
+
+    @classmethod
+    def _send_advice_job(
+        cls, *, communication_id, idempotency_key, context, outbox, request
+    ):
+        if not (
+            outbox is not None
+            and outbox.communication_id == communication_id
+            and outbox.advice_intent == context.advice_intent_id
+            and outbox.template_provenance_status
+            == CommunicationDeliveryOutbox.PROVENANCE_VERIFIED
+            and outbox.template_provenance_origin
+            == CommunicationDeliveryOutbox.PROVENANCE_ORIGIN_FROZEN
+        ):
+            raise CommunicationDispatchConflict(
+                "Legacy-partial or mismatched advice cannot be attached to a delivery job."
+            )
+        retained = (
+            CommunicationDeliveryJob.objects.select_for_update()
+            .filter(
+                Q(idempotency_key=idempotency_key)
+                | Q(communication_id=communication_id)
+                | Q(advice_intent_id=context.advice_intent_id)
+            )
+            .first()
+        )
+        if retained is not None:
+            cls._require_job_match(retained, context, outbox, idempotency_key)
+            return retained
+        return CommunicationDeliveryJob.objects.create(
+            outbox=outbox,
+            communication_id=communication_id,
+            advice_intent_id=context.advice_intent_id,
+            job_kind=CommunicationDeliveryJob.KIND_ADVICE,
+            idempotency_key=idempotency_key,
+            actor_id=context.actor_id,
+            actor_role_code=context.actor_role_code,
+            actor_team_codes=list(context.actor_team_codes),
+            request_id=request.request_id,
+            ip_address=request.ip_address,
+            user_agent=request.user_agent,
+            request_payload_digest=outbox.payload_digest,
+        )
+
+    @staticmethod
+    def _validated_idempotency_key(value):
+        key = value.strip() if isinstance(value, str) else ""
+        if not key:
+            raise ValidationError(
+                {"idempotency_key": "Idempotency-Key header is required."}
+            )
+        if len(key) > 255:
+            raise ValidationError(
+                {"idempotency_key": "Idempotency-Key must be at most 255 characters."}
+            )
+        return key
+
+    @staticmethod
+    def _lock_idempotency_key(key):
+        if connection.vendor != "postgresql":
+            return
+        digest = hashlib.sha256(key.encode()).digest()[:8]
+        lock_id = int.from_bytes(digest, byteorder="big", signed=True)
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [lock_id])
+
+    @classmethod
+    def _generic_payload_digest_from_row(cls, row):
+        return cls._generic_payload_digest(
+            communication_id=None,
+            related_entity_type=row.related_entity_type,
+            related_entity_id=row.related_entity_id,
+            recipient_party_type=row.recipient_party_type,
+            recipient_party_id=row.recipient_party_id,
+            recipient_address=row.recipient_address,
+            channel=row.channel,
+            content_template_id=row.content_template_id,
+            subject=row.subject_snapshot,
+            body=row.body_snapshot,
+        )
+
+    @staticmethod
+    def _generic_payload_digest(**facts):
+        canonical = {
+            key: str(value) if isinstance(value, uuid.UUID) else value
+            for key, value in facts.items()
+            if key != "communication_id"
+        }
+        return hashlib.sha256(
+            json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+
+    @staticmethod
+    def _require_generic_job_match(job, row, actor, key, payload_digest):
+        if not (
+            job.job_kind == CommunicationDeliveryJob.KIND_GENERIC
+            and job.outbox_id is None
+            and job.advice_intent_id is None
+            and job.communication_id == row.pk
+            and job.idempotency_key == key
+            and job.actor_id == actor.pk
+            and job.request_payload_digest == payload_digest
+        ):
+            raise CommunicationDispatchConflict(
+                "The idempotency key is already bound to another communication request."
+            )
 
     @staticmethod
     def _approved_effective_template(content_template_id):
@@ -359,11 +567,13 @@ class CommunicationDispatcher:
         )
 
     @classmethod
-    def queue_advice(cls, *, context, request):
+    def queue_advice(cls, *, context, request, idempotency_key):
         """Freeze one advice outbox and durable worker job without provider I/O."""
+        key = cls._validated_idempotency_key(idempotency_key)
         with transaction.atomic():
+            cls._lock_idempotency_key(key)
             job = (
-                CommunicationDeliveryJob.objects.select_for_update()
+                CommunicationDeliveryJob.objects.select_for_update(of=("self",))
                 .select_related("outbox")
                 .filter(advice_intent_id=context.advice_intent_id)
                 .first()
@@ -379,9 +589,9 @@ class CommunicationDispatcher:
                         "The terminal communication job lacks final delivery evidence."
                     )
                 cls._require_context_identity(job.outbox, context)
-                cls._require_job_match(job, context, job.outbox)
+                cls._require_job_match(job, context, job.outbox, key)
                 return job
-            prepared = cls._prepare(context)
+            prepared = cls._prepare(context, key)
             outbox = cls._freeze_or_reconcile(context, prepared)
             expected = {
                 "outbox_id": outbox.pk,
@@ -391,27 +601,33 @@ class CommunicationDispatcher:
                 "request_payload_digest": outbox.payload_digest,
             }
             if job is None:
-                return CommunicationDeliveryJob.objects.create(
-                    advice_intent_id=context.advice_intent_id,
-                    request_id=request.request_id,
-                    ip_address=request.ip_address,
-                    user_agent=request.user_agent,
-                    **expected,
+                return cls.send(
+                    communication_id=context.communication_id,
+                    idempotency_key=key,
+                    request=request,
+                    _advice_context=context,
+                    _outbox=outbox,
                 )
             if any(getattr(job, field) != value for field, value in expected.items()):
                 raise CommunicationDispatchConflict(
                     "The retained communication job conflicts with current advice facts."
                 )
+            cls._require_job_match(job, context, outbox, key)
             return job
 
     @staticmethod
-    def _require_job_match(job, context, outbox):
+    def _require_job_match(job, context, outbox, idempotency_key=None):
         if not (
             job.outbox_id == outbox.pk
+            and job.communication_id == context.communication_id
             and job.actor_id == context.actor_id
             and job.actor_role_code == context.actor_role_code
             and job.actor_team_codes == list(context.actor_team_codes)
             and job.request_payload_digest == outbox.payload_digest
+            and job.job_kind == CommunicationDeliveryJob.KIND_ADVICE
+            and (
+                idempotency_key is None or job.idempotency_key == idempotency_key
+            )
         ):
             raise CommunicationDispatchConflict(
                 "The retained communication job conflicts with current advice facts."
@@ -424,10 +640,10 @@ class CommunicationDispatcher:
         ).exists()
 
     @classmethod
-    def start_advice_job(cls, job_id):
+    def start_job(cls, job_id):
         with transaction.atomic():
             job = (
-                CommunicationDeliveryJob.objects.select_for_update()
+                CommunicationDeliveryJob.objects.select_for_update(of=("self",))
                 .select_related("outbox")
                 .get(pk=job_id)
             )
@@ -465,19 +681,29 @@ class CommunicationDispatcher:
         )
 
     @classmethod
-    def complete_advice_job(cls, job_id):
+    def complete_job(cls, job_id):
         with transaction.atomic():
             job = (
-                CommunicationDeliveryJob.objects.select_for_update()
+                CommunicationDeliveryJob.objects.select_for_update(of=("self",))
                 .select_related("outbox")
                 .get(pk=job_id)
             )
             outbox = job.outbox
-            if not (
-                job.status == CommunicationDeliveryJob.STATUS_RUNNING
+            advice_complete = bool(
+                outbox
                 and outbox.delivery_status == CommunicationDeliveryOutbox.DELIVERY_SENT
                 and outbox.delivery_receipt_id
                 and outbox.final_communication_id
+            )
+            generic_complete = bool(
+                job.job_kind == CommunicationDeliveryJob.KIND_GENERIC
+                and Communication.objects.filter(
+                    pk=job.communication_id, delivery_status="sent", sent_at__isnull=False
+                ).exists()
+            )
+            if not (
+                job.status == CommunicationDeliveryJob.STATUS_RUNNING
+                and (advice_complete or generic_complete)
             ):
                 raise CommunicationDispatchConflict(
                     "The communication job cannot complete without final delivery evidence."
@@ -489,7 +715,7 @@ class CommunicationDispatcher:
             return job
 
     @classmethod
-    def defer_advice_job(cls, job_id, failure_code):
+    def defer_job(cls, job_id, failure_code):
         safe_codes = {"provider_timeout", "provider_rejected", "provider_malformed", "worker_crash"}
         if failure_code not in safe_codes:
             failure_code = "worker_crash"
@@ -537,17 +763,106 @@ class CommunicationDispatcher:
 
     @staticmethod
     def _job_execution(job):
-        return AdviceJobExecution(
+        if job.outbox_id:
+            related_entity_id = job.outbox.related_entity_id
+            recipient_address = job.outbox.recipient_address
+        else:
+            communication = Communication.objects.get(pk=job.communication_id)
+            related_entity_id = communication.related_entity_id
+            recipient_address = communication.recipient_address or ""
+        return DeliveryJobExecution(
             job_id=job.pk,
+            job_kind=job.job_kind,
+            communication_id=job.communication_id,
             actor_id=job.actor_id,
-            related_entity_id=job.outbox.related_entity_id,
-            recipient_address=job.outbox.recipient_address,
+            related_entity_id=related_entity_id,
+            recipient_address=recipient_address,
             request_id=job.request_id,
             ip_address=job.ip_address,
             user_agent=job.user_agent,
             attempts=job.attempts,
             status=job.status,
         )
+
+    @classmethod
+    def execute_generic_job(cls, job_id, *, adapter=None):
+        execution = cls.start_job(job_id)
+        if execution.job_kind != CommunicationDeliveryJob.KIND_GENERIC:
+            raise CommunicationDispatchConflict(
+                "The communication job requires its business process coordinator."
+            )
+        if execution.status == CommunicationDeliveryJob.STATUS_SENT:
+            return CommunicationDeliveryJob.objects.get(pk=job_id)
+        row = Communication.objects.get(pk=execution.communication_id)
+        payload = EmailDeliveryPayload(
+            communication_id=row.pk,
+            recipient_email=row.recipient_address or "",
+            subject=row.subject_snapshot or "",
+            body_text=row.body_snapshot,
+            related_entity_type=row.related_entity_type,
+            related_entity_id=row.related_entity_id,
+        )
+        job = CommunicationDeliveryJob.objects.get(pk=job_id)
+        if job.provider_external_message_id:
+            result = EmailDeliveryResult(
+                external_message_id=job.provider_external_message_id,
+                delivery_status=job.provider_delivery_status,
+                accepted_at=job.provider_accepted_at,
+            )
+            validate_delivery_result(result)
+        else:
+            delivery_adapter = adapter or ManualEmailDeliveryAdapter()
+            try:
+                result = delivery_adapter.send_email(payload, job.idempotency_key)
+            except TimeoutError:
+                return cls.defer_job(job_id, "provider_timeout")
+            except (TypeError, ValueError):
+                return cls.defer_job(job_id, "provider_rejected")
+            try:
+                validate_delivery_result(result)
+            except (TypeError, ValueError):
+                return cls.defer_job(job_id, "provider_malformed")
+            with transaction.atomic():
+                job = CommunicationDeliveryJob.objects.select_for_update().get(pk=job_id)
+                if job.status != CommunicationDeliveryJob.STATUS_RUNNING:
+                    raise CommunicationDispatchConflict(
+                        "The generic communication job lost execution authority."
+                    )
+                if job.provider_external_message_id:
+                    if not (
+                        job.provider_external_message_id == result.external_message_id
+                        and job.provider_delivery_status == result.delivery_status
+                        and job.provider_accepted_at == result.accepted_at
+                    ):
+                        raise CommunicationDispatchConflict(
+                            "The retained generic provider acceptance conflicts."
+                        )
+                else:
+                    job.provider_external_message_id = result.external_message_id
+                    job.provider_delivery_status = result.delivery_status
+                    job.provider_accepted_at = result.accepted_at
+                    job.save(
+                        update_fields=[
+                            "provider_external_message_id",
+                            "provider_delivery_status",
+                            "provider_accepted_at",
+                        ]
+                    )
+        with transaction.atomic():
+            job = CommunicationDeliveryJob.objects.select_for_update().get(pk=job_id)
+            row = Communication.objects.select_for_update().get(pk=job.communication_id)
+            if not (
+                job.status == CommunicationDeliveryJob.STATUS_RUNNING
+                and job.request_payload_digest == cls._generic_payload_digest_from_row(row)
+            ):
+                raise CommunicationDispatchConflict(
+                    "The generic communication changed during provider delivery."
+                )
+            row.delivery_status = "sent"
+            row.external_message_id = result.external_message_id
+            row.sent_at = result.accepted_at
+            row.save(update_fields=["delivery_status", "external_message_id", "sent_at"])
+        return cls.complete_job(job_id)
 
     @classmethod
     def dispatch(cls, *, context, adapter=None):
@@ -565,7 +880,7 @@ class CommunicationDispatcher:
             ):
                 cls._require_context_identity(retained, context)
                 return cls._decision(retained)
-            prepared = cls._prepare(context)
+            prepared = cls._prepare(context, retained.idempotency_key if retained else None)
             outbox = cls._freeze_or_reconcile(context, prepared)
             if outbox.delivery_status == CommunicationDeliveryOutbox.DELIVERY_SENT:
                 return cls._decision(outbox)
@@ -642,8 +957,9 @@ class CommunicationDispatcher:
         return _create_finalization(context, receipt, decision, request)
 
     @classmethod
-    def _prepare(cls, context):
+    def _prepare(cls, context, idempotency_key):
         cls._validate_context(context)
+        key = cls._validated_idempotency_key(idempotency_key)
         template = cls._current_template(context)
         merge_values = dict(context.merge_values)
         subject = cls._render(template.subject_template or "", merge_values)
@@ -667,7 +983,7 @@ class CommunicationDispatcher:
         proposed = {
             "advice_intent": context.advice_intent_id,
             "communication_id": context.communication_id,
-            "idempotency_key": f"disbursement-advice:{context.advice_intent_id}",
+            "idempotency_key": key,
             "channel": "email",
             "recipient_address": context.recipient_address,
             "recipient_digest": hashlib.sha256(

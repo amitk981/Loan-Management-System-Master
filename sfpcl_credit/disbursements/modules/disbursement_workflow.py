@@ -18,11 +18,7 @@ from sfpcl_credit.disbursements.modules.disbursement_transfer_success import (
 from sfpcl_credit.disbursements.modules.disbursement_advice import (
     DisbursementAdviceConflict,
     DisbursementAdviceDeliveryFailed,
-    _queue_advice,
-    _send_advice,
 )
-
-
 class DisbursementWorkflow:
     """Public owner for payment initiation and its later maker-checker lifecycle."""
 
@@ -30,8 +26,6 @@ class DisbursementWorkflow:
     initiate = staticmethod(_initiate)
     authorise = staticmethod(_authorise)
     mark_transfer_successful = staticmethod(_mark_transfer_successful)
-    queue_advice = staticmethod(_queue_advice)
-    send_advice = staticmethod(_send_advice)
 
 
 __all__ = [

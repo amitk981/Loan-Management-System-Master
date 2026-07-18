@@ -143,7 +143,13 @@ used variables are exactly borrower name, application reference, account number,
 disbursed amounts, date, and masked bank reference. Missing, ambiguous, stale, unfunded, or
 malformed evidence returns zero-write `409 CONFLICT`.
 
-The request consumes the exact pending advice UUID created by transfer success, freezes the current
+Both `POST /api/v1/communications/send/` and
+`POST /api/v1/disbursements/{disbursement_id}/send-advice/` require a trimmed nonblank
+`Idempotency-Key` of at most 255 characters. The communications owner binds the key to the exact
+communication/advice, frozen payload, and current actor. Exact replay returns retained current
+truth; missing, changed, cross-actor, or cross-object reuse returns zero-write validation/conflict.
+
+The advice request consumes the exact pending advice UUID created by transfer success, freezes the current
 actor/role/team/request/network and rendered-template identity, and creates or reconciles one durable
 communications-owned job without invoking a provider. Its initial response contains only
 `disbursement_id`, `communication_job_id`, `delivery_status: queued`, and UTC `queued_at`. Exact
@@ -151,7 +157,9 @@ actor/channel/recipient replay returns the same job; changed replay conflicts. Q
 create a Communication, mark advice sent, or make advice borrower-visible.
 
 The pinned asynchronous worker re-authorises the frozen actor against current disbursement truth and
-uses the same canonical dispatcher contract for Manual, Fake, and Future adapters. Job lifecycle is
+uses the same canonical dispatcher contract for generic and advice jobs. Manual/no-provider mode
+never returns acceptance; only the test Fake or a configured external adapter may produce `sent`.
+Job lifecycle is
 `queued` → `running` → `retrying`/`sent` or terminal `failed`; provider timeouts, rejection, malformed
 results, and crashes retain only a bounded safe failure code and exponential backoff for at most three
 attempts. Exhaustion creates an operator task but no fabricated sent advice. Provider identity remains

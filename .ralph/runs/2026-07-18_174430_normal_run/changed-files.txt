@@ -1,0 +1,24 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009H7-communications-dispatcher-interface-and-idempotency-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/communications/adapters.py
+ M sfpcl_credit/communications/models.py
+ M sfpcl_credit/communications/modules/communication_dispatcher.py
+ M sfpcl_credit/communications/services.py
+ M sfpcl_credit/communications/views.py
+ M sfpcl_credit/disbursements/modules/disbursement_advice.py
+ M sfpcl_credit/disbursements/modules/disbursement_workflow.py
+ M sfpcl_credit/disbursements/views.py
+ M sfpcl_credit/processes/disbursement_advice_delivery.py
+ M sfpcl_credit/processes/tasks.py
+ M sfpcl_credit/tests/test_communication_advice_persistence.py
+ M sfpcl_credit/tests/test_communication_dispatcher_jobs.py
+ M sfpcl_credit/tests/test_communications_api.py
+ M sfpcl_credit/tests/test_disbursement_advice_api.py
+?? .ralph/runs/2026-07-18_174430_normal_run/
+?? sfpcl_credit/communications/migrations/0009_generic_delivery_job_identity.py
+?? sfpcl_credit/processes/communication_delivery.py
+?? sfpcl_credit/tests/test_communication_job_migration.py

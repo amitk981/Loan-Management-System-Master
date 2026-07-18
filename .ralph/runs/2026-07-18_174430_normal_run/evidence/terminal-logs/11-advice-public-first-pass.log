@@ -1,0 +1,273 @@
+Creating test database for alias 'default'...
+Found 32 test(s).
+System check identified no issues (0 silenced).
+EEFFEEEEEFFEFFFFFFFFFFFFFFFFFFFFss
+======================================================================
+ERROR: test_accepted_outbox_malformed_provider_result_fails_closed (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_accepted_outbox_malformed_provider_result_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 575, in test_accepted_outbox_malformed_provider_result_fails_closed
+    DisbursementWorkflow.send_advice(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+ERROR: test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1004, in test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth
+    DisbursementWorkflow.send_advice(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+ERROR: test_failure_after_complete_local_chain_rolls_back_but_acceptance_survives (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_failure_after_complete_local_chain_rolls_back_but_acceptance_survives)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1184, in test_failure_after_complete_local_chain_rolls_back_but_acceptance_survives
+    DisbursementWorkflow.send_advice(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+ERROR: test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 317, in test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback
+    DisbursementWorkflow.send_advice(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+ERROR: test_fresh_retry_recovers_before_protected_communication_commit (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_fresh_retry_recovers_before_protected_communication_commit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 525, in test_fresh_retry_recovers_before_protected_communication_commit
+    DisbursementWorkflow.send_advice(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+ERROR: test_frozen_outbox_rejects_changed_template_provenance_before_redispatch (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_frozen_outbox_rejects_changed_template_provenance_before_redispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 450, in test_frozen_outbox_rejects_changed_template_provenance_before_redispatch
+    DisbursementWorkflow.send_advice(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+ERROR: test_future_adapter_final_dispatch_replays_without_second_transport_call (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_future_adapter_final_dispatch_replays_without_second_transport_call)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1227, in test_future_adapter_final_dispatch_replays_without_second_transport_call
+    first = DisbursementWorkflow.send_advice(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+ERROR: test_outbox_survives_acceptance_before_receipt_and_blocks_changed_facts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_survives_acceptance_before_receipt_and_blocks_changed_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 374, in test_outbox_survives_acceptance_before_receipt_and_blocks_changed_facts
+    DisbursementWorkflow.send_advice(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DisbursementWorkflow' has no attribute 'send_advice'
+
+======================================================================
+FAIL: test_database_rejects_incomplete_stable_intent_delivery_truth (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_database_rejects_incomplete_stable_intent_delivery_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 672, in test_database_rejects_incomplete_stable_intent_delivery_truth
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:05.237888Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_exact_replay_is_zero_write_and_changed_replay_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_exact_replay_is_zero_write_and_changed_replay_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 238, in test_exact_replay_is_zero_write_and_changed_replay_conflicts
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:05.807821Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 934, in test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched
+    self.assertEqual(accepted.status_code, 200, accepted.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:09.264271Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1129, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:09.858115Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_permission_scope_and_stale_transfer_fail_closed (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_permission_scope_and_stale_transfer_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1257, in test_permission_scope_and_stale_transfer_fail_closed
+    self.assertEqual(denied_scope.status_code, 403, denied_scope.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:11.197426Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_and_template_evidence_is_complete_sealed_and_protected (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_and_template_evidence_is_complete_sealed_and_protected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1037, in test_provider_and_template_evidence_is_complete_sealed_and_protected
+    self.assertEqual(accepted.status_code, 200, accepted.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:11.862031Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1094, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:12.436873Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='RejectingAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 840, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:13.069827Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='MalformedAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 840, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:13.073309Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 861, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(accepted.status_code, 200, accepted.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:13.076278Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_public_role_matrix_allows_scoped_credit_manager_and_denies_cfc_only (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_public_role_matrix_allows_scoped_credit_manager_and_denies_cfc_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 103, in test_public_role_matrix_allows_scoped_credit_manager_and_denies_cfc_only
+    self.assertEqual(denied.status_code, 403, denied.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:13.647287Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_public_success_sends_exact_advice_without_financial_side_effects (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_public_success_sends_exact_advice_without_financial_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 134, in test_public_success_sends_exact_advice_without_financial_side_effects
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:14.215785Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 686, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:14.786140Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_conflicts_on_coordinated_provider_and_audit_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_coordinated_provider_and_audit_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 627, in test_replay_conflicts_on_coordinated_provider_and_audit_drift
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:15.377823Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_conflicts_on_extra_unsafe_audit_evidence (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_extra_unsafe_audit_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 648, in test_replay_conflicts_on_extra_unsafe_audit_evidence
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:15.953260Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_conflicts_when_current_canonical_email_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_current_canonical_email_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 277, in test_replay_conflicts_when_current_canonical_email_changes
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:16.522577Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_conflicts_when_rendered_subject_snapshot_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_rendered_subject_snapshot_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 289, in test_replay_conflicts_when_rendered_subject_snapshot_changes
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:17.092791Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_conflicts_when_workflow_timestamp_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_workflow_timestamp_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 662, in test_replay_conflicts_when_workflow_timestamp_changes
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:17.663706Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_fails_closed_when_retained_advice_evidence_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_fails_closed_when_retained_advice_evidence_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 609, in test_replay_fails_closed_when_retained_advice_evidence_changes
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:18.232789Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 712, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:18.801784Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_send_consumes_stable_pending_identity_and_keeps_ledgers_recipient_safe (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_send_consumes_stable_pending_identity_and_keeps_ledgers_recipient_safe)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 196, in test_send_consumes_stable_pending_identity_and_keeps_ledgers_recipient_safe
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:19.397768Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_terminal_advice_without_outbox_never_reinvokes_provider_or_rewrites_outbox (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_terminal_advice_without_outbox_never_reinvokes_provider_or_rewrites_outbox)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 921, in test_terminal_advice_without_outbox_never_reinvokes_provider_or_rewrites_outbox
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:19.975463Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_validation_template_and_delivery_failures_create_no_advice_truth (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_validation_template_and_delivery_failures_create_no_advice_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 774, in test_validation_template_and_delivery_failures_create_no_advice_truth
+    self.assertEqual(missing_template.status_code, 409, missing_template.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:33:20.551170Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_pending_transfer_cannot_send_advice (sfpcl_credit.tests.test_disbursement_advice_api.PendingDisbursementAdviceApiTests.test_pending_transfer_cannot_send_advice)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1438, in test_pending_transfer_cannot_send_advice
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Disbursement advice failed validation.", "details": {}, "field_errors": {"idempotency_key": ["Idempotency-Key header is required."]}}, "meta": {"request_id": null, "timestamp": "2026-07-18T12:33:21.094319Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 32 tests in 17.609s
+
+FAILED (failures=24, errors=8, skipped=2)
+Destroying test database for alias 'default'...

@@ -36,7 +36,7 @@ class _WorkerRequest:
 
 
 def execute_disbursement_advice_job(job_id, *, adapter=None):
-    execution = CommunicationDispatcher.start_advice_job(job_id)
+    execution = CommunicationDispatcher.start_job(job_id)
     if execution.status == "sent":
         return _serialize(execution.job_id, "sent", execution.attempts)
     actor = User.objects.get(pk=execution.actor_id)
@@ -57,19 +57,19 @@ def execute_disbursement_advice_job(job_id, *, adapter=None):
             adapter=adapter,
         )
     except DisbursementAdviceDeliveryFailed as exc:
-        job = CommunicationDispatcher.defer_advice_job(
+        job = CommunicationDispatcher.defer_job(
             execution.job_id, exc.failure_code
         )
         return _serialize(job.pk, job.status, job.attempts)
     except TimeoutError:
-        job = CommunicationDispatcher.defer_advice_job(
+        job = CommunicationDispatcher.defer_job(
             execution.job_id, "provider_timeout"
         )
         return _serialize(job.pk, job.status, job.attempts)
     except Exception:
-        CommunicationDispatcher.defer_advice_job(execution.job_id, "worker_crash")
+        CommunicationDispatcher.defer_job(execution.job_id, "worker_crash")
         raise
-    job = CommunicationDispatcher.complete_advice_job(execution.job_id)
+    job = CommunicationDispatcher.complete_job(execution.job_id)
     return {
         **_serialize(job.pk, job.status, job.attempts),
         "disbursement_advice_communication_id": result[
@@ -78,7 +78,10 @@ def execute_disbursement_advice_job(job_id, *, adapter=None):
     }
 
 
-def queue_disbursement_advice(*, actor, disbursement_id, payload, request=None):
+def queue_disbursement_advice(
+    *, actor, disbursement_id, payload, idempotency_key=None, request=None
+):
+    key = CommunicationDispatcher._validated_idempotency_key(idempotency_key)
     cleaned = advice_owner._validate_payload(payload)
     with transaction.atomic():
         context = advice_owner._locked_advice_context(actor, disbursement_id)
@@ -96,6 +99,7 @@ def queue_disbursement_advice(*, actor, disbursement_id, payload, request=None):
             job = CommunicationDispatcher.queue_advice(
                 context=context.dispatch_context,
                 request=_finalization_request(request),
+                idempotency_key=key,
             )
         except CommunicationDispatchConflict as exc:
             raise DisbursementAdviceConflict(str(exc)) from exc

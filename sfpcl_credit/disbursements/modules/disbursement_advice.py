@@ -62,33 +62,6 @@ class _AdviceContext:
     dispatch_context: DisbursementAdviceContext
 
 
-def _queue_advice(*, actor, disbursement_id, payload, request=None):
-    from sfpcl_credit.processes.disbursement_advice_delivery import (
-        queue_disbursement_advice,
-    )
-
-    return queue_disbursement_advice(
-        actor=actor,
-        disbursement_id=disbursement_id,
-        payload=payload,
-        request=request,
-    )
-
-
-def _send_advice(*, actor, disbursement_id, payload, request=None, adapter=None):
-    from sfpcl_credit.processes.disbursement_advice_delivery import (
-        send_disbursement_advice_now,
-    )
-
-    return send_disbursement_advice_now(
-        actor=actor,
-        disbursement_id=disbursement_id,
-        payload=payload,
-        request=request,
-        adapter=adapter,
-    )
-
-
 def _locked_advice_context(actor, disbursement_id):
     operator = _locked_operator(actor)
     row = (

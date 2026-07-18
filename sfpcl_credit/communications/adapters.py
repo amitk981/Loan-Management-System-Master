@@ -37,24 +37,28 @@ class EmailDeliveryAdapter(Protocol):
 
 
 class ManualEmailDeliveryAdapter:
-    """MVP adapter: records deterministic provider acceptance without network I/O."""
+    """No-provider adapter: never fabricates external acceptance."""
 
     _NAMESPACE = uuid.UUID("49d745c9-b464-4a4a-a51c-75691409f572")
 
     def send_email(self, payload, idempotency_key):
         _validate_payload(payload, idempotency_key)
-        identity = uuid.uuid5(self._NAMESPACE, idempotency_key)
-        return EmailDeliveryResult(
-            external_message_id=f"manual:{identity}",
-            delivery_status="sent",
-            accepted_at=timezone.now(),
-        )
+        raise ValueError("No external email provider is configured.")
 
 
 class FakeEmailDeliveryAdapter(ManualEmailDeliveryAdapter):
     """Deterministic test adapter satisfying the production acceptance contract."""
 
     _NAMESPACE = uuid.UUID("6d961c69-61d4-40f3-95e0-d45666922321")
+
+    def send_email(self, payload, idempotency_key):
+        _validate_payload(payload, idempotency_key)
+        identity = uuid.uuid5(self._NAMESPACE, idempotency_key)
+        return EmailDeliveryResult(
+            external_message_id=f"fake:{identity}",
+            delivery_status="sent",
+            accepted_at=timezone.now(),
+        )
 
 
 class FutureEmailDeliveryAdapter:
@@ -85,7 +89,7 @@ def _validate_payload(payload, idempotency_key):
         not isinstance(payload, EmailDeliveryPayload)
         or not isinstance(payload.communication_id, uuid.UUID)
         or not isinstance(payload.related_entity_id, uuid.UUID)
-        or payload.related_entity_type != "disbursement"
+        or not payload.related_entity_type
         or not payload.recipient_email
         or not payload.subject
         or not payload.body_text

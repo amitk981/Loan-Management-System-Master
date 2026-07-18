@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_send_requires_key_and_exact_replay_is_zero_write (sfpcl_credit.tests.test_communications_api.CommunicationApiTests.test_send_requires_key_and_exact_replay_is_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_communications_api.py", line 254, in test_send_requires_key_and_exact_replay_is_zero_write
+    self.assertEqual(missing.status_code, 400, missing.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"communication_id": "f3ea25a6-4d1b-4fd2-8217-f4df77869ee0", "related_entity_type": "loan_application", "related_entity_id": "165cb173-c311-43f9-bfaa-148476c0a42a", "recipient_party_type": "borrower", "recipient_party_id": "626c0b52-176a-49db-831c-ff4e80a47583", "recipient_address": "borrower@sfpcl.example", "channel": "email", "content_template_id": "de001f51-8eac-4581-9aba-1d059279612d", "subject_snapshot": "Sanction LA-2026-0001", "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.", "sent_by_user_id": "ce49d619-130e-434a-b2e1-d6d6ab524969", "sent_at": null, "delivery_status": "pending", "acknowledgement_status": null, "external_message_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-18T12:22:44.542036Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

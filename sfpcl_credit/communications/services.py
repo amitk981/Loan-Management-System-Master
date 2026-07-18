@@ -321,18 +321,27 @@ def create_content_template(user, request, payload):
 
 def send_communication(user, request, payload):
     cleaned = _validate_send_payload(payload)
-    row = CommunicationDispatcher.create_from_template(
-        actor=user,
-        request=request,
-        content_template_id=cleaned["content_template_id"],
-        merge_data=cleaned["merge_data"],
-        related_entity_type=cleaned["related_entity_type"],
-        related_entity_id=cleaned["related_entity_id"],
-        recipient_party_type=cleaned["recipient_party_type"],
-        recipient_party_id=cleaned.get("recipient_party_id"),
-        recipient_address=cleaned.get("recipient_address"),
-        channel=cleaned["channel"],
-    )
+    idempotency_key = request.headers.get("Idempotency-Key")
+    with transaction.atomic():
+        row = CommunicationDispatcher.create_from_template(
+            actor=user,
+            request=request,
+            content_template_id=cleaned["content_template_id"],
+            merge_data=cleaned["merge_data"],
+            related_entity_type=cleaned["related_entity_type"],
+            related_entity_id=cleaned["related_entity_id"],
+            recipient_party_type=cleaned["recipient_party_type"],
+            recipient_party_id=cleaned.get("recipient_party_id"),
+            recipient_address=cleaned.get("recipient_address"),
+            channel=cleaned["channel"],
+            idempotency_key=idempotency_key,
+        )
+        row = CommunicationDispatcher.send(
+            communication_id=row.pk,
+            idempotency_key=idempotency_key,
+            actor=user,
+            request=request,
+        )
     return serialize_communication(row)
 
 

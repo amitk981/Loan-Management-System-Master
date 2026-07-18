@@ -177,17 +177,19 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
 
 
 class AdviceEmailAdapterContractTests(SimpleTestCase):
-    def test_manual_fake_and_future_use_stable_key_identity_across_fresh_instances(self):
+    def test_manual_never_accepts_while_fake_and_future_keep_stable_identity(self):
         first = self._payload(subject="First subject")
         changed = self._payload(subject="Changed subject")
         key = "disbursement-advice:stable-intent"
         factories = (
-            ManualEmailDeliveryAdapter,
             FakeEmailDeliveryAdapter,
             lambda: FutureEmailDeliveryAdapter(
                 transport=FakeEmailDeliveryAdapter()
             ),
         )
+
+        with self.assertRaisesRegex(ValueError, "No external email provider"):
+            ManualEmailDeliveryAdapter().send_email(first, key)
 
         for factory in factories:
             with self.subTest(adapter=factory):

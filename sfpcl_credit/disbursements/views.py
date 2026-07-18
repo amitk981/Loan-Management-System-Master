@@ -4,12 +4,17 @@ from django.views.decorators.http import require_http_methods
 from sfpcl_credit.api import error_response, parse_json_body, success_response
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
     DisbursementAuthorisationConflict,
-    DisbursementAdviceConflict,
     DisbursementConflict,
     DisbursementReadinessStale,
     DisbursementTransferConflict,
     DuplicateBankReference,
     DisbursementWorkflow,
+)
+from sfpcl_credit.disbursements.modules.disbursement_advice import (
+    DisbursementAdviceConflict,
+)
+from sfpcl_credit.processes.disbursement_advice_delivery import (
+    queue_disbursement_advice,
 )
 from sfpcl_credit.disbursements.modules.disbursement_readiness import evaluate
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied, DomainPermissionDenied
@@ -204,10 +209,11 @@ def send_disbursement_advice(request, disbursement_id):
             {field: "Unknown query parameter." for field in sorted(request.GET)},
         )
     try:
-        data = DisbursementWorkflow.queue_advice(
+        data = queue_disbursement_advice(
             actor=actor,
             disbursement_id=disbursement_id,
             payload=parse_json_body(request),
+            idempotency_key=request.headers.get("Idempotency-Key"),
             request=request,
         )
         return success_response(data, request)

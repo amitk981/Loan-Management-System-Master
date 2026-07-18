@@ -2,6 +2,9 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.views.decorators.http import require_http_methods
 
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
+from sfpcl_credit.communications.modules.communication_dispatcher import (
+    CommunicationDispatchConflict,
+)
 from sfpcl_credit.communications import services
 from sfpcl_credit.identity.modules import http_auth
 
@@ -132,6 +135,8 @@ def communication_send(request):
             "Communication failed validation.",
             services.validation_field_errors(exc),
         )
+    except CommunicationDispatchConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
     return success_response(data, request)
 
 

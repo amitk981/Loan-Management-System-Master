@@ -1,0 +1,50 @@
+Creating test database for alias 'default'...
+Found 32 test(s).
+System check identified no issues (0 silenced).
+...F...........FFE............F.ss
+======================================================================
+ERROR: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 879, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    outbox.refresh_from_db()
+    ^^^^^^
+UnboundLocalError: cannot access local variable 'outbox' where it is not associated with a value
+
+======================================================================
+FAIL: test_exact_replay_is_zero_write_and_changed_replay_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_exact_replay_is_zero_write_and_changed_replay_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 278, in test_exact_replay_is_zero_write_and_changed_replay_conflicts
+    self.assertEqual(adapter.calls, 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='RejectingAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 857, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "63634b03-3bc5-47f3-8c84-f57accb00108", "disbursement_advice_communication_id": "81a928ea-f7bb-4502-820f-fdcb014f996d", "delivery_status": "sent", "sent_at": "2026-07-18T12:37:04.054531Z", "communication_job_id": "b2a4da0f-5dcc-4889-a475-9f35bce86e25"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:37:04.103168Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='MalformedAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 857, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "63634b03-3bc5-47f3-8c84-f57accb00108", "disbursement_advice_communication_id": "81a928ea-f7bb-4502-820f-fdcb014f996d", "delivery_status": "sent", "sent_at": "2026-07-18T12:37:04.054531Z", "communication_job_id": "b2a4da0f-5dcc-4889-a475-9f35bce86e25"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:37:04.137466Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_validation_template_and_delivery_failures_create_no_advice_truth (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_validation_template_and_delivery_failures_create_no_advice_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 834, in test_validation_template_and_delivery_failures_create_no_advice_truth
+    self.assertEqual(rejected.status_code, 409, rejected.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"disbursement_id": "f5efc038-38d8-41a0-afcc-07e748a261df", "disbursement_advice_communication_id": "ba4afc8c-3822-4cf2-b380-c543f79338cf", "delivery_status": "sent", "sent_at": "2026-07-18T12:37:13.156377Z", "communication_job_id": "a7273126-b212-4e55-899a-52822596bfdd"}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T12:37:13.204818Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 32 tests in 20.606s
+
+FAILED (failures=4, errors=1, skipped=2)
+Destroying test database for alias 'default'...

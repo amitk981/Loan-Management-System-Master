@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 21 test(s).
+System check identified no issues (0 silenced).
+...............F.ssss
+======================================================================
+FAIL: test_send_advice_requires_explicit_idempotency_key_before_writes (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_send_advice_requires_explicit_idempotency_key_before_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_communication_dispatcher_jobs.py", line 82, in test_send_advice_requires_explicit_idempotency_key_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"disbursement_id": "47f7833a-3790-4aa3-bc01-7d9d95d83b12", "communication_job_id": "d384a575-3814-4148-9870-cbc25e921b45", "delivery_status": "queued", "queued_at": "2026-07-18T12:32:01.487347Z"}, "meta": {"request_id": null, "timestamp": "2026-07-18T12:32:01.487596Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 21 tests in 6.357s
+
+FAILED (failures=1, skipped=4)
+Destroying test database for alias 'default'...

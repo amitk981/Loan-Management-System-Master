@@ -14,8 +14,8 @@ except ImportError:  # The orchestrator installs the newly pinned dependency.
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
 )
-from sfpcl_credit.processes.disbursement_advice_delivery import (
-    execute_disbursement_advice_job,
+from sfpcl_credit.processes.communication_delivery import (
+    execute_communication_job,
 )
 
 
@@ -23,7 +23,7 @@ from sfpcl_credit.processes.disbursement_advice_delivery import (
 def dispatch_due_communication_jobs():
     results = []
     for job_id in CommunicationDispatcher.retry_failed():
-        results.append(execute_disbursement_advice_job(job_id))
+        results.append(execute_communication_job(job_id))
     return results
 
 

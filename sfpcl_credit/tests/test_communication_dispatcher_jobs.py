@@ -5,6 +5,7 @@ import ast
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
+from types import SimpleNamespace
 
 from sfpcl_credit.communications.adapters import (
     FakeEmailDeliveryAdapter,
@@ -18,14 +19,16 @@ from sfpcl_credit.communications.models import (
     Notification,
 )
 from django.utils import timezone
-from django.db import close_old_connections, connection, connections
+from django.db import close_old_connections, connection, connections, transaction
 from django.test import TestCase, TransactionTestCase
 from sfpcl_credit.tests import test_disbursement_advice_api as advice_fixtures
+from sfpcl_credit.tests import test_communications_api as communication_fixtures
 from sfpcl_credit.processes.disbursement_advice_delivery import (
     execute_disbursement_advice_job,
     queue_disbursement_advice,
 )
 from sfpcl_credit.communications.modules.communication_dispatcher import (
+    CommunicationDispatcher,
     CommunicationDispatchConflict,
 )
 from sfpcl_credit.identity.models import User
@@ -33,7 +36,10 @@ from sfpcl_credit.processes.tasks import dispatch_due_communication_jobs
 
 
 class CommunicationDispatcherJobTests(TestCase):
-    setUp = advice_fixtures.DisbursementAdviceApiTests.setUp
+    def setUp(self):
+        advice_fixtures.DisbursementAdviceApiTests.setUp(self)
+        self.client.defaults["HTTP_IDEMPOTENCY_KEY"] = "advice-job-default"
+
     setUp_template = advice_fixtures.DisbursementAdviceApiTests.setUp_template
 
     def test_send_advice_request_queues_without_calling_provider(self):
@@ -47,6 +53,7 @@ class CommunicationDispatcherJobTests(TestCase):
                     "recipient_email": "borrower.advice@example.com",
                 },
                 content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="advice-send-001",
                 **self.owner.owner.fixture._auth(self.actor),
             )
 
@@ -59,9 +66,27 @@ class CommunicationDispatcherJobTests(TestCase):
         )
         self.assertEqual(data["communication_job_id"], str(job.pk))
         self.assertEqual(job.status, CommunicationDeliveryJob.STATUS_QUEUED)
+        self.assertEqual(job.idempotency_key, "advice-send-001")
         self.assertEqual(job.attempts, 0)
         provider.assert_not_called()
         self.assertIsNone(self.row.disbursement_advice_communication_id)
+
+    def test_send_advice_requires_explicit_idempotency_key_before_writes(self):
+        response = self.client.post(
+            f"/api/v1/disbursements/{self.row.pk}/send-advice/",
+            {
+                "channel": "email",
+                "recipient_email": "borrower.advice@example.com",
+            },
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="",
+            **self.owner.owner.fixture._auth(self.actor),
+        )
+
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn("idempotency_key", response.json()["error"]["field_errors"])
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 0)
+        self.assertEqual(CommunicationProviderAttempt.objects.count(), 0)
 
     def test_queue_exact_replay_returns_same_job_and_changed_replay_conflicts(self):
         communication_count = Communication.objects.count()
@@ -150,7 +175,7 @@ class CommunicationDispatcherJobTests(TestCase):
         self.assertEqual(DisbursementAdviceDeliveryReceipt.objects.count(), 1)
         self.assertEqual(CommunicationProviderAttempt.objects.count(), 1)
 
-    def test_pinned_task_contract_runs_manual_adapter_job(self):
+    def test_default_manual_mode_cannot_fabricate_provider_acceptance(self):
         queued = self.client.post(
             f"/api/v1/disbursements/{self.row.pk}/send-advice/",
             {"channel": "email", "recipient_email": "borrower.advice@example.com"},
@@ -161,11 +186,17 @@ class CommunicationDispatcherJobTests(TestCase):
         results = dispatch_due_communication_jobs()
 
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]["delivery_status"], "sent")
+        self.assertEqual(results[0]["delivery_status"], "retrying")
         self.assertEqual(
             results[0]["communication_job_id"],
             queued.json()["data"]["communication_job_id"],
         )
+        self.assertEqual(CommunicationProviderAttempt.objects.count(), 1)
+        self.assertFalse(
+            CommunicationProviderAttempt.objects.filter(outcome="accepted").exists()
+        )
+        self.assertEqual(DisbursementAdviceDeliveryReceipt.objects.count(), 0)
+        self.assertFalse(Communication.objects.filter(delivery_status="sent").exists())
 
     def test_future_adapter_uses_the_same_worker_contract(self):
         queued = self.client.post(
@@ -240,6 +271,33 @@ class CommunicationDispatcherJobTests(TestCase):
                     violations.append(str(source.relative_to(project)))
         self.assertEqual(violations, [])
 
+    def test_disbursement_owner_does_not_import_or_register_process_coordinator(self):
+        project = Path(__file__).resolve().parents[1]
+        owner_sources = [
+            project / "disbursements" / "modules" / "disbursement_advice.py",
+            project / "disbursements" / "modules" / "disbursement_workflow.py",
+        ]
+        violations = []
+        for source in owner_sources:
+            tree = ast.parse(source.read_text())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    names = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    names = [node.module]
+                else:
+                    continue
+                if any(
+                    name == "sfpcl_credit.processes"
+                    or name.startswith("sfpcl_credit.processes.")
+                    for name in names
+                ):
+                    violations.append(str(source.relative_to(project)))
+        self.assertEqual(violations, [])
+        workflow_source = owner_sources[1].read_text()
+        self.assertNotIn("queue_advice =", workflow_source)
+        self.assertNotIn("send_advice =", workflow_source)
+
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL five-race acceptance")
 class CommunicationDispatcherJobRaceTests(TransactionTestCase):
@@ -280,6 +338,7 @@ class CommunicationDispatcherJobRaceTests(TransactionTestCase):
                         "channel": "email",
                         "recipient_email": "borrower.advice@example.com",
                     },
+                    idempotency_key="advice-queue-race",
                 )
                 return result["communication_job_id"]
             finally:
@@ -299,6 +358,7 @@ class CommunicationDispatcherJobRaceTests(TransactionTestCase):
                 "channel": "email",
                 "recipient_email": "borrower.advice@example.com",
             },
+            idempotency_key="advice-worker-race",
         )["communication_job_id"]
         gate = Barrier(5)
 
@@ -331,3 +391,64 @@ class CommunicationDispatcherJobRaceTests(TransactionTestCase):
         self.assertEqual(CommunicationDeliveryJob.objects.get().status, "sent")
         self.assertEqual(CommunicationProviderAttempt.objects.count(), 1)
         self.assertEqual(DisbursementAdviceDeliveryReceipt.objects.count(), 1)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL five-race acceptance")
+class GenericCommunicationJobRaceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        communication_fixtures.CommunicationApiTests.setUp(self)
+        self.actor_id = self.user.pk
+        self.template_id = self.template.pk
+
+    def test_five_generic_callers_retain_one_job_run_one(self):
+        self._run_generic_race()
+
+    def test_five_generic_callers_retain_one_job_run_two(self):
+        self._run_generic_race()
+
+    def _run_generic_race(self):
+        gate = Barrier(5)
+
+        def contender(index):
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=self.actor_id)
+                request = SimpleNamespace(
+                    headers={"X-Request-ID": f"req-generic-race-{index}"},
+                    META={"REMOTE_ADDR": "127.0.0.1", "HTTP_USER_AGENT": "race"},
+                )
+                gate.wait(timeout=15)
+                with transaction.atomic():
+                    row = CommunicationDispatcher.create_from_template(
+                        actor=actor,
+                        request=request,
+                        content_template_id=self.template_id,
+                        merge_data={
+                            "application_reference_number": "LA-RACE-001",
+                            "borrower_name": "Race Borrower",
+                        },
+                        related_entity_type="loan_application",
+                        related_entity_id=self.related_entity_id,
+                        recipient_party_type="borrower",
+                        recipient_party_id=self.recipient_party_id,
+                        recipient_address="race.borrower@example.com",
+                        channel="email",
+                        idempotency_key="generic-five-race",
+                    )
+                    CommunicationDispatcher.send(
+                        communication_id=row.pk,
+                        idempotency_key="generic-five-race",
+                        actor=actor,
+                        request=request,
+                    )
+                    return row.pk
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            communication_ids = list(pool.map(contender, range(5)))
+        self.assertEqual(len(set(communication_ids)), 1)
+        self.assertEqual(Communication.objects.count(), 1)
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)

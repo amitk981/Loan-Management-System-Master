@@ -2,8 +2,17 @@ import uuid
 
 from django.test import Client, TestCase
 
-from sfpcl_credit.communications.models import Communication, ContentTemplate
+from sfpcl_credit.communications.models import (
+    Communication,
+    CommunicationDeliveryJob,
+    ContentTemplate,
+)
+from sfpcl_credit.communications.adapters import FakeEmailDeliveryAdapter
+from sfpcl_credit.communications.modules.communication_dispatcher import (
+    CommunicationDispatcher,
+)
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
+from sfpcl_credit.processes.communication_delivery import execute_communication_job
 from sfpcl_credit.tests.api_contracts import (
     assert_error_envelope,
     assert_pagination_shape,
@@ -102,6 +111,12 @@ class CommunicationApiTests(TestCase):
             effective_to="2026-12-31",
         )
 
+    def test_source_dispatcher_exposes_idempotent_send(self):
+        self.assertTrue(
+            hasattr(CommunicationDispatcher, "send"),
+            "Source §40.1 requires CommunicationDispatcher.send(..., idempotency_key).",
+        )
+
     def _access_token(
         self,
         email="cora.communicator@sfpcl.example",
@@ -118,8 +133,11 @@ class CommunicationApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         return response.json()["data"]["access_token"]
 
-    def _auth_headers(self, **kwargs):
-        return {"Authorization": f"Bearer {self._access_token(**kwargs)}"}
+    def _auth_headers(self, *, idempotency_key="communication-send-001", **kwargs):
+        return {
+            "Authorization": f"Bearer {self._access_token(**kwargs)}",
+            "Idempotency-Key": idempotency_key,
+        }
 
     def _reader_headers(self):
         return self._auth_headers(
@@ -190,6 +208,10 @@ class CommunicationApiTests(TestCase):
             row.body_snapshot, "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned."
         )
         self.assertEqual(row.delivery_status, "pending")
+        job = CommunicationDeliveryJob.objects.get(communication_id=row.pk)
+        self.assertEqual(job.job_kind, CommunicationDeliveryJob.KIND_GENERIC)
+        self.assertEqual(job.idempotency_key, "communication-send-001")
+        self.assertEqual(job.status, CommunicationDeliveryJob.STATUS_QUEUED)
 
         audit = AuditLog.objects.get(action="communications.communication.created")
         self.assertEqual(audit.actor_user, self.user)
@@ -221,6 +243,112 @@ class CommunicationApiTests(TestCase):
         self.assertEqual(
             list_payload["data"][0]["communication_id"], payload["data"]["communication_id"]
         )
+
+    def test_send_requires_key_and_exact_replay_is_zero_write(self):
+        missing_headers = self._auth_headers()
+        missing_headers.pop("Idempotency-Key")
+        missing = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(),
+            content_type="application/json",
+            headers=missing_headers,
+        )
+        self.assertEqual(missing.status_code, 400, missing.content)
+        self.assertIn("idempotency_key", missing.json()["error"]["field_errors"])
+        self.assertEqual(Communication.objects.count(), 0)
+
+        oversized = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(),
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key="k" * 256),
+        )
+        self.assertEqual(oversized.status_code, 400, oversized.content)
+        self.assertEqual(Communication.objects.count(), 0)
+
+        first = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(),
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key=" exact-key "),
+        )
+        replay = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(),
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key="exact-key"),
+        )
+        changed_object = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(related_entity_id=str(uuid.uuid4())),
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key="exact-key"),
+        )
+        other_actor = User.objects.create(
+            full_name="Other Communication Sender",
+            email="other.sender@sfpcl.example",
+            status="active",
+            primary_role=self.role,
+        )
+        other_actor.set_password("OtherSender123!")
+        other_actor.save()
+        changed_actor = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(),
+            content_type="application/json",
+            headers=self._auth_headers(
+                idempotency_key="exact-key",
+                email=other_actor.email,
+                password="OtherSender123!",
+            ),
+        )
+
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(replay.json()["data"], first.json()["data"])
+        self.assertEqual(changed_object.status_code, 409, changed_object.content)
+        self.assertEqual(changed_actor.status_code, 409, changed_actor.content)
+        self.assertEqual(Communication.objects.count(), 1)
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
+
+    def test_configured_fake_delivers_generic_job_once_and_default_manual_does_not(self):
+        queued = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(),
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key="generic-provider-key"),
+        )
+        self.assertEqual(queued.status_code, 200, queued.content)
+        job = CommunicationDeliveryJob.objects.get()
+
+        sent = execute_communication_job(job.pk, adapter=FakeEmailDeliveryAdapter())
+        replay = execute_communication_job(job.pk, adapter=FakeEmailDeliveryAdapter())
+
+        self.assertEqual(sent["delivery_status"], "sent")
+        self.assertEqual(replay, sent)
+        row = Communication.objects.get(pk=sent["communication_id"])
+        self.assertEqual(row.delivery_status, "sent")
+        self.assertTrue(row.external_message_id.startswith("fake:"))
+
+        second_payload = self._send_payload(
+            related_entity_id=str(uuid.uuid4()),
+            recipient_address="manual.pending@example.com",
+        )
+        second = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=second_payload,
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key="manual-provider-key"),
+        )
+        self.assertEqual(second.status_code, 200, second.content)
+        manual_job = CommunicationDeliveryJob.objects.get(
+            idempotency_key="manual-provider-key"
+        )
+        manual = execute_communication_job(manual_job.pk)
+        self.assertEqual(manual["delivery_status"], "retrying")
+        manual_row = Communication.objects.get(pk=manual["communication_id"])
+        self.assertEqual(manual_row.delivery_status, "pending")
+        self.assertIsNone(manual_row.external_message_id)
 
     def test_send_validation_errors_do_not_write_rows_or_audit(self):
         invalid = self._send_payload(

@@ -270,6 +270,8 @@ class CommunicationDeliveryOutbox(models.Model):
 
 
 class CommunicationDeliveryJob(models.Model):
+    KIND_GENERIC = "generic"
+    KIND_ADVICE = "advice"
     STATUS_QUEUED = "queued"
     STATUS_RUNNING = "running"
     STATUS_RETRYING = "retrying"
@@ -290,8 +292,13 @@ class CommunicationDeliveryJob(models.Model):
         CommunicationDeliveryOutbox,
         on_delete=models.PROTECT,
         related_name="delivery_job",
+        blank=True,
+        null=True,
     )
-    advice_intent_id = models.UUIDField(unique=True)
+    communication_id = models.UUIDField(unique=True)
+    advice_intent_id = models.UUIDField(blank=True, null=True, unique=True)
+    job_kind = models.CharField(max_length=40)
+    idempotency_key = models.CharField(max_length=255, unique=True)
     actor_id = models.UUIDField()
     actor_role_code = models.CharField(max_length=80)
     actor_team_codes = models.JSONField(default=list)
@@ -304,6 +311,11 @@ class CommunicationDeliveryJob(models.Model):
     max_attempts = models.PositiveSmallIntegerField(default=3)
     next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
     last_failure_code = models.CharField(max_length=80, blank=True)
+    provider_external_message_id = models.CharField(
+        max_length=120, blank=True, null=True, unique=True
+    )
+    provider_delivery_status = models.CharField(max_length=40, blank=True, null=True)
+    provider_accepted_at = models.DateTimeField(blank=True, null=True)
     started_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -314,7 +326,8 @@ class CommunicationDeliveryJob(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=(
-                    ~models.Q(actor_role_code="")
+                    ~models.Q(idempotency_key="")
+                    & ~models.Q(actor_role_code="")
                     & ~models.Q(request_id="")
                     & ~models.Q(request_payload_digest="")
                     & models.Q(
@@ -322,9 +335,40 @@ class CommunicationDeliveryJob(models.Model):
                     )
                     & models.Q(max_attempts__gte=1)
                     & models.Q(attempts__lte=models.F("max_attempts"))
+                    & (
+                        models.Q(
+                            job_kind="advice",
+                            outbox__isnull=False,
+                            advice_intent_id__isnull=False,
+                        )
+                        | models.Q(
+                            job_kind="generic",
+                            outbox__isnull=True,
+                            advice_intent_id__isnull=True,
+                        )
+                    )
                 ),
                 name="communication_delivery_job_complete",
-            )
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        provider_external_message_id__isnull=True,
+                        provider_delivery_status__isnull=True,
+                        provider_accepted_at__isnull=True,
+                    )
+                    | (
+                        models.Q(
+                            job_kind="generic",
+                            provider_external_message_id__isnull=False,
+                            provider_delivery_status="sent",
+                            provider_accepted_at__isnull=False,
+                        )
+                        & ~models.Q(provider_external_message_id="")
+                    )
+                ),
+                name="communication_job_provider_result_complete",
+            ),
         ]
 
 

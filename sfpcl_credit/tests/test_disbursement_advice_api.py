@@ -34,7 +34,10 @@ from sfpcl_credit.disbursements.models import (
 )
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
     DisbursementAdviceConflict,
-    DisbursementWorkflow,
+)
+from sfpcl_credit.processes.disbursement_advice_delivery import (
+    queue_disbursement_advice,
+    send_disbursement_advice_now,
 )
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission, User
 from sfpcl_credit.legal_documents.models import DocumentChecklist
@@ -54,6 +57,17 @@ ADVICE_VARIABLES = [
     "disbursed_at",
     "bank_reference_number",
 ]
+
+
+def _send_advice_through_process(**kwargs):
+    queue_disbursement_advice(
+        actor=kwargs["actor"],
+        disbursement_id=kwargs["disbursement_id"],
+        payload=kwargs["payload"],
+        request=kwargs.get("request"),
+        idempotency_key=f"advice-test:{kwargs['disbursement_id']}",
+    )
+    return send_disbursement_advice_now(**kwargs)
 
 
 class DisbursementAdviceApiTests(TestCase):
@@ -230,8 +244,8 @@ class DisbursementAdviceApiTests(TestCase):
 
         adapter = CountingAdapter()
         with patch(
-            "sfpcl_credit.communications.modules.communication_dispatcher."
-            "ManualEmailDeliveryAdapter",
+            "sfpcl_credit.tests.test_disbursement_advice_api."
+            "FakeEmailDeliveryAdapter",
             return_value=adapter,
         ):
             first = self._post()
@@ -253,6 +267,7 @@ class DisbursementAdviceApiTests(TestCase):
                     "recipient_email": "borrower.advice@example.com",
                 },
                 content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
                 **self.owner.owner.fixture._auth(self.actor),
             )
 
@@ -314,7 +329,7 @@ class DisbursementAdviceApiTests(TestCase):
             side_effect=RuntimeError("forced rollback after provider acceptance"),
         ):
             with self.assertRaisesRegex(RuntimeError, "forced rollback"):
-                DisbursementWorkflow.send_advice(
+                _send_advice_through_process(
                     actor=self.actor,
                     disbursement_id=self.row.pk,
                     payload={
@@ -332,7 +347,7 @@ class DisbursementAdviceApiTests(TestCase):
             ).exists()
         )
 
-        accepted = DisbursementWorkflow.send_advice(
+        accepted = _send_advice_through_process(
             actor=self.actor,
             disbursement_id=self.row.pk,
             payload={
@@ -371,7 +386,7 @@ class DisbursementAdviceApiTests(TestCase):
             side_effect=RuntimeError("forced failure before final receipt"),
         ):
             with self.assertRaisesRegex(RuntimeError, "before final receipt"):
-                DisbursementWorkflow.send_advice(
+                _send_advice_through_process(
                     actor=self.actor,
                     disbursement_id=self.row.pk,
                     payload={
@@ -400,7 +415,7 @@ class DisbursementAdviceApiTests(TestCase):
         self.row.member.email = "changed.after.acceptance@example.com"
         self.row.member.save(update_fields=["email"])
         with self.assertRaises(DisbursementAdviceConflict):
-            DisbursementWorkflow.send_advice(
+            _send_advice_through_process(
                 actor=self.actor,
                 disbursement_id=self.row.pk,
                 payload={
@@ -413,7 +428,7 @@ class DisbursementAdviceApiTests(TestCase):
 
         self.row.member.email = "Borrower.Advice@Example.com"
         self.row.member.save(update_fields=["email"])
-        accepted = DisbursementWorkflow.send_advice(
+        accepted = _send_advice_through_process(
             actor=self.actor,
             disbursement_id=self.row.pk,
             payload={
@@ -447,7 +462,7 @@ class DisbursementAdviceApiTests(TestCase):
             side_effect=RuntimeError("forced failure after accepted outbox"),
         ):
             with self.assertRaisesRegex(RuntimeError, "accepted outbox"):
-                DisbursementWorkflow.send_advice(
+                _send_advice_through_process(
                     actor=self.actor,
                     disbursement_id=self.row.pk,
                     payload={
@@ -477,7 +492,7 @@ class DisbursementAdviceApiTests(TestCase):
                     **{field: changed}
                 )
                 with self.assertRaises(DisbursementAdviceConflict):
-                    DisbursementWorkflow.send_advice(
+                    _send_advice_through_process(
                         actor=self.actor,
                         disbursement_id=self.row.pk,
                         payload={
@@ -491,7 +506,7 @@ class DisbursementAdviceApiTests(TestCase):
                 )
         self.assertEqual(len(RecordingAdapter.results), 1)
 
-        accepted = DisbursementWorkflow.send_advice(
+        accepted = _send_advice_through_process(
             actor=self.actor,
             disbursement_id=self.row.pk,
             payload={
@@ -522,7 +537,7 @@ class DisbursementAdviceApiTests(TestCase):
             side_effect=RuntimeError("forced failure before Communication commit"),
         ):
             with self.assertRaisesRegex(RuntimeError, "Communication commit"):
-                DisbursementWorkflow.send_advice(
+                _send_advice_through_process(
                     actor=self.actor,
                     disbursement_id=self.row.pk,
                     payload={
@@ -543,7 +558,7 @@ class DisbursementAdviceApiTests(TestCase):
         )
         self._assert_no_advice_truth()
 
-        accepted = DisbursementWorkflow.send_advice(
+        accepted = _send_advice_through_process(
             actor=self.actor,
             disbursement_id=self.row.pk,
             payload={
@@ -572,7 +587,7 @@ class DisbursementAdviceApiTests(TestCase):
             side_effect=RuntimeError("forced failure after provider acceptance"),
         ):
             with self.assertRaisesRegex(RuntimeError, "provider acceptance"):
-                DisbursementWorkflow.send_advice(
+                _send_advice_through_process(
                     actor=self.actor,
                     disbursement_id=self.row.pk,
                     payload={
@@ -586,7 +601,7 @@ class DisbursementAdviceApiTests(TestCase):
         ).update(provider_external_message_id="malformed provider result")
 
         with self.assertRaises(DisbursementAdviceConflict):
-            DisbursementWorkflow.send_advice(
+            _send_advice_through_process(
                 actor=self.actor,
                 disbursement_id=self.row.pk,
                 payload={
@@ -753,6 +768,7 @@ class DisbursementAdviceApiTests(TestCase):
                 "message": "caller supplied text",
             },
             content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
             **self.owner.owner.fixture._auth(self.actor),
         )
         wrong_channel = self.client.post(
@@ -762,6 +778,7 @@ class DisbursementAdviceApiTests(TestCase):
                 "recipient_email": "borrower.advice@example.com",
             },
             content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
             **self.owner.owner.fixture._auth(self.actor),
         )
         wrong_email = self._post(email="forged@example.com")
@@ -809,8 +826,8 @@ class DisbursementAdviceApiTests(TestCase):
                 raise ValueError("provider rejected")
 
         with patch(
-            "sfpcl_credit.communications.modules.communication_dispatcher."
-            "ManualEmailDeliveryAdapter",
+            "sfpcl_credit.tests.test_disbursement_advice_api."
+            "FakeEmailDeliveryAdapter",
             return_value=RejectingAdapter(),
         ):
             rejected = self._post()
@@ -832,8 +849,8 @@ class DisbursementAdviceApiTests(TestCase):
         ):
             with self.subTest(adapter=adapter.__class__.__name__):
                 with patch(
-                    "sfpcl_credit.communications.modules.communication_dispatcher."
-                    "ManualEmailDeliveryAdapter",
+                    "sfpcl_credit.tests.test_disbursement_advice_api."
+                    "FakeEmailDeliveryAdapter",
                     return_value=adapter,
                 ):
                     response = self._post()
@@ -912,8 +929,8 @@ class DisbursementAdviceApiTests(TestCase):
 
         adapter = CountingAdapter()
         with patch(
-            "sfpcl_credit.communications.modules.communication_dispatcher."
-            "ManualEmailDeliveryAdapter",
+            "sfpcl_credit.tests.test_disbursement_advice_api."
+            "FakeEmailDeliveryAdapter",
             return_value=adapter,
         ):
             replay = self._post()
@@ -969,8 +986,8 @@ class DisbursementAdviceApiTests(TestCase):
 
         adapter = CountingAdapter()
         with patch(
-            "sfpcl_credit.communications.modules.communication_dispatcher."
-            "ManualEmailDeliveryAdapter",
+            "sfpcl_credit.tests.test_disbursement_advice_api."
+            "FakeEmailDeliveryAdapter",
             return_value=adapter,
         ):
             replay = self._post()
@@ -1001,7 +1018,7 @@ class DisbursementAdviceApiTests(TestCase):
             side_effect=RuntimeError("forced pre-receipt crash"),
         ):
             with self.assertRaisesRegex(RuntimeError, "pre-receipt"):
-                DisbursementWorkflow.send_advice(
+                _send_advice_through_process(
                     actor=self.actor,
                     disbursement_id=self.row.pk,
                     payload={
@@ -1022,7 +1039,7 @@ class DisbursementAdviceApiTests(TestCase):
         )
 
         with self.assertRaises(DisbursementAdviceConflict):
-            DisbursementWorkflow.send_advice(
+            _send_advice_through_process(
                 actor=self.actor,
                 disbursement_id=self.row.pk,
                 payload={
@@ -1181,7 +1198,7 @@ class DisbursementAdviceApiTests(TestCase):
 
         with patch.object(type(self.row.advice_intent), "save", fail_after_local_chain):
             with self.assertRaisesRegex(RuntimeError, "before owner commit"):
-                DisbursementWorkflow.send_advice(
+                _send_advice_through_process(
                     actor=self.actor,
                     disbursement_id=self.row.pk,
                     payload={
@@ -1224,7 +1241,7 @@ class DisbursementAdviceApiTests(TestCase):
                 return super().send_email(payload, idempotency_key)
 
         transport = CountingTransport()
-        first = DisbursementWorkflow.send_advice(
+        first = _send_advice_through_process(
             actor=self.actor,
             disbursement_id=self.row.pk,
             payload={
@@ -1233,7 +1250,7 @@ class DisbursementAdviceApiTests(TestCase):
             },
             adapter=FutureEmailDeliveryAdapter(transport=transport),
         )
-        replay = DisbursementWorkflow.send_advice(
+        replay = _send_advice_through_process(
             actor=self.actor,
             disbursement_id=self.row.pk,
             payload={
@@ -1269,6 +1286,7 @@ class DisbursementAdviceApiTests(TestCase):
                 "recipient_email": "borrower.advice@example.com",
             },
             content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
             **headers,
         )
         self.assertEqual(inactive.status_code, 401, inactive.content)
@@ -1366,6 +1384,7 @@ class DisbursementAdviceApiTests(TestCase):
             {"channel": "email", "recipient_email": email},
             content_type="application/json",
             HTTP_X_REQUEST_ID="req-advice-001",
+            HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
             **self.owner.owner.fixture._auth(actor or self.actor),
         )
         if response.status_code == 200 and response.json()["data"].get(
@@ -1379,7 +1398,9 @@ class DisbursementAdviceApiTests(TestCase):
             CommunicationDeliveryJob.objects.filter(pk=job_id).update(
                 next_attempt_at=timezone.now()
             )
-            result = execute_disbursement_advice_job(job_id)
+            result = execute_disbursement_advice_job(
+                job_id, adapter=FakeEmailDeliveryAdapter()
+            )
             if result["delivery_status"] in {"retrying", "failed"}:
                 failed = JsonResponse(
                     {
@@ -1398,6 +1419,7 @@ class DisbursementAdviceApiTests(TestCase):
                 {"channel": "email", "recipient_email": email},
                 content_type="application/json",
                 HTTP_X_REQUEST_ID="req-advice-001",
+                HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
                 **self.owner.owner.fixture._auth(actor or self.actor),
             )
         return response
@@ -1432,6 +1454,7 @@ class PendingDisbursementAdviceApiTests(TestCase):
                 "recipient_email": "pending.borrower@example.com",
             },
             content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.pending.disbursement_id}",
             **self.pending.fixture._auth(self.pending.fixture.actor),
         )
 
@@ -1483,7 +1506,7 @@ class DisbursementAdviceRaceTests(TransactionTestCase):
                 actor = User.objects.get(pk=self.actor_id)
                 gate.wait(timeout=15)
                 try:
-                    result = DisbursementWorkflow.send_advice(
+                    result = _send_advice_through_process(
                         actor=actor,
                         disbursement_id=self.disbursement_id,
                         payload={

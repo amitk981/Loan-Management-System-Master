@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 28 test(s).
+System check identified no issues (0 silenced).
+.................ssssss.E...
+======================================================================
+ERROR: test_manual_fake_and_future_use_stable_key_identity_across_fresh_instances (sfpcl_credit.tests.test_communication_advice_persistence.AdviceEmailAdapterContractTests.test_manual_fake_and_future_use_stable_key_identity_across_fresh_instances) (adapter=<class 'sfpcl_credit.communications.adapters.ManualEmailDeliveryAdapter'>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_communication_advice_persistence.py", line 194, in test_manual_fake_and_future_use_stable_key_identity_across_fresh_instances
+    accepted = factory().send_email(first, key)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/communications/adapters.py", line 46, in send_email
+    raise ValueError("No external email provider is configured.")
+ValueError: No external email provider is configured.
+
+----------------------------------------------------------------------
+Ran 28 tests in 6.126s
+
+FAILED (errors=1, skipped=6)
+Destroying test database for alias 'default'...

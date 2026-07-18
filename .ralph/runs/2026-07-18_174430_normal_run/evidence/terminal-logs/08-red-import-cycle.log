@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_disbursement_owner_does_not_import_or_register_process_coordinator (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_disbursement_owner_does_not_import_or_register_process_coordinator)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/sfpcl_credit/tests/test_communication_dispatcher_jobs.py", line 292, in test_disbursement_owner_does_not_import_or_register_process_coordinator
+    self.assertEqual(violations, [])
+AssertionError: Lists differ: ['disbursements/modules/disbursement_advic[49 chars].py'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'disbursements/modules/disbursement_advice.py'
+
++ []
+- ['disbursements/modules/disbursement_advice.py',
+-  'disbursements/modules/disbursement_advice.py']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.592s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

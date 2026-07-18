@@ -182,7 +182,10 @@ class NotificationApiTests(TestCase):
                 "merge_data": {"application_reference_number": "LA-2026-0001"},
             },
             content_type="application/json",
-            headers=self._auth_headers(),
+            headers={
+                **self._auth_headers(),
+                "Idempotency-Key": "notification-user-recipient-send",
+            },
         )
 
         self.assertEqual(response.status_code, 200)

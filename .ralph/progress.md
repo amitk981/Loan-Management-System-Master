@@ -9135,3 +9135,46 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-18 - 2026-07-18_174430_normal_run
+
+- Agent tool used: codex with TDD and codebase-design skills.
+- Slice completed: 009H7-communications-dispatcher-interface-and-idempotency-closure.
+- Summary: Added the source-shaped generic dispatcher/send/retry interface, explicit generic and
+  advice idempotency, one preserved generic delivery-job identity, honest manual-provider behavior,
+  retained generic provider evidence, and acyclic top-level advice composition.
+- Tests run: RED/GREEN tracers; 57 focused communication/advice/job/migration tests; six H6
+  migration regressions; Django check; migration sync; compile; frontend typecheck/lint/331
+  tests/build; six PostgreSQL five-caller races in two final executions. Full backend coverage is
+  delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_174430_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High; communication idempotency, provider truth, concurrency, and retained migration
+  history changed under database constraints and twice-run PostgreSQL acceptance.
+- Next action: Run 009H8, then 009I2.
+
+## 2026-07-18 - 2026-07-18_184623_repair
+
+- Agent tool used: codex with the diagnosing-bugs discipline.
+- Slice repaired: 009H7-communications-dispatcher-interface-and-idempotency-closure.
+- Summary: Reproduced the sole independent coverage failure and confirmed that a retained
+  notification integration test omitted H7's mandatory `Idempotency-Key`. Added a stable explicit
+  key to that test only; production dispatcher/idempotency behavior is unchanged.
+- Tests run: exact failing test RED then GREEN; all 14 notification and generic communications API
+  tests; Django check; migration sync; focused Python compilation. Complete backend coverage is
+  delegated to the independent repair validator.
+- Evidence saved: `.ralph/runs/2026-07-18_184623_repair/evidence/terminal-logs/`.
+- Result: Repair complete pending independent orchestrator validation and commit.
+- Risk level: High inherited slice scope; repair mutation is one test header and preserves the
+  fail-closed production contract.
+- Next action: Independently revalidate 009H7, then run 009H8 followed by 009I2.
+
+## 2026-07-18 19:03:35 - 2026-07-18_184623_repair
+- Agent tool used: codex
+- Slice attempted: 009H7-communications-dispatcher-interface-and-idempotency-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/.ralph/runs/2026-07-18_184623_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_174430_normal_run/.ralph/runs/2026-07-18_184623_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

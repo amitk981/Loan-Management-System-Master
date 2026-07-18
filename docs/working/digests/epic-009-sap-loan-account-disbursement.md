@@ -1,5 +1,30 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H7 Communications Dispatcher Interface and Idempotency Closure
+
+- `CommunicationDispatcher` now exposes the source-shaped `create_from_template`, idempotent
+  `send`, and generic `retry_failed` interface. Generic HTTP and advice queueing retain one
+  communications-owned job kind/communication/key identity; advice authority and final financial
+  consumption remain private to the top-level process coordinator.
+- Both generic and advice HTTP sends require a trimmed nonblank `Idempotency-Key` up to 255
+  characters. The job binds exact communication/advice, frozen payload, and actor; exact replay is
+  zero-write retained truth, while missing, changed, cross-actor, and cross-object use fails before
+  communication/provider evidence writes.
+- Migration 0009 preserves every retained H5 job id/outbox/advice/status/attempt/schedule/failure/
+  timestamp while adding generic identity and provider-result fields. Only H6
+  `frozen_before_dispatch`/`verified` outboxes can backfill or attach; legacy-partial origins remain
+  excluded from job/replay truth.
+- The disbursement owner no longer lazily imports or registers its process coordinator. Views/tasks
+  enter top-level composition, business owners expose decisions only, and the communications owner
+  contains template, job, idempotency, adapter, and delivery policy.
+- Manual/no-provider mode now rejects instead of fabricating acceptance. Fake/configured adapters
+  retain exact provider identity; generic acceptance is frozen on the job before final Communication
+  mutation, and advice keeps its stronger outbox/attempt/final-chain evidence.
+- RED/GREEN public probes, 57 focused tests plus six H6 migration regressions, Django check,
+  migration sync, compilation, frontend typecheck/lint/331 tests/build, and two final PostgreSQL
+  executions of all six five-caller races pass. No new source-silent assumption was required. H8
+  and I2 were rechecked and are already concrete, so no speculative sharpening edit was made.
+
 ## 009H6 Legacy Advice Template Provenance Closure
 
 - Communications migration 0008 records an explicit provenance origin for every outbox. Either
