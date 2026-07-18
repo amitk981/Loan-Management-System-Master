@@ -156,14 +156,24 @@ communications-owned job without invoking a provider. Its initial response conta
 actor/channel/recipient replay returns the same job; changed replay conflicts. Queuing alone does not
 create a Communication, mark advice sent, or make advice borrower-visible.
 
-The pinned asynchronous worker re-authorises the frozen actor against current disbursement truth and
-uses the same canonical dispatcher contract for generic and advice jobs. Manual/no-provider mode
-never returns acceptance; only the test Fake or a configured external adapter may produce `sent`.
-Job lifecycle is
+The pinned Celery application explicitly registers the generic/advice execution task and periodic
+due/recovery task. Broker, result backend, adapter, beat interval, claim lease, and batch limit are
+environment-driven; tests use in-memory transports. A new job publishes one named signature only
+from a robust transaction commit callback: rollback publishes nothing, and broker publication
+failure leaves the committed queued row reachable by the periodic scan.
+
+The asynchronous worker re-authorises the frozen actor against current disbursement truth and uses
+the same canonical dispatcher contract for generic and advice jobs. Manual/no-provider mode never
+returns acceptance; only the test Fake or a configured external adapter may produce `sent`. Job lifecycle is
 `queued` → `running` → `retrying`/`sent` or terminal `failed`; provider timeouts, rejection, malformed
 results, and crashes retain only a bounded safe failure code and exponential backoff for at most three
 attempts. Exhaustion creates an operator task but no fabricated sent advice. Provider identity remains
-stable across fresh worker instances and a transaction rollback after acceptance.
+stable across fresh worker instances and a transaction rollback after acceptance. Running claims
+carry a fenced UUID and expiry. Stale recovery increments a separate recovery count without resetting
+attempts; an expired worker cannot mutate its replacement. H6 legacy-partial advice is never selected
+or mutated and is projected only as operator-blocked. Worker/operator results expose job/status/
+attempt/schedule/lease/recovery/safe-failure facts, never recipient/body/provider/financial/token/
+actor/request/payload facts.
 
 After acceptance, the workflow atomically marks that intent `sent`, retains one protected `sent`
 communication snapshot/link, and records one `disbursement.advice_sent` audit and
@@ -378,7 +388,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Sanction and approvals | Approval workflow, workbench, registers, settings, frozen legacy history, strict pagination, and action-order closure implemented through 007T | Sanction workbench, registers, approval settings | `auth-permissions.md`, `api-contracts.md` §25/§44, `screen-spec.md` S21-S25 | Approval matrix is high-control; case reads/actions use frozen actor-scoped projections. Historical S23 `purpose`/`risk` are top-level nullable, and S21 queue/detail/action/decision refreshes share newest-request authority. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
-| Communication templates and communication history | Canonical dispatcher and asynchronous advice job implemented through 009H5 | None directly | `api-contracts.md` §39.1-§39.3; `integrations.md` §§10/21/33.3; `data-model.md` §24.1-§24.2 | `content_templates`, `communications`, protected advice outboxes/provider attempts, and communication jobs are persisted. Generic `POST /api/v1/communications/send/` and disbursement advice share the dispatcher-owned approved/effective template, exact merge/render, Communication, and safe-audit policy. Generic send remains a pending no-provider shell; disbursement advice runs through the bounded asynchronous worker contract. |
+| Communication templates and communication history | Canonical dispatcher, generic/advice jobs, and recoverable Celery runtime implemented through 009H8 | None directly | `api-contracts.md` §39.1-§39.3; `integrations.md` §§7.3/10/21/22/29/33.3; `data-model.md` §24.1-§24.2 | `content_templates`, `communications`, protected advice outboxes/provider attempts, and fenced communication jobs are persisted. Generic `POST /api/v1/communications/send/` and disbursement advice share the dispatcher-owned approved/effective template, exact merge/render, Communication, safe-audit, configured-adapter, on-commit enqueue, bounded retry, stale recovery, and operator-safe evidence policy. HTTP queueing remains provider-free; the registered worker alone may produce configured-provider acceptance. |
 | SAP and disbursement | SAP request/delivery/completion/reuse implemented through 009B3B; loan-account/readiness, payment initiation, CFC decision, transfer success, advice delivery, and borrower MP14 projection implemented through 009I | Disbursement, CFC, and MP14 | `api-contracts.md` §§29-31; `integrations.md` §§8-10/19/21 | SAP is manual/adapter-first for MVP and owned by the public `sap_workflow` module; disbursement owner decisions feed a masked own-member portal projection, and finalized communications owns the one-use advice artifact boundary. Staff finance/CFC frontend wiring remains 009K. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |

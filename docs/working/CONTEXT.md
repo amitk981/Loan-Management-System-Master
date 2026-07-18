@@ -184,8 +184,11 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   verified history; an advice-specific, implicit-idempotency dispatcher with no runnable/recoverable
   worker and a false-success manual adapter; and MP14 application-selection, SAP-stage, timestamp,
   visual-reuse, and browser-evidence drift. Corrective 009G6 now freezes complete checklist model
-  state across both retained remove/add exception classes; 009H6, 009H7, 009H8, and 009I2 remain
-  dependency-ordered before 009J.
+  state across both retained remove/add exception classes; 009H6 and 009H7 restore honest legacy
+  provenance plus the generic/idempotent dispatcher. 009H8 now supplies the registered Celery
+  runtime, commit-only enqueue, periodic bounded retry, fenced leases, stale-worker recovery,
+  accepted-evidence replay, legacy exclusion, safe operator evidence, and twice-run PostgreSQL
+  claim/recovery proof. 009I2 remains dependency-ordered before 009J.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

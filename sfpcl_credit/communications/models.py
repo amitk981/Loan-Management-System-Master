@@ -311,6 +311,10 @@ class CommunicationDeliveryJob(models.Model):
     max_attempts = models.PositiveSmallIntegerField(default=3)
     next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
     last_failure_code = models.CharField(max_length=80, blank=True)
+    claim_token = models.UUIDField(blank=True, null=True)
+    lease_expires_at = models.DateTimeField(blank=True, null=True, db_index=True)
+    recovery_count = models.PositiveIntegerField(default=0)
+    last_recovered_at = models.DateTimeField(blank=True, null=True)
     provider_external_message_id = models.CharField(
         max_length=120, blank=True, null=True, unique=True
     )
@@ -368,6 +372,23 @@ class CommunicationDeliveryJob(models.Model):
                     )
                 ),
                 name="communication_job_provider_result_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        status="running",
+                        claim_token__isnull=False,
+                        lease_expires_at__isnull=False,
+                    )
+                    | (
+                        ~models.Q(status="running")
+                        & models.Q(
+                            claim_token__isnull=True,
+                            lease_expires_at__isnull=True,
+                        )
+                    )
+                ),
+                name="communication_job_claim_lease_complete",
             ),
         ]
 

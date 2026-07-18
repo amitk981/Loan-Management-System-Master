@@ -1,5 +1,32 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H8 Communications Worker Runtime and Crash Recovery Closure
+
+- The pinned Celery app now loads environment-driven broker/result/provider/runtime settings,
+  explicitly imports `communications.execute_job` and `communications.dispatch_due_jobs`, and
+  loads a 60-second periodic due/recovery schedule. New generic and advice jobs publish exactly one
+  named signature only from a robust `transaction.on_commit`; rollback publishes nothing, while a
+  broker-publish crash leaves the committed row discoverable by the periodic selector.
+- One migration adds a fenced UUID claim, expiry, recovery count, and last-recovered timestamp.
+  Existing running jobs receive expired claims rather than rewritten attempt history. The default
+  five-minute lease and 100-row batch are environment-configurable under A-134. Recovery preserves
+  attempts, records safe `worker_crash` evidence, and prevents an expired worker from completing or
+  deferring a replacement claim.
+- Generic and advice jobs run through the same configured adapter seam. Manual mode remains honest;
+  explicit Fake/eager integration proves both job kinds without network. Crashes before provider,
+  after retained provider acceptance, before local finalization, during publish, and after task
+  acknowledgement recover without a second accepted send. Provider idempotency plus retained
+  acceptance remains the external crash-window authority.
+- H6 `legacy_0005`/`legacy_partial` advice outboxes are excluded from due/recovery selection even
+  when a stale retained job points at one. Neither job nor outbox is mutated; operators receive only
+  `operator_blocked` evidence. General job evidence exposes bounded status/attempt/lease/recovery/
+  safe-failure facts and never recipient, body, provider id/error, financial reference, actor,
+  idempotency key, or payload truth. Exhaustion retains the existing singular reachable task.
+- The architecture runtime probe, focused generic/advice/eager/migration/crash suite, Django check,
+  migration sync, and frontend gates pass. Ten PostgreSQL queue/claim/stale-recovery races pass in
+  two final executions with one provider acceptance and one terminal chain. INT-COMM-002/003 and
+  the H5 runtime finding are closed.
+
 ## 009H7 Communications Dispatcher Interface and Idempotency Closure
 
 - `CommunicationDispatcher` now exposes the source-shaped `create_from_template`, idempotent

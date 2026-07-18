@@ -7,6 +7,8 @@ import re
 from typing import Protocol
 import uuid
 
+from django.conf import settings
+from django.utils.module_loading import import_string
 from django.utils import timezone
 
 
@@ -113,6 +115,17 @@ def delivery_payload_digest(payload):
     ).hexdigest()
 
 
+def configured_email_delivery_adapter():
+    try:
+        adapter_class = import_string(settings.COMMUNICATION_EMAIL_ADAPTER)
+        adapter = adapter_class()
+    except Exception:
+        return ManualEmailDeliveryAdapter()
+    if not callable(getattr(adapter, "send_email", None)):
+        return ManualEmailDeliveryAdapter()
+    return adapter
+
+
 __all__ = [
     "EmailDeliveryAdapter",
     "EmailDeliveryPayload",
@@ -121,5 +134,6 @@ __all__ = [
     "FutureEmailDeliveryAdapter",
     "ManualEmailDeliveryAdapter",
     "delivery_payload_digest",
+    "configured_email_delivery_adapter",
     "validate_delivery_result",
 ]

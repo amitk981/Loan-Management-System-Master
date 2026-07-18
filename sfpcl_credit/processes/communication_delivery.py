@@ -1,5 +1,6 @@
 """Top-level execution coordinator for generic communications-owned jobs."""
 
+from sfpcl_credit.communications.adapters import configured_email_delivery_adapter
 from sfpcl_credit.communications.models import CommunicationDeliveryJob
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
@@ -10,6 +11,7 @@ from sfpcl_credit.processes.disbursement_advice_delivery import (
 
 
 def execute_communication_job(job_id, *, adapter=None):
+    adapter = adapter or configured_email_delivery_adapter()
     job = CommunicationDeliveryJob.objects.only("job_kind").get(pk=job_id)
     if job.job_kind == CommunicationDeliveryJob.KIND_ADVICE:
         return execute_disbursement_advice_job(job_id, adapter=adapter)

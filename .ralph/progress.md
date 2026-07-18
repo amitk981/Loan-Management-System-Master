@@ -9178,3 +9178,31 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-18 - 2026-07-18_190359_normal_run
+
+- Agent tool used: codex with TDD and codebase-design skills.
+- Slice completed: 009H8-communications-worker-runtime-and-crash-recovery-closure.
+- Summary: Registered the pinned Celery runtime and periodic dispatcher, added robust commit-only
+  enqueue, environment-driven runtime/provider settings, fenced job leases, bounded stale recovery,
+  accepted-provider replay, immutable legacy exclusion, and safe operator evidence.
+- Tests run: failing-first runtime/on-commit/lease/fencing/operator/publish-crash probes; 37 focused
+  runtime/dispatcher/API/migration tests; Django check; migration sync; Python compile; frontend
+  typecheck/lint/tests/build; and 10 PostgreSQL queue/claim/stale-recovery races in two final green
+  executions. Complete backend coverage remains delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_190359_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High because asynchronous external communication, durable claims, migration history,
+  retry/exhaustion, and concurrent recovery changed; controls include provider idempotency, fenced
+  leases, one migration, safe evidence, failing-first crash probes, and twice-run PostgreSQL races.
+- Next action: Run the now-due architecture review, then 009I2 before 009J and 009K.
+
+## 2026-07-18 20:05:12 - 2026-07-18_190359_normal_run
+- Agent tool used: codex
+- Slice attempted: 009H8-communications-worker-runtime-and-crash-recovery-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_190359_normal_run/.ralph/runs/2026-07-18_190359_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_190359_normal_run/.ralph/runs/2026-07-18_190359_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

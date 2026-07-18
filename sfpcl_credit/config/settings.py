@@ -99,6 +99,39 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_TZ = True
 TIME_ZONE = "UTC"
 
+CELERY_BROKER_URL = os.environ.get("SFPCL_CELERY_BROKER_URL", "memory://")
+CELERY_RESULT_BACKEND = os.environ.get(
+    "SFPCL_CELERY_RESULT_BACKEND", "cache+memory://"
+)
+CELERY_TASK_ALWAYS_EAGER = env_bool(
+    "SFPCL_CELERY_TASK_ALWAYS_EAGER", False
+)
+CELERY_TASK_EAGER_PROPAGATES = env_bool(
+    "SFPCL_CELERY_TASK_EAGER_PROPAGATES", False
+)
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+COMMUNICATION_JOB_LEASE_SECONDS = int(
+    os.environ.get("SFPCL_COMMUNICATION_JOB_LEASE_SECONDS", "300")
+)
+COMMUNICATION_JOB_BATCH_LIMIT = int(
+    os.environ.get("SFPCL_COMMUNICATION_JOB_BATCH_LIMIT", "100")
+)
+COMMUNICATION_EMAIL_ADAPTER = os.environ.get(
+    "SFPCL_COMMUNICATION_EMAIL_ADAPTER",
+    "sfpcl_credit.communications.adapters.ManualEmailDeliveryAdapter",
+)
+CELERY_BEAT_SCHEDULE = {
+    "communications-dispatch-due-jobs": {
+        "task": "communications.dispatch_due_jobs",
+        "schedule": float(
+            os.environ.get("SFPCL_COMMUNICATION_DISPATCH_INTERVAL_SECONDS", "60")
+        ),
+    }
+}
+
 AUTH_ACCESS_TOKEN_MINUTES = 15
 AUTH_REFRESH_TOKEN_HOURS = 24
 

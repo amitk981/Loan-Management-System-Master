@@ -55,21 +55,33 @@ def execute_disbursement_advice_job(job_id, *, adapter=None):
             },
             request=request,
             adapter=adapter,
+            _job_id=execution.job_id,
+            _claim_token=execution.claim_token,
         )
     except DisbursementAdviceDeliveryFailed as exc:
         job = CommunicationDispatcher.defer_job(
-            execution.job_id, exc.failure_code
+            execution.job_id,
+            exc.failure_code,
+            claim_token=execution.claim_token,
         )
         return _serialize(job.pk, job.status, job.attempts)
     except TimeoutError:
         job = CommunicationDispatcher.defer_job(
-            execution.job_id, "provider_timeout"
+            execution.job_id,
+            "provider_timeout",
+            claim_token=execution.claim_token,
         )
         return _serialize(job.pk, job.status, job.attempts)
     except Exception:
-        CommunicationDispatcher.defer_job(execution.job_id, "worker_crash")
+        CommunicationDispatcher.defer_job(
+            execution.job_id,
+            "worker_crash",
+            claim_token=execution.claim_token,
+        )
         raise
-    job = CommunicationDispatcher.complete_job(execution.job_id)
+    job = CommunicationDispatcher.complete_job(
+        execution.job_id, claim_token=execution.claim_token
+    )
     return {
         **_serialize(job.pk, job.status, job.attempts),
         "disbursement_advice_communication_id": result[
@@ -122,7 +134,14 @@ def queue_disbursement_advice(
 
 
 def send_disbursement_advice_now(
-    *, actor, disbursement_id, payload, request=None, adapter=None
+    *,
+    actor,
+    disbursement_id,
+    payload,
+    request=None,
+    adapter=None,
+    _job_id=None,
+    _claim_token=None,
 ):
     cleaned = advice_owner._validate_payload(payload)
     with transaction.atomic():
@@ -137,6 +156,8 @@ def send_disbursement_advice_now(
         decision = CommunicationDispatcher.dispatch(
             context=context.dispatch_context,
             adapter=adapter,
+            _job_id=_job_id,
+            _claim_token=_claim_token,
         )
     except CommunicationDeliveryFailed as exc:
         raise DisbursementAdviceDeliveryFailed(
@@ -149,6 +170,8 @@ def send_disbursement_advice_now(
         try:
             decision = CommunicationDispatcher.dispatch(
                 context=context.dispatch_context,
+                _job_id=_job_id,
+                _claim_token=_claim_token,
             )
         except CommunicationDispatchConflict as exc:
             raise DisbursementAdviceConflict(str(exc)) from exc

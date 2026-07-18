@@ -1,7 +1,7 @@
 # Slice 009H8: Communications Worker Runtime and Crash Recovery Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -62,10 +62,10 @@ High
 - Worker death cannot strand a job or duplicate an accepted communication.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Runtime discovery/crash probes written failing first
-- [ ] Celery app, enqueue, schedule, and recovery implemented
-- [ ] Eager/in-memory and PostgreSQL races green twice
-- [ ] No real external provider invoked in tests/evidence
-- [ ] Risk, evidence, handoff, state, contract, and digest updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Runtime discovery/crash probes written failing first
+- [x] Celery app, enqueue, schedule, and recovery implemented
+- [x] Eager/in-memory and PostgreSQL races green twice
+- [x] No real external provider invoked in tests/evidence
+- [x] Risk, evidence, handoff, state, contract, and digest updated
+- [x] Commit delegated to the orchestrator after gates

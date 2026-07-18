@@ -2,31 +2,32 @@
 
 ## Last Run
 
-2026-07-18_184623_repair
+2026-07-18_190359_normal_run
 
 ## Current Status
 
-009H7 is complete pending independent repair validation. Generic communication and disbursement
-advice now cross the source-shaped communications dispatcher and one retained generic job identity.
-Both HTTP sends require a bounded explicit `Idempotency-Key`, bind it to exact
-object/payload/actor truth, and return zero-write exact replay while rejecting changed, cross-actor,
-or cross-object use.
+009H8 is complete pending independent validation. The pinned Celery application discovers explicit
+generic/advice execution and periodic due/recovery tasks. Generic and advice queue creation publishes
+one named signature only after commit; rollback publishes none, and a broker-publish crash leaves the
+committed job discoverable by the periodic scan. Broker/result/provider/runtime values are
+environment-driven with inert in-memory local defaults and an honest no-provider adapter.
 
-Migration 0009 preserves existing H5 job ids/history and excludes H6 legacy-partial provenance.
-The disbursement owner no longer imports/registers the process coordinator. Manual/no-provider mode
-cannot fabricate provider acceptance; Fake/configured adapters retain provider truth, and generic
-acceptance is frozen before final Communication mutation. Fifty-seven focused tests, six H6
-migration regressions, required backend checks, frontend gates, and all six PostgreSQL five-caller
-races in two final executions pass.
+Migration 0010 adds a fenced UUID claim, expiry, recovery count, and recovered timestamp without
+rewriting retained attempts. Stale workers recover under bounded row locks, keep attempt history,
+and cannot mutate a replacement claim. Retained provider acceptance finalizes after restart without
+redispatch. H6 legacy-partial outboxes are excluded and remain unchanged while safe operator evidence
+reports `operator_blocked`; ordinary evidence never exposes recipient/body/provider/financial/token/
+actor/request/payload truth. Exhaustion keeps its singular reachable operator task.
 
-The first independent complete-coverage run found one stale pre-H7 notification integration test:
-it called the generic send endpoint without the now-required key and expected HTTP 200. Repair
-`2026-07-18_184623_repair` reproduced the exact 400, supplied one stable explicit key in that test,
-and passed the exact test plus all 14 notification/generic-communications API tests. Production
-dispatcher code and its fail-closed missing-key contract were not changed.
+The missing-runtime and crash probes failed first. Thirty-seven focused runtime/dispatcher/API/
+migration tests pass with four expected PostgreSQL skips. Ten PostgreSQL queue/claim/stale-recovery
+races pass in two final executions after correcting a PostgreSQL-only nullable-join lock to target
+the job row. Django check and migration sync pass; complete backend coverage remains delegated to
+the orchestrator. The unchanged frontend gates are recorded in this run's evidence.
 
 ## Next Run
 
-Run 009H8 next, then 009I2 before 009J and 009K. H8 is already sharpened to register the Celery
-runtime, on-commit scheduling, leases, stale-running recovery, accepted-evidence replay, and H6
-legacy exclusion; I2 is already sharpened for exact owner timestamps and real-browser evidence.
+The four-slice architecture-review cadence is now due. After that review, run 009I2 before 009J and
+009K. 009I2, 009J, and 009K were re-read; all remain concrete, dependency-correct slices with exact
+owner truth, role/action, validation, frontend fidelity, and browser/evidence requirements, so no
+speculative sharpening edit was made.

@@ -5,6 +5,7 @@ import json
 import re
 import uuid
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.db.models import Q
@@ -27,6 +28,7 @@ from sfpcl_credit.communications.models import (
     DisbursementAdviceDeliveryReceipt,
     Notification,
 )
+from sfpcl_credit.communications.runtime import enqueue_after_commit
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.models import WorkflowEvent
@@ -200,6 +202,7 @@ class DeliveryJobExecution:
     user_agent: str
     attempts: int
     status: str
+    claim_token: uuid.UUID | None
 
 
 @dataclass(frozen=True)
@@ -338,7 +341,7 @@ class CommunicationDispatcher:
             request_id = ""
             if request is not None:
                 request_id = request.headers.get("X-Request-ID", "").strip()
-            CommunicationDeliveryJob.objects.create(
+            job = CommunicationDeliveryJob.objects.create(
                 communication_id=row.pk,
                 job_kind=CommunicationDeliveryJob.KIND_GENERIC,
                 idempotency_key=key,
@@ -350,6 +353,7 @@ class CommunicationDispatcher:
                 user_agent=request_user_agent(request) if request else "",
                 request_payload_digest=payload_digest,
             )
+            enqueue_after_commit(job.pk)
             return row
 
     @classmethod
@@ -380,7 +384,7 @@ class CommunicationDispatcher:
         if retained is not None:
             cls._require_job_match(retained, context, outbox, idempotency_key)
             return retained
-        return CommunicationDeliveryJob.objects.create(
+        job = CommunicationDeliveryJob.objects.create(
             outbox=outbox,
             communication_id=communication_id,
             advice_intent_id=context.advice_intent_id,
@@ -394,6 +398,8 @@ class CommunicationDispatcher:
             user_agent=request.user_agent,
             request_payload_digest=outbox.payload_digest,
         )
+        enqueue_after_commit(job.pk)
+        return job
 
     @staticmethod
     def _validated_idempotency_key(value):
@@ -658,30 +664,129 @@ class CommunicationDispatcher:
                 )
             job.status = CommunicationDeliveryJob.STATUS_RUNNING
             job.attempts += 1
-            job.started_at = timezone.now()
+            started_at = timezone.now()
+            job.started_at = started_at
+            job.claim_token = uuid.uuid4()
+            job.lease_expires_at = started_at + timedelta(
+                seconds=settings.COMMUNICATION_JOB_LEASE_SECONDS
+            )
             job.last_failure_code = ""
             job.save(
-                update_fields=["status", "attempts", "started_at", "last_failure_code"]
+                update_fields=[
+                    "status",
+                    "attempts",
+                    "started_at",
+                    "claim_token",
+                    "lease_expires_at",
+                    "last_failure_code",
+                ]
             )
             return cls._job_execution(job)
 
     @staticmethod
     def retry_failed(*, actor=None, limit=100):
         del actor
-        return list(
-            CommunicationDeliveryJob.objects.filter(
-                status__in=(
-                    CommunicationDeliveryJob.STATUS_QUEUED,
-                    CommunicationDeliveryJob.STATUS_RETRYING,
-                ),
-                next_attempt_at__lte=timezone.now(),
-            )
-            .order_by("next_attempt_at", "communication_job_id")
-            .values_list("communication_job_id", flat=True)[:limit]
+        bounded_limit = max(1, min(int(limit), settings.COMMUNICATION_JOB_BATCH_LIMIT))
+        now = timezone.now()
+        eligible = Q(job_kind=CommunicationDeliveryJob.KIND_GENERIC) | Q(
+            job_kind=CommunicationDeliveryJob.KIND_ADVICE,
+            outbox__template_provenance_status=(
+                CommunicationDeliveryOutbox.PROVENANCE_VERIFIED
+            ),
+            outbox__template_provenance_origin=(
+                CommunicationDeliveryOutbox.PROVENANCE_ORIGIN_FROZEN
+            ),
         )
+        with transaction.atomic():
+            stale = list(
+                CommunicationDeliveryJob.objects.select_for_update(of=("self",))
+                .filter(
+                    eligible,
+                    status=CommunicationDeliveryJob.STATUS_RUNNING,
+                    lease_expires_at__lte=now,
+                )
+                .order_by("lease_expires_at", "communication_job_id")[:bounded_limit]
+            )
+            for job in stale:
+                job.status = CommunicationDeliveryJob.STATUS_RETRYING
+                job.next_attempt_at = now
+                job.last_failure_code = "worker_crash"
+                job.claim_token = None
+                job.lease_expires_at = None
+                job.recovery_count += 1
+                job.last_recovered_at = now
+                job.save(
+                    update_fields=[
+                        "status",
+                        "next_attempt_at",
+                        "last_failure_code",
+                        "claim_token",
+                        "lease_expires_at",
+                        "recovery_count",
+                        "last_recovered_at",
+                    ]
+                )
+            return list(
+                CommunicationDeliveryJob.objects.filter(
+                    eligible,
+                    status__in=(
+                        CommunicationDeliveryJob.STATUS_QUEUED,
+                        CommunicationDeliveryJob.STATUS_RETRYING,
+                    ),
+                    next_attempt_at__lte=now,
+                )
+                .order_by("next_attempt_at", "communication_job_id")
+                .values_list("communication_job_id", flat=True)[:bounded_limit]
+            )
+
+    @staticmethod
+    def job_evidence(*, job_id=None, limit=100):
+        bounded_limit = max(1, min(int(limit), settings.COMMUNICATION_JOB_BATCH_LIMIT))
+        rows = CommunicationDeliveryJob.objects.select_related("outbox")
+        if job_id is not None:
+            rows = rows.filter(pk=job_id)
+        rows = rows.order_by("next_attempt_at", "communication_job_id")[:bounded_limit]
+        evidence = []
+        for job in rows:
+            legacy_blocked = bool(
+                job.job_kind == CommunicationDeliveryJob.KIND_ADVICE
+                and (
+                    job.outbox is None
+                    or job.outbox.template_provenance_status
+                    != CommunicationDeliveryOutbox.PROVENANCE_VERIFIED
+                    or job.outbox.template_provenance_origin
+                    != CommunicationDeliveryOutbox.PROVENANCE_ORIGIN_FROZEN
+                )
+            )
+            evidence.append(
+                {
+                    "communication_job_id": str(job.pk),
+                    "job_kind": job.job_kind,
+                    "status": "operator_blocked" if legacy_blocked else job.status,
+                    "attempts": job.attempts,
+                    "max_attempts": job.max_attempts,
+                    "next_attempt_at": _iso_or_none(job.next_attempt_at),
+                    "started_at": _iso_or_none(job.started_at),
+                    "completed_at": _iso_or_none(job.completed_at),
+                    "lease_expires_at": _iso_or_none(job.lease_expires_at),
+                    "recovery_count": job.recovery_count,
+                    "last_recovered_at": _iso_or_none(job.last_recovered_at),
+                    "last_failure_code": (
+                        "legacy_provenance_blocked"
+                        if legacy_blocked
+                        else job.last_failure_code
+                    ),
+                    "recovered": job.recovery_count > 0,
+                    "operator_attention_required": (
+                        legacy_blocked
+                        or job.status == CommunicationDeliveryJob.STATUS_FAILED
+                    ),
+                }
+            )
+        return evidence
 
     @classmethod
-    def complete_job(cls, job_id):
+    def complete_job(cls, job_id, *, claim_token):
         with transaction.atomic():
             job = (
                 CommunicationDeliveryJob.objects.select_for_update(of=("self",))
@@ -703,6 +808,7 @@ class CommunicationDispatcher:
             )
             if not (
                 job.status == CommunicationDeliveryJob.STATUS_RUNNING
+                and job.claim_token == claim_token
                 and (advice_complete or generic_complete)
             ):
                 raise CommunicationDispatchConflict(
@@ -711,19 +817,32 @@ class CommunicationDispatcher:
             job.status = CommunicationDeliveryJob.STATUS_SENT
             job.completed_at = timezone.now()
             job.last_failure_code = ""
-            job.save(update_fields=["status", "completed_at", "last_failure_code"])
+            job.claim_token = None
+            job.lease_expires_at = None
+            job.save(
+                update_fields=[
+                    "status",
+                    "completed_at",
+                    "last_failure_code",
+                    "claim_token",
+                    "lease_expires_at",
+                ]
+            )
             return job
 
     @classmethod
-    def defer_job(cls, job_id, failure_code):
+    def defer_job(cls, job_id, failure_code, *, claim_token):
         safe_codes = {"provider_timeout", "provider_rejected", "provider_malformed", "worker_crash"}
         if failure_code not in safe_codes:
             failure_code = "worker_crash"
         with transaction.atomic():
             job = CommunicationDeliveryJob.objects.select_for_update().get(pk=job_id)
-            if job.status != CommunicationDeliveryJob.STATUS_RUNNING:
+            if not (
+                job.status == CommunicationDeliveryJob.STATUS_RUNNING
+                and job.claim_token == claim_token
+            ):
                 raise CommunicationDispatchConflict(
-                    "The communication job is not running."
+                    "The communication worker no longer owns this job claim."
                 )
             exhausted = job.attempts >= job.max_attempts
             job.status = (
@@ -733,6 +852,8 @@ class CommunicationDispatcher:
             )
             job.last_failure_code = failure_code
             job.completed_at = timezone.now() if exhausted else None
+            job.claim_token = None
+            job.lease_expires_at = None
             if not exhausted:
                 seconds = min(900, 60 * (2 ** (job.attempts - 1)))
                 job.next_attempt_at = timezone.now() + timedelta(seconds=seconds)
@@ -742,6 +863,8 @@ class CommunicationDispatcher:
                     "last_failure_code",
                     "completed_at",
                     "next_attempt_at",
+                    "claim_token",
+                    "lease_expires_at",
                 ]
             )
             if exhausted:
@@ -782,6 +905,7 @@ class CommunicationDispatcher:
             user_agent=job.user_agent,
             attempts=job.attempts,
             status=job.status,
+            claim_token=job.claim_token,
         )
 
     @classmethod
@@ -815,16 +939,25 @@ class CommunicationDispatcher:
             try:
                 result = delivery_adapter.send_email(payload, job.idempotency_key)
             except TimeoutError:
-                return cls.defer_job(job_id, "provider_timeout")
+                return cls.defer_job(
+                    job_id, "provider_timeout", claim_token=execution.claim_token
+                )
             except (TypeError, ValueError):
-                return cls.defer_job(job_id, "provider_rejected")
+                return cls.defer_job(
+                    job_id, "provider_rejected", claim_token=execution.claim_token
+                )
             try:
                 validate_delivery_result(result)
             except (TypeError, ValueError):
-                return cls.defer_job(job_id, "provider_malformed")
+                return cls.defer_job(
+                    job_id, "provider_malformed", claim_token=execution.claim_token
+                )
             with transaction.atomic():
                 job = CommunicationDeliveryJob.objects.select_for_update().get(pk=job_id)
-                if job.status != CommunicationDeliveryJob.STATUS_RUNNING:
+                if not (
+                    job.status == CommunicationDeliveryJob.STATUS_RUNNING
+                    and job.claim_token == execution.claim_token
+                ):
                     raise CommunicationDispatchConflict(
                         "The generic communication job lost execution authority."
                     )
@@ -853,6 +986,7 @@ class CommunicationDispatcher:
             row = Communication.objects.select_for_update().get(pk=job.communication_id)
             if not (
                 job.status == CommunicationDeliveryJob.STATUS_RUNNING
+                and job.claim_token == execution.claim_token
                 and job.request_payload_digest == cls._generic_payload_digest_from_row(row)
             ):
                 raise CommunicationDispatchConflict(
@@ -862,11 +996,18 @@ class CommunicationDispatcher:
             row.external_message_id = result.external_message_id
             row.sent_at = result.accepted_at
             row.save(update_fields=["delivery_status", "external_message_id", "sent_at"])
-        return cls.complete_job(job_id)
+        return cls.complete_job(job_id, claim_token=execution.claim_token)
 
     @classmethod
-    def dispatch(cls, *, context, adapter=None):
+    def dispatch(
+        cls, *, context, adapter=None, _job_id=None, _claim_token=None
+    ):
         with transaction.atomic():
+            cls._require_active_advice_claim(
+                job_id=_job_id,
+                claim_token=_claim_token,
+                communication_id=context.communication_id,
+            )
             retained = (
                 CommunicationDeliveryOutbox.objects.select_for_update()
                 .filter(advice_intent=context.advice_intent_id)
@@ -893,7 +1034,13 @@ class CommunicationDispatcher:
                 prepared.proposed["idempotency_key"],
             )
         except (TypeError, ValueError) as exc:
-            cls._record_rejected_attempt(outbox.pk, prepared, adapter_kind)
+            with transaction.atomic():
+                cls._require_active_advice_claim(
+                    job_id=_job_id,
+                    claim_token=_claim_token,
+                    communication_id=context.communication_id,
+                )
+                cls._record_rejected_attempt(outbox.pk, prepared, adapter_kind)
             raise CommunicationDeliveryFailed(
                 "The disbursement advice was not accepted for delivery.",
                 failure_code="provider_rejected",
@@ -901,13 +1048,24 @@ class CommunicationDispatcher:
         try:
             validate_delivery_result(result)
         except (TypeError, ValueError) as exc:
-            cls._record_rejected_attempt(outbox.pk, prepared, adapter_kind)
+            with transaction.atomic():
+                cls._require_active_advice_claim(
+                    job_id=_job_id,
+                    claim_token=_claim_token,
+                    communication_id=context.communication_id,
+                )
+                cls._record_rejected_attempt(outbox.pk, prepared, adapter_kind)
             raise CommunicationDeliveryFailed(
                 "The disbursement advice provider result was malformed.",
                 failure_code="provider_malformed",
             ) from exc
 
         with transaction.atomic():
+            cls._require_active_advice_claim(
+                job_id=_job_id,
+                claim_token=_claim_token,
+                communication_id=context.communication_id,
+            )
             outbox = CommunicationDeliveryOutbox.objects.select_for_update().get(
                 advice_intent=context.advice_intent_id
             )
@@ -935,6 +1093,32 @@ class CommunicationDispatcher:
                     "The retained provider acceptance is stale or incoherent."
                 )
             return cls._decision(outbox)
+
+    @staticmethod
+    def _require_active_advice_claim(*, job_id, claim_token, communication_id):
+        if job_id is None and claim_token is None:
+            return
+        if job_id is None or claim_token is None:
+            raise CommunicationDispatchConflict(
+                "The communication worker claim is incomplete."
+            )
+        job = (
+            CommunicationDeliveryJob.objects.select_for_update(of=("self",))
+            .filter(pk=job_id)
+            .first()
+        )
+        if not (
+            job is not None
+            and job.job_kind == CommunicationDeliveryJob.KIND_ADVICE
+            and job.communication_id == communication_id
+            and job.status == CommunicationDeliveryJob.STATUS_RUNNING
+            and job.claim_token == claim_token
+            and job.lease_expires_at is not None
+            and job.lease_expires_at > timezone.now()
+        ):
+            raise CommunicationDispatchConflict(
+                "The communication worker no longer owns this advice claim."
+            )
 
     @classmethod
     def finalize(cls, *, context, decision, request=None):
@@ -1746,6 +1930,10 @@ def _digest(value):
 
 def _iso(value):
     return value.isoformat().replace("+00:00", "Z")
+
+
+def _iso_or_none(value):
+    return _iso(value) if value is not None else None
 
 
 __all__ = [
