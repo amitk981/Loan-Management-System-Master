@@ -181,9 +181,30 @@ run_bounded_repair() {
 # A measured diff-limit failure is a queue-shaping problem, not a product-code
 # defect. Discard the ungated implementation, then ask a clean planning run to
 # replace the oversized slice with independently executable successor slices.
+run_split_planning_attempt() {
+  local slice_id="${1:?slice id is required}"
+  local failed_run_id="${2:?failed run id is required}"
+  local total_lines="${3:?total lines is required}"
+  local max_lines="${4:?max lines is required}"
+  local corrective_run_id="${5:-}"
+  local split_env=(
+    AGENT_TOOL="$active_tool"
+    CODEX_REASONING_EFFORT=high
+    RALPH_SPLIT_SLICE_ID="$slice_id"
+    RALPH_SPLIT_FAILED_RUN_ID="$failed_run_id"
+    RALPH_SPLIT_TOTAL_LINES="$total_lines"
+    RALPH_SPLIT_MAX_LINES="$max_lines"
+  )
+  [[ -n "$corrective_run_id" ]] \
+    && split_env+=(RALPH_SPLIT_CORRECTIVE_RUN_ID="$corrective_run_id")
+  run_streamed env "${split_env[@]}" ./scripts/afk-dev.sh 1 --mode architecture-review
+}
+
 run_oversized_slice_split() {
   local request="${1:?trusted split request is required}"
   local slice_id failed_run_id total_lines max_lines split_status
+  local split_attempt corrective_run_id="" retry_context failure_signature
+  local max_split_attempts=2
   IFS=$'\t' read -r slice_id failed_run_id total_lines max_lines <<< "$request"
 
   echo "Slice $slice_id measured $total_lines changed lines (limit $max_lines). Replacing it with dependency-ordered successor slices before any product repair." | tee -a "$loop_log"
@@ -192,30 +213,52 @@ run_oversized_slice_split() {
     return 1
   fi
 
-  run_streamed env \
-    AGENT_TOOL="$active_tool" \
-    CODEX_REASONING_EFFORT=high \
-    RALPH_SPLIT_SLICE_ID="$slice_id" \
-    RALPH_SPLIT_FAILED_RUN_ID="$failed_run_id" \
-    RALPH_SPLIT_TOTAL_LINES="$total_lines" \
-    RALPH_SPLIT_MAX_LINES="$max_lines" \
-    ./scripts/afk-dev.sh 1 --mode architecture-review
-  split_status=$?
-  if (( split_status == RALPH_EXIT_AGENT_LIMIT )); then
-    switch_agent_or_stop
-    ./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log" || return 1
-    echo "Retrying oversized-slice queue rewrite with $active_tool." | tee -a "$loop_log"
-    run_streamed env \
-      AGENT_TOOL="$active_tool" \
-      CODEX_REASONING_EFFORT=high \
-      RALPH_SPLIT_SLICE_ID="$slice_id" \
-      RALPH_SPLIT_FAILED_RUN_ID="$failed_run_id" \
-      RALPH_SPLIT_TOTAL_LINES="$total_lines" \
-      RALPH_SPLIT_MAX_LINES="$max_lines" \
-      ./scripts/afk-dev.sh 1 --mode architecture-review
+  for ((split_attempt = 1; split_attempt <= max_split_attempts; split_attempt++)); do
+    if (( split_attempt == 1 )); then
+      echo "Oversized-slice planning attempt 1/$max_split_attempts." | tee -a "$loop_log"
+    else
+      echo "Corrective oversized-slice planning attempt $split_attempt/$max_split_attempts using diagnostics from $corrective_run_id." | tee -a "$loop_log"
+    fi
+
+    run_split_planning_attempt \
+      "$slice_id" "$failed_run_id" "$total_lines" "$max_lines" "$corrective_run_id"
     split_status=$?
-  fi
-  context_tripwire_check
+    if (( split_status == RALPH_EXIT_AGENT_LIMIT )); then
+      switch_agent_or_stop
+      ./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log" || return 1
+      echo "Retrying oversized-slice planning attempt $split_attempt/$max_split_attempts with $active_tool." | tee -a "$loop_log"
+      run_split_planning_attempt \
+        "$slice_id" "$failed_run_id" "$total_lines" "$max_lines" "$corrective_run_id"
+      split_status=$?
+      if (( split_status == RALPH_EXIT_AGENT_LIMIT )); then
+        switch_agent_or_stop
+      fi
+    fi
+    context_tripwire_check
+
+    if (( split_status == RALPH_EXIT_SUCCESS )); then
+      return 0
+    fi
+    if ! ralph_oversized_split_retry_allowed \
+        "$split_status" "$split_attempt" "$max_split_attempts"; then
+      return "$split_status"
+    fi
+    retry_context="$(ralph_oversized_split_retry_context \
+      "$repo_root" "$repo_root/.ralph/repair-context.json" "$slice_id")" \
+      || return "$split_status"
+    IFS=$'\t' read -r corrective_run_id failure_signature <<< "$retry_context"
+    echo "Split validation failed with signature $failure_signature; discarding the rejected planning worktree and launching one bounded corrective rewrite." | tee -a "$loop_log"
+    if ! ./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log"; then
+      echo "Unable to recover the rejected split-planning worktree; stopping before correction." | tee -a "$loop_log"
+      return "$split_status"
+    fi
+    if [[ ! -s "$repo_root/.ralph/runs/$corrective_run_id/failure-summary.md" \
+        || ! -s "$repo_root/.ralph/runs/$corrective_run_id/oversized-slice-split-results.md" ]]; then
+      echo "Recovered split diagnostics are incomplete for $corrective_run_id; stopping safely." | tee -a "$loop_log"
+      return "$split_status"
+    fi
+  done
+
   return "$split_status"
 }
 

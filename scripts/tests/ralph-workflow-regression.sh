@@ -200,6 +200,48 @@ split_request="$(ralph_oversized_slice_request "$registered_repo" "$registered_c
 [[ "$split_request" == $'999X\tregistered-failure\t2885\t2000' ]] \
   || fail "oversized split request returned the wrong trusted facts: $split_request"
 
+if ralph_oversized_split_retry_context \
+    "$registered_repo" "$registered_context" 999X >/dev/null 2>&1; then
+  fail "ordinary product failure was misclassified as a failed split planning gate"
+fi
+cat > "$registered_run_dir/oversized-slice-split-results.md" <<'EOF'
+# Oversized Slice Split Results
+
+PASS: 999X was replaced by a dependency-ordered, drainable successor chain.
+Oversized-slice planning may not rewrite unrelated slice docs/slices/999-parent.md.
+FAIL: the planning run changed files outside the queue-metadata allowlist.
+EOF
+cat > "$registered_run_dir/failure-summary.md" <<'EOF'
+# Validation Failure Summary
+
+## oversized-slice-split-results.md
+
+FAIL: the planning run changed files outside the queue-metadata allowlist.
+EOF
+ralph_write_repair_context \
+  "$registered_context" registered-failure "$registered_worktree" \
+  999X-browser-fixture ralph/registered-failure_fixture \
+  "$registered_run_dir/failure-summary.md"
+split_failure_signature="$(ralph_repair_context_value \
+  "$registered_context" failure_signature)"
+split_retry_context="$(ralph_oversized_split_retry_context \
+  "$registered_repo" "$registered_context" 999X)" \
+  || fail "valid failed split planning context was not eligible for bounded correction"
+[[ "$split_retry_context" == $'registered-failure\t'"$split_failure_signature" ]] \
+  || fail "split retry context returned the wrong trusted facts: $split_retry_context"
+if ralph_oversized_split_retry_context \
+    "$registered_repo" "$registered_context" 999Y >/dev/null 2>&1; then
+  fail "split retry context accepted a failure for a different oversized slice"
+fi
+ralph_oversized_split_retry_allowed "$RALPH_EXIT_FAILED" 1 2 \
+  || fail "first independently failed split was not eligible for bounded correction"
+if ralph_oversized_split_retry_allowed "$RALPH_EXIT_FAILED" 2 2; then
+  fail "second independently failed split was allowed to retry indefinitely"
+fi
+if ralph_oversized_split_retry_allowed "$RALPH_EXIT_MERGE_FAILED" 1 2; then
+  fail "validated split merge failure was misclassified as a planning repair"
+fi
+
 ralph_write_repair_context \
   "$registered_context" registered-failure "$registered_worktree" \
   999X-browser-fixture ralph/registered-failure_fixture \
@@ -1286,6 +1328,10 @@ rg -q 'RALPH_SPLIT_SLICE_ID' scripts/ralph-loop.sh \
   || fail "outer loop does not launch a trusted oversized-slice queue rewrite"
 rg -q 'RALPH_SPLIT_SLICE_ID' scripts/ralph-run.sh \
   || fail "Ralph run prompt does not distinguish queue splitting from architecture review"
+rg -q 'RALPH_SPLIT_CORRECTIVE_RUN_ID' scripts/ralph-loop.sh \
+  || fail "outer loop does not pass prior split diagnostics to a corrective planning attempt"
+rg -q 'RALPH_SPLIT_CORRECTIVE_RUN_ID' scripts/ralph-run.sh \
+  || fail "corrective split prompt does not consume the trusted prior failure run"
 rg -q 'ralph_validate_oversized_slice_split' scripts/ralph-validate.sh \
   || fail "independent validation does not verify oversized-slice queue rewrites"
 python3 - <<'PY'
@@ -1302,6 +1348,18 @@ detect = loop.index('ralph_oversized_slice_request')
 repair = loop.rindex('run_bounded_repair "$status"')
 if detect > repair:
     raise SystemExit('FAIL: diff-limit split is detected only after product repair starts')
+trusted_retry = loop.index('ralph_oversized_split_retry_context')
+corrective_context = loop.index("read -r corrective_run_id failure_signature", trusted_retry)
+if trusted_retry > corrective_context:
+    raise SystemExit('FAIL: corrective split context is consumed before it is validated')
+
+runner = Path('scripts/ralph-run.sh').read_text()
+if 'oversized-slice-split-results.md' not in runner or 'failure-summary.md' not in runner:
+    raise SystemExit('FAIL: corrective split prompt omits prior independent validation evidence')
+if '"$mode" != "architecture_review" || -n "$split_slice_id"' not in runner:
+    raise SystemExit('FAIL: failed split validation does not publish a trusted retry context')
+if loop.count('if (( split_status == RALPH_EXIT_AGENT_LIMIT )); then') < 2:
+    raise SystemExit('FAIL: second split-planning agent exhaustion loses the clean limit stop')
 PY
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \
   || fail "independent PostgreSQL acceptance log path is missing"
@@ -1486,6 +1544,24 @@ ralph_validate_oversized_slice_split "$split_repo" 020B \
 ralph_validate_oversized_split_change_scope "$split_repo" 020B \
   || fail "queue-only oversized split was rejected as a product change"
 printf '\nunrelated rewrite\n' >> "$split_repo/docs/slices/020A-prerequisite.md"
+split_failure_run="split-corrective-failure"
+set +e
+RALPH_SPLIT_SLICE_ID=020B scripts/ralph-validate.sh \
+  --run-id "$split_failure_run" \
+  --worktree "$split_repo" \
+  --mode architecture_review \
+  > "$fixture_dir/split-corrective-failure.stdout" \
+  2> "$fixture_dir/split-corrective-failure.stderr"
+split_failure_rc=$?
+set -e
+[[ "$split_failure_rc" == "$RALPH_EXIT_FAILED" ]] \
+  || fail "unsafe split rewrite returned $split_failure_rc instead of validation failure"
+split_failure_summary="$split_repo/.ralph/runs/$split_failure_run/failure-summary.md"
+grep -qF 'Oversized-slice planning may not rewrite unrelated slice docs/slices/020A-prerequisite.md.' \
+  "$split_failure_summary" \
+  || fail "split failure summary omitted the exact offending ancestor path"
+grep -qF 'oversized-slice-split-results.md' "$split_failure_summary" \
+  || fail "split failure summary omitted its machine-readable gate identity"
 if ralph_validate_oversized_split_change_scope "$split_repo" 020B >/dev/null 2>&1; then
   fail "oversized-slice planning accepted an unrelated slice rewrite"
 fi

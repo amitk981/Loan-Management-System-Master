@@ -76,18 +76,37 @@ if [[ -n "$split_slice_id" ]]; then
     echo
     split_semantics=0
     split_scope=0
-    ralph_validate_oversized_slice_split "$worktree_dir" "$split_slice_id" && split_semantics=1
-    ralph_validate_oversized_split_change_scope "$worktree_dir" "$split_slice_id" && split_scope=1
+    split_semantics_output=""
+    split_scope_output=""
+    if split_semantics_output="$(ralph_validate_oversized_slice_split \
+        "$worktree_dir" "$split_slice_id" 2>&1)"; then
+      split_semantics=1
+    elif [[ -n "$split_semantics_output" ]]; then
+      printf '%s\n' "$split_semantics_output"
+    fi
+    if split_scope_output="$(ralph_validate_oversized_split_change_scope \
+        "$worktree_dir" "$split_slice_id" 2>&1)"; then
+      split_scope=1
+    elif [[ -n "$split_scope_output" ]]; then
+      printf '%s\n' "$split_scope_output"
+    fi
     (( split_semantics == 1 )) \
       && echo "PASS: $split_slice_id was replaced by a dependency-ordered, drainable successor chain." \
       || echo "FAIL: the queue rewrite for $split_slice_id is incomplete or unsafe."
     (( split_scope == 1 )) \
       && echo "PASS: the planning run changed queue metadata only." \
       || echo "FAIL: the planning run changed files outside the queue-metadata allowlist."
-    if (( split_semantics != 1 || split_scope != 1 )); then
-      exit 1
-    fi
   } > "$split_results"
+  if (( split_semantics != 1 || split_scope != 1 )); then
+    {
+      echo "# Validation Failure Summary"
+      echo
+      echo "## oversized-slice-split-results.md"
+      echo
+      cat "$split_results"
+    } > "$run_dir/failure-summary.md"
+    exit 1
+  fi
 fi
 
 config="$worktree_dir/.ralph/config.yaml"

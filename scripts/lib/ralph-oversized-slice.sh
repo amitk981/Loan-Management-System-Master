@@ -57,6 +57,48 @@ print(f"{canonical_slice_id}\t{run_id}\t{total_lines}\t{max_lines}")
 PY
 }
 
+# Return the trusted failed planning run id and normalized failure signature
+# for one bounded corrective oversized-slice rewrite. A context for any other
+# slice, stale worktree, or unregistered branch is rejected before recovery.
+ralph_oversized_split_retry_context() {
+  local repo_root="${1:?repository root is required}"
+  local context_file="${2:?repair context is required}"
+  local expected_slice_id="${3:?oversized slice id is required}"
+  local context_slice_id canonical_slice_id run_id failure_signature failure_summary split_results
+
+  [[ "$expected_slice_id" =~ ^[A-Za-z0-9]+$ ]] || return 1
+  declare -F ralph_repair_context_is_resumable >/dev/null || return 1
+  ralph_repair_context_is_resumable "$repo_root" "$context_file" || return 1
+
+  context_slice_id="$(ralph_repair_context_value "$context_file" slice_id)" || return 1
+  canonical_slice_id="${context_slice_id%%-*}"
+  [[ "$canonical_slice_id" == "$expected_slice_id" ]] || return 1
+
+  run_id="$(ralph_repair_context_value "$context_file" run_id)" || return 1
+  failure_signature="$(ralph_repair_context_value "$context_file" failure_signature)" || return 1
+  failure_summary="$(ralph_repair_context_value "$context_file" failure_summary)" || return 1
+  split_results="$(dirname "$failure_summary")/oversized-slice-split-results.md"
+  [[ -f "$split_results" ]] || return 1
+  grep -qF 'oversized-slice-split-results.md' "$failure_summary" || return 1
+  grep -qF 'FAIL:' "$split_results" || return 1
+  [[ -n "$run_id" && -n "$failure_signature" ]] || return 1
+  printf '%s\t%s\n' "$run_id" "$failure_signature"
+}
+
+# Retry only a failed independent planning validation, never a successful
+# candidate whose merge failed or a repeatedly failing corrective attempt.
+ralph_oversized_split_retry_allowed() {
+  local status="${1:?status is required}"
+  local attempt="${2:?attempt is required}"
+  local max_attempts="${3:?max attempts is required}"
+  local failed_status="${RALPH_EXIT_FAILED:-1}"
+
+  [[ "$status" =~ ^[0-9]+$ && "$attempt" =~ ^[0-9]+$ && "$max_attempts" =~ ^[0-9]+$ ]] \
+    || return 1
+  (( attempt >= 1 && max_attempts >= 1 )) || return 1
+  (( status == failed_status && attempt < max_attempts ))
+}
+
 _ralph_slice_dependencies_from_stdin() {
   awk '
     /^## Depends On/ { in_section = 1; next }

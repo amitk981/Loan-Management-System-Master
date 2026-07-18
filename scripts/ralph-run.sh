@@ -31,6 +31,7 @@ split_slice_id="${RALPH_SPLIT_SLICE_ID:-}"
 split_failed_run_id="${RALPH_SPLIT_FAILED_RUN_ID:-}"
 split_total_lines="${RALPH_SPLIT_TOTAL_LINES:-}"
 split_max_lines="${RALPH_SPLIT_MAX_LINES:-}"
+split_corrective_run_id="${RALPH_SPLIT_CORRECTIVE_RUN_ID:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -53,6 +54,7 @@ if [[ -n "$split_slice_id" ]]; then
       || ! "$split_failed_run_id" =~ ^[A-Za-z0-9_.-]+$ \
       || ! "$split_total_lines" =~ ^[0-9]+$ \
       || ! "$split_max_lines" =~ ^[0-9]+$ \
+      || ( -n "$split_corrective_run_id" && ! "$split_corrective_run_id" =~ ^[A-Za-z0-9_.-]+$ ) \
       || "$split_total_lines" -le "$split_max_lines" ]]; then
     echo "Invalid oversized-slice planning environment." >&2
     exit 2
@@ -61,6 +63,14 @@ if [[ -n "$split_slice_id" ]]; then
   if [[ -z "$split_slice_file" ]]; then
     echo "Oversized source slice is missing: $split_slice_id" >&2
     exit 2
+  fi
+  if [[ -n "$split_corrective_run_id" ]]; then
+    split_corrective_run_dir="$repo_root/.ralph/runs/$split_corrective_run_id"
+    if [[ ! -s "$split_corrective_run_dir/failure-summary.md" \
+        || ! -s "$split_corrective_run_dir/oversized-slice-split-results.md" ]]; then
+      echo "Corrective oversized-slice evidence is missing for run: $split_corrective_run_id" >&2
+      exit 2
+    fi
   fi
 fi
 
@@ -356,12 +366,16 @@ else
 fi
 
 split_instruction=""
+split_corrective_instruction=""
 split_read_target="docs/slices/$slice_file"
 architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues."
 if [[ -n "$split_slice_id" ]]; then
   split_read_target="$split_slice_file"
   printf -v split_origin_marker 'Oversized slice: `%s`' "$split_slice_id"
   split_instruction="- This is an oversized-slice queue rewrite, not a general architecture review. Do not modify production code or review unrelated slices. Read $split_slice_file and the retained evidence for failed run $split_failed_run_id. The failed candidate measured $split_total_lines lines against a $split_max_lines-line limit. Mark $split_slice_id Superseded and create at least two dependency-ordered Not Started successor slices named ${split_slice_id}A, ${split_slice_id}B, and so on. Each successor must contain an Origin section with the exact marker $split_origin_marker. The first successor inherits every original prerequisite; each later successor depends on the previous one; every existing downstream dependency on $split_slice_id must point to the terminal successor. Preserve every original requirement, test, evidence, and risk across the successors. Each successor must be independently implementable and independently green, with a predicted diff comfortably below the configured limit. Update queue handoff or digest documents only when needed. Do not sharpen or change unrelated slices."
+  if [[ -n "$split_corrective_run_id" ]]; then
+    split_corrective_instruction="- This is the one bounded corrective queue-rewrite attempt after run $split_corrective_run_id failed independent validation. Before editing, read $split_corrective_run_dir/failure-summary.md and $split_corrective_run_dir/oversized-slice-split-results.md. Start from this clean worktree; do not salvage the rejected planning diff. Correct every exact validator finding, change only permitted queue/bookkeeping paths, and run local scope/semantics checks before handing back."
+  fi
   architecture_instruction="- In this queue-rewrite architecture mode, perform only the oversized-slice split described above."
 fi
 
@@ -413,6 +427,7 @@ Core requirements:
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 $repair_instruction
 $split_instruction
+$split_corrective_instruction
 $architecture_instruction
 - If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
 - If the selected slice is a change request (CR-*): write impact-analysis.md in the run folder BEFORE editing any code — affected backend/frontend pieces, blast radius across modules, and the regression tests to add in each affected module. Validation fails the run without it. Then add those regression tests as part of the fix.
@@ -548,10 +563,12 @@ The independent validation runner exited with status $validation_rc before it
 could write a detailed failure summary. Inspect the run's gate result files.
 EOF
   fi
-  if [[ "$mode" != "architecture_review" ]]; then
+  if [[ "$mode" != "architecture_review" || -n "$split_slice_id" ]]; then
+    repair_slice_id="$slice_id"
+    [[ -n "$split_slice_id" ]] && repair_slice_id="$split_slice_id"
     ralph_write_repair_context \
       "$repo_root/.ralph/repair-context.json" \
-      "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+      "$run_id" "$worktree_dir" "$repair_slice_id" "$branch_name" \
       "$run_dir/failure-summary.md"
   fi
   exit "$validation_rc"
