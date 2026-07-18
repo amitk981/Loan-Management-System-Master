@@ -371,7 +371,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
 | Communication templates and communication history | Canonical dispatcher and asynchronous advice job implemented through 009H5 | None directly | `api-contracts.md` §39.1-§39.3; `integrations.md` §§10/21/33.3; `data-model.md` §24.1-§24.2 | `content_templates`, `communications`, protected advice outboxes/provider attempts, and communication jobs are persisted. Generic `POST /api/v1/communications/send/` and disbursement advice share the dispatcher-owned approved/effective template, exact merge/render, Communication, and safe-audit policy. Generic send remains a pending no-provider shell; disbursement advice runs through the bounded asynchronous worker contract. |
-| SAP and disbursement | SAP request/delivery/completion/reuse implemented through 009B3B; loan-account/readiness implemented through 009D | Disbursement and CFC | `api-contracts.md` §§29-31; `integrations.md` §8 | SAP is manual/adapter-first for MVP and owned by the public `sap_workflow` module; Finance retains only the model-identity compatibility import. |
+| SAP and disbursement | SAP request/delivery/completion/reuse implemented through 009B3B; loan-account/readiness, payment initiation, CFC decision, transfer success, advice delivery, and borrower MP14 projection implemented through 009I | Disbursement, CFC, and MP14 | `api-contracts.md` §§29-31; `integrations.md` §§8-10/19/21 | SAP is manual/adapter-first for MVP and owned by the public `sap_workflow` module; disbursement owner decisions feed a masked own-member portal projection, and finalized communications owns the one-use advice artifact boundary. Staff finance/CFC frontend wiring remains 009K. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |
 | Compliance, registers, reports | Draft from source | Compliance, registers, reports | `api-contracts.md`, `auth-permissions.md` | Export masking must be tested. |
@@ -4174,3 +4174,32 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   Under A-126 the source-bank check fails honestly until a governed owner exists. Evaluation writes
   no audit, workflow, checklist, approval, security, account, balance, payment, task, communication,
   register, or borrower truth and exposes no identity/bank/document/cheque/BO/capability secrets.
+
+## Borrower portal disbursement status and advice (009I)
+
+- `GET /api/v1/portal/applications/{loan_application_id}/disbursement-status/` accepts no query
+  parameters and writes no audit or workflow evidence. An active borrower portal session may read
+  only the application owned by its canonical `PortalAccount.member_id`; missing and cross-member
+  ids share `404 NOT_FOUND`, staff sessions receive `403 FORBIDDEN`, and invalidated portal sessions
+  retain the shared `401` contract.
+- The response contains only application/account ids, one borrower-safe status code/label, decimal
+  sanctioned and nullable disbursement amounts, destination and bank-reference last four, UTC
+  disbursement time, advice availability, and the fixed ordered documentation/SAP/initiation/CFC/
+  transfer/advice timeline. It composes current sanction, disbursement, transfer, and finalized
+  communication owner decisions. Missing or incoherent terminal evidence cannot imply success;
+  internal actors, comments, raw SAP/bank values, evidence ids, and communication internals are
+  never returned.
+- `POST /api/v1/portal/applications/{loan_application_id}/disbursement-advice/download-capability/`
+  accepts exactly an empty JSON object. For the exact current finalized advice it replaces any
+  earlier capability and returns only `download_url` and UTC `expires_at`. The signed 15-minute
+  capability binds portal account, member, application, loan account, advice intent,
+  communication-owned file/checksum, and version.
+- `GET /api/v1/portal/applications/{loan_application_id}/disbursement-advice/content/?capability=...`
+  accepts only that query parameter. It re-resolves current owner truth, expires and consumes the
+  capability once, and returns the retained UTF-8 borrower advice as an attachment with
+  `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. Replacement, replay, expiry,
+  tamper, cross-scope, and changed evidence share nondisclosing `404 NOT_FOUND`.
+- Capability issuance and accepted/denied content attempts use `portal.document.downloaded` with
+  safe identity, request/network context, and `issued`/`accepted`/`denied` outcomes. Audit payloads
+  never retain the capability, advice bytes, recipient, full UTR/account/SAP values, storage keys,
+  or internal authorisation facts.

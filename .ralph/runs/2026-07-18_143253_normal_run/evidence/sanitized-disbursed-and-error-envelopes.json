@@ -1,0 +1,74 @@
+{
+  "disbursed": {
+    "success": true,
+    "data": {
+      "loan_application_id": "3b2d96c1-adc3-439a-82d8-67711f30761c",
+      "loan_account_id": "512b48b9-5a5f-4405-88f9-06a29c84d833",
+      "status_code": "disbursed",
+      "status_label": "Loan amount transferred.",
+      "sanctioned_amount": "400000.00",
+      "disbursement_amount": "400000.00",
+      "destination_account_last4": "4321",
+      "disbursed_at": "2026-07-18T09:42:05.623801Z",
+      "bank_reference_last4": "9876",
+      "advice_available": true,
+      "timeline": [
+        {
+          "code": "documentation_complete",
+          "label": "Documents completed.",
+          "status": "complete",
+          "completed_at": "2026-07-18T09:42:05.623801Z"
+        },
+        {
+          "code": "sap_setup",
+          "label": "Finance setup complete.",
+          "status": "complete",
+          "completed_at": "2026-07-18T09:42:05.623801Z"
+        },
+        {
+          "code": "payment_initiated",
+          "label": "Payment processing started.",
+          "status": "complete",
+          "completed_at": "2026-07-18T09:42:05.623801Z"
+        },
+        {
+          "code": "cfc_authorisation",
+          "label": "Payment approved.",
+          "status": "complete",
+          "completed_at": "2026-07-18T09:42:05.623801Z"
+        },
+        {
+          "code": "transfer_completed",
+          "label": "Loan amount transferred.",
+          "status": "complete",
+          "completed_at": "2026-07-18T09:42:05.623801Z"
+        },
+        {
+          "code": "advice_issued",
+          "label": "Disbursement advice issued.",
+          "status": "complete",
+          "completed_at": "2026-07-18T09:42:05.912507Z"
+        }
+      ]
+    },
+    "meta": {
+      "request_id": null,
+      "timestamp": "2026-07-18T09:43:12.865838Z",
+      "api_version": "v1"
+    }
+  },
+  "safe_error": {
+    "success": false,
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Loan application was not found.",
+      "details": {},
+      "field_errors": {}
+    },
+    "meta": {
+      "request_id": null,
+      "timestamp": "2026-07-18T09:43:12.868559Z",
+      "api_version": "v1"
+    }
+  }
+}

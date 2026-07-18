@@ -113,6 +113,77 @@ class AdviceFinalizationDecision:
 
 
 @dataclass(frozen=True)
+class FinalizedAdviceArtifact:
+    outbox_id: uuid.UUID
+    communication_id: uuid.UUID
+    checksum_sha256: str
+    body: bytes
+    sent_at: datetime
+    action_id: uuid.UUID
+    audit_id: uuid.UUID
+    workflow_id: uuid.UUID
+    delivery_evidence_digest: str
+
+
+def resolve_finalized_advice_artifact(*, context):
+    """Resolve exact communications-owned terminal advice without dispatching."""
+    outboxes = list(
+        CommunicationDeliveryOutbox.objects.select_related(
+            "accepted_provider_attempt", "delivery_receipt", "final_communication"
+        )
+        .filter(
+            advice_intent=context.advice_intent_id,
+            communication_id=context.communication_id,
+        )
+        .order_by("outbox_id")[:2]
+    )
+    if len(outboxes) != 1:
+        return None
+    outbox = outboxes[0]
+    receipt = outbox.delivery_receipt
+    communication = outbox.final_communication
+    if receipt is None or communication is None:
+        return None
+    try:
+        decision = CommunicationDispatcher._decision(outbox)
+    except CommunicationDispatchConflict:
+        return None
+    if not (
+        _receipt_matches(receipt, decision)
+        and communication.pk == decision.communication_id
+        and communication.related_entity_type == decision.related_entity_type
+        and communication.related_entity_id == decision.related_entity_id
+        and communication.recipient_party_type == "borrower"
+        and communication.channel == "email"
+        and communication.content_template_id == decision.template_id
+        and communication.subject_snapshot == decision.subject
+        and communication.body_snapshot == decision.body
+        and communication.sent_at == decision.accepted_at
+        and communication.delivery_status == "sent"
+        and communication.external_message_id == decision.external_message_id
+    ):
+        return None
+    try:
+        finalization = _reconcile_finalization(
+            context, receipt, decision, communication
+        )
+    except CommunicationDispatchConflict:
+        return None
+    body = f"{decision.subject}\n\n{decision.body}\n".encode("utf-8")
+    return FinalizedAdviceArtifact(
+        outbox_id=outbox.pk,
+        communication_id=communication.pk,
+        checksum_sha256=hashlib.sha256(body).hexdigest(),
+        body=body,
+        sent_at=communication.sent_at,
+        action_id=finalization.action_id,
+        audit_id=finalization.audit_id,
+        workflow_id=finalization.workflow_id,
+        delivery_evidence_digest=finalization.delivery_evidence_digest,
+    )
+
+
+@dataclass(frozen=True)
 class AdviceJobExecution:
     job_id: uuid.UUID
     actor_id: uuid.UUID
@@ -1344,4 +1415,6 @@ __all__ = [
     "CommunicationDeliveryFailed",
     "CommunicationDispatchConflict",
     "CommunicationDispatcher",
+    "FinalizedAdviceArtifact",
+    "resolve_finalized_advice_artifact",
 ]

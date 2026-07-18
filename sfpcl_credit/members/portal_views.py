@@ -8,6 +8,7 @@ from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import portal_services
 from sfpcl_credit.processes import portal_documentation_actions as portal_documentation_process
 from sfpcl_credit.processes import portal_deficiency_response as portal_deficiency_process
+from sfpcl_credit.processes import portal_disbursement_status
 from sfpcl_credit.workflows.guard import InvalidStateTransition
 
 
@@ -385,6 +386,76 @@ def portal_documentation_action_download(request, loan_application_id, action_co
     return success_response(data, request)
 
 
+@require_GET
+def portal_application_disbursement_status(request, loan_application_id):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    if request.GET:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Disbursement status does not accept query parameters.",
+            {field: "Unknown query parameter." for field in sorted(request.GET)},
+        )
+    try:
+        data = portal_disbursement_status.get_projection(
+            actor=user, application_id=loan_application_id
+        )
+    except portal_disbursement_status.PortalDisbursementNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "Loan application was not found."
+        )
+    return success_response(data, request)
+
+
+@require_http_methods(["POST"])
+def portal_disbursement_advice_capability(request, loan_application_id):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        payload = parse_json_body(request)
+        if payload:
+            raise ValidationError(
+                {field: "Unknown field." for field in sorted(payload)}
+            )
+        data = portal_disbursement_status.issue_advice_capability(
+            actor=user, application_id=loan_application_id, request=request
+        )
+    except ValidationError as exc:
+        return _portal_application_validation_error(request, exc)
+    except portal_disbursement_status.PortalDisbursementNotFound:
+        return error_response(request, 404, "NOT_FOUND", "Advice was not found.")
+    return success_response(data, request)
+
+
+@require_GET
+def portal_disbursement_advice_content(request, loan_application_id):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    if set(request.GET) != {"capability"}:
+        portal_disbursement_status.record_download_denial(
+            actor=user, application_id=loan_application_id, request=request
+        )
+        return error_response(request, 404, "NOT_FOUND", "Advice was not found.")
+    try:
+        content = portal_disbursement_status.read_advice(
+            actor=user,
+            application_id=loan_application_id,
+            capability=request.GET.get("capability", ""),
+            request=request,
+        )
+    except portal_disbursement_status.PortalDisbursementNotFound:
+        portal_disbursement_status.record_download_denial(
+            actor=user, application_id=loan_application_id, request=request
+        )
+        return error_response(request, 404, "NOT_FOUND", "Advice was not found.")
+    return _no_store_content_response(content)
+
+
 def _portal_object_access_denied(request, exc):
     return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
 
@@ -394,6 +465,7 @@ def _no_store_content_response(content):
     response["Content-Disposition"] = f'attachment; filename="{content.file_name}"'
     response["Cache-Control"] = "no-store"
     response["Pragma"] = "no-cache"
+    response["X-Content-Type-Options"] = "nosniff"
     return response
 
 

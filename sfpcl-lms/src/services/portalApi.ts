@@ -239,6 +239,27 @@ export interface PortalDownloadDescriptor {
   expires_at: string;
 }
 
+export interface PortalDisbursementTimelineItem {
+  code: string;
+  label: string;
+  status: 'complete' | 'pending' | 'blocked';
+  completed_at: string | null;
+}
+
+export interface PortalDisbursementStatus {
+  loan_application_id: string;
+  loan_account_id: string | null;
+  status_code: string;
+  status_label: string;
+  sanctioned_amount: string | null;
+  disbursement_amount: string | null;
+  destination_account_last4: string | null;
+  disbursed_at: string | null;
+  bank_reference_last4: string | null;
+  advice_available: boolean;
+  timeline: PortalDisbursementTimelineItem[];
+}
+
 export interface PortalApplicationDraftPayload {
   nominee_id?: string | null;
   required_loan_amount?: string;
@@ -295,6 +316,17 @@ export const downloadPortalDeficiencyResponse = (actionUrl: string) => {
   return request<PortalDownloadDescriptor>(actionUrl);
 };
 export const fetchPortalDocumentationActions = (applicationId: string) => request<PortalDocumentationProjection>(`/api/v1/portal/applications/${applicationId}/documentation-actions/`);
+export const fetchPortalDisbursementStatus = (applicationId: string) => request<PortalDisbursementStatus>(
+  `/api/v1/portal/applications/${applicationId}/disbursement-status/`,
+);
+export const downloadPortalDisbursementAdvice = async (applicationId: string) => {
+  const descriptor = await request<PortalDownloadDescriptor>(
+    `/api/v1/portal/applications/${applicationId}/disbursement-advice/download-capability/`,
+    { method: 'POST', body: {} },
+  );
+  const content = await fetchPortalDocumentContent(descriptor.download_url);
+  openPortalDocumentBlob(content);
+};
 export const uploadPortalDocumentationAction = (applicationId: string, actionCode: string, file: File, notes?: string) => {
   const formData = new FormData();
   formData.append('file', file, file.name);

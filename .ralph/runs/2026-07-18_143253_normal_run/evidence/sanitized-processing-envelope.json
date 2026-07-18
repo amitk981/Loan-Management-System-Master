@@ -1,0 +1,58 @@
+{
+  "success": true,
+  "data": {
+    "loan_application_id": "ba7ef2ac-ea52-473b-8cc1-e950b860708f",
+    "loan_account_id": "811a0f36-d0a2-4389-97e7-5ec9f7e97aaf",
+    "status_code": "cfc_authorisation_pending",
+    "status_label": "Payment approval in progress.",
+    "sanctioned_amount": "400000.00",
+    "disbursement_amount": null,
+    "destination_account_last4": "4321",
+    "disbursed_at": null,
+    "bank_reference_last4": null,
+    "advice_available": false,
+    "timeline": [
+      {
+        "code": "documentation_complete",
+        "label": "Documents completed.",
+        "status": "complete",
+        "completed_at": "2026-07-18T09:43:48.304078Z"
+      },
+      {
+        "code": "sap_setup",
+        "label": "Finance setup complete.",
+        "status": "complete",
+        "completed_at": "2026-07-18T09:43:48.304078Z"
+      },
+      {
+        "code": "payment_initiated",
+        "label": "Payment processing started.",
+        "status": "complete",
+        "completed_at": "2026-07-18T09:43:48.304078Z"
+      },
+      {
+        "code": "cfc_authorisation",
+        "label": "Payment approved.",
+        "status": "pending",
+        "completed_at": null
+      },
+      {
+        "code": "transfer_completed",
+        "label": "Loan amount transferred.",
+        "status": "pending",
+        "completed_at": null
+      },
+      {
+        "code": "advice_issued",
+        "label": "Disbursement advice issued.",
+        "status": "pending",
+        "completed_at": null
+      }
+    ]
+  },
+  "meta": {
+    "request_id": null,
+    "timestamp": "2026-07-18T09:43:48.662302Z",
+    "api_version": "v1"
+  }
+}

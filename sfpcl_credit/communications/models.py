@@ -145,6 +145,9 @@ class CommunicationDeliveryOutbox(models.Model):
         blank=True,
         null=True,
     )
+    portal_capability_version = models.PositiveIntegerField(default=0)
+    portal_capability_expires_at = models.DateTimeField(blank=True, null=True)
+    portal_capability_consumed_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

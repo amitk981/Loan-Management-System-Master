@@ -378,6 +378,93 @@ def _lock_source_relations(row):
     ).first()
 
 
+def resolve_current_advice_context(*, disbursement_id):
+    """Return immutable primitive context only for the current sent advice chain."""
+    row = (
+        Disbursement.objects.select_related(
+            "member",
+            "loan_application",
+            "loan_account",
+            "loan_account__terms",
+            "bank_transfer",
+            "bank_transfer_evidence_document",
+            "authorisation_audit",
+            "authorisation_workflow_event",
+            "transfer_success_audit",
+            "transfer_success_workflow_event",
+            "transfer_success_loan_status_history",
+            "advice_intent",
+            "advice_intent__delivery_audit",
+            "advice_intent__delivery_workflow_event",
+            "loan_register_update",
+            "register_update",
+            "disbursement_advice_communication",
+        )
+        .filter(pk=disbursement_id)
+        .first()
+    )
+    if row is None or not row.disbursement_advice_communication_id:
+        return None
+    intent = row.advice_intent
+    audit = intent.delivery_audit
+    communication = row.disbursement_advice_communication
+    evidence = audit.new_value_json if audit else None
+    if not (
+        completed_success_is_coherent(row)
+        and intent.delivery_status == DisbursementAdviceIntent.DELIVERY_SENT
+        and intent.delivery_action_id
+        and intent.delivery_evidence_digest
+        and intent.delivery_workflow_event_id
+        and audit
+        and isinstance(evidence, dict)
+        and audit.actor_user_id == communication.sent_by_user_id
+        and evidence.get("actor_user_id") == str(audit.actor_user_id)
+        and isinstance(evidence.get("actor_role_code"), str)
+        and evidence.get("actor_role_code")
+        and isinstance(evidence.get("actor_team_codes"), list)
+    ):
+        return None
+    try:
+        canonical_email = _canonical_email(row.member.email)
+    except DisbursementAdviceConflict:
+        return None
+    merge_values = (
+        ("borrower_name", row.member.display_name),
+        ("application_reference_number", row.loan_application.application_reference_number),
+        ("loan_account_number", row.loan_account.loan_account_number),
+        ("sanctioned_amount", f"{row.loan_account.sanctioned_amount:.2f}"),
+        ("disbursement_amount", f"{row.disbursement_amount:.2f}"),
+        ("disbursed_at", row.disbursed_at.date().isoformat()),
+        ("bank_reference_number", _masked_reference(row.bank_reference_number)),
+    )
+    return DisbursementAdviceContext(
+        actor_id=audit.actor_user_id,
+        actor_role_code=evidence["actor_role_code"],
+        actor_team_codes=tuple(evidence["actor_team_codes"]),
+        advice_intent_id=intent.pk,
+        intent_created_at=intent.created_at,
+        communication_id=communication.pk,
+        recipient_address=canonical_email,
+        recipient_party_id=row.member_id,
+        related_entity_type="disbursement",
+        related_entity_id=row.pk,
+        template_code_prefix="disbursement_advice_email_",
+        template_type="email",
+        template_audience="borrower",
+        required_variables=tuple(sorted(ADVICE_VARIABLES)),
+        merge_values=merge_values,
+        sensitive_values=(row.bank_reference_number,),
+        loan_account_id=row.loan_account_id,
+        loan_application_id=row.loan_application_id,
+        member_id=row.member_id,
+        disbursement_amount=row.disbursement_amount,
+        disbursed_at=row.disbursed_at.date(),
+        masked_bank_reference=_masked_reference(row.bank_reference_number),
+        transfer_success_action_id=row.transfer_success_action_id,
+        transfer_success_evidence_digest=row.transfer_success_evidence_digest,
+    )
+
+
 def _request_id(request):
     supplied = request.headers.get("X-Request-ID", "").strip() if request else ""
     return supplied if supplied and len(supplied) <= 255 else f"req_advice_{uuid.uuid4().hex}"
@@ -390,4 +477,5 @@ def _iso(value):
 __all__ = [
     "DisbursementAdviceConflict",
     "DisbursementAdviceDeliveryFailed",
+    "resolve_current_advice_context",
 ]

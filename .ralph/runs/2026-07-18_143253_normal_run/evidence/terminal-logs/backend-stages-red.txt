@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_initiated_payment_waiting_for_cfc_cannot_skip_forward (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests.test_initiated_payment_waiting_for_cfc_cannot_skip_forward)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_143253_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 219, in test_initiated_payment_waiting_for_cfc_cannot_skip_forward
+    self.assertEqual(data["status_code"], "cfc_authorisation_pending")
+AssertionError: 'finance_setup_pending' != 'cfc_authorisation_pending'
+- finance_setup_pending
++ cfc_authorisation_pending
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.552s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

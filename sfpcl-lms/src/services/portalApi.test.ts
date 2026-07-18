@@ -8,6 +8,8 @@ import {
   fetchPortalApplication,
   fetchPortalApplications,
   fetchPortalDocumentationActions,
+  downloadPortalDisbursementAdvice,
+  fetchPortalDisbursementStatus,
   fetchPortalDashboard,
   fetchPortalProduceSupply,
   fetchPortalProfile,
@@ -201,6 +203,39 @@ describe('portal member API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(4, `http://127.0.0.1:8000${descriptor.download_url}`, {
       headers: { Authorization: 'Bearer portal-access-token' },
     });
+  });
+
+  it('loads the disbursement projection and follows the server-issued one-use advice capability', async () => {
+    const projection = {
+      loan_application_id: 'app-1', loan_account_id: 'loan-1', status_code: 'disbursed',
+      status_label: 'Loan amount transferred.', sanctioned_amount: '400000.00',
+      disbursement_amount: '400000.00', destination_account_last4: '4321',
+      disbursed_at: '2026-07-18T10:00:00Z', bank_reference_last4: '9876',
+      advice_available: true, timeline: [],
+    };
+    const descriptor = {
+      download_url: '/api/v1/portal/applications/app-1/disbursement-advice/content/?capability=signed',
+      expires_at: '2026-07-18T10:15:00Z',
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(projection))
+      .mockResolvedValueOnce(ok(descriptor))
+      .mockResolvedValueOnce({ ok: true, status: 200, blob: async () => new Blob(['advice']) });
+    const open = vi.fn();
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('window', { open, setTimeout: vi.fn() });
+    vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:advice'), revokeObjectURL });
+
+    await expect(fetchPortalDisbursementStatus('app-1')).resolves.toEqual(projection);
+    await expect(downloadPortalDisbursementAdvice('app-1')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/disbursement-status/', request());
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/disbursement-advice/download-capability/', request('POST', {}));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, `http://127.0.0.1:8000${descriptor.download_url}`, {
+      headers: { Authorization: 'Bearer portal-access-token' },
+    });
+    expect(open).toHaveBeenCalledWith('blob:advice', '_blank', 'noopener,noreferrer');
   });
 });
 

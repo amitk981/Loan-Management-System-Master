@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_current_cfc_rejection_exposes_only_safe_blocked_copy (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests.test_current_cfc_rejection_exposes_only_safe_blocked_copy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_143253_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 249, in test_current_cfc_rejection_exposes_only_safe_blocked_copy
+    self.assertEqual(data["status_code"], "disbursement_blocked")
+                     ~~~~^^^^^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+----------------------------------------------------------------------
+Ran 1 test in 0.575s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

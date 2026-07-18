@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_stale_success_evidence_falls_back_to_safe_blocked_status (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests.test_stale_success_evidence_falls_back_to_safe_blocked_status)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_143253_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 118, in test_stale_success_evidence_falls_back_to_safe_blocked_status
+    self.assertEqual(data["status_code"], "disbursement_blocked")
+AssertionError: 'finance_setup_pending' != 'disbursement_blocked'
+- finance_setup_pending
++ disbursement_blocked
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.680s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_changed_advice_finalization_ledger_removes_availability_and_capability (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests.test_changed_advice_finalization_ledger_removes_availability_and_capability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_143253_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 255, in test_changed_advice_finalization_ledger_removes_availability_and_capability
+    self.assertFalse(status.json()["data"]["advice_available"])
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.687s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

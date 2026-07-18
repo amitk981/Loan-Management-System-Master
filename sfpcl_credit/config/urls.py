@@ -326,6 +326,21 @@ urlpatterns = [
         name="portal-documentation-actions",
     ),
     path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/disbursement-status/",
+        portal_views.portal_application_disbursement_status,
+        name="portal-application-disbursement-status",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/disbursement-advice/download-capability/",
+        portal_views.portal_disbursement_advice_capability,
+        name="portal-disbursement-advice-capability",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/disbursement-advice/content/",
+        portal_views.portal_disbursement_advice_content,
+        name="portal-disbursement-advice-content",
+    ),
+    path(
         "api/v1/portal/applications/<uuid:loan_application_id>/documentation-actions/<slug:action_code>/upload/",
         portal_views.portal_documentation_action_upload,
         name="portal-documentation-action-upload",

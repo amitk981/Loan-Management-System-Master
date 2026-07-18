@@ -1,24 +1,30 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-18_132412_normal_run
+
+2026-07-18_143253_normal_run
 
 ## Current Status
-009H5 is complete pending independent validation. The source-shaped communications dispatcher now
-owns generic template preparation/render/persistence plus durable advice outbox, provider, finalization,
-job, and retry policy. The §31.5 HTTP request creates/reconciles one queued job without provider I/O;
-the top-level process coordinator re-authorises current disbursement truth and finalizes only after
-Manual/Fake/Future provider acceptance. Three bounded attempts expose queued/running/retrying/sent/
-failed safely, with one operator task on exhaustion and no raw recipient/render/provider/error facts.
 
-Direct communications↔disbursements Python imports are eliminated and static-tested. Eight focused
-job/task/dependency tests, retained generic/advice/migration/scheduler tests, Django check, migration
-sync, compile, and two PostgreSQL queue plus two PostgreSQL worker races pass. Celery 5.5.3 is newly
-pinned as the source-required worker boundary but is not importable in the isolated agent venv; the
-task module's business-free entry point and fallback-call contract were exercised locally, and the
-orchestrator installs pinned requirements before independent validation. 009I and 009J were rechecked
-and remain concrete; no speculative sharpening edit was needed.
+009I is complete pending independent validation. MP14 is API-backed through one active-portal-member
+self-scope and projects only current sanction, initiation, CFC, transfer, and finalized advice owner
+truth. The fixed timeline, decimal amounts, UTC dates, and masked destination/reference last four
+replace all hard-coded fixture values. Status reads are zero-write and stale/mixed chains fail back
+to a safely provable processing stage or borrower-safe blocked copy.
+
+The exact finalized communications artifact is available through a 15-minute signed replacement
+capability bound to portal/member/application/account/advice/file/checksum/version and consumed once.
+Issued, accepted, and denied actions share safe audit vocabulary without token/content/bank leakage.
+Ten focused portal tests, 39 impacted advice tests, all 331 frontend tests, typecheck, lint, build,
+Django check, migration sync, and compile checks pass.
+
+Authenticated processing/disbursed/error envelopes are saved. No screenshot was fabricated: the
+browser runtime exposed no browser and the sandbox denied localhost listeners; external browser
+acceptance remains for the orchestrator. 009J is already concrete. 009K was reviewed as the second
+next slice and already names exact endpoints/screens, role rules, validation, mock removals, and
+evidence, so no speculative sharpening edit was needed.
 
 ## Next Run
-Run 009I for borrower-safe MP14 status/advice availability, then 009J for the initial Loan Account
-360 projection.
+
+Run 009J for the scoped Loan Account 360 initial list/detail projection, then 009K for staff
+disbursement/CFC frontend wiring.

@@ -882,3 +882,17 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - Finalization links the outbox to its receipt and Communication with protected one-to-one edges in
   the same transaction. Both crash windows and two PostgreSQL five-caller races recover to one
   provider acceptance and one complete local chain.
+
+## 009I retained implementation truth
+
+- MP14 reads one zero-write own-application projection rooted only in the active portal account's
+  member. Current owner decisions prove sanction, initiation, CFC decision, post-transfer funding,
+  and finalized advice; incoherent terminal claims fall back to safe blocked copy.
+- The response is an allowlisted six-stage borrower timeline with decimal amounts, UTC timestamps,
+  and destination/reference last four only. It never exposes SAP values, full UTR/account data,
+  actors, comments, permissions, checksums, or internal evidence identities.
+- Finalized advice is downloadable only through a 15-minute signed replacement capability bound to
+  portal/member/application/account/advice/file/checksum/version and consumed once. Issuance and
+  accepted/denied reads share the safe `portal.document.downloaded` audit vocabulary.
+- Under A-099 the retained communications subject/body is the exact UTF-8 advice attachment until a
+  governed document-template owner defines another artifact format.
