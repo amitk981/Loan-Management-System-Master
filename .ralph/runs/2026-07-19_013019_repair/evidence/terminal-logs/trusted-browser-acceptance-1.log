@@ -1,0 +1,70 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/.ralph/runs/2026-07-19_013019_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-disbursement-status.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/portal-disbursement-status.spec.ts
+
+[2m[WebServer] [22m[18/Jul/2026 20:08:43] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 3 tests using 1 worker
+
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 20:08:48] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "OPTIONS /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "OPTIONS /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "GET /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 1711
+[2m[WebServer] [22m[18/Jul/2026 20:08:49] "GET /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 1711
+  ✓  1 [chromium] › portal-disbursement-status.spec.ts:11:5 › MP14 preserves the borrower composition for current SAP-complete processing (3.2s)
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "OPTIONS /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "OPTIONS /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 1711
+[2m[WebServer] [22m[18/Jul/2026 20:08:51] "GET /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 1711
+  ✓  2 [chromium] › portal-disbursement-status.spec.ts:27:5 › MP14 preserves masked transfer facts and accepted-advice availability (2.7s)
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "OPTIONS /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "OPTIONS /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 1711
+[2m[WebServer] [22m[18/Jul/2026 20:08:54] "GET /api/v1/portal/applications/6854dfe2-8ff0-4137-a0a9-4d0cf8f92a81/ HTTP/1.1" 200 1711
+  ✓  3 [chromium] › portal-disbursement-status.spec.ts:41:5 › MP14 renders a safe unavailable state for an exact status failure (2.8s)
+
+  3 passed (33.4s)
+
+Duration milliseconds: 33929
+Exit code: 0

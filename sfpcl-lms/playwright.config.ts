@@ -31,7 +31,7 @@ const chromiumExecutable = resolveChromiumExecutable();
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: '**/*.e2e.spec.ts',
+  testMatch: ['**/*.e2e.spec.ts', 'portal-disbursement-status.spec.ts'],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,

@@ -1,7 +1,11 @@
 from datetime import timedelta
+from types import SimpleNamespace
+from unittest.mock import patch
+from uuid import uuid4
 
 from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from sfpcl_credit.communications.models import CommunicationDeliveryOutbox
@@ -16,6 +20,48 @@ from sfpcl_credit.disbursements.models import (
 from sfpcl_credit.identity.models import AuditLog, PortalAccount, Role, User
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
+
+
+def _patch_current_pre_payment_owners(test_case, *, account, application, initiated_at):
+    sap_code_id = uuid4()
+    documentation_completed_at = initiated_at - timedelta(days=2)
+    sap_completed_at = initiated_at - timedelta(days=1)
+    values = {
+        "documentation_completed_at": documentation_completed_at,
+        "sap_completed_at": sap_completed_at,
+    }
+    patchers = (
+        patch(
+            "sfpcl_credit.processes.portal_disbursement_status.resolve_legal_readiness",
+            return_value=SimpleNamespace(
+                documentation_complete=True,
+                documentation_completed_at=documentation_completed_at,
+            ),
+        ),
+        patch(
+            "sfpcl_credit.processes.portal_disbursement_status.get_customer_code_for_member",
+            return_value=SimpleNamespace(
+                customer_code_id=sap_code_id,
+                member_id=application.member_id,
+                profile_request_id=uuid4(),
+                loan_application_id=application.pk,
+                status="active",
+                completed_at=sap_completed_at,
+            ),
+        ),
+        patch(
+            "sfpcl_credit.processes.portal_disbursement_status.resolve_disbursement_account",
+            return_value=SimpleNamespace(
+                loan_application_id=application.pk,
+                member_id=application.member_id,
+                sap_customer_code_id=sap_code_id,
+            ),
+        ),
+    )
+    for patcher in patchers:
+        patcher.start()
+        test_case.addCleanup(patcher.stop)
+    return values
 
 
 class PortalDisbursementStatusApiTests(TestCase):
@@ -58,12 +104,19 @@ class PortalDisbursementStatusApiTests(TestCase):
             activated_at=timezone.now(),
         )
         self.client = Client()
+        self.stage_times = _patch_current_pre_payment_owners(
+            self,
+            account=self.row.loan_account,
+            application=self.row.loan_application,
+            initiated_at=self.row.initiated_at,
+        )
 
     def test_own_completed_disbursement_returns_only_borrower_safe_current_truth(self):
         auth = self._portal_auth()
         audit_count = AuditLog.objects.count()
 
-        response = self.client.get(self._status_url(), headers=auth)
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(self._status_url(), headers=auth)
 
         self.assertEqual(response.status_code, 200, response.content)
         assert_success_envelope(self, response.json())
@@ -107,6 +160,30 @@ class PortalDisbursementStatusApiTests(TestCase):
         )
         self.assertTrue(all(set(item) == {"code", "label", "status", "completed_at"} for item in data["timeline"]))
         self.assertEqual(AuditLog.objects.count(), audit_count)
+        write_verbs = ("INSERT ", "UPDATE ", "DELETE ", "REPLACE ")
+        self.assertFalse(
+            any(
+                query["sql"].lstrip().upper().startswith(write_verbs)
+                for query in queries.captured_queries
+            ),
+            queries.captured_queries,
+        )
+        timeline = {item["code"]: item for item in data["timeline"]}
+        expected_times = {
+            "documentation_complete": self.stage_times["documentation_completed_at"],
+            "sap_setup": self.stage_times["sap_completed_at"],
+            "payment_initiated": self.row.initiated_at,
+            "cfc_authorisation": self.row.authorised_at,
+            "transfer_completed": self.row.disbursed_at,
+            "advice_issued": self.row.disbursement_advice_communication.sent_at,
+        }
+        self.assertEqual(
+            {code: item["completed_at"] for code, item in timeline.items()},
+            {
+                code: value.isoformat().replace("+00:00", "Z")
+                for code, value in expected_times.items()
+            },
+        )
         serialized = str(response.json()).lower()
         for forbidden in (
             "rbl-advice-9876",
@@ -138,7 +215,26 @@ class PortalDisbursementStatusApiTests(TestCase):
         self.assertIsNone(data["disbursed_at"])
         self.assertIsNone(data["bank_reference_last4"])
         self.assertFalse(data["advice_available"])
-        self.assertTrue(all(item["status"] != "complete" for item in data["timeline"]))
+        self.assertEqual(
+            [item["status"] for item in data["timeline"]],
+            ["complete", "complete", "pending", "pending", "pending", "pending"],
+        )
+
+    def test_advice_capability_uses_honest_artifact_vocabulary(self):
+        response = self.client.post(
+            self._capability_url(),
+            data={},
+            content_type="application/json",
+            headers=self._portal_auth(),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        audit = AuditLog.objects.get(
+            action="portal.document.downloaded",
+            new_value_json__outcome="issued",
+        )
+        self.assertIn("artifact_id", audit.new_value_json)
+        self.assertNotIn("file_id", audit.new_value_json)
 
     def test_advice_capability_replaces_then_consumes_once_with_safe_audits(self):
         auth = self._portal_auth()
@@ -386,6 +482,80 @@ class PortalDisbursementStatusApiTests(TestCase):
 class PortalDisbursementStageApiTests(TestCase):
     password = "PortalDisbursement123!"
 
+    def test_current_sap_completion_without_initiation_stops_at_payment_pending(self):
+        from sfpcl_credit.tests.test_disbursement_initiation_api import (
+            DisbursementInitiationApiTests,
+        )
+
+        owner = DisbursementInitiationApiTests(
+            "test_current_ready_payment_is_recorded_once_without_transfer_side_effects"
+        )
+        owner.setUp()
+        portal_user = self._portal_user(owner.application.member)
+        account = owner.application.loan_account
+        # Legal readiness proves the current composite but does not retain the
+        # instant at which every constituent first became simultaneously true.
+        documentation_completed_at = None
+        sap_completed_at = timezone.now() - timedelta(days=2)
+        sap_code_id = uuid4()
+
+        with (
+            patch(
+                "sfpcl_credit.processes.portal_disbursement_status.resolve_approved_facts",
+                return_value=SimpleNamespace(
+                    sanction_decision_id=account.sanction_decision_id,
+                    sanctioned_amount=account.sanctioned_amount,
+                ),
+            ),
+            patch(
+                "sfpcl_credit.processes.portal_disbursement_status.resolve_legal_readiness",
+                return_value=SimpleNamespace(
+                    documentation_complete=True,
+                    documentation_completed_at=documentation_completed_at,
+                ),
+            ),
+            patch(
+                "sfpcl_credit.processes.portal_disbursement_status.get_customer_code_for_member",
+                return_value=SimpleNamespace(
+                    customer_code_id=sap_code_id,
+                    member_id=owner.application.member_id,
+                    profile_request_id=uuid4(),
+                    # A member-level SAP code can legitimately originate on an
+                    # earlier application and be reused by this loan account.
+                    loan_application_id=uuid4(),
+                    status="active",
+                    completed_at=sap_completed_at,
+                ),
+            ),
+            patch(
+                "sfpcl_credit.processes.portal_disbursement_status.resolve_disbursement_account",
+                return_value=SimpleNamespace(
+                    loan_application_id=owner.application.pk,
+                    member_id=owner.application.member_id,
+                    sap_customer_code_id=sap_code_id,
+                ),
+            ),
+        ):
+            response = Client().get(
+                f"/api/v1/portal/applications/{owner.application.pk}/disbursement-status/",
+                headers=self._portal_auth(portal_user),
+            )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        data = response.json()["data"]
+        timeline = {item["code"]: item for item in data["timeline"]}
+        self.assertEqual(
+            timeline["documentation_complete"]["status"], "complete", data
+        )
+        self.assertIsNone(timeline["documentation_complete"]["completed_at"])
+        self.assertEqual(timeline["sap_setup"]["status"], "complete")
+        self.assertEqual(
+            timeline["sap_setup"]["completed_at"],
+            sap_completed_at.isoformat().replace("+00:00", "Z"),
+        )
+        self.assertEqual(timeline["payment_initiated"]["status"], "pending")
+        self.assertIsNone(timeline["payment_initiated"]["completed_at"])
+
     def test_sanctioned_application_before_loan_account_stays_at_finance_setup(self):
         from sfpcl_credit.tests.test_portal_documentation_actions_api import (
             PortalDocumentationActionsApiTests,
@@ -421,6 +591,12 @@ class PortalDisbursementStageApiTests(TestCase):
         )
         self.assertEqual(transferred.status_code, 200, transferred.content)
         row = Disbursement.objects.select_related("member").get(pk=owner.owner.disbursement_id)
+        _patch_current_pre_payment_owners(
+            self,
+            account=row.loan_account,
+            application=row.loan_application,
+            initiated_at=row.initiated_at,
+        )
         portal_user = self._portal_user(row.member)
 
         response = Client().get(
@@ -431,6 +607,46 @@ class PortalDisbursementStageApiTests(TestCase):
         data = response.json()["data"]
         self.assertEqual(data["status_code"], "disbursed")
         self.assertEqual(data["bank_reference_last4"], "2468")
+        self.assertFalse(data["advice_available"])
+        self.assertEqual(data["timeline"][-1]["status"], "pending")
+
+    def test_queued_advice_remains_unavailable_until_provider_acceptance(self):
+        from sfpcl_credit.tests.test_disbursement_advice_api import (
+            DisbursementAdviceApiTests,
+        )
+
+        owner = DisbursementAdviceApiTests(
+            "test_public_success_sends_exact_advice_without_financial_side_effects"
+        )
+        owner.setUp()
+        queued = owner.client.post(
+            f"/api/v1/disbursements/{owner.row.pk}/send-advice/",
+            {"channel": "email", "recipient_email": "borrower.advice@example.com"},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-portal-queued-advice",
+            HTTP_IDEMPOTENCY_KEY=f"portal-queued:{owner.row.pk}",
+            **owner.owner.owner.fixture._auth(owner.actor),
+        )
+        self.assertEqual(queued.status_code, 200, queued.content)
+        self.assertEqual(queued.json()["data"]["delivery_status"], "queued")
+        row = Disbursement.objects.select_related("member", "loan_account").get(
+            pk=owner.row.pk
+        )
+        _patch_current_pre_payment_owners(
+            self,
+            account=row.loan_account,
+            application=row.loan_application,
+            initiated_at=row.initiated_at,
+        )
+        portal_user = self._portal_user(row.member)
+
+        response = Client().get(
+            self._status_url(row), headers=self._portal_auth(portal_user)
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        data = response.json()["data"]
+        self.assertEqual(data["status_code"], "disbursed")
         self.assertFalse(data["advice_available"])
         self.assertEqual(data["timeline"][-1]["status"], "pending")
 
@@ -445,6 +661,12 @@ class PortalDisbursementStageApiTests(TestCase):
         owner.setUp()
         row = Disbursement.objects.select_related("member", "loan_account").get(
             pk=owner.disbursement_id
+        )
+        _patch_current_pre_payment_owners(
+            self,
+            account=row.loan_account,
+            application=row.loan_application,
+            initiated_at=row.initiated_at,
         )
         portal_user = self._portal_user(row.member)
 
@@ -466,6 +688,46 @@ class PortalDisbursementStageApiTests(TestCase):
         self.assertIsNone(data["bank_reference_last4"])
         self.assertFalse(data["advice_available"])
 
+    def test_current_cfc_approval_uses_owner_time_and_waits_for_transfer(self):
+        from sfpcl_credit.tests.test_disbursement_authorisation_api import (
+            DisbursementAuthorisationApiTests,
+        )
+
+        owner = DisbursementAuthorisationApiTests(
+            "test_cfc_approval_is_terminal_evidence_but_not_bank_execution"
+        )
+        owner.setUp()
+        approved = owner._post("approved", "Approved for bank execution.")
+        self.assertEqual(approved.status_code, 200, approved.content)
+        row = Disbursement.objects.select_related("member", "loan_account").get(
+            pk=owner.disbursement_id
+        )
+        _patch_current_pre_payment_owners(
+            self,
+            account=row.loan_account,
+            application=row.loan_application,
+            initiated_at=row.initiated_at,
+        )
+        portal_user = self._portal_user(row.member)
+
+        response = Client().get(
+            self._status_url(row), headers=self._portal_auth(portal_user)
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        data = response.json()["data"]
+        self.assertEqual(data["status_code"], "payment_processing")
+        self.assertEqual(
+            [item["status"] for item in data["timeline"]],
+            ["complete", "complete", "complete", "complete", "pending", "pending"],
+        )
+        authorisation = data["timeline"][3]
+        self.assertEqual(
+            authorisation["completed_at"],
+            row.authorised_at.isoformat().replace("+00:00", "Z"),
+        )
+        self.assertIsNone(data["disbursed_at"])
+
     def test_current_cfc_rejection_exposes_only_safe_blocked_copy(self):
         from sfpcl_credit.tests.test_disbursement_authorisation_api import (
             DisbursementAuthorisationApiTests,
@@ -479,6 +741,12 @@ class PortalDisbursementStageApiTests(TestCase):
         self.assertEqual(rejected.status_code, 200, rejected.content)
         row = Disbursement.objects.select_related("member", "loan_account").get(
             pk=owner.disbursement_id
+        )
+        _patch_current_pre_payment_owners(
+            self,
+            account=row.loan_account,
+            application=row.loan_application,
+            initiated_at=row.initiated_at,
         )
         portal_user = self._portal_user(row.member)
 

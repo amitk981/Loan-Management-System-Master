@@ -23,6 +23,9 @@ class PostTransferEvidence:
     advice_intent_id: UUID
     transfer_audit_id: UUID
     transfer_workflow_event_id: UUID
+    initiated_at: object
+    authorised_at: object
+    disbursed_at: object
 
     def checklist_evidence(self):
         return {
@@ -86,4 +89,7 @@ def resolve_post_transfer_evidence(*, application_id, for_update=False):
         advice_intent_id=row.advice_intent.pk,
         transfer_audit_id=row.transfer_success_audit_id,
         transfer_workflow_event_id=row.transfer_success_workflow_event_id,
+        initiated_at=row.initiated_at,
+        authorised_at=row.authorised_at,
+        disbursed_at=row.disbursed_at,
     )

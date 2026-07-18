@@ -6,29 +6,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthSessionError } from '../../../../services/authSession';
 import {
   downloadPortalDisbursementAdvice,
-  fetchPortalApplications,
   fetchPortalDisbursementStatus,
   PortalDisbursementStatus,
 } from '../../../../services/portalApi';
 import MP14_DisbursementStatus from './MP14_DisbursementStatus';
 import source from './MP14_DisbursementStatus.tsx?raw';
+import borrowerPortalSource from '../../BorrowerPortal.tsx?raw';
 
 vi.mock('../../../../services/portalApi', async importOriginal => {
   const actual = await importOriginal<typeof import('../../../../services/portalApi')>();
   return {
     ...actual,
-    fetchPortalApplications: vi.fn(),
     fetchPortalDisbursementStatus: vi.fn(),
     downloadPortalDisbursementAdvice: vi.fn(),
   };
 });
 
-const applicationsMock = vi.mocked(fetchPortalApplications);
 const statusMock = vi.mocked(fetchPortalDisbursementStatus);
 const downloadMock = vi.mocked(downloadPortalDisbursementAdvice);
 
 beforeEach(() => {
-  applicationsMock.mockResolvedValue({ items: [approvedApplication] });
   statusMock.mockResolvedValue(disbursedProjection);
   downloadMock.mockResolvedValue(undefined);
 });
@@ -40,7 +37,7 @@ afterEach(() => {
 
 describe('MP14 disbursement status', () => {
   it('renders only the server projection and downloads through the portal boundary', async () => {
-    render(<MP14_DisbursementStatus />);
+    render(<MP14_DisbursementStatus selectedApplicationId="app-approved" onNavigateToApplications={vi.fn()} />);
 
     expect(screen.getByText('Loading disbursement status…')).toBeTruthy();
     expect((await screen.findAllByText('Loan amount transferred.')).length).toBeGreaterThan(0);
@@ -62,6 +59,11 @@ describe('MP14 disbursement status', () => {
     expect(source).not.toContain('UTR20240922001042');
     expect(source).not.toContain('18 Sep 2024');
     expect(source).not.toContain('₹5,00,000');
+    expect(source).not.toContain('fetchPortalApplications');
+    expect(source).not.toContain('FINANCE_APPLICATION_STATUSES');
+    expect(source).not.toContain('PortalMessage');
+    expect(source).toContain('<AlertBanner');
+    expect(borrowerPortalSource).toContain('selectedApplicationId={selectedApplicationId}');
   });
 
   it('shows processing, blocked, empty, session, and safe error states', async () => {
@@ -79,7 +81,7 @@ describe('MP14 disbursement status', () => {
         completed_at: index < 3 ? item.completed_at : null,
       })),
     });
-    const processing = render(<MP14_DisbursementStatus />);
+    const processing = render(<MP14_DisbursementStatus selectedApplicationId="app-approved" onNavigateToApplications={vi.fn()} />);
     expect(await screen.findByText('Payment approval in progress.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Advice unavailable' }).hasAttribute('disabled')).toBe(true);
     processing.unmount();
@@ -93,34 +95,36 @@ describe('MP14 disbursement status', () => {
       bank_reference_last4: null,
       advice_available: false,
     });
-    const blocked = render(<MP14_DisbursementStatus />);
+    const blocked = render(<MP14_DisbursementStatus selectedApplicationId="app-approved" onNavigateToApplications={vi.fn()} />);
     expect(await screen.findByText('Action required / SFPCL review needed.')).toBeTruthy();
     blocked.unmount();
 
-    applicationsMock.mockResolvedValueOnce({ items: [] });
-    const empty = render(<MP14_DisbursementStatus />);
-    expect(await screen.findByText('No approved application is in finance processing yet.')).toBeTruthy();
+    const navigate = vi.fn();
+    const empty = render(<MP14_DisbursementStatus selectedApplicationId={null} onNavigateToApplications={navigate} />);
+    expect(await screen.findByText('Select an application from My Applications to view its disbursement status.')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Go to My Applications' }));
+    expect(navigate).toHaveBeenCalledOnce();
     empty.unmount();
 
-    applicationsMock.mockRejectedValueOnce(new AuthSessionError('AUTH_REQUIRED', 'Expired.', 401));
-    const expired = render(<MP14_DisbursementStatus />);
+    statusMock.mockRejectedValueOnce(new AuthSessionError('AUTH_REQUIRED', 'Expired.', 401));
+    const expired = render(<MP14_DisbursementStatus selectedApplicationId="app-approved" onNavigateToApplications={vi.fn()} />);
     expect(await screen.findByText('Your member portal session has expired. Please sign in again.')).toBeTruthy();
     expired.unmount();
 
-    applicationsMock.mockRejectedValueOnce(new Error('offline'));
-    render(<MP14_DisbursementStatus />);
+    statusMock.mockRejectedValueOnce(new AuthSessionError('SERVICE_UNAVAILABLE', 'Unavailable.', 503));
+    render(<MP14_DisbursementStatus selectedApplicationId="app-approved" onNavigateToApplications={vi.fn()} />);
     expect(await screen.findByText('Disbursement status could not be loaded. Please try again.')).toBeTruthy();
+    expect(screen.queryByText('Unavailable.')).toBeNull();
+  });
+
+  it('requests only the explicit parent-owned application', async () => {
+    render(<MP14_DisbursementStatus selectedApplicationId="app-selected" onNavigateToApplications={vi.fn()} />);
+
+    expect((await screen.findAllByText('Loan amount transferred.')).length).toBeGreaterThan(0);
+    expect(statusMock).toHaveBeenCalledTimes(1);
+    expect(statusMock).toHaveBeenCalledWith('app-selected');
   });
 });
-
-const approvedApplication = {
-  loan_application_id: 'app-approved', application_reference_number: 'LO-APPROVED', display_reference: 'LO-APPROVED',
-  application_date: '2026-07-18', submitted_at: '2026-07-18T08:00:00Z', required_loan_amount: '400000.00',
-  declared_purpose: 'Crop production', purpose_category: 'crop_production', loan_type_requested: 'short_term',
-  application_status: 'approved_by_sanction_committee', current_stage: 'disbursement', completeness_status: 'complete',
-  pending_with: 'SFPCL', borrower_action: 'Track finance processing', open_deficiency_count: 0,
-  created_at: '2026-07-18T07:00:00Z', updated_at: '2026-07-18T09:00:00Z',
-};
 
 const disbursedProjection: PortalDisbursementStatus = {
   loan_application_id: 'app-approved',

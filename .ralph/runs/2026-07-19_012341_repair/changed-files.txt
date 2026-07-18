@@ -1,0 +1,19 @@
+ M docs/slices/009I2-portal-disbursement-stage-and-visual-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl-lms/playwright.config.ts
+ M sfpcl-lms/src/pages/borrower/BorrowerPortal.tsx
+ M sfpcl-lms/src/pages/borrower/portal/PortalMemberViews.test.tsx
+ M sfpcl-lms/src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx
+ M sfpcl-lms/src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.tsx
+ M sfpcl_credit/disbursements/modules/current_disbursement_evidence.py
+ M sfpcl_credit/disbursements/modules/post_transfer_evidence.py
+ M sfpcl_credit/legal_documents/modules/disbursement_readiness.py
+ M sfpcl_credit/loans/modules/loan_account_lifecycle.py
+ M sfpcl_credit/processes/portal_disbursement_status.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_profile.py
+ M sfpcl_credit/tests/test_portal_disbursement_status_api.py
+?? .ralph/runs/2026-07-19_003418_normal_run/
+?? .ralph/runs/2026-07-19_011304_repair/
+?? .ralph/runs/2026-07-19_012341_repair/
+?? sfpcl-lms/e2e/portal-disbursement-status.spec.ts

@@ -27,8 +27,20 @@ from sfpcl_credit.disbursements.modules.disbursement_advice import (
 from sfpcl_credit.disbursements.modules.disbursement_authorisation import (
     is_current_terminal_authorisation,
 )
+from sfpcl_credit.legal_documents.modules.disbursement_readiness import (
+    resolve_legal_readiness,
+)
 from sfpcl_credit.loans.models import LoanAccount
+from sfpcl_credit.loans.modules.loan_account_lifecycle import (
+    resolve_disbursement_account,
+)
 from sfpcl_credit.processes import portal_application_scope
+from sfpcl_credit.processes.security_instrument_evidence import (
+    terminal_checklist_evidence,
+)
+from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+    get_customer_code_for_member,
+)
 from sfpcl_credit.identity.models import AuditLog, PortalAccount, User
 from sfpcl_credit.api import request_ip, request_user_agent
 
@@ -78,6 +90,10 @@ def get_projection(*, actor, application_id):
     sanction = resolve_approved_facts(application_id=application.pk)
     if sanction is None:
         return _projection(application, sanctioned_amount=None)
+    stages = _current_pre_payment_stages(
+        application_id=application.pk,
+        member_id=context.account.member_id,
+    )
     account = (
         LoanAccount.objects.select_related("sanction_decision")
         .filter(
@@ -88,7 +104,28 @@ def get_projection(*, actor, application_id):
         .first()
     )
     if account is None or account.sanctioned_amount != sanction.sanctioned_amount:
-        return _projection(application, sanctioned_amount=sanction.sanctioned_amount)
+        return _projection(
+            application,
+            sanctioned_amount=sanction.sanctioned_amount,
+            stage_truth=stages,
+        )
+    account_decision = resolve_disbursement_account(loan_account_id=account.pk)
+    if (
+        account_decision is None
+        or account_decision.loan_application_id != application.pk
+        or account_decision.member_id != context.account.member_id
+        or not stages["completed"].get("documentation_complete")
+        or not stages["completed"].get("sap_setup")
+        or account_decision.sap_customer_code_id
+        != stages.get("sap_customer_code_id")
+    ):
+        return _projection(
+            application,
+            sanctioned_amount=sanction.sanctioned_amount,
+            loan_account_id=account.pk,
+            status_code="disbursement_blocked",
+            stage_truth=stages,
+        )
     transfer = resolve_post_transfer_evidence(application_id=application.pk)
     if transfer is None:
         current = resolve_current_disbursement_evidence(
@@ -121,6 +158,9 @@ def get_projection(*, actor, application_id):
                 completed_count=(
                     3 if current.authorisation_status == "pending" else 4
                 ),
+                stage_truth=stages,
+                initiated_at=current.initiated_at,
+                authorised_at=current.authorised_at,
             )
         if (
             current_row is not None
@@ -141,6 +181,8 @@ def get_projection(*, actor, application_id):
                 status_code="disbursement_blocked",
                 completed_count=3,
                 blocked_index=3,
+                stage_truth=stages,
+                initiated_at=current.initiated_at,
             )
         has_terminal_claim = Disbursement.objects.filter(
             loan_application=application,
@@ -158,6 +200,7 @@ def get_projection(*, actor, application_id):
             status_code=(
                 "disbursement_blocked" if has_terminal_claim else "finance_setup_pending"
             ),
+            stage_truth=stages,
         )
     row = (
         Disbursement.objects.select_related(
@@ -177,6 +220,7 @@ def get_projection(*, actor, application_id):
             sanctioned_amount=sanction.sanctioned_amount,
             loan_account_id=account.pk,
             status_code="disbursement_blocked",
+            stage_truth=stages,
         )
     artifact = None
     if row.disbursement_advice_communication_id:
@@ -188,7 +232,14 @@ def get_projection(*, actor, application_id):
         )
         if artifact is not None and not _artifact_is_current(row, artifact):
             artifact = None
-    completed_at = row.disbursed_at.isoformat().replace("+00:00", "Z")
+    completed_at = _iso(transfer.disbursed_at)
+    terminal_stage_times = {
+        **stages["times"],
+        "payment_initiated": transfer.initiated_at,
+        "cfc_authorisation": transfer.authorised_at,
+        "transfer_completed": transfer.disbursed_at,
+        "advice_issued": artifact.sent_at if artifact is not None else None,
+    }
     timeline = []
     for index, (code, label) in enumerate(_TIMELINE):
         completed = index < 5 or (index == 5 and artifact is not None)
@@ -198,9 +249,9 @@ def get_projection(*, actor, application_id):
                 "label": label,
                 "status": "complete" if completed else "pending",
                 "completed_at": (
-                    artifact.sent_at.isoformat().replace("+00:00", "Z")
-                    if index == 5 and artifact is not None
-                    else completed_at if completed else None
+                    _iso(terminal_stage_times[code])
+                    if completed and terminal_stage_times.get(code)
+                    else None
                 ),
             }
         )
@@ -357,7 +408,7 @@ def _capability_claims(terminal, outbox):
         "loan_application_id": str(terminal.context.application.pk),
         "loan_account_id": str(terminal.account.pk),
         "advice_intent_id": str(terminal.row.advice_intent.pk),
-        "file_id": str(terminal.artifact.outbox_id),
+        "artifact_id": str(terminal.artifact.outbox_id),
         "communication_id": str(terminal.artifact.communication_id),
         "checksum_sha256": terminal.artifact.checksum_sha256,
         "version": outbox.portal_capability_version,
@@ -390,7 +441,7 @@ def _record_download_audit(*, actor, terminal, request, outcome):
             "loan_application_id": str(terminal.context.application.pk),
             "loan_account_id": str(terminal.account.pk),
             "advice_id": str(terminal.artifact.communication_id),
-            "file_id": str(terminal.artifact.outbox_id),
+            "artifact_id": str(terminal.artifact.outbox_id),
             "document_category": "disbursement_advice",
             "request_id": request.headers.get("X-Request-ID"),
             "network": {
@@ -408,17 +459,71 @@ def _iso(value):
     return value.isoformat().replace("+00:00", "Z")
 
 
+def _current_pre_payment_stages(*, application_id, member_id):
+    legal = resolve_legal_readiness(
+        application_id=application_id,
+        terminal_security_evidence=terminal_checklist_evidence,
+    )
+    sap = get_customer_code_for_member(member_id)
+    sap_is_current = bool(
+        sap
+        and sap.member_id == member_id
+        and sap.status == "active"
+    )
+    return {
+        "completed": {
+            "documentation_complete": legal.documentation_complete,
+            "sap_setup": sap_is_current,
+        },
+        "times": {
+            "documentation_complete": (
+                legal.documentation_completed_at
+                if legal.documentation_complete
+                else None
+            ),
+            "sap_setup": sap.completed_at if sap_is_current else None,
+        },
+        "sap_customer_code_id": sap.customer_code_id if sap_is_current else None,
+    }
+
+
 def _projection(
     application,
     *,
     sanctioned_amount,
     loan_account_id=None,
     status_code="finance_setup_pending",
+    stage_truth=None,
 ):
     labels = {
         "finance_setup_pending": "Finance setup in progress.",
         "disbursement_blocked": "Action required / SFPCL review needed.",
     }
+    stage_truth = stage_truth or {"completed": {}, "times": {}}
+    prior_complete = True
+    timeline = []
+    for index, (code, label) in enumerate(_TIMELINE):
+        complete = bool(
+            index < 2
+            and prior_complete
+            and stage_truth["completed"].get(code)
+        )
+        completed_at = stage_truth["times"].get(code) if complete else None
+        prior_complete = prior_complete and complete
+        timeline.append(
+            {
+                "code": code,
+                "label": label,
+                "status": (
+                    "complete"
+                    if complete
+                    else "blocked"
+                    if status_code == "disbursement_blocked" and index == 0
+                    else "pending"
+                ),
+                "completed_at": _iso(completed_at) if completed_at else None,
+            }
+        )
     return {
         "loan_application_id": str(application.pk),
         "loan_account_id": str(loan_account_id) if loan_account_id else None,
@@ -430,10 +535,7 @@ def _projection(
         "disbursed_at": None,
         "bank_reference_last4": None,
         "advice_available": False,
-        "timeline": [
-            {"code": code, "label": label, "status": "pending", "completed_at": None}
-            for code, label in _TIMELINE
-        ],
+        "timeline": timeline,
     }
 
 
@@ -446,13 +548,20 @@ def _progress_projection(
     status_code,
     completed_count,
     blocked_index=None,
+    stage_truth=None,
+    initiated_at=None,
+    authorised_at=None,
 ):
     labels = {
         "cfc_authorisation_pending": "Payment approval in progress.",
         "payment_processing": "Payment is being processed.",
         "disbursement_blocked": "Action required / SFPCL review needed.",
     }
-    initiated_at = _iso(row.initiated_at)
+    stage_times = {
+        **((stage_truth or {}).get("times", {})),
+        "payment_initiated": initiated_at,
+        "cfc_authorisation": authorised_at,
+    }
     return {
         "loan_application_id": str(application.pk),
         "loan_account_id": str(account.pk),
@@ -475,7 +584,11 @@ def _progress_projection(
                     if index == blocked_index
                     else "pending"
                 ),
-                "completed_at": initiated_at if index < completed_count else None,
+                "completed_at": (
+                    _iso(stage_times.get(code))
+                    if index < completed_count and stage_times.get(code)
+                    else None
+                ),
             }
             for index, (code, label) in enumerate(_TIMELINE)
         ],

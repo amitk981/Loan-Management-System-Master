@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 12 test(s).
+System check identified no issues (0 silenced).
+..........F.
+======================================================================
+FAIL: test_stale_success_evidence_falls_back_to_safe_blocked_status (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests.test_stale_success_evidence_falls_back_to_safe_blocked_status)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 192, in test_stale_success_evidence_falls_back_to_safe_blocked_status
+    self.assertTrue(all(item["status"] != "complete" for item in data["timeline"]))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 12 tests in 6.464s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

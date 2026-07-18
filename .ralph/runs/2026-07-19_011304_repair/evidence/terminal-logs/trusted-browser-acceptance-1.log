@@ -1,0 +1,128 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/.ralph/runs/2026-07-19_011304_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-disbursement-status.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/portal-disbursement-status.spec.ts
+
+[2m[WebServer] [22m[18/Jul/2026 19:52:07] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 3 tests using 1 worker
+
+[2m[WebServer] [22m[18/Jul/2026 19:52:10] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "OPTIONS /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "OPTIONS /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 1711
+[2m[WebServer] [22m[18/Jul/2026 19:52:11] "GET /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 1711
+  ✘  1 [chromium] › portal-disbursement-status.spec.ts:11:5 › MP14 preserves the borrower composition for current SAP-complete processing (30.0s)
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 19:52:41] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "OPTIONS /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "OPTIONS /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "GET /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 1711
+[2m[WebServer] [22m[18/Jul/2026 19:52:42] "GET /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 1711
+  ✘  2 [chromium] › portal-disbursement-status.spec.ts:27:5 › MP14 preserves masked transfer facts and accepted-advice availability (30.0s)
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2172
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/auth/me/ HTTP/1.1" 200 1056
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "OPTIONS /api/v1/portal/applications/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/portal/applications/ HTTP/1.1" 200 1403
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "OPTIONS /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "OPTIONS /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 1711
+[2m[WebServer] [22m[18/Jul/2026 19:53:13] "GET /api/v1/portal/applications/c0aadd40-c4fc-4c11-af51-e01930944d57/ HTTP/1.1" 200 1711
+  ✘  3 [chromium] › portal-disbursement-status.spec.ts:41:5 › MP14 renders a safe unavailable state for an exact status failure (30.0s)
+
+
+  1) [chromium] › portal-disbursement-status.spec.ts:11:5 › MP14 preserves the borrower composition for current SAP-complete processing 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('navigation').getByRole('button', { name: 'Disbursement Status', exact: true })[22m
+
+
+      13 |   await page.route(statusUrl, route => portalProjection(route, processingProjection));
+      14 |
+    > 15 |   await page.getByRole('navigation').getByRole('button', { name: 'Disbursement Status', exact: true }).click();
+         |                                                                                                        ^
+      16 |
+      17 |   await expect(page.getByRole('heading', { name: 'Disbursement Status', level: 2 })).toBeVisible();
+      18 |   await expect(page.getByText('Finance setup in progress.', { exact: true })).toBeVisible();
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl-lms/e2e/portal-disbursement-status.spec.ts:15:104
+
+  2) [chromium] › portal-disbursement-status.spec.ts:27:5 › MP14 preserves masked transfer facts and accepted-advice availability 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('navigation').getByRole('button', { name: 'Disbursement Status', exact: true })[22m
+
+
+      29 |   await page.route(statusUrl, route => portalProjection(route, disbursedProjection));
+      30 |
+    > 31 |   await page.getByRole('navigation').getByRole('button', { name: 'Disbursement Status', exact: true }).click();
+         |                                                                                                        ^
+      32 |
+      33 |   await expect(page.getByText('Loan amount transferred.', { exact: true }).first()).toBeVisible();
+      34 |   await expect(page.getByText('••••4321', { exact: true })).toBeVisible();
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl-lms/e2e/portal-disbursement-status.spec.ts:31:104
+
+  3) [chromium] › portal-disbursement-status.spec.ts:41:5 › MP14 renders a safe unavailable state for an exact status failure 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('navigation').getByRole('button', { name: 'Disbursement Status', exact: true })[22m
+
+
+      52 |   }));
+      53 |
+    > 54 |   await page.getByRole('navigation').getByRole('button', { name: 'Disbursement Status', exact: true }).click();
+         |                                                                                                        ^
+      55 |
+      56 |   await expect(page.getByText('Disbursement status could not be loaded. Please try again.', { exact: true })).toBeVisible();
+      57 |   await expect(page.getByText('Unavailable.', { exact: true })).toHaveCount(0);
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl-lms/e2e/portal-disbursement-status.spec.ts:54:104
+
+  3 failed
+    [chromium] › portal-disbursement-status.spec.ts:11:5 › MP14 preserves the borrower composition for current SAP-complete processing 
+    [chromium] › portal-disbursement-status.spec.ts:27:5 › MP14 preserves masked transfer facts and accepted-advice availability 
+    [chromium] › portal-disbursement-status.spec.ts:41:5 › MP14 renders a safe unavailable state for an exact status failure 
+
+Duration milliseconds: 115966
+Exit code: 1

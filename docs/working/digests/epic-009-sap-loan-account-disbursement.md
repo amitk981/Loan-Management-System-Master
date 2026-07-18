@@ -1053,6 +1053,20 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
 - Under A-133 the retained communications subject/body is the exact UTF-8 advice attachment until a
   governed document-template owner defines another artifact format.
 
+## 009I2 portal stage and visual closure
+
+- MP14 receives only the application id explicitly selected by the portal container; it does not
+  fetch, rank, or infer an application from client-owned status strings.
+- Documentation and SAP completion are independent owner booleans with independent owner times, so
+  a proved stage can retain an honest null time. A later loan may reuse the member's active SAP code
+  when its loan account binds that exact code identity.
+- Payment, CFC, transfer, and advice stages retain their exact initiation, authorisation, transfer,
+  and provider-accepted times. Queued or incoherent advice remains unavailable, and stale/mixed
+  evidence stops at the last provable borrower-safe stage.
+- Trusted browser acceptance uses real Django login, application list, and selection plus an exact
+  MP14 status-route scenario seam for the three declared screenshot states; the orchestrator owns
+  the twice-run browser gate and screenshot artifacts.
+
 ## 009H9A queued-advice migration provenance closure
 
 - Communications migration 0008 now distinguishes a genuine H5 queued job from an unlinked

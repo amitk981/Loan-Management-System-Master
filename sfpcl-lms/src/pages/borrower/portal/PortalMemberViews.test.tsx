@@ -1,5 +1,8 @@
+// @vitest-environment jsdom
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { MP03DashboardView } from './MP03_Dashboard';
 import { MP04ProfileView } from './MP04_MyProfile';
@@ -55,6 +58,23 @@ describe('member portal backend-backed views', () => {
     expect(html).toContain('Action Needed');
     expect(html).toContain('Review deficiencies');
     expect(html).toContain('APP-RETURN');
+  });
+
+  it.each([
+    [[returnedApplication, approvedApplication]],
+    [[approvedApplication, returnedApplication]],
+  ])('keeps the selected application identity when the list order changes', async (applications) => {
+    const onSelect = vi.fn();
+    render(
+      <MP09ApplicationsView applications={applications} loading={false} error={null}
+        onNavigateToApplication={onSelect} onNavigateToNew={vi.fn()} />
+    );
+
+    await userEvent.click(screen.getByText('APP-SELECTED'));
+
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(onSelect).toHaveBeenCalledWith('app-selected');
+    cleanup();
   });
 });
 
@@ -120,4 +140,15 @@ const returnedApplication: PortalApplication = {
   open_deficiency_count: 1,
   created_at: '2026-07-10T07:00:00Z',
   updated_at: '2026-07-10T09:00:00Z',
+};
+
+const approvedApplication: PortalApplication = {
+  ...returnedApplication,
+  loan_application_id: 'app-selected',
+  application_reference_number: 'APP-SELECTED',
+  display_reference: 'APP-SELECTED',
+  application_status: 'reference_generated',
+  completeness_status: 'complete',
+  pending_with: 'Finance',
+  borrower_action: 'Track finance processing',
 };

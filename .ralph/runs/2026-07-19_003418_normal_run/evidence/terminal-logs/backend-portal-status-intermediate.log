@@ -1,0 +1,76 @@
+Creating test database for alias 'default'...
+Found 12 test(s).
+System check identified no issues (0 silenced).
+F.F.F..F.FF.
+======================================================================
+FAIL: test_current_cfc_rejection_exposes_only_safe_blocked_copy (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests.test_current_cfc_rejection_exposes_only_safe_blocked_copy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 569, in test_current_cfc_rejection_exposes_only_safe_blocked_copy
+    self.assertEqual(
+AssertionError: Lists differ: ['complete', 'pending', 'pending', 'pending', 'pending', 'pending'] != ['complete', 'complete', 'complete', 'blocked', 'pending', 'pending']
+
+First differing element 1:
+'pending'
+'complete'
+
+- ['complete', 'pending', 'pending', 'pending', 'pending', 'pending']
++ ['complete', 'complete', 'complete', 'blocked', 'pending', 'pending']
+
+======================================================================
+FAIL: test_initiated_payment_waiting_for_cfc_cannot_skip_forward (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests.test_initiated_payment_waiting_for_cfc_cannot_skip_forward)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 533, in test_initiated_payment_waiting_for_cfc_cannot_skip_forward
+    self.assertEqual(data["status_code"], "cfc_authorisation_pending")
+AssertionError: 'disbursement_blocked' != 'cfc_authorisation_pending'
+- disbursement_blocked
++ cfc_authorisation_pending
+
+
+======================================================================
+FAIL: test_successful_transfer_without_sent_advice_is_disbursed_but_unavailable (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests.test_successful_transfer_without_sent_advice_is_disbursed_but_unavailable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 508, in test_successful_transfer_without_sent_advice_is_disbursed_but_unavailable
+    self.assertEqual(data["status_code"], "disbursed")
+AssertionError: 'disbursement_blocked' != 'disbursed'
+- disbursement_blocked
++ disbursed
+
+
+======================================================================
+FAIL: test_changed_advice_finalization_ledger_removes_availability_and_capability (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests.test_changed_advice_finalization_ledger_removes_availability_and_capability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 333, in test_changed_advice_finalization_ledger_removes_availability_and_capability
+    self.assertEqual(status.json()["data"]["status_code"], "disbursed")
+AssertionError: 'disbursement_blocked' != 'disbursed'
+- disbursement_blocked
++ disbursed
+
+
+======================================================================
+FAIL: test_own_completed_disbursement_returns_only_borrower_safe_current_truth (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests.test_own_completed_disbursement_returns_only_borrower_safe_current_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 92, in test_own_completed_disbursement_returns_only_borrower_safe_current_truth
+    self.assertEqual(data["status_code"], "disbursed")
+AssertionError: 'disbursement_blocked' != 'disbursed'
+- disbursement_blocked
++ disbursed
+
+
+======================================================================
+FAIL: test_stale_success_evidence_falls_back_to_safe_blocked_status (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests.test_stale_success_evidence_falls_back_to_safe_blocked_status)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 144, in test_stale_success_evidence_falls_back_to_safe_blocked_status
+    self.assertTrue(all(item["status"] != "complete" for item in data["timeline"]))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 12 tests in 6.861s
+
+FAILED (failures=6)
+Destroying test database for alias 'default'...

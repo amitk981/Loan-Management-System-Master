@@ -81,6 +81,7 @@ class DisbursementAccountDecision:
     loan_application_id: uuid.UUID
     member_id: uuid.UUID
     sanction_decision_id: uuid.UUID
+    sap_customer_code_id: uuid.UUID | None
     loan_terms_id: uuid.UUID
     creation_status_history_id: uuid.UUID
     creation_audit_id: uuid.UUID
@@ -181,6 +182,7 @@ def resolve_disbursement_account(*, loan_account_id):
         loan_application_id=account.loan_application_id,
         member_id=account.member_id,
         sanction_decision_id=account.sanction_decision_id,
+        sap_customer_code_id=account.sap_customer_code_id,
         loan_terms_id=account.terms.pk,
         creation_status_history_id=history.pk,
         creation_audit_id=audit.pk,

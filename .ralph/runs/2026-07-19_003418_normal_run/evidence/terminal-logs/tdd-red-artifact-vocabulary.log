@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_advice_capability_uses_honest_artifact_vocabulary (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStatusApiTests.test_advice_capability_uses_honest_artifact_vocabulary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 236, in test_advice_capability_uses_honest_artifact_vocabulary
+    self.assertIn("artifact_id", audit.new_value_json)
+AssertionError: 'artifact_id' not found in {'portal_account_id': '4e94b361-e854-4ec4-b019-a676e2196be8', 'member_id': '721d9ef0-6eef-478c-8d87-22ba312c369f', 'loan_application_id': '2cee003b-2d61-4b1c-997c-f1b0b83e94b2', 'loan_account_id': 'fc91e526-3671-43d4-b33a-0c3bbb846cbf', 'advice_id': 'a28eb08f-5b86-4bde-a2dd-5a9c1806c798', 'file_id': '4841b7d3-779c-4473-9b4d-01004f3280fb', 'document_category': 'disbursement_advice', 'request_id': None, 'network': {'ip_address': '127.0.0.1', 'user_agent': ''}, 'outcome': 'issued'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.666s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

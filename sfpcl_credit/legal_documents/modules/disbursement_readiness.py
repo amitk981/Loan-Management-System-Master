@@ -23,6 +23,7 @@ class LegalReadinessFacts:
     loan_agreement_complete: bool
     signature_mismatch_resolved: bool
     completed_item_codes: frozenset[str]
+    documentation_completed_at: object | None
 
 
 def resolve_legal_readiness(*, application_id, terminal_security_evidence=None):
@@ -74,8 +75,9 @@ def resolve_legal_readiness(*, application_id, terminal_security_evidence=None):
     completed_codes = frozenset(
         item.item_code for item in items if item.pk in completed_ids
     )
+    documentation_complete = terminal and item_truth and owner_actions_current
     return LegalReadinessFacts(
-        documentation_complete=terminal and item_truth and owner_actions_current,
+        documentation_complete=documentation_complete,
         company_secretary_approval=owner_actions_current and approvals[
             ChecklistAction.TYPE_COMPANY_SECRETARY_APPROVAL
         ],
@@ -89,6 +91,11 @@ def resolve_legal_readiness(*, application_id, terminal_security_evidence=None):
         loan_agreement_complete=loan_agreement is not None,
         signature_mismatch_resolved=signature_resolved,
         completed_item_codes=completed_codes,
+        # The owner does not retain the instant at which every checklist item,
+        # approval, and blocker first formed this current composite. A signature
+        # timestamp can predate a later item completion or blocker resolution,
+        # so the borrower projection must keep this stage time honestly null.
+        documentation_completed_at=None,
     )
 
 

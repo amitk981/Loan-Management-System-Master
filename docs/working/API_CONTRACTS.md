@@ -4281,12 +4281,15 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   transfer/advice timeline. It composes current sanction, disbursement, transfer, and finalized
   communication owner decisions. Missing or incoherent terminal evidence cannot imply success;
   internal actors, comments, raw SAP/bank values, evidence ids, and communication internals are
-  never returned.
+  never returned. Documentation and SAP stages compose the current legal-readiness and member-level
+  SAP customer-code owner decisions; a legitimately reused active SAP code is current when the loan
+  account binds that exact code identity. Every stage uses its retained owner timestamp or null.
 - `POST /api/v1/portal/applications/{loan_application_id}/disbursement-advice/download-capability/`
   accepts exactly an empty JSON object. For the exact current finalized advice it replaces any
   earlier capability and returns only `download_url` and UTC `expires_at`. The signed 15-minute
   capability binds portal account, member, application, loan account, advice intent,
-  communication-owned file/checksum, and version.
+  communication-owned artifact/checksum, and version. Internal capability and audit claims name
+  that identity `artifact_id`; they do not describe a delivery outbox as a governed file.
 - `GET /api/v1/portal/applications/{loan_application_id}/disbursement-advice/content/?capability=...`
   accepts only that query parameter. It re-resolves current owner truth, expires and consumes the
   capability once, and returns the retained UTF-8 borrower advice as an attachment with

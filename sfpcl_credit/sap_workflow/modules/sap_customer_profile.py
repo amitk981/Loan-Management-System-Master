@@ -75,6 +75,7 @@ class SapCustomerCodeDecision:
     profile_request_id: uuid.UUID
     loan_application_id: uuid.UUID
     status: str
+    completed_at: object
 
 
 def is_current_finance_assignee(*, application_id, member_id, actor_id):
@@ -134,6 +135,7 @@ def get_customer_code_for_member(member_id, *, for_update=False):
         profile_request_id=request.pk,
         loan_application_id=request.loan_application_id,
         status=code.status,
+        completed_at=request.completed_at,
     )
 
 

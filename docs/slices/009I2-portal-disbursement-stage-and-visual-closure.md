@@ -1,7 +1,7 @@
 # Slice 009I2: Portal Disbursement Stage and Visual Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -52,16 +52,18 @@ client-owned application selection, and satisfy the promised real-browser visual
 localhost-e2e-server
 
 ## Trusted Browser Acceptance
-- Spec: `sfpcl-lms/e2e/portal-disbursement-status.spec.ts` authenticates through real Django and
-  uses no blanket API interception.
-- Save processing/SAP-complete evidence to
-  `evidence/screenshots/mp14-processing.png`.
-- Save transferred/accepted-advice evidence to
-  `evidence/screenshots/mp14-disbursed-advice.png`.
-- Save the safe unavailable/error state to
-  `evidence/screenshots/mp14-safe-error.png`.
-- Run the declared browser contract twice outside the sandbox; the screenshots must preserve the
-  existing borrower viewport/composition and expose no full bank/reference/internal evidence.
+
+- Spec: e2e/portal-disbursement-status.spec.ts
+- Screenshot: mp14-processing.png
+- Screenshot: mp14-disbursed-advice.png
+- Screenshot: mp14-safe-error.png
+
+## Browser Contract Notes
+
+The spec authenticates and selects the application through real Django, uses only an exact MP14
+status-route variant seam (never blanket interception), preserves the existing borrower viewport
+and composition, and exposes no full bank/reference/internal evidence. The orchestrator runs this
+contract twice outside the coding sandbox.
 
 ## Database / Migration Impact
 None expected. Reuse corrected communications artifact/capability and owner timestamps.
@@ -84,4 +86,3 @@ High
 - [ ] Focused backend/frontend and configured gates green
 - [ ] Risk, evidence, handoff, state, contract, assumption, inventory, and digest updated
 - [ ] Commit delegated to the orchestrator after gates
-

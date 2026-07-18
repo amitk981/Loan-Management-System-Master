@@ -24,6 +24,7 @@ class CurrentDisbursementEvidence:
     authorisation_evidence_digest: str | None
     authorised_by_user_id: object | None
     authorised_at: object | None
+    initiated_at: object
 
 
 def resolve_current_disbursement_evidence(
@@ -109,6 +110,7 @@ def resolve_current_disbursement_evidence(
         authorisation_evidence_digest=row.authorisation_evidence_digest,
         authorised_by_user_id=row.authorised_by_user_id,
         authorised_at=row.authorised_at,
+        initiated_at=row.initiated_at,
     )
 
 

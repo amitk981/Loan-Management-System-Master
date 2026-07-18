@@ -1,44 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, Banknote, CheckCircle2, Clock, Download, Landmark } from 'lucide-react';
+import AlertBanner from '../../../../components/ui/AlertBanner';
 import StatusBadge from '../../../../components/ui/StatusBadge';
 import { AuthSessionError } from '../../../../services/authSession';
 import {
   downloadPortalDisbursementAdvice,
-  fetchPortalApplications,
   fetchPortalDisbursementStatus,
   PortalDisbursementStatus,
 } from '../../../../services/portalApi';
 
-const FINANCE_APPLICATION_STATUSES = new Set([
-  'approved_by_sanction_committee',
-  'documentation_pending',
-  'disbursement_processing',
-  'disbursed',
-]);
+interface MP14DisbursementStatusProps {
+  selectedApplicationId: string | null;
+  onNavigateToApplications: () => void;
+}
 
-const MP14_DisbursementStatus: React.FC = () => {
-  const [applicationId, setApplicationId] = useState<string | null>(null);
+const MP14_DisbursementStatus: React.FC<MP14DisbursementStatusProps> = ({
+  selectedApplicationId,
+  onNavigateToApplications,
+}) => {
   const [projection, setProjection] = useState<PortalDisbursementStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(selectedApplicationId));
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let current = true;
     const load = async () => {
+      if (!selectedApplicationId) {
+        setProjection(null);
+        setError(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
+      setProjection(null);
       try {
-        const applications = await fetchPortalApplications();
-        const eligible = applications.items.find(item => FINANCE_APPLICATION_STATUSES.has(item.application_status));
-        if (!current) return;
-        if (!eligible) {
-          setApplicationId(null);
-          setProjection(null);
-          return;
-        }
-        setApplicationId(eligible.loan_application_id);
-        const status = await fetchPortalDisbursementStatus(eligible.loan_application_id);
+        const status = await fetchPortalDisbursementStatus(selectedApplicationId);
         if (current) setProjection(status);
       } catch (requestError) {
         if (current) setError(disbursementErrorMessage(requestError));
@@ -48,14 +46,14 @@ const MP14_DisbursementStatus: React.FC = () => {
     };
     void load();
     return () => { current = false; };
-  }, []);
+  }, [selectedApplicationId]);
 
   const download = async () => {
-    if (!applicationId || !projection?.advice_available) return;
+    if (!selectedApplicationId || !projection?.advice_available) return;
     setDownloading(true);
     setError(null);
     try {
-      await downloadPortalDisbursementAdvice(applicationId);
+      await downloadPortalDisbursementAdvice(selectedApplicationId);
     } catch (requestError) {
       setError(disbursementErrorMessage(requestError, 'Disbursement advice could not be downloaded.'));
     } finally {
@@ -70,10 +68,22 @@ const MP14_DisbursementStatus: React.FC = () => {
         <p className="text-sm text-slate-500 mt-1">Track SAP setup, bank authorisation, and final payment advice.</p>
       </div>
 
-      {loading && <PortalMessage message="Loading disbursement status…" />}
-      {!loading && error && <PortalMessage message={error} error />}
-      {!loading && !error && !projection && (
-        <PortalMessage message="No approved application is in finance processing yet." />
+      {loading && <AlertBanner type="info" title="Loading disbursement status…" />}
+      {!loading && error && <AlertBanner type="error" title={error} />}
+      {!loading && !error && !selectedApplicationId && (
+        <AlertBanner
+          type="info"
+          title="Select an application from My Applications to view its disbursement status."
+          actions={(
+            <button
+              type="button"
+              onClick={onNavigateToApplications}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Go to My Applications
+            </button>
+          )}
+        />
       )}
       {!loading && projection && <DisbursementStatusView projection={projection} downloading={downloading} onDownload={() => { void download(); }} />}
     </div>
@@ -166,12 +176,6 @@ export const DisbursementStatusView: React.FC<{
   );
 };
 
-const PortalMessage: React.FC<{ message: string; error?: boolean }> = ({ message, error = false }) => (
-  <div className={`rounded-xl border p-5 text-sm ${error ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-slate-100 text-slate-500'}`}>
-    {message}
-  </div>
-);
-
 const formatMoney = (value: string | null) => value
   ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(value))
   : 'Not available';
@@ -186,7 +190,6 @@ const disbursementErrorMessage = (error: unknown, fallback = 'Disbursement statu
   if (error instanceof AuthSessionError) {
     if (error.status === 401) return 'Your member portal session has expired. Please sign in again.';
     if (error.status === 403) return 'You are not authorised to view this disbursement status.';
-    return error.message || fallback;
   }
   return fallback;
 };

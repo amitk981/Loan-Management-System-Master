@@ -134,7 +134,12 @@ const BorrowerPortal: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
 
         {activeTab === 'sanctionOutcome' && <MP12_SanctionOutcome />}
         {activeTab === 'documentationActions' && <MP13_DocumentationActions />}
-        {activeTab === 'disbursementStatus' && <MP14_DisbursementStatus />}
+        {activeTab === 'disbursementStatus' && (
+          <MP14_DisbursementStatus
+            selectedApplicationId={selectedApplicationId}
+            onNavigateToApplications={() => setActiveTab('myApplications')}
+          />
+        )}
         {activeTab === 'repayments' && <MP17_Repayments />}
         {activeTab === 'directRepayment' && <MP18_DirectRepaymentInfo />}
         {activeTab === 'documents' && <MP07_DocumentChecklist />}

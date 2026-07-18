@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_current_sap_completion_without_initiation_stops_at_payment_pending (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests.test_current_sap_completion_without_initiation_stops_at_payment_pending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_003418_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 408, in test_current_sap_completion_without_initiation_stops_at_payment_pending
+    self.assertEqual(timeline["documentation_complete"]["status"], "complete")
+AssertionError: 'pending' != 'complete'
+- pending
++ complete
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.049s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
