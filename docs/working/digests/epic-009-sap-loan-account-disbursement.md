@@ -1036,3 +1036,18 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
   accepted/denied reads share the safe `portal.document.downloaded` audit vocabulary.
 - Under A-133 the retained communications subject/body is the exact UTF-8 advice attachment until a
   governed document-template owner defines another artifact format.
+
+## 009H9A queued-advice migration provenance closure
+
+- Communications migration 0008 now distinguishes a genuine H5 queued job from an unlinked
+  attempt-less legacy row at the earliest truthful boundary. Verification requires the singular
+  outbox/job edge, exact advice and payload identities, complete actor/request facts, pristine
+  queued/zero-attempt state, no provider/receipt/final history, and an internally recomputed frozen
+  template checksum.
+- Missing jobs and one-field drift in job/outbox/advice/payload/actor/request/status/checksum or
+  snapshot remain `legacy_partial / ambiguous_legacy`; migration 0008 clears their untrusted
+  template facts and neither reconstructs history nor weakens H6's replay/download exclusions.
+- A genuine queued fixture preserves every old job/outbox id, attempt, actor, request, digest,
+  idempotency, snapshot, and timestamp through 0007-to-current, safe reverse, and reapply. No later
+  migration, schema, provider/receipt/Communication, action/audit/workflow, API, or frontend change
+  is part of this closure.

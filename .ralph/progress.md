@@ -9264,3 +9264,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-18 - 2026-07-18_210357_normal_run
+
+- Agent tool used: codex with the TDD discipline.
+- Slice completed: 009H9A-queued-advice-migration-provenance-closure.
+- Summary: Corrected communications migration 0008 in place so one exact queued H5 job preserves
+  its complete checksum-protected frozen provenance through migration 0009/current leaves, while
+  unlinked or drifted attempt-less history remains honestly legacy-partial and nondispatching.
+- Tests run: queued-job RED/GREEN tracer; one-field drift RED/GREEN matrix; 10 retained migration
+  tests; three public legacy exclusion tests; Django check; migration sync. Complete backend suite
+  and coverage remain delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_210357_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High because an existing pre-release data migration classification changed; controls
+  are exact fail-closed provenance predicates, no schema/history rewrite, complete migration
+  manifests, and retained public legacy exclusions.
+- Next action: Run 009H9B, then 009H9C before 009I2.
+
+## 2026-07-18 21:28:21 - 2026-07-18_210357_normal_run
+- Agent tool used: codex
+- Slice attempted: 009H9A-queued-advice-migration-provenance-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_210357_normal_run/.ralph/runs/2026-07-18_210357_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_210357_normal_run/.ralph/runs/2026-07-18_210357_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

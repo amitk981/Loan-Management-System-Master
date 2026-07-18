@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/009H9A-queued-advice-migration-provenance-closure.md
+ M docs/slices/009H9B-communication-final-attempt-and-exception-queue-closure.md
+ M docs/slices/009H9C-communication-channel-interface-and-provider-evidence-closure.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/communications/migrations/0008_legacy_template_provenance_closure.py
+ M sfpcl_credit/tests/test_communication_receipt_owner_migration.py
+?? .ralph/runs/2026-07-18_210357_normal_run/

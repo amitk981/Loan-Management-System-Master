@@ -7,6 +7,20 @@ from django.db import migrations, models
 LEGACY_ADAPTER_KINDS = ("legacy:pre-outbox", "legacy:retained-outbox")
 
 
+def _is_nonblank(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _is_sha256(value):
+    if not isinstance(value, str) or len(value) != 64:
+        return False
+    try:
+        int(value, 16)
+    except ValueError:
+        return False
+    return True
+
+
 def _has_complete_frozen_provenance(outbox):
     required = (
         outbox.content_template_id,
@@ -49,8 +63,39 @@ def _has_complete_frozen_provenance(outbox):
     return checksum == outbox.template_checksum_sha256
 
 
+def _has_coherent_queued_job(outbox, job, attempt_count):
+    return bool(
+        job is not None
+        and attempt_count == 0
+        and job.outbox_id == outbox.pk
+        and job.advice_intent_id == outbox.advice_intent
+        and outbox.communication_id == outbox.advice_intent
+        and job.request_payload_digest == outbox.payload_digest
+        and _is_sha256(job.request_payload_digest)
+        and job.actor_id.int != 0
+        and _is_nonblank(job.actor_role_code)
+        and isinstance(job.actor_team_codes, list)
+        and all(_is_nonblank(team) for team in job.actor_team_codes)
+        and _is_nonblank(job.request_id)
+        and job.status == "queued"
+        and job.attempts == 0
+        and job.max_attempts >= 1
+        and not job.last_failure_code
+        and job.started_at is None
+        and job.completed_at is None
+        and outbox.delivery_status == "pending"
+        and outbox.provider_external_message_id is None
+        and outbox.provider_delivery_status is None
+        and outbox.provider_accepted_at is None
+        and outbox.accepted_provider_attempt_id is None
+        and outbox.delivery_receipt_id is None
+        and outbox.final_communication_id is None
+    )
+
+
 def mark_legacy_template_provenance(apps, schema_editor):
     Attempt = apps.get_model("communications", "CommunicationProviderAttempt")
+    Job = apps.get_model("communications", "CommunicationDeliveryJob")
     Outbox = apps.get_model("communications", "CommunicationDeliveryOutbox")
     legacy_outbox_ids = set(Attempt.objects.filter(
         adapter_kind__in=LEGACY_ADAPTER_KINDS,
@@ -63,6 +108,28 @@ def mark_legacy_template_provenance(apps, schema_editor):
         for row in Outbox.objects.filter(pk__in=post_0005_candidate_ids).iterator()
         if _has_complete_frozen_provenance(row)
     }
+    queued_jobs_by_outbox = {
+        job.outbox_id: job
+        for job in Job.objects.all().iterator()
+    }
+    attempt_counts = dict(
+        Attempt.objects.values("outbox_id")
+        .annotate(count=models.Count("pk"))
+        .values_list("outbox_id", "count")
+    )
+    queued_outbox_ids = {
+        row.pk
+        for row in Outbox.objects.filter(
+            pk__in=queued_jobs_by_outbox,
+        ).iterator()
+        if _has_complete_frozen_provenance(row)
+        and _has_coherent_queued_job(
+            row,
+            queued_jobs_by_outbox.get(row.pk),
+            attempt_counts.get(row.pk, 0),
+        )
+    }
+    post_0005_outbox_ids.update(queued_outbox_ids)
     Outbox.objects.update(
         template_provenance_status="legacy_partial",
         template_provenance_origin="ambiguous_legacy",

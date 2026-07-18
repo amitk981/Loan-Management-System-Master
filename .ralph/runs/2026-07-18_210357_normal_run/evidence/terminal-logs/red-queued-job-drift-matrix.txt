@@ -1,0 +1,54 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFE
+======================================================================
+ERROR: test_only_exact_queued_job_relationship_is_verified (sfpcl_credit.tests.test_communication_receipt_owner_migration.LegacyAdviceTemplateProvenanceMigrationTests.test_only_exact_queued_job_relationship_is_verified)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_210357_normal_run/sfpcl_credit/tests/test_communication_receipt_owner_migration.py", line 47, in tearDown
+    executor.migrate(executor.loader.graph.leaf_nodes())
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 135, in migrate
+    state = self._migrate_all_forwards(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 167, in _migrate_all_forwards
+    state = self.apply_migration(
+            ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/executor.py", line 252, in apply_migration
+    state = migration.apply(state, schema_editor)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/migration.py", line 132, in apply
+    operation.database_forwards(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/migrations/operations/special.py", line 193, in database_forwards
+    self.code(from_state.apps, schema_editor)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_210357_normal_run/sfpcl_credit/communications/migrations/0009_generic_delivery_job_identity.py", line 13, in preserve_advice_job_identity
+    raise RuntimeError(
+RuntimeError: Legacy-partial communication outboxes cannot be attached to delivery jobs.
+
+======================================================================
+FAIL: test_only_exact_queued_job_relationship_is_verified (sfpcl_credit.tests.test_communication_receipt_owner_migration.LegacyAdviceTemplateProvenanceMigrationTests.test_only_exact_queued_job_relationship_is_verified) (label='actor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_210357_normal_run/sfpcl_credit/tests/test_communication_receipt_owner_migration.py", line 290, in test_only_exact_queued_job_relationship_is_verified
+    self.assertEqual(
+AssertionError: 'verified' != 'legacy_partial'
+- verified
++ legacy_partial
+
+
+======================================================================
+FAIL: test_only_exact_queued_job_relationship_is_verified (sfpcl_credit.tests.test_communication_receipt_owner_migration.LegacyAdviceTemplateProvenanceMigrationTests.test_only_exact_queued_job_relationship_is_verified) (label='request')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_210357_normal_run/sfpcl_credit/tests/test_communication_receipt_owner_migration.py", line 290, in test_only_exact_queued_job_relationship_is_verified
+    self.assertEqual(
+AssertionError: 'verified' != 'legacy_partial'
+- verified
++ legacy_partial
+
+
+----------------------------------------------------------------------
+Ran 1 test in 2.626s
+
+FAILED (failures=2, errors=1)
+Destroying test database for alias 'default'...

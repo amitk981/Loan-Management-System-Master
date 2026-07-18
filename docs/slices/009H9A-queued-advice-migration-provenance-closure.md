@@ -1,7 +1,7 @@
 # Slice 009H9A: Queued Advice Migration Provenance Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -65,10 +65,9 @@ High
 - Ambiguous/legacy history remains honest, nondispatching, and excluded from current advice truth.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Genuine queued-job migration probe written failing first
-- [ ] Exact coherent-job classification implemented
-- [ ] Forward/reverse/reapply and legacy matrices green
-- [ ] Risk, evidence, handoff, state, contract, and digest updated
-- [ ] Commit delegated to the orchestrator after gates
-
+- [x] Execution plan written
+- [x] Genuine queued-job migration probe written failing first
+- [x] Exact coherent-job classification implemented
+- [x] Forward/reverse/reapply and legacy matrices green
+- [x] Risk, evidence, handoff, state, contract, and digest updated
+- [x] Commit delegated to the orchestrator after gates

@@ -59,6 +59,15 @@ seams, and retain replay/provider truth without treating every channel as email.
 - Run generic Email/SMS five-caller send and five-worker claim races twice on PostgreSQL with one
   provider acceptance, one immutable evidence chain, and no recipient/content leakage.
 
+## 009H9A Sharpening Extract
+
+- Integrations §21.1 requires an idempotency key for both Email and SMS, and §21.2 identifies the
+  communication id as their duplicate identity. Preserve that pair through queued, retrying,
+  failed, and provider-accepted paths rather than deriving channel-specific duplicate rules.
+- INT-COMM-002/003 require asynchronous queueing and retryability; INT-COMM-005 specifically bars
+  sensitive values from SMS and logs. Channel tests must therefore assert both the selected adapter
+  call and the absence of raw rendered recipient/content values from job, error, and task evidence.
+
 ## Runtime Capabilities
 
 postgresql-five-race-acceptance

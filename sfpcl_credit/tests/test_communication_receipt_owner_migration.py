@@ -218,6 +218,117 @@ class LegacyAdviceTemplateProvenanceMigrationTests(TransactionTestCase):
             self._history_values(current_apps, corrected.pk), legacy_before
         )
 
+    def test_coherent_queued_job_preserves_frozen_provenance_to_current(self):
+        old_apps = self._migrate(self.migrate_from)
+        Job = old_apps.get_model("communications", "CommunicationDeliveryJob")
+        outbox, job = self._queued_outbox_with_job(old_apps, "preserved")
+        before_outbox = self._stable_outbox_values(old_apps, outbox.pk)
+        before_job = Job.objects.filter(pk=job.pk).values().get()
+
+        current_leaves = MigrationExecutor(connection).loader.graph.leaf_nodes()
+        current_apps = self._migrate(current_leaves)
+        CurrentOutbox = current_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        CurrentJob = current_apps.get_model(
+            "communications", "CommunicationDeliveryJob"
+        )
+        migrated_outbox = CurrentOutbox.objects.get(pk=outbox.pk)
+        migrated_job = CurrentJob.objects.get(pk=job.pk)
+
+        self.assertEqual(migrated_outbox.template_provenance_status, "verified")
+        self.assertEqual(
+            migrated_outbox.template_provenance_origin,
+            "frozen_before_dispatch",
+        )
+        self.assertEqual(
+            self._stable_outbox_values(current_apps, outbox.pk), before_outbox
+        )
+        for field, value in before_job.items():
+            self.assertEqual(getattr(migrated_job, field), value, field)
+        self.assertEqual(migrated_job.communication_id, outbox.communication_id)
+        self.assertEqual(migrated_job.idempotency_key, outbox.idempotency_key)
+        self.assertEqual(migrated_job.job_kind, "advice")
+        current_outbox_manifest = self._all_outbox_values(
+            current_apps, outbox.pk
+        )
+        current_job_manifest = CurrentJob.objects.filter(pk=job.pk).values().get()
+
+        reversed_apps = self._migrate(self.migrate_from)
+        self.assertEqual(
+            self._stable_outbox_values(reversed_apps, outbox.pk), before_outbox
+        )
+        ReversedJob = reversed_apps.get_model(
+            "communications", "CommunicationDeliveryJob"
+        )
+        self.assertEqual(
+            ReversedJob.objects.filter(pk=job.pk).values().get(), before_job
+        )
+
+        reapplied_apps = self._migrate(current_leaves)
+        self.assertEqual(
+            self._all_outbox_values(reapplied_apps, outbox.pk),
+            current_outbox_manifest,
+        )
+        ReappliedJob = reapplied_apps.get_model(
+            "communications", "CommunicationDeliveryJob"
+        )
+        self.assertEqual(
+            ReappliedJob.objects.filter(pk=job.pk).values().get(),
+            current_job_manifest,
+        )
+
+    def test_only_exact_queued_job_relationship_is_verified(self):
+        old_apps = self._migrate(self.migrate_from)
+        Outbox = old_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        Job = old_apps.get_model("communications", "CommunicationDeliveryJob")
+
+        unlinked, _ = self._queued_outbox_with_job(
+            old_apps, "unlinked", create_job=False
+        )
+        drifted = {"unlinked": unlinked.pk}
+        mutations = {
+            "job": ("job", {"attempts": 1}),
+            "outbox": ("outbox", {"communication_id": uuid.uuid4()}),
+            "advice": ("job", {"advice_intent_id": uuid.uuid4()}),
+            "payload": ("job", {"request_payload_digest": "d" * 64}),
+            "actor": ("job", {"actor_id": uuid.UUID(int=0)}),
+            "request": ("job", {"request_id": " "}),
+            "status": ("job", {"status": "failed"}),
+            "checksum": ("outbox", {"template_checksum_sha256": "0" * 64}),
+            "snapshot": (
+                "outbox",
+                {"body_template_snapshot": "Changed after queue"},
+            ),
+        }
+        for label, (model_name, values) in mutations.items():
+            outbox, job = self._queued_outbox_with_job(old_apps, label)
+            model = Job if model_name == "job" else Outbox
+            target = job.pk if model_name == "job" else outbox.pk
+            model.objects.filter(pk=target).update(**values)
+            drifted[label] = outbox.pk
+
+        current_apps = self._migrate(self.migrate_to)
+        CurrentOutbox = current_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        for label, outbox_id in drifted.items():
+            with self.subTest(label=label):
+                migrated = CurrentOutbox.objects.get(pk=outbox_id)
+                self.assertEqual(
+                    migrated.template_provenance_status, "legacy_partial"
+                )
+                self.assertEqual(
+                    migrated.template_provenance_origin, "ambiguous_legacy"
+                )
+                self.assertIsNone(migrated.template_checksum_sha256)
+        CurrentJob = current_apps.get_model(
+            "communications", "CommunicationDeliveryJob"
+        )
+        CurrentJob.objects.filter(outbox_id__in=drifted.values()).delete()
+
     def test_reverse_refuses_legacy_history_and_clean_reapply_preserves_verified_rows(
         self,
     ):
@@ -328,6 +439,47 @@ class LegacyAdviceTemplateProvenanceMigrationTests(TransactionTestCase):
             accepted_provider_attempt_id=attempt.pk,
         )
         return Outbox.objects.get(pk=outbox.pk)
+
+    def _queued_outbox_with_job(self, apps, label, *, create_job=True):
+        Template = apps.get_model("communications", "ContentTemplate")
+        Job = apps.get_model("communications", "CommunicationDeliveryJob")
+        template = Template.objects.create(
+            template_code=f"queued_advice_{label}_v1",
+            template_name=f"Queued advice {label}",
+            template_type="email",
+            language_code="en",
+            audience="borrower",
+            subject_template="Advice {{ borrower_name }}",
+            body_template="Queued for {{ borrower_name }}",
+            variables_json=["borrower_name"],
+            approval_status="approved",
+            template_version="v1",
+            effective_from=django_timezone.localdate(),
+        )
+        outbox = self._make_pending_without_attempt(
+            apps,
+            self._accepted_outbox(
+                apps,
+                template=template,
+                outbox_id=uuid.uuid4(),
+                adapter_kind=(
+                    "sfpcl_credit.communications.adapters.FakeEmailDeliveryAdapter"
+                ),
+            ),
+        )
+        if not create_job:
+            return outbox, None
+        job = Job.objects.create(
+            outbox=outbox,
+            advice_intent_id=outbox.advice_intent,
+            actor_id=uuid.uuid4(),
+            actor_role_code="credit_manager",
+            actor_team_codes=["credit"],
+            request_id=f"queued-advice-{label}",
+            request_payload_digest=outbox.payload_digest,
+            status="queued",
+        )
+        return outbox, job
 
     def _history_values(self, apps, outbox_id):
         Outbox = apps.get_model("communications", "CommunicationDeliveryOutbox")

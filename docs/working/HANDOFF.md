@@ -2,29 +2,25 @@
 
 ## Last Run
 
-2026-07-18_204305_architecture_review
+2026-07-18_210357_normal_run
 
 ## Current Status
 
-Architecture review independently inspected 009G6, 009H6, 009H7, 009H8, and CR-011 over
-`fb380227...e3d965ad` in separate Standards and Spec passes. Forty-three focused retained tests
-pass. Three review-only probes fail on the intended source assertions:
+009H9A corrects the existing communications 0008 data migration at the first point that can inspect
+both a complete frozen outbox snapshot and its retained H5 job. A pristine pending/queued,
+attempt-less job now remains `verified / frozen_before_dispatch`; any missing or one-field-drifted
+job, outbox, advice, payload, actor, request, status, checksum, or snapshot remains
+`legacy_partial / ambiguous_legacy` with its untrusted template snapshot cleared.
 
-- a complete attempt-less outbox bound to a valid queued H5 job is downgraded by communications
-  0008, causing 0009 to abort the 0007-to-current upgrade;
-- an expired worker claim at attempt 3 of 3 is returned as due, so the next claim would exceed the
-  database cap instead of creating terminal exception truth; and
-- a generic SMS job calls `send_email` and becomes sent with no SMS adapter or sensitive-content
-  guard.
-
-The legal complete-state fingerprint and CR-011 migration-test cleanup appear complete. Secondary
-findings cover the source §40.1 facade, API §45.2 replay shape, immutable generic provider evidence,
-the source §22.3 exception ledger, thin Celery tasks, and contradictory old/current generic-send
-text in API_CONTRACTS. Findings are newest-first in REVIEW_FINDINGS; no production code changed.
+The genuine queued fixture migrates from 0007 through every current leaf, reverses safely, and
+reapplies with exact old/current manifests. Ten retained migration tests and three public legacy
+no-redispatch/operator-block/portal-exclusion tests pass. Django check and migration sync pass. No
+schema, model, API, frontend, provider, receipt, Communication, action, audit, or workflow history
+changed; complete backend coverage remains delegated to the orchestrator.
 
 ## Next Run
 
-Run `009H9A-queued-advice-migration-provenance-closure`, then dependency-ordered `009H9B` and
-`009H9C`. They are concrete High-risk corrective slices for the queued upgrade, retry-cap/exception
-queue, and channel/facade/provider-evidence contracts. Their filenames and dependencies place them
-before 009I2; after they complete, run 009I2 before 009J and 009K.
+Run `009H9B-communication-final-attempt-and-exception-queue-closure`, then dependency-ordered
+`009H9C-communication-channel-interface-and-provider-evidence-closure`. Both were sharpened with
+the already-opened retry/idempotency/exception/SMS source facts. After they complete, run 009I2
+before 009J and 009K.

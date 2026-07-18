@@ -49,6 +49,16 @@ that can only violate its attempts constraint.
 - Exercise Email/advice/generic failure classes, safe redaction, authorised resolution, denied and
   stale resolution, and accepted-provider recovery without resend.
 
+## 009H9A Sharpening Extract
+
+- Use each job row's retained `max_attempts` as the cap; do not replace it with a hard-coded retry
+  count. Integrations §22.2 permits configured Email/SMS retry counts, while §22.3 requires the
+  exhausted row to enter exception truth with provider, job type, related entity, safe last error,
+  retry count, assignment, resolution, resolver, and resolution time.
+- The exact-cap test must begin from a fenced `running` row whose attempts already equal its cap,
+  expire that claim, and prove repeated scans retain the same terminal row and never expose it to
+  `start_job` or the provider seam.
+
 ## Runtime Capabilities
 
 postgresql-five-race-acceptance
@@ -71,4 +81,3 @@ High
 - [ ] PostgreSQL acceptance green twice
 - [ ] Risk, evidence, handoff, state, contract, and digest updated
 - [ ] Commit delegated to the orchestrator after gates
-
