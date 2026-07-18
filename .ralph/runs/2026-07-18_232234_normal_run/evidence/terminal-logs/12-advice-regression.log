@@ -1,0 +1,24 @@
+Creating test database for alias 'default'...
+Found 32 test(s).
+System check identified no issues (0 silenced).
+.................F............ss
+======================================================================
+FAIL: test_public_success_sends_exact_advice_without_financial_side_effects (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_public_success_sends_exact_advice_without_financial_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 149, in test_public_success_sends_exact_advice_without_financial_side_effects
+    assert_success_envelope(self, response.json())
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/api_contracts.py", line 54, in assert_success_envelope
+    assert_standard_meta(test_case, payload)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/api_contracts.py", line 43, in assert_standard_meta
+    meta = _assert_field(test_case, payload, "meta")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/api_contracts.py", line 33, in _assert_field
+    test_case.assertIn(
+AssertionError: 'meta' not found in {'success': True, 'data': {'disbursement_id': 'b41cfe20-d2ae-48ea-813a-c5ad4d9b041e', 'disbursement_advice_communication_id': '502460e2-0644-4954-aea8-12c409e32396', 'delivery_status': 'sent', 'sent_at': '2026-07-18T18:11:20.584614Z'}} : Missing contract field: meta
+
+----------------------------------------------------------------------
+Ran 32 tests in 21.589s
+
+FAILED (failures=1, skipped=2)
+Destroying test database for alias 'default'...

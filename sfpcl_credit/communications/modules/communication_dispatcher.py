@@ -7,6 +7,7 @@ import uuid
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import connection, transaction
 from django.db.models import F, Q
 from django.utils import timezone
@@ -16,6 +17,8 @@ from sfpcl_credit.communications.adapters import (
     EmailDeliveryPayload,
     EmailDeliveryResult,
     ManualEmailDeliveryAdapter,
+    ManualSmsDeliveryAdapter,
+    SmsDeliveryPayload,
     delivery_payload_digest,
     validate_delivery_result,
 )
@@ -24,6 +27,7 @@ from sfpcl_credit.communications.models import (
     CommunicationDeliveryJob,
     CommunicationDeliveryOutbox,
     CommunicationException,
+    CommunicationProviderEvidence,
     CommunicationProviderAttempt,
     ContentTemplate,
     DisbursementAdviceDeliveryReceipt,
@@ -44,6 +48,15 @@ _SENSITIVE_VARIABLE_PARTS = (
     "cheque",
     "ifsc",
     "ciphertext",
+)
+_MOBILE_RE = re.compile(r"^\+[1-9][0-9]{7,14}$")
+_UNSAFE_SMS_VALUE_PATTERNS = (
+    re.compile(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b", re.IGNORECASE),
+    re.compile(r"(?<![0-9])[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}(?![0-9])"),
+    re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b", re.IGNORECASE),
+    re.compile(r"(?<![0-9])[0-9]{6}(?![0-9])"),
+    re.compile(r"(?<![0-9])[0-9]{9,18}(?![0-9])"),
+    re.compile(r"\b(?:enc:|ciphertext:|gAAAA)[^\s]*", re.IGNORECASE),
 )
 _ADVICE_ACTION = "disbursement.advice_sent"
 _ADVICE_WORKFLOW = "DisbursementAdviceSent"
@@ -218,6 +231,40 @@ class CommunicationDispatcher:
 
     @classmethod
     def create_from_template(
+        cls, *, actor, template_code, recipient, context, related_entity
+    ):
+        """Create one governed snapshot through the source §40.1 facade."""
+        try:
+            template = ContentTemplate.objects.only("content_template_id").get(
+                template_code=template_code
+            )
+        except ContentTemplate.DoesNotExist as exc:
+            field = context.get("template_error_field", "template_code")
+            raise ValidationError({field: "Content template was not found."}) from exc
+        return cls._create_from_template(
+            actor=actor,
+            request=context.get("request"),
+            content_template_id=template.pk,
+            merge_data=context.get("merge_data", {}),
+            related_entity_type=related_entity.get("type"),
+            related_entity_id=related_entity.get("id"),
+            recipient_party_type=recipient.get("party_type"),
+            recipient_party_id=recipient.get("party_id"),
+            recipient_address=recipient.get("address"),
+            channel=recipient.get("channel"),
+            idempotency_key=context.get("idempotency_key"),
+        )
+
+    @classmethod
+    def send(cls, *, communication_id, idempotency_key):
+        """Queue one existing snapshot through the source §40.1 facade."""
+        return cls._send(
+            communication_id=communication_id,
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def _create_from_template(
         cls,
         *,
         actor,
@@ -236,12 +283,20 @@ class CommunicationDispatcher:
             key = cls._validated_idempotency_key(idempotency_key)
             cls._lock_idempotency_key(key)
             template = cls._approved_effective_template(content_template_id)
+            cls._validate_channel_contract(
+                channel=channel,
+                template=template,
+                recipient_address=recipient_address,
+                merge_data=merge_data,
+            )
             subject = cls._render_generic(
                 template.subject_template, template.variables_json or [], merge_data
             )
             body = cls._render_generic(
                 template.body_template, template.variables_json or [], merge_data
             )
+            if channel == Communication.CHANNEL_SMS:
+                cls._validate_sms_rendered_values(subject, body, merge_data)
             proposed_digest = cls._generic_payload_digest(
                 communication_id=None,
                 related_entity_type=related_entity_type,
@@ -269,7 +324,10 @@ class CommunicationDispatcher:
                         "The idempotency key is already bound to another communication request."
                     )
                 try:
-                    return Communication.objects.get(pk=retained.communication_id)
+                    row = Communication.objects.get(pk=retained.communication_id)
+                    row._idempotency_replayed = True
+                    row._original_response = retained.original_response_json
+                    return row
                 except Communication.DoesNotExist as exc:
                     raise CommunicationDispatchConflict(
                         "The retained communication job has no communication snapshot."
@@ -289,10 +347,11 @@ class CommunicationDispatcher:
             )
             cls._create_notification(row)
             cls._record_generic_audit(actor, request, row)
+            row._idempotency_replayed = False
             return row
 
     @classmethod
-    def send(
+    def _send(
         cls,
         *,
         communication_id,
@@ -353,6 +412,7 @@ class CommunicationDispatcher:
                 ip_address=request_ip(request) if request else "",
                 user_agent=request_user_agent(request) if request else "",
                 request_payload_digest=payload_digest,
+                original_response_json=cls._generic_original_response(row),
             )
             enqueue_after_commit(job.pk)
             return row
@@ -399,6 +459,13 @@ class CommunicationDispatcher:
             user_agent=request.user_agent,
             request_payload_digest=outbox.payload_digest,
         )
+        job.original_response_json = {
+            "disbursement_id": str(outbox.related_entity_id),
+            "communication_job_id": str(job.pk),
+            "delivery_status": CommunicationDeliveryJob.STATUS_QUEUED,
+            "queued_at": job.created_at.isoformat().replace("+00:00", "Z"),
+        }
+        job.save(update_fields=["original_response_json"])
         enqueue_after_commit(job.pk)
         return job
 
@@ -438,6 +505,30 @@ class CommunicationDispatcher:
             subject=row.subject_snapshot,
             body=row.body_snapshot,
         )
+
+    @staticmethod
+    def _generic_original_response(row):
+        return {
+            "communication_id": str(row.pk),
+            "related_entity_type": row.related_entity_type,
+            "related_entity_id": str(row.related_entity_id),
+            "recipient_party_type": row.recipient_party_type,
+            "recipient_party_id": (
+                str(row.recipient_party_id) if row.recipient_party_id else None
+            ),
+            "recipient_address": row.recipient_address,
+            "channel": row.channel,
+            "content_template_id": (
+                str(row.content_template_id) if row.content_template_id else None
+            ),
+            "subject_snapshot": row.subject_snapshot,
+            "body_snapshot": row.body_snapshot,
+            "sent_by_user_id": str(row.sent_by_user_id) if row.sent_by_user_id else None,
+            "sent_at": None,
+            "delivery_status": Communication.DELIVERY_PENDING,
+            "acknowledgement_status": row.acknowledgement_status,
+            "external_message_id": None,
+        }
 
     @staticmethod
     def _generic_payload_digest(**facts):
@@ -489,6 +580,60 @@ class CommunicationDispatcher:
                 {"content_template_id": "Content template is no longer effective."}
             )
         return template
+
+    @classmethod
+    def _validate_channel_contract(
+        cls, *, channel, template, recipient_address, merge_data
+    ):
+        if channel not in {Communication.CHANNEL_EMAIL, Communication.CHANNEL_SMS}:
+            raise ValidationError(
+                {"channel": "Phone and courier delivery are not supported by this endpoint."}
+            )
+        if template.template_type.strip().lower() != channel:
+            raise ValidationError(
+                {"channel": "Channel must match the selected content template type."}
+            )
+        recipient = recipient_address.strip() if isinstance(recipient_address, str) else ""
+        if channel == Communication.CHANNEL_EMAIL:
+            try:
+                validate_email(recipient)
+            except ValidationError:
+                raise ValidationError(
+                    {"recipient_address": "Must be a valid email address."}
+                ) from None
+            return
+        if not _MOBILE_RE.fullmatch(recipient):
+            raise ValidationError(
+                {"recipient_address": "Must be an E.164 mobile number."}
+            )
+        declared = set(template.variables_json or []) | set(merge_data)
+        if any(cls._sensitive_sms_variable(variable) for variable in declared):
+            raise ValidationError(
+                {"merge_data": "SMS cannot include sensitive financial or identity variables."}
+            )
+
+    @staticmethod
+    def _sensitive_sms_variable(variable):
+        normalized = variable.lower()
+        if any(part in normalized for part in _SENSITIVE_VARIABLE_PARTS):
+            return True
+        return any(
+            part in normalized
+            for part in ("bank_details", "bank_detail", "full_bank", "bank_number")
+        ) or ("account_number" in normalized and not normalized.startswith("loan_"))
+
+    @staticmethod
+    def _validate_sms_rendered_values(subject, body, merge_data):
+        rendered_values = [str(value) for value in merge_data.values()]
+        rendered_values.extend([subject or "", body or ""])
+        if any(
+            pattern.search(value)
+            for value in rendered_values
+            for pattern in _UNSAFE_SMS_VALUE_PATTERNS
+        ):
+            raise ValidationError(
+                {"merge_data": "SMS cannot include sensitive financial or identity values."}
+            )
 
     @staticmethod
     def _render_generic(source, declared_variables, merge_data):
@@ -597,6 +742,7 @@ class CommunicationDispatcher:
                     )
                 cls._require_context_identity(job.outbox, context)
                 cls._require_job_match(job, context, job.outbox, key)
+                job._idempotency_replayed = True
                 return job
             prepared = cls._prepare(context, key)
             outbox = cls._freeze_or_reconcile(context, prepared)
@@ -608,18 +754,21 @@ class CommunicationDispatcher:
                 "request_payload_digest": outbox.payload_digest,
             }
             if job is None:
-                return cls.send(
+                created = cls._send(
                     communication_id=context.communication_id,
                     idempotency_key=key,
                     request=request,
                     _advice_context=context,
                     _outbox=outbox,
                 )
+                created._idempotency_replayed = False
+                return created
             if any(getattr(job, field) != value for field, value in expected.items()):
                 raise CommunicationDispatchConflict(
                     "The retained communication job conflicts with current advice facts."
                 )
             cls._require_job_match(job, context, outbox, key)
+            job._idempotency_replayed = True
             return job
 
     @staticmethod
@@ -1054,7 +1203,11 @@ class CommunicationDispatcher:
             communication = Communication.objects.get(pk=job.communication_id)
             related_entity_type = communication.related_entity_type
             related_entity_id = communication.related_entity_id
-            provider_code = settings.COMMUNICATION_EMAIL_ADAPTER
+            provider_code = (
+                settings.COMMUNICATION_SMS_ADAPTER
+                if communication.channel == Communication.CHANNEL_SMS
+                else settings.COMMUNICATION_EMAIL_ADAPTER
+            )
         expected = {
             "provider_code": provider_code,
             "job_type": job.job_kind,
@@ -1149,18 +1302,43 @@ class CommunicationDispatcher:
             raise CommunicationDispatchConflict(
                 "The communication job requires its business process coordinator."
             )
-        if execution.status == CommunicationDeliveryJob.STATUS_SENT:
-            return CommunicationDeliveryJob.objects.get(pk=job_id)
         row = Communication.objects.get(pk=execution.communication_id)
-        payload = EmailDeliveryPayload(
-            communication_id=row.pk,
-            recipient_email=row.recipient_address or "",
-            subject=row.subject_snapshot or "",
-            body_text=row.body_snapshot,
-            related_entity_type=row.related_entity_type,
-            related_entity_id=row.related_entity_id,
-        )
+        if row.channel == Communication.CHANNEL_EMAIL:
+            payload = EmailDeliveryPayload(
+                communication_id=row.pk,
+                recipient_email=row.recipient_address or "",
+                subject=row.subject_snapshot or "",
+                body_text=row.body_snapshot,
+                related_entity_type=row.related_entity_type,
+                related_entity_id=row.related_entity_id,
+            )
+            method_name = "send_email"
+            default_adapter = ManualEmailDeliveryAdapter()
+        elif row.channel == Communication.CHANNEL_SMS:
+            payload = SmsDeliveryPayload(
+                communication_id=row.pk,
+                recipient_mobile=row.recipient_address or "",
+                template_code=row.content_template.template_code,
+                message=row.body_snapshot,
+                related_entity_type=row.related_entity_type,
+                related_entity_id=row.related_entity_id,
+            )
+            method_name = "send_sms"
+            default_adapter = ManualSmsDeliveryAdapter()
+        else:
+            return cls.defer_job(
+                job_id, "unsupported_channel", claim_token=execution.claim_token
+            )
         job = CommunicationDeliveryJob.objects.get(pk=job_id)
+        if execution.status == CommunicationDeliveryJob.STATUS_SENT:
+            result = EmailDeliveryResult(
+                external_message_id=job.provider_external_message_id,
+                delivery_status=job.provider_delivery_status,
+                accepted_at=job.provider_accepted_at,
+            )
+            validate_delivery_result(result)
+            cls._reconcile_generic_provider_evidence(job, row, result)
+            return job
         if job.provider_external_message_id:
             result = EmailDeliveryResult(
                 external_message_id=job.provider_external_message_id,
@@ -1168,10 +1346,13 @@ class CommunicationDispatcher:
                 accepted_at=job.provider_accepted_at,
             )
             validate_delivery_result(result)
+            cls._reconcile_generic_provider_evidence(job, row, result)
         else:
-            delivery_adapter = adapter or ManualEmailDeliveryAdapter()
+            delivery_adapter = adapter or default_adapter
             try:
-                result = delivery_adapter.send_email(payload, job.idempotency_key)
+                result = getattr(delivery_adapter, method_name)(
+                    payload, job.idempotency_key
+                )
             except TimeoutError:
                 return cls.defer_job(
                     job_id, "provider_timeout", claim_token=execution.claim_token
@@ -1205,6 +1386,12 @@ class CommunicationDispatcher:
                             "The retained generic provider acceptance conflicts."
                         )
                 else:
+                    cls._reconcile_generic_provider_evidence(
+                        job,
+                        row,
+                        result,
+                        adapter_kind=cls._adapter_kind(delivery_adapter),
+                    )
                     job.provider_external_message_id = result.external_message_id
                     job.provider_delivery_status = result.delivery_status
                     job.provider_accepted_at = result.accepted_at
@@ -1231,6 +1418,76 @@ class CommunicationDispatcher:
             row.sent_at = result.accepted_at
             row.save(update_fields=["delivery_status", "external_message_id", "sent_at"])
         return cls.complete_job(job_id, claim_token=execution.claim_token)
+
+    @classmethod
+    def _reconcile_generic_provider_evidence(
+        cls, job, communication, result, *, adapter_kind=None
+    ):
+        retained = CommunicationProviderEvidence.objects.filter(job=job).first()
+        kind = retained.adapter_kind if retained is not None else adapter_kind
+        if not kind:
+            raise CommunicationDispatchConflict(
+                "The generic provider acceptance has no immutable provider identity."
+            )
+        facts = {
+            "job_id": str(job.pk),
+            "communication_id": str(communication.pk),
+            "channel": communication.channel,
+            "payload_digest": job.request_payload_digest,
+            "idempotency_key": job.idempotency_key,
+            "actor_id": str(job.actor_id),
+            "adapter_kind": kind,
+            "provider_external_message_id": result.external_message_id,
+            "provider_delivery_status": result.delivery_status,
+            "provider_accepted_at": result.accepted_at.isoformat(),
+        }
+        digest = hashlib.sha256(
+            json.dumps(facts, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        expected = {
+            "communication_id": communication.pk,
+            "channel": communication.channel,
+            "payload_digest": job.request_payload_digest,
+            "idempotency_key": job.idempotency_key,
+            "actor_id": job.actor_id,
+            "adapter_kind": kind,
+            "provider_external_message_id": result.external_message_id,
+            "provider_delivery_status": result.delivery_status,
+            "provider_accepted_at": result.accepted_at,
+            "evidence_digest": digest,
+        }
+        if retained is None:
+            return CommunicationProviderEvidence.objects.create(job=job, **expected)
+        if any(getattr(retained, field) != value for field, value in expected.items()):
+            raise CommunicationDispatchConflict(
+                "The retained generic provider evidence conflicts with job truth."
+            )
+        return retained
+
+    @classmethod
+    def _run_due_jobs(cls, *, executor):
+        results = [executor(job_id) for job_id in cls.retry_failed()]
+        blocked_ids = {item["communication_job_id"] for item in results}
+        for evidence in cls.job_evidence():
+            if (
+                evidence["status"] == "operator_blocked"
+                and evidence["communication_job_id"] not in blocked_ids
+            ):
+                results.append(cls._task_evidence(evidence))
+        return results
+
+    @staticmethod
+    def _task_evidence(evidence):
+        return {
+            "communication_job_id": evidence["communication_job_id"],
+            "delivery_status": evidence["status"],
+            "attempts": evidence["attempts"],
+            "max_attempts": evidence["max_attempts"],
+            "next_attempt_at": evidence["next_attempt_at"],
+            "last_failure_code": evidence["last_failure_code"],
+            "recovered": evidence["recovered"],
+            "operator_attention_required": evidence["operator_attention_required"],
+        }
 
     @classmethod
     def dispatch(

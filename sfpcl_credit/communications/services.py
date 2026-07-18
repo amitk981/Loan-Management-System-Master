@@ -8,7 +8,12 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.communications.models import Communication, ContentTemplate, Notification
+from sfpcl_credit.communications.models import (
+    Communication,
+    CommunicationDeliveryJob,
+    ContentTemplate,
+    Notification,
+)
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.communications.modules.communication_dispatcher import CommunicationDispatcher
@@ -335,25 +340,43 @@ def send_communication(user, request, payload):
     cleaned = _validate_send_payload(payload)
     idempotency_key = request.headers.get("Idempotency-Key")
     with transaction.atomic():
+        try:
+            template_code = ContentTemplate.objects.only("template_code").get(
+                pk=cleaned["content_template_id"]
+            ).template_code
+        except ContentTemplate.DoesNotExist:
+            template_code = str(cleaned["content_template_id"])
         row = CommunicationDispatcher.create_from_template(
             actor=user,
-            request=request,
-            content_template_id=cleaned["content_template_id"],
-            merge_data=cleaned["merge_data"],
-            related_entity_type=cleaned["related_entity_type"],
-            related_entity_id=cleaned["related_entity_id"],
-            recipient_party_type=cleaned["recipient_party_type"],
-            recipient_party_id=cleaned.get("recipient_party_id"),
-            recipient_address=cleaned.get("recipient_address"),
-            channel=cleaned["channel"],
-            idempotency_key=idempotency_key,
+            template_code=template_code,
+            recipient={
+                "party_type": cleaned["recipient_party_type"],
+                "party_id": cleaned.get("recipient_party_id"),
+                "address": cleaned.get("recipient_address"),
+                "channel": cleaned["channel"],
+            },
+            context={
+                "merge_data": cleaned["merge_data"],
+                "idempotency_key": idempotency_key,
+                "request": request,
+                "template_error_field": "content_template_id",
+            },
+            related_entity={
+                "type": cleaned["related_entity_type"],
+                "id": cleaned["related_entity_id"],
+            },
         )
+        was_replay = getattr(row, "_idempotency_replayed", False)
+        original_response = getattr(row, "_original_response", None)
         row = CommunicationDispatcher.send(
             communication_id=row.pk,
             idempotency_key=idempotency_key,
-            actor=user,
-            request=request,
         )
+    if was_replay:
+        return {
+            "idempotency_replayed": True,
+            "original_response": original_response,
+        }
     return serialize_communication(row)
 
 

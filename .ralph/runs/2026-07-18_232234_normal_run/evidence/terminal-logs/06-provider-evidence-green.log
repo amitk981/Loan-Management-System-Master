@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_generic_acceptance_freezes_immutable_provider_evidence_and_replays (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_generic_acceptance_freezes_immutable_provider_evidence_and_replays)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 141, in test_generic_acceptance_freezes_immutable_provider_evidence_and_replays
+    self.assertEqual(evidence.provider_external_message_id, job.provider_external_message_id)
+AssertionError: 'fake:generic-provider-evidence' != None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

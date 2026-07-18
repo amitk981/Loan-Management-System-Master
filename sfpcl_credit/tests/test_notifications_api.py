@@ -69,7 +69,7 @@ class NotificationApiTests(TestCase):
         self.template = ContentTemplate.objects.create(
             template_code="internal_review_notice_v1",
             template_name="Internal Review Notice",
-            template_type="in_app",
+            template_type="email",
             language_code="en",
             audience="staff",
             subject_template="Review {{application_reference_number}}",

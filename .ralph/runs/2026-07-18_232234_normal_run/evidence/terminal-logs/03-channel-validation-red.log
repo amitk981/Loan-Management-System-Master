@@ -1,0 +1,89 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFFFFFFF
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='email', template_type='sms', value={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"communication_id": "c8079970-eee3-488c-92ed-0c5f22ca5984", "related_entity_type": "loan_application", "related_entity_id": "56ea7aaf-8b80-40b9-9aba-be894b9a8056", "recipient_party_type": "borrower", "recipient_party_id": "ce93435e-9852-417b-9898-e00f8d340226", "recipient_address": "borrower@sfpcl.example", "channel": "email", "content_template_id": "df2bae52-5436-46cd-8bd7-ab854556583e", "subject_snapshot": "Sanction LA-2026-0001", "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.", "sent_by_user_id": "fe5c4777-39bf-4a68-bc91-12123c38d618", "sent_at": null, "delivery_status": "pending", "acknowledgement_status": null, "external_message_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.357724Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='email', template_type='email', value={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"communication_id": "24c51ee1-341e-49ed-977f-6c768c01192e", "related_entity_type": "loan_application", "related_entity_id": "56ea7aaf-8b80-40b9-9aba-be894b9a8056", "recipient_party_type": "borrower", "recipient_party_id": "ce93435e-9852-417b-9898-e00f8d340226", "recipient_address": "not-an-email", "channel": "email", "content_template_id": "df2bae52-5436-46cd-8bd7-ab854556583e", "subject_snapshot": "Sanction LA-2026-0001", "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.", "sent_by_user_id": "fe5c4777-39bf-4a68-bc91-12123c38d618", "sent_at": null, "delivery_status": "pending", "acknowledgement_status": null, "external_message_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.363418Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='sms', template_type='sms', value={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"communication_id": "9f2eb343-12f8-4b02-97b1-53f6d56d74f9", "related_entity_type": "loan_application", "related_entity_id": "56ea7aaf-8b80-40b9-9aba-be894b9a8056", "recipient_party_type": "borrower", "recipient_party_id": "ce93435e-9852-417b-9898-e00f8d340226", "recipient_address": "9876543210", "channel": "sms", "content_template_id": "df2bae52-5436-46cd-8bd7-ab854556583e", "subject_snapshot": "Sanction LA-2026-0001", "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.", "sent_by_user_id": "fe5c4777-39bf-4a68-bc91-12123c38d618", "sent_at": null, "delivery_status": "pending", "acknowledgement_status": null, "external_message_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.368672Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='phone', template_type='phone', value={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"communication_id": "738e5fe4-8c03-438b-a3eb-04784e907199", "related_entity_type": "loan_application", "related_entity_id": "56ea7aaf-8b80-40b9-9aba-be894b9a8056", "recipient_party_type": "borrower", "recipient_party_id": "ce93435e-9852-417b-9898-e00f8d340226", "recipient_address": "+919876543210", "channel": "phone", "content_template_id": "df2bae52-5436-46cd-8bd7-ab854556583e", "subject_snapshot": "Sanction LA-2026-0001", "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.", "sent_by_user_id": "fe5c4777-39bf-4a68-bc91-12123c38d618", "sent_at": null, "delivery_status": "pending", "acknowledgement_status": null, "external_message_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.373853Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='courier', template_type='courier', value={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"communication_id": "b47c0097-68ae-48d2-b2f9-828a10fc4c34", "related_entity_type": "loan_application", "related_entity_id": "56ea7aaf-8b80-40b9-9aba-be894b9a8056", "recipient_party_type": "borrower", "recipient_party_id": "ce93435e-9852-417b-9898-e00f8d340226", "recipient_address": "Postal address", "channel": "courier", "content_template_id": "df2bae52-5436-46cd-8bd7-ab854556583e", "subject_snapshot": "Sanction LA-2026-0001", "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.", "sent_by_user_id": "fe5c4777-39bf-4a68-bc91-12123c38d618", "sent_at": null, "delivery_status": "pending", "acknowledgement_status": null, "external_message_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.378864Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='sms', template_type='sms', value={'pan_number': 'ABCDE1234F'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"communication_id": "5492dab5-d5e4-40eb-b4c9-989b015cebf2", "related_entity_type": "loan_application", "related_entity_id": "56ea7aaf-8b80-40b9-9aba-be894b9a8056", "recipient_party_type": "borrower", "recipient_party_id": "ce93435e-9852-417b-9898-e00f8d340226", "recipient_address": "+919876543210", "channel": "sms", "content_template_id": "df2bae52-5436-46cd-8bd7-ab854556583e", "subject_snapshot": "Sanction LA-2026-0001", "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned. ABCDE1234F", "sent_by_user_id": "fe5c4777-39bf-4a68-bc91-12123c38d618", "sent_at": null, "delivery_status": "pending", "acknowledgement_status": null, "external_message_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.383855Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='sms', template_type='sms', value={'borrower_name': 'ABCDE1234F'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 409 != 400 : b'{"success": false, "error": {"code": "CONFLICT", "message": "The idempotency key is already bound to another communication request.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.387518Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='sms', template_type='sms', value={'borrower_name': '1234 5678 9012'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 409 != 400 : b'{"success": false, "error": {"code": "CONFLICT", "message": "The idempotency key is already bound to another communication request.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.391328Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='sms', template_type='sms', value={'borrower_name': 'HDFC0123456'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 409 != 400 : b'{"success": false, "error": {"code": "CONFLICT", "message": "The idempotency key is already bound to another communication request.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.394991Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_channel_template_recipient_and_sms_safety_fail_before_writes (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_channel_template_recipient_and_sms_safety_fail_before_writes) (channel='sms', template_type='sms', value={'borrower_name': 'enc:gAAAA-secret'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 98, in test_channel_template_recipient_and_sms_safety_fail_before_writes
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 409 != 400 : b'{"success": false, "error": {"code": "CONFLICT", "message": "The idempotency key is already bound to another communication request.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-18T17:59:16.398629Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.054s
+
+FAILED (failures=10)
+Destroying test database for alias 'default'...

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exact_http_replay_returns_retained_source_envelope (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_exact_http_replay_returns_retained_source_envelope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 163, in test_exact_http_replay_returns_retained_source_envelope
+    self.assertEqual(
+AssertionError: {'communication_id': 'd355aaac-be1d-4af5-a4[631 chars]None} != {'idempotency_replayed': True, 'original_re[684 chars]one}}
+Diff is 2137 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.025s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

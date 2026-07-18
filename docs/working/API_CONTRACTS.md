@@ -1875,24 +1875,29 @@ Rules:
   audience, approval status, version, variables, and effective dates, but no rendered borrower or
   loan-specific merge output.
 
-## Communication adapter shell (003I)
+## Asynchronous communication dispatch (003I, 009H7-009H9C)
 
 `POST /api/v1/communications/send/`
 
 `GET /api/v1/communications/?related_entity_type=loan_application&related_entity_id=uuid`
 
 Protected endpoints matching `docs/source/api-contracts.md` §39.2-§39.3 and
-`docs/source/data-model.md` §24.2. The send endpoint is a no-provider shell: it validates and
-renders snapshots from an approved/effective `ContentTemplate`, persists one `communications` row,
-and leaves delivery pending. It does not send email, SMS, courier letters, phone calls, or in-app
-notifications.
+`docs/source/data-model.md` §24.2. The send endpoint validates and renders an approved/effective
+template, persists one pending Communication plus one durable delivery job, and publishes the job
+only after transaction commit. HTTP never calls a provider. The registered worker routes Email to
+the configured `EmailAdapter` and SMS to the separately configured `SmsAdapter`; manual/default
+adapters retain retryable pending/failed truth and never fabricate provider acceptance.
 
 Send request fields:
 - Required: `related_entity_type`, `related_entity_id`, `recipient_party_type`, `channel`,
   `content_template_id`, `merge_data`.
 - Optional: `recipient_party_id`, `recipient_address`.
 - `related_entity_id`, `recipient_party_id`, and `content_template_id` must be UUIDs when supplied.
-- `channel` is limited to `email`, `sms`, `phone`, or `courier`.
+- Email requires an Email template and valid email recipient. SMS requires an SMS template and an
+  E.164 mobile recipient. Phone/courier return stable `400 VALIDATION_ERROR` because this endpoint
+  has no source-owned manual-task implementation; neither can cross an Email/SMS provider seam.
+- SMS rejects PAN, Aadhaar, full bank-account/cheque/IFSC/ciphertext variable names and rendered
+  values before any Communication, job, notification, or audit write.
 - `content_template_id` must reference an `approved` template whose `effective_from`/`effective_to`
   window includes the server's current local date.
 - Per A-025, `merge_data` must exactly match `ContentTemplate.variables_json`; missing or extra keys
@@ -1920,6 +1925,22 @@ Success data:
 }
 ```
 
+An exact repeated actor/object/channel/payload/key returns the source §45.2 shape and the retained
+first response; it performs no provider call or write:
+
+```json
+{
+  "idempotency_replayed": true,
+  "original_response": {}
+}
+```
+
+Changed, cross-actor, cross-object, or cross-channel reuse returns zero-write `409 CONFLICT`.
+Accepted Email/SMS delivery freezes one immutable communications-owned provider-evidence row bound
+to the job, communication, channel, payload digest, key, actor, adapter identity, provider result,
+and acceptance time before the mutable delivery projections become `sent`. Worker crash/replay
+reconciles that evidence and does not re-enter the provider.
+
 List query parameters:
 - Required: `related_entity_type`, `related_entity_id`.
 - Optional: `page`, `page_size` using standard top-level pagination.
@@ -1937,11 +1958,11 @@ Rules:
   the new communication id. Audit metadata includes related entity, recipient party, address,
   channel, template id, sender id, and delivery status. It deliberately omits `subject_snapshot`,
   `body_snapshot`, `merge_data`, provider credentials, and external secrets.
-- M16-FR-001 through M16-FR-007 are partially traced only: this shell supports communication
-  metadata/snapshot creation, template usage, delivery-status storage, and generic attachment to a
-  related entity. Real email/SMS/letter delivery, manual phone-call reminder workflows, provider
-  acknowledgement updates remain deferred. Current-user notification-center read/unread/action state
-  is implemented separately by 003IA under `GET /api/v1/notifications/`.
+- M16-FR-001, M16-FR-002, M16-FR-004, M16-FR-005, and M16-FR-007 are implemented for generic
+  Email/SMS queueing, adapter dispatch, retained status/evidence, templates, and related records.
+  Hard-copy task generation and manual phone-call reminders remain owned by later source-specific
+  workflows. Current-user notification-center read/unread/action state is implemented separately by
+  003IA under `GET /api/v1/notifications/`.
 - Response examples are saved in
   `.ralph/runs/2026-07-06_105004_normal_run/evidence/api-examples/communications-api-examples.json`.
 

@@ -12,6 +12,7 @@ from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
     CommunicationDispatchConflict,
 )
+from sfpcl_credit.communications.models import CommunicationDeliveryJob
 from sfpcl_credit.disbursements.modules import disbursement_advice as advice_owner
 from sfpcl_credit.disbursements.modules.disbursement_advice import (
     DisbursementAdviceConflict,
@@ -115,6 +116,19 @@ def queue_disbursement_advice(
             )
         except CommunicationDispatchConflict as exc:
             raise DisbursementAdviceConflict(str(exc)) from exc
+        was_replay = getattr(job, "_idempotency_replayed", False)
+        if was_replay:
+            if job.status == CommunicationDeliveryJob.STATUS_SENT:
+                send_disbursement_advice_now(
+                    actor=actor,
+                    disbursement_id=disbursement_id,
+                    payload=cleaned,
+                    request=request,
+                )
+            return {
+                "idempotency_replayed": True,
+                "original_response": job.original_response_json,
+            }
         if job.status == "sent":
             return {
                 **send_disbursement_advice_now(

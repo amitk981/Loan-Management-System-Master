@@ -305,7 +305,13 @@ class CommunicationApiTests(TestCase):
 
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(replay.status_code, 200, replay.content)
-        self.assertEqual(replay.json()["data"], first.json()["data"])
+        self.assertEqual(
+            replay.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": first.json()["data"],
+            },
+        )
         self.assertEqual(changed_object.status_code, 409, changed_object.content)
         self.assertEqual(changed_actor.status_code, 409, changed_actor.content)
         self.assertEqual(Communication.objects.count(), 1)

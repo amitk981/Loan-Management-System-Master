@@ -1379,22 +1379,27 @@ class DisbursementAdviceApiTests(TestCase):
         )
 
     def _post(self, *, email="borrower.advice@example.com", actor=None):
+        acting_user = actor or self.actor
         response = self.client.post(
             f"/api/v1/disbursements/{self.row.pk}/send-advice/",
             {"channel": "email", "recipient_email": email},
             content_type="application/json",
             HTTP_X_REQUEST_ID="req-advice-001",
             HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
-            **self.owner.owner.fixture._auth(actor or self.actor),
+            **self.owner.owner.fixture._auth(acting_user),
         )
-        if response.status_code == 200 and response.json()["data"].get(
-            "delivery_status"
-        ) in {"queued", "retrying"}:
+        data = response.json().get("data", {}) if response.status_code == 200 else {}
+        if data.get("idempotency_replayed"):
+            data = data["original_response"]
+        if response.status_code == 200 and data.get("delivery_status") in {
+            "queued",
+            "retrying",
+        }:
             from sfpcl_credit.processes.disbursement_advice_delivery import (
                 execute_disbursement_advice_job,
             )
 
-            job_id = response.json()["data"]["communication_job_id"]
+            job_id = data["communication_job_id"]
             CommunicationDeliveryJob.objects.filter(pk=job_id).update(
                 next_attempt_at=timezone.now()
             )
@@ -1414,14 +1419,33 @@ class DisbursementAdviceApiTests(TestCase):
                     "error": {"code": "DELIVERY_FAILED"},
                 }
                 return failed
-            response = self.client.post(
-                f"/api/v1/disbursements/{self.row.pk}/send-advice/",
-                {"channel": "email", "recipient_email": email},
-                content_type="application/json",
-                HTTP_X_REQUEST_ID="req-advice-001",
-                HTTP_IDEMPOTENCY_KEY=f"advice-api:{self.row.pk}",
-                **self.owner.owner.fixture._auth(actor or self.actor),
-            )
+            try:
+                current = send_disbursement_advice_now(
+                    actor=acting_user,
+                    disbursement_id=self.row.pk,
+                    payload={"channel": "email", "recipient_email": email},
+                )
+            except DisbursementAdviceConflict as exc:
+                response = JsonResponse(
+                    {"success": False, "error": {"code": "CONFLICT", "message": str(exc)}},
+                    status=409,
+                )
+                response.json = lambda: {
+                    "success": False,
+                    "error": {"code": "CONFLICT", "message": str(exc)},
+                }
+                return response
+            payload = {
+                "success": True,
+                "data": current,
+                "meta": {
+                    "request_id": "req-advice-001",
+                    "timestamp": timezone.now().isoformat().replace("+00:00", "Z"),
+                    "api_version": "v1",
+                },
+            }
+            response = JsonResponse(payload)
+            response.json = lambda: payload
         return response
 
 

@@ -1,5 +1,21 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H9C communication channel, interface, and provider-evidence closure
+
+- Generic HTTP now rejects channel/template mismatch, malformed Email/SMS recipients, unsupported
+  phone/courier delivery, and sensitive SMS variable/value forms before any row, job, notification,
+  or audit write. Email and SMS have distinct configured/manual/fake/future adapter seams; SMS can
+  never call `send_email`.
+- Exact generic and §31.5 advice key replays return API §45.2's retained-original-response wrapper;
+  changed actor/object/channel/payload reuse remains zero-write conflict. HTTP remains provider-free.
+- One communications migration adds a singular immutable generic provider-evidence owner bound to
+  job, Communication, channel, payload digest, key, actor, adapter identity, provider result, and
+  acceptance time. Worker replay reconciles it before returning `sent` and never re-enters the
+  provider. Retained pre-migration generic acceptance is backfilled as explicit legacy evidence.
+- Due-job selection, iteration, and safe task evidence shaping now remain in the deep communications
+  module; Celery tasks only delegate. H6 legacy exclusion, H8 leases/on-commit/recovery, H9B exact-cap
+  exception behavior, and the acyclic communications/process/disbursements seam remain intact.
+
 ## Architecture Review 2026-07-18 20:56 — Queued Migration, Retry Cap, and Channel Truth
 
 - Independent review of 009G6, 009H6, 009H7, 009H8, and CR-011 found that communications 0008

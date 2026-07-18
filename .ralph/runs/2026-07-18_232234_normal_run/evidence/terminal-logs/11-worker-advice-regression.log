@@ -1,0 +1,274 @@
+Creating test database for alias 'default'...
+Found 61 test(s).
+System check identified no issues (0 silenced).
+...............................FFFFFFFFFFF...FFFFFFFFFFFEEEEF.EFFFE...ssssss.ss
+======================================================================
+ERROR: test_public_role_matrix_allows_scoped_credit_manager_and_denies_cfc_only (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_public_role_matrix_allows_scoped_credit_manager_and_denies_cfc_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 134, in test_public_role_matrix_allows_scoped_credit_manager_and_denies_cfc_only
+    self.assertEqual(accepted.json()["data"]["delivery_status"], "sent")
+                     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+KeyError: 'delivery_status'
+
+======================================================================
+ERROR: test_public_success_sends_exact_advice_without_financial_side_effects (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_public_success_sends_exact_advice_without_financial_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 151, in test_public_success_sends_exact_advice_without_financial_side_effects
+    self.assertEqual(data["disbursement_id"], str(self.row.pk))
+                     ~~~~^^^^^^^^^^^^^^^^^^^
+KeyError: 'disbursement_id'
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 703, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    pk=first.json()["data"]["disbursement_advice_communication_id"]
+       ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'disbursement_advice_communication_id'
+
+======================================================================
+ERROR: test_replay_conflicts_on_coordinated_provider_and_audit_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_coordinated_provider_and_audit_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 644, in test_replay_conflicts_on_coordinated_provider_and_audit_drift
+    pk=first.json()["data"]["disbursement_advice_communication_id"]
+       ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'disbursement_advice_communication_id'
+
+======================================================================
+ERROR: test_replay_conflicts_when_rendered_subject_snapshot_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_rendered_subject_snapshot_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 307, in test_replay_conflicts_when_rendered_subject_snapshot_changes
+    pk=first.json()["data"]["disbursement_advice_communication_id"]
+       ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'disbursement_advice_communication_id'
+
+======================================================================
+ERROR: test_send_consumes_stable_pending_identity_and_keeps_ledgers_recipient_safe (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_send_consumes_stable_pending_identity_and_keeps_ledgers_recipient_safe)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 214, in test_send_consumes_stable_pending_identity_and_keeps_ledgers_recipient_safe
+    response.json()["data"]["disbursement_advice_communication_id"],
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'disbursement_advice_communication_id'
+
+======================================================================
+FAIL: test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 995, in test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "93974046-33d2-4e12-9df6-9b2096549405", "communication_job_id": "14912df8-23b4-4557-926a-5c67c393021f", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.035124Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.095912Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_name_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.777928Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_type_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.791564Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_language_code_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.805590Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_audience_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.820369Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_approval_status_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.834122Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_effective_from_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.847316Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_effective_to_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.860368Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='template_variables_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.873481Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='subject_template_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.886531Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_outbox_provenance_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_provenance_one_field_mutations_are_zero_write_conflicts) (field='body_template_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1170, in test_outbox_provenance_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "43aeaace-7007-48c7-81e9-6c613ad5a7cd", "communication_job_id": "e28667c5-dc43-4aa2-954e-f0a42937ba61", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:23.698033Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:23.899784Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='advice_intent_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.479090Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='communication_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.494281Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='idempotency_key')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.530692Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='payload_digest')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.544183Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='adapter_kind')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.557258Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='provider_external_message_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.570223Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='provider_accepted_at')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.583311Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='attempted_at')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.596346Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_attempt_one_field_mutations_are_zero_write_conflicts (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_attempt_one_field_mutations_are_zero_write_conflicts) (field='evidence_digest')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1137, in test_provider_attempt_one_field_mutations_are_zero_write_conflicts
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "359b9ada-47f6-4ffb-91a9-a01327c6dc60", "communication_job_id": "be70395c-ce4e-4250-987c-ab44a4210c9d", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:26.418899Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:26.609309Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable) (adapter='MalformedAdapter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 857, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "1a1722d4-77f8-4bb2-89eb-95f31b89054c", "communication_job_id": "0792a457-dce4-4d02-86a8-f9a230475fd8", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:27.262187Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:27.292580Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_provider_rejection_and_malformed_results_leave_outbox_retryable (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 880, in test_provider_rejection_and_malformed_results_leave_outbox_retryable
+    self.assertEqual(outbox.delivery_status, "sent")
+AssertionError: 'pending' != 'sent'
+- pending
++ sent
+
+
+======================================================================
+FAIL: test_replay_conflicts_on_extra_unsafe_audit_evidence (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_extra_unsafe_audit_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_on_extra_unsafe_audit_evidence
+    self.assertEqual(self._post().status_code, 409)
+AssertionError: 200 != 409
+
+======================================================================
+FAIL: test_replay_conflicts_when_workflow_timestamp_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_workflow_timestamp_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 683, in test_replay_conflicts_when_workflow_timestamp_changes
+    self.assertEqual(self._post().status_code, 409)
+AssertionError: 200 != 409
+
+======================================================================
+FAIL: test_replay_fails_closed_when_retained_advice_evidence_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_fails_closed_when_retained_advice_evidence_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 634, in test_replay_fails_closed_when_retained_advice_evidence_changes
+    self.assertEqual(replay.status_code, 409, replay.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"idempotency_replayed": true, "original_response": {"disbursement_id": "dfe18c2f-3fe5-41f8-975b-e405993cd7d7", "communication_job_id": "1bd3a614-bf18-4c44-8598-a84b61ca1ad7", "delivery_status": "queued", "queued_at": "2026-07-18T18:09:33.006822Z"}}, "meta": {"request_id": "req-advice-001", "timestamp": "2026-07-18T18:09:33.061622Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_replay_uses_frozen_template_but_conflicts_on_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_uses_frozen_template_but_conflicts_on_ledger_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 760, in test_replay_uses_frozen_template_but_conflicts_on_ledger_drift
+    self.assertEqual(self._post().status_code, 409)
+AssertionError: 200 != 409
+
+----------------------------------------------------------------------
+Ran 61 tests in 23.236s
+
+FAILED (failures=26, errors=6, skipped=8)
+Destroying test database for alias 'default'...

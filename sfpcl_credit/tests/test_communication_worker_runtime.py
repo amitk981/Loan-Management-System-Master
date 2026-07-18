@@ -268,25 +268,29 @@ class CommunicationWorkerQueueTests(TestCase):
                     with transaction.atomic():
                         row = CommunicationDispatcher.create_from_template(
                             actor=self.user,
-                            request=request,
-                            content_template_id=self.template.pk,
-                            merge_data={
-                                "application_reference_number": "LA-ROLLBACK",
-                                "borrower_name": "Rollback Borrower",
+                            template_code=self.template.template_code,
+                            recipient={
+                                "party_type": "borrower",
+                                "party_id": self.recipient_party_id,
+                                "address": "rollback@example.com",
+                                "channel": "email",
                             },
-                            related_entity_type="loan_application",
-                            related_entity_id=self.related_entity_id,
-                            recipient_party_type="borrower",
-                            recipient_party_id=self.recipient_party_id,
-                            recipient_address="rollback@example.com",
-                            channel="email",
-                            idempotency_key="worker-rollback",
+                            context={
+                                "merge_data": {
+                                    "application_reference_number": "LA-ROLLBACK",
+                                    "borrower_name": "Rollback Borrower",
+                                },
+                                "idempotency_key": "worker-rollback",
+                                "request": request,
+                            },
+                            related_entity={
+                                "type": "loan_application",
+                                "id": self.related_entity_id,
+                            },
                         )
                         CommunicationDispatcher.send(
                             communication_id=row.pk,
                             idempotency_key="worker-rollback",
-                            actor=self.user,
-                            request=request,
                         )
                         raise RuntimeError("force rollback")
 

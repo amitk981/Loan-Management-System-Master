@@ -123,6 +123,10 @@ COMMUNICATION_EMAIL_ADAPTER = os.environ.get(
     "SFPCL_COMMUNICATION_EMAIL_ADAPTER",
     "sfpcl_credit.communications.adapters.ManualEmailDeliveryAdapter",
 )
+COMMUNICATION_SMS_ADAPTER = os.environ.get(
+    "SFPCL_COMMUNICATION_SMS_ADAPTER",
+    "sfpcl_credit.communications.adapters.ManualSmsDeliveryAdapter",
+)
 CELERY_BEAT_SCHEDULE = {
     "communications-dispatch-due-jobs": {
         "task": "communications.dispatch_due_jobs",

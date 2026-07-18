@@ -1,0 +1,5 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run
+Exit code: 0
+
++No changes detected
+

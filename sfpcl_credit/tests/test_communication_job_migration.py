@@ -2,6 +2,7 @@ from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
 from django.utils import timezone
+import uuid
 
 from sfpcl_credit.communications.models import CommunicationDeliveryJob
 from sfpcl_credit.tests import test_disbursement_advice_api as advice_fixtures
@@ -107,6 +108,63 @@ class GenericCommunicationJobMigrationTests(TransactionTestCase):
         self.assertLess(job.lease_expires_at, timezone.now())
         self.assertEqual(job.recovery_count, 0)
         self.assertIsNone(job.last_recovered_at)
+
+    def test_existing_generic_acceptance_gains_immutable_provider_evidence(self):
+        old_apps = self._migrate(
+            [("communications", "0011_communication_exception_queue")]
+        )
+        Communication = old_apps.get_model("communications", "Communication")
+        Job = old_apps.get_model("communications", "CommunicationDeliveryJob")
+        communication = Communication.objects.create(
+            related_entity_type="loan_application",
+            related_entity_id=uuid.uuid4(),
+            recipient_party_type="borrower",
+            recipient_address="migration@example.com",
+            channel="email",
+            subject_snapshot="Migration acceptance",
+            body_snapshot="Retained generic provider acceptance",
+            delivery_status="sent",
+            sent_at=timezone.now(),
+            external_message_id="fake:migration-provider-evidence",
+        )
+        accepted_at = communication.sent_at
+        job = Job.objects.create(
+            communication_id=communication.pk,
+            job_kind="generic",
+            idempotency_key="migration-provider-evidence",
+            actor_id=uuid.uuid4(),
+            actor_role_code="credit_manager",
+            actor_team_codes=["credit"],
+            request_id="migration-provider-evidence",
+            request_payload_digest="a" * 64,
+            status="sent",
+            attempts=1,
+            provider_external_message_id="fake:migration-provider-evidence",
+            provider_delivery_status="sent",
+            provider_accepted_at=accepted_at,
+            completed_at=accepted_at,
+        )
+
+        new_apps = self._migrate(
+            [("communications", "0012_generic_provider_evidence")]
+        )
+        Evidence = new_apps.get_model(
+            "communications", "CommunicationProviderEvidence"
+        )
+        evidence = Evidence.objects.get(job_id=job.pk)
+        self.assertEqual(evidence.communication_id, communication.pk)
+        self.assertEqual(evidence.channel, "email")
+        self.assertEqual(evidence.payload_digest, "a" * 64)
+        self.assertEqual(evidence.idempotency_key, "migration-provider-evidence")
+        self.assertEqual(evidence.actor_id, job.actor_id)
+        self.assertEqual(
+            evidence.adapter_kind, "legacy:retained-generic-acceptance"
+        )
+        self.assertEqual(
+            evidence.provider_external_message_id,
+            "fake:migration-provider-evidence",
+        )
+        self.assertEqual(len(evidence.evidence_digest), 64)
 
     @staticmethod
     def _migrate(targets):

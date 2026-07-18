@@ -306,6 +306,7 @@ class CommunicationDeliveryJob(models.Model):
     ip_address = models.CharField(max_length=64, blank=True)
     user_agent = models.CharField(max_length=255, blank=True)
     request_payload_digest = models.CharField(max_length=64)
+    original_response_json = models.JSONField(default=dict)
     status = models.CharField(max_length=40, default=STATUS_QUEUED, db_index=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     max_attempts = models.PositiveSmallIntegerField(default=3)
@@ -541,6 +542,62 @@ class CommunicationProviderAttempt(models.Model):
 
     def delete(self, *args, **kwargs):
         raise TypeError("Provider-attempt evidence is immutable.")
+
+
+class ImmutableProviderEvidenceQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise TypeError("Provider evidence is immutable.")
+
+    def delete(self):
+        raise TypeError("Provider evidence is immutable.")
+
+
+class CommunicationProviderEvidence(models.Model):
+    provider_evidence_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    job = models.OneToOneField(
+        CommunicationDeliveryJob,
+        on_delete=models.PROTECT,
+        related_name="provider_evidence",
+    )
+    communication_id = models.UUIDField()
+    channel = models.CharField(max_length=40)
+    payload_digest = models.CharField(max_length=64)
+    idempotency_key = models.CharField(max_length=255)
+    actor_id = models.UUIDField()
+    adapter_kind = models.CharField(max_length=255)
+    provider_external_message_id = models.CharField(max_length=120)
+    provider_delivery_status = models.CharField(max_length=40)
+    provider_accepted_at = models.DateTimeField()
+    evidence_digest = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    objects = ImmutableProviderEvidenceQuerySet.as_manager()
+
+    class Meta:
+        db_table = "communication_provider_evidence"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(channel__in=("email", "sms"))
+                    & ~models.Q(payload_digest="")
+                    & ~models.Q(idempotency_key="")
+                    & ~models.Q(adapter_kind="")
+                    & ~models.Q(provider_external_message_id="")
+                    & models.Q(provider_delivery_status="sent")
+                    & ~models.Q(evidence_digest="")
+                ),
+                name="communication_provider_evidence_complete",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise TypeError("Provider evidence is immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise TypeError("Provider evidence is immutable.")
 
 
 class DisbursementAdviceDeliveryReceipt(models.Model):

@@ -9,15 +9,18 @@ from types import SimpleNamespace
 
 from sfpcl_credit.communications.adapters import (
     FakeEmailDeliveryAdapter,
+    FakeSmsDeliveryAdapter,
     FutureEmailDeliveryAdapter,
 )
 from sfpcl_credit.communications.models import (
     Communication,
     CommunicationDeliveryJob,
+    CommunicationProviderEvidence,
     CommunicationProviderAttempt,
     DisbursementAdviceDeliveryReceipt,
     Notification,
 )
+from sfpcl_credit.communications import services as communication_services
 from django.utils import timezone
 from django.db import close_old_connections, connection, connections, transaction
 from django.test import TestCase, TransactionTestCase
@@ -27,6 +30,7 @@ from sfpcl_credit.processes.disbursement_advice_delivery import (
     execute_disbursement_advice_job,
     queue_disbursement_advice,
 )
+from sfpcl_credit.processes.communication_delivery import execute_communication_job
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
     CommunicationDispatchConflict,
@@ -115,8 +119,11 @@ class CommunicationDispatcherJobTests(TestCase):
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(replay.status_code, 200, replay.content)
         self.assertEqual(
-            replay.json()["data"]["communication_job_id"],
-            first.json()["data"]["communication_job_id"],
+            replay.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": first.json()["data"],
+            },
         )
         self.assertEqual(changed.status_code, 409, changed.content)
         self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
@@ -340,13 +347,19 @@ class CommunicationDispatcherJobRaceTests(TransactionTestCase):
                     },
                     idempotency_key="advice-queue-race",
                 )
-                return result["communication_job_id"]
+                return result
             finally:
                 connections["default"].close()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
-            job_ids = list(pool.map(contender, range(5)))
-        self.assertEqual(len(set(job_ids)), 1)
+            responses = list(pool.map(contender, range(5)))
+        originals = [item for item in responses if not item.get("idempotency_replayed")]
+        replays = [item for item in responses if item.get("idempotency_replayed")]
+        self.assertEqual(len(originals), 1)
+        self.assertEqual(len(replays), 4)
+        self.assertTrue(
+            all(item["original_response"] == originals[0] for item in replays)
+        )
         self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
 
     def _run_worker_race(self):
@@ -403,12 +416,36 @@ class GenericCommunicationJobRaceTests(TransactionTestCase):
         self.template_id = self.template.pk
 
     def test_five_generic_callers_retain_one_job_run_one(self):
-        self._run_generic_race()
+        self._run_generic_race("email")
 
     def test_five_generic_callers_retain_one_job_run_two(self):
-        self._run_generic_race()
+        self._run_generic_race("email")
 
-    def _run_generic_race(self):
+    def test_five_sms_callers_retain_one_job_run_one(self):
+        self._run_generic_race("sms")
+
+    def test_five_sms_callers_retain_one_job_run_two(self):
+        self._run_generic_race("sms")
+
+    def test_five_email_workers_retain_one_acceptance_run_one(self):
+        self._run_generic_worker_race("email")
+
+    def test_five_email_workers_retain_one_acceptance_run_two(self):
+        self._run_generic_worker_race("email")
+
+    def test_five_sms_workers_retain_one_acceptance_run_one(self):
+        self._run_generic_worker_race("sms")
+
+    def test_five_sms_workers_retain_one_acceptance_run_two(self):
+        self._run_generic_worker_race("sms")
+
+    def _run_generic_race(self, channel):
+        if channel == "sms":
+            self.template.template_type = "sms"
+            self.template.save(update_fields=["template_type"])
+        recipient = (
+            "+919876543210" if channel == "sms" else "race.borrower@example.com"
+        )
         gate = Barrier(5)
 
         def contender(index):
@@ -420,35 +457,75 @@ class GenericCommunicationJobRaceTests(TransactionTestCase):
                     META={"REMOTE_ADDR": "127.0.0.1", "HTTP_USER_AGENT": "race"},
                 )
                 gate.wait(timeout=15)
-                with transaction.atomic():
-                    row = CommunicationDispatcher.create_from_template(
-                        actor=actor,
-                        request=request,
-                        content_template_id=self.template_id,
-                        merge_data={
+                request.headers["Idempotency-Key"] = f"generic-{channel}-five-race"
+                return communication_services.send_communication(
+                    actor,
+                    request,
+                    {
+                        "related_entity_type": "loan_application",
+                        "related_entity_id": str(self.related_entity_id),
+                        "recipient_party_type": "borrower",
+                        "recipient_party_id": str(self.recipient_party_id),
+                        "recipient_address": recipient,
+                        "channel": channel,
+                        "content_template_id": str(self.template_id),
+                        "merge_data": {
                             "application_reference_number": "LA-RACE-001",
                             "borrower_name": "Race Borrower",
                         },
-                        related_entity_type="loan_application",
-                        related_entity_id=self.related_entity_id,
-                        recipient_party_type="borrower",
-                        recipient_party_id=self.recipient_party_id,
-                        recipient_address="race.borrower@example.com",
-                        channel="email",
-                        idempotency_key="generic-five-race",
-                    )
-                    CommunicationDispatcher.send(
-                        communication_id=row.pk,
-                        idempotency_key="generic-five-race",
-                        actor=actor,
-                        request=request,
-                    )
-                    return row.pk
+                    },
+                )
             finally:
                 connections["default"].close()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
-            communication_ids = list(pool.map(contender, range(5)))
-        self.assertEqual(len(set(communication_ids)), 1)
+            responses = list(pool.map(contender, range(5)))
+        originals = [item for item in responses if not item.get("idempotency_replayed")]
+        replays = [item for item in responses if item.get("idempotency_replayed")]
+        self.assertEqual(len(originals), 1)
+        self.assertEqual(len(replays), 4)
+        self.assertTrue(
+            all(item["original_response"] == originals[0] for item in replays)
+        )
         self.assertEqual(Communication.objects.count(), 1)
         self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
+
+    def _run_generic_worker_race(self, channel):
+        self._run_generic_race(channel)
+        job_id = CommunicationDeliveryJob.objects.get().pk
+        gate = Barrier(5)
+        base = FakeSmsDeliveryAdapter if channel == "sms" else FakeEmailDeliveryAdapter
+
+        class CountingAdapter(base):
+            calls = 0
+
+            def send_email(self, payload, idempotency_key):
+                self.calls += 1
+                return super().send_email(payload, idempotency_key)
+
+            def send_sms(self, payload, idempotency_key):
+                self.calls += 1
+                return super().send_sms(payload, idempotency_key)
+
+        adapter = CountingAdapter()
+
+        def contender(_index):
+            close_old_connections()
+            try:
+                gate.wait(timeout=15)
+                try:
+                    return execute_communication_job(job_id, adapter=adapter)[
+                        "delivery_status"
+                    ]
+                except CommunicationDispatchConflict:
+                    return "clean_loser"
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            outcomes = list(pool.map(contender, range(5)))
+        self.assertIn("sent", outcomes)
+        self.assertEqual(adapter.calls, 1)
+        self.assertEqual(CommunicationDeliveryJob.objects.get().status, "sent")
+        evidence = CommunicationProviderEvidence.objects.get()
+        self.assertEqual(evidence.channel, channel)

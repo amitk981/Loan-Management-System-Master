@@ -1,0 +1,45 @@
+Creating test database for alias 'default'...
+Found 36 test(s).
+System check identified no issues (0 silenced).
+....F..........F..........F...ssssss
+======================================================================
+FAIL: test_send_requires_key_and_exact_replay_is_zero_write (sfpcl_credit.tests.test_communications_api.CommunicationApiTests.test_send_requires_key_and_exact_replay_is_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communications_api.py", line 308, in test_send_requires_key_and_exact_replay_is_zero_write
+    self.assertEqual(replay.json()["data"], first.json()["data"])
+AssertionError: {'idempotency_replayed': True, 'original_re[684 chars]one}} != {'communication_id': '2578e0b9-0fa8-43c4-a6[631 chars]None}
+Diff is 2137 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_send_requires_key_and_exact_replay_is_zero_write (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_send_requires_key_and_exact_replay_is_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communications_api.py", line 308, in test_send_requires_key_and_exact_replay_is_zero_write
+    self.assertEqual(replay.json()["data"], first.json()["data"])
+AssertionError: {'idempotency_replayed': True, 'original_re[684 chars]one}} != {'communication_id': '54624599-39a8-43fc-b5[631 chars]None}
+Diff is 2137 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_queue_exact_replay_returns_same_job_and_changed_replay_conflicts (sfpcl_credit.tests.test_communication_dispatcher_jobs.CommunicationDispatcherJobTests.test_queue_exact_replay_returns_same_job_and_changed_replay_conflicts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_232234_normal_run/sfpcl_credit/tests/test_communication_dispatcher_jobs.py", line 117, in test_queue_exact_replay_returns_same_job_and_changed_replay_conflicts
+    self.assertEqual(
+AssertionError: {'ide[186 chars]s': 'queued', 'queued_at': '2026-07-18T18:07:35.787884+00:00'}} != {'ide[186 chars]s': 'queued', 'queued_at': '2026-07-18T18:07:35.787884Z'}}
+  {'idempotency_replayed': True,
+   'original_response': {'communication_job_id': '2658ecd8-d7f8-4b6d-b069-6bdc28c56bf2',
+                         'delivery_status': 'queued',
+                         'disbursement_id': '432397bb-66b2-4999-8534-9bd59c8dc8cd',
+-                        'queued_at': '2026-07-18T18:07:35.787884+00:00'}}
+?                                                                ^^^^^^
+
++                        'queued_at': '2026-07-18T18:07:35.787884Z'}}
+?                                                                ^
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 6.885s
+
+FAILED (failures=3, skipped=6)
+Destroying test database for alias 'default'...
