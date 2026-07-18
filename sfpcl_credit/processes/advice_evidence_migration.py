@@ -29,7 +29,7 @@ def _template_values(template):
         "body_template": template.body_template,
     }
     return {
-        "template_provenance_status": "verified",
+        "template_provenance_status": "legacy_partial",
         "template_name_snapshot": template.template_name,
         "template_type_snapshot": template.template_type,
         "template_language_code_snapshot": template.language_code,

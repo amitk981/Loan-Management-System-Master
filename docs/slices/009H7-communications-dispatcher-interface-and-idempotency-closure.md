@@ -32,7 +32,9 @@ honest, explicit idempotency and delivery policy without a hidden process/app cy
    exact replay returns retained truth and changed/missing/cross-object key use writes nothing.
 3. Replace the advice-only job interface with one generic communications-owned job identity while
    preserving every 009H5 row/id/status/attempt. Do not create a parallel generic job table or put
-   template/provider policy in scheduler/shared/process callers.
+   template/provider policy in scheduler/shared/process callers. Preserve H6's immutable
+   `legacy_0005` versus `frozen_before_dispatch` origin/status contract; legacy-partial outboxes
+   cannot be attached to a generalized send job, replayed, or upgraded as part of job migration.
 4. Remove the lazy `disbursements -> processes -> disbursements` cycle. HTTP/task entrypoints call
    the top-level process coordinator; each business app exposes only its owner decision interface
    and imports neither the other app nor the coordinator that imports it.
@@ -70,4 +72,3 @@ High
 - [ ] Public matrices and PostgreSQL races green twice
 - [ ] Risk, evidence, handoff, state, contract, assumption, and digest updated
 - [ ] Commit delegated to the orchestrator after gates
-

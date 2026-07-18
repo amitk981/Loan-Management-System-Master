@@ -1,0 +1,20 @@
+Focused TDD evidence index
+
+The following `.raw.log` files were generated directly by `script` and contain verbatim terminal
+output rather than reconstructed summaries:
+
+- `red-legacy-template-provenance-reproduced.raw.log`: faithful reproduction of the original
+  `_template_values` defect, with the implementation temporarily restored to its pre-fix
+  `verified` value; exit 1 with the expected `verified != legacy_partial` assertion.
+- `green-legacy-template-provenance-after-reproduction.raw.log`: the same focused test immediately
+  after restoring the implementation; exit 0.
+- `green-contract-migration.raw.log`: final provenance contract, migration, replay, and portal
+  group; 5 tests, exit 0.
+- `green-impacted-public-behavior.raw.log`: advice API, portal API, and persistence group; 39 tests,
+  exit 0.
+- `green-retained-migration-history.raw.log`: retained historical migration cases; 2 tests,
+  exit 0.
+
+The `tdd-red-*.log` files are contemporaneous narrative records retained from the earlier RED
+cycles. The reproduced raw RED/GREEN pair above supplies the verbatim terminal evidence required
+for the core failing-first behavior.

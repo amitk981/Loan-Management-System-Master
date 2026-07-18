@@ -1,0 +1,14 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched --verbosity 1
+
+Result: FAILED as expected (1 test)
+
+AssertionError: 200 != 409
+
+A coherent accepted attempt carrying the migration-0005 adapter identity was relabelled from
+`legacy_partial` to `verified`; public replay incorrectly returned success. The provider call count
+remained available for the GREEN assertion.
+
+System check identified no issues (0 silenced).
+Ran 1 test in 0.697s
+FAILED (failures=1)

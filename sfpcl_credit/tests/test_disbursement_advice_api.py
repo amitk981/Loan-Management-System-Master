@@ -24,6 +24,9 @@ from sfpcl_credit.communications.models import (
     ContentTemplate,
     DisbursementAdviceDeliveryReceipt,
 )
+from sfpcl_credit.communications.modules.communication_dispatcher import (
+    CommunicationDispatcher,
+)
 from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
@@ -924,6 +927,61 @@ class DisbursementAdviceApiTests(TestCase):
                 ).count(),
             ),
             (0, 0),
+        )
+
+    def test_legacy_partial_attempt_cannot_be_upgraded_or_redispatched(self):
+        accepted = self._post()
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        outbox = CommunicationDeliveryOutbox.objects.get(
+            advice_intent=self.row.advice_intent.pk
+        )
+        attempt = outbox.accepted_provider_attempt
+        attempt.adapter_kind = "legacy:retained-outbox"
+        attempt.evidence_digest = CommunicationDispatcher._attempt_digest(
+            {
+                "outbox": outbox,
+                "advice_intent_id": attempt.advice_intent_id,
+                "communication_id": attempt.communication_id,
+                "idempotency_key": attempt.idempotency_key,
+                "payload_digest": attempt.payload_digest,
+                "adapter_kind": attempt.adapter_kind,
+                "outcome": attempt.outcome,
+                "provider_external_message_id": attempt.provider_external_message_id,
+                "provider_delivery_status": attempt.provider_delivery_status,
+                "provider_accepted_at": attempt.provider_accepted_at,
+                "attempted_at": attempt.attempted_at,
+            }
+        )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE communication_provider_attempts "
+                "SET adapter_kind = %s, evidence_digest = %s "
+                "WHERE provider_attempt_id = %s",
+                [attempt.adapter_kind, attempt.evidence_digest, attempt.pk.hex],
+            )
+            self.assertEqual(cursor.rowcount, 1)
+        class CountingAdapter(FakeEmailDeliveryAdapter):
+            calls = 0
+
+            def send_email(self, payload, idempotency_key):
+                self.calls += 1
+                return super().send_email(payload, idempotency_key)
+
+        adapter = CountingAdapter()
+        with patch(
+            "sfpcl_credit.communications.modules.communication_dispatcher."
+            "ManualEmailDeliveryAdapter",
+            return_value=adapter,
+        ):
+            replay = self._post()
+
+        self.assertEqual(replay.status_code, 409, replay.content)
+        self.assertEqual(adapter.calls, 0)
+        self.assertEqual(
+            CommunicationDeliveryOutbox.objects.filter(pk=outbox.pk).count(), 1
+        )
+        self.assertEqual(
+            Communication.objects.filter(pk=outbox.communication_id).count(), 1
         )
 
     def test_changed_valid_provider_tuple_cannot_become_terminal_delivery_truth(

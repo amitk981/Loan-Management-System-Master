@@ -1,5 +1,31 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H6 Legacy Advice Template Provenance Closure
+
+- Communications migration 0008 records an explicit provenance origin for every outbox. Either
+  deterministic 0005 legacy attempt kind becomes `legacy_0005`; attempt-less or checksum-incoherent
+  rows become honestly `ambiguous_legacy`; only a non-legacy provider attempt plus a complete
+  internally checksummed frozen snapshot becomes `frozen_before_dispatch`. The first two origins
+  are `legacy_partial`, and database constraints bind every origin/status/full-or-null snapshot
+  shape so a status flip or copied current template cannot upgrade history.
+- Fresh migration 0005 application now labels its copied current-template facts `legacy_partial`
+  immediately. Existing retained template snapshots remain reviewable but are never claimed as
+  historical provenance; provider attempts, receipts, Communications, actions, audits, workflows,
+  ids, rendered advice, and final links are preserved without resend or replacement.
+- Migration 0008 clears the mutable template FK, every reconstructed template fact/source, and the
+  checksum from partial rows. Current replay/finalization and portal artifact/download selection
+  require verified frozen origin
+  and reject both 0005 legacy attempt identities. A coherent origin/status tamper is database-
+  rejected; an attempt/template mismatch fails through the public interface with zero provider
+  calls. Reverse refuses when removing the origin marker would expose retained legacy history;
+  clean post-0005 rows reverse/reapply unchanged.
+- The template-drift review probe failed first. Five provenance/migration/public tests, every
+  retained historical migration case, 29 advice tests, 12 portal/persistence tests, Django check,
+  migration sync, compilation, and both PostgreSQL five-caller methods in two independent runs pass.
+- 009H7 and 009H8 now explicitly preserve/exclude the H6 immutable origin contract while
+  generalizing jobs and adding worker recovery; no speculative business rule or assumption was
+  added.
+
 ## 009G6 Legal Migration Exception Fingerprint Closure
 
 - The legal-owned migration guard now deep-snapshots each real Django `ProjectState` before an

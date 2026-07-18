@@ -1,0 +1,13 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_receipt_owner_migration.LegacyAdviceTemplateProvenanceContractTests.test_legacy_template_provenance_is_not_upgraded_from_current_template --verbosity 2
+
+Result: FAILED as expected (1 test)
+
+AssertionError: 'verified' != 'legacy_partial'
+- verified
++ legacy_partial
+ : Missing historical provenance cannot be reconstructed from a later template row.
+
+System check identified no issues (0 silenced).
+Ran 1 test in 0.009s
+FAILED (failures=1)

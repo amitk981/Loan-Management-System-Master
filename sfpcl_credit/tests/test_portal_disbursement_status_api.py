@@ -1,9 +1,13 @@
 from datetime import timedelta
 
+from django.db import connection
 from django.test import Client, TestCase
 from django.utils import timezone
 
 from sfpcl_credit.communications.models import CommunicationDeliveryOutbox
+from sfpcl_credit.communications.modules.communication_dispatcher import (
+    CommunicationDispatcher,
+)
 from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
@@ -185,6 +189,72 @@ class PortalDisbursementStatusApiTests(TestCase):
             "token",
         ):
             self.assertNotIn(forbidden, serialized)
+
+    def test_legacy_partial_advice_is_not_current_or_downloadable(self):
+        auth = self._portal_auth()
+        issued = self.client.post(
+            self._capability_url(), data={}, content_type="application/json", headers=auth
+        )
+        self.assertEqual(issued.status_code, 200, issued.content)
+        outbox = CommunicationDeliveryOutbox.objects.get(
+            advice_intent=self.row.advice_intent.pk
+        )
+        attempt = outbox.accepted_provider_attempt
+        attempt.adapter_kind = "legacy:pre-outbox"
+        attempt.evidence_digest = CommunicationDispatcher._attempt_digest(
+            {
+                "outbox": outbox,
+                "advice_intent_id": attempt.advice_intent_id,
+                "communication_id": attempt.communication_id,
+                "idempotency_key": attempt.idempotency_key,
+                "payload_digest": attempt.payload_digest,
+                "adapter_kind": attempt.adapter_kind,
+                "outcome": attempt.outcome,
+                "provider_external_message_id": attempt.provider_external_message_id,
+                "provider_delivery_status": attempt.provider_delivery_status,
+                "provider_accepted_at": attempt.provider_accepted_at,
+                "attempted_at": attempt.attempted_at,
+            }
+        )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE communication_provider_attempts "
+                "SET adapter_kind = %s, evidence_digest = %s "
+                "WHERE provider_attempt_id = %s",
+                [attempt.adapter_kind, attempt.evidence_digest, attempt.pk.hex],
+            )
+            self.assertEqual(cursor.rowcount, 1)
+        CommunicationDeliveryOutbox.objects.filter(pk=outbox.pk).update(
+            template_provenance_status="legacy_partial",
+            template_provenance_origin="legacy_0005",
+            content_template_id=None,
+            template_code_snapshot=None,
+            template_name_snapshot=None,
+            template_type_snapshot=None,
+            template_language_code_snapshot=None,
+            template_audience_snapshot=None,
+            template_version_snapshot=None,
+            template_approval_status_snapshot=None,
+            template_effective_from_snapshot=None,
+            template_effective_to_snapshot=None,
+            template_variables_snapshot=None,
+            subject_template_snapshot=None,
+            body_template_snapshot=None,
+            template_checksum_sha256=None,
+        )
+
+        status = self.client.get(self._status_url(), headers=auth)
+        download = self.client.get(issued.json()["data"]["download_url"], headers=auth)
+
+        self.assertEqual(status.status_code, 200, status.content)
+        self.assertFalse(status.json()["data"]["advice_available"])
+        advice_stage = next(
+            row
+            for row in status.json()["data"]["timeline"]
+            if row["code"] == "advice_issued"
+        )
+        self.assertNotEqual(advice_stage["status"], "complete")
+        self.assertEqual(download.status_code, 404, download.content)
 
     def test_status_permission_query_and_nondisclosure_matrix(self):
         auth = self._portal_auth()

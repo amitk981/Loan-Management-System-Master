@@ -84,6 +84,9 @@ class CommunicationDeliveryOutbox(models.Model):
     DELIVERY_SENT = "sent"
     PROVENANCE_VERIFIED = "verified"
     PROVENANCE_LEGACY_PARTIAL = "legacy_partial"
+    PROVENANCE_ORIGIN_FROZEN = "frozen_before_dispatch"
+    PROVENANCE_ORIGIN_LEGACY_0005 = "legacy_0005"
+    PROVENANCE_ORIGIN_AMBIGUOUS = "ambiguous_legacy"
 
     outbox_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     advice_intent = models.UUIDField(unique=True, db_column="advice_intent_id")
@@ -96,23 +99,26 @@ class CommunicationDeliveryOutbox(models.Model):
         ContentTemplate,
         on_delete=models.PROTECT,
         related_name="delivery_outboxes",
+        blank=True,
+        null=True,
     )
-    template_code_snapshot = models.CharField(max_length=120)
+    template_code_snapshot = models.CharField(max_length=120, blank=True, null=True)
     template_provenance_status = models.CharField(max_length=40)
+    template_provenance_origin = models.CharField(max_length=40)
     template_name_snapshot = models.CharField(max_length=255, blank=True, null=True)
     template_type_snapshot = models.CharField(max_length=60, blank=True, null=True)
     template_language_code_snapshot = models.CharField(
         max_length=20, blank=True, null=True
     )
     template_audience_snapshot = models.CharField(max_length=80, blank=True, null=True)
-    template_version_snapshot = models.CharField(max_length=40)
+    template_version_snapshot = models.CharField(max_length=40, blank=True, null=True)
     template_approval_status_snapshot = models.CharField(max_length=60, blank=True, null=True)
     template_effective_from_snapshot = models.DateField(blank=True, null=True)
     template_effective_to_snapshot = models.DateField(blank=True, null=True)
     template_variables_snapshot = models.JSONField(blank=True, null=True)
     subject_template_snapshot = models.CharField(max_length=255, blank=True, null=True)
     body_template_snapshot = models.TextField(blank=True, null=True)
-    template_checksum_sha256 = models.CharField(max_length=64)
+    template_checksum_sha256 = models.CharField(max_length=64, blank=True, null=True)
     subject_snapshot = models.CharField(max_length=255)
     body_snapshot = models.TextField()
     payload_digest = models.CharField(max_length=64)
@@ -162,10 +168,7 @@ class CommunicationDeliveryOutbox(models.Model):
                     & ~models.Q(channel="")
                     & ~models.Q(recipient_address="")
                     & ~models.Q(recipient_digest="")
-                    & ~models.Q(template_code_snapshot="")
                     & models.Q(template_provenance_status__in=("verified", "legacy_partial"))
-                    & ~models.Q(template_version_snapshot="")
-                    & ~models.Q(template_checksum_sha256="")
                     & ~models.Q(subject_snapshot="")
                     & ~models.Q(body_snapshot="")
                     & ~models.Q(payload_digest="")
@@ -178,18 +181,60 @@ class CommunicationDeliveryOutbox(models.Model):
                 check=(
                     models.Q(
                         template_provenance_status="verified",
+                        template_provenance_origin="frozen_before_dispatch",
+                        content_template__isnull=False,
+                        template_code_snapshot__isnull=False,
                         template_name_snapshot__isnull=False,
                         template_type_snapshot__isnull=False,
                         template_audience_snapshot__isnull=False,
+                        template_version_snapshot__isnull=False,
                         template_approval_status_snapshot__isnull=False,
                         template_effective_from_snapshot__isnull=False,
                         template_variables_snapshot__isnull=False,
                         subject_template_snapshot__isnull=False,
                         body_template_snapshot__isnull=False,
+                        template_checksum_sha256__isnull=False,
                     )
-                    | models.Q(template_provenance_status="legacy_partial")
+                    | models.Q(
+                        template_provenance_status="legacy_partial",
+                        template_provenance_origin__in=(
+                            "legacy_0005",
+                            "ambiguous_legacy",
+                        ),
+                        content_template__isnull=True,
+                        template_code_snapshot__isnull=True,
+                        template_name_snapshot__isnull=True,
+                        template_type_snapshot__isnull=True,
+                        template_language_code_snapshot__isnull=True,
+                        template_audience_snapshot__isnull=True,
+                        template_version_snapshot__isnull=True,
+                        template_approval_status_snapshot__isnull=True,
+                        template_effective_from_snapshot__isnull=True,
+                        template_effective_to_snapshot__isnull=True,
+                        template_variables_snapshot__isnull=True,
+                        subject_template_snapshot__isnull=True,
+                        body_template_snapshot__isnull=True,
+                        template_checksum_sha256__isnull=True,
+                    )
                 ),
                 name="communication_outbox_provenance_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        template_provenance_origin="legacy_0005",
+                        template_provenance_status="legacy_partial",
+                    )
+                    | models.Q(
+                        template_provenance_origin="frozen_before_dispatch",
+                        template_provenance_status="verified",
+                    )
+                    | models.Q(
+                        template_provenance_origin="ambiguous_legacy",
+                        template_provenance_status="legacy_partial",
+                    )
+                ),
+                name="communication_outbox_provenance_origin",
             ),
             models.CheckConstraint(
                 check=(

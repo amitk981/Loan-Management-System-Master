@@ -48,6 +48,10 @@ _GENERIC_ACTION = "communications.communication.created"
 _USER_RECIPIENT_TYPES = {"user", "staff_user", "internal_user"}
 _ROLE_RECIPIENT_TYPES = {"role", "role_code"}
 _TEAM_RECIPIENT_TYPES = {"team", "team_code"}
+_LEGACY_PROVENANCE_ADAPTER_KINDS = {
+    "legacy:pre-outbox",
+    "legacy:retained-outbox",
+}
 
 
 class CommunicationDispatchConflict(Exception):
@@ -672,6 +676,7 @@ class CommunicationDispatcher:
             "content_template_id": template.pk,
             "template_code_snapshot": template.template_code,
             "template_provenance_status": "verified",
+            "template_provenance_origin": "frozen_before_dispatch",
             "template_name_snapshot": template.template_name,
             "template_type_snapshot": template.template_type,
             "template_language_code_snapshot": template.language_code,
@@ -896,6 +901,25 @@ class CommunicationDispatcher:
 
     @staticmethod
     def _validate_outbox_evidence(outbox):
+        if not (
+            outbox.template_provenance_status == "verified"
+            and outbox.template_provenance_origin == "frozen_before_dispatch"
+            and outbox.content_template_id is not None
+            and outbox.template_code_snapshot is not None
+            and outbox.template_name_snapshot is not None
+            and outbox.template_type_snapshot is not None
+            and outbox.template_audience_snapshot is not None
+            and outbox.template_version_snapshot is not None
+            and outbox.template_approval_status_snapshot is not None
+            and outbox.template_effective_from_snapshot is not None
+            and outbox.template_variables_snapshot is not None
+            and outbox.subject_template_snapshot is not None
+            and outbox.body_template_snapshot is not None
+            and outbox.template_checksum_sha256 is not None
+        ):
+            raise CommunicationDispatchConflict(
+                "The frozen communication outbox conflicts with retained evidence."
+            )
         template_facts = {
             "content_template_id": str(outbox.content_template_id),
             "template_code": outbox.template_code_snapshot,
@@ -926,8 +950,7 @@ class CommunicationDispatcher:
             json.dumps(template_facts, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
         if not (
-            outbox.template_provenance_status == "verified"
-            and checksum == outbox.template_checksum_sha256
+            checksum == outbox.template_checksum_sha256
             and delivery_payload_digest(payload) == outbox.payload_digest
             and hashlib.sha256(outbox.recipient_address.encode()).hexdigest()
             == outbox.recipient_digest
@@ -1021,6 +1044,7 @@ class CommunicationDispatcher:
         if (
             len(accepted) != 1
             or attempts[-1].pk != accepted[0].pk
+            or accepted[0].adapter_kind in _LEGACY_PROVENANCE_ADAPTER_KINDS
             or outbox.accepted_provider_attempt_id != accepted[0].pk
             or accepted[0].advice_intent_id != outbox.advice_intent
             or accepted[0].communication_id != outbox.communication_id

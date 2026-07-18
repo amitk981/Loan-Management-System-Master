@@ -1,0 +1,13 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_receipt_owner_migration.LegacyAdviceTemplateProvenanceMigrationTests.test_template_drift_downgrades_only_0005_legacy_attempts --verbosity 1
+
+Result: FAILED as expected (1 test)
+
+AssertionError: IntegrityError not raised
+
+After the correction migration, a direct `legacy_partial -> verified` status update still succeeded,
+showing that status alone did not durably identify 0005 provenance.
+
+System check identified no issues (0 silenced).
+Ran 1 test in 0.804s
+FAILED (failures=1)

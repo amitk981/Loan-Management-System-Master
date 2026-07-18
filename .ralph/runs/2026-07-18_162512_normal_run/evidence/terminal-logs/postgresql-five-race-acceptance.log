@@ -1,0 +1,13 @@
+PostgreSQL five-caller acceptance — two independent executions
+
+Run 1 command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_1_2026_07_18_162512_h6_final /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceRaceTests --settings=sfpcl_credit.config.postgres_test_settings --noinput --verbosity 1
+
+Result: OK — 2 tests in 11.578s. Each method retained one winner, four clean losers,
+one adapter result, and one provider identity.
+
+Run 2 command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_2_2026_07_18_162512_h6_final /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceRaceTests --settings=sfpcl_credit.config.postgres_test_settings --noinput --verbosity 1
+
+Result: OK — 2 tests in 10.790s. Each method retained one winner, four clean losers,
+one adapter result, and one provider identity.

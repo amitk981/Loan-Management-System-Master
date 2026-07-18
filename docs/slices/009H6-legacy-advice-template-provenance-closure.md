@@ -1,7 +1,7 @@
 # Slice 009H6: Legacy Advice Template Provenance Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -61,11 +61,10 @@ High
   provenance can satisfy current advice truth.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Legacy template-drift migration probe written failing first
-- [ ] Honest provenance migration/current selector implemented
-- [ ] Migration manifests and public no-redispatch tests green
-- [ ] PostgreSQL acceptance green twice
-- [ ] Risk, evidence, handoff, state, and digest updated
-- [ ] Commit delegated to the orchestrator after gates
-
+- [x] Execution plan written
+- [x] Legacy template-drift migration probe written failing first
+- [x] Honest provenance migration/current selector implemented
+- [x] Migration manifests and public no-redispatch tests green
+- [x] PostgreSQL acceptance green twice
+- [x] Risk, evidence, handoff, state, and digest updated
+- [x] Commit delegated to the orchestrator after gates

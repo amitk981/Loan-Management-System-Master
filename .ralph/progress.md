@@ -1,5 +1,24 @@
 # Ralph Progress Log
 
+## 2026-07-18 - 2026-07-18_162512_normal_run
+
+- Agent tool used: codex with mandatory TDD, deep-module seam review, and the `review` skill's
+  independent Standards/Spec passes.
+- Slice completed: 009H6-legacy-advice-template-provenance-closure.
+- Summary: Added one communications migration that labels exact 0005 attempts legacy, preserves
+  unresolved rows as ambiguous, clears reconstructed template provenance/checksums, retains all
+  delivery history, and structurally prevents partial history from becoming current advice truth.
+- Tests run: four saved RED cycles; final 4-test provenance/migration/terminal fixture run; 41
+  impacted advice/portal/persistence tests; two retained migration cases; Django check; migration
+  sync; compile; both PostgreSQL five-caller methods in two independent final executions.
+- Evidence saved: `.ralph/runs/2026-07-18_162512_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent Ralph coverage, protected-path, queue, diff, and migration
+  validation; commit remains delegated to the orchestrator.
+- Risk level: High; controlled by explicit legacy/ambiguous/frozen origins, database snapshot-shape
+  constraints, immutable accepted-attempt reconciliation, fail-closed reverse, zero-provider replay,
+  and twice-run PostgreSQL races.
+- Next action: Run 009H7, then 009H8 and 009I2 before 009J/009K.
+
 ## 2026-07-18 - 2026-07-18_143253_normal_run
 
 - Agent tool used: codex with mandatory TDD, deep-module seam review, and the browser skill's
@@ -9103,6 +9122,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_155947_normal_run/.ralph/runs/2026-07-18_155947_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_155947_normal_run/.ralph/runs/2026-07-18_155947_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 17:44:21 - 2026-07-18_162512_normal_run
+- Agent tool used: codex
+- Slice attempted: 009H6-legacy-advice-template-provenance-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_162512_normal_run/.ralph/runs/2026-07-18_162512_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_162512_normal_run/.ralph/runs/2026-07-18_162512_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

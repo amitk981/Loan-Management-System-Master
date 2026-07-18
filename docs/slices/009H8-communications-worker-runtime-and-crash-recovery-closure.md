@@ -31,7 +31,9 @@ including bounded recovery of a worker that dies after claiming a job.
    retryable without resetting attempts or redispatching accepted evidence.
 3. Preserve H7's generic dispatcher interface and H4/H6 provider truth. Crash before provider,
    after provider acceptance, before local commit, during acknowledgement, and during retry
-   scheduling all recover exactly; accepted truth is never sent again.
+   scheduling all recover exactly; accepted truth is never sent again. Claim/recovery selectors
+   exclude H6 `legacy_0005`/`legacy_partial` outboxes even if a stale retained job points at one,
+   and must not mutate that retained history while reporting the row as operator-blocked.
 4. Expose operator-safe queued/running/retrying/sent/failed/recovered evidence without recipient,
    template body, provider id/error, bank/UTR, token, or internal payload leakage. Exhaustion creates
    one reachable task and never silently strands a row.
@@ -67,4 +69,3 @@ High
 - [ ] No real external provider invoked in tests/evidence
 - [ ] Risk, evidence, handoff, state, contract, and digest updated
 - [ ] Commit delegated to the orchestrator after gates
-

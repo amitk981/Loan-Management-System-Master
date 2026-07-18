@@ -1,10 +1,385 @@
 from datetime import datetime, timezone
 import hashlib
+import json
 import uuid
+from types import SimpleNamespace
 
-from django.db import connection
+from django.db import IntegrityError, connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
+from django.utils import timezone as django_timezone
+
+from sfpcl_credit.processes.advice_evidence_migration import _template_values
+
+
+class LegacyAdviceTemplateProvenanceContractTests(TransactionTestCase):
+    def test_legacy_template_provenance_is_not_upgraded_from_current_template(self):
+        template = SimpleNamespace(
+            pk=uuid.uuid4(),
+            template_code="disbursement_advice_email_v1",
+            template_name="Mutable current name",
+            template_type="email",
+            language_code="en",
+            audience="borrower",
+            template_version="v1",
+            approval_status="approved",
+            effective_from=django_timezone.localdate(),
+            effective_to=None,
+            variables_json=["borrower_name"],
+            subject_template="Advice {{ borrower_name }}",
+            body_template="Body {{ borrower_name }}",
+        )
+
+        self.assertEqual(
+            _template_values(template)["template_provenance_status"],
+            "legacy_partial",
+            "Missing historical provenance cannot be reconstructed from a later template row.",
+        )
+
+
+class LegacyAdviceTemplateProvenanceMigrationTests(TransactionTestCase):
+    reset_sequences = True
+    migrate_from = [("communications", "0007_portal_advice_download_capability")]
+    migrate_to = [("communications", "0008_legacy_template_provenance_closure")]
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_template_drift_downgrades_only_0005_legacy_attempts(self):
+        old_apps = self._migrate(self.migrate_from)
+        Template = old_apps.get_model("communications", "ContentTemplate")
+        Communication = old_apps.get_model("communications", "Communication")
+        template = Template.objects.create(
+            template_code="disbursement_advice_email_v1",
+            template_name="Original delivery template",
+            template_type="email",
+            language_code="en",
+            audience="borrower",
+            subject_template="Original subject {{ borrower_name }}",
+            body_template="Original body {{ borrower_name }}",
+            variables_json=["borrower_name"],
+            approval_status="approved",
+            template_version="v1",
+            effective_from=django_timezone.localdate(),
+        )
+        legacy_id = uuid.uuid4()
+        Communication.objects.create(
+            communication_id=legacy_id,
+            related_entity_type="disbursement",
+            related_entity_id=uuid.uuid4(),
+            recipient_party_type="borrower",
+            recipient_address="legacy.borrower@example.com",
+            channel="email",
+            content_template=template,
+            subject_snapshot="Original subject Borrower",
+            body_snapshot="Original body Borrower",
+            sent_at=django_timezone.now(),
+            delivery_status="sent",
+            external_message_id="manual:legacy-template-drift",
+        )
+        Template.objects.filter(pk=template.pk).update(
+            template_name="Later mutable template",
+            subject_template="Later subject {{ borrower_name }}",
+            body_template="Later body {{ borrower_name }}",
+            variables_json=["borrower_name", "loan_account_number"],
+        )
+        template.refresh_from_db()
+
+        legacy = self._accepted_outbox(
+            old_apps,
+            template=template,
+            outbox_id=legacy_id,
+            adapter_kind="legacy:pre-outbox",
+        )
+        verified = self._accepted_outbox(
+            old_apps,
+            template=template,
+            outbox_id=uuid.uuid4(),
+            adapter_kind="sfpcl_credit.communications.adapters.FakeEmailDeliveryAdapter",
+        )
+        retained_legacy = self._accepted_outbox(
+            old_apps,
+            template=template,
+            outbox_id=uuid.uuid4(),
+            adapter_kind="legacy:retained-outbox",
+        )
+        historical_pending = self._make_pending_without_attempt(
+            old_apps,
+            self._accepted_outbox(
+                old_apps,
+                template=template,
+                outbox_id=uuid.uuid4(),
+                adapter_kind="temporary:test-setup",
+            ),
+        )
+        new_pending = self._make_pending_without_attempt(
+            old_apps,
+            self._accepted_outbox(
+                old_apps,
+                template=template,
+                outbox_id=uuid.uuid4(),
+                adapter_kind="temporary:test-setup",
+            ),
+        )
+        malformed = self._accepted_outbox(
+            old_apps,
+            template=template,
+            outbox_id=uuid.uuid4(),
+            adapter_kind="legacy:retained-outbox",
+        )
+        OldOutbox = old_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        OldOutbox.objects.filter(pk=malformed.pk).update(
+            delivery_status="pending",
+            provider_external_message_id=None,
+            provider_delivery_status=None,
+            provider_accepted_at=None,
+            accepted_provider_attempt_id=None,
+        )
+        unfrozen_post_0005 = self._accepted_outbox(
+            old_apps,
+            template=template,
+            outbox_id=uuid.uuid4(),
+            adapter_kind="sfpcl_credit.communications.adapters.FakeEmailDeliveryAdapter",
+        )
+        OldOutbox.objects.filter(pk=unfrozen_post_0005.pk).update(
+            template_checksum_sha256="0" * 64
+        )
+        legacy_before = self._history_values(old_apps, legacy.pk)
+        verified_before = self._stable_outbox_values(old_apps, verified.pk)
+
+        current_apps = self._migrate(self.migrate_to)
+        CurrentOutbox = current_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        corrected = CurrentOutbox.objects.get(pk=legacy.pk)
+        untouched = CurrentOutbox.objects.get(pk=verified.pk)
+
+        self.assertEqual(corrected.template_provenance_status, "legacy_partial")
+        self.assertEqual(corrected.template_provenance_origin, "legacy_0005")
+        self.assertIsNone(corrected.content_template_id)
+        self.assertIsNone(corrected.template_name_snapshot)
+        self.assertIsNone(corrected.template_variables_snapshot)
+        self.assertIsNone(corrected.subject_template_snapshot)
+        self.assertIsNone(corrected.body_template_snapshot)
+        self.assertIsNone(corrected.template_checksum_sha256)
+        self.assertEqual(
+            self._history_values(current_apps, corrected.pk), legacy_before
+        )
+        self.assertEqual(self._stable_outbox_values(current_apps, untouched.pk), verified_before)
+        self.assertEqual(
+            untouched.template_provenance_origin, "frozen_before_dispatch"
+        )
+        self.assertEqual(
+            CurrentOutbox.objects.get(pk=retained_legacy.pk).template_provenance_status,
+            "legacy_partial",
+        )
+        self.assertEqual(
+            CurrentOutbox.objects.get(pk=historical_pending.pk).template_provenance_status,
+            "legacy_partial",
+        )
+        self.assertEqual(
+            CurrentOutbox.objects.get(pk=historical_pending.pk).template_provenance_origin,
+            "ambiguous_legacy",
+        )
+        self.assertEqual(
+            CurrentOutbox.objects.get(pk=malformed.pk).template_provenance_status,
+            "legacy_partial",
+        )
+        self.assertEqual(
+            CurrentOutbox.objects.get(pk=new_pending.pk).template_provenance_status,
+            "legacy_partial",
+        )
+        self.assertEqual(
+            CurrentOutbox.objects.get(pk=new_pending.pk).template_provenance_origin,
+            "ambiguous_legacy",
+        )
+        self.assertEqual(
+            CurrentOutbox.objects.get(
+                pk=unfrozen_post_0005.pk
+            ).template_provenance_origin,
+            "ambiguous_legacy",
+        )
+        with self.assertRaises(IntegrityError):
+            CurrentOutbox.objects.filter(pk=legacy.pk).update(
+                template_provenance_status="verified"
+            )
+        with self.assertRaisesRegex(
+            RuntimeError, "Cannot reverse communications 0008"
+        ):
+            self._migrate(self.migrate_from)
+        current_apps = MigrationExecutor(connection).loader.project_state(
+            self.migrate_to
+        ).apps
+        self.assertEqual(
+            self._history_values(current_apps, corrected.pk), legacy_before
+        )
+
+    def test_reverse_refuses_legacy_history_and_clean_reapply_preserves_verified_rows(
+        self,
+    ):
+        old_apps = self._migrate(self.migrate_from)
+        Template = old_apps.get_model("communications", "ContentTemplate")
+        template = Template.objects.create(
+            template_code="disbursement_advice_email_v1",
+            template_name="Frozen new template",
+            template_type="email",
+            language_code="en",
+            audience="borrower",
+            subject_template="Advice {{ borrower_name }}",
+            body_template="Body {{ borrower_name }}",
+            variables_json=["borrower_name"],
+            approval_status="approved",
+            template_version="v1",
+            effective_from=django_timezone.localdate(),
+        )
+        verified = self._accepted_outbox(
+            old_apps,
+            template=template,
+            outbox_id=uuid.uuid4(),
+            adapter_kind="sfpcl_credit.communications.adapters.FakeEmailDeliveryAdapter",
+        )
+        before = self._stable_outbox_values(old_apps, verified.pk)
+
+        self._migrate(self.migrate_to)
+        reversed_apps = self._migrate(self.migrate_from)
+        self.assertEqual(self._stable_outbox_values(reversed_apps, verified.pk), before)
+        reapplied_apps = self._migrate(self.migrate_to)
+        self.assertEqual(self._stable_outbox_values(reapplied_apps, verified.pk), before)
+
+    def _accepted_outbox(self, apps, *, template, outbox_id, adapter_kind):
+        Outbox = apps.get_model("communications", "CommunicationDeliveryOutbox")
+        Attempt = apps.get_model("communications", "CommunicationProviderAttempt")
+        accepted_at = django_timezone.now()
+        template_facts = {
+            "content_template_id": str(template.pk),
+            "template_code": template.template_code,
+            "template_name": template.template_name,
+            "template_type": template.template_type,
+            "language_code": template.language_code,
+            "audience": template.audience,
+            "template_version": template.template_version,
+            "approval_status": template.approval_status,
+            "effective_from": template.effective_from.isoformat(),
+            "effective_to": (
+                template.effective_to.isoformat() if template.effective_to else None
+            ),
+            "variables": sorted(template.variables_json or []),
+            "subject_template": template.subject_template,
+            "body_template": template.body_template,
+        }
+        template_checksum = hashlib.sha256(
+            json.dumps(
+                template_facts, sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest()
+        outbox = Outbox.objects.create(
+            outbox_id=outbox_id,
+            advice_intent=outbox_id,
+            communication_id=outbox_id,
+            idempotency_key=f"disbursement-advice:{outbox_id}",
+            channel="email",
+            recipient_address="legacy.borrower@example.com",
+            recipient_digest=hashlib.sha256(b"legacy.borrower@example.com").hexdigest(),
+            content_template=template,
+            template_code_snapshot=template.template_code,
+            template_provenance_status="verified",
+            template_name_snapshot=template.template_name,
+            template_type_snapshot=template.template_type,
+            template_language_code_snapshot=template.language_code,
+            template_audience_snapshot=template.audience,
+            template_version_snapshot=template.template_version,
+            template_approval_status_snapshot=template.approval_status,
+            template_effective_from_snapshot=template.effective_from,
+            template_effective_to_snapshot=template.effective_to,
+            template_variables_snapshot=template.variables_json,
+            subject_template_snapshot=template.subject_template,
+            body_template_snapshot=template.body_template,
+            template_checksum_sha256=template_checksum,
+            subject_snapshot="Frozen advice subject",
+            body_snapshot="Frozen advice body",
+            payload_digest="b" * 64,
+            related_entity_type="disbursement",
+            related_entity_id=uuid.uuid4(),
+            delivery_status="pending",
+        )
+        attempt = Attempt.objects.create(
+            outbox=outbox,
+            advice_intent_id=outbox.advice_intent,
+            communication_id=outbox.communication_id,
+            idempotency_key=outbox.idempotency_key,
+            payload_digest=outbox.payload_digest,
+            adapter_kind=adapter_kind,
+            outcome="accepted",
+            provider_external_message_id=f"manual:{outbox_id}",
+            provider_delivery_status="sent",
+            provider_accepted_at=accepted_at,
+            attempted_at=accepted_at,
+            evidence_digest="c" * 64,
+        )
+        Outbox.objects.filter(pk=outbox.pk).update(
+            delivery_status="sent",
+            provider_external_message_id=attempt.provider_external_message_id,
+            provider_delivery_status="sent",
+            provider_accepted_at=accepted_at,
+            accepted_provider_attempt_id=attempt.pk,
+        )
+        return Outbox.objects.get(pk=outbox.pk)
+
+    def _history_values(self, apps, outbox_id):
+        Outbox = apps.get_model("communications", "CommunicationDeliveryOutbox")
+        return Outbox.objects.filter(pk=outbox_id).values(
+            "outbox_id",
+            "advice_intent",
+            "communication_id",
+            "idempotency_key",
+            "channel",
+            "recipient_address",
+            "recipient_digest",
+            "subject_snapshot",
+            "body_snapshot",
+            "payload_digest",
+            "related_entity_type",
+            "related_entity_id",
+            "delivery_status",
+            "provider_external_message_id",
+            "provider_delivery_status",
+            "provider_accepted_at",
+            "accepted_provider_attempt_id",
+            "delivery_receipt_id",
+            "final_communication_id",
+            "created_at",
+        ).get()
+
+    def _stable_outbox_values(self, apps, outbox_id):
+        values = self._all_outbox_values(apps, outbox_id)
+        values.pop("template_provenance_origin", None)
+        return values
+
+    def _make_pending_without_attempt(self, apps, outbox):
+        Outbox = apps.get_model("communications", "CommunicationDeliveryOutbox")
+        Attempt = apps.get_model("communications", "CommunicationProviderAttempt")
+        Outbox.objects.filter(pk=outbox.pk).update(
+            delivery_status="pending",
+            provider_external_message_id=None,
+            provider_delivery_status=None,
+            provider_accepted_at=None,
+            accepted_provider_attempt_id=None,
+        )
+        Attempt.objects.filter(outbox_id=outbox.pk).delete()
+        return Outbox.objects.get(pk=outbox.pk)
+
+    def _all_outbox_values(self, apps, outbox_id):
+        Outbox = apps.get_model("communications", "CommunicationDeliveryOutbox")
+        return Outbox.objects.filter(pk=outbox_id).values().get()
+
+    def _migrate(self, targets):
+        executor = MigrationExecutor(connection)
+        executor.migrate(targets)
+        return executor.loader.project_state(targets).apps
 
 
 class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
@@ -247,6 +622,13 @@ class CommunicationAdviceEvidenceMigrationTests(TransactionTestCase):
             accepted_at=accepted_at,
             created_at=accepted_at,
         )
+        old_apps.get_model("communications", "ContentTemplate").objects.filter(
+            pk=fixture.template.pk
+        ).update(
+            template_name="Later mutable legacy template",
+            subject_template="Later mutable subject {{ borrower_name }}",
+            body_template="Later mutable body {{ borrower_name }}",
+        )
         retained_ids = {
             "communication": str(communication_id),
             "receipt": str(receipt.pk),
@@ -263,7 +645,8 @@ class CommunicationAdviceEvidenceMigrationTests(TransactionTestCase):
         self.assertEqual(first["outbox_id"], retained_ids["communication"])
         self.assertEqual(first["adapter_kind"], "legacy:pre-outbox")
         self.assertEqual(first["provider_outcome"], "accepted")
-        self.assertEqual(first["template_name"], fixture.template.template_name)
+        self.assertEqual(first["template_provenance_status"], "legacy_partial")
+        self.assertEqual(first["template_name"], "Later mutable legacy template")
         self.assertEqual(first["template_variables"], sorted(fixture.template.variables_json))
         self.assertEqual(first["primitive_outbox_intent"], retained_ids["communication"])
         self.assertEqual(first["primitive_receipt_intent"], retained_ids["communication"])
@@ -323,6 +706,26 @@ class CommunicationAdviceEvidenceMigrationTests(TransactionTestCase):
             },
             forward_manifests,
         )
+        corrected_apps = self._migrate(
+            [("communications", "0008_legacy_template_provenance_closure")]
+        )
+        corrected = {
+            **first,
+            "template_name": None,
+            "template_variables": None,
+        }
+        self.assertEqual(
+            self._current_values(corrected_apps),
+            corrected,
+        )
+        with self.assertRaisesRegex(
+            RuntimeError, "Cannot reverse communications 0008"
+        ):
+            self._migrate(self.migrate_to)
+        current_apps = MigrationExecutor(connection).loader.project_state(
+            [("communications", "0008_legacy_template_provenance_closure")]
+        ).apps
+        self.assertEqual(self._current_values(current_apps), corrected)
 
     def test_accepted_pending_and_no_advice_rows_reapply_without_fabrication(self):
         from sfpcl_credit.tests.test_disbursement_advice_api import (
@@ -485,6 +888,7 @@ class CommunicationAdviceEvidenceMigrationTests(TransactionTestCase):
             "attempt_id": str(attempt.pk),
             "adapter_kind": attempt.adapter_kind,
             "provider_outcome": attempt.outcome,
+            "template_provenance_status": outbox.template_provenance_status,
             "template_name": outbox.template_name_snapshot,
             "template_variables": outbox.template_variables_snapshot,
             "primitive_outbox_intent": str(outbox.advice_intent),
