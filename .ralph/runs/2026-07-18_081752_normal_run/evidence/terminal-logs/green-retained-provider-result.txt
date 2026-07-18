@@ -1,0 +1,15 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_accepted_outbox_malformed_provider_result_fails_closed --verbosity 1
+
+Result: GREEN
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.612s
+OK
+
+Every accepted outbox recovery now reapplies the same provider id/status/aware-timestamp validation
+used for a live adapter result. Malformed retained truth conflicts without a new provider call or any
+receipt, Communication, audit, workflow, or disbursement-owned success state.
+

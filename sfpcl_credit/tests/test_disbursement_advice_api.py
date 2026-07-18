@@ -10,7 +10,11 @@ from django.test import Client, TestCase, TransactionTestCase
 from django.utils import timezone
 
 from sfpcl_credit.communications.adapters import FakeEmailDeliveryAdapter
-from sfpcl_credit.communications.models import Communication, ContentTemplate
+from sfpcl_credit.communications.models import (
+    Communication,
+    CommunicationDeliveryOutbox,
+    ContentTemplate,
+)
 from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
@@ -18,6 +22,7 @@ from sfpcl_credit.disbursements.models import (
     LoanRegisterUpdate,
 )
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
+    DisbursementAdviceConflict,
     DisbursementWorkflow,
 )
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission, User
@@ -198,7 +203,7 @@ class DisbursementAdviceApiTests(TestCase):
 
         adapter = CountingAdapter()
         with patch(
-            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "sfpcl_credit.communications.modules.communication_dispatcher."
             "ManualEmailDeliveryAdapter",
             return_value=adapter,
         ):
@@ -312,10 +317,210 @@ class DisbursementAdviceApiTests(TestCase):
         self.assertEqual(
             accepted["sent_at"], receipt.accepted_at.isoformat().replace("+00:00", "Z")
         )
+
+    def test_outbox_survives_acceptance_before_receipt_and_blocks_changed_facts(self):
+        class RecordingAdapter(FakeEmailDeliveryAdapter):
+            results = []
+            observed_outbox_statuses = []
+
+            def send_email(self, payload, idempotency_key):
+                self.observed_outbox_statuses.append(
+                    CommunicationDeliveryOutbox.objects.get(
+                        communication_id=payload.communication_id
+                    ).delivery_status
+                )
+                result = super().send_email(payload, idempotency_key)
+                self.results.append(result)
+                return result
+
+        with patch(
+            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "_retained_receipt",
+            side_effect=RuntimeError("forced failure before final receipt"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "before final receipt"):
+                DisbursementWorkflow.send_advice(
+                    actor=self.actor,
+                    disbursement_id=self.row.pk,
+                    payload={
+                        "channel": "email",
+                        "recipient_email": "borrower.advice@example.com",
+                    },
+                    adapter=RecordingAdapter(),
+                )
+
+        outbox = CommunicationDeliveryOutbox.objects.get(
+            advice_intent=self.row.advice_intent
+        )
+        self.assertEqual(outbox.delivery_status, "sent")
+        self.assertEqual(RecordingAdapter.observed_outbox_statuses, ["pending"])
+        self.assertEqual(
+            outbox.provider_external_message_id,
+            RecordingAdapter.results[0].external_message_id,
+        )
+        self.assertFalse(
+            DisbursementAdviceDeliveryReceipt.objects.filter(
+                advice_intent=self.row.advice_intent
+            ).exists()
+        )
+        self._assert_no_advice_truth()
+
+        self.row.member.email = "changed.after.acceptance@example.com"
+        self.row.member.save(update_fields=["email"])
+        with self.assertRaises(DisbursementAdviceConflict):
+            DisbursementWorkflow.send_advice(
+                actor=self.actor,
+                disbursement_id=self.row.pk,
+                payload={
+                    "channel": "email",
+                    "recipient_email": "changed.after.acceptance@example.com",
+                },
+                adapter=RecordingAdapter(),
+            )
+        self.assertEqual(len(RecordingAdapter.results), 1)
+
+        self.row.member.email = "Borrower.Advice@Example.com"
+        self.row.member.save(update_fields=["email"])
+        accepted = DisbursementWorkflow.send_advice(
+            actor=self.actor,
+            disbursement_id=self.row.pk,
+            payload={
+                "channel": "email",
+                "recipient_email": "borrower.advice@example.com",
+            },
+            adapter=RecordingAdapter(),
+        )
+
+        self.assertEqual(len(RecordingAdapter.results), 1)
+        self.assertEqual(accepted["delivery_status"], "sent")
+        receipt = DisbursementAdviceDeliveryReceipt.objects.get(
+            advice_intent=self.row.advice_intent
+        )
+        self.assertEqual(receipt.external_message_id, outbox.provider_external_message_id)
+
+    def test_frozen_outbox_rejects_changed_template_provenance_before_redispatch(
+        self,
+    ):
+        class RecordingAdapter(FakeEmailDeliveryAdapter):
+            results = []
+
+            def send_email(self, payload, idempotency_key):
+                result = super().send_email(payload, idempotency_key)
+                self.results.append(result)
+                return result
+
+        with patch(
+            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "_retained_receipt",
+            side_effect=RuntimeError("forced failure after accepted outbox"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "accepted outbox"):
+                DisbursementWorkflow.send_advice(
+                    actor=self.actor,
+                    disbursement_id=self.row.pk,
+                    payload={
+                        "channel": "email",
+                        "recipient_email": "borrower.advice@example.com",
+                    },
+                    adapter=RecordingAdapter(),
+                )
+
+        cases = {
+            "template_name": "Changed advice name",
+            "template_type": "sms",
+            "language_code": "mr",
+            "audience": "staff",
+            "template_version": "2.0",
+            "approval_status": ContentTemplate.STATUS_DRAFT,
+            "effective_from": timezone.localdate() + timedelta(days=1),
+            "effective_to": timezone.localdate() - timedelta(days=1),
+            "variables_json": [*ADVICE_VARIABLES, "unexpected"],
+            "subject_template": "Changed {{borrower_name}}",
+            "body_template": "Changed source {{borrower_name}}",
+        }
+        for field, changed in cases.items():
+            with self.subTest(field=field):
+                original = getattr(self.template, field)
+                ContentTemplate.objects.filter(pk=self.template.pk).update(
+                    **{field: changed}
+                )
+                with self.assertRaises(DisbursementAdviceConflict):
+                    DisbursementWorkflow.send_advice(
+                        actor=self.actor,
+                        disbursement_id=self.row.pk,
+                        payload={
+                            "channel": "email",
+                            "recipient_email": "borrower.advice@example.com",
+                        },
+                        adapter=RecordingAdapter(),
+                    )
+                ContentTemplate.objects.filter(pk=self.template.pk).update(
+                    **{field: original}
+                )
+        self.assertEqual(len(RecordingAdapter.results), 1)
+
+        accepted = DisbursementWorkflow.send_advice(
+            actor=self.actor,
+            disbursement_id=self.row.pk,
+            payload={
+                "channel": "email",
+                "recipient_email": "borrower.advice@example.com",
+            },
+            adapter=RecordingAdapter(),
+        )
+        self.assertEqual(accepted["delivery_status"], "sent")
+        self.assertEqual(len(RecordingAdapter.results), 1)
         self.assertEqual(
             accepted["disbursement_advice_communication_id"],
             str(self.row.advice_intent.pk),
         )
+
+    def test_accepted_outbox_malformed_provider_result_fails_closed(self):
+        class RecordingAdapter(FakeEmailDeliveryAdapter):
+            calls = 0
+
+            def send_email(self, payload, idempotency_key):
+                self.calls += 1
+                return super().send_email(payload, idempotency_key)
+
+        adapter = RecordingAdapter()
+        with patch(
+            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "_retained_receipt",
+            side_effect=RuntimeError("forced failure after provider acceptance"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "provider acceptance"):
+                DisbursementWorkflow.send_advice(
+                    actor=self.actor,
+                    disbursement_id=self.row.pk,
+                    payload={
+                        "channel": "email",
+                        "recipient_email": "borrower.advice@example.com",
+                    },
+                    adapter=adapter,
+                )
+        CommunicationDeliveryOutbox.objects.filter(
+            advice_intent=self.row.advice_intent
+        ).update(provider_external_message_id="malformed provider result")
+
+        with self.assertRaises(DisbursementAdviceConflict):
+            DisbursementWorkflow.send_advice(
+                actor=self.actor,
+                disbursement_id=self.row.pk,
+                payload={
+                    "channel": "email",
+                    "recipient_email": "borrower.advice@example.com",
+                },
+                adapter=adapter,
+            )
+
+        self.assertEqual(adapter.calls, 1)
+        self.assertFalse(
+            DisbursementAdviceDeliveryReceipt.objects.filter(
+                advice_intent=self.row.advice_intent
+            ).exists()
+        )
+        self._assert_no_advice_truth()
 
     def test_replay_fails_closed_when_retained_advice_evidence_changes(self):
         first = self._post()
@@ -522,7 +727,7 @@ class DisbursementAdviceApiTests(TestCase):
                 raise ValueError("provider rejected")
 
         with patch(
-            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "sfpcl_credit.communications.modules.communication_dispatcher."
             "ManualEmailDeliveryAdapter",
             return_value=RejectingAdapter(),
         ):
@@ -530,6 +735,48 @@ class DisbursementAdviceApiTests(TestCase):
         self.assertEqual(rejected.status_code, 409, rejected.content)
         self.assertEqual(rejected.json()["error"]["code"], "DELIVERY_FAILED")
         self._assert_no_advice_truth()
+
+    def test_provider_rejection_and_malformed_results_leave_outbox_retryable(self):
+        class RejectingAdapter:
+            def send_email(self, payload, idempotency_key):
+                raise ValueError("provider rejected")
+
+        class MalformedAdapter:
+            def send_email(self, payload, idempotency_key):
+                return {"delivery_status": "sent"}
+
+        for adapter in (RejectingAdapter(), MalformedAdapter()):
+            with self.subTest(adapter=adapter.__class__.__name__):
+                with patch(
+                    "sfpcl_credit.communications.modules.communication_dispatcher."
+                    "ManualEmailDeliveryAdapter",
+                    return_value=adapter,
+                ):
+                    response = self._post()
+                self.assertEqual(response.status_code, 409, response.content)
+                self.assertEqual(response.json()["error"]["code"], "DELIVERY_FAILED")
+                outbox = CommunicationDeliveryOutbox.objects.get(
+                    advice_intent=self.row.advice_intent
+                )
+                self.assertEqual(outbox.delivery_status, "pending")
+                self.assertIsNone(outbox.provider_external_message_id)
+                self.assertFalse(
+                    DisbursementAdviceDeliveryReceipt.objects.filter(
+                        advice_intent=self.row.advice_intent
+                    ).exists()
+                )
+                self._assert_no_advice_truth()
+
+        accepted = self._post()
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        outbox.refresh_from_db()
+        self.assertEqual(outbox.delivery_status, "sent")
+        self.assertEqual(
+            outbox.provider_external_message_id,
+            DisbursementAdviceDeliveryReceipt.objects.get(
+                advice_intent=self.row.advice_intent
+            ).external_message_id,
+        )
 
     def test_permission_scope_and_stale_transfer_fail_closed(self):
         wrong_role = self.owner.owner.fixture.fixture._user(

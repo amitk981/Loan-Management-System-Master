@@ -1,25 +1,21 @@
 from dataclasses import dataclass
 import hashlib
 import json
-import re
 import uuid
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
-from django.db.models import Q
-from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.communications.adapters import (
-    EmailDeliveryPayload,
-    ManualEmailDeliveryAdapter,
-    delivery_payload_digest,
-    validate_delivery_result,
+from sfpcl_credit.communications.modules.communication_dispatcher import (
+    AdviceDeliveryDecision,
+    CommunicationDeliveryFailed,
+    CommunicationDispatcher,
+    CommunicationDispatchConflict,
 )
 from sfpcl_credit.communications.models import (
     Communication,
-    ContentTemplate,
     DisbursementAdviceDeliveryReceipt,
 )
 from sfpcl_credit.disbursements.models import (
@@ -31,6 +27,9 @@ from sfpcl_credit.disbursements.models import (
 from sfpcl_credit.disbursements.modules.disbursement_transfer_success import (
     _masked_reference,
     completed_success_is_coherent,
+)
+from sfpcl_credit.disbursements.modules.disbursement_advice_context import (
+    DisbursementAdviceContext,
 )
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied, DomainPermissionDenied
 from sfpcl_credit.identity.models import AuditLog, Permission, User
@@ -52,7 +51,6 @@ ADVICE_VARIABLES = {
     "disbursed_at",
     "bank_reference_number",
 }
-_TOKEN_RE = re.compile(r"{{\s*([a-zA-Z0-9_]+)\s*}}")
 _CREDIT_ROLE = "credit_manager"
 _FINANCE_ROLE = "senior_manager_finance"
 _CREDIT_ACTIVE_LOAN_STATUSES = {"active", "partially_repaid"}
@@ -73,43 +71,50 @@ class _AdviceContext:
     role_code: str
     canonical_email: str
     intent: DisbursementAdviceIntent
-    template: ContentTemplate
-    subject: str
-    body: str
+    dispatch_context: DisbursementAdviceContext
 
 
 def _send_advice(*, actor, disbursement_id, payload, request=None, adapter=None):
     cleaned = _validate_payload(payload)
     with transaction.atomic():
         context = _locked_advice_context(actor, disbursement_id)
-        replay = _current_replay(context, cleaned)
-        if replay is not None:
-            return replay
-        _require_pending_delivery(context, cleaned)
-        delivery_payload = _delivery_payload(context)
-
-    receipt = _accepted_delivery_receipt(
-        context.intent.pk,
-        delivery_payload,
-        adapter=adapter or ManualEmailDeliveryAdapter(),
-    )
+        if context.row.disbursement_advice_communication_id is None:
+            _validate_request_context(context, cleaned)
+            _require_pending_delivery(context)
+    try:
+        decision = CommunicationDispatcher.dispatch(
+            context=context.dispatch_context,
+            adapter=adapter,
+        )
+    except CommunicationDeliveryFailed as exc:
+        raise DisbursementAdviceDeliveryFailed(str(exc)) from exc
+    except CommunicationDispatchConflict as exc:
+        raise DisbursementAdviceConflict(str(exc)) from exc
+    receipt = _retained_receipt(decision)
 
     with transaction.atomic():
         context = _locked_advice_context(actor, disbursement_id)
-        replay = _current_replay(context, cleaned)
+        try:
+            decision = CommunicationDispatcher.dispatch(
+                context=context.dispatch_context,
+            )
+        except CommunicationDispatchConflict as exc:
+            raise DisbursementAdviceConflict(str(exc)) from exc
+        replay = _current_replay(context, cleaned, decision)
         if replay is not None:
             return replay
-        _require_pending_delivery(context, cleaned)
+        _validate_request_context(context, cleaned)
+        _require_pending_delivery(context)
         if not _receipt_matches(
             receipt,
-            intent_id=context.intent.pk,
-            idempotency_key=_delivery_idempotency_key(context.intent.pk),
-            payload_digest=delivery_payload_digest(_delivery_payload(context)),
+            decision=decision,
         ):
             raise DisbursementAdviceConflict(
                 "The retained provider acceptance is stale or incoherent."
             )
-        return _persist_accepted_delivery(context, receipt, request=request)
+        return _persist_accepted_delivery(
+            context, receipt, decision, request=request
+        )
 
 
 def _locked_advice_context(actor, disbursement_id):
@@ -146,36 +151,65 @@ def _locked_advice_context(actor, disbursement_id):
         raise DisbursementAdviceConflict(
             "The successful disbursement evidence is stale or incoherent."
         )
-    template = _locked_current_template()
-    merge_data = _merge_data(row)
+    merge_values = (
+        ("borrower_name", row.member.display_name),
+        (
+            "application_reference_number",
+            row.loan_application.application_reference_number,
+        ),
+        ("loan_account_number", row.loan_account.loan_account_number),
+        ("sanctioned_amount", f"{row.loan_account.sanctioned_amount:.2f}"),
+        ("disbursement_amount", f"{row.disbursement_amount:.2f}"),
+        ("disbursed_at", row.disbursed_at.date().isoformat()),
+        ("bank_reference_number", _masked_reference(row.bank_reference_number)),
+    )
     return _AdviceContext(
         operator=operator,
         row=row,
         role_code=role_code,
         canonical_email=canonical_email,
         intent=row.advice_intent,
-        template=template,
-        subject=_render(template.subject_template or "", merge_data),
-        body=_render(template.body_template, merge_data),
+        dispatch_context=DisbursementAdviceContext(
+            actor_id=operator.pk,
+            actor_role_code=role_code,
+            actor_team_codes=tuple(sorted(operator.team_codes())),
+            advice_intent_id=row.advice_intent.pk,
+            intent_created_at=row.advice_intent.created_at,
+            communication_id=row.advice_intent.pk,
+            recipient_address=canonical_email,
+            recipient_party_id=row.member_id,
+            related_entity_type="disbursement",
+            related_entity_id=row.pk,
+            template_code_prefix="disbursement_advice_email_",
+            template_type="email",
+            template_audience="borrower",
+            required_variables=tuple(sorted(ADVICE_VARIABLES)),
+            merge_values=merge_values,
+            sensitive_values=(row.bank_reference_number,),
+            loan_account_id=row.loan_account_id,
+            loan_application_id=row.loan_application_id,
+            member_id=row.member_id,
+            disbursement_amount=row.disbursement_amount,
+            disbursed_at=row.disbursed_at.date(),
+            masked_bank_reference=_masked_reference(row.bank_reference_number),
+            transfer_success_action_id=row.transfer_success_action_id,
+            transfer_success_evidence_digest=row.transfer_success_evidence_digest,
+        ),
     )
 
 
-def _current_replay(context, cleaned):
+def _current_replay(context, cleaned, decision):
     row = context.row
     if row.disbursement_advice_communication_id is None:
         return None
-    if _retained_advice_is_coherent(context, cleaned):
+    if _retained_advice_is_coherent(context, cleaned, decision):
         return serialize_advice(row.disbursement_advice_communication)
     raise DisbursementAdviceConflict(
         "The disbursement already has different or stale advice evidence."
     )
 
 
-def _require_pending_delivery(context, cleaned):
-    if context.intent.delivery_status != DisbursementAdviceIntent.DELIVERY_PENDING:
-        raise DisbursementAdviceConflict(
-            "The pending disbursement advice identity is stale or incoherent."
-        )
+def _validate_request_context(context, cleaned):
     if cleaned["channel"] != "email":
         raise ValidationError({"channel": "Only email is supported."})
     if cleaned["recipient_email"] != context.canonical_email:
@@ -184,96 +218,61 @@ def _require_pending_delivery(context, cleaned):
         )
 
 
-def _delivery_payload(context):
-    return EmailDeliveryPayload(
-        communication_id=context.intent.pk,
-        recipient_email=context.canonical_email,
-        subject=context.subject,
-        body_text=context.body,
-        related_entity_type="disbursement",
-        related_entity_id=context.row.pk,
-    )
-
-
-def _delivery_idempotency_key(intent_id):
-    return f"disbursement-advice:{intent_id}"
-
-
-def _accepted_delivery_receipt(intent_id, delivery_payload, *, adapter):
-    idempotency_key = _delivery_idempotency_key(intent_id)
-    payload_digest = delivery_payload_digest(delivery_payload)
-    retained = DisbursementAdviceDeliveryReceipt.objects.filter(
-        advice_intent_id=intent_id
-    ).first()
-    if retained is not None:
-        if _receipt_matches(
-            retained,
-            intent_id=intent_id,
-            idempotency_key=idempotency_key,
-            payload_digest=payload_digest,
-        ):
-            return retained
+def _require_pending_delivery(context):
+    if context.intent.delivery_status != DisbursementAdviceIntent.DELIVERY_PENDING:
         raise DisbursementAdviceConflict(
-            "The retained provider acceptance is stale or incoherent."
+            "The pending disbursement advice identity is stale or incoherent."
         )
-    try:
-        delivery = adapter.send_email(delivery_payload, idempotency_key)
-        validate_delivery_result(delivery)
-    except (TypeError, ValueError) as exc:
-        raise DisbursementAdviceDeliveryFailed(
-            "The disbursement advice was not accepted for delivery."
-        ) from exc
+
+
+def _retained_receipt(decision: AdviceDeliveryDecision):
     with transaction.atomic():
-        receipt, _created = DisbursementAdviceDeliveryReceipt.objects.get_or_create(
-            advice_intent_id=intent_id,
-            defaults={
-                "idempotency_key": idempotency_key,
-                "payload_digest": payload_digest,
-                "external_message_id": delivery.external_message_id,
-                "delivery_status": delivery.delivery_status,
-                "accepted_at": delivery.accepted_at,
-            },
+        receipt, _created = (
+            DisbursementAdviceDeliveryReceipt.objects.select_for_update().get_or_create(
+                advice_intent_id=decision.advice_intent_id,
+                defaults={
+                    "idempotency_key": decision.idempotency_key,
+                    "payload_digest": decision.payload_digest,
+                    "external_message_id": decision.external_message_id,
+                    "delivery_status": decision.delivery_status,
+                    "accepted_at": decision.accepted_at,
+                },
+            )
         )
-    if not _receipt_matches(
-        receipt,
-        intent_id=intent_id,
-        idempotency_key=idempotency_key,
-        payload_digest=payload_digest,
-    ):
+    if not _receipt_matches(receipt, decision=decision):
         raise DisbursementAdviceConflict(
             "The retained provider acceptance is stale or incoherent."
         )
     return receipt
 
 
-def _receipt_matches(receipt, *, intent_id, idempotency_key, payload_digest):
+def _receipt_matches(receipt, *, decision):
     return bool(
-        receipt.advice_intent_id == intent_id
-        and receipt.idempotency_key == idempotency_key
-        and receipt.payload_digest == payload_digest
-        and receipt.delivery_status == "sent"
-        and receipt.external_message_id
-        and receipt.accepted_at
+        receipt.advice_intent_id == decision.advice_intent_id
+        and receipt.idempotency_key == decision.idempotency_key
+        and receipt.payload_digest == decision.payload_digest
+        and receipt.delivery_status == decision.delivery_status == "sent"
+        and receipt.external_message_id == decision.external_message_id
+        and receipt.accepted_at == decision.accepted_at
     )
 
 
-def _persist_accepted_delivery(context, receipt, *, request):
+def _persist_accepted_delivery(context, receipt, decision, *, request):
     operator = context.operator
     row = context.row
     intent = context.intent
-    template = context.template
     action_id = uuid.uuid4()
     communication = Communication.objects.create(
-        communication_id=intent.pk,
-        related_entity_type="disbursement",
-        related_entity_id=row.pk,
+        communication_id=decision.communication_id,
+        related_entity_type=decision.related_entity_type,
+        related_entity_id=decision.related_entity_id,
         recipient_party_type="borrower",
         recipient_party_id=row.member_id,
-        recipient_address=context.canonical_email,
+        recipient_address=decision.recipient_address,
         channel="email",
-        content_template=template,
-        subject_snapshot=context.subject,
-        body_snapshot=context.body,
+        content_template_id=decision.template_id,
+        subject_snapshot=decision.subject,
+        body_snapshot=decision.body,
         sent_by_user=operator,
         sent_at=receipt.accepted_at,
         delivery_status=receipt.delivery_status,
@@ -285,6 +284,7 @@ def _persist_accepted_delivery(context, receipt, *, request):
     evidence = _advice_audit_evidence(
         context,
         receipt,
+        decision,
         action_id=action_id,
         request_id=request_id,
         ip_address=ip_address,
@@ -322,6 +322,7 @@ def _persist_accepted_delivery(context, receipt, *, request):
     intent.delivery_evidence_digest = _delivery_evidence_digest(
         context,
         receipt,
+        decision,
         evidence=evidence,
         audit=audit,
         workflow=workflow,
@@ -341,7 +342,7 @@ def _persist_accepted_delivery(context, receipt, *, request):
 
 
 def _advice_audit_evidence(
-    context, receipt, *, action_id, request_id, ip_address, user_agent
+    context, receipt, decision, *, action_id, request_id, ip_address, user_agent
 ):
     row = context.row
     return {
@@ -351,11 +352,11 @@ def _advice_audit_evidence(
         "loan_account_id": str(row.loan_account_id),
         "loan_application_id": str(row.loan_application_id),
         "member_id": str(row.member_id),
-        "template_id": str(context.template.pk),
-        "template_code": context.template.template_code,
-        "template_version": context.template.template_version,
-        "recipient_masked": _masked_email(context.canonical_email),
-        "recipient_digest": _recipient_digest(context.canonical_email),
+        "template_id": str(decision.template_id),
+        "template_code": decision.template_code,
+        "template_version": decision.template_version,
+        "recipient_masked": _masked_email(decision.recipient_address),
+        "recipient_digest": decision.recipient_digest,
         "channel": "email",
         "delivery_status": receipt.delivery_status,
         "external_message_id": receipt.external_message_id,
@@ -374,7 +375,9 @@ def _advice_audit_evidence(
     }
 
 
-def _delivery_evidence_digest(context, receipt, *, evidence, audit, workflow):
+def _delivery_evidence_digest(
+    context, receipt, decision, *, evidence, audit, workflow
+):
     facts = {
         "advice_intent_id": str(context.intent.pk),
         "intent_created_at": _iso(context.intent.created_at),
@@ -386,16 +389,16 @@ def _delivery_evidence_digest(context, receipt, *, evidence, audit, workflow):
         "workflow_trigger_reason": workflow.trigger_reason,
         "receipt_id": str(receipt.pk),
         "receipt_payload_digest": receipt.payload_digest,
-        "subject_digest": hashlib.sha256(context.subject.encode()).hexdigest(),
-        "body_digest": hashlib.sha256(context.body.encode()).hexdigest(),
-        "template_approval_status": context.template.approval_status,
-        "template_effective_from": context.template.effective_from.isoformat(),
+        "subject_digest": hashlib.sha256(decision.subject.encode()).hexdigest(),
+        "body_digest": hashlib.sha256(decision.body.encode()).hexdigest(),
+        "template_approval_status": decision.template_approval_status,
+        "template_effective_from": decision.template_effective_from.isoformat(),
         "template_effective_to": (
-            context.template.effective_to.isoformat()
-            if context.template.effective_to
+            decision.template_effective_to.isoformat()
+            if decision.template_effective_to
             else None
         ),
-        "template_variables": sorted(context.template.variables_json or []),
+        "template_variables": list(decision.template_variables),
     }
     return hashlib.sha256(
         json.dumps(facts, sort_keys=True, separators=(",", ":")).encode()
@@ -553,61 +556,7 @@ def _lock_source_relations(row):
     ).first()
 
 
-def _locked_current_template():
-    today = timezone.localdate()
-    rows = list(
-        ContentTemplate.objects.select_for_update()
-        .filter(
-            template_code__startswith="disbursement_advice_email_",
-            template_type="email",
-            audience="borrower",
-            approval_status=ContentTemplate.STATUS_APPROVED,
-            effective_from__lte=today,
-        )
-        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=today))
-        .order_by("content_template_id")[:2]
-    )
-    if len(rows) != 1 or set(rows[0].variables_json or []) != ADVICE_VARIABLES:
-        raise DisbursementAdviceConflict(
-            "Exactly one approved effective disbursement advice template is required."
-        )
-    template = rows[0]
-    declared_tokens = set(_TOKEN_RE.findall(template.subject_template or "")) | set(
-        _TOKEN_RE.findall(template.body_template)
-    )
-    if declared_tokens != ADVICE_VARIABLES:
-        raise DisbursementAdviceConflict(
-            "The disbursement advice template variables are incomplete or unexpected."
-        )
-    return template
-
-
-def _merge_data(row):
-    return {
-        "borrower_name": row.member.display_name,
-        "application_reference_number": row.loan_application.application_reference_number,
-        "loan_account_number": row.loan_account.loan_account_number,
-        "sanctioned_amount": f"{row.loan_account.sanctioned_amount:.2f}",
-        "disbursement_amount": f"{row.disbursement_amount:.2f}",
-        "disbursed_at": row.disbursed_at.date().isoformat(),
-        "bank_reference_number": _masked_reference(row.bank_reference_number),
-    }
-
-
-def _render(value, merge_data):
-    rendered = value
-    for key, replacement in merge_data.items():
-        rendered = re.sub(
-            rf"{{{{\s*{re.escape(key)}\s*}}}}", str(replacement), rendered
-        )
-    if _TOKEN_RE.search(rendered):
-        raise DisbursementAdviceConflict(
-            "The disbursement advice template could not be rendered."
-        )
-    return rendered
-
-
-def _retained_advice_is_coherent(context, cleaned):
+def _retained_advice_is_coherent(context, cleaned, decision):
     row = context.row
     intent = context.intent
     communication = row.disbursement_advice_communication
@@ -644,6 +593,7 @@ def _retained_advice_is_coherent(context, cleaned):
     expected_evidence = _advice_audit_evidence(
         context,
         receipt,
+        decision,
         action_id=action_id,
         request_id=evidence.get("request_id"),
         ip_address=evidence.get("ip_address"),
@@ -655,13 +605,12 @@ def _retained_advice_is_coherent(context, cleaned):
     )
     receipt_current = _receipt_matches(
         receipt,
-        intent_id=intent.pk,
-        idempotency_key=_delivery_idempotency_key(intent.pk),
-        payload_digest=delivery_payload_digest(_delivery_payload(context)),
+        decision=decision,
     )
     expected_digest = _delivery_evidence_digest(
         context,
         receipt,
+        decision,
         evidence=evidence,
         audit=audit,
         workflow=workflow,
@@ -670,18 +619,19 @@ def _retained_advice_is_coherent(context, cleaned):
         cleaned["channel"] == communication.channel == "email"
         and cleaned["recipient_email"]
         == context.canonical_email
+        == decision.recipient_address
         == communication.recipient_address
-        and communication.related_entity_type == "disbursement"
-        and communication.related_entity_id == row.pk
+        and communication.related_entity_type == decision.related_entity_type
+        and communication.related_entity_id == decision.related_entity_id == row.pk
         and communication.recipient_party_type == "borrower"
         and communication.recipient_party_id == row.member_id
         and communication.sent_by_user_id == context.operator.pk
         and communication.delivery_status == receipt.delivery_status == "sent"
         and communication.sent_at == receipt.accepted_at
         and communication.external_message_id == receipt.external_message_id
-        and communication.content_template_id == context.template.pk
-        and communication.subject_snapshot == context.subject
-        and communication.body_snapshot == context.body
+        and communication.content_template_id == decision.template_id
+        and communication.subject_snapshot == decision.subject
+        and communication.body_snapshot == decision.body
         and intent.pk == communication.pk
         and intent.delivery_status == DisbursementAdviceIntent.DELIVERY_SENT
         and intent.delivery_action_id == action_id
@@ -717,10 +667,6 @@ def _request_id(request):
 def _masked_email(email):
     local, domain = email.split("@", 1)
     return f"{local[:1]}***@{domain}"
-
-
-def _recipient_digest(email):
-    return hashlib.sha256(email.encode()).hexdigest()
 
 
 def _iso(value):

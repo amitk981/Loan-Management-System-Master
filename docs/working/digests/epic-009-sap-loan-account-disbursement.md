@@ -1,5 +1,39 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H3BA Repair — Historical Receipt Fixture Isolation
+
+- Independent complete coverage found one retained migration-test error: the test reversed
+  communications to `0003` and then called the current public advice dispatcher, which correctly
+  queried the `0004` outbox table that the test had removed.
+- The migration proof now creates one exact pre-transfer receipt through the projected historical
+  disbursements model and compares every receipt value plus physical schema through forward,
+  reverse, and reapply. This exercises the state-only owner transfer at its true historical seam.
+- The exact failed test and the 29-test receipt-migration/communications/public set pass with two
+  expected PostgreSQL-only final-race skips. Production dispatcher, migrations, models, public API,
+  provider behavior, and financial truth are unchanged.
+
+## 009H3BA Communications Dispatcher and Outbox Freeze
+
+- `communications.modules.communication_dispatcher` now solely owns approved/effective template
+  resolution, exact declared-variable and protected-value checks, rendering, full provenance
+  checksum, durable outbox reconciliation, adapter dispatch, and provider-result validation.
+  Communications imports no disbursement code; disbursements supplies one frozen primitive
+  `DisbursementAdviceContext` after retaining authority and locked financial/current-truth checks.
+- The unchanged 009H3A outbox commits pending recipient/digest, template identity/version/checksum,
+  rendered snapshots, payload digest, communication/idempotency identity, and related entity before
+  any provider call. Accepted provider truth is retained there before the transitional local final
+  receipt transaction. Changed recipient/template/render/payload/entity facts conflict before
+  redispatch; exact fresh-adapter recovery consumes the same logical provider identity.
+- Manual/Fake/Future stable identity, provider rejection/retry, malformed results, accepted-result
+  recovery, and full template provenance drift are green. Rejection/malformed output leaves only a
+  pending outbox and fabricates no receipt, Communication, audit, workflow, or disbursement sent
+  state. The focused owner/public suite passes 28 tests with two expected PostgreSQL-only BB skips;
+  Django check, migration sync, Python compile, dependency, protected-path, and diff checks pass.
+- No schema, migration, public response, frontend, money, transfer, account, register, checklist,
+  repayment, schedule, interest, default, closure, or portal truth changed. 009H3BB remains the
+  concrete terminal owner for receipt/Communication/audit/workflow finalization and twice-run races;
+  009G4 was also rechecked and remains concrete without speculative edits.
+
 ## 009H3A Repair — Historical Migration Projection Closure
 
 - Complete coverage exposed five retained migration-test errors after communications 0004 became a

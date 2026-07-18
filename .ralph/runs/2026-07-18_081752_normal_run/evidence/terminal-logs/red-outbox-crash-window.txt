@@ -1,0 +1,17 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_survives_acceptance_before_receipt_and_blocks_changed_facts --verbosity 2
+
+Result: RED (actual failing-first output retained by allocated run 2026-07-18_022416_normal_run)
+
+Found 1 test.
+System check identified no issues (0 silenced).
+test_outbox_survives_acceptance_before_receipt_and_blocks_changed_facts ... ERROR
+
+CommunicationDeliveryOutbox.DoesNotExist: CommunicationDeliveryOutbox matching query does not exist.
+
+Ran 1 test in 0.656s
+FAILED (errors=1)
+
+The provider was invoked and the simulated local receipt failure was reached without a durable
+outbox. BA transplanted this exact allocated test before accepting the bounded implementation.
+

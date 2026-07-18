@@ -1,0 +1,14 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_advice_persistence sfpcl_credit.tests.test_disbursement_advice_api --verbosity 1
+
+Result: GREEN
+
+Found 28 test(s).
+System check identified no issues (0 silenced).
+..........................ss
+Ran 28 tests in 14.250s
+OK (skipped=2)
+
+The two skips are the PostgreSQL-only five-caller finalization races allocated to 009H3BB. Focused
+public success/replay, role and object scope, canonical contact/template/upstream drift, safe errors,
+masking, no-financial-side-effects, owner, crash, and adapter contracts are green.

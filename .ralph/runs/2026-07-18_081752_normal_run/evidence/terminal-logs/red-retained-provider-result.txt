@@ -1,0 +1,16 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_accepted_outbox_malformed_provider_result_fails_closed --verbosity 1
+
+Result: RED (expected failing-first behavior)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+
+AssertionError: DisbursementAdviceConflict not raised
+
+Ran 1 test in 0.699s
+FAILED (failures=1)
+
+The recovery path trusted a tampered accepted outbox tuple without reapplying the provider-result
+format/time/status contract, allowing malformed retained truth to proceed toward finalization.

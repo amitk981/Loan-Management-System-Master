@@ -1,0 +1,15 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_outbox_survives_acceptance_before_receipt_and_blocks_changed_facts --verbosity 1
+
+Result: GREEN
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.883s
+OK
+
+The adapter observed a pending outbox before dispatch. Accepted provider truth survived the forced
+pre-receipt failure; changed canonical recipient facts conflicted with no second call, and an exact
+fresh-adapter retry finalized from the same provider identity.
+

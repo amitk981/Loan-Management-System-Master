@@ -1,0 +1,20 @@
+Command:
+cd sfpcl_credit && /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_receipt_owner_migration.CommunicationReceiptOwnerMigrationTests.test_receipt_row_and_schema_survive_forward_reverse_and_reapply --verbosity 2
+
+Result: FAIL (exit 1)
+
+Exact symptom:
+ERROR: test_receipt_row_and_schema_survive_forward_reverse_and_reapply
+sqlite3.OperationalError: no such table: communication_delivery_outboxes
+django.db.utils.OperationalError: no such table: communication_delivery_outboxes
+
+Trace seam:
+- `test_communication_receipt_owner_migration.py:33` called `fixture._post()` after migrating
+  communications to `0003_notification`.
+- The current request reached `CommunicationDispatcher._freeze_or_reconcile()`.
+- That required `communication_delivery_outboxes`, which is correctly absent before
+  `communications.0004_advice_outbox_and_receipt_owner`.
+
+Test summary:
+Ran 1 test in 1.787s
+FAILED (errors=1)

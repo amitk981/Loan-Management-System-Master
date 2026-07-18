@@ -1,4 +1,5 @@
 import ast
+import importlib
 import inspect
 import uuid
 
@@ -24,6 +25,53 @@ from sfpcl_credit.disbursements.models import (
 
 
 class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
+    def test_dispatcher_owns_policy_without_importing_disbursements(self):
+        dispatcher = importlib.import_module(
+            "sfpcl_credit.communications.modules.communication_dispatcher"
+        )
+        legacy = importlib.import_module(
+            "sfpcl_credit.disbursements.modules.disbursement_advice"
+        )
+        context_seam = importlib.import_module(
+            "sfpcl_credit.disbursements.modules.disbursement_advice_context"
+        )
+
+        dispatcher_tree = ast.parse(inspect.getsource(dispatcher))
+        imported_modules = {
+            node.module
+            for node in ast.walk(dispatcher_tree)
+            if isinstance(node, ast.ImportFrom) and node.module
+        }
+        imported_modules.update(
+            name.name
+            for node in ast.walk(dispatcher_tree)
+            if isinstance(node, ast.Import)
+            for name in node.names
+        )
+        self.assertFalse(
+            any(
+                imported.startswith("sfpcl_credit.disbursements")
+                for imported in imported_modules
+            )
+        )
+        self.assertTrue(hasattr(dispatcher, "CommunicationDispatcher"))
+        self.assertTrue(hasattr(context_seam, "DisbursementAdviceContext"))
+
+        legacy_tree = ast.parse(inspect.getsource(legacy))
+        forbidden_policy = {
+            "_accepted_delivery_receipt",
+            "_delivery_payload",
+            "_locked_current_template",
+            "_merge_data",
+            "_render",
+        }
+        defined = {
+            node.name
+            for node in ast.walk(legacy_tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        }
+        self.assertEqual(defined & forbidden_policy, set())
+
     def test_communications_owns_complete_outbox_and_retained_receipt_state(self):
         outbox = CommunicationDeliveryOutbox._meta
         self.assertEqual(outbox.app_label, "communications")

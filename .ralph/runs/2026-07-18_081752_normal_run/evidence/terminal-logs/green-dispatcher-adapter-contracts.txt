@@ -1,0 +1,17 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_advice_persistence.AdviceEmailAdapterContractTests sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_provider_rejection_and_malformed_results_leave_outbox_retryable --verbosity 2
+
+Result: GREEN
+
+Found 3 test(s).
+test_provider_rejection_and_malformed_results_leave_outbox_retryable ... ok
+test_future_provider_rejection_is_retryable_without_fabricated_acceptance ... ok
+test_manual_fake_and_future_use_stable_key_identity_across_fresh_instances ... ok
+
+Ran 3 tests in 0.697s
+OK
+
+Manual, Fake, and Future preserve stable key-owned provider identity across changed payload and
+fresh instances. Rejection and malformed results retain only a pending frozen outbox; retry accepts
+without fabricated receipt, Communication, audit, workflow, or disbursement sent truth.
+

@@ -1,0 +1,17 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_frozen_outbox_rejects_changed_template_provenance_before_redispatch --verbosity 1
+
+Result: RED (actual failing-first output retained by allocated run 2026-07-18_022416_normal_run)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+
+AssertionError: DisbursementAdviceConflict not raised
+
+Ran 1 test in 0.615s
+FAILED (failures=1)
+
+Changing template language provenance was not bound by the earlier retained implementation, so it
+could reach redispatch instead of conflicting.
+

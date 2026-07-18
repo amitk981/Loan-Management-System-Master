@@ -1,6 +1,9 @@
+from datetime import datetime, timezone
+
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
+
 
 class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
     reset_sequences = True
@@ -30,8 +33,6 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
             "test_public_success_sends_exact_advice_without_financial_side_effects"
         )
         fixture.setUp()
-        response = fixture._post()
-        self.assertEqual(response.status_code, 200, response.content)
 
         old_apps = MigrationExecutor(connection).loader.project_state(
             self.migrate_from
@@ -39,7 +40,17 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
         OldReceipt = old_apps.get_model(
             "disbursements", "DisbursementAdviceDeliveryReceipt"
         )
-        retained_id = str(OldReceipt.objects.get().pk)
+        retained = OldReceipt.objects.create(
+            advice_intent_id=fixture.row.advice_intent.pk,
+            idempotency_key="migration-receipt-owner-key",
+            payload_digest="a" * 64,
+            external_message_id="manual-migration-receipt-owner",
+            delivery_status="sent",
+            accepted_at=datetime(2026, 7, 18, 8, 50, tzinfo=timezone.utc),
+            created_at=datetime(2026, 7, 18, 8, 51, tzinfo=timezone.utc),
+        )
+        retained_id = str(retained.pk)
+        retained_values = self._receipt_values(OldReceipt)
         before = self._receipt_signature()
 
         moved_apps = self._migrate(self.migrate_to)
@@ -47,6 +58,7 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
             "communications", "DisbursementAdviceDeliveryReceipt"
         )
         self.assertEqual(str(MovedReceipt.objects.get().pk), retained_id)
+        self.assertEqual(self._receipt_values(MovedReceipt), retained_values)
         self.assertEqual(self._receipt_signature(), before)
         self.assertEqual(self._outbox_table_count(), 1)
 
@@ -55,6 +67,7 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
             "disbursements", "DisbursementAdviceDeliveryReceipt"
         )
         self.assertEqual(str(ReversedReceipt.objects.get().pk), retained_id)
+        self.assertEqual(self._receipt_values(ReversedReceipt), retained_values)
         self.assertEqual(self._receipt_signature(), before)
         self.assertEqual(self._outbox_table_count(), 0)
 
@@ -63,6 +76,7 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
             "communications", "DisbursementAdviceDeliveryReceipt"
         )
         self.assertEqual(str(ReappliedReceipt.objects.get().pk), retained_id)
+        self.assertEqual(self._receipt_values(ReappliedReceipt), retained_values)
         self.assertEqual(self._receipt_signature(), before)
         self.assertEqual(self._outbox_table_count(), 1)
 
@@ -82,6 +96,23 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
             "table": table,
             "columns": tuple(field.name for field in description),
             "constraints": tuple(sorted(constraints)),
+        }
+
+    def _receipt_values(self, model):
+        row = model.objects.values(
+            "delivery_receipt_id",
+            "advice_intent_id",
+            "idempotency_key",
+            "payload_digest",
+            "external_message_id",
+            "delivery_status",
+            "accepted_at",
+            "created_at",
+        ).get()
+        return {
+            **row,
+            "delivery_receipt_id": str(row["delivery_receipt_id"]),
+            "advice_intent_id": str(row["advice_intent_id"]),
         }
 
     def _outbox_table_count(self):

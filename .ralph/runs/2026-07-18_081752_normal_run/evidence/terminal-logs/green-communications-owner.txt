@@ -1,0 +1,14 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_advice_persistence.CommunicationAdvicePersistenceOwnershipTests.test_dispatcher_owns_policy_without_importing_disbursements --verbosity 1
+
+Result: GREEN
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.016s
+OK
+
+The dispatcher is the sole template/render/outbox/provider policy owner, imports no disbursement
+code, and receives only a frozen primitive context through the one-way composition seam.
+

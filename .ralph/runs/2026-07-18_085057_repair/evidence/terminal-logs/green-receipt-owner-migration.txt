@@ -1,0 +1,17 @@
+Command:
+cd sfpcl_credit && /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_receipt_owner_migration.CommunicationReceiptOwnerMigrationTests.test_receipt_row_and_schema_survive_forward_reverse_and_reapply --verbosity 1
+
+Result: PASS (exit 0)
+
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 2.956s
+
+OK
+Destroying test database for alias 'default'...
+
+The passing test asserts all retained receipt values and the physical schema through forward,
+reverse, and reapply, while asserting the outbox exists only in the `0004` state.

@@ -1,7 +1,7 @@
 # Slice 009H3BA: Communications Dispatcher and Outbox Freeze
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `009H3B`
@@ -142,11 +142,11 @@ High
   remains green in the independently shippable intermediate state.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing ownership/crash/template/adapter tests written first
-- [ ] Dispatcher/context seam and pre-provider outbox freeze implemented
-- [ ] Manual/Fake/Future adapter and accepted-result recovery contract green
-- [ ] Legacy template/render/dispatch policy removed
-- [ ] Focused public/owner, dependency, Django, migration, and diff evidence saved
-- [ ] Risk assessment, handoff, state, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing ownership/crash/template/adapter tests written first
+- [x] Dispatcher/context seam and pre-provider outbox freeze implemented
+- [x] Manual/Fake/Future adapter and accepted-result recovery contract green
+- [x] Legacy template/render/dispatch policy removed
+- [x] Focused public/owner, dependency, Django, migration, and diff evidence saved
+- [x] Risk assessment, handoff, state, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

@@ -1,0 +1,34 @@
+# Repair Scope and Diff Evidence
+
+Demonstrated repair code change:
+- `sfpcl_credit/tests/test_communication_receipt_owner_migration.py`
+
+Production/migration change in repair:
+- None.
+
+Protected/forbidden paths:
+- No status entry under `scripts/`, `.github/`, `.ralph/config.yaml`,
+  `.ralph/permissions.json`, `.codex/config.toml`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`,
+  `docs/working/HIGH_RISK_APPROVALS.md`, `docs/working/DECISION_POLICY.md`,
+  `docs/working/FRONTEND_DESIGN_RULES.md`, or `docs/source/`.
+
+Dependency/debug cleanup:
+- `communications/modules` contains no import of `sfpcl_credit.disbursements`.
+- No `[DEBUG-...]` instrumentation was introduced.
+
+Candidate diff budget after repair bookkeeping:
+- The pre-existing quarantined implementation was already within the 30-file/2,000-line slice
+  limits before independent coverage.
+- Incremental repair adds only the historical migration test assertions and repair artifacts.
+- Tracked candidate delta after repair bookkeeping: 578 additions and 240 deletions (818 changed
+  lines).
+- Untracked production modules: 400 lines (`communication_dispatcher.py`, module initializer, and
+  `disbursement_advice_context.py`).
+- Tracked delta plus untracked production modules is 1,218 changed lines, below the slice's 1,350-
+  line forecast ceiling and the configured 2,000-line
+  hard limit; `.ralph/runs/` evidence is bookkeeping excluded by the product diff limit.
+
+Next slices rechecked:
+- `009H3BB-communications-finalization-and-race-closure`: Not Started and concrete.
+- `009G4-legal-checklist-migration-ownership-anchor`: Not Started and concrete.
+- No speculative sharpening edit was required.

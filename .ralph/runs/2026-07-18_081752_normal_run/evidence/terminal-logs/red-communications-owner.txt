@@ -1,0 +1,17 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_advice_persistence.CommunicationAdvicePersistenceOwnershipTests.test_dispatcher_owns_policy_without_importing_disbursements --verbosity 1
+
+Result: RED (expected before implementation)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+
+ERROR: test_dispatcher_owns_policy_without_importing_disbursements
+ModuleNotFoundError: No module named 'sfpcl_credit.communications.modules'
+
+Ran 1 test in 0.001s
+FAILED (errors=1)
+
+The required communications dispatcher seam did not exist; template/render/dispatch policy was
+still defined by the disbursements advice module.

@@ -1,0 +1,15 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_frozen_outbox_rejects_changed_template_provenance_before_redispatch --verbosity 1
+
+Result: GREEN
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.824s
+OK
+
+The frozen checksum binds template identity, name, type, language, audience, version, approval,
+effective range, exact declared variables, and subject/body source templates. Every one-field drift
+conflicts before another adapter call; exact restored provenance recovers from accepted outbox truth.
+

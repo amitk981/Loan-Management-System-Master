@@ -1,0 +1,18 @@
+Backend interpreter for every command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python
+
+Command: cd sfpcl_credit && <python> manage.py check
+Exit code: 0
+Output: System check identified no issues (0 silenced).
+
+Command: cd sfpcl_credit && <python> manage.py makemigrations --check --dry-run
+Exit code: 0
+Output: No changes detected
+
+Command: cd sfpcl_credit && <python> -m compileall -q communications/modules disbursements/modules/disbursement_advice.py disbursements/modules/disbursement_advice_context.py tests/test_communication_receipt_owner_migration.py tests/test_communication_advice_persistence.py tests/test_disbursement_advice_api.py
+Exit code: 0
+Output: none
+
+Command: git diff --check
+Exit code: 0
+Output: none

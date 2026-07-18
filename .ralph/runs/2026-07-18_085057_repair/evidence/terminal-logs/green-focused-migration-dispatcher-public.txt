@@ -1,0 +1,16 @@
+Command:
+cd sfpcl_credit && /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_receipt_owner_migration sfpcl_credit.tests.test_communication_advice_persistence sfpcl_credit.tests.test_disbursement_advice_api --verbosity 1
+
+Result: PASS (exit 0)
+
+Creating test database for alias 'default'...
+Found 29 test(s).
+System check identified no issues (0 silenced).
+...........................ss
+----------------------------------------------------------------------
+Ran 29 tests in 16.555s
+
+OK (skipped=2)
+Destroying test database for alias 'default'...
+
+The two skips are the existing PostgreSQL-only finalization races allocated to 009H3BB.

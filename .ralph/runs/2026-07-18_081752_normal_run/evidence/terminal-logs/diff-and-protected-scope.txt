@@ -1,0 +1,15 @@
+Candidate scope result: PASS
+
+- Tracked non-run candidate: 510 insertions + 238 deletions.
+- New executable source: 400 lines across three files.
+- Total non-run changed-line count: 1,148, below `limits.max_lines_changed: 2000` and within the
+  slice target of 850-1,150.
+- Non-run changed/new files: 11, below `limits.max_changed_files: 30`.
+- New dependencies: 0 (limit 4).
+- New migrations: 0 (slice requires none; repository limit 1).
+- Protected/forbidden paths changed: 0.
+- `git diff --check`: PASS.
+
+Run artifacts under `.ralph/runs/2026-07-18_081752_normal_run/` are Ralph bookkeeping and are not
+part of the configured product/docs diff-limit count. The orchestrator performs the independent
+authoritative candidate calculation after the agent returns.

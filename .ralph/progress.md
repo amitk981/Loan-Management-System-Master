@@ -1,5 +1,41 @@
 # Ralph Progress Log
 
+## 2026-07-18 - 2026-07-18_085057_repair
+
+- Agent tool used: codex with the diagnosing-bugs feedback-loop discipline.
+- Slice repaired: 009H3BA-communications-dispatcher-outbox-freeze.
+- Summary: Replaced the historical receipt-owner migration test's call into the current dispatcher
+  after communications had intentionally been reversed to `0003`. The fixture now creates one
+  exact receipt through the projected historical model and verifies its complete values plus schema
+  through forward, reverse, and reapply. Production and migration behavior are unchanged.
+- Tests run: exact independent-validation RED/GREEN test; 29 focused receipt-migration,
+  communications-owner, and public-advice tests with two expected PostgreSQL skips; Django check;
+  migration sync; Python compile; whitespace, dependency, protected-path, and diff checks.
+- Evidence saved: `.ralph/runs/2026-07-18_085057_repair/evidence/terminal-logs/`.
+- Result: Test-only repair complete pending independent orchestrator revalidation.
+- Risk level: High inherited slice risk; Low incremental test-only repair risk.
+- Next action: Run independent complete coverage, then execute already-concrete 009H3BB followed by
+  009G4 and 009I in dependency order.
+
+## 2026-07-18 - 2026-07-18_081752_normal_run
+
+- Agent tool used: codex with mandatory TDD and deep-module seam checks.
+- Slice completed: 009H3BA-communications-dispatcher-outbox-freeze.
+- Summary: Moved template resolution/validation, protected-value checks, rendering, pre-provider
+  outbox freeze/reconciliation, adapter dispatch, and provider-result validation into the source-
+  owned communications dispatcher behind a frozen primitive disbursement context. Exact recovery
+  reuses accepted outbox truth; changed facts conflict before redispatch.
+- Tests run: named ownership, crash-window, and provenance RED/GREEN cycles; Manual/Fake/Future,
+  rejection/retry, malformed-result, and accepted-result recovery contracts; 28 focused owner/public
+  tests with two expected BB PostgreSQL skips; Django check; migration sync; compile, dependency,
+  protected-path, whitespace, and diff checks.
+- Evidence saved: `.ralph/runs/2026-07-18_081752_normal_run/evidence/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High external-delivery/idempotency risk, bounded by a committed frozen outbox, stable
+  provider identity, fail-closed drift/result validation, one-way ownership, and retained public
+  behavior. No financial, schema, frontend, dependency, or public wire change.
+- Next action: Run already-concrete 009H3BB, then 009G4 and 009I in dependency order.
+
 ## 2026-07-18 - oversized 009H3B queue recovery
 
 - Queue recovery: Marked 009H3B Superseded after retained run `2026-07-18_022416_normal_run`
@@ -8785,6 +8821,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/.ralph/runs/2026-07-18_020218_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_013956_normal_run/.ralph/runs/2026-07-18_020218_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 09:09:39 - 2026-07-18_085057_repair
+- Agent tool used: codex
+- Slice attempted: 009H3BA-communications-dispatcher-outbox-freeze
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_081752_normal_run/.ralph/runs/2026-07-18_085057_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_081752_normal_run/.ralph/runs/2026-07-18_085057_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
