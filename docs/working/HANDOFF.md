@@ -19,6 +19,12 @@ All 24 focused foundation and retained 009H2 tests pass with two expected Postgr
 Django check and migration sync pass. The public advice route, roles/scope, current truth, safe
 audit, receipt/Communication behavior, and no-financial-side-effect contract are unchanged.
 
+The combined 009H3B candidate passed its focused dispatcher/crash/template and twice-run
+PostgreSQL evidence but was rejected at 2,118 changed lines against the 2,000-line limit. It is now
+Superseded by dependency-ordered 009H3BA (dispatcher/outbox freeze) and 009H3BB (finalization/public/
+race closure). Ralph's exact oversized-split semantics and queue-scope validators pass for the
+corrected metadata-only rewrite; the original 009H3 parent remains unchanged.
+
 Independent coverage initially failed five retained historical migration tests. The required
 `communications.0004` dependency on `disbursements.0007` made communications a downstream leaf of
 current application and credit state, so those tests' pre-migration app registries outran their
@@ -27,8 +33,9 @@ projections, matching their existing downstream-owner exclusions. The exact orde
 all six implicated migration tests pass, and no production or migration file changed in repair.
 
 ## Next Run
-Run 009H3B. It must consume the 009H3A schema without a second migration, move the dispatcher and
-template/render/finalization policy to communications, freeze the outbox before dispatch, and prove
-both crash windows plus the twice-run PostgreSQL five-caller contract. Then run 009G4 and 009I in
-dependency order. 009H3B and 009G4 were rechecked and are already concrete; no speculative
-sharpening edit was needed.
+Run 009H3BA, then 009H3BB. BA consumes the 009H3A schema without a second migration and owns the
+dispatcher/template/render/outbox-freeze/provider boundary; BB completes communications-owned
+finalization, the public matrix, both crash windows, and twice-run PostgreSQL five-caller proof.
+Then run 009G4 and 009I in dependency order through terminal prerequisite 009H3BB. Both successors
+are concrete and require another split before implementation if either forecast exceeds 1,350
+changed lines.

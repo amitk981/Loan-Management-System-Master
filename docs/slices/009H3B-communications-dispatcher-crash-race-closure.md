@@ -1,7 +1,17 @@
 # Slice 009H3B: Communications Dispatcher Crash and Race Closure
 
 ## Status
-Not Started
+Superseded
+
+## Superseded By
+
+- 009H3BA
+- 009H3BB
+
+Failed run `2026-07-18_022416_normal_run` implemented the combined candidate successfully but
+measured 2,118 changed lines against the configured 2,000-line limit. The dependency-ordered
+successors preserve the complete scope below: 009H3BA owns the pre-provider dispatcher/outbox
+boundary, and 009H3BB owns communications finalization plus public/race closure.
 
 ## Origin
 Oversized slice: `009H3`

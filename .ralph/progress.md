@@ -1,5 +1,22 @@
 # Ralph Progress Log
 
+## 2026-07-18 - oversized 009H3B queue recovery
+
+- Queue recovery: Marked 009H3B Superseded after retained run `2026-07-18_022416_normal_run`
+  passed focused and twice-run PostgreSQL evidence but measured 2,118 changed lines against the
+  2,000-line limit.
+- Successors: Created dependency-ordered Not Started slices 009H3BA (dispatcher/template/render/
+  durable outbox freeze and adapter contract) and 009H3BB (communications finalization, complete
+  public behavior, safe ledgers, and race closure), each targeting 850-1,150 changed lines with a
+  mandatory resplit above a 1,350-line forecast.
+- Dependency update: 009G4 and 009I now depend on terminal successor 009H3BB. The original 009H3
+  parent was not modified.
+- Validation: Ralph's exact oversized-split semantics and queue-scope validators pass; whitespace
+  validation passes and 009H3 remains byte-for-byte unchanged.
+- Result: Queue-only recovery ready to commit; no product, migration, configuration, or automation
+  code changed.
+- Next action: Run 009H3BA, then 009H3BB, then 009G4 and 009I in dependency order.
+
 ## 2026-07-18 - 2026-07-18_020218_repair
 
 - Agent tool used: codex with the diagnosing-bugs feedback-loop discipline.

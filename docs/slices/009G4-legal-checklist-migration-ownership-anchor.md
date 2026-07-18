@@ -13,7 +13,7 @@ from a downstream disbursements migration, without replaying or weakening those 
 
 ## Depends On
 - 009G3
-- 009H3B
+- 009H3BB
 
 ## Source / Review References
 - `docs/source/codebase-design.md` §§6-8, 21, 36.1-36.2, and 42
