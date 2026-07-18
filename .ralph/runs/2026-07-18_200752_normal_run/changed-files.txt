@@ -1,0 +1,7 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/CR-011-github-ci-migration-test-schema-isolation.md
+ M docs/working/HANDOFF.md
+ M sfpcl_credit/tests/test_approval_read_scope_migration.py
+ M sfpcl_credit/tests/test_communication_job_migration.py
+?? .ralph/runs/2026-07-18_200752_normal_run/

@@ -1,0 +1,9 @@
+Django system check:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check
+System check identified no issues (0 silenced).
+Result: exit 0.
+
+Migration sync:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run
+No changes detected
+Result: exit 0.

@@ -1,0 +1,17 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalReadScopeMigrationTests sfpcl_credit.tests.test_communication_job_migration.GenericCommunicationJobMigrationTests --verbosity 2
+
+Result: exit 1; 3 tests run; 1 error.
+
+The approvals migration test passed, then
+GenericCommunicationJobMigrationTests.test_existing_advice_job_identity_and_attempt_history_are_preserved
+failed during its current-model fixture setup.
+
+sqlite3.OperationalError: table approval_cases has no column named appraisal_review_decision_id
+
+The exception was raised by ApprovalCase.objects.create before the communications migration behavior
+could be tested. The second communications test passed only because the first test's tearDown restored
+the current leaf migrations.
+
+Ran 3 tests in 38.379s
+FAILED (errors=1)

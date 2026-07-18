@@ -10,6 +10,11 @@ from sfpcl_credit.tests import test_disbursement_advice_api as advice_fixtures
 class GenericCommunicationJobMigrationTests(TransactionTestCase):
     reset_sequences = True
 
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
     def tearDown(self):
         executor = MigrationExecutor(connection)
         executor.migrate(executor.loader.graph.leaf_nodes())

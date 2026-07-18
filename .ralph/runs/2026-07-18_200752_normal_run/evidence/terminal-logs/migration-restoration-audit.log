@@ -1,0 +1,22 @@
+Command: mandated virtualenv Python AST audit of every `tests/test_*.py` class that directly
+subclasses `TransactionTestCase` and contains `MigrationExecutor`.
+
+tests/test_appraisal_api.py::AppraisalSnapshotMigrationTests: restore_current_leaf=True
+tests/test_appraisal_api.py::AppraisalHistoryHardeningMigrationTests: restore_current_leaf=True
+tests/test_appraisal_api.py::LegacyAppraisalRemediationMigrationTests: restore_current_leaf=True
+tests/test_approval_read_scope_migration.py::ApprovalReadScopeMigrationTests: restore_current_leaf=True
+tests/test_approval_read_scope_migration.py::ApprovalConflictProjectionMigrationTests: restore_current_leaf=True
+tests/test_approval_read_scope_migration.py::ApprovalCycleMigrationTests: restore_current_leaf=True
+tests/test_communication_job_migration.py::GenericCommunicationJobMigrationTests: restore_current_leaf=True
+tests/test_communication_receipt_owner_migration.py::LegacyAdviceTemplateProvenanceMigrationTests: restore_current_leaf=True
+tests/test_communication_receipt_owner_migration.py::CommunicationReceiptOwnerMigrationTests: restore_current_leaf=True
+tests/test_communication_receipt_owner_migration.py::CommunicationAdviceEvidenceMigrationTests: restore_current_leaf=True
+tests/test_credit_model_ownership_migration.py::CreditAssessmentModelOwnershipMigrationTests: restore_current_leaf=True
+tests/test_legal_checklist_migration_anchor.py::LegalChecklistConstraintOwnerMigrationTests: restore_current_leaf=True
+tests/test_legal_document_boundary.py::LegalDocumentOwnershipMigrationTests: restore_current_leaf=True
+tests/test_sap_model_ownership_migration.py::SapModelOwnershipMigrationTests: restore_current_leaf=True
+tests/test_security_instrument_boundary.py::SecurityInstrumentOwnershipMigrationTests: restore_current_leaf=True
+tests/test_witness_evidence_migration.py::WitnessEvidenceMigrationTests: restore_current_leaf=True
+
+AUDIT classes=16 missing_restoration=0
+Result: exit 0.

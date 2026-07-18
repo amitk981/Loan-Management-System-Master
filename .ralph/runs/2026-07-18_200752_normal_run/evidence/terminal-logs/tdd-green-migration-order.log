@@ -1,0 +1,15 @@
+Formerly failing order:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalReadScopeMigrationTests sfpcl_credit.tests.test_communication_job_migration.GenericCommunicationJobMigrationTests --verbosity 1
+
+Found 3 test(s).
+System check identified no issues (0 silenced).
+Ran 3 tests in 39.061s
+OK
+
+Reverse order:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_communication_job_migration.GenericCommunicationJobMigrationTests sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalReadScopeMigrationTests --verbosity 1
+
+Found 3 test(s).
+System check identified no issues (0 silenced).
+Ran 3 tests in 35.167s
+OK

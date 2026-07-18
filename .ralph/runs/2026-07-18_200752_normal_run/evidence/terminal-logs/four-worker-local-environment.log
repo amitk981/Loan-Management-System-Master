@@ -1,0 +1,14 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_approval_read_scope_migration.ApprovalReadScopeMigrationTests sfpcl_credit.tests.test_communication_job_migration.GenericCommunicationJobMigrationTests --parallel 4 --verbosity 1
+
+Local result: not an acceptance result. Django created/cloned the test databases, but spawned child
+processes failed while importing `cryptography` before the focused tests could run. The macOS child
+interpreter requested x86_64 while the mandated Ralph virtualenv contains an arm64
+`_cffi_backend.cpython-311-darwin.so`:
+
+ImportError: ... _cffi_backend.cpython-311-darwin.so ... incompatible architecture
+(have 'arm64', need 'x86_64')
+
+The worker pool then stopped making progress and was interrupted. No product/test assertion failed;
+the two serial order regressions are green. The Ralph orchestrator's independent four-worker backend
+gate and GitHub CI provide the authoritative acceptance environment.

@@ -1,7 +1,7 @@
 # Slice CR-011: GitHub CI migration tests leak an older approvals schema
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-18 from docs/change-requests/accepted/CR-011-github-ci-migration-test-schema-isolation.md.

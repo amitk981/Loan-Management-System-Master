@@ -17,6 +17,11 @@ class ApprovalReadScopeMigrationTests(TransactionTestCase):
         ("approvals", "0010_approvalcasereadscopegrant_and_more"),
     ]
 
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
     def test_migration_backfills_exact_scope_and_coherence_from_historical_state(self):
         executor = MigrationExecutor(connection)
         executor.migrate(self.migrate_from)

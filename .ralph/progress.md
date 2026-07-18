@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-18 - 2026-07-18_200752_normal_run
+
+- Agent tool used: codex with mandatory TDD and the `review` skill's independent Standards/Spec
+  passes.
+- Slice completed: CR-011-github-ci-migration-test-schema-isolation.
+- Summary: Restored current migration leaves after the approvals read-scope migration test and
+  explicitly normalized the communications migration test schema before its current-model fixture,
+  removing worker-order dependence without changing production behavior.
+- Tests run: exact formerly failing order RED then GREEN; reverse order GREEN; 16-class migration
+  restoration audit; Django check; migration sync. The local four-worker attempt was blocked before
+  assertions by an x86_64-child/arm64-virtualenv `_cffi_backend` mismatch and is delegated to the
+  independent Ralph/GitHub environment.
+- Evidence saved: `.ralph/runs/2026-07-18_200752_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent Ralph four-worker coverage, protected-path, queue, and diff
+  validation; commit remains delegated to the orchestrator.
+- Risk level: High by CR classification; incremental change is test-only and bounded to exact
+  current-leaf setup/cleanup. No production model, migration, API, frontend, dependency, or business
+  behavior changed.
+- Next action: Perform the overdue architecture review, then run already-concrete 009I2 before 009J.
+
 ## 2026-07-18 - 2026-07-18_162512_normal_run
 
 - Agent tool used: codex with mandatory TDD, deep-module seam review, and the `review` skill's
@@ -9203,6 +9223,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_190359_normal_run/.ralph/runs/2026-07-18_190359_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_190359_normal_run/.ralph/runs/2026-07-18_190359_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 20:28:40 - 2026-07-18_200752_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-011-github-ci-migration-test-schema-isolation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_200752_normal_run/.ralph/runs/2026-07-18_200752_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_200752_normal_run/.ralph/runs/2026-07-18_200752_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
