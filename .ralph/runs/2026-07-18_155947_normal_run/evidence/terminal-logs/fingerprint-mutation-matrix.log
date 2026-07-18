@@ -1,0 +1,9 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_historical_exception_rejects_complete_model_state_mutation_matrix (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_historical_exception_rejects_complete_model_state_mutation_matrix) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.069s
+
+OK

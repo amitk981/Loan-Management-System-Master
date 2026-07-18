@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -12,6 +13,7 @@ from django.db.migrations import Migration
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.operations.base import Operation
 from django.db.migrations.state import ProjectState
+from django.db.migrations.writer import MigrationWriter
 
 
 _CHECKLIST_KEY = ("legal_documents", "documentchecklist")
@@ -57,6 +59,35 @@ _RETAINED_OPERATIONS = (
         ),
     ),
 )
+_RETAINED_CONSTRAINT_FINGERPRINTS = MappingProxyType(
+    {
+        "checklist_account_requires_epic_009": (
+            "models.CheckConstraint(check=models.Q((\'loan_account_id__isnull\', True)), "
+            "name=\'checklist_account_requires_epic_009\')"
+        ),
+        "checklist_finance_requires_epic_009": (
+            "models.CheckConstraint(check=models.Q("
+            "(\'senior_manager_finance_signature_id__isnull\', True)), "
+            "name=\'checklist_finance_requires_epic_009\')"
+        ),
+        "checklist_finance_requires_sanction": (
+            "models.CheckConstraint(check=models.Q("
+            "(\'senior_manager_finance_signature_id__isnull\', True), "
+            "(\'sanction_committee_signature_id__isnull\', False), "
+            "_connector=\'OR\'), name=\'checklist_finance_requires_sanction\')"
+        ),
+        "checklist_ready_evidence_complete": (
+            "models.CheckConstraint(check=models.Q(models.Q("
+            "(\'checklist_status\', \'ready\'), "
+            "(\'loan_account_id__isnull\', False), "
+            "(\'senior_manager_finance_signature_id__isnull\', False)), "
+            "models.Q(models.Q((\'checklist_status\', \'ready\'), _negated=True), "
+            "(\'loan_account_id__isnull\', True), "
+            "(\'senior_manager_finance_signature_id__isnull\', True)), "
+            "_connector=\'OR\'), name=\'checklist_ready_evidence_complete\')"
+        ),
+    }
+)
 
 LEGAL_CHECKLIST_STATE_ALLOWLIST = frozenset(
     f"{item.path}:{item.class_name}" for item in _RETAINED_OPERATIONS
@@ -100,9 +131,9 @@ def legal_checklist_state_ownership_violations(
         normalized = path.as_posix()
         owner_app = normalized.split("/", 1)[0]
         for index, operation in enumerate(migration_operations):
-            before = state.clone()
-            operation.state_forwards(owner_app, state)
-            changed_models = _changed_models(before, state)
+            before, changed_models = _apply_operation_state(
+                owner_app=owner_app, state=state, operation=operation
+            )
             if _CHECKLIST_KEY not in changed_models or owner_app == "legal_documents":
                 continue
             identity = f"{normalized}:{operation.__class__.__name__}"
@@ -116,6 +147,14 @@ def legal_checklist_state_ownership_violations(
             ):
                 violations.append(identity)
     return violations
+
+
+def _apply_operation_state(
+    *, owner_app: str, state: ProjectState, operation: Operation
+) -> tuple[ProjectState, set[tuple[str, str]]]:
+    before = deepcopy(state)
+    operation.state_forwards(owner_app, state)
+    return before, _changed_models(before, state)
 
 
 def _repository_operations(
@@ -206,6 +245,30 @@ def _constraint_names(state: ProjectState) -> set[str]:
     }
 
 
+def _checklist_fingerprint(
+    state: ProjectState, *, omit_constraint: str | None = None
+) -> str:
+    model_state = state.models[_CHECKLIST_KEY].clone()
+    if omit_constraint is not None:
+        model_state.options["constraints"] = [
+            constraint
+            for constraint in model_state.options.get("constraints", ())
+            if constraint.name != omit_constraint
+        ]
+    return MigrationWriter.serialize(_model_state_value(model_state))[0]
+
+
+def _constraint_fingerprint(state: ProjectState, name: str) -> str | None:
+    matching = [
+        constraint
+        for constraint in state.models[_CHECKLIST_KEY].options.get("constraints", ())
+        if constraint.name == name
+    ]
+    if len(matching) != 1:
+        return None
+    return MigrationWriter.serialize(matching[0])[0]
+
+
 def _is_retained_transition(
     *,
     path: str,
@@ -233,9 +296,21 @@ def _is_retained_transition(
     before_names = _constraint_names(before)
     after_names = _constraint_names(after)
     if action == "remove":
-        return before_names - after_names == {constraint_name} and not (
-            after_names - before_names
+        return (
+            before_names - after_names == {constraint_name}
+            and not (after_names - before_names)
+            and _constraint_fingerprint(before, constraint_name)
+            == _RETAINED_CONSTRAINT_FINGERPRINTS[constraint_name]
+            and _checklist_fingerprint(
+                before, omit_constraint=constraint_name
+            )
+            == _checklist_fingerprint(after)
         )
-    return after_names - before_names == {constraint_name} and not (
-        before_names - after_names
+    return (
+        after_names - before_names == {constraint_name}
+        and not (before_names - after_names)
+        and _constraint_fingerprint(after, constraint_name)
+        == _RETAINED_CONSTRAINT_FINGERPRINTS[constraint_name]
+        and _checklist_fingerprint(before)
+        == _checklist_fingerprint(after, omit_constraint=constraint_name)
     )

@@ -1,7 +1,7 @@
 # Slice 009G6: Legal Migration Exception Fingerprint Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -53,10 +53,9 @@ High
 - Only the exact historical constraint transitions pass, with no schema or business-behavior change.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Review probe written failing first
-- [ ] Complete state fingerprint guard implemented
-- [ ] Migration owner/manifest tests green
-- [ ] Risk, evidence, handoff, state, and digest updated
-- [ ] Commit delegated to the orchestrator after gates
-
+- [x] Execution plan written
+- [x] Review probe written failing first
+- [x] Complete state fingerprint guard implemented
+- [x] Migration owner/manifest tests green
+- [x] Risk, evidence, handoff, state, and digest updated
+- [x] Commit delegated to the orchestrator after gates

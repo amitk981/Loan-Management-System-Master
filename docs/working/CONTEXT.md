@@ -183,7 +183,8 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   found a same-model migration-fingerprint bypass; reconstructed legacy template facts labelled as
   verified history; an advice-specific, implicit-idempotency dispatcher with no runnable/recoverable
   worker and a false-success manual adapter; and MP14 application-selection, SAP-stage, timestamp,
-  visual-reuse, and browser-evidence drift. Corrective 009G6, 009H6, 009H7, 009H8, and 009I2 are
+  visual-reuse, and browser-evidence drift. Corrective 009G6 now freezes complete checklist model
+  state across both retained remove/add exception classes; 009H6, 009H7, 009H8, and 009I2 remain
   dependency-ordered before 009J.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —

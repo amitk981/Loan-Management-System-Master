@@ -9079,3 +9079,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-18 - 2026-07-18_155947_normal_run
+
+- Agent tool used: codex with the implement, TDD, codebase-design, and two-axis review skills.
+- Slice completed: 009G6-legal-migration-exception-fingerprint-closure.
+- Summary: Deep-snapshotted every migration operation state and froze the canonical complete
+  checklist footprint plus exact retained constraint definitions for all four disbursements 0005
+  exception indices. No migration, schema, model, API, or checklist behavior changed.
+- Tests run: three failing-first tracers; all-four-operation acceptance; 24-case footprint matrix;
+  20-test forward/reverse/reapply manifest and ownership guard file; Django check; migration sync;
+  compile; zero-SQL legal 0015 proof; diff check. Complete backend coverage remains delegated to
+  the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_155947_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High because the guard protects legal/financial migration history; mutation risk is
+  minimized by unchanged migrations/models/schema and exact retained manifests.
+- Next action: Run 009H6, then 009H7, 009H8, and 009I2 in dependency order.
+
+## 2026-07-18 16:25:01 - 2026-07-18_155947_normal_run
+- Agent tool used: codex
+- Slice attempted: 009G6-legal-migration-exception-fingerprint-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_155947_normal_run/.ralph/runs/2026-07-18_155947_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_155947_normal_run/.ralph/runs/2026-07-18_155947_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

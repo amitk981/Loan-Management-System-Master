@@ -1,5 +1,23 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009G6 Legal Migration Exception Fingerprint Closure
+
+- The legal-owned migration guard now deep-snapshots each real Django `ProjectState` before an
+  operation runs. This is required because the retained add operations mutate the nested constraint
+  list in place and an ordinary Django state clone shares that list, which could erase the genuine
+  before-state and hide the transition.
+- Each of the four retained disbursements 0005 operation identities now freezes the exact expected
+  constraint definition and accepts only a canonical complete `DocumentChecklist` state whose sole
+  difference is that constraint. Fields, all options (including table/index/constraint definitions),
+  bases, managers, and other-model footprints fail closed.
+- The independent same-model option probe failed first. All four real operation indices pass, and a
+  24-case matrix rejects one-property field/constraint/index/option/base/manager mutations across
+  both remove and both add identities. The 20-test forward/reverse/reapply manifest and guard file,
+  Django check, migration sync, compilation, and legal 0015 zero-SQL proof pass.
+- Legal 0015, disbursements 0005, models, physical schema, rows, ids, APIs, and checklist behavior
+  remain unchanged. 009H6 and 009H7 were rechecked and already contain concrete executable
+  provenance, migration, interface, idempotency, adapter, dependency, race, and evidence contracts.
+
 ## Architecture Review 2026-07-18 15:45 — Migration, Communications Runtime, and MP14 Truth
 
 - Independent review of 009G5, 009H4, 009H5, and 009I found that the legal migration exception

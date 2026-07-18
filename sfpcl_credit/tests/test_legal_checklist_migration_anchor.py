@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from django.db import connection, migrations
+from django.db import connection, migrations, models
 from django.db.migrations.operations.base import Operation
 from django.db.migrations.executor import MigrationExecutor
 from django.db.migrations.loader import MigrationLoader
@@ -8,6 +8,11 @@ from django.test import SimpleTestCase, TransactionTestCase
 
 from sfpcl_credit.legal_documents.migration_state_guard import (
     LEGAL_CHECKLIST_STATE_ALLOWLIST,
+    _CHECKLIST_KEY,
+    _HISTORICAL_MODULE,
+    _HISTORICAL_PATH,
+    _apply_operation_state,
+    _is_retained_transition,
     legal_checklist_state_ownership_violations,
 )
 
@@ -304,6 +309,178 @@ class LegalChecklistConstraintOwnerMigrationTests(TransactionTestCase):
 
 
 class LegalChecklistMigrationOwnershipGuardTests(SimpleTestCase):
+    def test_guard_snapshots_all_four_historical_operation_changes(self):
+        loader = MigrationLoader(None)
+        migration = loader.disk_migrations[
+            (
+                "disbursements",
+                "0005_disbursementadviceintent_loanregisterupdate_and_more",
+            )
+        ]
+        state = loader.project_state(migration.dependencies)
+
+        for index, operation in enumerate(migration.operations[:4]):
+            with self.subTest(index=index):
+                before, changed_models = _apply_operation_state(
+                    owner_app="disbursements",
+                    state=state,
+                    operation=operation,
+                )
+
+                self.assertEqual(changed_models, {_CHECKLIST_KEY})
+                self.assertTrue(
+                    _is_retained_transition(
+                        path=_HISTORICAL_PATH,
+                        operation=operation,
+                        index=index,
+                        before=before,
+                        after=state,
+                        changed_models=changed_models,
+                    )
+                )
+
+    def test_historical_exception_rejects_extra_same_model_option_mutation(self):
+        after = MigrationLoader(None).project_state()
+        before = after.clone()
+        before_model = before.models[_CHECKLIST_KEY]
+        before_model.options["constraints"] = [
+            item
+            for item in before_model.options.get("constraints", ())
+            if item.name != "checklist_finance_requires_sanction"
+        ]
+        before_model.options["review_probe_extra_change"] = "before"
+        after.models[_CHECKLIST_KEY].options["review_probe_extra_change"] = "after"
+        operation_type = type(
+            "AddLegalChecklistConstraint",
+            (Operation,),
+            {"__module__": _HISTORICAL_MODULE},
+        )
+
+        self.assertFalse(
+            _is_retained_transition(
+                path=_HISTORICAL_PATH,
+                operation=operation_type(),
+                index=2,
+                before=before,
+                after=after,
+                changed_models={_CHECKLIST_KEY},
+            )
+        )
+
+    def test_historical_exception_rejects_changed_expected_constraint_definition(self):
+        after = MigrationLoader(None).project_state()
+        before = after.clone()
+        constraint_name = "checklist_finance_requires_sanction"
+        before.models[_CHECKLIST_KEY].options["constraints"] = [
+            item
+            for item in before.models[_CHECKLIST_KEY].options.get("constraints", ())
+            if item.name != constraint_name
+        ]
+        after_model = after.models[_CHECKLIST_KEY]
+        after_model.options["constraints"] = [
+            models.CheckConstraint(
+                check=models.Q(
+                    ("senior_manager_finance_signature_id__isnull", False)
+                ),
+                name=constraint_name,
+            )
+            if item.name == constraint_name
+            else item
+            for item in after_model.options.get("constraints", ())
+        ]
+        operation_type = type(
+            "AddLegalChecklistConstraint",
+            (Operation,),
+            {"__module__": _HISTORICAL_MODULE},
+        )
+
+        self.assertFalse(
+            _is_retained_transition(
+                path=_HISTORICAL_PATH,
+                operation=operation_type(),
+                index=2,
+                before=before,
+                after=after,
+                changed_models={_CHECKLIST_KEY},
+            )
+        )
+
+    def test_historical_exception_rejects_complete_model_state_mutation_matrix(self):
+        def replace_field(model_state):
+            model_state.fields["remarks"] = models.TextField(blank=False)
+
+        def replace_constraint(model_state):
+            model_state.options["constraints"] = [
+                models.CheckConstraint(
+                    check=models.Q(("checklist_status", "review_probe")),
+                    name="document_checklist_valid_status",
+                )
+                if item.name == "document_checklist_valid_status"
+                else item
+                for item in model_state.options.get("constraints", ())
+            ]
+
+        def append_index(model_state):
+            model_state.options["indexes"] = [
+                *model_state.options.get("indexes", ()),
+                models.Index(
+                    fields=["created_at"], name="review_probe_checklist_idx"
+                ),
+            ]
+
+        def change_option(model_state):
+            model_state.options["ordering"] = ["updated_at"]
+
+        def change_bases(model_state):
+            model_state.bases = ("legal_documents.reviewprobebase",)
+
+        def change_managers(model_state):
+            model_state.managers = [("review_probe", models.Manager())]
+
+        mutations = {
+            "fields": replace_field,
+            "constraints": replace_constraint,
+            "indexes": append_index,
+            "options": change_option,
+            "bases": change_bases,
+            "managers": change_managers,
+        }
+        loader = MigrationLoader(None)
+        migration = loader.disk_migrations[
+            (
+                "disbursements",
+                "0005_disbursementadviceintent_loanregisterupdate_and_more",
+            )
+        ]
+
+        for index, operation in enumerate(migration.operations[:4]):
+            for footprint, mutate in mutations.items():
+                with self.subTest(index=index, footprint=footprint):
+                    state = loader.project_state(migration.dependencies)
+                    for prior_operation in migration.operations[:index]:
+                        _apply_operation_state(
+                            owner_app="disbursements",
+                            state=state,
+                            operation=prior_operation,
+                        )
+                    before, changed_models = _apply_operation_state(
+                        owner_app="disbursements",
+                        state=state,
+                        operation=operation,
+                    )
+                    mutate(state.models[_CHECKLIST_KEY])
+
+                    self.assertFalse(
+                        _is_retained_transition(
+                            path=_HISTORICAL_PATH,
+                            operation=operation,
+                            index=index,
+                            before=before,
+                            after=state,
+                            changed_models=changed_models,
+                        )
+                    )
+
     def test_shared_package_contains_no_legal_migration_policy(self):
         shared_root = Path(__file__).resolve().parents[1] / "shared"
         shared_source = "\n".join(

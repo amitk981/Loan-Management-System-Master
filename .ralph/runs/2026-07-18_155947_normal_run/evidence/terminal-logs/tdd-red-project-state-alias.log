@@ -1,0 +1,29 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_guard_snapshots_all_four_historical_operation_changes (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_snapshots_all_four_historical_operation_changes) ... 
+  test_guard_snapshots_all_four_historical_operation_changes (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_snapshots_all_four_historical_operation_changes) (index=2) ... FAIL
+  test_guard_snapshots_all_four_historical_operation_changes (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_snapshots_all_four_historical_operation_changes) (index=3) ... FAIL
+
+======================================================================
+FAIL: test_guard_snapshots_all_four_historical_operation_changes (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_snapshots_all_four_historical_operation_changes) (index=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_155947_normal_run/sfpcl_credit/tests/test_legal_checklist_migration_anchor.py", line 327, in test_guard_snapshots_all_four_historical_operation_changes
+    self.assertEqual(_changed_models(before, state), {_CHECKLIST_KEY})
+AssertionError: Items in the second set but not the first:
+('legal_documents', 'documentchecklist')
+
+======================================================================
+FAIL: test_guard_snapshots_all_four_historical_operation_changes (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_snapshots_all_four_historical_operation_changes) (index=3)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_155947_normal_run/sfpcl_credit/tests/test_legal_checklist_migration_anchor.py", line 327, in test_guard_snapshots_all_four_historical_operation_changes
+    self.assertEqual(_changed_models(before, state), {_CHECKLIST_KEY})
+AssertionError: Items in the second set but not the first:
+('legal_documents', 'documentchecklist')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+FAILED (failures=2)

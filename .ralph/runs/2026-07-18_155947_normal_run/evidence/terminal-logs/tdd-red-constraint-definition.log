@@ -1,0 +1,17 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_historical_exception_rejects_changed_expected_constraint_definition (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_historical_exception_rejects_changed_expected_constraint_definition) ... FAIL
+
+======================================================================
+FAIL: test_historical_exception_rejects_changed_expected_constraint_definition (sfpcl_credit.tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_historical_exception_rejects_changed_expected_constraint_definition)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_155947_normal_run/sfpcl_credit/tests/test_legal_checklist_migration_anchor.py", line 366, in test_historical_exception_rejects_changed_expected_constraint_definition
+    self.assertFalse(
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.041s
+
+FAILED (failures=1)
