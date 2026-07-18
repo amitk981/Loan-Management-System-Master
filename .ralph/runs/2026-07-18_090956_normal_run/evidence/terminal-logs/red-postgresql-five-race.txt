@@ -1,0 +1,29 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_five_advice_attempts_retain_one_accepted_delivery_run_one (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceRaceTests.test_five_advice_attempts_retain_one_accepted_delivery_run_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1017, in test_five_advice_attempts_retain_one_accepted_delivery_run_one
+    self._run_five()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1060, in _run_five
+    self.assertEqual(len(winners), 1, results)
+AssertionError: 5 != 1 : [('winner', 'aee8150e-b65a-421e-b682-d42f18294b5d'), ('winner', 'aee8150e-b65a-421e-b682-d42f18294b5d'), ('winner', 'aee8150e-b65a-421e-b682-d42f18294b5d'), ('winner', 'aee8150e-b65a-421e-b682-d42f18294b5d'), ('winner', 'aee8150e-b65a-421e-b682-d42f18294b5d')]
+
+======================================================================
+FAIL: test_five_advice_attempts_retain_one_accepted_delivery_run_two (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceRaceTests.test_five_advice_attempts_retain_one_accepted_delivery_run_two)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1020, in test_five_advice_attempts_retain_one_accepted_delivery_run_two
+    self._run_five()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 1060, in _run_five
+    self.assertEqual(len(winners), 1, results)
+AssertionError: 5 != 1 : [('winner', 'dd077048-fea2-4ae2-bccc-f270eb4975da'), ('winner', 'dd077048-fea2-4ae2-bccc-f270eb4975da'), ('winner', 'dd077048-fea2-4ae2-bccc-f270eb4975da'), ('winner', 'dd077048-fea2-4ae2-bccc-f270eb4975da'), ('winner', 'dd077048-fea2-4ae2-bccc-f270eb4975da')]
+
+----------------------------------------------------------------------
+Ran 2 tests in 11.817s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

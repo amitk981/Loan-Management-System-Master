@@ -1,0 +1,20 @@
+ .ralph/progress.md                                 |  19 ++
+ .ralph/state.json                                  |   7 +-
+ ...communications-finalization-and-race-closure.md |  24 +-
+ docs/working/HANDOFF.md                            |  53 +--
+ .../epic-009-sap-loan-account-disbursement.md      |  27 ++
+ .../modules/communication_dispatcher.py            | 330 +++++++++++++++++++
+ .../disbursements/modules/disbursement_advice.py   | 357 +++------------------
+ .../tests/test_communication_advice_persistence.py |  14 +
+ sfpcl_credit/tests/test_disbursement_advice_api.py | 177 ++++++++--
+ 9 files changed, 640 insertions(+), 368 deletions(-)
+19	0	.ralph/progress.md
+4	3	.ralph/state.json
+12	12	docs/slices/009H3BB-communications-finalization-and-race-closure.md
+27	26	docs/working/HANDOFF.md
+27	0	docs/working/digests/epic-009-sap-loan-account-disbursement.md
+330	0	sfpcl_credit/communications/modules/communication_dispatcher.py
+52	305	sfpcl_credit/disbursements/modules/disbursement_advice.py
+14	0	sfpcl_credit/tests/test_communication_advice_persistence.py
+155	22	sfpcl_credit/tests/test_disbursement_advice_api.py
+tracked_files=9 insertions=640 deletions=368 changed_lines=1008

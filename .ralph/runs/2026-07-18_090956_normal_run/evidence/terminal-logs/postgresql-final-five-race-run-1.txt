@@ -1,0 +1,11 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.advice_race_results= [('clean_loser', 'Another caller finalized the accepted disbursement advice.'), ('winner', '5c0fb107-3d4b-4a17-a15e-c5b9647ebb61'), ('clean_loser', 'Another caller finalized the accepted disbursement advice.'), ('clean_loser', 'Another caller finalized the accepted disbursement advice.'), ('clean_loser', 'Another caller finalized the accepted disbursement advice.')] adapter_results= 1 provider_identities= 1
+.advice_race_results= [('winner', 'dda9ebb4-3feb-49ae-a15b-17283b94de6b'), ('clean_loser', 'Another caller finalized the accepted disbursement advice.'), ('clean_loser', 'Another caller finalized the accepted disbursement advice.'), ('clean_loser', 'Another caller finalized the accepted disbursement advice.'), ('clean_loser', 'Another caller finalized the accepted disbursement advice.')] adapter_results= 1 provider_identities= 1
+
+----------------------------------------------------------------------
+Ran 2 tests in 11.681s
+
+OK
+Destroying test database for alias 'default'...

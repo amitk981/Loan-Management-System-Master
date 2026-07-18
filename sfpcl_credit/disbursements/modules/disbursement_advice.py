@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-import hashlib
-import json
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -9,14 +7,10 @@ from django.db import transaction
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.communications.modules.communication_dispatcher import (
-    AdviceDeliveryDecision,
+    AdviceFinalizationRequest,
     CommunicationDeliveryFailed,
     CommunicationDispatcher,
     CommunicationDispatchConflict,
-)
-from sfpcl_credit.communications.models import (
-    Communication,
-    DisbursementAdviceDeliveryReceipt,
 )
 from sfpcl_credit.disbursements.models import (
     BankTransfer,
@@ -37,11 +31,9 @@ from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
     SapCustomerProfileModule,
 )
-from sfpcl_credit.workflows.events import record_workflow_event
 
 
 SEND_ADVICE_PERMISSION = "finance.disbursement.send_advice"
-ADVICE_ACTION = "disbursement.advice_sent"
 ADVICE_VARIABLES = {
     "borrower_name",
     "application_reference_number",
@@ -78,7 +70,10 @@ def _send_advice(*, actor, disbursement_id, payload, request=None, adapter=None)
     cleaned = _validate_payload(payload)
     with transaction.atomic():
         context = _locked_advice_context(actor, disbursement_id)
-        if context.row.disbursement_advice_communication_id is None:
+        started_without_finalization = (
+            context.row.disbursement_advice_communication_id is None
+        )
+        if started_without_finalization:
             _validate_request_context(context, cleaned)
             _require_pending_delivery(context)
     try:
@@ -90,8 +85,6 @@ def _send_advice(*, actor, disbursement_id, payload, request=None, adapter=None)
         raise DisbursementAdviceDeliveryFailed(str(exc)) from exc
     except CommunicationDispatchConflict as exc:
         raise DisbursementAdviceConflict(str(exc)) from exc
-    receipt = _retained_receipt(decision)
-
     with transaction.atomic():
         context = _locked_advice_context(actor, disbursement_id)
         try:
@@ -100,21 +93,25 @@ def _send_advice(*, actor, disbursement_id, payload, request=None, adapter=None)
             )
         except CommunicationDispatchConflict as exc:
             raise DisbursementAdviceConflict(str(exc)) from exc
-        replay = _current_replay(context, cleaned, decision)
-        if replay is not None:
-            return replay
-        _validate_request_context(context, cleaned)
-        _require_pending_delivery(context)
-        if not _receipt_matches(
-            receipt,
-            decision=decision,
-        ):
+        is_replay = context.row.disbursement_advice_communication_id is not None
+        if is_replay and started_without_finalization:
             raise DisbursementAdviceConflict(
-                "The retained provider acceptance is stale or incoherent."
+                "Another caller finalized the accepted disbursement advice."
             )
-        return _persist_accepted_delivery(
-            context, receipt, decision, request=request
-        )
+        if not is_replay:
+            _validate_request_context(context, cleaned)
+            _require_pending_delivery(context)
+        try:
+            finalization = CommunicationDispatcher.finalize(
+                context=context.dispatch_context,
+                decision=decision,
+                request=None if is_replay else _finalization_request(request),
+            )
+        except CommunicationDispatchConflict as exc:
+            raise DisbursementAdviceConflict(str(exc)) from exc
+        if is_replay:
+            return _current_replay(context, cleaned, finalization)
+        return _consume_finalization(context, finalization)
 
 
 def _locked_advice_context(actor, disbursement_id):
@@ -200,10 +197,18 @@ def _locked_advice_context(actor, disbursement_id):
 
 def _current_replay(context, cleaned, decision):
     row = context.row
-    if row.disbursement_advice_communication_id is None:
-        return None
-    if _retained_advice_is_coherent(context, cleaned, decision):
-        return serialize_advice(row.disbursement_advice_communication)
+    intent = context.intent
+    if (
+        cleaned["channel"] == "email"
+        and cleaned["recipient_email"] == context.canonical_email
+        and row.disbursement_advice_communication_id == decision.communication_id
+        and intent.delivery_status == DisbursementAdviceIntent.DELIVERY_SENT
+        and intent.delivery_action_id == decision.action_id
+        and intent.delivery_audit_id == decision.audit_id
+        and intent.delivery_workflow_event_id == decision.workflow_id
+        and intent.delivery_evidence_digest == decision.delivery_evidence_digest
+    ):
+        return serialize_advice(row.pk, decision)
     raise DisbursementAdviceConflict(
         "The disbursement already has different or stale advice evidence."
     )
@@ -225,108 +230,14 @@ def _require_pending_delivery(context):
         )
 
 
-def _retained_receipt(decision: AdviceDeliveryDecision):
-    with transaction.atomic():
-        receipt, _created = (
-            DisbursementAdviceDeliveryReceipt.objects.select_for_update().get_or_create(
-                advice_intent_id=decision.advice_intent_id,
-                defaults={
-                    "idempotency_key": decision.idempotency_key,
-                    "payload_digest": decision.payload_digest,
-                    "external_message_id": decision.external_message_id,
-                    "delivery_status": decision.delivery_status,
-                    "accepted_at": decision.accepted_at,
-                },
-            )
-        )
-    if not _receipt_matches(receipt, decision=decision):
-        raise DisbursementAdviceConflict(
-            "The retained provider acceptance is stale or incoherent."
-        )
-    return receipt
-
-
-def _receipt_matches(receipt, *, decision):
-    return bool(
-        receipt.advice_intent_id == decision.advice_intent_id
-        and receipt.idempotency_key == decision.idempotency_key
-        and receipt.payload_digest == decision.payload_digest
-        and receipt.delivery_status == decision.delivery_status == "sent"
-        and receipt.external_message_id == decision.external_message_id
-        and receipt.accepted_at == decision.accepted_at
-    )
-
-
-def _persist_accepted_delivery(context, receipt, decision, *, request):
-    operator = context.operator
+def _consume_finalization(context, decision):
     row = context.row
     intent = context.intent
-    action_id = uuid.uuid4()
-    communication = Communication.objects.create(
-        communication_id=decision.communication_id,
-        related_entity_type=decision.related_entity_type,
-        related_entity_id=decision.related_entity_id,
-        recipient_party_type="borrower",
-        recipient_party_id=row.member_id,
-        recipient_address=decision.recipient_address,
-        channel="email",
-        content_template_id=decision.template_id,
-        subject_snapshot=decision.subject,
-        body_snapshot=decision.body,
-        sent_by_user=operator,
-        sent_at=receipt.accepted_at,
-        delivery_status=receipt.delivery_status,
-        external_message_id=receipt.external_message_id,
-    )
-    request_id = _request_id(request)
-    ip_address = request_ip(request) if request else ""
-    user_agent = request_user_agent(request) if request else ""
-    evidence = _advice_audit_evidence(
-        context,
-        receipt,
-        decision,
-        action_id=action_id,
-        request_id=request_id,
-        ip_address=ip_address,
-        user_agent=user_agent,
-    )
-    audit = AuditLog.objects.create(
-        actor_user=operator,
-        actor_type="user",
-        action=ADVICE_ACTION,
-        entity_type="disbursement",
-        entity_id=row.pk,
-        old_value_json={"disbursement_advice_communication_id": None},
-        new_value_json=evidence,
-        ip_address=ip_address,
-        user_agent=user_agent,
-    )
-    workflow = record_workflow_event(
-        actor=operator,
-        workflow_name="DisbursementAdviceSent",
-        entity_type="disbursement",
-        entity_id=row.pk,
-        from_state="transfer_successful",
-        to_state="advice_sent",
-        trigger_reason=(
-            f"action_id={action_id};communication_id={communication.pk};"
-            f"request_id={request_id}"
-        ),
-        action_code=ADVICE_ACTION,
-        metadata=evidence,
-    )
     intent.delivery_status = DisbursementAdviceIntent.DELIVERY_SENT
-    intent.delivery_action_id = action_id
-    intent.delivery_audit = audit
-    intent.delivery_workflow_event = workflow
-    intent.delivery_evidence_digest = _delivery_evidence_digest(
-        context,
-        receipt,
-        decision,
-        evidence=evidence,
-        audit=audit,
-        workflow=workflow,
-    )
+    intent.delivery_action_id = decision.action_id
+    intent.delivery_audit_id = decision.audit_id
+    intent.delivery_workflow_event_id = decision.workflow_id
+    intent.delivery_evidence_digest = decision.delivery_evidence_digest
     intent.save(
         update_fields=[
             "delivery_status",
@@ -336,82 +247,26 @@ def _persist_accepted_delivery(context, receipt, decision, *, request):
             "delivery_evidence_digest",
         ]
     )
-    row.disbursement_advice_communication = communication
+    row.disbursement_advice_communication_id = decision.communication_id
     row.save(update_fields=["disbursement_advice_communication"])
-    return serialize_advice(communication)
+    return serialize_advice(row.pk, decision)
 
 
-def _advice_audit_evidence(
-    context, receipt, decision, *, action_id, request_id, ip_address, user_agent
-):
-    row = context.row
+def serialize_advice(disbursement_id, decision):
     return {
-        "action_id": str(action_id),
-        "disbursement_id": str(row.pk),
-        "communication_id": str(context.intent.pk),
-        "loan_account_id": str(row.loan_account_id),
-        "loan_application_id": str(row.loan_application_id),
-        "member_id": str(row.member_id),
-        "template_id": str(decision.template_id),
-        "template_code": decision.template_code,
-        "template_version": decision.template_version,
-        "recipient_masked": _masked_email(decision.recipient_address),
-        "recipient_digest": decision.recipient_digest,
-        "channel": "email",
-        "delivery_status": receipt.delivery_status,
-        "external_message_id": receipt.external_message_id,
-        "sent_at": _iso(receipt.accepted_at),
-        "disbursement_amount": f"{row.disbursement_amount:.2f}",
-        "bank_reference_masked": _masked_reference(row.bank_reference_number),
-        "transfer_success_action_id": str(row.transfer_success_action_id),
-        "transfer_success_evidence_digest": row.transfer_success_evidence_digest,
-        "actor_user_id": str(context.operator.pk),
-        "actor_role_code": context.role_code,
-        "actor_team_codes": sorted(context.operator.team_codes()),
-        "request_id": request_id,
-        "ip_address": ip_address,
-        "user_agent": user_agent,
-        "outcome": "sent",
+        "disbursement_id": str(disbursement_id),
+        "disbursement_advice_communication_id": str(decision.communication_id),
+        "delivery_status": decision.delivery_status,
+        "sent_at": _iso(decision.sent_at),
     }
 
 
-def _delivery_evidence_digest(
-    context, receipt, decision, *, evidence, audit, workflow
-):
-    facts = {
-        "advice_intent_id": str(context.intent.pk),
-        "intent_created_at": _iso(context.intent.created_at),
-        "audit_evidence": evidence,
-        "audit_id": str(audit.pk),
-        "audit_created_at": _iso(audit.created_at),
-        "workflow_id": str(workflow.pk),
-        "workflow_created_at": _iso(workflow.created_at),
-        "workflow_trigger_reason": workflow.trigger_reason,
-        "receipt_id": str(receipt.pk),
-        "receipt_payload_digest": receipt.payload_digest,
-        "subject_digest": hashlib.sha256(decision.subject.encode()).hexdigest(),
-        "body_digest": hashlib.sha256(decision.body.encode()).hexdigest(),
-        "template_approval_status": decision.template_approval_status,
-        "template_effective_from": decision.template_effective_from.isoformat(),
-        "template_effective_to": (
-            decision.template_effective_to.isoformat()
-            if decision.template_effective_to
-            else None
-        ),
-        "template_variables": list(decision.template_variables),
-    }
-    return hashlib.sha256(
-        json.dumps(facts, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-
-
-def serialize_advice(communication):
-    return {
-        "disbursement_id": str(communication.related_entity_id),
-        "disbursement_advice_communication_id": str(communication.pk),
-        "delivery_status": communication.delivery_status,
-        "sent_at": _iso(communication.sent_at),
-    }
+def _finalization_request(request):
+    return AdviceFinalizationRequest(
+        request_id=_request_id(request),
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
 
 
 def _validate_payload(payload):
@@ -556,117 +411,9 @@ def _lock_source_relations(row):
     ).first()
 
 
-def _retained_advice_is_coherent(context, cleaned, decision):
-    row = context.row
-    intent = context.intent
-    communication = row.disbursement_advice_communication
-    audits = list(
-        AuditLog.objects.select_for_update()
-        .filter(action=ADVICE_ACTION, entity_type="disbursement", entity_id=row.pk)
-        .order_by("audit_log_id")[:2]
-    )
-    workflows = list(
-        row.transfer_success_workflow_event.__class__.objects.select_for_update()
-        .filter(
-            workflow_name="DisbursementAdviceSent",
-            entity_type="disbursement",
-            entity_id=row.pk,
-        )
-        .order_by("workflow_event_id")[:2]
-    )
-    audit = audits[0] if len(audits) == 1 else None
-    workflow = workflows[0] if len(workflows) == 1 else None
-    receipt = (
-        DisbursementAdviceDeliveryReceipt.objects.select_for_update()
-        .filter(advice_intent=intent)
-        .first()
-    )
-    if audit is None or workflow is None or receipt is None:
-        return False
-    evidence = audit.new_value_json
-    if not isinstance(evidence, dict):
-        return False
-    try:
-        action_id = uuid.UUID(evidence.get("action_id", ""))
-    except (ValueError, TypeError, AttributeError):
-        return False
-    expected_evidence = _advice_audit_evidence(
-        context,
-        receipt,
-        decision,
-        action_id=action_id,
-        request_id=evidence.get("request_id"),
-        ip_address=evidence.get("ip_address"),
-        user_agent=evidence.get("user_agent"),
-    )
-    expected_trigger = (
-        f"action_id={action_id};communication_id={communication.pk};"
-        f"request_id={evidence.get('request_id')}"
-    )
-    receipt_current = _receipt_matches(
-        receipt,
-        decision=decision,
-    )
-    expected_digest = _delivery_evidence_digest(
-        context,
-        receipt,
-        decision,
-        evidence=evidence,
-        audit=audit,
-        workflow=workflow,
-    )
-    return bool(
-        cleaned["channel"] == communication.channel == "email"
-        and cleaned["recipient_email"]
-        == context.canonical_email
-        == decision.recipient_address
-        == communication.recipient_address
-        and communication.related_entity_type == decision.related_entity_type
-        and communication.related_entity_id == decision.related_entity_id == row.pk
-        and communication.recipient_party_type == "borrower"
-        and communication.recipient_party_id == row.member_id
-        and communication.sent_by_user_id == context.operator.pk
-        and communication.delivery_status == receipt.delivery_status == "sent"
-        and communication.sent_at == receipt.accepted_at
-        and communication.external_message_id == receipt.external_message_id
-        and communication.content_template_id == decision.template_id
-        and communication.subject_snapshot == decision.subject
-        and communication.body_snapshot == decision.body
-        and intent.pk == communication.pk
-        and intent.delivery_status == DisbursementAdviceIntent.DELIVERY_SENT
-        and intent.delivery_action_id == action_id
-        and intent.delivery_audit_id == audit.pk
-        and intent.delivery_workflow_event_id == workflow.pk
-        and intent.delivery_evidence_digest == expected_digest
-        and receipt_current
-        and len(audits) == 1
-        and len(workflows) == 1
-        and audit.actor_user_id == context.operator.pk
-        and audit.actor_type == "user"
-        and audit.action == ADVICE_ACTION
-        and audit.entity_type == "disbursement"
-        and audit.entity_id == row.pk
-        and audit.old_value_json == {"disbursement_advice_communication_id": None}
-        and evidence == expected_evidence
-        and audit.ip_address == evidence.get("ip_address")
-        and audit.user_agent == evidence.get("user_agent")
-        and workflow.workflow_name == "DisbursementAdviceSent"
-        and workflow.entity_id == row.pk
-        and workflow.from_state == "transfer_successful"
-        and workflow.to_state == "advice_sent"
-        and workflow.triggered_by_user_id == context.operator.pk
-        and workflow.trigger_reason == expected_trigger
-    )
-
-
 def _request_id(request):
     supplied = request.headers.get("X-Request-ID", "").strip() if request else ""
     return supplied if supplied and len(supplied) <= 255 else f"req_advice_{uuid.uuid4().hex}"
-
-
-def _masked_email(email):
-    local, domain = email.split("@", 1)
-    return f"{local[:1]}***@{domain}"
 
 
 def _iso(value):

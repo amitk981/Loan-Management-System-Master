@@ -9,16 +9,19 @@ from django.db import transaction
 from django.test import Client, TestCase, TransactionTestCase
 from django.utils import timezone
 
-from sfpcl_credit.communications.adapters import FakeEmailDeliveryAdapter
+from sfpcl_credit.communications.adapters import (
+    FakeEmailDeliveryAdapter,
+    FutureEmailDeliveryAdapter,
+)
 from sfpcl_credit.communications.models import (
     Communication,
     CommunicationDeliveryOutbox,
     ContentTemplate,
+    DisbursementAdviceDeliveryReceipt,
 )
 from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
-    DisbursementAdviceDeliveryReceipt,
     LoanRegisterUpdate,
 )
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
@@ -156,6 +159,19 @@ class DisbursementAdviceApiTests(TestCase):
             audit.new_value_json["communication_id"], str(communication.pk)
         )
         self.assertNotIn("RBL-ADVICE-9876", str(audit.new_value_json))
+        for protected in (
+            communication.recipient_address,
+            communication.subject_snapshot,
+            communication.body_snapshot,
+            communication.external_message_id,
+            f"{self.row.disbursement_amount:.2f}",
+        ):
+            self.assertNotIn(protected, str(audit.new_value_json))
+            self.assertNotIn(protected, workflow.trigger_reason)
+        self.assertNotIn("external_message_id", audit.new_value_json)
+        self.assertEqual(len(audit.new_value_json["provider_message_digest"]), 64)
+        self.assertEqual(len(audit.new_value_json["subject_digest"]), 64)
+        self.assertEqual(len(audit.new_value_json["body_digest"]), 64)
         self.assertEqual(
             LoanAccount.objects.values().get(pk=self.row.loan_account_id),
             account_before,
@@ -196,10 +212,13 @@ class DisbursementAdviceApiTests(TestCase):
     def test_exact_replay_is_zero_write_and_changed_replay_conflicts(self):
         class CountingAdapter(FakeEmailDeliveryAdapter):
             calls = 0
+            results = []
 
             def send_email(self, payload, idempotency_key):
                 self.calls += 1
-                return super().send_email(payload, idempotency_key)
+                result = super().send_email(payload, idempotency_key)
+                self.results.append(result)
+                return result
 
         adapter = CountingAdapter()
         with patch(
@@ -299,8 +318,10 @@ class DisbursementAdviceApiTests(TestCase):
         self._assert_no_advice_truth()
         self.row.advice_intent.refresh_from_db()
         self.assertEqual(self.row.advice_intent.delivery_status, "pending")
-        receipt = DisbursementAdviceDeliveryReceipt.objects.get(
-            advice_intent=self.row.advice_intent
+        self.assertFalse(
+            DisbursementAdviceDeliveryReceipt.objects.filter(
+                advice_intent=self.row.advice_intent
+            ).exists()
         )
 
         accepted = DisbursementWorkflow.send_advice(
@@ -314,6 +335,9 @@ class DisbursementAdviceApiTests(TestCase):
         )
 
         self.assertEqual(len(RecordingAdapter.receipts), 1)
+        receipt = DisbursementAdviceDeliveryReceipt.objects.get(
+            advice_intent=self.row.advice_intent
+        )
         self.assertEqual(
             accepted["sent_at"], receipt.accepted_at.isoformat().replace("+00:00", "Z")
         )
@@ -334,7 +358,7 @@ class DisbursementAdviceApiTests(TestCase):
                 return result
 
         with patch(
-            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "sfpcl_credit.communications.modules.communication_dispatcher."
             "_retained_receipt",
             side_effect=RuntimeError("forced failure before final receipt"),
         ):
@@ -410,7 +434,7 @@ class DisbursementAdviceApiTests(TestCase):
                 return result
 
         with patch(
-            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "sfpcl_credit.communications.modules.communication_dispatcher."
             "_retained_receipt",
             side_effect=RuntimeError("forced failure after accepted outbox"),
         ):
@@ -475,6 +499,56 @@ class DisbursementAdviceApiTests(TestCase):
             str(self.row.advice_intent.pk),
         )
 
+    def test_fresh_retry_recovers_before_protected_communication_commit(self):
+        class RecordingAdapter(FakeEmailDeliveryAdapter):
+            results = []
+
+            def send_email(self, payload, idempotency_key):
+                result = super().send_email(payload, idempotency_key)
+                self.results.append(result)
+                return result
+
+        with patch(
+            "sfpcl_credit.communications.modules.communication_dispatcher."
+            "_create_protected_communication",
+            side_effect=RuntimeError("forced failure before Communication commit"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "Communication commit"):
+                DisbursementWorkflow.send_advice(
+                    actor=self.actor,
+                    disbursement_id=self.row.pk,
+                    payload={
+                        "channel": "email",
+                        "recipient_email": "borrower.advice@example.com",
+                    },
+                    adapter=RecordingAdapter(),
+                )
+
+        outbox = CommunicationDeliveryOutbox.objects.get(
+            advice_intent=self.row.advice_intent
+        )
+        self.assertEqual(outbox.delivery_status, "sent")
+        self.assertFalse(
+            DisbursementAdviceDeliveryReceipt.objects.filter(
+                advice_intent=self.row.advice_intent
+            ).exists()
+        )
+        self._assert_no_advice_truth()
+
+        accepted = DisbursementWorkflow.send_advice(
+            actor=self.actor,
+            disbursement_id=self.row.pk,
+            payload={
+                "channel": "email",
+                "recipient_email": "borrower.advice@example.com",
+            },
+            adapter=RecordingAdapter(),
+        )
+
+        self.assertEqual(len(RecordingAdapter.results), 1)
+        self.assertEqual(accepted["delivery_status"], "sent")
+        self.assertEqual(self._advice_counts(), (1, 1, 1))
+
     def test_accepted_outbox_malformed_provider_result_fails_closed(self):
         class RecordingAdapter(FakeEmailDeliveryAdapter):
             calls = 0
@@ -485,7 +559,7 @@ class DisbursementAdviceApiTests(TestCase):
 
         adapter = RecordingAdapter()
         with patch(
-            "sfpcl_credit.disbursements.modules.disbursement_advice."
+            "sfpcl_credit.communications.modules.communication_dispatcher."
             "_retained_receipt",
             side_effect=RuntimeError("forced failure after provider acceptance"),
         ):
@@ -778,6 +852,37 @@ class DisbursementAdviceApiTests(TestCase):
             ).external_message_id,
         )
 
+    def test_future_adapter_final_dispatch_replays_without_second_transport_call(self):
+        class CountingTransport(FakeEmailDeliveryAdapter):
+            calls = 0
+
+            def send_email(self, payload, idempotency_key):
+                self.calls += 1
+                return super().send_email(payload, idempotency_key)
+
+        transport = CountingTransport()
+        first = DisbursementWorkflow.send_advice(
+            actor=self.actor,
+            disbursement_id=self.row.pk,
+            payload={
+                "channel": "email",
+                "recipient_email": "borrower.advice@example.com",
+            },
+            adapter=FutureEmailDeliveryAdapter(transport=transport),
+        )
+        replay = DisbursementWorkflow.send_advice(
+            actor=self.actor,
+            disbursement_id=self.row.pk,
+            payload={
+                "channel": "email",
+                "recipient_email": "borrower.advice@example.com",
+            },
+            adapter=FutureEmailDeliveryAdapter(transport=transport),
+        )
+
+        self.assertEqual(replay, first)
+        self.assertEqual(transport.calls, 1)
+
     def test_permission_scope_and_stale_transfer_fail_closed(self):
         wrong_role = self.owner.owner.fixture.fixture._user(
             "field_officer", "Advice Scope Outsider"
@@ -966,10 +1071,13 @@ class DisbursementAdviceRaceTests(TransactionTestCase):
 
         class CountingAdapter(FakeEmailDeliveryAdapter):
             calls = 0
+            results = []
 
             def send_email(self, payload, idempotency_key):
                 self.calls += 1
-                return super().send_email(payload, idempotency_key)
+                result = super().send_email(payload, idempotency_key)
+                self.results.append(result)
+                return result
 
         adapter = CountingAdapter()
 
@@ -978,32 +1086,57 @@ class DisbursementAdviceRaceTests(TransactionTestCase):
             try:
                 actor = User.objects.get(pk=self.actor_id)
                 gate.wait(timeout=15)
-                result = DisbursementWorkflow.send_advice(
-                    actor=actor,
-                    disbursement_id=self.disbursement_id,
-                    payload={
-                        "channel": "email",
-                        "recipient_email": self.recipient_email,
-                    },
-                    adapter=adapter,
-                )
-                return result["disbursement_advice_communication_id"]
+                try:
+                    result = DisbursementWorkflow.send_advice(
+                        actor=actor,
+                        disbursement_id=self.disbursement_id,
+                        payload={
+                            "channel": "email",
+                            "recipient_email": self.recipient_email,
+                        },
+                        adapter=adapter,
+                    )
+                    return ("winner", result["disbursement_advice_communication_id"])
+                except DisbursementAdviceConflict as exc:
+                    return ("clean_loser", str(exc))
             finally:
                 connections["default"].close()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
             results = list(pool.map(contender, range(5)))
 
-        self.assertEqual(len(set(results)), 1)
+        winners = [value for outcome, value in results if outcome == "winner"]
+        losers = [value for outcome, value in results if outcome == "clean_loser"]
+        print(
+            "advice_race_results=",
+            results,
+            "adapter_results=",
+            len(adapter.results),
+            "provider_identities=",
+            len({result.external_message_id for result in adapter.results}),
+        )
+        self.assertEqual(len(winners), 1, results)
+        self.assertEqual(len(losers), 4, results)
         self.assertGreaterEqual(adapter.calls, 1)
+        self.assertEqual(len(adapter.results), adapter.calls)
+        self.assertEqual(
+            len({result.external_message_id for result in adapter.results}), 1
+        )
         self.assertEqual(
             DisbursementAdviceDeliveryReceipt.objects.filter(
-                advice_intent_id=results[0]
+                advice_intent_id=winners[0]
             ).count(),
             1,
         )
         row = Disbursement.objects.get(pk=self.disbursement_id)
-        self.assertEqual(str(row.disbursement_advice_communication_id), results[0])
+        intent = row.advice_intent
+        self.assertEqual(str(row.disbursement_advice_communication_id), winners[0])
+        self.assertEqual(intent.delivery_status, "sent")
+        self.assertIsNotNone(intent.delivery_action_id)
+        self.assertIsNotNone(intent.delivery_audit_id)
+        self.assertIsNotNone(intent.delivery_workflow_event_id)
+        self.assertTrue(intent.delivery_evidence_digest)
+        self.assertEqual(CommunicationDeliveryOutbox.objects.count(), 1)
         self.assertEqual(
             Communication.objects.filter(
                 related_entity_type="disbursement",

@@ -259,14 +259,15 @@
     "009G3-post-transfer-aggregate-and-checklist-integrity-closure",
     "CR-010-backend-pending-age-parallel-ci-flake",
     "009H3A-communications-advice-persistence-and-provider-identity",
-    "009H3BA-communications-dispatcher-outbox-freeze"
+    "009H3BA-communications-dispatcher-outbox-freeze",
+    "009H3BB-communications-finalization-and-race-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "d0ae505e",
-  "last_run_id": "2026-07-18_085057_repair",
+  "last_run_id": "2026-07-18_090956_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

@@ -1,36 +1,37 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-18_085057_repair
+2026-07-18_090956_normal_run
 
 ## Current Status
-009H3BA is complete. The new deep `communications.modules.communication_dispatcher` is the sole
-owner of approved/effective advice-template resolution, exact variables and sensitive-value checks,
-rendering, full provenance checksum, durable outbox reconciliation, adapter dispatch, and provider-
-result validation. It imports no disbursement code. Disbursements retains authority, locked current
-financial/upstream facts, and supplies one frozen primitive `DisbursementAdviceContext`.
+009H3BB is complete. `communications.modules.communication_dispatcher` now owns the complete advice
+lifecycle behind two narrow interfaces: dispatch freezes/reconciles BA's outbox and provider result;
+finalize retains/reconciles the communications-owned receipt, protected Communication, safe audit,
+workflow event, and delivery digest under the financial context owner's transaction. Communications
+imports no disbursement code and never saves supplied financial objects.
 
-The unchanged 009H3A outbox now commits every provider-relevant recipient/template/render/payload/
-entity fact before the adapter call. Accepted provider truth survives the forced pre-receipt crash;
-changed recipient or every tested template-provenance dimension conflicts without another call,
-while an exact fresh-adapter retry finalizes from the same provider identity. Provider rejection and
-malformed results leave the outbox pending and create no final truth. The public API, 009H2 roles/
-scope/current truth/masking/replay, and zero-financial-write behavior remain unchanged.
+Disbursements retains the public endpoint, payload validation, role/object authority, locked current
+transfer/register/intent/account/member/template context, and its immutable delivery action/link. It
+atomically consumes the ordinary frozen finalization decision and contains no duplicate receipt,
+Communication, communication-audit, workflow, digest, or replay-finalization policy.
 
-Independent complete coverage exposed one test-isolation error in the retained receipt-owner
-migration proof: after intentionally reversing communications to `0003`, the test called today's
-dispatcher, which correctly requires the `0004` outbox table. The repair creates the pre-transfer
-receipt through the projected historical model and now compares its complete retained values plus
-schema through forward, reverse, and reapply. No production or migration code changed.
+Both post-provider crash windows are proven failing-first: before receipt retention and after receipt
+creation but before protected Communication commit. Each local transaction rolls back cleanly while
+the frozen accepted outbox survives; exact fresh-adapter retry uses the same provider identity and
+finishes one chain, while changed facts conflict. General audit/workflow evidence retains only
+masked/digested recipient, advice, provider, amount, and bank-reference facts.
 
-The exact failed test and all 29 focused receipt-migration/communications/public tests pass with two
-expected PostgreSQL-only BB race skips. Django check, migration sync, Python compile, dependency
-direction, whitespace, protected-path, and diff checks pass. 009H3BB and 009G4 were rechecked and
-remain concrete; neither needed speculative sharpening.
+The complete 30-test owner/public matrix passes with the two PostgreSQL methods skipped only in the
+routine SQLite lane. The retained 009H3A migration proof passes. Both declared five-caller methods
+then passed in two separate PostgreSQL final runs; every method logged one winner, four clean losers,
+one provider identity, and one outbox/receipt/Communication/action/audit/workflow chain. Django
+check, migration sync, compile, dependency direction, protected paths, whitespace, and the 878-line
+product/test diff all pass. No migration, API-shape, frontend, or financial/downstream truth changed.
+
+009G4 and 009I were rechecked against the terminal communications identity and remain concrete;
+neither needed speculative sharpening.
 
 ## Next Run
-Run 009H3BB. It consumes BA's immutable outbox/provider decision, moves the transitional receipt,
-protected Communication, audit/workflow, and replay finalization policy fully into communications,
-and runs the complete public matrix plus twice-run PostgreSQL five-caller proof. Then run 009G4 and
-009I in dependency order. BB and G4 are concrete; BB requires another split before implementation
-if its forecast exceeds 1,350 changed lines.
+Run 009G4, which is now unblocked by 009G3 and 009H3BB and restores legal-document migration-state
+ownership without changing behavior. Then run 009I for the borrower-safe MP14 projection and advice
+download flow. Independent orchestrator complete coverage remains authoritative for this run.

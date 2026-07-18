@@ -1,0 +1,589 @@
+Creating test database for alias 'default'...
+Found 29 test(s).
+System check identified no issues (0 silenced).
+E..E.E.....EEEEEEEEEE.E.E........ss
+======================================================================
+ERROR: test_accepted_outbox_malformed_provider_result_fails_closed (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_accepted_outbox_malformed_provider_result_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 537, in test_accepted_outbox_malformed_provider_result_fails_closed
+    with patch(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1437, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1410, in get_original
+    raise AttributeError(
+AttributeError: <module 'sfpcl_credit.disbursements.modules.disbursement_advice' from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py'> does not have the attribute '_retained_receipt'
+
+======================================================================
+ERROR: test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 302, in test_fresh_adapter_retry_reuses_provider_receipt_after_post_acceptance_rollback
+    receipt = DisbursementAdviceDeliveryReceipt.objects.get(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.communications.models.DisbursementAdviceDeliveryReceipt.DoesNotExist: DisbursementAdviceDeliveryReceipt matching query does not exist.
+
+======================================================================
+ERROR: test_frozen_outbox_rejects_changed_template_provenance_before_redispatch (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_frozen_outbox_rejects_changed_template_provenance_before_redispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 412, in test_frozen_outbox_rejects_changed_template_provenance_before_redispatch
+    with patch(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1437, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1410, in get_original
+    raise AttributeError(
+AttributeError: <module 'sfpcl_credit.disbursements.modules.disbursement_advice' from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py'> does not have the attribute '_retained_receipt'
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift) (field='recipient_address')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift) (field='subject_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift) (field='body_snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift) (field='content_template_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift) (field='delivery_status')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift) (field='external_message_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_recipient_rendered_and_provider_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_recipient_rendered_and_provider_drift) (field='sent_at')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 673, in test_replay_conflicts_for_each_recipient_rendered_and_provider_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_for_each_template_upstream_and_ledger_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_for_each_template_upstream_and_ledger_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 713, in test_replay_conflicts_for_each_template_upstream_and_ledger_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_on_coordinated_provider_and_audit_drift (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_coordinated_provider_and_audit_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 612, in test_replay_conflicts_on_coordinated_provider_and_audit_drift
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_on_extra_unsafe_audit_evidence (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_on_extra_unsafe_audit_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 626, in test_replay_conflicts_on_extra_unsafe_audit_evidence
+    self.assertEqual(self._post().status_code, 409)
+                     ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_conflicts_when_rendered_subject_snapshot_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_conflicts_when_rendered_subject_snapshot_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 268, in test_replay_conflicts_when_rendered_subject_snapshot_changes
+    replay = self._post()
+             ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+======================================================================
+ERROR: test_replay_fails_closed_when_retained_advice_evidence_changes (sfpcl_credit.tests.test_disbursement_advice_api.DisbursementAdviceApiTests.test_replay_fails_closed_when_retained_advice_evidence_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 585, in test_replay_fails_closed_when_retained_advice_evidence_changes
+    replay = self._post()
+             ^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/tests/test_disbursement_advice_api.py", line 946, in _post
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/views.py", line 207, in send_disbursement_advice
+    data = DisbursementWorkflow.send_advice(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/disbursements/modules/disbursement_advice.py", line 97, in _send_advice
+    finalization = CommunicationDispatcher.finalize(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 175, in finalize
+    return _reconcile_finalization(context, receipt, decision, existing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 598, in _reconcile_finalization
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The retained communication finalization is stale or incoherent.
+
+----------------------------------------------------------------------
+Ran 29 tests in 14.194s
+
+FAILED (errors=15, skipped=2)
+Destroying test database for alias 'default'...

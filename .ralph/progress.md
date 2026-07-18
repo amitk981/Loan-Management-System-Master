@@ -1,5 +1,24 @@
 # Ralph Progress Log
 
+## 2026-07-18 - 2026-07-18_090956_normal_run
+
+- Agent tool used: codex with mandatory TDD and deep-module seam checks.
+- Slice completed: 009H3BB-communications-finalization-and-race-closure.
+- Summary: Moved advice receipt, protected Communication, safe communication audit/workflow,
+  delivery digest, finalization, and replay reconciliation into the communications dispatcher.
+  Disbursements retains authority/current financial locks and atomically consumes one immutable
+  finalization decision for its own action. Both accepted-provider crash windows recover exactly.
+- Tests run: two named RED/GREEN crash cycles; 30 focused owner/public tests; retained 009H3A
+  migration regression; both declared PostgreSQL five-caller methods in two separate final runs;
+  Django check; migration sync; compile, dependency, protected-path, whitespace, and diff checks.
+- Evidence saved: `.ralph/runs/2026-07-18_090956_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator coverage validation and commit.
+- Risk level: High. Duplicate delivery, partial finalization, stale replay, secrecy, race, and
+  dependency-direction controls all passed; the Future provider's idempotency obligation remains an
+  explicit external integration risk.
+- Next action: Run 009G4, then 009I. Both Not Started slices were rechecked and remain concrete;
+  neither required speculative sharpening.
+
 ## 2026-07-18 - 2026-07-18_085057_repair
 
 - Agent tool used: codex with the diagnosing-bugs feedback-loop discipline.
@@ -8831,6 +8850,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_081752_normal_run/.ralph/runs/2026-07-18_085057_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_081752_normal_run/.ralph/runs/2026-07-18_085057_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-18 09:51:37 - 2026-07-18_090956_normal_run
+- Agent tool used: codex
+- Slice attempted: 009H3BB-communications-finalization-and-race-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/.ralph/runs/2026-07-18_090956_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_090956_normal_run/.ralph/runs/2026-07-18_090956_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

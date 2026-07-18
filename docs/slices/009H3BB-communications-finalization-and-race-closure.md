@@ -1,7 +1,7 @@
 # Slice 009H3BB: Communications Finalization and Race Closure
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `009H3B`
@@ -147,14 +147,14 @@ High
   acceptance.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing finalization crash tests written first
-- [ ] Communications-owned receipt/Communication/audit/finalization implemented
-- [ ] Immutable delivery decision consumed by the disbursement context owner
-- [ ] Legacy disbursement advice policy removed or made shallow
-- [ ] Full public/owner/redaction/current-truth suite green
-- [ ] Twice-run PostgreSQL five-caller evidence saved
-- [ ] Django, migration, dependency, protected-path, and diff evidence saved
-- [ ] API contracts updated only if the public shape changes
-- [ ] Risk assessment, handoff, state, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing finalization crash tests written first
+- [x] Communications-owned receipt/Communication/audit/finalization implemented
+- [x] Immutable delivery decision consumed by the disbursement context owner
+- [x] Legacy disbursement advice policy removed or made shallow
+- [x] Full public/owner/redaction/current-truth suite green
+- [x] Twice-run PostgreSQL five-caller evidence saved
+- [x] Django, migration, dependency, protected-path, and diff evidence saved
+- [x] API contracts updated only if the public shape changes
+- [x] Risk assessment, handoff, state, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

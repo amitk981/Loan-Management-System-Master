@@ -60,9 +60,15 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
         legacy_tree = ast.parse(inspect.getsource(legacy))
         forbidden_policy = {
             "_accepted_delivery_receipt",
+            "_advice_audit_evidence",
+            "_delivery_evidence_digest",
             "_delivery_payload",
             "_locked_current_template",
             "_merge_data",
+            "_persist_accepted_delivery",
+            "_receipt_matches",
+            "_retained_advice_is_coherent",
+            "_retained_receipt",
             "_render",
         }
         defined = {
@@ -71,6 +77,14 @@ class CommunicationAdvicePersistenceOwnershipTests(SimpleTestCase):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
         }
         self.assertEqual(defined & forbidden_policy, set())
+        legacy_source = inspect.getsource(legacy)
+        for forbidden_call in (
+            "Communication.objects.create",
+            "DisbursementAdviceDeliveryReceipt.objects",
+            "record_workflow_event(",
+        ):
+            self.assertNotIn(forbidden_call, legacy_source)
+        self.assertIn("def finalize(", inspect.getsource(dispatcher))
 
     def test_communications_owns_complete_outbox_and_retained_receipt_state(self):
         outbox = CommunicationDeliveryOutbox._meta

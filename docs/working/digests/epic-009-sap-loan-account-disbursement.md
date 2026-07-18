@@ -1,5 +1,32 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009H3BB Communications Finalization and Race Closure
+
+- Source BR-054/M08-FR-010 requires borrower advice after disbursement; integrations §§10, 19.3,
+  and 21 require template-backed Communication evidence, provider acceptance status, stable
+  `communication_id` duplicate identity, safe retry, and no raw sensitive payload logging.
+  Codebase-design §§20.6, 22.2, 26.3, 36.2, 40.1-40.2, and 42.4 place adapter, template, delivery,
+  audit, idempotency, and redaction policy in the deep communications module without a reverse
+  dependency on disbursements.
+- `CommunicationDispatcher.finalize` now retains/reconciles the communications-owned receipt,
+  protected Communication, digested/masked audit, workflow event, and delivery evidence under the
+  financial context owner's transaction. It returns an immutable finalization decision;
+  disbursements alone validates authority/current transfer-register-intent truth and saves its own
+  action/link from that decision. The legacy module contains no receipt, Communication, audit,
+  workflow, digest, or finalization implementation.
+- Provider acceptance survives both forced pre-receipt and pre-Communication-commit failures.
+  Atomic rollback leaves no partial local chain; an exact fresh-adapter retry consumes the retained
+  outbox provider identity once, while changed recipient/template/render/provider/upstream facts
+  conflict. General audit/workflow evidence contains recipient/content/provider/amount digests or
+  masks only, never raw email, rendered advice, full UTR, provider id, or advice amount.
+- The 30-test owner/public matrix and retained 009H3A migration test pass. Two separate PostgreSQL
+  executions each ran both declared five-caller methods; every method logged one winner, four clean
+  losers, one provider identity, one outbox/receipt/Communication/action/audit/workflow chain.
+  No migration, public response, frontend, financial, register, checklist, repayment, schedule,
+  interest, default, closure, or portal behavior changed.
+- 009G4 and 009I were rechecked against this terminal identity. Their requirements already name the
+  communications-owned accepted delivery and remain concrete, so no speculative edits were made.
+
 ## 009H3BA Repair — Historical Receipt Fixture Isolation
 
 - Independent complete coverage found one retained migration-test error: the test reversed
