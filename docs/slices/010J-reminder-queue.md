@@ -8,67 +8,71 @@ Epic 010: Servicing, Repayments, Interest, and Monitoring
 Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create a deduplicated quarter-end queue for loans outstanding beyond one year and retain honest SMS,
+email, phone-call, delivery, follow-up, actor, and audit evidence.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Credit follows up every eligible overdue loan consistently without duplicate borrower messages or
+invented delivery status.
 
 ## Depends On
 - 010I
 
 ## Source References
-- docs/source/implementation-roadmap.md section 15
-- docs/source/api-contracts.md sections 32-34 (repayment, interest, monitoring)
-- docs/source/data-model.md servicing/monitoring tables
-- docs/source/test-plan.md
+- `docs/source/product-requirements.md` §11.25
+- `docs/source/user-flows.md` §30.3
+- `docs/source/functional-spec.md` BR-069 and §11.11 M11-FR-006/007
+- `docs/source/data-model.md` §20.2
+- `docs/source/api-contracts.md` §§34.3–34.4, 45
+- `docs/source/codebase-design.md` §18.2
+- `docs/source/screen-spec.md` S52
+- `docs/source/component-spec.md` §16.3
+- `docs/source/test-plan.md` API-MON-003
+- `docs/working/digests/epic-010-servicing-repayments-interest-monitoring.md` §010J
 
-## Prototype Reference
-- sfpcl-lms/src/pages/loan-accounts/LoanAccount360.tsx
-- sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx
-- sfpcl-lms/src/pages/interest/InterestManagement.tsx
-- sfpcl-lms/src/pages/monitoring/MonitoringDashboard.tsx
+## Concrete Requirements
+1. Implement the reminder owner and a bounded quarter-end eligibility run. Select loans whose
+   canonical as-of DPD/outstanding truth is beyond one year at quarter end; retain loan/member,
+   quarter/as-of date, reason, channel, template/message snapshot, status, actor, and timestamps.
+2. Prevent duplicate automatic reminders for the same loan, quarter, reason, and channel. Exact run
+   replay is zero-write and concurrent runs retain one eligible reminder per deduplication identity.
+3. Send SMS/email only through the existing communications dispatcher/job/provider seam with its
+   idempotency, channel, retry, and evidence rules. Queueing is not delivery; preserve queued/sent/
+   failed truth and safe provider evidence.
+4. Support phone reminders as an authorised manual log with outcome and next-follow-up date; never
+   report a provider send for a phone log. Retain who contacted whom in borrower-safe audit form.
+5. Recheck current eligibility before send. A fully repaid/resolved loan is skipped/cancelled with
+   reason rather than receiving stale automation.
+6. Require `monitoring.reminder.create`, account scope, approved/effective templates, and audit.
 
-## Screens Involved
-None directly.
+## Scope Boundaries / Non-Goals
+- No DPD recalculation, default/grace transition, capitalisation, custom communications provider,
+  hard-coded recipient data, frontend wiring, or policy for reminders below one year.
+- Do not expose message/recipient/provider-sensitive data in ordinary run summaries or logs.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
-
-## Backend/API Scope
-Implement the named backend/API capability only.
-
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
+## Acceptance and Reverse-Consumer Tests
+- A quarter-end loan beyond one year creates one reminder; under-threshold/current/fully repaid loans
+  do not. Boundary dates and repeat/concurrent runs are exact.
+- SMS/email queue through the correct channel owner; phone log retains outcome without provider call;
+  communication failure/retry never duplicates the reminder.
+- Wrong permission, cross-scope loan, missing/unapproved template, missing contact, or stale resolved
+  loan fails/skips honestly with no false sent status.
+- 010I DPD snapshots and 010A/010C balances remain immutable; existing 009 communications delivery,
+  retry, and crash-recovery tests remain green.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+- RED/GREEN eligibility/boundary/channel tests, API/permission/audit tests, communications job and
+  phone-log evidence, database dedupe proof, twice-run PostgreSQL run/send race, and 009 communications
+  plus 010A/010C/010I reverse-consumer results.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- Quarter-end reminders are eligibility-correct, channel-correct, duplicate-safe, permission-scoped,
+  and honest about queue/delivery/call outcomes.
+- Stale or failed work cannot message a resolved loan or fabricate success.
+- Required focused, contention, reverse-consumer, and full gates pass.
 
 ## Done Checklist
 - [ ] Execution plan written
@@ -81,6 +85,5 @@ Medium
 - [ ] Visual evidence saved, if frontend
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive risks/decisions recorded in `review-packet.md` (and HANDOFF only when needed)
 - [ ] Commit created only after passing gates

@@ -5,82 +5,71 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Track applicable SH-4, blank-cheque, PoA, and demat-pledge release through acknowledged completion
+after closure, without bypassing existing custody and CDSL owners.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Borrowers recover held security with a complete, auditable chain instead of an unchecked boolean.
 
 ## Depends On
 - 011H
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/api-contracts.md` §36.4
+- `docs/source/data-model.md` §22.3
+- `docs/source/user-flows.md` §33
+- `docs/source/screen-spec.md` S60
+- `docs/source/component-spec.md` §§18.3-18.4
+- `docs/source/auth-permissions.md` §§12.11, 20.2, 25.9, 26.7
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011I
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add one security-return aggregate per closure plus item-level evidence sufficient to distinguish not
+  applicable, pending, returned/released, rejected, and completed outcomes.
+- Implement POST `/api/v1/loan-closures/{id}/security-return/`; derive applicable instruments and
+  custody/pledge identity from the existing security package. Do not trust submitted applicability.
+- For SH-4/cheque/PoA retain item, custody, returned/released by/to/time, pending reason, and governed
+  acknowledgement. For CDSL retain PSN, URF, partial/full, pledgor and pledgee DP dates/outcome,
+  auto-unpledge flag, completion time, and evidence through the existing CDSL module.
+- Do not mark aggregate complete while an applicable item is pending/rejected or acknowledgement is
+  absent. Exact replay is zero-write; changed replay is rejected.
 
-## Screens Involved
-None directly.
+## Permissions and Audit
+- Critical `closure.security_return.record` for Company Secretary/authorised Compliance after closure;
+  Credit, borrower-own status, and Auditor read only.
+- Every item transition, CDSL owner handoff/result, acknowledgement/download, and denied action is
+  auditable; BO/account details remain masked under the existing sensitive-data boundary.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+## Acceptance and Negative Tests
+- Physical-only, demat-only, mixed, and no-security fixtures derive the correct required items and
+  complete only after all applicable evidence exists.
+- Reject pre-close, foreign/mismatched package/item/PSN/evidence, caller-declared not-applicable,
+  missing recipient/acknowledgement, completion after rejected DP action, wrong role/scope, duplicate/
+  changed replay, and stale concurrent updates.
+- PostgreSQL item/aggregate races preserve one return and monotonic state; external-owner failure
+  cannot falsely complete local truth.
+- Reverse consumers: SH-4/CDSL/cheque/PoA custody, reveal masking, signed download, 011G closure, and
+  011H NOC suites remain green; closed loan allows only this controlled mutation.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Performing real DP requests, deciding physical-return/PoA policy not present in source, changing
+security custody, archive (011J), or portal/staff aggregate UI.
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN item-state/API/permission tests; migration and PostgreSQL races; CDSL owner rollback/masking
+proof; audited acknowledgement evidence; full backend gate and API examples.
 
 ## Risk Level
 High
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `CLOSE-AC-004-005`, `MOD-CLOSURE-006-008`, and `API-CLOSE-004` pass.
+- Completion cannot be forged, skip an applicable instrument, or expose restricted security data.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] Return aggregate/API and security-owner integrations completed
+- [ ] Applicability, masking, race/rollback, reverse-consumer, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

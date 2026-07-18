@@ -20,6 +20,7 @@ ralph_run_fast_candidate_checks() {
   local oversized_request_file
   local review_packet declared_result declared_result_normalized declared_result_is_failure=0
   local impact_file ia_results noop_file agent_changes aq_file dl_file artifact_file declared_file required
+  local ownership_file ownership_path ownership_violations=0
 
   changed_paths="$( (cd "$worktree_dir" && git status --porcelain) \
     | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"
@@ -63,6 +64,25 @@ ralph_run_fast_candidate_checks() {
     failures=$((failures + protected_violations))
   else
     echo "- PASS: no protected paths were modified." >> "$guard_file"
+  fi
+
+  ownership_file="$run_dir/orchestrator-ownership-check.md"
+  {
+    echo "# Orchestrator Ownership Check"
+    echo
+  } > "$ownership_file"
+  for ownership_path in .ralph/state.json .ralph/progress.md; do
+    if printf '%s\n' "$changed_paths" | grep -Fxq "$ownership_path"; then
+      echo "- FAIL: agent modified orchestrator-owned $ownership_path." >> "$ownership_file"
+      ownership_violations=$((ownership_violations + 1))
+    fi
+  done
+  if (( ownership_violations > 0 )); then
+    echo >> "$ownership_file"
+    echo "State, progress, and status transitions are written only after independent validation." >> "$ownership_file"
+    failures=$((failures + ownership_violations))
+  else
+    echo "- PASS: no agent changed orchestrator-owned state or progress." >> "$ownership_file"
   fi
 
   local queue_lint_file="$run_dir/slice-queue-lint.md"
@@ -298,8 +318,9 @@ PY
     echo "Checks ran before all expensive validation lanes."
     echo
     if (( failures > 0 )); then
-      grep -H -E '(^|- )FAIL' "$guard_file" "$queue_lint_file" "$st_file" "$aq_file" \
-        "$artifact_file" "$declared_file" "$run_dir"/*-results.md 2>/dev/null \
+      grep -H -E '(^|- )FAIL' "$guard_file" "$ownership_file" "$queue_lint_file" \
+        "$st_file" "$aq_file" "$artifact_file" "$declared_file" \
+        "$run_dir"/*-results.md 2>/dev/null \
         | sed "s|$run_dir/||" | head -60 || true
     else
       echo "PASS: candidate is eligible for expensive validation gates."

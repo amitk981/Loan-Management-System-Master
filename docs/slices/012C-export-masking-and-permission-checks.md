@@ -8,20 +8,24 @@ Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness
 Epic file: `docs/epics/012-reports-exports-hardening-uat.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Make every 012B export fail closed on report, object, column, and sensitivity authority, with
+default masking, reason-gated sensitive export, expiring scoped downloads, and complete audit.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Users receive only the columns they are authorised to export, while compliance can prove who
+requested and downloaded sensitive information and why.
 
 ## Depends On
 - 012B
 
 ## Source References
-- docs/source/implementation-roadmap.md sections 17, 24, 25, 27, 32-33
-- docs/source/api-contracts.md sections 40, 42-43 (reporting, audit, dashboard)
-- docs/source/deployment-ops.md
-- docs/source/security-privacy.md
-- docs/source/test-plan.md
+- `docs/source/security-privacy.md` sections 14.3-14.4, 24, and 32
+- `docs/source/product-requirements.md` sections 11.31-11.32
+- `docs/source/auth-permissions.md` sections 11.1, 12.13, 19, and 33.3
+- `docs/source/codebase-design.md` section 33.3
+- `docs/source/test-plan.md` sections 18.2-18.5 and 22.2 (`EXP-001`-`EXP-010`)
+- `docs/source/api-contracts.md` sections 40.7-40.8
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` section 012C
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/reports/ReportsMIS.tsx
@@ -35,40 +39,79 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+- Add a central export policy/classification decision used both before queueing and before file
+  creation/download. Report read, `reports.export`, object/team scope, allowed columns, report
+  classification, and sensitive-export authority are evaluated independently.
+- Mask PAN, Aadhaar, bank account, cheque, and BO-account fields by default using established
+  masking helpers. Omit forbidden columns; never copy raw values into job metadata, URL, logs, or
+  audit payloads.
+- An unmasked permitted-column export requires separate sensitive-export authority and a
+  nonblank reason; audit the authority, reason, classification, actor snapshot, job, and outcome.
+  Require the source-defined `reports.export_sensitive` permission. Its role grants remain
+  unresolved, so grant it to no additional role unless an authoritative mapping lands; unknown
+  role combinations deny rather than broadening `reports.export`.
+- Bind status/download access to the requesting actor's permitted scope (or an explicitly
+  authorised auditor/admin policy), and re-check authority at download time. Expired,
+  cross-user, cross-team, or revoked access is denied.
+- Rate-limit excessive export attempts using existing infrastructure when present and preserve
+  a security/audit signal for denials.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Extend the 012B job only with classification, requested/permitted column policy, masked/sensitive
+decision, reason reference, and authority snapshot if needed. Store no plaintext sensitive data.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Document optional requested columns and sensitive reason only if required by the implementation;
+preserve 40.7-40.8 response compatibility and standard 403/410 error shapes.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Read permission does not imply export; `reports.export` does not imply
+`reports.export_sensitive`. Audit-log export is Restricted, recovery is Critical Restricted, and
+bulk KYC is disabled or requires the highest approved authority. The permission code is binding;
+its unresolved role grants default deny.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Audit request, denied request, sensitive grant, generation outcome, download, expired/revoked
+download, and unusual attempt rate through the immutable recorder. Sanitise all before/after and
+reason fields; never audit raw exported rows.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- Policy is evaluated against authoritative server-side roles/scope, never client claims.
+- Masking is per field and format and cannot be reversed from displayed/exported output.
+- Generated files contain only permitted columns; signed URL possession alone cannot grant
+  access after scope/expiry/revocation checks.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Implement `EXP-001` through `EXP-010`, including filter equivalence, retention/expiry,
+  generated-by/time metadata, audit-export restriction, and large async export.
+- `SEC-PII-009` and format-parameterised tests prove all five sensitive field families are masked
+  without authority and revealed only with authority + reason; blank/missing reason is denied.
+- Cross-user/team/object, revoked permission, guessed job ID, expired link, forbidden column,
+  bulk-KYC, and excessive-attempt negative tests.
+- Reverse-consumer tests prove ordinary report reads, existing reveal/download audit, 012B retry,
+  and audit-log sanitisation remain intact.
 
 ## Visual Acceptance Criteria
 None.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+RED/GREEN and full-gate output; permission/classification matrix; parsed masked and authorised
+files for each format; denial/expiry examples; immutable sanitised audit rows; no-secret scan.
+
+## Non-Goals
+Frontend wiring, a redesign of ordinary sensitive reveal, new report definitions, live sharing,
+or granting unknown roles/permissions access.
 
 ## Risk Level
 High
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- Every export and download is independently authorised, scoped, classified, expiring, and
+  audited; unknown policy denies.
+- Sensitive fields are masked by default and unmasked only for permitted columns with separate
+  authority and a recorded reason.
+- Export files, jobs, logs, URLs, and audit metadata contain no unauthorised raw sensitive data.
+- Frontend wiring and changes to general sensitive-reveal policy remain out of scope.
 
 ## Done Checklist
 - [ ] Execution plan written
@@ -81,6 +124,5 @@ High
 - [ ] Visual evidence saved, if frontend
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive unresolved risk or decision recorded only if needed
 - [ ] Commit created only after passing gates

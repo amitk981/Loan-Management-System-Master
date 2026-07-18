@@ -8,21 +8,24 @@ Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness
 Epic file: `docs/epics/012-reports-exports-hardening-uat.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Assemble and independently verify a commit-bound UAT and production-readiness packet that marks
+missing, stale, failed, or unsigned mandatory evidence as `NOT READY` and leaves business go/no-go
+approval to the named owners.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+The owner and business signatories receive one auditable release decision packet showing exactly
+what passed, what remains open, who must approve it, and which commit the evidence covers.
 
 ## Depends On
 - 012H
 
 ## Source References
-- docs/source/implementation-roadmap.md sections 17, 24, 25, 27, 32-33
-- docs/source/api-contracts.md sections 40, 42-43 (reporting, audit, dashboard)
-- docs/source/deployment-ops.md
-- docs/source/security-privacy.md
-- docs/source/test-plan.md
-- docs/source/product-requirements.md (UAT verifies against the PRD scope)
+- `docs/source/test-plan.md` sections 27, 28.3, 33, and 34
+- `docs/source/implementation-roadmap.md` sections 17.4-17.6 and 27.1-27.3
+- `docs/source/deployment-ops.md` sections 11.5, 13, 15, and 29
+- `docs/source/security-privacy.md` sections 36 and 40
+- `docs/source/product-requirements.md` sections 11-12 and 19.2
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` section 012I
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/reports/ReportsMIS.tsx
@@ -30,46 +33,76 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/pages/Dashboard.tsx
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+None to implement. The packet indexes retained screenshots/traces from the relevant completed
+slices, especially reports/export/audit/dashboard, critical UAT, and deployment smoke evidence.
 
 ## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+None. Do not repair screens or generate replacement screenshots in this review slice.
 
 ## Backend/API Scope
-None for this slice, except reading existing contracts for validation.
+None. Read existing results and run only non-mutating verification needed to prove evidence paths,
+hashes, candidate commit, counts, and required gate status.
 
 ## Database/Model Impact
 None.
 
 ## API Contracts
-None, unless this planning/test slice discovers a contract gap to document.
+None. A newly discovered contract/product gap is listed as a defect/blocker; it is not fixed here.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Packet evidence must include the UAT role-permission review and security negative results. Redact
+the packet itself and link restricted evidence by controlled path rather than copying secrets/PII.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Verify that critical UAT workflows and restricted report/export/download scenarios have audit
+evidence. This documentation review creates no business audit events.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- Bind the packet to the exact candidate commit and record evidence path, timestamp, producer,
+  result, counts, and hash. A result from another commit is stale unless equivalence is proven.
+- Include `UAT-001..026` status/actor, full regression, security/privacy, financial, audit,
+  integration, operational/deployment smoke, report reconciliation, performance, and migration
+  status when in scope.
+- Include known defects with severity, owner, acceptance/workaround, assumptions/open decisions,
+  backup/rollback/monitoring/support/hypercare/training status, and named signoff slots.
+- Missing evidence, mandatory skips, open Sev 1, unaccepted Sev 2, failed critical tests, or absent
+  required signoff produces a prominent `NOT READY`; never infer or fabricate acceptance.
+- Separate engineering readiness from owner/business production approval and staging-to-main
+  promotion. Ralph may recommend readiness but cannot sign or deploy.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Packet validator detects a missing file, changed hash, wrong candidate commit, expired/stale
+  result, mandatory skipped test, failed gate, open blocking defect, and absent signoff.
+- Reconciliation check ensures every `UAT-001..026` and every QA/production gate has exactly one
+  status and evidence/owner; duplicates or unmapped evidence fail validation.
+- Redaction scan rejects credentials, tokens, raw PAN/Aadhaar/bank/cheque/BO values, or unprotected
+  signed URLs in the packet.
+- Reverse-consumer checks reference (without modifying) 012F security, 012G UAT, 012H smoke, report
+  reconciliation, full-suite, CI, and release-promotion evidence.
 
 ## Visual Acceptance Criteria
-Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
+Packet tables are readable, source/evidence links resolve, readiness is unambiguous, and failed or
+missing items cannot be visually mistaken for passed items.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+The final packet and machine-readable index; packet-validator negative/green output; evidence hash
+manifest; exact candidate commit; defect/assumption/signoff tables; redaction-scan result.
+
+## Non-Goals
+Product repair, new UI/API, deployment, migration, synthetic signoff, staging-to-main promotion,
+or any production go-live action.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- Every source UAT script and production gate is mapped to current, hashed evidence or explicitly
+  marked missing/not applicable with an authorised owner and reason.
+- The computed readiness outcome fails closed and clearly distinguishes engineering evidence from
+  owner/business go/no-go approval.
+- Packet validation detects missing/stale/tampered evidence and the redaction scan passes.
+- No product repair, new UI/API, deployment, migration, synthetic signoff, `main` promotion, or
+  production go-live action occurs in this slice.
 
 ## Done Checklist
 - [ ] Execution plan written
@@ -82,6 +115,5 @@ Medium
 - [ ] Visual evidence saved, if frontend
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive unresolved risk or decision recorded only if needed
 - [ ] Commit created only after passing gates

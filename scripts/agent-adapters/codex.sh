@@ -5,6 +5,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/../lib/ralph-exit-protocol.sh"
 source "$script_dir/../lib/ralph-runtime-capabilities.sh"
 source "$script_dir/../lib/ralph-agent-log.sh"
+source "$script_dir/../lib/ralph-agent-profile.sh"
 
 for assignment in "$@"; do
   export "$assignment"
@@ -14,6 +15,7 @@ done
 : "${RUN_DIR:?RUN_DIR is required}"
 : "${WORKTREE_DIR:?WORKTREE_DIR is required}"
 : "${PROMPT_FILE:?PROMPT_FILE is required}"
+: "${MODE:?MODE is required}"
 SELECTED_SLICE="${SELECTED_SLICE:-}"
 
 if ! command -v codex >/dev/null 2>&1; then
@@ -21,13 +23,24 @@ if ! command -v codex >/dev/null 2>&1; then
   exit 1
 fi
 
-CODEX_PROFILE="${CODEX_PROFILE:-default}"
-CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-medium}"
-CODEX_VERBOSITY="${CODEX_VERBOSITY:-medium}"
-CODEX_APPROVAL_MODE="${CODEX_APPROVAL_MODE:-never}"
-CODEX_MODEL="${CODEX_MODEL:-}"
-CODEX_ADDITIONAL_ARGS="${CODEX_ADDITIONAL_ARGS:-exec}"
-slice_file="$WORKTREE_DIR/docs/slices/${SELECTED_SLICE}.md"
+requested_profile="${CODEX_PROFILE:-}"
+requested_model="${CODEX_MODEL:-}"
+requested_effort="${CODEX_REASONING_EFFORT:-}"
+requested_verbosity="${CODEX_VERBOSITY:-}"
+requested_approval="${CODEX_APPROVAL_MODE:-}"
+trusted_repo_root="$(cd "$script_dir/../.." && pwd)"
+profile_values="$(ralph_codex_profile_values \
+  "$trusted_repo_root/.ralph/config.yaml" "$requested_profile" "$MODE" \
+  "$requested_model" "$requested_effort" "$requested_verbosity" \
+  "$requested_approval")" || exit 1
+IFS=$'\t' read -r resolved_profile profile_model profile_effort profile_verbosity profile_approval \
+  <<< "$profile_values"
+CODEX_PROFILE="$resolved_profile"
+CODEX_REASONING_EFFORT="$profile_effort"
+CODEX_VERBOSITY="$profile_verbosity"
+CODEX_APPROVAL_MODE="$profile_approval"
+CODEX_MODEL="$profile_model"
+slice_file="$trusted_repo_root/docs/slices/${SELECTED_SLICE}.md"
 if [[ -n "$SELECTED_SLICE" && ! -f "$slice_file" ]]; then
   echo "Selected slice file is missing: $slice_file" >&2
   exit 1
@@ -48,11 +61,14 @@ cat > "$RUN_DIR/codex-settings.md" <<EOF
 - Requested reasoning effort: $CODEX_REASONING_EFFORT
 - Actual reasoning effort if known: unknown
 - Verbosity setting: $CODEX_VERBOSITY
+- Applied CLI model argument: $CODEX_MODEL
+- Applied CLI reasoning argument: $CODEX_REASONING_EFFORT
+- Applied CLI verbosity argument: $CODEX_VERBOSITY
 - Approval mode: $CODEX_APPROVAL_MODE
 - Sandbox mode: $codex_sandbox_label
 - Permission profile: ${CODEX_PERMISSION_PROFILE:-none}
 - Fallback used: no
-- Config source: .ralph/config.yaml and environment overrides
+- Config source: trusted integration .ralph/config.yaml and validated environment overrides
 EOF
 
 cd "$WORKTREE_DIR"
@@ -105,7 +121,7 @@ ralph_prepare_agent_log "$WORKTREE_DIR" "$RUN_ID" codex
 log="$RALPH_AGENT_RAW_LOG"
 summary_log="$RUN_DIR/evidence/terminal-logs/codex-summary.md"
 
-codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" > "$log" 2>&1 &
+codex "${args[@]}" exec < "$PROMPT_FILE" > "$log" 2>&1 &
 agent_pid=$!
 
 # The full transcript is short-lived operator-local evidence outside the Git

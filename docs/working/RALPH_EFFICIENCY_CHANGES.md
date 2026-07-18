@@ -40,7 +40,7 @@ Because every proof predicate matched and six had the best measured wall time, a
 
 ## Documentation-only architecture reviews
 
-Architecture reviews now have a fail-closed documentation lane. Candidate scope must remain under `docs/`, explicit state/progress bookkeeping, or the current review's own run-evidence directory, while protected-path checks, queue validation, artifact checks, and the frozen-candidate hash still run. Product gates are skipped with an explicit reason only after that scope proof; any product path, configuration edit, or historical run-evidence edit rejects the lane.
+Architecture reviews now have a fail-closed documentation lane. Agent-authored scope must remain under `docs/` or the current review's own run-evidence directory; state, progress, and status remain orchestrator-owned. Protected-path checks, queue validation, artifact checks, and the frozen-candidate hash still run. Product gates are skipped with an explicit reason only after that scope proof; any product path, configuration/state edit, or historical run-evidence edit rejects the lane.
 
 ## Backend validation shadow
 
@@ -59,3 +59,32 @@ The regular backend CI job continues to run the complete `sfpcl_credit.tests` la
 ## Agent transcript retention
 
 New raw Codex and Claude transcripts are stored outside the candidate under Git's common directory and retained for at most 20 runs or 14 days by default. Committed evidence contains only a bounded final excerpt, byte and line counts, session id, and SHA-256 digest. Existing historical transcripts are not rewritten.
+
+## Throughput checkpoint — 2026-07-18
+
+Measured recent slices spent roughly 87% of wall time before independent gates, while the six-worker
+backend gate accounted for about 13%. This checkpoint therefore preserves the full backend suite and
+targets agent/context rework and recursive queue growth:
+
+- Epics 010–012 now have bounded, source-cited digests and every generic pending slice has a concrete
+  execution contract, negative/reverse-consumer tests, non-goals, and evidence requirements.
+- Normal implementation sessions no longer prepare unrelated future slices or duplicate Ralph-owned
+  state, progress, status, and changed-file bookkeeping.
+- Mandatory context is current-only; historical review detail moved to a linked archive, while the
+  active review ledger contains unresolved debt. Agents read only digest shared invariants plus the
+  selected slice section and avoid repeated cumulative diffs.
+- Codex profiles are now resolved from protected configuration and applied fail-closed by mode. The
+  current locally verified model is explicit; ordinary runs remain medium reasoning, while repairs
+  and architecture reviews remain high reasoning.
+- Architecture reviews retain four-slice scrutiny until two consecutive reviews report zero new
+  Critical/High findings. They then expand to eight, reset to four on any new Critical/High issue,
+  and always run at epic boundaries. Convergence metrics, executable new corrective slices, and
+  explicit mappings to actionable existing corrective work are independently validated.
+- Loop progress reports product statuses directly and excludes the documentation-only architecture
+  pseudo-slice, so remaining-work estimates no longer count superseded/history artifacts as work.
+- The default loop budget is 250 iterations so the prepared backlog can drain in one AFK command;
+  exhausting an explicit bound while work remains returns a distinct non-success outcome.
+
+Selective backend execution remains in shadow. No coverage floor, full-suite High-risk rule,
+PostgreSQL race contract, protected path, frozen-candidate check, repair bound, or single-loop mutex
+was weakened.

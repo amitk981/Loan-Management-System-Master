@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Ralph Loop: run the slice queue autonomously until it is done or genuinely blocked.
-# Usage: ./scripts/ralph-loop.sh [max_iterations]   (default 25)
+# Usage: ./scripts/ralph-loop.sh [max_iterations]   (default 250)
 #
 # Per iteration: one normal Ralph run (preflight -> agent -> gates -> commit -> merge -> push).
 # On a failed run: the same quarantined worktree is repaired until validation is
@@ -14,13 +14,19 @@ source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 source "$repo_root/scripts/lib/ralph-retry-policy.sh"
 source "$repo_root/scripts/lib/ralph-repair-context.sh"
 source "$repo_root/scripts/lib/ralph-oversized-slice.sh"
+source "$repo_root/scripts/lib/ralph-slice-selection.sh"
+source "$repo_root/scripts/lib/ralph-architecture-review.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
   exit 1
 fi
 
-max_iterations="${1:-25}"
+max_iterations="${1:-250}"
+if ! [[ "$max_iterations" =~ ^[1-9][0-9]*$ ]]; then
+  echo "max_iterations must be a positive integer." >&2
+  exit "$RALPH_EXIT_ITERATION_LIMIT"
+fi
 mkdir -p .ralph/logs
 loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
 last_out=".ralph/logs/last-run-output.log"
@@ -54,10 +60,17 @@ run_streamed() {
 }
 
 progress_line() {
-  local completed total
-  completed="$(python3 -c "import json; print(len(json.load(open('.ralph/state.json'))['completed_slices']))" 2>/dev/null || echo '?')"
-  total="$(ls docs/slices/*.md 2>/dev/null | wc -l | xargs)"
-  echo "Progress: $completed of $total slices complete."
+  local counts complete not_started blocked superseded total remaining
+  counts="$(ralph_queue_status_counts docs/slices 2>/dev/null || true)"
+  if IFS=$'\t' read -r complete not_started blocked superseded total <<< "$counts" \
+      && [[ "$complete" =~ ^[0-9]+$ && "$not_started" =~ ^[0-9]+$ \
+          && "$blocked" =~ ^[0-9]+$ && "$superseded" =~ ^[0-9]+$ \
+          && "$total" =~ ^[0-9]+$ ]]; then
+    remaining=$((not_started + blocked))
+    echo "Progress: $complete/$total actionable product slices complete; $remaining remaining ($not_started Not Started, $blocked Blocked); $superseded Superseded history excluded."
+  else
+    echo "Progress: queue status counts unavailable."
+  fi
 }
 
 # Usage-limit fallback (agent.limit_fallback in .ralph/config.yaml): when the
@@ -274,13 +287,20 @@ for ((i = 1; i <= max_iterations; i++)); do
   progress_line | tee -a "$loop_log"
   echo "Agent: $active_tool" | tee -a "$loop_log"
 
-  review_due="$(python3 -c "import json; print(json.load(open('.ralph/state.json')).get('architecture_review_due', False))" 2>/dev/null || echo False)"
+  if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+    echo "Stopping: cannot read a valid architecture-review state; refusing to run or declare completion." | tee -a "$loop_log"
+    exit 2
+  fi
   if [[ "$review_due" == "True" ]]; then
     # A failed review keeps architecture_review_due set (it only resets on a
     # validated success), so without a cap a persistent failure cause taxes
     # every iteration with a doomed review attempt. Two strikes per loop run,
     # then continue the queue; the review stays due for the next loop start.
     if (( review_failures_this_loop >= 2 )); then
+      if [[ -z "$(ralph_remaining_slices docs/slices)" ]]; then
+        echo "Stopping: the product queue is empty, but the mandatory final architecture review failed twice. Refusing to declare final completion." | tee -a "$loop_log"
+        exit 2
+      fi
       echo "Architecture review already failed $review_failures_this_loop times this loop; skipping further attempts and continuing the queue (it stays due for the next loop run)." | tee -a "$loop_log"
     else
       echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
@@ -293,7 +313,15 @@ for ((i = 1; i <= max_iterations; i++)); do
           continue
         fi
         review_failures_this_loop=$((review_failures_this_loop + 1))
-        echo "Architecture review failed (non-fatal, strike $review_failures_this_loop/2 this loop); continuing with the queue." | tee -a "$loop_log"
+        if [[ -z "$(ralph_remaining_slices docs/slices)" ]]; then
+          if (( review_failures_this_loop >= 2 )); then
+            echo "Stopping: the product queue is empty, but the mandatory final architecture review failed twice. Refusing to declare final completion." | tee -a "$loop_log"
+            exit 2
+          fi
+          echo "Mandatory final architecture review failed (strike 1/2); retrying before final completion." | tee -a "$loop_log"
+          continue
+        fi
+        echo "Architecture review failed (non-fatal, strike $review_failures_this_loop/2 this loop); continuing with the product queue." | tee -a "$loop_log"
       else
         review_failures_this_loop=0
       fi
@@ -307,6 +335,14 @@ for ((i = 1; i <= max_iterations; i++)); do
   outcome="$(ralph_outcome_for_status "$status")"
   case "$outcome" in
     queue_empty)
+      if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+        echo "Stopping: cannot read a valid architecture-review state; refusing to declare final completion." | tee -a "$loop_log"
+        exit 2
+      fi
+      if [[ "$review_due" == "True" ]]; then
+        echo "Stopping: the product queue is empty, but a mandatory architecture review remains due. Refusing to declare final completion." | tee -a "$loop_log"
+        exit 2
+      fi
       echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
       exit 0
       ;;
@@ -320,8 +356,8 @@ for ((i = 1; i <= max_iterations; i++)); do
       exit 2
       ;;
     merge_failed)
-      echo "Stopping: a completed run could not merge into staging (staging moved or an unsafe non-generated collision exists)." | tee -a "$loop_log"
-      echo "The finished work is kept on its ralph/* branch — ask an agent in a chat session to merge it, then rerun the loop. Do not rerun the slice." | tee -a "$loop_log"
+      echo "Stopping: a validated/quarantined branch could not be safely finalized or merged into staging." | tee -a "$loop_log"
+      echo "The work is kept on its ralph/* branch — inspect the commit/merge evidence in an owner chat, then integrate it safely. Do not rerun the slice." | tee -a "$loop_log"
       exit 1
       ;;
     agent_limit)
@@ -359,5 +395,14 @@ for ((i = 1; i <= max_iterations; i++)); do
   fi
 done
 
-echo "Reached max iterations ($max_iterations). Run './scripts/ralph-loop.sh' again to continue the queue." | tee -a "$loop_log"
-exit 0
+if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+  echo "Stopping at the iteration limit: architecture-review state is invalid." | tee -a "$loop_log"
+  exit 2
+fi
+if [[ "$review_due" == "True" && -z "$(ralph_remaining_slices docs/slices)" ]]; then
+  echo "Stopping at the iteration limit: product work is empty but the mandatory final architecture review remains due." | tee -a "$loop_log"
+  exit 2
+fi
+progress_line | tee -a "$loop_log"
+echo "Stopped incomplete after reaching max iterations ($max_iterations). Run './scripts/ralph-loop.sh' again to continue the queue." | tee -a "$loop_log"
+exit "$RALPH_EXIT_ITERATION_LIMIT"

@@ -5,82 +5,68 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Grant one auditable one-year extension to an unpaid, non-intentional default and retain its Extension
+Note in the governed loan file.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Eligible borrowers receive the source-mandated extension while Credit retains defensible evidence.
 
 ## Depends On
 - 011B
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/api-contracts.md` §35.5
+- `docs/source/data-model.md` §21.3
+- `docs/source/product-requirements.md` §11.26 (`DEFAULT-AC-003-004`)
+- `docs/source/screen-spec.md` S54
+- `docs/source/component-spec.md` §17.4
+- `docs/source/auth-permissions.md` §§12.10, 20.3, 25.8
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011C
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add one `ExtensionNote` per default case and `DefaultWorkflow.grant_extension` behind POST
+  `/api/v1/default-cases/{id}/grant-extension/`.
+- Require an expired/unpaid grace period, current non-intentional assessment recommending extension,
+  reason, start date immediately after grace, end exactly one calendar year later, and a valid
+  loan-scoped Extension Note document.
+- Preserve preparer, configured approver when required, draft/approved/active/expired state, and
+  immutable effective dates once active. Do not invent an approval route when configuration is absent.
+- Add retry-safe extension-expiry processing that marks review required but does not create a
+  Non-Payment Note automatically.
 
-## Screens Involved
-None directly.
+## Permissions and Audit
+- Credit Manager with `defaults.extension.grant`; configured checker remains distinct when enabled.
+  Credit Assessment and Auditor receive scoped read only.
+- Create/approve/activate/expire/cure actions append audit/workflow evidence and document linkage.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+## Acceptance and Negative Tests
+- Eligible non-intentional case creates one one-year note and stores it in the exact loan file;
+  payment during extension cures the default without deleting the note.
+- Reject intentional/unclear or stale assessment, pre-grace-expiry, already-paid/closed case, wrong
+  dates, missing/foreign document, self-check when configured, changed replay, and second extension.
+- Exact replay and concurrent grants converge on one note/transition; expiry processor is retry safe.
+- Reverse consumers: 011A/B history remains readable and unchanged; document permission/download
+  tests remain green; extension cannot mutate ledger or KYC facts.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Generating new document infrastructure, defining source-silent intentionality criteria, repeated
+extensions, Non-Payment Note (011D), recovery, or staff frontend.
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN eligibility/date/service/API/document/permission tests; migration and PostgreSQL uniqueness
+proof; expiry retry proof; audit trace; full backend gate and response/document metadata examples.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `DEFAULT-AC-003-004`, `MOD-DEF-005-007`, and `API-DEF-004` pass.
+- Extension authority, dates, evidence, and uniqueness are enforced by the backend owner.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] Model/migration/service/API/document and scheduler integration completed
+- [ ] Negative, race/retry, reverse-consumer, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

@@ -5,82 +5,70 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create one searchable, access-controlled archive manifest for an eligible closed loan with a
+server-calculated retention date of at least eight years.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Compliance and auditors can locate the complete loan file and prove retention obligations.
 
 ## Depends On
 - 011I
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/api-contracts.md` §36.5
+- `docs/source/data-model.md` §22.4
+- `docs/source/product-requirements.md` §11.28
+- `docs/source/screen-spec.md` S61
+- `docs/source/component-spec.md` §18.5
+- `docs/source/security-privacy.md` §§26, 34
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011J
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add one `ArchiveRecord` per loan and `LoanClosureModule.archive` behind POST
+  `/api/v1/loan-closures/{id}/archive/`, plus scoped manifest/detail read.
+- Require the retained closure plus NOC and all applicable security-return/unpledge completion before
+  terminal `archived` truth. Preserve the earlier financial-close record even when archive is blocked.
+- Retain physical and/or digital location, start date derived from closure, archive actor/time, and
+  `retention_until_date` calculated by the server no earlier than eight calendar years later.
+- Keep archived records searchable/read-only for authorised users; document access still routes through
+  existing classification/download audit. `destruction_eligible` is informational only.
+- Exact replay returns the retained archive; location correction, destruction, and certificate flows
+  require separately governed future contracts rather than silent mutation.
 
-## Screens Involved
-None directly.
+## Permissions and Audit
+- `closure.archive.create` for Compliance/CS after prerequisites; `closure.archive.read` for scoped
+  authorised users and Auditor. Borrower receives only explicitly allowed closure/NOC facts.
+- Archive creation, manifest/download access, and denied attempts are audited without paths or
+  sensitive document contents in general logs.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+## Acceptance and Negative Tests
+- Eligible loan archives once with exact locations and >=8-year calendar retention; boundary dates
+  include leap-day cases.
+- Reject pre-close, missing NOC/applicable return, foreign closure/path/evidence, owner-supplied short
+  retention, wrong role/scope, duplicate/change replay, direct archive mutation, and early destruction.
+- PostgreSQL concurrent archive yields one manifest and one terminal status/history chain.
+- Reverse consumers: 011G-I histories stay immutable; document access/masking/download audits remain
+  green; archived loan rejects all ordinary loan/default/recovery mutations.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Physical storage automation, data deletion/destruction approval, retention-policy reduction, report
+exports (Epic 012), or archive frontend (011P).
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN prerequisite/date/API/permission tests; migration and race proof; archived-read-only matrix;
+document-access/audit regressions; full backend gate and manifest example.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `CLOSE-AC-006`, `MOD-CLOSURE-009-010`, and `API-CLOSE-005` pass.
+- No archive can precede closure evidence, shorten retention, mutate ordinary records, or bypass access audit.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] Archive persistence/module/API and read scope completed
+- [ ] Prerequisite, date, race, read-only, reverse-consumer, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

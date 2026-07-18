@@ -58,6 +58,5 @@ Low
 - [ ] Visual evidence saved
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Ralph owns mechanical bookkeeping; record only substantive unresolved risks/decisions in `review-packet.md` and `HANDOFF` if needed
 - [ ] Commit created only after passing gates

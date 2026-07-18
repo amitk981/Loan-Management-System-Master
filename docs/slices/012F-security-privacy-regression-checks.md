@@ -8,20 +8,24 @@ Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness
 Epic file: `docs/epics/012-reports-exports-hardening-uat.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create a deterministic production-hardening regression lane that proves implemented
+authentication, authorisation, sensitive-data, web, audit, configuration, dependency, and log
+controls fail closed before UAT.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+The owner gets one reproducible security-readiness result instead of relying on scattered tests or
+assuming local functional success implies safe production configuration.
 
 ## Depends On
 - 012E
 
 ## Source References
-- docs/source/implementation-roadmap.md sections 17, 24, 25, 27, 32-33
-- docs/source/api-contracts.md sections 40, 42-43 (reporting, audit, dashboard)
-- docs/source/deployment-ops.md
-- docs/source/security-privacy.md
-- docs/source/test-plan.md
+- `docs/source/security-privacy.md` sections 10-18, 24-25, 29-30, 32, and 36-37
+- `docs/source/test-plan.md` sections 18, 28.3, 33.2, and 34.2
+- `docs/source/implementation-roadmap.md` sections 17.2, 17.5-17.6, and 24
+- `docs/source/deployment-ops.md` sections 9-11 and 39
+- `docs/source/technical-architecture.md` sections 17, 30, and 32
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` section 012F
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/reports/ReportsMIS.tsx
@@ -35,40 +39,77 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+- Assemble a tagged, deterministic regression lane over existing public interfaces for
+  authentication/session lifecycle, RBAC and object scope, maker-checker/conflict, masking and
+  reason-gated reveal, restricted documents, exports, immutable audit, rate limits, and safe
+  errors. Do not create a second security subsystem.
+- Add production-settings assertions for DEBUG/allowed hosts, HTTPS/secure cookies/HSTS, CORS,
+  trusted origins, secret presence/separation, and the tracer/key invariants from 012E2/012E3.
+- Exercise injection/XSS sanitisation boundaries, unsafe upload/filename rejection, JWT/secret/PII
+  absence from logs/URLs/errors, and public-object-storage denial using safe fixtures.
+- Run repository-supported secret and dependency scans with pinned/reproducible configuration;
+  produce a machine-readable pass/fail summary containing no secrets. An unavailable required
+  scanner is a visible failure, not a silent skip.
+- Record product defects as blocking findings/corrective slices under Ralph policy; do not bundle
+  unrelated fixes into this test-focused slice.
 
 ## Database/Model Impact
 None.
 
 ## API Contracts
-Create or update the API contract for this capability.
+No new business APIs. Update security/test documentation only where the executable lane exposes a
+stable local command or clarifies existing safe error/config expectations.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Test backend authority independently of hidden buttons/routes, including cross-object/team access,
+admin-without-business-role, conflicted approver, maker-checker, auditor read-only, and unknown
+permission combinations. Unknown or disabled authority must deny.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Verify critical success/denied events use the immutable recorder, include required actor/outcome/
+request/reason context, and redact sensitive values. Audit edit/delete attempts must fail.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- The lane is non-destructive outside isolated test data, deterministic, runnable in CI/local, and
+  fails on missing controls/scans or unexpected skips.
+- Fixtures, output, logs, and evidence contain no live credentials or raw PAN/Aadhaar/bank data.
+- Do not weaken an existing gate, coverage floor, or production fail-closed setting to make the
+  lane green.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Map and execute `SEC-AUTH-001..010`, `SEC-AUTHZ-001..007`, `SEC-PII-001..012`,
+  `SEC-WEB-001..010`, and `AUD-001..016`, reusing existing tests where they already prove the
+  public behaviour instead of duplicating them.
+- Production-config negatives for missing/malformed secrets, debug/demo/tracer exposure, insecure
+  cookies/origins/hosts, and raw exception output.
+- Reverse-consumer coverage across login/session, permissions, all sensitive field adapters,
+  documents, exports, audit, production demo isolation, and field-key rotation.
+- Test the summary command itself: one controlled failure produces non-zero status and an exact
+  failing control; green emits counts, skips with approved reasons, scanner versions, and hash.
 
 ## Visual Acceptance Criteria
 None.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+Control-to-test matrix; focused and full-gate outputs; production-settings negatives; secret and
+dependency scan reports/hashes; no-secret log scan; machine-readable summary and failure demo.
+
+## Non-Goals
+Broad product repair, a second auth/encryption system, live penetration tests, infrastructure
+provisioning, or weakening/changing protected CI and Ralph scripts.
 
 ## Risk Level
 High
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- Every required source security control maps to executable evidence or an explicit blocking
+  finding; required scanners/config checks cannot silently skip.
+- Production configuration, cross-scope permissions, masking/reveal/export, safe errors/logs, and
+  immutable audit all fail closed under negative tests.
+- The lane is reproducible, secret-free, and reports exact pass/fail/skip counts non-zero on any
+  mandatory failure.
+- Broad product repair, live penetration testing, infrastructure provisioning, and changing
+  protected CI/scripts are out of scope.
 
 ## Done Checklist
 - [ ] Execution plan written
@@ -81,6 +122,5 @@ High
 - [ ] Visual evidence saved, if frontend
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive unresolved risk or decision recorded only if needed
 - [ ] Commit created only after passing gates

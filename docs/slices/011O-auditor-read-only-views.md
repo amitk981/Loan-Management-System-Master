@@ -5,82 +5,69 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Give Internal Auditor a coherent read-only view of Epic 011 cases, evidence, controls, and histories
+without adding operational authority or bypassing document classification.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Auditors can sample lifecycle and compliance evidence directly while owners remain accountable for changes.
 
 ## Depends On
 - 011N
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/auth-permissions.md` §§15.11, 19-20, 22-23, 26.7
+- `docs/source/functional-spec.md` M14-FR-012-013
+- `docs/source/security-privacy.md` §34
+- `docs/source/design-system.md` §36.6
+- `docs/source/test-plan.md` §§13.17-13.20, 37.2-37.5
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011O
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Audit all Epic 011 GET/list/detail/query services for explicit `audit_readonly` scope across default/
+  assessment/extension/note/recovery, closure/NOC/return/archive, controls/tasks/evidence/calculations/
+  KYC reviews, and grievances. Add only missing read projections; do not duplicate write services.
+- Return masked/safe summaries, complete immutable workflow/audit references, evidence metadata, and
+  no mutating `available_actions`. Restricted document content still requires the existing category,
+  object-scope, permission, reason/audit, and signed-download path.
+- Add a focused auditor route/view using existing tables, filters, status badges, timeline, evidence
+  links, loading/empty/error/unauthorised states, and read-only styling; reuse existing components.
+- Assert every Epic 011 POST/PATCH/DELETE and operational service method remains forbidden to the
+  auditor, including evidence review unless governance explicitly confirms that optional role later.
+- Keep audit observations, exports, and broad Audit Explorer work in Epic 012.
 
-## Screens Involved
-Relevant prototype screen area for this capability.
+## Permissions and Audit
+- Use existing `audit.*`, `reports.compliance.read`, owner read permissions, and `audit_readonly` scope;
+  never grant operational manage/create/update/approve/invoke/close/issue/return/archive permissions.
+- Sensitive/restricted detail and downloads are audited; normal list reads avoid excessive per-row audit noise.
 
-## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+## Acceptance and Negative Tests
+- Auditor can filter/open each Epic 011 aggregate, trace immutable history, and access only authorised
+  evidence metadata/downloads; masked fields stay masked.
+- Full method matrix proves every mutation returns 403 with zero write/audit side effect beyond the
+  denied-access event; hand-crafted UI calls cannot bypass it.
+- Other broad-read roles do not inherit auditor scope; borrower and staff object filters remain unchanged.
+- Reverse consumers: all prior Epic 011 authority/object-scope suites, sensitive reveal/download,
+  dashboard navigation, and generic mutation endpoint tests remain green.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Audit observation mutation, exports/reports/Audit Explorer (Epic 012), changing evidence review policy,
+new visual language, or staff operational UI (011P).
 
-## Database/Model Impact
-None.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+Backend GET/mutation permission matrix and object-scope tests; frontend component/route tests,
+typecheck/lint/build; trusted-browser screenshots for populated/empty/unauthorised views; full gates.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- Internal Auditor can inspect required Epic 011 truth while every operational mutation stays impossible.
+- Evidence access remains classified, scoped, masked, signed, and audited through existing owners.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and permission matrix saved
+- [ ] Missing read projections and focused auditor UI completed
+- [ ] Mutation-denial, scope/masking, reverse-consumer, visual, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

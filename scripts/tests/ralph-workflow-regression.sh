@@ -39,6 +39,8 @@ source scripts/lib/ralph-merge-guard.sh
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_AGENT_LIMIT")" == "agent_limit" ]] || fail "agent-limit status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_BROWSER_INFRASTRUCTURE")" == "browser_infrastructure" ]] \
   || fail "browser-infrastructure status misclassified"
+[[ "$(ralph_outcome_for_status "$RALPH_EXIT_ITERATION_LIMIT")" == "iteration_limit" ]] \
+  || fail "iteration-limit status misclassified"
 [[ "$(ralph_outcome_for_status 1)" == "failed" ]] || fail "generic failure misclassified"
 
 [[ -f scripts/lib/ralph-postgresql-acceptance.sh ]] || fail "missing PostgreSQL acceptance predicate"
@@ -64,6 +66,57 @@ EOF
 [[ "$(ralph_max_progressive_repair_attempts "$fixture_dir/invalid-retries.yaml")" == "3" ]] \
   || fail "missing progressive repair ceiling did not fail safely to three"
 
+loop_limit_repo="$fixture_dir/loop-limit-repo"
+mkdir -p "$loop_limit_repo/scripts/lib" "$loop_limit_repo/.ralph" \
+  "$loop_limit_repo/docs/slices"
+cp scripts/ralph-loop.sh "$loop_limit_repo/scripts/ralph-loop.sh"
+for loop_lib in ralph-exit-protocol.sh ralph-retry-policy.sh ralph-repair-context.sh \
+    ralph-oversized-slice.sh ralph-slice-selection.sh ralph-architecture-review.sh; do
+  cp "scripts/lib/$loop_lib" "$loop_limit_repo/scripts/lib/$loop_lib"
+done
+cat > "$loop_limit_repo/scripts/ralph-recover.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat > "$loop_limit_repo/scripts/afk-dev.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$loop_limit_repo/scripts/ralph-loop.sh" \
+  "$loop_limit_repo/scripts/ralph-recover.sh" "$loop_limit_repo/scripts/afk-dev.sh"
+cat > "$loop_limit_repo/.ralph/config.yaml" <<'EOF'
+agent:
+  default_tool: codex
+  limit_fallback: false
+run:
+  max_retries: 2
+  max_progressive_repairs: 5
+EOF
+printf '%s\n' '{"architecture_review_due": false}' > "$loop_limit_repo/.ralph/state.json"
+cat > "$loop_limit_repo/docs/slices/001A-pending.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+git init -q "$loop_limit_repo"
+git -C "$loop_limit_repo" add .
+git -C "$loop_limit_repo" -c user.name='Ralph Regression' \
+  -c user.email='ralph-regression@example.invalid' commit -qm fixture
+set +e
+(
+  cd "$loop_limit_repo"
+  ./scripts/ralph-loop.sh 1 > loop.stdout 2>&1
+)
+loop_limit_rc=$?
+set -e
+[[ "$loop_limit_rc" == "$RALPH_EXIT_ITERATION_LIMIT" ]] \
+  || fail "unfinished loop limit returned $loop_limit_rc instead of $RALPH_EXIT_ITERATION_LIMIT"
+grep -qF 'Stopped incomplete after reaching max iterations (1).' \
+  "$loop_limit_repo/loop.stdout" \
+  || fail "unfinished loop limit did not report its exact outcome"
+
 merge_repo="$fixture_dir/merge-repo"
 git init -q -b integration "$merge_repo"
 git -C "$merge_repo" config user.name "Ralph Regression"
@@ -80,6 +133,11 @@ git -C "$merge_repo" add .ralph/runs/failed-run/evidence.md \
   .ralph/runs/failed-run/execution-plan.md conflict.txt
 git -C "$merge_repo" commit -qm completed
 git -C "$merge_repo" switch -q integration
+ralph_quarantined_commit_exists "$merge_repo" completed-slice \
+  || fail "post-commit quarantined branch was misclassified as product-repairable"
+if ralph_quarantined_commit_exists "$merge_repo" integration; then
+  fail "integration HEAD was misclassified as a post-commit quarantine"
+fi
 mkdir -p "$merge_repo/.ralph/runs/failed-run"
 printf 'identical evidence\n' > "$merge_repo/.ralph/runs/failed-run/evidence.md"
 printf 'earlier diagnostic plan\n' > "$merge_repo/.ralph/runs/failed-run/execution-plan.md"
@@ -623,6 +681,35 @@ grep -qF 'PASS: candidate content remained frozen throughout validation.' \
   "$validator_success_run_dir/candidate-hash-results.md" \
   || fail "all-green validator did not verify the frozen candidate"
 
+state_guard_run="orchestrator-state-guard-run"
+state_guard_run_dir="$validator_success_repo/.ralph/runs/$state_guard_run"
+mkdir -p "$state_guard_run_dir"
+for artifact in prompt.md changed-files.txt final-summary.md; do
+  printf 'fixture\n' > "$state_guard_run_dir/$artifact"
+done
+printf '1. Reject agent-owned state changes.\n' > "$state_guard_run_dir/execution-plan.md"
+printf 'Low risk fixture.\n' > "$state_guard_run_dir/risk-assessment.md"
+printf '## Result\nReady to merge\n' > "$state_guard_run_dir/review-packet.md"
+printf '%s\n' '{"completed_slices": ["agent-forged-completion"]}' \
+  > "$validator_success_repo/.ralph/state.json"
+set +e
+scripts/ralph-validate.sh \
+  --run-id "$state_guard_run" \
+  --worktree "$validator_success_repo" \
+  --mode normal_run \
+  --slice 999Z-validator-success \
+  > "$fixture_dir/state-guard.stdout" \
+  2> "$fixture_dir/state-guard.stderr"
+state_guard_rc=$?
+set -e
+[[ "$state_guard_rc" == "1" ]] \
+  || fail "agent-authored state returned $state_guard_rc instead of validation failure"
+grep -qF 'FAIL: agent modified orchestrator-owned .ralph/state.json.' \
+  "$state_guard_run_dir/orchestrator-ownership-check.md" \
+  || fail "agent-authored state did not leave ownership evidence"
+git -C "$validator_success_repo" show HEAD:.ralph/state.json \
+  > "$validator_success_repo/.ralph/state.json"
+
 # A configured backend gate with no manage.py is an unsafe repository/config
 # condition. It must fail instead of being mislabeled as a no-backend skip.
 missing_backend_repo="$fixture_dir/missing-backend-repo"
@@ -898,6 +985,131 @@ architecture_scope_helper="scripts/lib/ralph-architecture-review.sh"
   || fail "missing architecture-review change-scope helper"
 # shellcheck source=../lib/ralph-architecture-review.sh
 source "$architecture_scope_helper"
+metrics_packet="$fixture_dir/architecture-review-packet.md"
+cat > "$metrics_packet" <<'EOF'
+# Review Packet
+
+## Convergence Metrics
+- Findings closed: 3
+- New Critical: 0
+- New High: 0
+- New Medium: 2
+- New Low: 1
+- Corrective slices added: 1
+EOF
+[[ "$(ralph_architecture_review_metrics "$metrics_packet")" == $'3\t0\t0\t2\t1\t1' ]] \
+  || fail "architecture-review convergence metrics did not parse deterministically"
+sed 's/- New High: 0/- New High: unknown/' "$metrics_packet" > "$metrics_packet.invalid"
+if ralph_architecture_review_metrics "$metrics_packet.invalid" >/dev/null 2>&1; then
+  fail "architecture-review convergence metrics accepted a non-numeric severity count"
+fi
+adaptive_config="$fixture_dir/adaptive-review-config.yaml"
+cat > "$adaptive_config" <<'EOF'
+run:
+  architecture_review_every_completed_slices: 4
+  architecture_review_clean_every_completed_slices: 8
+  architecture_review_clean_streak_required: 2
+EOF
+adaptive_state="$fixture_dir/adaptive-review-state.json"
+printf '{"architecture_review_clean_streak": 0}\n' > "$adaptive_state"
+[[ "$(ralph_architecture_review_interval "$adaptive_config" "$adaptive_state")" == 4 ]] \
+  || fail "adaptive review interval did not retain four-slice scrutiny before clean proof"
+printf '{"architecture_review_clean_streak": 2}\n' > "$adaptive_state"
+[[ "$(ralph_architecture_review_interval "$adaptive_config" "$adaptive_state")" == 8 ]] \
+  || fail "adaptive review interval did not expand after the configured clean streak"
+printf '{"architecture_review_due": true}\n' > "$adaptive_state"
+[[ "$(ralph_architecture_review_due "$adaptive_state")" == True ]] \
+  || fail "valid due-review state was not read"
+[[ "$(ralph_architecture_review_due_after_product True 2 8)" == True ]] \
+  || fail "failed mandatory boundary review was cleared below cadence"
+[[ "$(ralph_architecture_review_due_after_product False 8 8)" == True ]] \
+  || fail "cadence threshold did not schedule a review"
+[[ "$(ralph_architecture_review_due_after_product False 2 8)" == False ]] \
+  || fail "clean sub-threshold product progress scheduled an early review"
+printf '{"architecture_review_due": "unknown"}\n' > "$adaptive_state"
+if ralph_architecture_review_due "$adaptive_state" >/dev/null 2>&1; then
+  fail "non-boolean architecture-review state failed open"
+fi
+[[ "$(ralph_architecture_review_boundary_reason 009K-close 010A-start \
+      '010A-start (Not Started)')" == "epic_boundary:009->010" ]] \
+  || fail "cross-epic completion did not require an architecture review"
+[[ "$(ralph_architecture_review_boundary_reason 009K-close '' \
+      '010A-parked (Blocked)')" == "epic_boundary:009->010" ]] \
+  || fail "a blocked next epic hid its mandatory boundary review"
+[[ "$(ralph_architecture_review_boundary_reason 012I-close '' '')" == "epic_completion:012" ]] \
+  || fail "final project completion did not require an architecture review"
+[[ "$(ralph_architecture_review_boundary_reason CR-012-final-fix '' '')" == \
+    "project_completion:CR-012-final-fix" ]] \
+  || fail "a final change-request slice drained the queue without a completion review"
+[[ -z "$(ralph_architecture_review_boundary_reason 012I-close '' \
+      '012J-parked (Blocked)')" ]] \
+  || fail "blocked remaining work was misclassified as final project completion"
+ralph_validate_architecture_review_admission 0 0 0 \
+  || fail "clean architecture review failed severity admission"
+ralph_validate_architecture_review_admission 0 2 1 0 \
+  || fail "grouped High findings with corrective work failed severity admission"
+ralph_validate_architecture_review_admission 1 0 0 1 \
+  || fail "High/Critical finding mapped to existing corrective work failed admission"
+if ralph_validate_architecture_review_admission 1 0 0 0 >/dev/null 2>&1; then
+  fail "Critical architecture finding passed without corrective work"
+fi
+corrective_repo="$fixture_dir/architecture-corrective-repo"
+mkdir -p "$corrective_repo/docs/slices"
+git init -q "$corrective_repo"
+git -C "$corrective_repo" config user.name "Ralph Regression"
+git -C "$corrective_repo" config user.email "ralph-regression@example.invalid"
+cat > "$corrective_repo/docs/slices/010A-existing.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+cat > "$corrective_repo/docs/slices/010Z-complete.md" <<'EOF'
+## Status
+Complete
+
+## Depends On
+- None
+EOF
+git -C "$corrective_repo" add .
+git -C "$corrective_repo" commit -qm fixture
+corrective_mapping_packet="$corrective_repo/review-packet.md"
+printf '%s\n' '- Existing corrective slice: 010A' > "$corrective_mapping_packet"
+[[ "$(ralph_architecture_review_existing_corrective_count \
+      "$corrective_mapping_packet" "$corrective_repo")" == 1 ]] \
+  || fail "valid existing corrective mapping was not admitted"
+printf '%s\n' '- Existing corrective slice: 010Z' > "$corrective_mapping_packet"
+cat > "$corrective_repo/docs/slices/010Z-complete.md" <<'EOF'
+## Status
+Blocked
+
+## Depends On
+- None
+EOF
+if ralph_architecture_review_existing_corrective_count \
+    "$corrective_mapping_packet" "$corrective_repo" >/dev/null 2>&1; then
+  fail "slice made actionable only by the review was admitted as existing corrective work"
+fi
+cat > "$corrective_repo/docs/slices/010B-new.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- 010A
+EOF
+[[ "$(ralph_architecture_review_new_corrective_count "$corrective_repo")" == 1 ]] \
+  || fail "valid new numeric corrective slice was not counted"
+cat > "$corrective_repo/docs/slices/CR-001-invalid.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+if ralph_architecture_review_new_corrective_count "$corrective_repo" >/dev/null 2>&1; then
+  fail "non-numeric untracked slice was counted as architecture corrective work"
+fi
 architecture_repo="$fixture_dir/architecture-review-repo"
 mkdir -p "$architecture_repo/docs/working" "$architecture_repo/src" \
   "$architecture_repo/.ralph/runs/prior-review"
@@ -912,9 +1124,15 @@ printf 'retained historical evidence\n' \
 git -C "$architecture_repo" add .
 git -C "$architecture_repo" commit -qm fixture
 printf 'review finding\n' >> "$architecture_repo/docs/working/REVIEW_FINDINGS.md"
-printf '{"architecture_review_due": false}\n' > "$architecture_repo/.ralph/state.json"
 ralph_validate_architecture_review_change_scope "$architecture_repo" current-review \
   || fail "documentation-only architecture review was rejected"
+printf '{"architecture_review_due": false}\n' > "$architecture_repo/.ralph/state.json"
+if ralph_validate_architecture_review_change_scope \
+    "$architecture_repo" current-review >/dev/null 2>&1; then
+  fail "architecture-review lane accepted agent-authored state"
+fi
+git -C "$architecture_repo" show HEAD:.ralph/state.json \
+  > "$architecture_repo/.ralph/state.json"
 printf 'rewritten historical evidence\n' \
   > "$architecture_repo/.ralph/runs/prior-review/evidence.md"
 if ralph_validate_architecture_review_change_scope \
@@ -974,6 +1192,14 @@ printf 'Low risk fixture.\n' > "$architecture_validator_run_dir/risk-assessment.
 cat > "$architecture_validator_run_dir/review-packet.md" <<'EOF'
 ## Result
 Ready to merge
+
+## Convergence Metrics
+- Findings closed: 1
+- New Critical: 0
+- New High: 0
+- New Medium: 1
+- New Low: 0
+- Corrective slices added: 0
 EOF
 git init -q "$architecture_validator_repo"
 git -C "$architecture_validator_repo" config user.name "Ralph Regression"
@@ -994,6 +1220,9 @@ for skipped_gate in build install typecheck lint test e2e backend-check backend-
     "$architecture_validator_run_dir/${skipped_gate}-results.md" \
     || fail "architecture-review lane did not skip $skipped_gate with an explicit reason"
 done
+grep -qF 'PASS: architecture review reported machine-readable convergence metrics.' \
+  "$architecture_validator_run_dir/architecture-review-metrics-results.md" \
+  || fail "architecture-review lane did not preserve validated convergence metrics"
 
 # A shadow selector records potential future backend lanes without changing the
 # authoritative full gate. Its recommendations fail closed for high-risk,
@@ -1618,6 +1847,36 @@ EOF
 [[ -z "$(ralph_slice_dependencies "$slices_fixture/001D-fixture.md")" ]] \
   || fail "'- None' was parsed as a real dependency"
 
+metrics_fixture="$fixture_dir/queue-metrics"
+mkdir -p "$metrics_fixture"
+make_fixture_slice_at() {
+  local target="$1" id="$2" status="$3"
+  cat > "$target/$id-fixture.md" <<EOF
+## Status
+$status
+
+## Depends On
+- None
+EOF
+}
+make_fixture_slice_at "$metrics_fixture" 001A Complete
+make_fixture_slice_at "$metrics_fixture" 001B "Not Started"
+make_fixture_slice_at "$metrics_fixture" 001C Blocked
+make_fixture_slice_at "$metrics_fixture" 001D Superseded
+cat > "$metrics_fixture/architecture-review.md" <<'EOF'
+## Status
+Complete
+
+## Depends On
+- None
+EOF
+[[ "$(ralph_queue_status_counts "$metrics_fixture")" == $'1\t1\t1\t1\t3' ]] \
+  || fail "queue metrics did not exclude the architecture-review pseudo-slice or count statuses exactly"
+[[ "$(ralph_slice_epic 009H9A-queued-advice)" == "009" ]] \
+  || fail "slice epic helper did not identify a numbered product epic"
+[[ -z "$(ralph_slice_epic CR-011-fix)" ]] \
+  || fail "slice epic helper misclassified a change request as an epic boundary"
+
 ralph_slice_unmet_dependencies "$slices_fixture/001B-fixture.md" "$slices_fixture" >/dev/null \
   || fail "slice with a Complete dependency was reported blocked"
 ralph_slice_unmet_dependencies "$slices_fixture/001G-fixture.md" "$slices_fixture" >/dev/null \
@@ -1715,10 +1974,11 @@ remaining="$(ralph_remaining_slices "$slices_fixture")"
 [[ "$remaining" == *"001H-fixture (Blocked)"* ]] || fail "remaining-slice listing omits Blocked slices"
 [[ "$remaining" == *"001B-fixture (Not Started)"* ]] || fail "remaining-slice listing omits Not Started slices"
 
-# Status transition rules: only the executed slice may change status, and no
-# run may complete a slice it did not execute.
-ralph_slice_transition_allowed normal_run 001X-f 001X-f "Not Started" "Complete" \
-  || fail "selected slice completion was rejected"
+# Status transition rules: agents cannot change even their selected status;
+# the orchestrator applies that transition after independent validation.
+if ralph_slice_transition_allowed normal_run 001X-f 001X-f "Not Started" "Complete"; then
+  fail "implementation agent was allowed to complete its selected slice"
+fi
 ralph_slice_transition_allowed normal_run 001X-f 001Y-f "Not Started" "Not Started" \
   || fail "unchanged status was rejected"
 if ralph_slice_transition_allowed normal_run 001X-f 001Y-f "Not Started" "Complete"; then
@@ -1734,6 +1994,85 @@ ralph_slice_transition_allowed architecture_review architecture-review 001Y-f "N
 if ralph_slice_transition_allowed architecture_review architecture-review 001Y-f "Not Started" "Complete"; then
   fail "a review completing a slice was allowed"
 fi
+
+status_restore_repo="$fixture_dir/status-restore-repo"
+mkdir -p "$status_restore_repo/docs/slices"
+git init -q "$status_restore_repo"
+git -C "$status_restore_repo" config user.name "Ralph Regression"
+git -C "$status_restore_repo" config user.email "ralph-regression@example.invalid"
+cat > "$status_restore_repo/docs/slices/001R-repair.md" <<'EOF'
+# Repair fixture
+
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+git -C "$status_restore_repo" add .
+git -C "$status_restore_repo" commit -qm fixture
+rm "$status_restore_repo/docs/slices/001R-repair.md"
+ralph_restore_selected_slice_status \
+  "$status_restore_repo" docs/slices/001R-repair.md \
+  || fail "deleted selected slice was not restored for repair"
+git -C "$status_restore_repo" diff --quiet -- docs/slices/001R-repair.md \
+  || fail "deleted selected slice was not restored exactly from HEAD"
+printf '# malformed repair slice\n' > "$status_restore_repo/docs/slices/001R-repair.md"
+ralph_restore_selected_slice_status \
+  "$status_restore_repo" docs/slices/001R-repair.md \
+  || fail "status-less selected slice was not restored for repair"
+git -C "$status_restore_repo" diff --quiet -- docs/slices/001R-repair.md \
+  || fail "status-less selected slice was not restored exactly from HEAD"
+cat >> "$status_restore_repo/docs/slices/001R-repair.md" <<'EOF'
+
+Sharpened requirement retained.
+EOF
+python3 - "$status_restore_repo/docs/slices/001R-repair.md" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text().replace("Not Started", "Complete", 1))
+PY
+ralph_restore_selected_slice_status \
+  "$status_restore_repo" docs/slices/001R-repair.md \
+  || fail "selected status was not restored while preserving repair content"
+grep -qF 'Sharpened requirement retained.' "$status_restore_repo/docs/slices/001R-repair.md" \
+  || fail "status restoration discarded valid slice sharpening"
+[[ "$(ralph_slice_status "$status_restore_repo/docs/slices/001R-repair.md")" == "Not Started" ]] \
+  || fail "selected status restoration did not restore the HEAD value"
+
+bookkeeping_trusted="$fixture_dir/bookkeeping-trusted"
+bookkeeping_worktree="$fixture_dir/bookkeeping-worktree"
+mkdir -p "$bookkeeping_trusted/.ralph" "$bookkeeping_worktree/.ralph"
+printf '{"architecture_review_due": false}\n' > "$bookkeeping_trusted/.ralph/state.json"
+printf 'trusted progress\n' > "$bookkeeping_trusted/.ralph/progress.md"
+printf 'outside sentinel\n' > "$fixture_dir/bookkeeping-sentinel"
+ln -s "$fixture_dir/bookkeeping-sentinel" "$bookkeeping_worktree/.ralph/state.json"
+ln "$fixture_dir/bookkeeping-sentinel" "$bookkeeping_worktree/.ralph/progress.md"
+ralph_restore_worktree_bookkeeping "$bookkeeping_trusted" "$bookkeeping_worktree" \
+  || fail "trusted bookkeeping could not replace rejected repair files"
+[[ ! -L "$bookkeeping_worktree/.ralph/state.json" ]] \
+  || fail "bookkeeping restoration retained a state symlink"
+cmp -s "$bookkeeping_trusted/.ralph/state.json" "$bookkeeping_worktree/.ralph/state.json" \
+  || fail "bookkeeping restoration did not materialize trusted state"
+cmp -s "$bookkeeping_trusted/.ralph/progress.md" "$bookkeeping_worktree/.ralph/progress.md" \
+  || fail "bookkeeping restoration did not materialize trusted progress"
+[[ "$(cat "$fixture_dir/bookkeeping-sentinel")" == "outside sentinel" ]] \
+  || fail "bookkeeping restoration followed a link outside the worktree"
+
+rm "$status_restore_repo/docs/slices/001R-repair.md"
+printf 'slice sentinel\n' > "$fixture_dir/slice-sentinel"
+ln -s "$fixture_dir/slice-sentinel" "$status_restore_repo/docs/slices/001R-repair.md"
+ralph_restore_selected_slice_status \
+  "$status_restore_repo" docs/slices/001R-repair.md \
+  || fail "selected-slice restoration could not replace a rejected symlink"
+[[ ! -L "$status_restore_repo/docs/slices/001R-repair.md" ]] \
+  || fail "selected-slice restoration retained a candidate symlink"
+[[ "$(cat "$fixture_dir/slice-sentinel")" == "slice sentinel" ]] \
+  || fail "selected-slice restoration followed a link outside the worktree"
+git -C "$status_restore_repo" diff --quiet -- docs/slices/001R-repair.md \
+  || fail "symlinked selected slice was not restored exactly from HEAD"
 
 # Zero-padded CR identifiers are decimal identifiers, not shell octal values.
 # Intake after CR-008 must deterministically produce CR-009 without an
@@ -1786,5 +2125,191 @@ EOF
   || fail "intake did not treat zero-padded CR-008 as decimal when allocating CR-009"
 [[ ! -s "$intake_repo/intake.stderr" ]] \
   || fail "intake emitted a zero-padded CR arithmetic diagnostic"
+
+# Codex mode profiles must be executable configuration, not settings-file
+# decoration. Resolution fails closed when a profile is missing or disallows
+# the requested Ralph mode, while explicit compatible profiles remain usable.
+profile_helper="scripts/lib/ralph-agent-profile.sh"
+[[ -f "$profile_helper" ]] || fail "missing Codex profile resolver"
+# shellcheck source=../lib/ralph-agent-profile.sh
+source "$profile_helper"
+profile_fixture="$fixture_dir/profile-config.yaml"
+cat > "$profile_fixture" <<'EOF'
+agent:
+  codex:
+    default_profile: default
+    allow_model_override: true
+    allow_effort_override: true
+    allow_verbosity_override: true
+    allow_xhigh: false
+    approval_modes_allowed: [never]
+    profiles:
+      default:
+        model: gpt-default
+        reasoning_effort: medium
+        verbosity: medium
+        allowed_modes: [normal_run]
+      fast:
+        model: gpt-fast
+        reasoning_effort: low
+        verbosity: low
+        allowed_modes: [normal_run, docs_only]
+      repair:
+        model: gpt-repair
+        reasoning_effort: high
+        verbosity: medium
+        allowed_modes: [repair]
+      architecture:
+        model: gpt-architecture
+        reasoning_effort: high
+        verbosity: medium
+        allowed_modes: [architecture_review]
+EOF
+[[ "$(ralph_codex_profile_values "$profile_fixture" '' normal_run)" == $'default\tgpt-default\tmedium\tmedium\tnever' ]] \
+  || fail "normal mode did not resolve the configured default Codex profile"
+[[ "$(ralph_codex_profile_values "$profile_fixture" '' repair)" == $'repair\tgpt-repair\thigh\tmedium\tnever' ]] \
+  || fail "repair mode did not resolve the repair Codex profile"
+[[ "$(ralph_codex_profile_values "$profile_fixture" '' architecture_review)" == $'architecture\tgpt-architecture\thigh\tmedium\tnever' ]] \
+  || fail "architecture mode did not resolve the architecture Codex profile"
+[[ "$(ralph_codex_profile_values "$profile_fixture" fast normal_run)" == $'fast\tgpt-fast\tlow\tlow\tnever' ]] \
+  || fail "explicit compatible Codex profile was not honored"
+[[ "$(ralph_codex_profile_values "$profile_fixture" '' normal_run \
+      gpt-owner high low never)" == $'default\tgpt-owner\thigh\tlow\tnever' ]] \
+  || fail "allowed Codex profile overrides were not validated and applied"
+if ralph_codex_profile_values "$profile_fixture" '' normal_run \
+    '' '' '' on-request >/dev/null 2>&1; then
+  fail "Codex profile resolver admitted an interactive approval mode for an AFK run"
+fi
+if ralph_codex_profile_values "$profile_fixture" '' normal_run \
+    '' xhigh '' '' >/dev/null 2>&1; then
+  fail "Codex profile resolver allowed xhigh while protected configuration disables it"
+fi
+profile_locked_fixture="$fixture_dir/profile-config-locked.yaml"
+sed 's/allow_model_override: true/allow_model_override: false/' \
+  "$profile_fixture" > "$profile_locked_fixture"
+if ralph_codex_profile_values "$profile_locked_fixture" '' normal_run \
+    gpt-owner '' '' '' >/dev/null 2>&1; then
+  fail "Codex profile resolver bypassed a disabled model override"
+fi
+if ralph_codex_profile_values "$profile_fixture" fast repair >/dev/null 2>&1; then
+  fail "Codex profile resolver accepted a profile that disallows repair mode"
+fi
+rg -qF 'ralph_codex_profile_values' scripts/agent-adapters/codex.sh \
+  || fail "Codex adapter does not apply configured profile values"
+rg -qF '$trusted_repo_root/.ralph/config.yaml' scripts/agent-adapters/codex.sh \
+  || fail "Codex adapter resolves protected profiles from an agent-modifiable worktree"
+if rg -qF '$WORKTREE_DIR/.ralph/config.yaml' scripts/agent-adapters/codex.sh; then
+  fail "Codex adapter still trusts quarantined worktree profile configuration"
+fi
+rg -qF 'clean_streak = int("$pre_run_arch_clean_streak")' scripts/ralph-run.sh \
+  || fail "adaptive review cadence trusts agent-edited worktree state"
+if rg -qF 'CODEX_ADDITIONAL_ARGS' scripts/agent-adapters/codex.sh; then
+  fail "Codex adapter accepts unrestricted arguments after protected settings"
+fi
+rg -qF 'codex "${args[@]}" exec' scripts/agent-adapters/codex.sh \
+  || fail "Codex adapter does not use a fixed exec subcommand"
+
+adapter_repo="$fixture_dir/codex-adapter-repo"
+adapter_run_dir="$adapter_repo/run"
+adapter_fake_bin="$adapter_repo/fake-bin"
+adapter_args="$adapter_repo/codex-argv.txt"
+mkdir -p "$adapter_run_dir" "$adapter_fake_bin"
+git init -q "$adapter_repo"
+printf 'prompt fixture\n' > "$adapter_repo/prompt.md"
+cat > "$adapter_fake_bin/codex" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "$FAKE_CODEX_ARGS"
+EOF
+chmod +x "$adapter_fake_bin/codex"
+PATH="$adapter_fake_bin:$PATH" \
+FAKE_CODEX_ARGS="$adapter_args" \
+CODEX_MODEL=gpt-owner \
+CODEX_REASONING_EFFORT=high \
+CODEX_VERBOSITY=low \
+CODEX_APPROVAL_MODE=never \
+CODEX_ADDITIONAL_ARGS='--model injected --ask-for-approval on-request exec' \
+RALPH_RAW_AGENT_LOG_ROOT="$adapter_repo/raw-agent-logs" \
+RALPH_ALLOW_EXTERNAL_AGENT_LOG_ROOT=true \
+RALPH_AGENT_HEARTBEAT_SECONDS=1 \
+RUN_ID=adapter-argv-run \
+RUN_DIR="$adapter_run_dir" \
+WORKTREE_DIR="$adapter_repo" \
+PROMPT_FILE="$adapter_repo/prompt.md" \
+MODE=normal_run \
+SELECTED_SLICE='' \
+scripts/agent-adapters/codex.sh > "$adapter_repo/adapter.stdout" \
+  || fail "Codex adapter argv-capture fixture failed"
+python3 - "$adapter_args" <<'PY'
+import sys
+from pathlib import Path
+
+args = Path(sys.argv[1]).read_text().splitlines()
+if args[-1:] != ["exec"] or args.count("exec") != 1:
+    raise SystemExit(f"FAIL: Codex adapter did not apply one final exec subcommand: {args}")
+if "injected" in args or "on-request" in args or "--dangerously-bypass-approvals-and-sandbox" in args:
+    raise SystemExit(f"FAIL: unrestricted Codex arguments reached the CLI: {args}")
+if args[args.index("--model") + 1] != "gpt-owner":
+    raise SystemExit(f"FAIL: validated model was not applied: {args}")
+if args[args.index("--ask-for-approval") + 1] != "never":
+    raise SystemExit(f"FAIL: headless approval mode was not applied: {args}")
+PY
+
+# Prompt ownership and context discipline: implementation agents own
+# substantive code/evidence; the orchestrator owns mechanical queue state.
+runner="scripts/ralph-run.sh"
+rg -qF 'The orchestrator owns changed-files.txt, .ralph/state.json, .ralph/progress.md, the selected slice Status transition, and mechanical handoff/progress bookkeeping.' "$runner" \
+  || fail "run prompt does not assign mechanical bookkeeping to the orchestrator"
+rg -qF 'slice_file="architecture-review.md"' "$runner" \
+  || fail "architecture-review runner has no concrete pseudo-slice before worktree restoration"
+if rg -qF -- '- Save changed-files.txt.' "$runner"; then
+  fail "run prompt still asks the implementation agent to regenerate changed-files.txt"
+fi
+if rg -qF -- '- Update state, progress, handoff, and slice status.' "$runner"; then
+  fail "run prompt still asks the implementation agent to duplicate orchestrator state transitions"
+fi
+if rg -qF "Before finishing, sharpen the next 1-2 'Not Started' slice files" "$runner"; then
+  fail "run prompt still expands implementation sessions into unrelated future-slice sharpening"
+fi
+rg -qF 'Read only the digest shared invariants and the selected slice section by default.' "$runner" \
+  || fail "run prompt does not bound epic-digest reads to the selected slice"
+rg -qF 'After roughly 500 changed lines, use diff stats and targeted hunks; never repeatedly print the complete cumulative diff.' "$runner" \
+  || fail "run prompt does not prevent cumulative diff churn"
+rg -qF 'Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work.' "$runner" \
+  || fail "architecture-review prompt does not enforce severity-based queue admission"
+rg -qF 'Report findings closed, new findings by severity, and corrective slices added' "$runner" \
+  || fail "architecture-review prompt omits convergence metrics"
+rg -qF 'ralph_architecture_review_new_corrective_count' scripts/ralph-validate.sh \
+  || fail "validator does not enforce the new corrective-slice queue contract"
+rg -qF 'ralph_architecture_review_existing_corrective_count' scripts/ralph-validate.sh \
+  || fail "validator cannot map findings to existing corrective work"
+rg -qF 'Refusing to declare final completion.' scripts/ralph-loop.sh \
+  || fail "loop can declare final completion while a mandatory review remains due"
+rg -qF 'product work is empty but the mandatory final architecture review remains due.' scripts/ralph-loop.sh \
+  || fail "iteration exhaustion can return success with a failed final review"
+rg -qF 'max_iterations="${1:-250}"' scripts/ralph-loop.sh \
+  || fail "default Ralph loop budget cannot drain the prepared remaining queue"
+rg -qF 'exit "$RALPH_EXIT_ITERATION_LIMIT"' scripts/ralph-loop.sh \
+  || fail "max-iteration exhaustion reports success for unfinished work"
+rg -qF 'ralph_architecture_review_due .ralph/state.json' scripts/ralph-loop.sh \
+  || fail "loop does not fail closed when architecture-review state is unreadable"
+rg -qF 'Owner/architecture preparation maintains an 8-10 slice ready runway' AGENTS.md \
+  || fail "repository rules do not assign future-slice preparation to a bounded planning lane"
+if rg -qF 'Before finishing, sharpen the next 1-2 `Not Started` slice files' AGENTS.md; then
+  fail "repository rules still expand every implementation session into future-slice preparation"
+fi
+if rg -qF 'Update state, progress, handoff, and slice status.' AGENTS.md; then
+  fail "repository rules still assign mechanical bookkeeping to implementation agents"
+fi
+rg -qF 'state = json.loads(trusted_path.read_text())' scripts/ralph-run.sh \
+  || fail "orchestrator rebuilds successful state from an agent-modifiable candidate"
+rg -qF 'COMMIT_QUARANTINED: post-commit integrity failure' scripts/ralph-run.sh \
+  || fail "post-commit failures can re-enter incompatible product repair"
+rg -qF 'if (( no_worktree == 0 ))' scripts/ralph-run.sh \
+  || fail "no-worktree commit failure can dereference an unset quarantine branch"
+rg -qF 'if (( no_worktree == 0 )) && [[ "$mode" != "architecture_review" || -n "$split_slice_id" ]]; then' scripts/ralph-run.sh \
+  || fail "no-worktree validation failure can publish non-resumable repair context"
+if rg -qF 'prior_due or cadence_due' scripts/ralph-run.sh; then
+  fail "inline due logic bypasses the tested mandatory-review transition helper"
+fi
 
 echo "PASS: Ralph workflow regressions"

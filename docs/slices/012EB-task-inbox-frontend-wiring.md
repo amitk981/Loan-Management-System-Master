@@ -83,6 +83,5 @@ Medium
 - [ ] Visual evidence saved
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive unresolved risk or decision recorded only if needed
 - [ ] Commit created only after passing gates

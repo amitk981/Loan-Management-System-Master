@@ -5,82 +5,70 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Persist exact quarterly Section 186 and NBFC principal-business calculations with evidence, review,
+boundary warnings, and one result per period.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+CFO and Board receive reproducible statutory-limit and registration-risk evidence instead of spreadsheets.
 
 ## Depends On
 - 011K
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/api-contracts.md` §§37.5-37.6
+- `docs/source/data-model.md` §§23.4-23.5
+- `docs/source/product-requirements.md` §11.29
+- `docs/source/codebase-design.md` §§19.2-19.3
+- `docs/source/screen-spec.md` S63-S64
+- `docs/source/test-plan.md` §§21.2-21.3
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011L
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add `Section186TrackerModule` and `NbfcPrincipalBusinessTestModule` plus their period-unique models,
+  migrations, create/read APIs, K evidence/review linkage, and audit.
+- Section 186 uses Decimal arithmetic: 60% of `(paid-up capital + free reserves + securities premium)`,
+  100% of `(free reserves + securities premium)`, higher applicable limit, exposure/headroom, within-
+  limit flag, and special-resolution-required when exposure exceeds the limit.
+- NBFC computes financial-assets/total-assets and financial-income/gross-income ratios. Trigger only
+  when both are strictly `>50%`; one ratio above is warning/no trigger. Preserve a configurable
+  early-warning threshold without changing the statutory trigger.
+- Server calculates all derived values from validated inputs and freezes period/input/result/reviewer/
+  evidence snapshots. Existing-period exact replay returns retained truth; changed replay conflicts.
+- Integrate quarterly due/review tasks through 011K without duplicating its scheduler or evidence policy.
 
-## Screens Involved
-None directly.
+## Permissions and Audit
+- Critical `compliance.section186.create` and `compliance.nbfc_test.create` for CFO/delegate source
+  owners; exact read permissions for authorised management/Auditor. Review is distinct and audited.
+- Inputs, calculations, review, Board presentation/evidence, warnings, and denied access are traceable.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+## Acceptance and Negative Tests
+- Table-driven formula tests cover higher-of-two outcomes, equal/over exposure, Decimal rounding, and
+  exact 50%, one-ratio-over, both-over NBFC boundaries.
+- Reject negative values, zero denominators, invalid FY/quarter, client-derived outputs, foreign/
+  missing evidence, self-review when checker required, changed replay, and duplicate period.
+- PostgreSQL concurrent create yields one tracker per type/period; no float math appears in policy code.
+- Reverse consumers: 011K task/evidence ownership stays singular; approval/Board document access,
+  dashboard summary, and audit suites remain green; calculators do not mutate source finance records.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Legal interpretation of Section 186 exemptions, RBI registration action, source-finance integration,
+generic compliance task changes, frontend wiring (011P), or report exports.
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN formula/boundary/API/permission tests; migration and PostgreSQL uniqueness proof; Decimal/
+static policy checks; evidence/review trace; full backend gate and response examples.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `COMP-AC-002-003`, `MOD-COMP-001-005`, `API-COMP-001-002`, and test-plan §§21.2-21.3 pass.
+- Stored outputs are deterministic, period-unique, reviewable, and never caller calculated.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] Both calculators/models/APIs and 011K integration completed
+- [ ] Formula boundaries, race, reverse-consumer, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

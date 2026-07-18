@@ -5,82 +5,67 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Generate, retain, and deliver one No Objection Certificate only for an eligible full-repayment closure.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Borrowers receive authoritative no-dues evidence promptly after financial closure.
 
 ## Depends On
 - 011G
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/api-contracts.md` §36.3
+- `docs/source/data-model.md` §22.2
+- `docs/source/functional-spec.md` M13-FR-004-005
+- `docs/source/screen-spec.md` S59
+- `docs/source/component-spec.md` §18.2
+- `docs/source/auth-permissions.md` §§12.11, 20.2, 25.9, 26.7
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011H
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add one `NocRecord` per closure and `LoanClosureModule.generate_noc` behind POST
+  `/api/v1/loan-closures/{id}/noc/`.
+- Require a retained eligible full-repayment closure and canonical borrower/loan/application/amount/
+  repayment facts. Use the existing document template/generation/storage owner; the request may
+  reference a valid generated document but may not supply certificate facts.
+- Retain issued-by/time, governed signatory, document, delivery mode/status, and closure linkage.
+  Hand delivery to the existing communications dispatcher and preserve honest queued/sent/failed truth.
+- Exact replay returns the same NOC; delivery retry must not generate another certificate.
 
-## Screens Involved
-None directly.
+## Permissions and Audit
+- Critical `closure.noc.issue` for Compliance/Company Secretary; Credit/borrower-own/Auditor receive
+  scoped read/download only as allowed. Signed download remains audited.
+- Generation, issue, delivery handoff/result, download, and denied attempts are correlated without
+  exposing document contents in logs.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+## Acceptance and Negative Tests
+- Eligible full-repayment closure produces one document/NOC and a truthful delivery chain.
+- Reject pre-close/unready, foreign closure/document/template, recovery/write-off without explicit
+  eligibility, wrong signatory/role/scope, missing document, changed replay, and duplicate issue.
+- PostgreSQL concurrent issue yields one NOC/document/outbox chain; provider/publish failure preserves
+  retryable truth rather than claiming delivery.
+- Reverse consumers: 011G closure snapshot remains immutable; document generation/download and
+  communications idempotency suites remain green; borrower can access only own issued NOC.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+New template/communication/provider infrastructure, security return, archive, NOC wording changes,
+or member portal UI (011NA).
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN eligibility/API/document/communication/permission tests; migration and race proof; delivery
+failure/replay evidence; audit/download trace; full backend gate and NOC metadata example.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `CLOSE-AC-003`, `MOD-CLOSURE-004-005`, and `API-CLOSE-003` pass.
+- NOC identity, eligibility, provenance, delivery truth, and object scope are backend enforced.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] NOC persistence/module/API and owner integrations completed
+- [ ] Eligibility, idempotency/race, reverse-consumer, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

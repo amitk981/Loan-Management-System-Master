@@ -8,67 +8,71 @@ Epic 010: Servicing, Repayments, Interest, and Monitoring
 Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Calculate deterministic as-of-date DPD snapshots from unpaid schedule and posted ledger truth, with
+SOP and separately configured operational buckets for one loan or the active portfolio.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Credit and CFO see the same reproducible overdue classification instead of manually maintained ageing.
 
 ## Depends On
 - 010H
 
 ## Source References
-- docs/source/implementation-roadmap.md section 15
-- docs/source/api-contracts.md sections 32-34 (repayment, interest, monitoring)
-- docs/source/data-model.md servicing/monitoring tables
-- docs/source/test-plan.md
+- `docs/source/product-requirements.md` §11.25
+- `docs/source/user-flows.md` §30
+- `docs/source/functional-spec.md` BR-066–068 and §11.11 M11-FR-001–004/008/010
+- `docs/source/domain-model.md` §14.1
+- `docs/source/data-model.md` §§20.1, 35.4
+- `docs/source/api-contracts.md` §§34.1–34.2
+- `docs/source/codebase-design.md` §18.1
+- `docs/source/screen-spec.md` S50–S51
+- `docs/source/test-plan.md` API-MON-001
+- `docs/working/digests/epic-010-servicing-repayments-interest-monitoring.md` §010I
 
-## Prototype Reference
-- sfpcl-lms/src/pages/loan-accounts/LoanAccount360.tsx
-- sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx
-- sfpcl-lms/src/pages/interest/InterestManagement.tsx
-- sfpcl-lms/src/pages/monitoring/MonitoringDashboard.tsx
+## Concrete Requirements
+1. Implement `calculate_for_loan` and bounded portfolio calculation through the DPD owner. Use an
+   explicit `as_of_date`; derive `days_past_due = as_of_date - earliest_unpaid_due_date` from the
+   canonical schedule and posted allocations/ledger, never from a client bucket or cached UI total.
+2. Persist one idempotent snapshot per loan/as-of date with principal, interest and total overdue,
+   SOP bucket, optional standard bucket, inputs/version, and created time; update the loan's current
+   DPD pointer without rewriting historical snapshots.
+3. Always preserve SOP buckets `Current`, `1–2 years`, `2–3 years`, and `>3 years`. Treat optional
+   0–30/31–60/61–90/>90 as a separate configured scheme, never a replacement.
+4. The source does not settle inclusive year-boundary convention. Use an existing approved config;
+   otherwise record the narrow calendar-boundary assumption under `DECISION_POLICY.md` before code
+   and retain tests for day before/on/after every threshold.
+5. A loan with no unpaid due schedule is Current with zero overdue; future as-of dates cannot consume
+   payments posted after the requested date. Bulk results disclose calculated/skipped/failed loans.
+6. Require `monitoring.dpd.calculate` for writes and `monitoring.dpd.read` for reads, plus account
+   scope. Calculation records audit/run evidence but does not transition loan/default workflow state.
 
-## Screens Involved
-None directly.
+## Scope Boundaries / Non-Goals
+- No default-case/grace/extension transitions (Epic 011), reminders (`010J`), MIS (`010K`), frontend,
+  or source-silent manual override of DPD.
+- No replacement of the SOP buckets with standard banking buckets.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
-
-## Backend/API Scope
-Implement the named backend/API capability only.
-
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
+## Acceptance and Reverse-Consumer Tests
+- Current, first overdue day, and every configured bucket boundary return exact days/amounts/buckets;
+  repayments before the as-of date reduce overdue while later repayments do not.
+- Same loan/date replay is stable; concurrent calls retain one snapshot/current pointer. Missing
+  schedule, invalid/future policy input, wrong permission, and cross-scope access do not fabricate DPD.
+- Portfolio dry fixture reports per-loan outcomes and query bounds.
+- 010A schedule/ledger, 010C allocations, and 010H principal remain unchanged; calculations read their
+  canonical truth and create no default case or reminder.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+- RED/GREEN date/bucket/payment timing matrix, API/permission/audit tests, database uniqueness proof,
+  twice-run PostgreSQL same-date race, bulk/query-count evidence, response examples, and
+  010A/010C/010H reverse-consumer results.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- DPD is deterministic, as-of-date correct, historical, idempotent, and derived from schedule/ledger
+  truth with SOP buckets intact.
+- No default workflow transition is hidden inside calculation.
+- Required focused, contention, reverse-consumer, and full gates pass.
 
 ## Done Checklist
 - [ ] Execution plan written
@@ -81,6 +85,5 @@ Medium
 - [ ] Visual evidence saved, if frontend
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive risks/decisions recorded in `review-packet.md` (and HANDOFF only when needed)
 - [ ] Commit created only after passing gates

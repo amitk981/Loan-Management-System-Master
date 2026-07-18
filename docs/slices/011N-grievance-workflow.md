@@ -5,82 +5,72 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create, assign, track, escalate, and resolve borrower grievances with supporting evidence, TAT, notice,
+and special linkage for recovery-conduct complaints.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Borrower complaints have an accountable owner and visible, auditable resolution rather than an offline log.
 
 ## Depends On
 - 011M
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/api-contracts.md` §38
+- `docs/source/data-model.md` §24.3
+- `docs/source/functional-spec.md` M15
+- `docs/source/user-flows.md` §36
+- `docs/source/component-spec.md` §19.6
+- `docs/source/auth-permissions.md` §§19, 25, 26.7
+- `docs/source/test-plan.md` MOD-COMP-009, API-COMP-004, §21.6
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011N
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add `Grievance` persistence and staff POST create, filtered/paginated GET list/detail, assign/update,
+  and POST `/api/v1/grievances/{id}/resolve/` through one grievance service owner.
+- Retain generated reference, member, optional matching loan/application/default, category, description,
+  received date/channel, governed supporting documents, assignee, due date, status/history, resolution,
+  close time, borrower-informed/acknowledgement, and audit.
+- Calculate TAT/overdue from server dates; a retry-safe 011K job escalates overdue/sensitive cases but
+  never resolves them. Recovery-conduct grievances link to loan/default/action and fair-practice logs.
+- Resolution requires a nonblank summary and optional governed resolution document, transitions
+  monotonically, and queues borrower notice through the existing communications owner.
+- Provide the staff contract and self-scope primitives required by 011NA; borrower portal UI remains there.
 
-## Screens Involved
-None directly.
+## Permissions and Audit
+- Borrower/Field Officer/CS may create only within source scope; CS assigns, relevant owner investigates,
+  and authorised CS/owner resolves. Auditor reads only. Borrower sees own safe status/resolution only.
+- Create/assign/update/escalate/resolve/notice/download and every denied cross-object attempt are audited;
+  internal notes or other members' facts never leak.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+## Acceptance and Negative Tests
+- Each source category creates with one reference, valid owner/TAT, document provenance, and status;
+  assignment and resolution history is retained and borrower notice truth is honest.
+- Reject nonexistent/cross-member loan/application/default, foreign document, missing description/category/
+  owner, invalid/backward status, resolve without summary, wrong role/scope, changed replay, and edit after close.
+- Scheduler and concurrent create/resolve tests yield one escalation/reference/terminal chain.
+- Recovery complaint is linked and escalated without exposing recovery notes to the borrower.
+- Reverse consumers: communications jobs, document access, recovery fair-conduct, 011K task, member/
+  loan object-scope, and Auditor read-only suites remain green.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Member portal UI (011NA), staff dashboard UI (011P), report/export (Epic 012), inventing a TAT when
+configuration/source provides none, or changing recovery decisions.
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN workflow/API/permission/object-scope tests; migration and race/retry proof; escalation and
+notice evidence; recovery/privacy probes; full backend gate and API examples.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `MOD-COMP-009`, `API-COMP-004`, and `COMP-GRV-001-005` pass.
+- A grievance cannot cross borrower scope, close without reason, lose history, or falsely claim notice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] Grievance persistence/service/APIs and task/communication integration completed
+- [ ] Scope, privacy, escalation/race, reverse-consumer, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

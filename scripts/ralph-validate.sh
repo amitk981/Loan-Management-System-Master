@@ -249,6 +249,51 @@ elif [[ "$mode" == "architecture_review" ]]; then
     echo "Architecture review changed product code; refusing specialized validation." >&2
     exit 1
   }
+  architecture_metrics_results="$run_dir/architecture-review-metrics-results.md"
+  {
+    echo "# Architecture Review Metrics Results"
+    echo
+    if metrics="$(ralph_architecture_review_metrics "$run_dir/review-packet.md")"; then
+      IFS=$'\t' read -r findings_closed new_critical new_high new_medium new_low corrective_added \
+        <<< "$metrics"
+      echo "PASS: architecture review reported machine-readable convergence metrics."
+      echo "- Findings closed: $findings_closed"
+      echo "- New Critical: $new_critical"
+      echo "- New High: $new_high"
+      echo "- New Medium: $new_medium"
+      echo "- New Low: $new_low"
+      echo "- Corrective slices added: $corrective_added"
+      if ! actual_corrective_added="$(ralph_architecture_review_new_corrective_count \
+          "$worktree_dir")"; then
+        echo "FAIL: new corrective slice files do not satisfy the executable queue contract."
+        exit 1
+      fi
+      echo "- Corrective slice files observed: $actual_corrective_added"
+      if [[ "$corrective_added" != "$actual_corrective_added" ]]; then
+        echo "FAIL: reported corrective-slice additions do not match the candidate."
+        exit 1
+      fi
+      echo "PASS: reported corrective-slice additions match the candidate."
+      if ! existing_corrective_mapped="$(ralph_architecture_review_existing_corrective_count \
+          "$run_dir/review-packet.md" "$worktree_dir")"; then
+        echo "FAIL: an existing corrective-slice mapping is invalid."
+        exit 1
+      fi
+      echo "- Existing corrective slices mapped: $existing_corrective_mapped"
+      if ! ralph_validate_architecture_review_admission \
+          "$new_critical" "$new_high" "$corrective_added" "$existing_corrective_mapped"; then
+        echo "FAIL: Critical/High findings have no admitted corrective work."
+        exit 1
+      fi
+      echo "PASS: Critical/High findings have corrective work admitted when required."
+    else
+      echo "FAIL: review-packet.md is missing valid convergence metrics."
+      exit 1
+    fi
+  } > "$architecture_metrics_results" || {
+    echo "Architecture review omitted valid convergence metrics; refusing specialized validation." >&2
+    exit 1
+  }
   queue_only_reason="documentation-only architecture review contains no product changes"
   queue_only_label="documentation-only architecture review"
 fi

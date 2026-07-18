@@ -9,6 +9,135 @@ ralph_slice_status() {
   awk '/^## Status/ { getline; print; exit }' "${1:?slice file is required}"
 }
 
+# Restore the selected slice's orchestrator-owned Status from worktree HEAD.
+# Preserve valid agent sharpening/content, but if the rejected attempt deleted
+# the file or removed its Status contract, restore the full trusted slice so a
+# repair agent can start instead of failing before launch.
+ralph_restore_selected_slice_status() {
+  local worktree="${1:?worktree is required}" relative="${2:?slice path is required}"
+  local candidate="$worktree/$relative" trusted_status candidate_status
+  local resolved_worktree resolved_parent expected_parent
+  [[ "$relative" =~ ^docs/slices/[A-Za-z0-9._-]+\.md$ ]] || {
+    echo "Selected slice restore path is unsafe: $relative" >&2
+    return 1
+  }
+  resolved_worktree="$(cd "$worktree" && pwd -P)" || return 1
+  [[ ! -L "$worktree/docs" && ! -L "$worktree/docs/slices" \
+      && -d "$worktree/docs/slices" ]] || {
+    echo "Selected slice parent is not a trusted worktree directory." >&2
+    return 1
+  }
+  resolved_parent="$(cd "$worktree/docs/slices" && pwd -P)" || return 1
+  expected_parent="$resolved_worktree/docs/slices"
+  [[ "$resolved_parent" == "$expected_parent" ]] || {
+    echo "Selected slice parent escapes the worktree: $resolved_parent" >&2
+    return 1
+  }
+  trusted_status="$(git -C "$worktree" show "HEAD:$relative" \
+    | awk '/^## Status/ { getline; print; exit }')" || return 1
+  [[ -n "$trusted_status" ]] || {
+    echo "Trusted selected slice has no Status contract: $relative" >&2
+    return 1
+  }
+  candidate_status=""
+  if [[ -f "$candidate" && ! -L "$candidate" ]]; then
+    candidate_status="$(ralph_slice_status "$candidate")"
+  elif [[ -e "$candidate" && ! -L "$candidate" ]]; then
+    echo "Selected slice candidate is not a regular file: $candidate" >&2
+    return 1
+  fi
+  if [[ ! -f "$candidate" || -L "$candidate" || -z "$candidate_status" ]]; then
+    rm -f -- "$candidate" || return 1
+    git -C "$worktree" show "HEAD:$relative" > "$candidate"
+    return 0
+  fi
+  python3 - "$candidate" "$trusted_status" <<'PY'
+import os
+import sys
+import tempfile
+from pathlib import Path
+
+path = Path(sys.argv[1])
+lines = path.read_text().splitlines()
+for index, line in enumerate(lines):
+    if line.strip() == "## Status" and index + 1 < len(lines):
+        lines[index + 1] = sys.argv[2]
+        break
+else:
+    raise SystemExit(f"Selected slice has no Status section: {path}")
+with tempfile.NamedTemporaryFile("w", dir=path.parent, delete=False) as handle:
+    handle.write("\n".join(lines) + "\n")
+    temporary = handle.name
+os.chmod(temporary, 0o644)
+os.replace(temporary, path)
+PY
+}
+
+# Materialize trusted integration state/progress as regular files. Removing
+# the exact candidate paths first breaks malicious symlinks or hard links
+# instead of following them during repair startup.
+ralph_restore_worktree_bookkeeping() {
+  local trusted="${1:?trusted repository is required}" worktree="${2:?worktree is required}"
+  local resolved_worktree resolved_meta relative source destination
+  resolved_worktree="$(cd "$worktree" && pwd -P)" || return 1
+  [[ ! -L "$worktree/.ralph" && -d "$worktree/.ralph" ]] || {
+    echo "Worktree .ralph directory is missing or symlinked." >&2
+    return 1
+  }
+  resolved_meta="$(cd "$worktree/.ralph" && pwd -P)" || return 1
+  [[ "$resolved_meta" == "$resolved_worktree/.ralph" ]] || {
+    echo "Worktree .ralph directory escapes the worktree." >&2
+    return 1
+  }
+  for relative in .ralph/state.json .ralph/progress.md; do
+    source="$trusted/$relative"
+    destination="$worktree/$relative"
+    [[ -f "$source" && ! -L "$source" ]] || {
+      echo "Trusted bookkeeping source is not a regular file: $source" >&2
+      return 1
+    }
+    if [[ -e "$destination" && ! -f "$destination" && ! -L "$destination" ]]; then
+      echo "Worktree bookkeeping destination is not a file: $destination" >&2
+      return 1
+    fi
+    rm -f -- "$destination" || return 1
+    cp "$source" "$destination" || return 1
+  done
+}
+
+ralph_slice_epic() {
+  local slice_id="${1:-}"
+  if [[ "$slice_id" =~ ^([0-9][0-9][0-9]) ]]; then
+    printf '%s\n' "${BASH_REMATCH[1]}"
+  fi
+}
+
+# Print tab-separated product queue counts in this order:
+# Complete, Not Started, Blocked, Superseded, actionable total. Superseded
+# history is reported separately and excluded from the denominator. The documentation-only
+# architecture-review pseudo-slice is deliberately excluded so product
+# progress matches .ralph/state.json and owner ETAs.
+ralph_queue_status_counts() {
+  local slices_dir="${1:-docs/slices}" file base slice_status
+  local complete=0 not_started=0 blocked=0 superseded=0 actionable_total=0
+  for file in "$slices_dir"/*.md; do
+    [[ -f "$file" ]] || continue
+    base="$(basename "$file")"
+    [[ "$base" == "architecture-review.md" ]] && continue
+    slice_status="$(ralph_slice_status "$file")"
+    case "$slice_status" in
+      Complete) complete=$((complete + 1)) ;;
+      "Not Started") not_started=$((not_started + 1)) ;;
+      Blocked) blocked=$((blocked + 1)) ;;
+      Superseded) superseded=$((superseded + 1)) ;;
+      *) continue ;;
+    esac
+  done
+  actionable_total=$((complete + not_started + blocked))
+  printf '%s\t%s\t%s\t%s\t%s\n' \
+    "$complete" "$not_started" "$blocked" "$superseded" "$actionable_total"
+}
+
 # Print the dependency ids declared in a slice file, one per line. Entries are
 # "- <ID>" with optional annotation text after the id; "- None" declares no
 # blockers. Prose lines inside the section are commentary, not dependencies.
@@ -190,16 +319,15 @@ ralph_remaining_slices() {
 
 # Decide whether one slice-status transition observed in a run's diff is
 # allowed. Args: mode, selected slice basename, changed slice basename,
-# old status, new status. The selected slice may transition freely (its run
-# is what validation is judging); any other slice may only be re-parked by
-# an architecture review (Blocked <-> Not Started, or Superseded) — no run
-# may flip a slice it did not execute to Complete, which would silently
-# remove queued work.
+# old status, new status. Implementation agents never own status transitions;
+# the orchestrator marks the selected slice Complete only after validation.
+# Architecture reviews may re-park other slices but cannot alter their own
+# pseudo-slice or mark any product slice Complete.
 ralph_slice_transition_allowed() {
   local mode="${1:?mode is required}" selected="${2:?selected slice is required}"
   local base="${3:?slice basename is required}" old="$4" new="$5"
   [[ "$old" == "$new" ]] && return 0
-  [[ "$base" == "$selected" ]] && return 0
+  [[ "$base" == "$selected" ]] && return 1
   if [[ "$mode" == "architecture_review" ]]; then
     [[ "$new" == "Complete" ]] && return 1
     return 0

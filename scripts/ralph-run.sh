@@ -11,6 +11,7 @@ source "$repo_root/scripts/lib/ralph-merge-guard.sh"
 source "$repo_root/scripts/lib/ralph-node-runtime.sh"
 source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
 source "$repo_root/scripts/lib/ralph-browser-runtime.sh"
+source "$repo_root/scripts/lib/ralph-architecture-review.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -27,6 +28,7 @@ no_worktree=0
 continue_failed=0
 resume_worktree=""
 failed_run_id=""
+branch_name=""
 split_slice_id="${RALPH_SPLIT_SLICE_ID:-}"
 split_failed_run_id="${RALPH_SPLIT_FAILED_RUN_ID:-}"
 split_total_lines="${RALPH_SPLIT_TOTAL_LINES:-}"
@@ -110,6 +112,7 @@ select_slice() {
 slice_file=""
 if [[ "$mode" == "architecture_review" ]]; then
   slice_id="architecture-review"
+  slice_file="architecture-review.md"
 else
   slice_file="$(select_slice || true)"
   if [[ -z "$slice_file" ]]; then
@@ -211,6 +214,9 @@ if (( no_worktree == 0 )); then
     worktree_dir="$repo_root/.ralph/worktrees/$run_id"
     git worktree add -b "$branch_name" "$worktree_dir" HEAD
   fi
+  ralph_restore_worktree_bookkeeping "$repo_root" "$worktree_dir" || exit 1
+  ralph_restore_selected_slice_status \
+    "$worktree_dir" "docs/slices/$slice_file" || exit 1
   run_dir="$worktree_dir/.ralph/runs/$run_id"
   mkdir -p "$run_dir"
   if [[ -d "$main_run_dir" ]]; then
@@ -218,6 +224,10 @@ if (( no_worktree == 0 )); then
     rm -rf "$main_run_dir"
   fi
 fi
+
+# Mechanical queue facts never belong to an implementation or repair agent.
+# Worktree setup above restores trusted state/progress and the selected status
+# before creating any candidate-local run path; substantive repair edits stay.
 
 mkdir -p "$run_dir/evidence/screenshots" "$run_dir/evidence/videos" "$run_dir/evidence/api-responses" "$run_dir/evidence/terminal-logs"
 
@@ -368,7 +378,7 @@ fi
 split_instruction=""
 split_corrective_instruction=""
 split_read_target="docs/slices/$slice_file"
-architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues."
+architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md. Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work. Bundle Medium findings into the owning slice or epic closure and record Low findings unless they naturally combine with higher-severity work. Group related symptoms by root owner instead of creating one slice per symptom. Report findings closed, new findings by severity, and corrective slices added in review-packet.md under '## Convergence Metrics' using the exact lines '- Findings closed: N', '- New Critical: N', '- New High: N', '- New Medium: N', '- New Low: N', and '- Corrective slices added: N'. A new corrective must be a numeric Not Started slice with a valid Depends On contract. When an actionable existing root-owner slice already covers a new Critical/High finding, do not duplicate it; add one exact '- Existing corrective slice: ID' line per mapped slice under the convergence metrics. Validation requires every mapped ID to resolve to one tracked Not Started or Blocked slice. If corrective additions exceed closures across two reviews, recommend one root-cause boundary correction instead of further leaf patches."
 if [[ -n "$split_slice_id" ]]; then
   split_read_target="$split_slice_file"
   printf -v split_origin_marker 'Oversized slice: `%s`' "$split_slice_id"
@@ -411,24 +421,26 @@ Core requirements:
 - Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
 - Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
 - During implementation, run focused red/green tests for the changed backend/business behavior and the impacted frontend tests, typecheck, lint, and build as appropriate.
+- Batch related searches, reads, edits, and focused tests. Aim to stay below roughly 80 tool calls; after that, return to execution-plan.md and finish through focused work instead of rediscovering context.
+- After roughly 500 changed lines, use diff stats and targeted hunks; never repeatedly print the complete cumulative diff.
 - Do not run the complete backend suite or full coverage yourself. The orchestrator runs the authoritative complete backend suite once under coverage after you finish, and rejects any test failure or coverage below the configured floor. This avoids paying for identical full-suite executions without removing any acceptance gate.
 - For a slice declaring 'localhost-e2e-server', implement the exact specs and screenshot outputs in its '## Trusted Browser Acceptance' section. Your coding sandbox may deny Chromium's macOS services: use Playwright collection or non-browser tests for your local feedback, do not fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch. The orchestrator runs the declared browser contract twice outside your sandbox after you finish; that independent gate decides browser acceptance.
 - Save evidence.
-- Save changed-files.txt.
 - Save risk-assessment.md.
 - Save review-packet.md.
-- Update state, progress, handoff, and slice status.
+- The orchestrator owns changed-files.txt, .ralph/state.json, .ralph/progress.md, the selected slice Status transition, and mechanical handoff/progress bookkeeping. Do not edit those mechanical facts. Put substantive next-run risks or decisions in review-packet.md; edit HANDOFF only when it needs non-mechanical context the orchestrator cannot derive.
 - Never run git commit, git add, or git push: your sandbox cannot write the worktree's git metadata and the attempt will fail your run. The orchestrator independently validates and commits passing work after you finish.
 - High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
 - When requirements are ambiguous, follow docs/working/DECISION_POLICY.md: choose the source-doc-compliant option, or the industry-standard default, record it in docs/working/ASSUMPTIONS.md, and continue. Do not stop to ask. Never invent business rules the documents do not state — stub them, record the open question, and continue.
 - If the selected slice file is still an unsharpened template stub (its Goal reads "Deliver this narrow capability as a small, testable Ralph implementation slice" or its scope sections say only "Implement the named backend/API capability only"), your FIRST deliverable is sharpening that slice file with concrete requirements from the epic digest, docs/working/maps/, and the slice's cited source sections — before writing execution-plan.md. Never implement directly from an unsharpened stub.
-- Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
-- Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
+- Do not sharpen or edit unrelated future slices during an implementation run. Owner/architecture preparation maintains a bounded ready runway outside the product session.
+- Prefer docs/working/digests/ over re-reading large docs/source files. Read only the digest shared invariants and the selected slice section by default. If the selected section lacks a required source fact, locate that fact with docs/working/maps/ and rg, then save only the missing distilled fact.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 $repair_instruction
 $split_instruction
 $split_corrective_instruction
 $architecture_instruction
+- In an ordinary architecture review, read the bounded active docs/working/REVIEW_FINDINGS.md first. Open its historical archive only when a current diff reproduces an archived issue or an exact prior citation is required; never ingest the entire archive by default.
 - If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
 - If the selected slice is a change request (CR-*): write impact-analysis.md in the run folder BEFORE editing any code — affected backend/frontend pieces, blast radius across modules, and the regression tests to add in each affected module. Validation fails the run without it. Then add those regression tests as part of the fix.
 
@@ -444,7 +456,7 @@ Read in this order:
 9. docs/working/DECISION_POLICY.md
 10. docs/working/FRONTEND_DESIGN_RULES.md (mandatory before any frontend change)
 11. $split_read_target
-12. The matching docs/working/digests/ file for this epic, if it exists
+12. The matching docs/working/digests/ shared invariants and selected-slice section, if it exists
 
 Do not load all docs/source during a normal run unless the selected slice explicitly requires it.
 EOF
@@ -496,6 +508,13 @@ validation_timeout="$(awk -F': *' '/^[[:space:]]*validation_timeout_seconds:/ {s
 # agents also edit state.json inside the worktree, and trusting their copy
 # double-counted completed slices (reviews fired at 2x the configured cadence).
 pre_run_arch_count="$(python3 -c "import json; print(json.load(open('$repo_root/.ralph/state.json')).get('slices_completed_since_architecture_review', 0))" 2>/dev/null || echo 0)"
+pre_run_arch_clean_streak="$(python3 -c "import json; print(json.load(open('$repo_root/.ralph/state.json')).get('architecture_review_clean_streak', 0))" 2>/dev/null || echo 0)"
+pre_run_arch_due="$(ralph_architecture_review_due "$repo_root/.ralph/state.json")" || exit 1
+if ! [[ "$pre_run_arch_count" =~ ^[0-9]+$ \
+    && "$pre_run_arch_clean_streak" =~ ^[0-9]+$ ]]; then
+  echo "Trusted architecture-review counters are invalid." >&2
+  exit 1
+fi
 
 agent_rc=0
 "$repo_root/scripts/agent-adapters/$agent.sh" \
@@ -563,7 +582,7 @@ The independent validation runner exited with status $validation_rc before it
 could write a detailed failure summary. Inspect the run's gate result files.
 EOF
   fi
-  if [[ "$mode" != "architecture_review" || -n "$split_slice_id" ]]; then
+  if (( no_worktree == 0 )) && [[ "$mode" != "architecture_review" || -n "$split_slice_id" ]]; then
     repair_slice_id="$slice_id"
     [[ -n "$split_slice_id" ]] && repair_slice_id="$split_slice_id"
     ralph_write_repair_context \
@@ -582,14 +601,37 @@ Result: Success
 Ralph run completed for $slice_id.
 EOF
 
-arch_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_every_completed_slices:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
-arch_threshold="${arch_threshold:-4}"
+arch_threshold="$(ralph_architecture_review_interval \
+  "$worktree_dir/.ralph/config.yaml" "$repo_root/.ralph/state.json")" || exit 1
+arch_base_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_every_completed_slices:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
+arch_clean_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_clean_every_completed_slices:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
+arch_clean_required="$(awk -F': *' '/^[[:space:]]*architecture_review_clean_streak_required:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
+arch_base_threshold="${arch_base_threshold:-4}"
+arch_clean_threshold="${arch_clean_threshold:-$arch_base_threshold}"
+arch_clean_required="${arch_clean_required:-2}"
+review_findings_closed=0
+review_new_critical=0
+review_new_high=0
+review_new_medium=0
+review_new_low=0
+review_corrective_added=0
+if [[ "$mode" == "architecture_review" && -z "$split_slice_id" ]]; then
+  review_metrics="$(ralph_architecture_review_metrics "$run_dir/review-packet.md")" || exit 1
+  IFS=$'\t' read -r review_findings_closed review_new_critical review_new_high \
+    review_new_medium review_new_low review_corrective_added <<< "$review_metrics"
+fi
+arch_due_after_product=False
+if [[ "$mode" != "architecture_review" ]]; then
+  arch_due_after_product="$(ralph_architecture_review_due_after_product \
+    "$pre_run_arch_due" "$((pre_run_arch_count + 1))" "$arch_threshold")" || exit 1
+fi
 
 python3 - <<PY
 import json
 from pathlib import Path
 path = Path("$worktree_dir/.ralph/state.json")
-state = json.loads(path.read_text())
+trusted_path = Path("$repo_root/.ralph/state.json")
+state = json.loads(trusted_path.read_text())
 state["last_run_id"] = "$run_id"
 state["last_run_status"] = "success"
 state["current_slice"] = None
@@ -607,10 +649,41 @@ if "$mode" != "architecture_review":
     count = int("$pre_run_arch_count") + 1
     threshold = int("$arch_threshold")
     state["slices_completed_since_architecture_review"] = count
-    state["architecture_review_due"] = count >= threshold
+    prior_due = state.get("architecture_review_due") is True
+    prior_reason = state.get("architecture_review_due_reason")
+    cadence_due = count >= threshold
+    state["architecture_review_due"] = "$arch_due_after_product" == "True"
+    state["architecture_review_interval"] = threshold
+    if prior_due:
+        state["architecture_review_due_reason"] = prior_reason or "carried_mandatory_review"
+    elif cadence_due:
+        state["architecture_review_due_reason"] = f"cadence:{threshold}"
+    else:
+        state.pop("architecture_review_due_reason", None)
 elif not "$split_slice_id":
+    metrics = {
+        "findings_closed": int("$review_findings_closed"),
+        "new_critical": int("$review_new_critical"),
+        "new_high": int("$review_new_high"),
+        "new_medium": int("$review_new_medium"),
+        "new_low": int("$review_new_low"),
+        "corrective_slices_added": int("$review_corrective_added"),
+    }
+    clean_streak = int("$pre_run_arch_clean_streak")
+    if metrics["new_critical"] == 0 and metrics["new_high"] == 0:
+        clean_streak += 1
+    else:
+        clean_streak = 0
+    state["architecture_review_clean_streak"] = clean_streak
+    state["architecture_review_interval"] = (
+        int("$arch_clean_threshold")
+        if clean_streak >= int("$arch_clean_required")
+        else int("$arch_base_threshold")
+    )
+    state["last_architecture_review_metrics"] = metrics
     state["slices_completed_since_architecture_review"] = 0
     state["architecture_review_due"] = False
+    state.pop("architecture_review_due_reason", None)
 path.write_text(json.dumps(state, indent=2) + "\n")
 
 slice_path = Path("$worktree_dir/docs/slices") / f"{slice_id}.md"
@@ -621,7 +694,48 @@ if slice_path.exists():
             lines[index + 1] = "Complete"
             break
     slice_path.write_text("\n".join(lines) + "\n")
+
+blocked = []
+for candidate in sorted(Path("$worktree_dir/docs/slices").glob("*.md")):
+    if candidate.name == "architecture-review.md":
+        continue
+    lines = candidate.read_text().splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() == "## Status" and index + 1 < len(lines):
+            if lines[index + 1].strip() == "Blocked":
+                blocked.append(candidate.stem)
+            break
+state["blocked_slices"] = blocked
+path.write_text(json.dumps(state, indent=2) + "\n")
 PY
+
+# An epic boundary is always a review checkpoint, even after the cadence has
+# safely expanded. Determine the next grabbable product slice only after the
+# orchestrator has completed the selected slice's status transition.
+if [[ "$mode" != "architecture_review" ]]; then
+  next_slice_file="$(ralph_first_grabbable_slice "$worktree_dir/docs/slices" 2>/dev/null || true)"
+  next_slice_id="${next_slice_file%.md}"
+  remaining_after="$(ralph_remaining_slices "$worktree_dir/docs/slices")"
+  boundary_reason="$(ralph_architecture_review_boundary_reason \
+    "$slice_id" "$next_slice_id" "$remaining_after")"
+  if [[ -n "$boundary_reason" ]]; then
+    python3 - "$worktree_dir/.ralph/state.json" "$boundary_reason" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_due"] = True
+prior = state.get("architecture_review_due_reason")
+boundary = sys.argv[2]
+state["architecture_review_due_reason"] = (
+    f"{prior}+{boundary}" if prior and prior != boundary else boundary
+)
+path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+  fi
+fi
 
 # Keep the agent's handoff when it wrote one this run — it carries context the
 # next run needs. The generic template below is only a fallback so the file
@@ -729,6 +843,16 @@ EOF
 commit-results.md:- FAIL: validated work could not be committed.
 Inspect the staged diff and commit hooks in $worktree_dir.
 EOF
+    if (( no_worktree == 0 )) \
+        && ralph_quarantined_commit_exists "$repo_root" "$branch_name"; then
+      # The validated candidate is already in a quarantined commit (for
+      # example exit 12/13). Re-entering product repair would treat that commit
+      # as a new baseline and conflict with orchestrator-owned state/status.
+      # Preserve the branch and stop at the integration boundary instead.
+      ralph_clear_repair_context "$repo_root/.ralph/repair-context.json"
+      echo "COMMIT_QUARANTINED: post-commit integrity failure; branch $branch_name is preserved for owner review." >&2
+      exit "$RALPH_EXIT_MERGE_FAILED"
+    fi
     if [[ "$mode" != "architecture_review" && "$no_worktree" == 0 ]]; then
       ralph_write_repair_context \
         "$repo_root/.ralph/repair-context.json" \

@@ -8,67 +8,73 @@ Epic 010: Servicing, Repayments, Interest, and Monitoring
 Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Capture and reconcile a subsidiary produce-payment deduction with its agreement, transfer, statement,
+Treasury-verification, allocation, and SAP-status evidence kept distinct and auditable.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Borrowers receive credit for genuine subsidiary deductions while unclear or unsupported deductions
+remain visible for review instead of changing balances automatically.
 
 ## Depends On
 - 010D
 
 ## Source References
-- docs/source/implementation-roadmap.md section 15
-- docs/source/api-contracts.md sections 32-34 (repayment, interest, monitoring)
-- docs/source/data-model.md servicing/monitoring tables
-- docs/source/test-plan.md
+- `docs/source/product-requirements.md` §11.23
+- `docs/source/user-flows.md` §28
+- `docs/source/functional-spec.md` BR-058/059 and §11.9
+- `docs/source/domain-model.md` §13.4
+- `docs/source/data-model.md` §§19.5–19.6
+- `docs/source/api-contracts.md` §§32.3–32.5, 45
+- `docs/source/screen-spec.md` S45
+- `docs/source/security-privacy.md` §§22.2, 23.1
+- `docs/source/test-plan.md` MOD-REP-003/004, INT-SUB-001–007, E2E-012
+- `docs/working/digests/epic-010-servicing-repayments-interest-monitoring.md` §010E
 
-## Prototype Reference
-- sfpcl-lms/src/pages/loan-accounts/LoanAccount360.tsx
-- sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx
-- sfpcl-lms/src/pages/interest/InterestManagement.tsx
-- sfpcl-lms/src/pages/monitoring/MonitoringDashboard.tsx
+## Concrete Requirements
+1. Extend the canonical repayment-capture owner for `subsidiary_deduction`. Require positive amount,
+   received date, subsidiary company, produce/payment reference, transfer/bank reference, actor, and
+   bounded `Idempotency-Key`; enforce duplicate subsidiary/transfer references.
+2. Verify the applicable tri-party agreement through the existing agreement/document owner before a
+   receipt may become reconcilable. A missing agreement is an explicit blocked/exception result, not
+   an inferred approval.
+3. Require borrower name and loan application/account reference in statement truth for auto-match.
+   Missing or conflicting facts preserve the receipt/line as unmatched exception for authorised
+   manual reconciliation; they must not auto-allocate.
+4. Bind the receipt to the 010D statement line and retain subsidiary, produce-payment, Treasury
+   verification, and SAP posting facts separately. Treasury verification must precede SAP marking.
+5. Reuse 010C for allocation after reconciliation. Do not reimplement the principal-first rule or
+   directly edit balances/ledger from this module.
+6. Enforce `finance.repayment.create/allocate/mark_sap_posted`, object scope, and §26.6 role truth;
+   audit capture, match/exception, verification, allocation request, and SAP transition.
 
-## Screens Involved
-None directly.
+## Scope Boundaries / Non-Goals
+- No subsidiary payment calculation, agreement creation, bank integration, transaction split policy,
+  custom allocation rule, borrower acknowledgement, or frontend wiring.
+- Amount above known outstanding remains an explicit excess exception under the open policy.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
-
-## Backend/API Scope
-Implement the named backend/API capability only.
-
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
+## Acceptance and Reverse-Consumer Tests
+- Valid agreement + exact narration/line creates one reconciled subsidiary receipt that can invoke
+  the retained 010C allocation and later record SAP reference.
+- Missing agreement, missing/mismatched borrower or application reference, duplicate deduction/
+  transfer reference, negative amount, ambiguous line, excess amount, wrong role, and cross-scope
+  access produce no unauthorised allocation or balance change.
+- Treasury verification is required before SAP posting; exact replay is zero-write; concurrent same
+  reference retains one receipt, one match, and at most one allocation.
+- Direct receipts from 010B and generic matching from 010D retain their existing behavior.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+- RED/GREEN service/API/permission/audit tests, full INT-SUB/E2E-012 matrix, agreement and statement
+  fixtures, PostgreSQL duplicate/reconcile race evidence, retained 010C balance/ledger proof, and
+  010B/010D reverse-consumer results.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- A subsidiary receipt cannot affect balances without agreement, unambiguous or authorised matching,
+  and the canonical allocation owner.
+- Duplicate, exception, Treasury, SAP, and audit truth are explicit and permission-correct.
+- Required focused, contention, reverse-consumer, and full gates pass.
 
 ## Done Checklist
 - [ ] Execution plan written
@@ -81,6 +87,5 @@ Medium
 - [ ] Visual evidence saved, if frontend
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive risks/decisions recorded in `review-packet.md` (and HANDOFF only when needed)
 - [ ] Commit created only after passing gates

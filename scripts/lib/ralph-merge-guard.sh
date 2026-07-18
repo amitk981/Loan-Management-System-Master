@@ -5,6 +5,15 @@
 # later repair can commit an expanded version of the same generated file.
 # Identical copies are removed. Differing .ralph/runs/** copies are archived in
 # Git's private metadata directory. Any other differing path still fails closed.
+ralph_quarantined_commit_exists() {
+  local repo_root="${1:?repository root is required}"
+  local candidate_ref="${2:?candidate ref is required}"
+  local integration_head candidate_head
+  integration_head="$(git -C "$repo_root" rev-parse HEAD)" || return 1
+  candidate_head="$(git -C "$repo_root" rev-parse "$candidate_ref")" || return 1
+  [[ "$candidate_head" != "$integration_head" ]]
+}
+
 ralph_prepare_worktree_for_ff_merge() {
   local repo_root="${1:?repository root is required}"
   local branch_name="${2:?branch name is required}"

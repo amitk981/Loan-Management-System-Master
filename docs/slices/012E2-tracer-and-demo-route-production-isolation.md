@@ -56,6 +56,5 @@ High
 - [ ] Audit events tested, if needed
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive unresolved risk or decision recorded only if needed
 - [ ] Commit created only after passing gates

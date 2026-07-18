@@ -8,20 +8,24 @@ Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness
 Epic file: `docs/epics/012-reports-exports-hardening-uat.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Complete role-scoped dashboard APIs and wire the staff Dashboard to real, bounded summaries whose
+counts and links reconcile to existing domain selectors for each operational role.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Credit, compliance, finance, treasury, accounts, and CS users begin with an accurate view of their
+pending work and risk indicators instead of static or partially populated dashboard data.
 
 ## Depends On
 - 012D
 
 ## Source References
-- docs/source/implementation-roadmap.md sections 17, 24, 25, 27, 32-33
-- docs/source/api-contracts.md sections 40, 42-43 (reporting, audit, dashboard)
-- docs/source/deployment-ops.md
-- docs/source/security-privacy.md
-- docs/source/test-plan.md
+- `docs/source/api-contracts.md` sections 43-44
+- `docs/source/information-architecture.md` section 9.1
+- `docs/source/technical-architecture.md` sections 21.1-21.2 and 24
+- `docs/source/deployment-ops.md` section 42.2
+- `docs/source/test-plan.md` sections 18.2 and 24.1-24.2 (`PERF-002`)
+- `docs/source/screen-spec.md` section 12
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` section 012E
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/reports/ReportsMIS.tsx
@@ -29,46 +33,79 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/pages/Dashboard.tsx
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+Staff Dashboard (`sfpcl-lms/src/pages/Dashboard.tsx`) for Credit, Compliance, CFO, Treasury,
+Accounts, and CS role contexts.
 
 ## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+- Wire Dashboard to the authenticated role-based API; the caller cannot select a different role.
+- Render stable cards/counts/links using existing components and patterns only. Card links must
+  preserve the backend's scoped filter destination.
+- Add loading, empty, partial/failed, forbidden, and refresh states without fake counts or
+  `mockData.ts` fallback. Preserve `tasks[]` compatibility; real task population belongs to
+  012EA/012EB.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+- Complete `GET /api/v1/dashboard/`, `/dashboard/sanction-committee/`,
+  `/dashboard/compliance/`, and `/dashboard/treasury/` per `api-contracts.md` 43.
+- Derive role context from the authenticated user and build cards from existing domain/report
+  selectors. Stable `code`, `label`, `count`, and scoped `link` values must reconcile to the
+  linked list/report with the same filters.
+- Cover the source role cards for Credit Manager, Compliance, CFO, Treasury, Accounts, and CS;
+  return only cards authorised for the effective role/team/object scope.
+- Batch/aggregate queries to avoid one query per card/row; instrument representative query count
+  and response time against the dashboard <3-second target.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+None. Dashboards are read models over canonical records, not persisted duplicate counters.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Preserve section-43 shapes and document the stable card catalogue/role mapping. Do not extend the
+task resource contract owned by 012EA.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Backend derives role/team scope and denies dedicated dashboards to unauthorised callers. Hidden
+frontend cards are not a security boundary; target links remain independently permission-checked.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Dashboard reads create no business workflow events and must not log card/result data containing
+sensitive details. Preserve ordinary request/access logging policy.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- Every card count reconciles to the canonical target selector with the card link filters.
+- No caller-controlled role override, cross-team totals, fake fallback counts, or unbounded rows.
+- Dashboard remains read-only; tasks and cards cannot mutate source records.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Service/API tests for every supported role, card code/count/link reconciliation, no-role and
+  multi-role resolution, 401/403, and cross-team/object isolation.
+- Frontend tests for API data and loading/empty/error/forbidden/refresh states, card navigation,
+  and absence of mock fallback.
+- Reverse-consumer tests cover domain/report selectors and target-list filters, navigation
+  permissions, existing dashboard consumers, and empty `tasks[]` until 012EA.
+- Query-count and representative performance test covers the 50-user dashboard load risk without
+  asserting an unreliable wall-clock threshold in unit CI.
 
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+RED/GREEN; role/card reconciliation matrix; API and frontend test output; query-count/performance
+evidence; screenshots for populated, empty, error, and forbidden states; full gates.
+
+## Non-Goals
+Task engine/inbox work, new dashboard styling/components, reports/audit UI, persisted counters, or
+DevOps/security/integration monitoring dashboards.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- All section-43 dashboards return role-scoped, reconciled cards through bounded selectors and
+  Dashboard renders them without mock fallback.
+- Card links reach independently authorised lists/reports with matching filters and counts.
+- Role leakage, caller role override, N+1 query growth, and mutation are regression-tested.
+- Task-engine/inbox work, new dashboard styling, reports UI, and deployment monitoring dashboards
+  remain out of scope.
 
 ## Done Checklist
 - [ ] Execution plan written
@@ -81,6 +118,5 @@ Medium
 - [ ] Visual evidence saved, if frontend
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [ ] Substantive unresolved risk or decision recorded only if needed
 - [ ] Commit created only after passing gates

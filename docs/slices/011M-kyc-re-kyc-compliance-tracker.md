@@ -5,82 +5,71 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Generate and track two-year re-KYC reviews from governed member/KYC truth, with due, warning, overdue,
+completion, reminder, and restricted-evidence states.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Credit and Compliance can act before borrower KYC becomes stale without bypassing verification controls.
 
 ## Depends On
 - 011L
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/data-model.md` §23.6
+- `docs/source/api-contracts.md` §18.5 and compliance task APIs §37.2
+- `docs/source/user-flows.md` §34
+- `docs/source/component-spec.md` §19.3
+- `docs/source/screen-spec.md` S65
+- `docs/source/auth-permissions.md` §§12.3, 12.12, 19.4, 22
+- `docs/source/test-plan.md` §§16.17, 21.4
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011M
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add `KYCReview` and a compliance-owned service/query API for onboarding/re-KYC review status,
+  filtering due within 30 days, overdue, member type/status, and assignment.
+- Generate one re-KYC review/task per member/cycle exactly two calendar years after canonical last
+  completed KYC; use 011K's scheduler/job/task/reminder owner and preserve retry-safe period identity.
+- Project completeness from existing governed individual/FPC profile, KYC document/verification,
+  CKYC consent, nominee/beneficial-owner requirements, and risk facts; do not copy or mutate them.
+- Completion requires a real new governed KYC verification result and records before/after status,
+  reviewer, completion, evidence links, and audit. The tracker cannot mark verification itself.
+- Send due/overdue requests through the existing communications owner with honest delivery status.
 
-## Screens Involved
-None directly.
+## Permissions and Audit
+- `compliance.kyc_review.manage` for source-authorised Credit/KYC owners; Compliance/CFO/Auditor read
+  summaries as allowed. KYC files remain masked/restricted and every download is audited.
+- Generation, assignment, reminder, overdue transition, governed completion link, and denied access
+  append safe audit/workflow evidence without PAN/Aadhaar in logs.
 
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+## Acceptance and Negative Tests
+- Individual and FPC fixtures calculate exact two-year due dates, 30-day warning, and overdue state;
+  scheduler replay/concurrency yields one review/task/reminder identity per cycle.
+- Missing PAN/CKYC/FPC beneficial ownership projects incomplete; completed new verification closes the
+  review while stale/same-cycle/caller-supplied status cannot.
+- Reject foreign member/evidence, wrong scope/role, premature completion, direct KYC mutation,
+  invalid dates/status, changed replay, and unrestricted document access.
+- Reverse consumers: member/KYC verification, maker-checker, sensitive reveal/download, 011K task,
+  notification, and portal self-scope suites remain green.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Changing KYC fields/documents, defining CKYC/bureau integration, portal correction request (011M2),
+staff dashboard wiring, or changing generic task/communication policy.
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN date/completeness/service/API/permission tests; migration and PostgreSQL scheduler race;
+governed-completion and masking/download probes; full backend gate and API examples.
 
 ## Risk Level
 High
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `COMP-AC-004`, `MOD-COMP-006`, `COMP-KYC-004-007`, and E2E-017 backend contract pass.
+- Tracker state is derived, cycle-unique, access controlled, and can close only from real KYC verification.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] KYCReview/service/API and scheduler/task/communication integration completed
+- [ ] Date, completeness, race/retry, masking, reverse-consumer, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph

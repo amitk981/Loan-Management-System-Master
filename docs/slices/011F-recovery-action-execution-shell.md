@@ -5,82 +5,75 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
-Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Initiate and complete only the recovery action authorised by 011E, using existing security owners and
+a focused S57 execution UI with evidence and fair-conduct history.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Company Secretary can execute an approved recovery route without uncontrolled security movement.
 
 ## Depends On
 - 011E
 
 ## Source References
-- docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
-- docs/source/data-model.md default/recovery/closure/compliance tables
-- docs/source/auth-permissions.md
+- `docs/source/api-contracts.md` §§35.9-35.10
+- `docs/source/data-model.md` §21.6
+- `docs/source/user-flows.md` §32
+- `docs/source/screen-spec.md` S57
+- `docs/source/component-spec.md` §§17.7-17.8
+- `docs/source/security-privacy.md` §23
+- `docs/source/auth-permissions.md` §§12.10, 20.3, 25.8, 26.7
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011F
 
-## Prototype Reference
-- sfpcl-lms/src/pages/defaults/DefaultRecoveryHub.tsx
-- sfpcl-lms/src/pages/closure/LoanClosureHub.tsx
-- sfpcl-lms/src/pages/compliance/*
-- sfpcl-lms/src/pages/borrower/portal/support/MP24_SupportGrievance.tsx
+## Scope
+- Add `RecoveryAction`, `RecoveryWorkflow.initiate_recovery_action/complete_recovery_action`, and
+  POST action/complete APIs with pending/completed/failed states, amount recovered, timestamps,
+  remarks, and governed evidence.
+- Require the exact approved decision/action, a usable matching security instrument, CS/authorised
+  executor, and evidence. Delegate SH-4, CDSL, and cheque decisions to existing security-instrument
+  module interfaces; never copy or mutate their custody/pledge policy directly.
+- Preserve one action attempt/history per approved route; completion records outcome and recovery
+  amount but does not invent SAP/ledger posting. Expose explicit posting-pending truth for its owner.
+- Wire only the S57 execution portion of `DefaultRecoveryHub.tsx`: selected approved action,
+  instrument status, checklist/evidence upload, initiate/complete controls, and recovery interaction
+  log using existing UI patterns and backend `available_actions`.
+- Retain call/visit/borrower-contact evidence and grievance link without debt disclosure or harassment.
 
-## Screens Involved
-Relevant prototype screen area for this capability.
+## Permissions and Audit
+- `recovery.action.initiate/complete` are Critical, limited to CS/authorised recovery users after
+  approval; Credit/Committee/Auditor are read only.
+- Initiation, external-security handoff, completion/failure, amount, evidence, and every denied action
+  are correlated in immutable audit/workflow history without sensitive payloads in logs.
 
-## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+## Acceptance and Negative Tests
+- Each SH-4/CDSL/cheque mode uses its existing owner and only the approved matching instrument/action;
+  valid completion retains evidence and outcome.
+- Reject missing/rejected/no-action/mismatched approval, unavailable/foreign security, missing evidence,
+  wrong role/scope, negative/excess amount, complete-before-initiate, duplicate/change replay, and
+  stale concurrent completion with zero partial writes.
+- PostgreSQL races prove one initiation/terminal transition; failed owner call rolls back local state.
+- Reverse consumers: SH-4/CDSL/cheque custody and authority suites remain green; 011E approval remains
+  immutable; API and UI expose no execution action to read-only or unapproved users.
 
-## Backend/API Scope
-Implement the named backend/API capability only.
+## Non-Goals
+Automating DP/bank/share sale, new ledger/SAP posting, defining sale/write-off policy, broad S53-S56
+frontend wiring (011P), or grievance resolution (011N).
 
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
-
-## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
-
-## Visual Acceptance Criteria
-Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Evidence
+RED/GREEN orchestration/API/security-owner/permission tests; PostgreSQL races and rollback probes;
+audit/fair-conduct evidence; frontend tests/typecheck/lint/build; trusted-browser screenshots for
+blocked and approved execution; full backend gate.
 
 ## Risk Level
 High
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- `REC-AC-001/004-006`, `MOD-REC-004-010`, and `API-REC-003-004` pass.
+- Recovery UI and APIs cannot bypass approval, security ownership, evidence, or audit.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [ ] Execution plan and TDD evidence saved
+- [ ] Backend orchestration/API and focused S57 UI completed
+- [ ] Security-owner, race/rollback, reverse-consumer, visual, and full gates passed
+- [ ] Evidence saved; substantive risks/decisions recorded in review-packet/HANDOFF only when needed; mechanical bookkeeping left to Ralph
