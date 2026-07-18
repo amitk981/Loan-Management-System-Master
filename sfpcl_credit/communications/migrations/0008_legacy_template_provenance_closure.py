@@ -21,22 +21,45 @@ def _is_sha256(value):
     return True
 
 
+def _is_string_collection(value):
+    return (
+        isinstance(value, list)
+        and all(_is_nonblank(item) for item in value)
+        and len(value) == len(set(value))
+    )
+
+
 def _has_complete_frozen_provenance(outbox):
-    required = (
-        outbox.content_template_id,
+    required_text = (
         outbox.template_code_snapshot,
         outbox.template_name_snapshot,
         outbox.template_type_snapshot,
         outbox.template_audience_snapshot,
         outbox.template_version_snapshot,
         outbox.template_approval_status_snapshot,
-        outbox.template_effective_from_snapshot,
-        outbox.template_variables_snapshot,
         outbox.subject_template_snapshot,
         outbox.body_template_snapshot,
-        outbox.template_checksum_sha256,
     )
-    if any(value is None for value in required):
+    if (
+        outbox.content_template_id is None
+        or getattr(outbox.content_template_id, "int", 1) == 0
+        or not all(_is_nonblank(value) for value in required_text)
+        or outbox.template_effective_from_snapshot is None
+        or not _is_string_collection(outbox.template_variables_snapshot)
+        or not _is_sha256(outbox.template_checksum_sha256)
+        or outbox.template_type_snapshot != "email"
+        or outbox.template_audience_snapshot != "borrower"
+        or outbox.template_approval_status_snapshot != "approved"
+        or (
+            outbox.template_language_code_snapshot is not None
+            and not _is_nonblank(outbox.template_language_code_snapshot)
+        )
+        or (
+            outbox.template_effective_to_snapshot is not None
+            and outbox.template_effective_to_snapshot
+            < outbox.template_effective_from_snapshot
+        )
+    ):
         return False
     facts = {
         "content_template_id": str(outbox.content_template_id),
@@ -63,6 +86,28 @@ def _has_complete_frozen_provenance(outbox):
     return checksum == outbox.template_checksum_sha256
 
 
+def _matches_referenced_template(outbox):
+    try:
+        template = outbox.content_template
+    except Exception:
+        return False
+    expected = {
+        "template_code_snapshot": template.template_code,
+        "template_name_snapshot": template.template_name,
+        "template_type_snapshot": template.template_type,
+        "template_language_code_snapshot": template.language_code,
+        "template_audience_snapshot": template.audience,
+        "template_version_snapshot": template.template_version,
+        "template_approval_status_snapshot": template.approval_status,
+        "template_effective_from_snapshot": template.effective_from,
+        "template_effective_to_snapshot": template.effective_to,
+        "template_variables_snapshot": template.variables_json,
+        "subject_template_snapshot": template.subject_template,
+        "body_template_snapshot": template.body_template,
+    }
+    return all(getattr(outbox, field) == value for field, value in expected.items())
+
+
 def _has_coherent_queued_job(outbox, job, attempt_count):
     return bool(
         job is not None
@@ -80,6 +125,8 @@ def _has_coherent_queued_job(outbox, job, attempt_count):
         and job.status == "queued"
         and job.attempts == 0
         and job.max_attempts >= 1
+        and outbox.channel == "email"
+        and _matches_referenced_template(outbox)
         and not job.last_failure_code
         and job.started_at is None
         and job.completed_at is None

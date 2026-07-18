@@ -1,0 +1,29 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_process_execution_delegates_without_reading_communications_models (sfpcl_credit.tests.test_communication_channel_contract.CommunicationChannelContractTests.test_process_execution_delegates_without_reading_communications_models)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/tests/test_communication_channel_contract.py", line 62, in test_process_execution_delegates_without_reading_communications_models
+    result = execute_communication_job(job_id, adapter="test-adapter")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/processes/communication_delivery.py", line 17, in execute_communication_job
+    job = CommunicationDeliveryJob.objects.only("job_kind").get(pk=job_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+AssertionError: process read CommunicationDeliveryJob
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

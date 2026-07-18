@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_cross_owner_with_exact_permission_is_nondisclosing_and_zero_write (sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_cross_owner_with_exact_permission_is_nondisclosing_and_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/tests/test_communication_worker_runtime.py", line 864, in test_cross_owner_with_exact_permission_is_nondisclosing_and_zero_write
+    self.assertEqual(resolution.status_code, 403, resolution.content)
+AssertionError: 409 != 403 : b'{"success": false, "error": {"code": "CONFLICT", "message": "The communication exception is unavailable for this operator.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-18T21:02:53.770653Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -12,14 +12,14 @@ from sfpcl_credit.processes.communication_delivery import (
 
 @shared_task(name="communications.execute_job")
 def execute_communication_delivery_job(job_id):
-    execute_communication_job(job_id)
-    evidence = CommunicationDispatcher.job_evidence(job_id=job_id, limit=1)[0]
-    return CommunicationDispatcher._task_evidence(evidence)
+    return CommunicationDispatcher.execute_task(
+        job_id, executor=execute_communication_job
+    )
 
 
 @shared_task(name="communications.dispatch_due_jobs")
 def dispatch_due_communication_jobs():
-    return CommunicationDispatcher._run_due_jobs(
+    return CommunicationDispatcher.run_due_jobs(
         executor=execute_communication_delivery_job
     )
 

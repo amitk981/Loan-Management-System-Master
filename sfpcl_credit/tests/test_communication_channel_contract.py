@@ -1,7 +1,8 @@
 from django.apps import apps
 from django.utils import timezone
 import inspect
-from pathlib import Path
+from unittest.mock import patch
+import uuid
 
 from sfpcl_credit.communications.adapters import (
     EmailDeliveryResult,
@@ -9,7 +10,11 @@ from sfpcl_credit.communications.adapters import (
     FutureSmsDeliveryAdapter,
     ManualSmsDeliveryAdapter,
 )
-from sfpcl_credit.communications.models import Communication, CommunicationDeliveryJob
+from sfpcl_credit.communications.models import (
+    Communication,
+    CommunicationDeliveryJob,
+    ContentTemplate,
+)
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
     CommunicationDispatchConflict,
@@ -36,20 +41,34 @@ class CommunicationChannelContractTests(CommunicationApiTests):
         ).parameters
         self.assertIn("actor", retry_parameters)
 
-        project = Path(__file__).resolve().parents[1]
-        services_source = (project / "communications" / "services.py").read_text()
-        self.assertIn("CommunicationDispatcher.create_from_template(", services_source)
-        self.assertIn("CommunicationDispatcher.send(", services_source)
-        for relative in (
-            "communications/services.py",
-            "processes/communication_delivery.py",
-            "processes/disbursement_advice_delivery.py",
-            "processes/tasks.py",
+    def test_process_execution_delegates_without_reading_communications_models(self):
+        job_id = uuid.uuid4()
+        expected = {
+            "communication_job_id": str(job_id),
+            "delivery_status": "sent",
+        }
+        with (
+            patch.object(
+                CommunicationDispatcher,
+                "execute_job",
+                return_value=expected,
+                create=True,
+            ) as owner_interface,
+            patch(
+                "sfpcl_credit.communications.models.CommunicationDeliveryJob.objects.only",
+                side_effect=AssertionError("process read CommunicationDeliveryJob"),
+            ),
+            patch(
+                "sfpcl_credit.communications.models.Communication.objects.only",
+                side_effect=AssertionError("process read Communication"),
+            ),
         ):
-            source = (project / relative).read_text()
-            self.assertNotIn(".send_email(", source)
-            self.assertNotIn(".send_sms(", source)
-            self.assertNotIn("CommunicationDispatcher._send(", source)
+            result = execute_communication_job(job_id, adapter="test-adapter")
+
+        self.assertEqual(result, expected)
+        owner_interface.assert_called_once()
+        self.assertEqual(owner_interface.call_args.kwargs["adapter"], "test-adapter")
+        self.assertTrue(callable(owner_interface.call_args.kwargs["advice_executor"]))
 
     def test_sms_job_uses_only_sms_adapter(self):
         self.template.template_type = "sms"
@@ -88,6 +107,44 @@ class CommunicationChannelContractTests(CommunicationApiTests):
         self.assertEqual(result["delivery_status"], "sent")
         self.assertEqual(adapter.sms_calls, 1)
         self.assertEqual(adapter.email_calls, 0)
+
+    def test_idempotency_key_cannot_replay_across_email_and_sms_channels(self):
+        key = "cross-channel-contract"
+        email = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(),
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key=key),
+        )
+        sms_template = ContentTemplate.objects.create(
+            template_code="loan_sanction_sms_v1",
+            template_name="Loan Sanction SMS",
+            template_type="sms",
+            language_code="en",
+            audience="borrower",
+            subject_template="SMS notification",
+            body_template="Loan {{application_reference_number}} for {{borrower_name}}",
+            variables_json=["application_reference_number", "borrower_name"],
+            approval_status=ContentTemplate.STATUS_APPROVED,
+            template_version="1.0",
+            effective_from="2026-01-01",
+            effective_to="2026-12-31",
+        )
+        cross_channel = self.client.post(
+            COMMUNICATION_SEND_URL,
+            data=self._send_payload(
+                channel="sms",
+                recipient_address="+919876543210",
+                content_template_id=str(sms_template.pk),
+            ),
+            content_type="application/json",
+            headers=self._auth_headers(idempotency_key=key),
+        )
+
+        self.assertEqual(email.status_code, 200, email.content)
+        self.assertEqual(cross_channel.status_code, 409, cross_channel.content)
+        self.assertEqual(Communication.objects.count(), 1)
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
 
     def test_channel_template_recipient_and_sms_safety_fail_before_writes(self):
         unsafe_cases = [

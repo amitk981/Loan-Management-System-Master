@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 import hashlib
 import json
+from math import ceil
 import re
 import uuid
 
@@ -19,6 +20,8 @@ from sfpcl_credit.communications.adapters import (
     ManualEmailDeliveryAdapter,
     ManualSmsDeliveryAdapter,
     SmsDeliveryPayload,
+    configured_email_delivery_adapter,
+    configured_sms_delivery_adapter,
     delivery_payload_digest,
     validate_delivery_result,
 )
@@ -35,6 +38,7 @@ from sfpcl_credit.communications.models import (
 )
 from sfpcl_credit.communications.runtime import enqueue_after_commit
 from sfpcl_credit.identity.models import AuditLog, User
+from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.models import WorkflowEvent
 
@@ -71,6 +75,10 @@ _LEGACY_PROVENANCE_ADAPTER_KINDS = {
 
 
 class CommunicationDispatchConflict(Exception):
+    pass
+
+
+class CommunicationExceptionAccessDenied(Exception):
     pass
 
 
@@ -227,6 +235,44 @@ class _PreparedAdvice:
 
 
 class CommunicationDispatcher:
+    _EXCEPTION_PERMISSIONS = {
+        CommunicationDeliveryJob.KIND_GENERIC: "communications.communication.send",
+        CommunicationDeliveryJob.KIND_ADVICE: "finance.disbursement.send_advice",
+    }
+
+    @classmethod
+    def _authorised_exception_job_kinds(cls, actor):
+        if actor.status != "active" or actor.primary_role.status != "active":
+            return set()
+        permissions = set(auth_service.effective_permission_codes(actor))
+        return {
+            job_kind
+            for job_kind, permission in cls._EXCEPTION_PERMISSIONS.items()
+            if permission in permissions
+        }
+
+    @classmethod
+    def _require_exception_authority(cls, actor, job_kind):
+        if job_kind not in cls._authorised_exception_job_kinds(actor):
+            raise CommunicationExceptionAccessDenied(
+                "The communication exception is unavailable for this operator."
+            )
+
+    @staticmethod
+    def _positive_exception_query_value(query_params, name, default):
+        values = query_params.getlist(name) if hasattr(query_params, "getlist") else []
+        if values and len(values) != 1:
+            raise ValidationError({name: "Provide this parameter exactly once."})
+        value = query_params.get(name)
+        if value is None:
+            return default
+        if not isinstance(value, str) or not value.isascii() or not value.isdigit():
+            raise ValidationError({name: "Must be a positive integer."})
+        parsed = int(value)
+        if parsed < 1:
+            raise ValidationError({name: "Must be a positive integer."})
+        return parsed
+
     """Own template, render, durable outbox, and provider dispatch policy."""
 
     @classmethod
@@ -262,6 +308,41 @@ class CommunicationDispatcher:
             communication_id=communication_id,
             idempotency_key=idempotency_key,
         )
+
+    @classmethod
+    def execute_job(cls, job_id, *, adapter=None, advice_executor):
+        job = CommunicationDeliveryJob.objects.only(
+            "job_kind", "communication_id"
+        ).get(pk=job_id)
+        if job.job_kind == CommunicationDeliveryJob.KIND_ADVICE:
+            delivery_adapter = adapter or configured_email_delivery_adapter()
+            return advice_executor(job_id, adapter=delivery_adapter)
+        if adapter is None:
+            channel = Communication.objects.only("channel").get(
+                pk=job.communication_id
+            ).channel
+            adapter = (
+                configured_sms_delivery_adapter()
+                if channel == Communication.CHANNEL_SMS
+                else configured_email_delivery_adapter()
+            )
+        result = cls.execute_generic_job(job_id, adapter=adapter)
+        return {
+            "communication_job_id": str(result.pk),
+            "communication_id": str(result.communication_id),
+            "delivery_status": result.status,
+            "attempts": result.attempts,
+        }
+
+    @classmethod
+    def execute_task(cls, job_id, *, executor):
+        executor(job_id)
+        evidence = cls.job_evidence(job_id=job_id, limit=1)[0]
+        return cls._task_evidence(evidence)
+
+    @classmethod
+    def run_due_jobs(cls, *, executor):
+        return cls._run_due_jobs(executor=executor)
 
     @classmethod
     def _create_from_template(
@@ -974,11 +1055,12 @@ class CommunicationDispatcher:
             )
         return evidence
 
-    @staticmethod
-    def exception_evidence(*, actor, exception_id=None, limit=100):
-        bounded_limit = max(1, min(int(limit), settings.COMMUNICATION_JOB_BATCH_LIMIT))
-        rows = CommunicationException.objects.filter(
+    @classmethod
+    def _exception_queryset(cls, actor):
+        authorised_kinds = cls._authorised_exception_job_kinds(actor)
+        return CommunicationException.objects.filter(
             assigned_owner=actor,
+            job_type__in=authorised_kinds,
             job__status=CommunicationDeliveryJob.STATUS_FAILED,
             job__attempts=F("retry_count"),
             job__attempts__gte=F("job__max_attempts"),
@@ -988,28 +1070,76 @@ class CommunicationDispatcher:
             job__claim_token__isnull=True,
             job__lease_expires_at__isnull=True,
         )
+
+    @classmethod
+    def exception_evidence(cls, *, actor, exception_id=None, limit=100):
+        bounded_limit = max(1, min(int(limit), settings.COMMUNICATION_JOB_BATCH_LIMIT))
+        rows = cls._exception_queryset(actor)
         if exception_id is not None:
+            retained_kind = (
+                CommunicationException.objects.filter(
+                    pk=exception_id, assigned_owner=actor
+                )
+                .values_list("job_type", flat=True)
+                .first()
+            )
+            if retained_kind is not None:
+                cls._require_exception_authority(actor, retained_kind)
             rows = rows.filter(pk=exception_id)
         rows = rows.order_by("-created_at", "-communication_exception_id")[
             :bounded_limit
         ]
-        return [
-            {
-                "communication_exception_id": str(row.pk),
-                "provider_code": row.provider_code,
-                "job_type": row.job_type,
-                "related_entity_type": row.related_entity_type,
-                "related_entity_id": str(row.related_entity_id),
-                "last_error_code": row.last_error_code,
-                "retry_count": row.retry_count,
-                "assigned_owner": "current_user",
-                "resolution_action": row.resolution_action or None,
-                "resolved_by": "current_user" if row.resolved_by_id else None,
-                "resolved_at": _iso_or_none(row.resolved_at),
-                "resolution_version": row.resolution_version,
-            }
-            for row in rows
-        ]
+        return [cls._exception_row_evidence(row) for row in rows]
+
+    @classmethod
+    def exception_page(cls, *, actor, query_params):
+        unknown = set(query_params) - {"page", "page_size"}
+        if unknown:
+            raise ValidationError(
+                {name: "Unknown query parameter." for name in sorted(unknown)}
+            )
+        page = cls._positive_exception_query_value(query_params, "page", 1)
+        page_size = cls._positive_exception_query_value(
+            query_params, "page_size", 20
+        )
+        if page_size > 100:
+            raise ValidationError({"page_size": "Must be at most 100."})
+
+        rows = cls._exception_queryset(actor).order_by(
+            "-created_at", "-communication_exception_id"
+        )
+        total_count = rows.count()
+        total_pages = ceil(total_count / page_size) if total_count else 1
+        if page > total_pages:
+            raise ValidationError({"page": "Requested page is out of range."})
+        offset = (page - 1) * page_size
+        page_rows = rows[offset : offset + page_size]
+        data = [cls._exception_row_evidence(row) for row in page_rows]
+        return data, {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
+
+    @staticmethod
+    def _exception_row_evidence(row):
+        return {
+            "communication_exception_id": str(row.pk),
+            "provider_code": row.provider_code,
+            "job_type": row.job_type,
+            "related_entity_type": row.related_entity_type,
+            "related_entity_id": str(row.related_entity_id),
+            "last_error_code": row.last_error_code,
+            "retry_count": row.retry_count,
+            "assigned_owner": "current_user",
+            "resolution_action": row.resolution_action or None,
+            "resolved_by": "current_user" if row.resolved_by_id else None,
+            "resolved_at": _iso_or_none(row.resolved_at),
+            "resolution_version": row.resolution_version,
+        }
 
     @classmethod
     def resolve_exception(
@@ -1033,7 +1163,7 @@ class CommunicationDispatcher:
                     .get(pk=exception_id, assigned_owner=actor)
                 )
             except CommunicationException.DoesNotExist as exc:
-                raise CommunicationDispatchConflict(
+                raise CommunicationExceptionAccessDenied(
                     "The communication exception is unavailable for this operator."
                 ) from exc
             if (
@@ -1044,6 +1174,7 @@ class CommunicationDispatcher:
                     "The communication exception changed. Refresh and try again."
                 )
             job = exception.job
+            cls._require_exception_authority(actor, job.job_kind)
             if not (
                 job.status == CommunicationDeliveryJob.STATUS_FAILED
                 and job.attempts == exception.retry_count
@@ -1194,20 +1325,12 @@ class CommunicationDispatcher:
             )
             related_entity_type = outbox.related_entity_type
             related_entity_id = outbox.related_entity_id
-            provider_code = (
-                outbox.accepted_provider_attempt.adapter_kind
-                if outbox.accepted_provider_attempt_id
-                else settings.COMMUNICATION_EMAIL_ADAPTER
-            )
+            provider_code = outbox.channel
         else:
             communication = Communication.objects.get(pk=job.communication_id)
             related_entity_type = communication.related_entity_type
             related_entity_id = communication.related_entity_id
-            provider_code = (
-                settings.COMMUNICATION_SMS_ADAPTER
-                if communication.channel == Communication.CHANNEL_SMS
-                else settings.COMMUNICATION_EMAIL_ADAPTER
-            )
+            provider_code = communication.channel
         expected = {
             "provider_code": provider_code,
             "job_type": job.job_kind,

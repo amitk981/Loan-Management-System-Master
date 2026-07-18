@@ -1,0 +1,46 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_celery_entries_delegate_only_to_public_communications_interfaces (sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerRuntimeTests.test_celery_entries_delegate_only_to_public_communications_interfaces)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/tests/test_communication_worker_runtime.py", line 84, in test_celery_entries_delegate_only_to_public_communications_interfaces
+    executed = execute_communication_delivery_job(job_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/celery/local.py", line 182, in __call__
+    return self._get_current_object()(*a, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/celery/app/task.py", line 411, in __call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/processes/tasks.py", line 15, in execute_communication_delivery_job
+    execute_communication_job(job_id)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/processes/communication_delivery.py", line 12, in execute_communication_job
+    return CommunicationDispatcher.execute_job(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 316, in execute_job
+    ).get(pk=job_id)
+      ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 645, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 382, in __len__
+    self._fetch_all()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1560, in execute_sql
+    cursor = self.connection.cursor()
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 166, in __call__
+    raise DatabaseOperationForbidden(self.message)
+django.test.testcases.DatabaseOperationForbidden: Database queries to 'default' are not allowed in SimpleTestCase subclasses. Either subclass TestCase or TransactionTestCase to ensure proper test isolation or add 'default' to sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerRuntimeTests.databases to silence this failure.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)

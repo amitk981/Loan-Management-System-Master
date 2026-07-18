@@ -166,6 +166,76 @@ class GenericCommunicationJobMigrationTests(TransactionTestCase):
         )
         self.assertEqual(len(evidence.evidence_digest), 64)
 
+    def test_retained_exception_normalizes_source_channel_without_losing_truth(self):
+        old_apps = self._migrate(
+            [("communications", "0012_generic_provider_evidence")]
+        )
+        Role = old_apps.get_model("identity", "Role")
+        User = old_apps.get_model("identity", "User")
+        Communication = old_apps.get_model("communications", "Communication")
+        Job = old_apps.get_model("communications", "CommunicationDeliveryJob")
+        Exception = old_apps.get_model("communications", "CommunicationException")
+        role = Role.objects.create(
+            role_code="legacy-exception-owner",
+            role_name="Legacy exception owner",
+            status="active",
+        )
+        actor = User.objects.create(
+            full_name="Legacy Exception Owner",
+            email="legacy.exception.owner@sfpcl.example",
+            primary_role=role,
+            password_hash="not-a-real-password",
+        )
+        communication = Communication.objects.create(
+            related_entity_type="loan_application",
+            related_entity_id=uuid.uuid4(),
+            recipient_party_type="borrower",
+            recipient_address="legacy@example.com",
+            channel="sms",
+            subject_snapshot="SMS",
+            body_snapshot="Retained message",
+            delivery_status="pending",
+        )
+        job = Job.objects.create(
+            communication_id=communication.pk,
+            job_kind="generic",
+            idempotency_key="legacy-exception-provider",
+            actor_id=actor.pk,
+            actor_role_code=role.role_code,
+            actor_team_codes=[],
+            request_id="legacy-exception-provider",
+            request_payload_digest="b" * 64,
+            status="failed",
+            attempts=3,
+            max_attempts=3,
+            last_failure_code="provider_rejected",
+            completed_at=timezone.now(),
+        )
+        retained = Exception.objects.create(
+            job=job,
+            provider_code=(
+                "sfpcl_credit.communications.adapters.ManualSmsDeliveryAdapter"
+            ),
+            job_type="generic",
+            related_entity_type=communication.related_entity_type,
+            related_entity_id=communication.related_entity_id,
+            last_error_code=job.last_failure_code,
+            retry_count=job.attempts,
+            assigned_owner=actor,
+        )
+        before = Exception.objects.filter(pk=retained.pk).values().get()
+
+        new_apps = self._migrate(
+            [("communications", "0013_exception_provider_vocabulary")]
+        )
+        migrated = new_apps.get_model(
+            "communications", "CommunicationException"
+        ).objects.filter(pk=retained.pk).values().get()
+
+        self.assertEqual(migrated.pop("provider_code"), "sms")
+        before.pop("provider_code")
+        self.assertEqual(migrated, before)
+
     @staticmethod
     def _migrate(targets):
         executor = MigrationExecutor(connection)

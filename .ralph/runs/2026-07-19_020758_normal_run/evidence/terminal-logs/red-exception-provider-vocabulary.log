@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exception_evidence_exposes_only_safe_review_facts (sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_exception_evidence_exposes_only_safe_review_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/tests/test_communication_worker_runtime.py", line 478, in test_exception_evidence_exposes_only_safe_review_facts
+    self.assertEqual(evidence[0]["provider_code"], "email")
+AssertionError: 'sfpcl_credit.communications.adapters.ManualEmailDeliveryAdapter' != 'email'
+- sfpcl_credit.communications.adapters.ManualEmailDeliveryAdapter
++ email
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.027s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

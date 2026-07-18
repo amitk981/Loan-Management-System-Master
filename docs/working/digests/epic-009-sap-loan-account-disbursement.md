@@ -2,6 +2,18 @@
 
 ## 009H9D communications provenance and operator-boundary closure
 
+- Migration 0008 now validates every required frozen fact for type/content, checksum, channel, and
+  exact agreement with the still-referenced queued template. Recomputed one-field drift and
+  malformed variable collections are cleared to `ambiguous_legacy`/`legacy_partial`; the genuine
+  coherent queued job retains its exact forward/reverse/reapply identity.
+- Exception collection/detail/resolution select the current permission from the exact retained job
+  kind in addition to assigned ownership. Retained adapter paths normalize once to source
+  `email`/`sms` vocabulary, and strict stable page/page-size pagination applies the same authority
+  and redaction to every page.
+- Channel/configured-adapter selection, job execution, due iteration, and task evidence shaping now
+  sit behind public `CommunicationDispatcher` interfaces. Process/Celery entries only compose or
+  delegate; executable interface tests cover Email/SMS execution and exact/changed/cross-channel
+  idempotency without coupling to private implementation spelling.
 - Architecture review `2026-07-19_014802_architecture_review` proves migration 0008 accepts a blank
   required queued-template fact when its checksum is recomputed. Complete provenance must validate
   required fact content, not only non-null presence and checksum equality.

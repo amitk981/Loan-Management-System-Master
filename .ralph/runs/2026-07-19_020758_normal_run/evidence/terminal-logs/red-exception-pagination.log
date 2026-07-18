@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exception_collection_is_strict_stable_and_truthfully_paginated (sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_exception_collection_is_strict_stable_and_truthfully_paginated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_020758_normal_run/sfpcl_credit/tests/test_communication_worker_runtime.py", line 654, in test_exception_collection_is_strict_stable_and_truthfully_paginated
+    self.assertEqual(
+AssertionError: Lists differ: ['454c915d-1c23-4189-bace-a2a222553694', '7[3952 chars]b63'] != ['7bd0587b-011a-4b4b-a5eb-f0a019ba4ae8', 'a[152 chars]02e']
+
+First differing element 0:
+'454c915d-1c23-4189-bace-a2a222553694'
+'7bd0587b-011a-4b4b-a5eb-f0a019ba4ae8'
+
+First list contains 95 additional elements.
+First extra element 5:
+'3c058dbe-b98a-4d05-aaef-609cbe6384dc'
+
+Diff is 4515 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.054s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

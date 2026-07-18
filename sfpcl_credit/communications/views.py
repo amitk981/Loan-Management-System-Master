@@ -5,6 +5,7 @@ from sfpcl_credit.api import error_response, list_response, parse_json_body, suc
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
     CommunicationDispatchConflict,
+    CommunicationExceptionAccessDenied,
 )
 from sfpcl_credit.communications import services
 from sfpcl_credit.identity.modules import http_auth
@@ -153,15 +154,18 @@ def communication_exception_collection(request):
             "FORBIDDEN",
             "You do not have permission to review communication exceptions.",
         )
-    data = CommunicationDispatcher.exception_evidence(actor=user)
-    pagination = {
-        "page": 1,
-        "page_size": 100,
-        "total_count": len(data),
-        "total_pages": 1,
-        "has_next": False,
-        "has_previous": False,
-    }
+    try:
+        data, pagination = CommunicationDispatcher.exception_page(
+            actor=user, query_params=request.GET
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Communication exception query failed validation.",
+            services.validation_field_errors(exc),
+        )
     return list_response(data, pagination, request)
 
 
@@ -177,9 +181,17 @@ def communication_exception_detail(request, communication_exception_id):
             "FORBIDDEN",
             "You do not have permission to review communication exceptions.",
         )
-    data = CommunicationDispatcher.exception_evidence(
-        actor=user, exception_id=communication_exception_id, limit=1
-    )
+    try:
+        data = CommunicationDispatcher.exception_evidence(
+            actor=user, exception_id=communication_exception_id, limit=1
+        )
+    except CommunicationExceptionAccessDenied:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "You do not have permission to review communication exceptions.",
+        )
     if not data:
         return error_response(
             request, 404, "NOT_FOUND", "Requested communication exception was not found."
@@ -233,6 +245,13 @@ def communication_exception_resolve(request, communication_exception_id):
         )
     except CommunicationDispatchConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
+    except CommunicationExceptionAccessDenied:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "You do not have permission to resolve communication exceptions.",
+        )
     return success_response(data, request)
 
 

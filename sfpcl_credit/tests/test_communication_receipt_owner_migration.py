@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import uuid
@@ -277,6 +277,158 @@ class LegacyAdviceTemplateProvenanceMigrationTests(TransactionTestCase):
             ReappliedJob.objects.filter(pk=job.pk).values().get(),
             current_job_manifest,
         )
+
+    def test_blank_required_queued_snapshot_is_not_verified_with_recomputed_checksum(self):
+        old_apps = self._migrate(self.migrate_from)
+        Outbox = old_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        outbox, _job = self._queued_outbox_with_job(old_apps, "blank-snapshot")
+        Outbox.objects.filter(pk=outbox.pk).update(template_name_snapshot="")
+        outbox.refresh_from_db()
+        facts = {
+            "content_template_id": str(outbox.content_template_id),
+            "template_code": outbox.template_code_snapshot,
+            "template_name": outbox.template_name_snapshot,
+            "template_type": outbox.template_type_snapshot,
+            "language_code": outbox.template_language_code_snapshot,
+            "audience": outbox.template_audience_snapshot,
+            "template_version": outbox.template_version_snapshot,
+            "approval_status": outbox.template_approval_status_snapshot,
+            "effective_from": outbox.template_effective_from_snapshot.isoformat(),
+            "effective_to": (
+                outbox.template_effective_to_snapshot.isoformat()
+                if outbox.template_effective_to_snapshot
+                else None
+            ),
+            "variables": sorted(outbox.template_variables_snapshot or []),
+            "subject_template": outbox.subject_template_snapshot,
+            "body_template": outbox.body_template_snapshot,
+        }
+        Outbox.objects.filter(pk=outbox.pk).update(
+            template_checksum_sha256=hashlib.sha256(
+                json.dumps(facts, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
+        )
+
+        current_apps = self._migrate(self.migrate_to)
+        migrated = current_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        ).objects.get(pk=outbox.pk)
+
+        self.assertEqual(migrated.template_provenance_status, "legacy_partial")
+        self.assertEqual(migrated.template_provenance_origin, "ambiguous_legacy")
+        self.assertIsNone(migrated.template_name_snapshot)
+        self.assertIsNone(migrated.template_checksum_sha256)
+        current_apps.get_model(
+            "communications", "CommunicationDeliveryJob"
+        ).objects.filter(outbox_id=outbox.pk).delete()
+
+    def test_every_drifted_queued_snapshot_fact_and_malformed_variables_stay_legacy(self):
+        old_apps = self._migrate(self.migrate_from)
+        Outbox = old_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        mutations = {
+            "template_code_snapshot": "different_advice_v1",
+            "template_name_snapshot": "Different queued advice",
+            "template_type_snapshot": "sms",
+            "template_language_code_snapshot": "mr",
+            "template_audience_snapshot": "staff",
+            "template_version_snapshot": "v2",
+            "template_approval_status_snapshot": "draft",
+            "template_effective_from_snapshot": (
+                django_timezone.localdate() - timedelta(days=1)
+            ),
+            "template_effective_to_snapshot": django_timezone.localdate(),
+            "template_variables_snapshot": ["borrower_name", "loan_account_number"],
+            "subject_template_snapshot": "Different {{ borrower_name }}",
+            "body_template_snapshot": "Different body {{ borrower_name }}",
+        }
+        drifted = {}
+        for field, value in mutations.items():
+            outbox, _job = self._queued_outbox_with_job(old_apps, field[:20])
+            Outbox.objects.filter(pk=outbox.pk).update(**{field: value})
+            outbox.refresh_from_db()
+            Outbox.objects.filter(pk=outbox.pk).update(
+                template_checksum_sha256=self._snapshot_checksum(outbox)
+            )
+            drifted[field] = outbox.pk
+
+        template_target, _ = self._queued_outbox_with_job(
+            old_apps, "template-target"
+        )
+        template_drift, _ = self._queued_outbox_with_job(
+            old_apps, "template-id-drift"
+        )
+        Outbox.objects.filter(pk=template_drift.pk).update(
+            content_template_id=template_target.content_template_id
+        )
+        template_drift.refresh_from_db()
+        Outbox.objects.filter(pk=template_drift.pk).update(
+            template_checksum_sha256=self._snapshot_checksum(template_drift)
+        )
+        drifted["content_template_id"] = template_drift.pk
+
+        malformed = {}
+        for label, variables in {
+            "not-list": "borrower_name",
+            "blank-item": ["borrower_name", " "],
+            "duplicate": ["borrower_name", "borrower_name"],
+            "non-string": ["borrower_name", 7],
+        }.items():
+            outbox, _job = self._queued_outbox_with_job(old_apps, label)
+            Outbox.objects.filter(pk=outbox.pk).update(
+                template_variables_snapshot=variables,
+                template_checksum_sha256="a" * 64,
+            )
+            malformed[label] = outbox.pk
+
+        current_apps = self._migrate(self.migrate_to)
+        CurrentOutbox = current_apps.get_model(
+            "communications", "CommunicationDeliveryOutbox"
+        )
+        for label, outbox_id in {**drifted, **malformed}.items():
+            with self.subTest(label=label):
+                migrated = CurrentOutbox.objects.get(pk=outbox_id)
+                self.assertEqual(migrated.template_provenance_status, "legacy_partial")
+                self.assertEqual(
+                    migrated.template_provenance_origin, "ambiguous_legacy"
+                )
+                self.assertIsNone(migrated.content_template_id)
+                self.assertIsNone(migrated.template_variables_snapshot)
+                self.assertIsNone(migrated.template_checksum_sha256)
+        current_apps.get_model(
+            "communications", "CommunicationDeliveryJob"
+        ).objects.filter(outbox_id__in={*drifted.values(), *malformed.values()}).delete()
+        current_apps.get_model(
+            "communications", "CommunicationDeliveryJob"
+        ).objects.filter(outbox_id=template_target.pk).delete()
+
+    @staticmethod
+    def _snapshot_checksum(outbox):
+        facts = {
+            "content_template_id": str(outbox.content_template_id),
+            "template_code": outbox.template_code_snapshot,
+            "template_name": outbox.template_name_snapshot,
+            "template_type": outbox.template_type_snapshot,
+            "language_code": outbox.template_language_code_snapshot,
+            "audience": outbox.template_audience_snapshot,
+            "template_version": outbox.template_version_snapshot,
+            "approval_status": outbox.template_approval_status_snapshot,
+            "effective_from": outbox.template_effective_from_snapshot.isoformat(),
+            "effective_to": (
+                outbox.template_effective_to_snapshot.isoformat()
+                if outbox.template_effective_to_snapshot
+                else None
+            ),
+            "variables": sorted(outbox.template_variables_snapshot or []),
+            "subject_template": outbox.subject_template_snapshot,
+            "body_template": outbox.body_template_snapshot,
+        }
+        return hashlib.sha256(
+            json.dumps(facts, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
 
     def test_only_exact_queued_job_relationship_is_verified(self):
         old_apps = self._migrate(self.migrate_from)

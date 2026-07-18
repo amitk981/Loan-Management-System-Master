@@ -19,7 +19,7 @@ The collection/detail item is deliberately redacted:
 ```json
 {
   "communication_exception_id": "uuid",
-  "provider_code": "configured-adapter-identity",
+  "provider_code": "email",
   "job_type": "generic",
   "related_entity_type": "loan_application",
   "related_entity_id": "uuid",
@@ -32,6 +32,15 @@ The collection/detail item is deliberately redacted:
   "resolution_version": 1
 }
 ```
+
+`provider_code` is the source delivery channel vocabulary (`email` or `sms`), independently of the
+configured adapter implementation. The collection accepts only `page` and `page_size`, defaults to
+page 1 with 20 rows, caps `page_size` at 100, orders by newest creation then descending exception
+UUID, and returns the standard truthful top-level pagination object. Duplicate, unknown,
+non-integer, non-positive, over-cap, or out-of-range pagination input returns
+`400 VALIDATION_ERROR`. Every page is filtered independently by assigned owner and the exact
+current permission selected by `job_type`; a generic-only operator never sees advice rows and an
+advice-only operator never sees generic rows.
 
 Recipient/address, subject/body/content, provider external id/error/secret, bank/UTR, idempotency
 key, payload/digest, request id, actor identity/role/team, IP address, and user agent are absent. One
@@ -48,8 +57,9 @@ Resolution accepts exactly:
 
 The version is a positive stale-write token. Unknown/malformed fields return
 `400 VALIDATION_ERROR`; missing authority returns `403 FORBIDDEN`; an unsupported `retry`, stale
-version, wrong owner, already-resolved row, or changed/missing exhausted-job evidence returns
-`409 CONFLICT`. Since the job has reached its retained `max_attempts`, this contract does not grant
+version, already-resolved row, or changed/missing exhausted-job evidence returns `409 CONFLICT`;
+wrong-owner and wrong-job-kind authority remain nondisclosing. Since the job has reached its
+retained `max_attempts`, this contract does not grant
 another attempt. Manual closure leaves the job `failed`, preserves its attempts and provider
 evidence, does not mutate the Communication to sent, and appends one audit/workflow resolution
 chain. The opening terminalisation likewise appends one singular exception/audit/workflow chain.

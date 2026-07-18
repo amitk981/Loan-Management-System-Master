@@ -396,6 +396,9 @@ class CommunicationDeliveryJob(models.Model):
 
 class CommunicationException(models.Model):
     ACTION_MANUAL_CLOSED = "manual_closed"
+    PROVIDER_EMAIL = "email"
+    PROVIDER_SMS = "sms"
+    PROVIDERS = {PROVIDER_EMAIL, PROVIDER_SMS}
 
     communication_exception_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -434,7 +437,7 @@ class CommunicationException(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=(
-                    ~models.Q(provider_code="")
+                    models.Q(provider_code__in=("email", "sms"))
                     & ~models.Q(job_type="")
                     & ~models.Q(related_entity_type="")
                     & ~models.Q(last_error_code="")

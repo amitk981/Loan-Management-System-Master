@@ -4,6 +4,7 @@ from datetime import timedelta
 from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Lock
+import uuid
 
 from django.db import (
     close_old_connections,
@@ -29,10 +30,15 @@ from sfpcl_credit.communications.models import (
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
     CommunicationDispatchConflict,
+    CommunicationExceptionAccessDenied,
 )
 from sfpcl_credit.communications.adapters import FakeEmailDeliveryAdapter
-from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission
 from sfpcl_credit.processes.communication_delivery import execute_communication_job
+from sfpcl_credit.processes.tasks import (
+    dispatch_due_communication_jobs,
+    execute_communication_delivery_job,
+)
 from sfpcl_credit.processes.disbursement_advice_delivery import (
     send_disbursement_advice_now,
 )
@@ -57,6 +63,34 @@ class CommunicationWorkerRuntimeTests(SimpleTestCase):
             "communications.dispatch_due_jobs",
         )
 
+    def test_celery_entries_delegate_only_to_public_communications_interfaces(self):
+        job_id = uuid.uuid4()
+        task_result = {"communication_job_id": str(job_id), "delivery_status": "sent"}
+        due_result = [task_result]
+        with (
+            patch.object(
+                CommunicationDispatcher,
+                "execute_task",
+                return_value=task_result,
+                create=True,
+            ) as execute_owner,
+            patch.object(
+                CommunicationDispatcher,
+                "run_due_jobs",
+                return_value=due_result,
+                create=True,
+            ) as due_owner,
+        ):
+            executed = execute_communication_delivery_job(job_id)
+            due = dispatch_due_communication_jobs()
+
+        self.assertEqual(executed, task_result)
+        self.assertEqual(due, due_result)
+        execute_owner.assert_called_once()
+        due_owner.assert_called_once()
+        self.assertTrue(callable(execute_owner.call_args.kwargs["executor"]))
+        self.assertTrue(callable(due_owner.call_args.kwargs["executor"]))
+
 
 class CommunicationWorkerQueueTests(TestCase):
     def setUp(self):
@@ -65,6 +99,112 @@ class CommunicationWorkerQueueTests(TestCase):
     _auth_headers = communication_fixtures.CommunicationApiTests._auth_headers
     _access_token = communication_fixtures.CommunicationApiTests._access_token
     _send_payload = communication_fixtures.CommunicationApiTests._send_payload
+
+    def _generic_exception_with_advice_only_permission(self, idempotency_key):
+        with patch(
+            "sfpcl_credit.processes.tasks.execute_communication_delivery_job.signature"
+        ):
+            response = self.client.post(
+                communication_fixtures.COMMUNICATION_SEND_URL,
+                data=self._send_payload(),
+                content_type="application/json",
+                headers=self._auth_headers(idempotency_key=idempotency_key),
+            )
+        self.assertEqual(response.status_code, 200, response.content)
+        job = CommunicationDeliveryJob.objects.get()
+        CommunicationDeliveryJob.objects.filter(pk=job.pk).update(attempts=2)
+        CommunicationDispatcher.start_job(job.pk)
+        CommunicationDeliveryJob.objects.filter(pk=job.pk).update(
+            lease_expires_at=timezone.now()
+        )
+        CommunicationDispatcher.retry_failed(limit=1)
+        RolePermission.objects.filter(
+            role=self.role,
+            permission__permission_code="communications.communication.send",
+        ).delete()
+        advice_permission, _ = Permission.objects.get_or_create(
+            permission_code="finance.disbursement.send_advice",
+            defaults={
+                "permission_name": "Send disbursement advice",
+                "module_name": "finance",
+                "risk_level": "high",
+            },
+        )
+        RolePermission.objects.get_or_create(
+            role=self.role, permission=advice_permission
+        )
+        return job.delivery_exception
+
+    def test_generic_exception_rejects_advice_only_permission_on_read(self):
+        exception = self._generic_exception_with_advice_only_permission(
+            "generic-exception-read-authority"
+        )
+
+        response = self.client.get(
+            f"/api/v1/communication-exceptions/{exception.pk}/",
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 403, response.content)
+
+    def test_generic_exception_rejects_advice_only_permission_on_resolution(self):
+        exception = self._generic_exception_with_advice_only_permission(
+            "generic-exception-resolution-authority"
+        )
+
+        response = self.client.post(
+            f"/api/v1/communication-exceptions/{exception.pk}/resolve/",
+            {"resolution_action": "manual_closed", "resolution_version": 1},
+            content_type="application/json",
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 403, response.content)
+
+    def test_revoked_and_inactive_generic_owner_are_zero_write(self):
+        exception = self._generic_exception_with_advice_only_permission(
+            "generic-exception-revoked-inactive"
+        )
+        request = SimpleNamespace(headers={}, META={})
+
+        self.assertEqual(
+            CommunicationDispatcher.exception_evidence(actor=self.user), []
+        )
+        with self.assertRaises(CommunicationExceptionAccessDenied):
+            CommunicationDispatcher.resolve_exception(
+                actor=self.user,
+                exception_id=exception.pk,
+                expected_version=1,
+                resolution_action="manual_closed",
+                request=request,
+            )
+
+        generic_permission = Permission.objects.get(
+            permission_code="communications.communication.send"
+        )
+        RolePermission.objects.get_or_create(
+            role=self.role, permission=generic_permission
+        )
+        self.user.status = "inactive"
+        self.user.save(update_fields=["status"])
+        self.assertEqual(
+            CommunicationDispatcher.exception_evidence(actor=self.user), []
+        )
+        with self.assertRaises(CommunicationExceptionAccessDenied):
+            CommunicationDispatcher.resolve_exception(
+                actor=self.user,
+                exception_id=exception.pk,
+                expected_version=1,
+                resolution_action="manual_closed",
+                request=request,
+            )
+        exception.refresh_from_db()
+        self.assertIsNone(exception.resolved_at)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="communications.exception.resolved", entity_id=exception.pk
+            ).exists()
+        )
 
     def test_committed_queue_publishes_one_job_signature(self):
         with patch(
@@ -414,6 +554,7 @@ class CommunicationWorkerQueueTests(TestCase):
         )
 
         self.assertEqual(len(evidence), 1)
+        self.assertEqual(evidence[0]["provider_code"], "email")
         self.assertEqual(
             set(evidence[0]),
             {
@@ -531,6 +672,88 @@ class CommunicationWorkerQueueTests(TestCase):
         self.assertNotIn("borrower@sfpcl.example", str(payload))
         self.assertNotIn("exception-http-list", str(payload))
 
+    def test_exception_collection_is_strict_stable_and_truthfully_paginated(self):
+        created = timezone.now() - timedelta(days=1)
+        jobs = []
+        for index in range(105):
+            jobs.append(
+                CommunicationDeliveryJob(
+                    communication_job_id=uuid.uuid4(),
+                    communication_id=uuid.uuid4(),
+                    job_kind=CommunicationDeliveryJob.KIND_GENERIC,
+                    idempotency_key=f"exception-page-{index}",
+                    actor_id=self.user.pk,
+                    actor_role_code=self.role.role_code,
+                    actor_team_codes=[],
+                    request_id=f"exception-page-request-{index}",
+                    request_payload_digest=f"{index:064x}",
+                    status=CommunicationDeliveryJob.STATUS_FAILED,
+                    attempts=3,
+                    max_attempts=3,
+                    last_failure_code="provider_rejected",
+                    next_attempt_at=created,
+                    completed_at=created,
+                    created_at=created + timedelta(seconds=index),
+                )
+            )
+        CommunicationDeliveryJob.objects.bulk_create(jobs)
+        exceptions = [
+            CommunicationException(
+                communication_exception_id=uuid.uuid4(),
+                job=job,
+                provider_code="email",
+                job_type=job.job_kind,
+                related_entity_type="loan_application",
+                related_entity_id=uuid.uuid4(),
+                last_error_code=job.last_failure_code,
+                retry_count=job.attempts,
+                assigned_owner=self.user,
+                created_at=job.created_at,
+            )
+            for job in jobs
+        ]
+        CommunicationException.objects.bulk_create(exceptions)
+        expected_second_page = [
+            str(row.pk)
+            for row in sorted(
+                exceptions,
+                key=lambda row: (row.created_at, row.pk),
+                reverse=True,
+            )[100:]
+        ]
+
+        response = self.client.get(
+            "/api/v1/communication-exceptions/?page=2&page_size=100",
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        payload = response.json()
+        self.assertEqual(
+            [row["communication_exception_id"] for row in payload["data"]],
+            expected_second_page,
+        )
+        self.assertEqual(
+            payload["pagination"],
+            {
+                "page": 2,
+                "page_size": 100,
+                "total_count": 105,
+                "total_pages": 2,
+                "has_next": False,
+                "has_previous": True,
+            },
+        )
+        self.assertNotIn("exception-page-", str(payload))
+        for query in ("page=0", "page_size=101", "ordering=created_at"):
+            with self.subTest(query=query):
+                invalid = self.client.get(
+                    f"/api/v1/communication-exceptions/?{query}",
+                    headers=self._auth_headers(),
+                )
+                self.assertEqual(invalid.status_code, 400, invalid.content)
+                self.assertEqual(invalid.json()["error"]["code"], "VALIDATION_ERROR")
+
     def test_exception_resolution_http_is_authorised_policy_bound_and_stale_safe(self):
         with patch(
             "sfpcl_credit.processes.tasks.execute_communication_delivery_job.signature"
@@ -590,6 +813,61 @@ class CommunicationWorkerQueueTests(TestCase):
                 action="communications.exception.resolved", entity_id=exception.pk
             ).count(),
             1,
+        )
+
+    def test_cross_owner_with_exact_permission_is_nondisclosing_and_zero_write(self):
+        with patch(
+            "sfpcl_credit.processes.tasks.execute_communication_delivery_job.signature"
+        ):
+            response = self.client.post(
+                communication_fixtures.COMMUNICATION_SEND_URL,
+                data=self._send_payload(),
+                content_type="application/json",
+                headers=self._auth_headers(idempotency_key="exception-cross-owner"),
+            )
+        self.assertEqual(response.status_code, 200, response.content)
+        job = CommunicationDeliveryJob.objects.get()
+        CommunicationDeliveryJob.objects.filter(pk=job.pk).update(attempts=2)
+        CommunicationDispatcher.start_job(job.pk)
+        CommunicationDeliveryJob.objects.filter(pk=job.pk).update(
+            lease_expires_at=timezone.now()
+        )
+        CommunicationDispatcher.retry_failed(limit=1)
+        exception = CommunicationException.objects.get(job=job)
+        permission = Permission.objects.get(
+            permission_code="communications.communication.send"
+        )
+        RolePermission.objects.get_or_create(
+            role=self.read_only_role, permission=permission
+        )
+        headers = self._auth_headers(
+            email="ravi.communications@sfpcl.example",
+            password="ReaderPass123!",
+        )
+
+        collection = self.client.get(
+            "/api/v1/communication-exceptions/", headers=headers
+        )
+        detail = self.client.get(
+            f"/api/v1/communication-exceptions/{exception.pk}/", headers=headers
+        )
+        resolution = self.client.post(
+            f"/api/v1/communication-exceptions/{exception.pk}/resolve/",
+            {"resolution_action": "manual_closed", "resolution_version": 1},
+            content_type="application/json",
+            headers=headers,
+        )
+
+        self.assertEqual(collection.status_code, 200, collection.content)
+        self.assertEqual(collection.json()["data"], [])
+        self.assertEqual(detail.status_code, 404, detail.content)
+        self.assertEqual(resolution.status_code, 403, resolution.content)
+        exception.refresh_from_db()
+        self.assertIsNone(exception.resolved_at)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="communications.exception.resolved", entity_id=exception.pk
+            ).exists()
         )
 
     def test_recovery_reuses_retained_provider_acceptance_without_redispatch(self):
@@ -959,6 +1237,69 @@ class AdviceWorkerQueueTests(TestCase):
             task.action_url, **self.owner.owner.fixture._auth(self.actor)
         )
         self.assertEqual(detail.status_code, 200, detail.content)
+
+    def test_advice_exception_rejects_generic_only_permission_for_every_action(self):
+        with patch(
+            "sfpcl_credit.processes.tasks.execute_communication_delivery_job.signature"
+        ):
+            response = self.client.post(
+                f"/api/v1/disbursements/{self.row.pk}/send-advice/",
+                {
+                    "channel": "email",
+                    "recipient_email": "borrower.advice@example.com",
+                },
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="advice-exception-authority",
+                **self.owner.owner.fixture._auth(self.actor),
+            )
+        self.assertEqual(response.status_code, 200, response.content)
+        job = CommunicationDeliveryJob.objects.get()
+        CommunicationDeliveryJob.objects.filter(pk=job.pk).update(attempts=2)
+        CommunicationDispatcher.start_job(job.pk)
+        CommunicationDeliveryJob.objects.filter(pk=job.pk).update(
+            lease_expires_at=timezone.now()
+        )
+        CommunicationDispatcher.retry_failed(limit=1)
+        exception = CommunicationException.objects.get(job=job)
+        RolePermission.objects.filter(
+            role=self.actor.primary_role,
+            permission__permission_code="finance.disbursement.send_advice",
+        ).delete()
+        generic_permission, _ = Permission.objects.get_or_create(
+            permission_code="communications.communication.send",
+            defaults={
+                "permission_name": "Send communications",
+                "module_name": "communications",
+                "risk_level": "medium",
+            },
+        )
+        RolePermission.objects.get_or_create(
+            role=self.actor.primary_role, permission=generic_permission
+        )
+        auth = self.owner.owner.fixture._auth(self.actor)
+
+        collection = self.client.get("/api/v1/communication-exceptions/", **auth)
+        detail = self.client.get(
+            f"/api/v1/communication-exceptions/{exception.pk}/", **auth
+        )
+        resolution = self.client.post(
+            f"/api/v1/communication-exceptions/{exception.pk}/resolve/",
+            {"resolution_action": "manual_closed", "resolution_version": 1},
+            content_type="application/json",
+            **auth,
+        )
+
+        self.assertEqual(collection.status_code, 200, collection.content)
+        self.assertEqual(collection.json()["data"], [])
+        self.assertEqual(detail.status_code, 403, detail.content)
+        self.assertEqual(resolution.status_code, 403, resolution.content)
+        exception.refresh_from_db()
+        self.assertIsNone(exception.resolved_at)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="communications.exception.resolved", entity_id=exception.pk
+            ).exists()
+        )
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL five-race acceptance")

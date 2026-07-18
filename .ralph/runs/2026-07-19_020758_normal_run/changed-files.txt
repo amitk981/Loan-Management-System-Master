@@ -1,0 +1,14 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/digests/epic-009-sap-loan-account-disbursement.md
+ M sfpcl_credit/communications/migrations/0008_legacy_template_provenance_closure.py
+ M sfpcl_credit/communications/models.py
+ M sfpcl_credit/communications/modules/communication_dispatcher.py
+ M sfpcl_credit/communications/views.py
+ M sfpcl_credit/processes/communication_delivery.py
+ M sfpcl_credit/processes/tasks.py
+ M sfpcl_credit/tests/test_communication_channel_contract.py
+ M sfpcl_credit/tests/test_communication_job_migration.py
+ M sfpcl_credit/tests/test_communication_receipt_owner_migration.py
+ M sfpcl_credit/tests/test_communication_worker_runtime.py
+?? .ralph/runs/2026-07-19_020758_normal_run/
+?? sfpcl_credit/communications/migrations/0013_exception_provider_vocabulary.py
