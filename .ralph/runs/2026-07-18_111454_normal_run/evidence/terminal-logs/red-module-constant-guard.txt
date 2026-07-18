@@ -1,0 +1,24 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_guard_rejects_module_constant_cross_app_checklist_state_mutation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_module_constant_cross_app_checklist_state_mutation) ... FAIL
+
+======================================================================
+FAIL: test_guard_rejects_module_constant_cross_app_checklist_state_mutation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_module_constant_cross_app_checklist_state_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "sfpcl_credit/tests/test_legal_checklist_migration_anchor.py", line 302, in test_guard_rejects_module_constant_cross_app_checklist_state_mutation
+    self.assertEqual(
+AssertionError: Lists differ: [] != ['future_app/migrations/0001_bad.py:BadChecklistMutation']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'future_app/migrations/0001_bad.py:BadChecklistMutation'
+
+- []
++ ['future_app/migrations/0001_bad.py:BadChecklistMutation']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

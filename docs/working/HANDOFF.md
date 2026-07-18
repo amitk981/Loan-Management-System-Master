@@ -1,27 +1,23 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-18_104345_architecture_review
+2026-07-18_111454_normal_run
 
 ## Current Status
-Independent review covered 009H3A, 009H3BA, 009H3BB, and 009G4 over
-`1be0a281...4a0c03ad`. The four slices contain substantive new-row delivery, crash, race, masking,
-state-transfer, and legal-anchor work; 34 retained focused tests pass. Three review-only probes
-nevertheless fail: terminal/migrated advice without an outbox calls the provider and commits a new
-outbox before conflicting; a different syntactically valid provider id/time becomes terminal
-delivery truth after a pre-receipt crash; and module-level target constants evade the legal
-migration-state guard.
+009G5 is complete pending independent validation. The business-specific shared AST heuristic is
+gone; the legal owner now compares actual Django project-state transitions operation by operation.
+The architecture-review module-constant probe and imported/inherited/helper variants pass, while
+database-only RunPython and legal-owned future operations remain valid. The immutable historical
+exception binds only disbursements 0005's exact path/module/classes, operation positions, target
+footprint, and constraint deltas.
 
-The review also confirmed source-boundary drift: template/render policy remains duplicated,
-provider calls remain synchronous with no queued/failed/retrying job, communications and
-disbursements retain two-way persistence/runtime edges, full template provenance is checksum-only,
-and private-helper crash/schema tests do not prove the exact promised boundary. Findings and M08/
-INT-COMM traceability are newest-first in REVIEW_FINDINGS. Corrective slices 009G5, 009H4, and 009H5
-are dependency ordered; 009I now waits for G5/H5, and 009J remains transitively behind 009I. No
-production code changed, no Blocked slice was stale, and CONTEXT now reflects this truth.
+Twelve focused guard tests and the 27-test 009G4 anchor plus adjacent credit/witness/communications/
+document-template/SAP migration set pass. Django check, migration sync, compilation, and the legal
+0015 zero-SQL proof are green. No migration, schema, row, id, API, checklist, frontend, or production
+workflow behavior changed. 009H4 and 009H5 were rechecked and are already concrete; no speculative
+queue edit was made.
 
 ## Next Run
-Run 009G5 first to replace the bypassable shared migration heuristic while preserving legal 0015.
-Then run independently grabbable 009H4 for immutable provider/provenance and coherent legacy replay,
-followed by 009H5 for the canonical asynchronous dispatcher/job and acyclic process seam. Run 009I
-and then 009J only after those corrective owners are complete.
+Run 009H4 for immutable provider/provenance and coherent legacy replay, followed by 009H5 for the
+canonical asynchronous dispatcher/job and acyclic process seam. Run 009I and then 009J only after
+those corrective owners are complete.

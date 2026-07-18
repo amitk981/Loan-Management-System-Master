@@ -1,7 +1,7 @@
 # Slice 009G5: Legal Migration State Guard Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
@@ -64,10 +64,10 @@ High
   forward/reverse/reapply proof.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing guard-bypass tests written first
-- [ ] State-transition guard implemented at the correct owner/test seam
-- [ ] 009G4 migration manifest and adjacent isolation tests green
-- [ ] Django check and migration sync green
-- [ ] Risk assessment, handoff, state, digest, and evidence updated
-- [ ] Commit delegated to the orchestrator after gates
+- [x] Execution plan written
+- [x] Failing guard-bypass tests written first
+- [x] State-transition guard implemented at the correct owner/test seam
+- [x] 009G4 migration manifest and adjacent isolation tests green
+- [x] Django check and migration sync green
+- [x] Risk assessment, handoff, state, digest, and evidence updated
+- [x] Commit delegated to the orchestrator after gates

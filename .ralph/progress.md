@@ -8933,3 +8933,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-18 - 2026-07-18_111454_normal_run
+
+- Agent tool used: codex with the TDD and codebase-design skills.
+- Slice completed: 009G5-legal-migration-state-guard-closure.
+- Summary: Replaced the shared literal AST heuristic with a legal-owned Django project-state
+  transition guard and froze the historical exception to exact path/module/class/position/target
+  and constraint deltas. No migration or production behavior changed.
+- Tests run: exact failing-first architecture probe; 12 focused guard tests; 27 anchor/adjacent
+  migration tests; Django check; migration sync; compile; zero-SQL proof; diff check. Complete
+  backend coverage remains delegated to the orchestrator.
+- Evidence saved: `.ralph/runs/2026-07-18_111454_normal_run/evidence/terminal-logs/`.
+- Result: Complete pending independent orchestrator validation and commit.
+- Risk level: High because migration-state ownership protects live legal/financial integrity;
+  mutation risk is minimized by no migration/model change and retained forward/reverse manifests.
+- Next action: Run 009H4, then dependency-blocked 009H5; run 009I and 009J afterward.
+
+## 2026-07-18 11:43:06 - 2026-07-18_111454_normal_run
+- Agent tool used: codex
+- Slice attempted: 009G5-legal-migration-state-guard-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_111454_normal_run/.ralph/runs/2026-07-18_111454_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-18_111454_normal_run/.ralph/runs/2026-07-18_111454_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

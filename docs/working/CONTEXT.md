@@ -174,8 +174,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   history can re-enter the provider path, a changed valid provider tuple can become terminal truth,
   and the literal-only legal migration guard is bypassable. It also confirmed that the source
   communications dispatcher remains duplicated/synchronous and that communications/disbursements
-  still form a two-way owner seam. Corrective 009G5, 009H4, and 009H5 now precede the borrower/status
-  and Loan Account 360 screens.
+  still form a two-way owner seam. Corrective 009G5 now evaluates actual Django migration-state
+  transitions from the legal owner, keeps the exact historical exception fail-closed, and removes
+  business policy from `shared`. Corrective 009H4 and 009H5 still precede the borrower/status and
+  Loan Account 360 screens.
   Other later module screens (disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

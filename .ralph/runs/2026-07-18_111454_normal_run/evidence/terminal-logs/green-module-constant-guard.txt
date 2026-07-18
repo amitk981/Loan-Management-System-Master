@@ -1,0 +1,9 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_guard_rejects_module_constant_cross_app_checklist_state_mutation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_module_constant_cross_app_checklist_state_mutation) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.111s
+
+OK

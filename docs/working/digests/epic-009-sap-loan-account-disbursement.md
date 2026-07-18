@@ -1,5 +1,24 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009G5 Legal Migration State Guard Closure
+
+- The legal-owned `migration_state_guard` now evaluates real Django `ProjectState` transitions for
+  every operation in every repository migration. It compares the checklist model immediately before
+  and after each operation, so module constants, imported classes, inheritance, and helper
+  indirection cannot hide a cross-app mutation; database-only `RunPython` remains correctly inert.
+- `shared` no longer contains legal/disbursement model names, migration filenames, or allowlist
+  policy. Only the two historical disbursements 0005 class identities are retained, frozen by exact
+  path/module/class plus operation position and expected constraint transition; renamed paths or
+  classes, sibling operations, and changed model footprints fail closed.
+- The architecture-review module-constant probe failed first and is retained. Twelve guard tests
+  and the 27-test 009G4/credit/witness/communications/document-template/SAP migration set pass.
+  Django check, migration sync, compile, and zero-operation `sqlmigrate` are green. Legal 0015,
+  migration history, physical schema, rows, ids, APIs, checklist truth, and production behavior are
+  unchanged.
+- 009H4 and 009H5 were rechecked before completion. Both already contain concrete owner interfaces,
+  exact evidence fields, migration/job contracts, failure cases, race requirements, and source
+  references, so no speculative sharpening edit was needed.
+
 ## Architecture Review 2026-07-18 10:43 — Advice Evidence, Jobs, and Migration Guard
 
 - 009H3A/BA/BB substantively move new advice template/provider/finalization policy into

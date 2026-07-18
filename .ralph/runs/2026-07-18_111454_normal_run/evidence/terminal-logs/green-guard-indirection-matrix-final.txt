@@ -1,0 +1,20 @@
+Found 12 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_guard_accepts_future_legal_owned_operation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_accepts_future_legal_owned_operation) ... ok
+test_guard_allows_only_reviewed_009g2_history_in_repository (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_allows_only_reviewed_009g2_history_in_repository) ... ok
+test_guard_does_not_report_database_only_runpython (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_does_not_report_database_only_runpython) ... ok
+test_guard_rejects_helper_indirected_cross_app_operation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_helper_indirected_cross_app_operation) ... ok
+test_guard_rejects_imported_cross_app_operation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_imported_cross_app_operation) ... ok
+test_guard_rejects_inherited_cross_app_operation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_inherited_cross_app_operation) ... ok
+test_guard_rejects_module_constant_cross_app_checklist_state_mutation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_module_constant_cross_app_checklist_state_mutation) ... ok
+test_guard_rejects_synthetic_cross_app_checklist_state_mutation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_guard_rejects_synthetic_cross_app_checklist_state_mutation) ... ok
+test_historical_exception_is_immutable_and_rejects_sibling_operation (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_historical_exception_is_immutable_and_rejects_sibling_operation) ... ok
+test_historical_exception_rejects_changed_target_footprint (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_historical_exception_rejects_changed_target_footprint) ... ok
+test_historical_exception_rejects_renamed_path_and_class (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_historical_exception_rejects_renamed_path_and_class) ... ok
+test_shared_package_contains_no_legal_migration_policy (tests.test_legal_checklist_migration_anchor.LegalChecklistMigrationOwnershipGuardTests.test_shared_package_contains_no_legal_migration_policy) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.243s
+
+OK

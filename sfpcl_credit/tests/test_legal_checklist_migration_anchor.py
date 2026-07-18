@@ -1,14 +1,33 @@
 from pathlib import Path
 
-from django.db import connection
+from django.db import connection, migrations
+from django.db.migrations.operations.base import Operation
 from django.db.migrations.executor import MigrationExecutor
 from django.db.migrations.loader import MigrationLoader
 from django.test import SimpleTestCase, TransactionTestCase
 
-from sfpcl_credit.shared.migration_state_guard import (
+from sfpcl_credit.legal_documents.migration_state_guard import (
     LEGAL_CHECKLIST_STATE_ALLOWLIST,
     legal_checklist_state_ownership_violations,
 )
+
+
+class ImportedChecklistMutation(Operation):
+    def state_forwards(self, app_label, state):
+        state.models[("legal_documents", "documentchecklist")].options.clear()
+
+
+class InheritedChecklistMutation(ImportedChecklistMutation):
+    pass
+
+
+def mutate_checklist_through_helper(state):
+    state.models[("legal_documents", "documentchecklist")].options.clear()
+
+
+class HelperChecklistMutation(Operation):
+    def state_forwards(self, app_label, state):
+        mutate_checklist_through_helper(state)
 
 
 class LegalChecklistMigrationAnchorTests(SimpleTestCase):
@@ -285,6 +304,193 @@ class LegalChecklistConstraintOwnerMigrationTests(TransactionTestCase):
 
 
 class LegalChecklistMigrationOwnershipGuardTests(SimpleTestCase):
+    def test_shared_package_contains_no_legal_migration_policy(self):
+        shared_root = Path(__file__).resolve().parents[1] / "shared"
+        shared_source = "\n".join(
+            path.read_text()
+            for path in sorted(shared_root.rglob("*.py"))
+        ).lower()
+
+        for business_token in (
+            "legal_documents",
+            "documentchecklist",
+            "0005_disbursementadviceintent_loanregisterupdate_and_more",
+            "legal_checklist_state_allowlist",
+        ):
+            self.assertNotIn(business_token, shared_source)
+
+    def test_guard_does_not_report_database_only_runpython(self):
+        path = Path("future_app/migrations/0005_data_only.py")
+        operation = migrations.RunPython(lambda apps, schema_editor: None)
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={path: [operation]}
+            ),
+            [],
+        )
+
+    def test_guard_accepts_future_legal_owned_operation(self):
+        path = Path("legal_documents/migrations/0016_future.py")
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={path: [HelperChecklistMutation()]}
+            ),
+            [],
+        )
+
+    def test_historical_exception_rejects_renamed_path_and_class(self):
+        historical_path = Path(
+            "disbursements/migrations/"
+            "0005_disbursementadviceintent_loanregisterupdate_and_more.py"
+        )
+        renamed_path = Path("disbursements/migrations/0006_renamed.py")
+
+        def state_forwards(operation, app_label, state):
+            state.models[("legal_documents", "documentchecklist")].options.clear()
+
+        exact_name_wrong_module = type(
+            "RemoveLegalChecklistConstraint",
+            (Operation,),
+            {"state_forwards": state_forwards},
+        )()
+        renamed_class = type(
+            "RenamedLegalChecklistConstraint",
+            (Operation,),
+            {"state_forwards": state_forwards},
+        )()
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={renamed_path: [exact_name_wrong_module]}
+            ),
+            [f"{renamed_path.as_posix()}:RemoveLegalChecklistConstraint"],
+        )
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={historical_path: [renamed_class]}
+            ),
+            [f"{historical_path.as_posix()}:RenamedLegalChecklistConstraint"],
+        )
+
+    def test_historical_exception_rejects_changed_target_footprint(self):
+        historical_path = Path(
+            "disbursements/migrations/"
+            "0005_disbursementadviceintent_loanregisterupdate_and_more.py"
+        )
+
+        def state_forwards(operation, app_label, state):
+            state.models[("legal_documents", "documentchecklist")].options.clear()
+            state.models[("legal_documents", "checklistitem")].options.clear()
+
+        changed_target_class = type(
+            "RemoveLegalChecklistConstraint",
+            (Operation,),
+            {
+                "__module__": (
+                    "sfpcl_credit.disbursements.migrations."
+                    "0005_disbursementadviceintent_loanregisterupdate_and_more"
+                ),
+                "state_forwards": state_forwards,
+            },
+        )
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={historical_path: [changed_target_class()]}
+            ),
+            [f"{historical_path.as_posix()}:RemoveLegalChecklistConstraint"],
+        )
+
+    def test_historical_exception_is_immutable_and_rejects_sibling_operation(self):
+        historical_path = Path(
+            "disbursements/migrations/"
+            "0005_disbursementadviceintent_loanregisterupdate_and_more.py"
+        )
+
+        def state_forwards(operation, app_label, state):
+            state.models[("legal_documents", "documentchecklist")].options.clear()
+
+        sibling_class = type(
+            "AddLegalChecklistConstraint",
+            (Operation,),
+            {
+                "__module__": (
+                    "sfpcl_credit.disbursements.migrations."
+                    "0005_disbursementadviceintent_loanregisterupdate_and_more"
+                ),
+                "state_forwards": state_forwards,
+            },
+        )
+
+        self.assertIsInstance(LEGAL_CHECKLIST_STATE_ALLOWLIST, frozenset)
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={
+                    historical_path: [
+                        migrations.RunPython(lambda apps, schema_editor: None),
+                        migrations.RunPython(lambda apps, schema_editor: None),
+                        migrations.RunPython(lambda apps, schema_editor: None),
+                        migrations.RunPython(lambda apps, schema_editor: None),
+                        sibling_class(),
+                    ]
+                }
+            ),
+            [
+                f"{historical_path.as_posix()}:AddLegalChecklistConstraint"
+            ],
+        )
+
+    def test_guard_rejects_helper_indirected_cross_app_operation(self):
+        path = Path("future_app/migrations/0004_helper.py")
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={path: [HelperChecklistMutation()]}
+            ),
+            [f"{path.as_posix()}:HelperChecklistMutation"],
+        )
+
+    def test_guard_rejects_inherited_cross_app_operation(self):
+        path = Path("future_app/migrations/0003_inherited.py")
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={path: [InheritedChecklistMutation()]}
+            ),
+            [f"{path.as_posix()}:InheritedChecklistMutation"],
+        )
+
+    def test_guard_rejects_imported_cross_app_operation(self):
+        path = Path("future_app/migrations/0002_imported.py")
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(
+                operations={path: [ImportedChecklistMutation()]}
+            ),
+            [f"{path.as_posix()}:ImportedChecklistMutation"],
+        )
+
+    def test_guard_rejects_module_constant_cross_app_checklist_state_mutation(self):
+        synthetic = {
+            Path("future_app/migrations/0001_bad.py"): """
+from django.db.migrations.operations.base import Operation
+
+TARGET_APP = "legal_documents"
+TARGET_MODEL = "documentchecklist"
+
+class BadChecklistMutation(Operation):
+    def state_forwards(self, app_label, state):
+        state.models[(TARGET_APP, TARGET_MODEL)].options.clear()
+"""
+        }
+
+        self.assertEqual(
+            legal_checklist_state_ownership_violations(sources=synthetic),
+            ["future_app/migrations/0001_bad.py:BadChecklistMutation"],
+        )
+
     def test_guard_rejects_synthetic_cross_app_checklist_state_mutation(self):
         synthetic = {
             Path("future_app/migrations/0001_bad.py"): """
