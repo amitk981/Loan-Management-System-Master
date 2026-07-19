@@ -1081,6 +1081,13 @@ Complete
 ## Depends On
 - None
 EOF
+cat > "$corrective_repo/docs/slices/CR-012-existing.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- 010A
+EOF
 git -C "$corrective_repo" add .
 git -C "$corrective_repo" commit -qm fixture
 corrective_mapping_packet="$corrective_repo/review-packet.md"
@@ -1088,6 +1095,20 @@ printf '%s\n' '- Existing corrective slice: 010A' > "$corrective_mapping_packet"
 [[ "$(ralph_architecture_review_existing_corrective_count \
       "$corrective_mapping_packet" "$corrective_repo")" == 1 ]] \
   || fail "valid existing corrective mapping was not admitted"
+printf '%s\n' '- Existing corrective slice: CR-012' > "$corrective_mapping_packet"
+[[ "$(ralph_architecture_review_existing_corrective_count \
+      "$corrective_mapping_packet" "$corrective_repo")" == 1 ]] \
+  || fail "valid existing change-request corrective mapping was not admitted"
+printf '%s\n' '- Existing corrective slice: CR-invalid' > "$corrective_mapping_packet"
+if ralph_architecture_review_existing_corrective_count \
+    "$corrective_mapping_packet" "$corrective_repo" >/dev/null 2>&1; then
+  fail "malformed change-request corrective mapping was admitted"
+fi
+printf '%s\n' '- Existing corrective slice: CR-999' > "$corrective_mapping_packet"
+if ralph_architecture_review_existing_corrective_count \
+    "$corrective_mapping_packet" "$corrective_repo" >/dev/null 2>&1; then
+  fail "missing change-request corrective mapping was admitted"
+fi
 printf '%s\n' '- Existing corrective slice: 010Z' > "$corrective_mapping_packet"
 cat > "$corrective_repo/docs/slices/010Z-complete.md" <<'EOF'
 ## Status

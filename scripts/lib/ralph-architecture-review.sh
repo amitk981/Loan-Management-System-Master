@@ -177,15 +177,16 @@ ralph_architecture_review_new_corrective_count() {
 
 # A new finding may already belong to one actionable root-owner slice. Review
 # packets can map it without creating duplicate queue work using exact
-# `- Existing corrective slice: <ID>` lines. Targets must already be tracked
-# and remain Not Started or Blocked.
+# `- Existing corrective slice: <ID>` lines. Existing targets may use either
+# the numeric product-slice format or the CR-NNN maintenance format; they must
+# already be tracked and remain Not Started or Blocked.
 ralph_architecture_review_existing_corrective_count() {
   local packet="${1:?review packet is required}" worktree="${2:?worktree is required}"
   local value id matches match_count relative status head_status count=0 seen=$'\n'
   while IFS= read -r value; do
     [[ -n "$value" ]] || continue
     id="$(printf '%s' "$value" | xargs)"
-    if ! [[ "$id" =~ ^[0-9][0-9][0-9][A-Za-z0-9]*$ ]]; then
+    if ! [[ "$id" =~ ^([0-9][0-9][0-9][A-Za-z0-9]*|CR-[0-9][0-9][0-9][0-9]*)$ ]]; then
       echo "Existing corrective mapping has invalid slice id: $value" >&2
       return 1
     fi
