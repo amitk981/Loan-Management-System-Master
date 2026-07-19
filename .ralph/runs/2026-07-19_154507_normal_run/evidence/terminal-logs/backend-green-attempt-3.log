@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.Epic 009 E2E fixture seeded: real SAP candidate, sanctioned ready account, Credit Manager, Senior Finance, and CFC actors.
+Epic 009 E2E fixture already seeded.
+E
+======================================================================
+ERROR: test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/tests/test_seed_e2e_users.py", line 358, in test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints
+    ready = next(
+            ^^^^^
+StopIteration
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.634s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

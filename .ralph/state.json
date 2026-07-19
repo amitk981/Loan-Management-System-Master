@@ -282,15 +282,16 @@
     "009L3-epic-009-authority-evidence-and-pagination-closure",
     "009L4-epic-009-canonical-read-and-bounded-pagination-closure",
     "009L5-epic-009-exact-selector-and-consumer-parity-closure",
-    "009L6-epic-009-owner-selector-equivalence-and-matrix-closure"
+    "009L6-epic-009-owner-selector-equivalence-and-matrix-closure",
+    "CR-012-epic-009-playwright-evidence-is-incomplete"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-19_151614_repair",
+  "last_run_id": "2026-07-19_174320_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 2,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -305,5 +306,6 @@
     "corrective_slices_added": 1
   },
   "architecture_review_cycle_epic": "009",
-  "architecture_review_corrective_generation": 1
+  "architecture_review_corrective_generation": 1,
+  "architecture_review_due_reason": "epic_boundary:009->010"
 }

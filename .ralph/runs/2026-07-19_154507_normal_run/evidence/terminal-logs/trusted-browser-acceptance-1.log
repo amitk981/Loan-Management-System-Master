@@ -1,0 +1,62 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_154507_normal_run/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[19/Jul/2026 10:46:08] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:51872) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "GET /api/v1/auth/me/ HTTP/1.1" 200 1141
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 10:46:13] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 10:46:14] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 10:46:14] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 10:46:14] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[19/Jul/2026 10:46:14] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[19/Jul/2026 10:46:14] "OPTIONS /api/v1/loan-accounts/c5e6a55e-51c2-4224-892f-92b2fe413ca5/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 10:46:14] "GET /api/v1/loan-accounts/c5e6a55e-51c2-4224-892f-92b2fe413ca5/ HTTP/1.1" 200 1035
+  ✘  1 [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:35:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence (3.4s)
+
+
+  1) [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:35:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+    Error: expect.toBeVisible: Error: strict mode violation: getByText('Sanctioned', { exact: true }) resolved to 2 elements:
+        1) <span class="inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-green-50 text-green-900 border-green-100 text-xs px-2.5 py-1 h-6">…</span> aka locator('span').filter({ hasText: 'Sanctioned' })
+        2) <p class="text-xs text-slate-500 font-medium">Sanctioned</p> aka locator('p').filter({ hasText: 'Sanctioned' })
+
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Sanctioned', { exact: true })[22m
+
+
+      43 |
+      44 |   await page.getByText(accountNumber, { exact: true }).click();
+    > 45 |   await expect(page.getByText('Sanctioned', { exact: true })).toBeVisible();
+         |                                                               ^
+      46 |   await expect(page.getByText('₹0.00 disbursed', { exact: true })).toBeVisible();
+      47 |   await shot(page, 'loan-account-sanctioned-summary.png');
+      48 |
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl-lms/e2e/epic-009-staff-disbursement-closure.e2e.spec.ts:45:63
+
+  1 failed
+    [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:35:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+Duration milliseconds: 30749
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_154507_normal_run/evidence/trusted-browser-screenshots-1.sha256

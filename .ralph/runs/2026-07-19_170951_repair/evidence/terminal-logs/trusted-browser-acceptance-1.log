@@ -1,0 +1,99 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_170951_repair/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[19/Jul/2026 11:48:10] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:53010) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "GET /api/v1/auth/me/ HTTP/1.1" 200 1215
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:15] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "OPTIONS /api/v1/loan-accounts/97f8102d-f090-448c-b415-3a29c3664be1/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "GET /api/v1/loan-accounts/97f8102d-f090-448c-b415-3a29c3664be1/ HTTP/1.1" 200 1035
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:16] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:17] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4530
+[2m[WebServer] [22m[19/Jul/2026 11:48:17] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4530
+[2m[WebServer] [22m[19/Jul/2026 11:48:18] "GET /api/v1/auth/me/ HTTP/1.1" 200 1215
+[2m[WebServer] [22m[19/Jul/2026 11:48:18] "GET /api/v1/auth/me/ HTTP/1.1" 200 1215
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:18] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:18] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:48:18] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[19/Jul/2026 11:48:18] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[19/Jul/2026 11:48:19] "OPTIONS /api/v1/loan-accounts/97f8102d-f090-448c-b415-3a29c3664be1/disbursements/initiate/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:19] "POST /api/v1/loan-accounts/97f8102d-f090-448c-b415-3a29c3664be1/disbursements/initiate/ HTTP/1.1" 200 319
+[2m[WebServer] [22m[19/Jul/2026 11:48:19] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4007
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "POST /api/v1/auth/login/ HTTP/1.1" 200 1335
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "GET /api/v1/auth/me/ HTTP/1.1" 200 775
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 2642
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 2642
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "OPTIONS /api/v1/disbursements/7ab04d08-92f3-41ab-be52-2d8792766e6b/authorise/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "POST /api/v1/disbursements/7ab04d08-92f3-41ab-be52-2d8792766e6b/authorise/ HTTP/1.1" 200 373
+[2m[WebServer] [22m[19/Jul/2026 11:48:20] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 280
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "GET /api/v1/auth/me/ HTTP/1.1" 200 1215
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4739
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "OPTIONS /api/v1/notifications/?category=finance HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "GET /api/v1/notifications/?category=finance HTTP/1.1" 200 1715
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "OPTIONS /api/v1/disbursements/7ab04d08-92f3-41ab-be52-2d8792766e6b/mark-transfer-successful/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4739
+[2m[WebServer] [22mBad Request: /api/v1/disbursements/7ab04d08-92f3-41ab-be52-2d8792766e6b/mark-transfer-successful/
+[2m[WebServer] [22m[19/Jul/2026 11:48:22] "POST /api/v1/disbursements/7ab04d08-92f3-41ab-be52-2d8792766e6b/mark-transfer-successful/ HTTP/1.1" 400 328
+  ✘  1 [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:36:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence (9.2s)
+
+
+  1) [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:36:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+    Error: Real Django transfer failed: {"success":false,"error":{"code":"VALIDATION_ERROR","message":"Transfer success failed validation.","details":{},"field_errors":{"disbursed_at":["Must not be before CFC authorisation."]}},"meta":{"request_id":"727fe774-5214-4d68-a558-24e5f870e92d","timestamp":"2026-07-19T11:48:22.818852Z","api_version":"v1"}}
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mtrue[39m
+    Received: [31mfalse[39m
+
+      147 |     transferResponse.ok(),
+      148 |     `Real Django transfer failed: ${JSON.stringify(transferEnvelope)}`,
+    > 149 |   ).toBe(true);
+          |     ^
+      150 |   expect(transferEnvelope).toMatchObject({
+      151 |     success: true,
+      152 |     data: { bank_transfer_status: 'successful', loan_account_status: 'active' },
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl-lms/e2e/epic-009-staff-disbursement-closure.e2e.spec.ts:149:5
+
+  1 failed
+    [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:36:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+Duration milliseconds: 42299
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_170951_repair/evidence/trusted-browser-screenshots-1.sha256

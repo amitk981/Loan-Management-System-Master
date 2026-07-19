@@ -1,0 +1,11 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.Epic 009 E2E fixture seeded: completed SAP, sanctioned blocked account, Credit Manager, Senior Finance, and CFC actors.
+Epic 009 E2E fixture already seeded.
+.
+----------------------------------------------------------------------
+Ran 2 tests in 1.005s
+
+OK
+Destroying test database for alias 'default'...

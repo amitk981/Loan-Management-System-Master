@@ -1,0 +1,24 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/disbursementApi.test.ts src/pages/disbursement/DisbursementHub.test.tsx src/pages/disbursement/PaymentAuthorisationHub.test.tsx src/pages/loan-accounts/LoanAccount360.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl-lms
+
+ ✓ src/services/disbursementApi.test.ts (3 tests) 9ms
+ ✓ src/pages/loan-accounts/LoanAccount360.test.tsx (4 tests) 580ms
+   ✓ 009J Loan Account 360 initial API view > loads the scoped account list and routes the selected server identity  379ms
+ ✓ src/pages/disbursement/DisbursementHub.test.tsx (4 tests) 858ms
+   ✓ 009K disbursement finance workspace > renders named backend blockers and disables initiation while readiness fails  443ms
+   ✓ 009K disbursement finance workspace > submits Money fields with one stable key and treats replay as success  383ms
+ ✓ src/pages/disbursement/PaymentAuthorisationHub.test.tsx (5 tests) 1875ms
+   ✓ 009K CFC payment authorisation workspace > shows CFC actions only when the backend projects them and posts the decision reason  779ms
+   ✓ 009K CFC payment authorisation workspace > shows the truthful empty queue after an authorised item leaves CFC scope  398ms
+   ✓ 009K CFC payment authorisation workspace > surfaces backend duplicate UTR and permission errors without optimistic success  657ms
+
+ Test Files  4 passed (4)
+      Tests  16 passed (16)
+   Start at  16:56:59
+   Duration  4.18s (transform 497ms, setup 0ms, collect 2.30s, tests 3.32s, environment 2.63s, prepare 585ms)
+

@@ -1,0 +1,89 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_164219_repair/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[19/Jul/2026 11:21:56] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:27197) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[19/Jul/2026 11:22:01] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "GET /api/v1/auth/me/ HTTP/1.1" 200 1141
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "OPTIONS /api/v1/loan-accounts/30fe17c5-dc05-41c0-a38b-bf175f004f33/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:02] "GET /api/v1/loan-accounts/30fe17c5-dc05-41c0-a38b-bf175f004f33/ HTTP/1.1" 200 1035
+[2m[WebServer] [22m[19/Jul/2026 11:22:03] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:03] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:03] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4530
+[2m[WebServer] [22m[19/Jul/2026 11:22:03] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4530
+[2m[WebServer] [22m[19/Jul/2026 11:22:04] "GET /api/v1/auth/me/ HTTP/1.1" 200 1141
+[2m[WebServer] [22m[19/Jul/2026 11:22:04] "GET /api/v1/auth/me/ HTTP/1.1" 200 1141
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:22:04] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:22:04] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:22:04] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[19/Jul/2026 11:22:04] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[19/Jul/2026 11:22:05] "OPTIONS /api/v1/loan-accounts/30fe17c5-dc05-41c0-a38b-bf175f004f33/disbursements/initiate/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:05] "POST /api/v1/loan-accounts/30fe17c5-dc05-41c0-a38b-bf175f004f33/disbursements/initiate/ HTTP/1.1" 200 319
+[2m[WebServer] [22m[19/Jul/2026 11:22:05] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4007
+[2m[WebServer] [22m[19/Jul/2026 11:22:06] "POST /api/v1/auth/login/ HTTP/1.1" 200 1335
+[2m[WebServer] [22m[19/Jul/2026 11:22:06] "GET /api/v1/auth/me/ HTTP/1.1" 200 775
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:22:06] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:22:06] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:22:06] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 2642
+[2m[WebServer] [22m[19/Jul/2026 11:22:06] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 2642
+[2m[WebServer] [22m[19/Jul/2026 11:22:06] "OPTIONS /api/v1/disbursements/5882ee15-4f26-4a73-ad59-aab7de6591af/authorise/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:22:07] "POST /api/v1/disbursements/5882ee15-4f26-4a73-ad59-aab7de6591af/authorise/ HTTP/1.1" 200 373
+[2m[WebServer] [22m[19/Jul/2026 11:22:07] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 280
+  ✘  1 [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:35:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence (12.4s)
+
+
+  1) [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:35:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText('Action recorded successfully.')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Action recorded successfully.')[22m
+
+
+      102 |   await page.getByLabel('Comments').fill('Independent CFC authorisation retained.');
+      103 |   await page.getByRole('button', { name: 'Authorise payment' }).click();
+    > 104 |   await expect(page.getByText('Action recorded successfully.')).toBeVisible();
+          |                                                                 ^
+      105 |
+      106 |   advanceFixture('--prepare-transfer');
+      107 |   await page.reload();
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl-lms/e2e/epic-009-staff-disbursement-closure.e2e.spec.ts:104:65
+
+  1 failed
+    [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:35:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+Duration milliseconds: 40172
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_164219_repair/evidence/trusted-browser-screenshots-1.sha256

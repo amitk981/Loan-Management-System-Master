@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.E
+======================================================================
+ERROR: test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/tests/test_seed_e2e_users.py", line 348, in test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints
+    call_command("seed_epic_009_e2e_fixture")
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 194, in call_command
+    return command.execute(*args, **defaults)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/identity/management/commands/seed_epic_009_e2e_fixture.py", line 79, in handle
+    self._validate_account(facts, "browser notifications")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/identity/management/commands/seed_epic_009_e2e_fixture.py", line 196, in _validate_account
+    raise CommandError(
+django.core.management.base.CommandError: Epic 009 account projection became incoherent after browser notifications: creation=True, sap=False.
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.518s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

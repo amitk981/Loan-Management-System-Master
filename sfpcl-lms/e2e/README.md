@@ -33,8 +33,13 @@ The web server seeds deterministic users via the backend command
   no permissions.
 - `e2e.credit.finance@sfpcl.example` and `e2e.credit.manager@sfpcl.example` —
   synthetic Epic 006 actors plus one resettable `LOE2E00601` credit fixture.
+- `e2e.epic009.finance@sfpcl.example`, `e2e.epic009.credit@sfpcl.example`, and
+  `e2e.epic009.cfc@sfpcl.example` — isolated Epic 009 actors for the exact staff-disbursement
+  closure spec. That spec uses `ChecklistPass123!`, a guarded owner-evidence seed, and real Django
+  Loan Account/workspace/action endpoints. It captures nine state-specific PNGs and writes
+  `epic-009-screenshot-sha256.txt`, rejecting any pair of byte-identical screenshots.
 
-Password for both (local only): `E2eTracer123!`.
+The tracer, zero-permission, and Epic 006 users use `E2eTracer123!` (local only).
 
 This is not production seed data. The command refuses to run unless both
 `SFPCL_DEBUG=true` and `SFPCL_ALLOW_E2E_SEED=true` are present. The Playwright

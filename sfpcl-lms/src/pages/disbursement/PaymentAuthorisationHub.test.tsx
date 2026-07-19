@@ -49,6 +49,20 @@ describe('009K CFC payment authorisation workspace', () => {
     expect(screen.getByText('Backend Borrower')).toBeTruthy();
   });
 
+  it('shows the truthful empty queue after an authorised item leaves CFC scope', async () => {
+    vi.mocked(fetchDisbursementWorkspace)
+      .mockResolvedValueOnce({ items: [row], pagination })
+      .mockResolvedValueOnce({
+        items: [],
+        pagination: { ...pagination, total_count: 0, total_pages: 0 },
+      });
+    render(<PaymentAuthorisationHub onOpenApplication={vi.fn()} />);
+    await userEvent.type(await screen.findByLabelText('CFC comments'), 'Independent review complete.');
+    await userEvent.click(screen.getByRole('button', { name: 'Authorise payment' }));
+    expect(await screen.findByText('No payment authorisations in your scope')).toBeTruthy();
+    expect(screen.queryByText('Action recorded successfully.')).toBeNull();
+  });
+
   it('does not invent authorise controls for a Senior Finance projection', async () => {
     vi.mocked(fetchDisbursementWorkspace).mockResolvedValueOnce({ items: [{ ...row, available_actions: [transfer] }], pagination });
     render(<PaymentAuthorisationHub onOpenApplication={vi.fn()} />);

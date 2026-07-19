@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Epic 009 E2E fixture seeded: completed SAP, sanctioned blocked account, Credit Manager, Senior Finance, and CFC actors.
+Epic 009 E2E fixture already seeded.
+F
+======================================================================
+FAIL: test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints (tests.test_seed_e2e_users.SeedE2eUsersTests.test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/tests/test_seed_e2e_users.py", line 454, in test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints
+    self.assertIn("finance.disbursement.mark_success", finance_permissions)
+AssertionError: 'finance.disbursement.mark_success' not found in {'finance.disbursement.send_advice', 'finance.sap_request.complete', 'documents.checklist.sign_disbursement_complete', 'finance.loan_account.read', 'config.source_bank_account.activate', 'communications.notification.read', 'finance.disbursement.readiness', 'finance.disbursement.initiate', 'documents.checklist.read'}
+
+----------------------------------------------------------------------
+Ran 1 test in 1.185s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

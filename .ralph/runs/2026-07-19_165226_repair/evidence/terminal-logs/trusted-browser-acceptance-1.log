@@ -1,0 +1,61 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_165226_repair/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[19/Jul/2026 11:34:05] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:75850) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "POST /api/v1/auth/login/ HTTP/1.1" 200 1286
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "GET /api/v1/auth/me/ HTTP/1.1" 200 914
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[19/Jul/2026 11:34:11] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 280
+[2m[WebServer] [22m[19/Jul/2026 11:34:12] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 280
+  ✘  1 [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:36:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence (8.1s)
+
+
+  1) [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:36:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText('LN-REAL-OWNER-001', { exact: true })
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('LN-REAL-OWNER-001', { exact: true })[22m
+
+
+      40 |   await open(page, 'Loan Accounts');
+      41 |   await expect(page.getByRole('heading', { name: 'Loan Accounts', exact: true })).toBeVisible();
+    > 42 |   await expect(page.getByText(accountNumber, { exact: true })).toBeVisible();
+         |                                                                ^
+      43 |   await shot(page, 'loan-account-list.png');
+      44 |
+      45 |   await page.getByText(accountNumber, { exact: true }).click();
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl-lms/e2e/epic-009-staff-disbursement-closure.e2e.spec.ts:42:64
+
+  1 failed
+    [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:36:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence 
+
+Duration milliseconds: 36208
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/.ralph/runs/2026-07-19_165226_repair/evidence/trusted-browser-screenshots-1.sha256

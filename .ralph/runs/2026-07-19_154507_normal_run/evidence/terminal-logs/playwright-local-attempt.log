@@ -1,0 +1,118 @@
+[1A[2K[2m[WebServer] [22mTraceback (most recent call last):
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+
+[1A[2K[2m[WebServer] [22m    return self.cursor.execute(sql, params)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 329, in execute
+[2m[WebServer] [22m    return super().execute(query, params)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22msqlite3.IntegrityError: UNIQUE constraint failed: document_templates.document_type, document_templates.borrower_type, document_templates.template_version
+[2m[WebServer] [22m
+[2m[WebServer] [22mThe above exception was the direct cause of the following exception:
+[2m[WebServer] [22m
+[2m[WebServer] [22mTraceback (most recent call last):
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/manage.py", line 17, in <module>
+[2m[WebServer] [22m    main()
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/manage.py", line 13, in main
+[2m[WebServer] [22m    execute_from_command_line(sys.argv)
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+
+[1A[2K[2m[WebServer] [22m    utility.execute()
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 436, in execute
+
+[1A[2K[2m[WebServer] [22m    self.fetch_command(subcommand).run_from_argv(self.argv)
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 413, in run_from_argv
+
+[1A[2K[2m[WebServer] [22m    self.execute(*args, **cmd_options)
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+
+[1A[2K[2m[WebServer] [22m    output = self.handle(*args, **options)
+[2m[WebServer] [22m             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+
+[1A[2K[2m[WebServer] [22m    return func(*args, **kwds)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/identity/management/commands/seed_portal_e2e_fixture.py", line 124, in handle
+[2m[WebServer] [22m    term_sheet = self._term_sheet(approved, compliance)
+[2m[WebServer] [22m                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/identity/management/commands/seed_portal_e2e_fixture.py", line 421, in _term_sheet
+[2m[WebServer] [22m    template = DocumentTemplate.objects.create(
+[2m[WebServer] [22m               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+
+[1A[2K[2m[WebServer] [22m    return getattr(self.get_queryset(), name)(*args, **kwargs)
+
+[1A[2K[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 679, in create
+
+[1A[2K[2m[WebServer] [22m    obj.save(force_insert=True, using=self.db)
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 822, in save
+
+[1A[2K[2m[WebServer] [22m    self.save_base(
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 909, in save_base
+
+[1A[2K[2m[WebServer] [22m    updated = self._save_table(
+
+[1A[2K[2m[WebServer] [22m              ^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 1071, in _save_table
+
+[1A[2K[2m[WebServer] [22m    results = self._do_insert(
+
+[1A[2K[2m[WebServer] [22m              ^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 1112, in _do_insert
+
+[1A[2K[2m[WebServer] [22m    return manager._insert(
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+
+[1A[2K[2m[WebServer] [22m    return getattr(self.get_queryset(), name)(*args, **kwargs)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1847, in _insert
+
+[1A[2K[2m[WebServer] [22m    return query.get_compiler(using=using).execute_sql(returning_fields)
+
+[1A[2K[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1823, in execute_sql
+
+[1A[2K[2m[WebServer] [22m    cursor.execute(sql, params)
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+
+[1A[2K[2m[WebServer] [22m    return super().execute(sql, params)
+
+[1A[2K[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+[2m[WebServer] [22m    return self._execute_with_wrappers(
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+
+[1A[2K[2m[WebServer] [22m    return executor(sql, params, many, context)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+
+[1A[2K[2m[WebServer] [22m    with self.db.wrap_database_errors:
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+
+[1A[2K[2m[WebServer] [22m    raise dj_exc_value.with_traceback(traceback) from exc_value
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+
+[1A[2K[2m[WebServer] [22m    return self.cursor.execute(sql, params)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[1A[2K[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 329, in execute
+
+[1A[2K[2m[WebServer] [22m    return super().execute(query, params)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22mdjango.db.utils.IntegrityError: UNIQUE constraint failed: document_templates.document_type, document_templates.borrower_type, document_templates.template_version
+
+Error: Process from config.webServer was not able to start. Exit code: 1
+
+[1A[2K

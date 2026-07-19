@@ -1,8 +1,10 @@
+import tempfile
 from unittest.mock import patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import Client, TestCase
+from django.test import override_settings
 
 from sfpcl_credit.applications.models import ApplicationDocument, LoanApplication
 from sfpcl_credit.configurations.models import LoanPolicyConfig
@@ -19,6 +21,11 @@ E2E_PASSWORD = "E2eTracer123!"
 EPIC_006_FINANCE_EMAIL = "e2e.credit.finance@sfpcl.example"
 EPIC_006_MANAGER_EMAIL = "e2e.credit.manager@sfpcl.example"
 EPIC_006_REFERENCE = "LOE2E00601"
+EPIC_009_FINANCE_EMAIL = "e2e.epic009.finance@sfpcl.example"
+EPIC_009_CREDIT_EMAIL = "e2e.epic009.credit@sfpcl.example"
+EPIC_009_CFC_EMAIL = "e2e.epic009.cfc@sfpcl.example"
+EPIC_009_BORROWER_EMAIL = "e2e.epic009.borrower@sfpcl.example"
+EPIC_009_PASSWORD = "ChecklistPass123!"
 
 
 class SeedE2eUsersTests(TestCase):
@@ -32,11 +39,11 @@ class SeedE2eUsersTests(TestCase):
         self.assertFalse(User.objects.filter(email=TRACER_EMAIL).exists())
         self.assertFalse(User.objects.filter(email=ZERO_EMAIL).exists())
 
-    def _login_access_token(self, email):
+    def _login_access_token(self, email, password=E2E_PASSWORD):
         client = Client()
         response = client.post(
             "/api/v1/auth/login/",
-            data={"email": email, "password": E2E_PASSWORD},
+            data={"email": email, "password": password},
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -323,6 +330,239 @@ class SeedE2eUsersTests(TestCase):
         ):
             self.assertNotIn(private_text, evidence)
 
-    def _auth_headers(self, email):
-        _client, token = self._login_access_token(email)
+    def _auth_headers(self, email, password=E2E_PASSWORD):
+        _client, token = self._login_access_token(email, password)
         return {"Authorization": f"Bearer {token}"}
+
+    def test_epic_009_seed_refuses_without_both_isolated_e2e_guards(self):
+        with self.assertRaisesMessage(CommandError, "SFPCL_ALLOW_E2E_SEED=true"):
+            call_command("seed_epic_009_e2e_fixture")
+
+        self.assertFalse(User.objects.filter(email=EPIC_009_FINANCE_EMAIL).exists())
+
+    def test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints(self):
+        with tempfile.TemporaryDirectory() as storage_root, override_settings(
+            DOCUMENT_STORAGE_ROOT=storage_root
+        ), patch.dict(
+            "os.environ",
+            {"SFPCL_DEBUG": "true", "SFPCL_ALLOW_E2E_SEED": "true"},
+        ):
+            call_command("seed_epic_009_e2e_fixture")
+            counts = self._epic_009_counts()
+            call_command("seed_epic_009_e2e_fixture")
+            self.assertEqual(self._epic_009_counts(), counts)
+            self.assertEqual(
+                Member.objects.get(
+                    loan_accounts__loan_account_number="LN-REAL-OWNER-001"
+                ).email,
+                EPIC_009_BORROWER_EMAIL,
+            )
+
+            finance = self.client.get(
+                "/api/v1/disbursement-workspaces/",
+                headers=self._auth_headers(EPIC_009_FINANCE_EMAIL, EPIC_009_PASSWORD),
+            )
+            self.assertEqual(finance.status_code, 200, finance.content)
+            diagnostic_accounts = self.client.get(
+                "/api/v1/loan-accounts/",
+                headers=self._auth_headers(EPIC_009_FINANCE_EMAIL, EPIC_009_PASSWORD),
+            )
+            credit_accounts = self.client.get(
+                "/api/v1/loan-accounts/",
+                headers=self._auth_headers(EPIC_009_CREDIT_EMAIL, EPIC_009_PASSWORD),
+            )
+            self.assertEqual(
+                diagnostic_accounts.status_code, 200, diagnostic_accounts.content
+            )
+            self.assertEqual(credit_accounts.status_code, 200, credit_accounts.content)
+            self.assertEqual(
+                [
+                    row["loan_account_number"]
+                    for row in diagnostic_accounts.json()["data"]
+                ],
+                ["LN-REAL-OWNER-001"],
+            )
+            self.assertNotIn(
+                "LN-REAL-OWNER-001",
+                [row["loan_account_number"] for row in credit_accounts.json()["data"]],
+                "Credit Manager account scope begins after activation; Senior Finance owns the "
+                "sanctioned browser state.",
+            )
+            blocked_rows = [
+                row for row in finance.json()["data"]
+                if row["loan_account_number"] == "LN-REAL-OWNER-001"
+            ]
+            self.assertEqual(
+                len(blocked_rows), 1,
+                {"workspace": finance.json(), "accounts": diagnostic_accounts.json()},
+            )
+            blocked = blocked_rows[0]
+            self.assertFalse(blocked["readiness"]["ready_for_disbursement"])
+            self.assertIn(
+                "source_bank_account_configured",
+                [
+                    check["code"] for check in blocked["readiness"]["checks"]
+                    if check["status"] == "fail"
+                ],
+            )
+
+            call_command("seed_epic_009_e2e_fixture", make_ready=True)
+            finance = self.client.get(
+                "/api/v1/disbursement-workspaces/",
+                headers=self._auth_headers(EPIC_009_FINANCE_EMAIL, EPIC_009_PASSWORD),
+            )
+            ready = next(
+                row for row in finance.json()["data"]
+                if row["loan_account_number"] == "LN-REAL-OWNER-001"
+            )
+            self.assertTrue(ready["readiness"]["ready_for_disbursement"])
+            self.assertIn(
+                "initiate_disbursement",
+                [action["action_code"] for action in ready["available_actions"]],
+            )
+            initiation = next(
+                action for action in ready["available_actions"]
+                if action["action_code"] == "initiate_disbursement"
+            )
+            initiation_payload = {
+                field["name"]: field.get("value") or ""
+                for field in initiation["fields"]
+            }
+            initiation_payload.update(initiation.get("fixed_payload") or {})
+            initiation_payload["final_verification_comments"] = (
+                "All current owner evidence verified."
+            )
+            initiated = self.client.post(
+                initiation["action_url"],
+                data=initiation_payload,
+                content_type="application/json",
+                headers={
+                    **self._auth_headers(
+                        EPIC_009_FINANCE_EMAIL, EPIC_009_PASSWORD
+                    ),
+                    "Idempotency-Key": "epic-009-browser-fixture-initiation",
+                },
+            )
+            self.assertEqual(initiated.status_code, 200, initiated.content)
+            self.assertEqual(
+                {
+                    key: initiated.json()["data"][key]
+                    for key in (
+                        "initiation_status",
+                        "authorisation_status",
+                        "bank_transfer_status",
+                    )
+                },
+                {
+                    "initiation_status": "initiated",
+                    "authorisation_status": "pending",
+                    "bank_transfer_status": "pending",
+                },
+            )
+
+            accounts = self.client.get(
+                "/api/v1/loan-accounts/",
+                headers=self._auth_headers(EPIC_009_FINANCE_EMAIL, EPIC_009_PASSWORD),
+            )
+            self.assertEqual(accounts.status_code, 200, accounts.content)
+            account = next(
+                row for row in accounts.json()["data"]
+                if row["loan_account_number"] == "LN-REAL-OWNER-001"
+            )
+            self.assertEqual(account["loan_account_status"], "sanctioned")
+            self.assertEqual(account["disbursed_amount"], "0.00")
+
+            finance_user = User.objects.get(email=EPIC_009_FINANCE_EMAIL)
+            finance_permissions = set(
+                Permission.objects.filter(
+                    role_permissions__role=finance_user.primary_role
+                ).values_list("permission_code", flat=True)
+            )
+            self.assertIn("finance.disbursement.send_advice", finance_permissions)
+            self.assertIn("finance.disbursement.mark_success", finance_permissions)
+            self.assertEqual(
+                Permission.objects.get(
+                    permission_code="finance.disbursement.send_advice"
+                ).risk_level,
+                Permission.RISK_HIGH,
+            )
+
+            cfc = User.objects.get(email=EPIC_009_CFC_EMAIL)
+            self.assertEqual(cfc.approval_authority_type, "chief_financial_controller")
+            self.assertTrue(cfc.check_password(EPIC_009_PASSWORD))
+            cfc_permissions = set(
+                Permission.objects.filter(
+                    role_permissions__role=cfc.primary_role
+                ).values_list("permission_code", flat=True)
+            )
+            self.assertIn("finance.disbursement.mark_success", cfc_permissions)
+
+            cfc_workspace = self.client.get(
+                "/api/v1/disbursement-workspaces/",
+                headers=self._auth_headers(EPIC_009_CFC_EMAIL, EPIC_009_PASSWORD),
+            )
+            self.assertEqual(cfc_workspace.status_code, 200, cfc_workspace.content)
+            authorise = next(
+                action
+                for action in cfc_workspace.json()["data"][0]["available_actions"]
+                if action["action_code"] == "authorise_disbursement"
+            )
+            authorised = self.client.post(
+                authorise["action_url"],
+                data={
+                    "decision": "approved",
+                    "comments": "Independent CFC authorisation retained.",
+                },
+                content_type="application/json",
+                headers=self._auth_headers(EPIC_009_CFC_EMAIL, EPIC_009_PASSWORD),
+            )
+            self.assertEqual(authorised.status_code, 200, authorised.content)
+            self.assertEqual(
+                authorised.json()["data"]["authorisation_status"], "approved"
+            )
+            cfc_after = self.client.get(
+                "/api/v1/disbursement-workspaces/",
+                headers=self._auth_headers(EPIC_009_CFC_EMAIL, EPIC_009_PASSWORD),
+            )
+            self.assertEqual(cfc_after.json()["data"], [])
+            finance_after = self.client.get(
+                "/api/v1/disbursement-workspaces/",
+                headers=self._auth_headers(EPIC_009_FINANCE_EMAIL, EPIC_009_PASSWORD),
+            )
+            transfer_row = next(
+                row
+                for row in finance_after.json()["data"]
+                if row["loan_account_number"] == "LN-REAL-OWNER-001"
+            )
+            self.assertIn(
+                "mark_transfer_successful",
+                [action["action_code"] for action in transfer_row["available_actions"]],
+            )
+
+            call_command("seed_epic_009_e2e_fixture", prepare_transfer=True)
+            call_command("seed_epic_009_e2e_fixture", prepare_transfer=True)
+            from sfpcl_credit.communications.models import Notification
+            from sfpcl_credit.documents.services import resolve_immutable_upload_provenance
+
+            evidence_notice = Notification.objects.get(
+                notification_type="e2e_transfer_evidence"
+            )
+            self.assertEqual(evidence_notice.recipient_user, finance_user)
+            provenance = resolve_immutable_upload_provenance(
+                document_id=evidence_notice.related_entity_id
+            )
+            self.assertEqual(provenance.document_category, "finance")
+            self.assertEqual(provenance.related_entity_type, "loan_application")
+
+    @staticmethod
+    def _epic_009_counts():
+        from sfpcl_credit.disbursements.models import Disbursement
+        from sfpcl_credit.loans.models import LoanAccount
+        from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest
+
+        return (
+            User.objects.filter(email__startswith="e2e.epic009.").count(),
+            LoanAccount.objects.count(),
+            SapCustomerProfileRequest.objects.count(),
+            Disbursement.objects.count(),
+        )

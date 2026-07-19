@@ -1,0 +1,30 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.F
+======================================================================
+FAIL: test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/tests/test_seed_e2e_users.py", line 348, in test_epic_009_seed_is_idempotent_and_reaches_real_owned_endpoints
+    call_command("seed_epic_009_e2e_fixture")
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 194, in call_command
+    return command.execute(*args, **defaults)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/identity/management/commands/seed_epic_009_e2e_fixture.py", line 61, in handle
+    self._seed_sent_sap_candidate(facts)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/identity/management/commands/seed_epic_009_e2e_fixture.py", line 150, in _seed_sent_sap_candidate
+    auth = facts["owner"].fixture._auth(facts["credit"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_154507_normal_run/sfpcl_credit/tests/test_document_checklist_api.py", line 1033, in _auth
+    self.assertEqual(response.status_code, 200, response.json())
+AssertionError: 401 != 200 : {'success': False, 'error': {'code': 'INVALID_CREDENTIALS', 'message': 'Email or password is incorrect.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-19T10:22:51.742399Z', 'api_version': 'v1'}}
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.554s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

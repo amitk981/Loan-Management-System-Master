@@ -28,6 +28,12 @@ const e2eStorageRoot =
 
 const manage = `"${djangoPython}" sfpcl_credit/manage.py`;
 const chromiumExecutable = resolveChromiumExecutable();
+const epic009Contract = process.argv.some(argument =>
+  argument.includes('epic-009-staff-disbursement-closure.e2e.spec.ts'),
+);
+const seedCommands = epic009Contract
+  ? `${manage} seed_epic_009_e2e_fixture && `
+  : `${manage} seed_role_catalogue && ${manage} seed_e2e_users && ${manage} seed_portal_e2e_fixture && `;
 
 export default defineConfig({
   testDir: './e2e',
@@ -59,9 +65,7 @@ export default defineConfig({
         `rm -f "${e2eDbPath}" && mkdir -p "${e2eStorageRoot}" && ` +
         `find "${e2eStorageRoot}" -type f -delete && ` +
         `${manage} migrate --noinput && ` +
-        `${manage} seed_role_catalogue && ` +
-        `${manage} seed_e2e_users && ` +
-        `${manage} seed_portal_e2e_fixture && ` +
+        seedCommands +
         `${manage} runserver 127.0.0.1:8000 --noreload`,
       cwd: repoRoot,
       url: 'http://127.0.0.1:8000/api/v1/health/ready/',
