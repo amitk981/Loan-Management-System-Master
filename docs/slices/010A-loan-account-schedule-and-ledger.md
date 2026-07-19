@@ -17,6 +17,7 @@ calculating balances in the browser.
 
 ## Depends On
 - 009J
+- 009L
 
 ## Source References
 - `docs/source/product-requirements.md` §11.21

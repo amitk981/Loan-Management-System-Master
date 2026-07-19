@@ -1,0 +1,22 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/loan-accounts/LoanAccount360.test.tsx src/pages/disbursement/DisbursementHub.test.tsx src/pages/disbursement/PaymentAuthorisationHub.test.tsx src/services/disbursementApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_041708_architecture_review/sfpcl-lms
+
+ ✓ src/services/disbursementApi.test.ts (2 tests) 18ms
+ ✓ src/pages/loan-accounts/LoanAccount360.test.tsx (4 tests) 480ms
+ ✓ src/pages/disbursement/DisbursementHub.test.tsx (4 tests) 825ms
+   ✓ 009K disbursement finance workspace > renders named backend blockers and disables initiation while readiness fails  315ms
+   ✓ 009K disbursement finance workspace > submits Money fields with one stable key and treats replay as success  482ms
+ ✓ src/pages/disbursement/PaymentAuthorisationHub.test.tsx (4 tests) 1438ms
+   ✓ 009K CFC payment authorisation workspace > shows CFC actions only when the backend projects them and posts the decision reason  712ms
+   ✓ 009K CFC payment authorisation workspace > surfaces backend duplicate UTR and permission errors without optimistic success  663ms
+
+ Test Files  4 passed (4)
+      Tests  14 passed (14)
+   Start at  04:41:41
+   Duration  5.44s (transform 1.24s, setup 0ms, collect 3.80s, tests 2.76s, environment 4.02s, prepare 1.46s)
+

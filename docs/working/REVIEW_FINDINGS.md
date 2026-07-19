@@ -19,64 +19,82 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
-## Open findings from 2026-07-19_014802_architecture_review
+## Open findings from 2026-07-19_041708_architecture_review
 
-Reviewed product commits: `35dd95ce` (009H9A), `4bdff96c` (009H9B), `9b1113af` (009H9C), and
-`4bebe1af` (009I2), relative to the prior reviewed product boundary `e3d965ad`. The chronological
-range also contains owner-maintenance commit `4fb0a5af`; it changed Ralph/docs preparation rather
-than these product slices and is not attributed to them.
+Reviewed product commits: `bc476293` (009H9D), `7e88fe42` (009J), and `eeb0ba7d` (009K), relative
+to the previous architecture-review commit `c90cb326`. Epic 009 reaches its declared boundary in
+this range, so M07/M08 functional-requirement coverage was audited in addition to the three diffs.
 
-### 009H9D — communications provenance and operator boundary
+### 009L — Epic 009 staff workflow and SAP posting closure
 
-- **High — incomplete provenance can be promoted:** communications migration 0008 treats required
-  snapshot strings as complete when they are merely non-null. A queued row with a blank required
-  template fact and a recomputed checksum becomes `verified / frozen_before_dispatch`, contrary to
-  009H9A requirement 2. The review probe fails with `verified` instead of `legacy_partial`.
-- **High — cross-kind exception authority:** the exception routes accept either generic-send or
-  advice-send permission before returning every assigned exception. An assigned advice-only actor
-  can read and resolve a generic exception, contrary to the exact job-kind authority documented in
-  `API_CONTRACTS.md`; both read and resolution review probes return 200 instead of 403.
-- **Medium — exception contract fidelity:** `provider_code` stores a dotted adapter class path
-  instead of the source `email`/`sms` provider vocabulary, and the collection hard-codes its first
-  100 rows instead of implementing standard pagination. Tests assert field presence but not
-  provider semantics or reachability beyond the first batch.
-- **Medium — communications boundary/test drift:** the process coordinator reads `Communication`
-  to choose Email/SMS adapters and Celery calls underscore-prefixed dispatcher methods even though
-  source §40.1 says the communications owner hides channel/adapter selection. A static test checks
-  implementation strings while the required cross-channel idempotency behavior has no assertion.
-- One root-owner corrective, `009H9D`, covers these related migration, permission, provider,
-  pagination, module-boundary, and test-interface symptoms.
+- **High — the binding staff workflow is incomplete and partly non-executable:** 009K requires
+  S36-S41 end to end, but its own run packet records S36 create/send as open and the workspace
+  admits only Senior Finance/CFC. Its enabled S37 descriptor names nonexistent permission
+  `finance.sap_customer_code.complete` instead of source/catalogue
+  `finance.sap_request.complete`, marks optional completion facts required, and both S37 and
+  transfer success submit raw `datetime-local` values although their real endpoints require aware
+  ISO-8601 timestamps. The mock-bound frontend tests never assert those request bytes. Neither 009J
+  nor 009K retained any of their four required real-Django screenshots, so the walkable/prototype
+  acceptance claim is also unproved. This violates 009K requirements 1-4 and acceptance, screen spec
+  S36-S41, API §§29-31/45, and the two slices' explicit visual contracts.
+- **High — workspace authority and financial state are not current-owner truth:** CFC admission can
+  fall back to raw `approval_authority_type` instead of the governed effective role; Senior Finance
+  admission checks only initiate authority, then an uncaught `LoanAccountReadPermissionDenied`
+  produces 500; and the Senior Finance path projects its newest mutable disbursement without the
+  current-evidence check used by the CFC path. The retained review probes receive 500 for an admitted
+  Finance actor and still receive one `approved` row after its immutable initiation ledger is made
+  incoherent. This contradicts the 009K digest/API contract's exact current authority, server-owned
+  action, safe blocker, and zero-fabrication promises.
+- **High — M07-FR-009 is absent at the Epic 009 boundary:** source requires tracking the initial loan
+  payment SAP entry. The digest traceability table covers M07-FR-001-008, readiness owns FR-010, and
+  no model, API, slice, or explicit ASSUMPTIONS deferral owns FR-009. Payment success therefore has
+  no honest pending/posted SAP obligation even though the epic is recorded complete.
+- **Medium — 009J source/test fidelity is partial:** source §30.2 names search, status, member, and
+  DPD filters, while the implementation rejects every parameter except page/page-size without an
+  explicit Epic 010 deferral. Its required missing/duplicate/changed creation, terms, SAP, transfer,
+  activation, cross-object, and balance/status drift matrix is mostly absent; retained tests cover
+  one changed amount and inactive SAP case.
+- **Medium — SAP/read architecture and query boundaries drifted:** the Loan Account 360 and
+  disbursement coordinators import SAP persistence models and reconstruct current request/code
+  truth outside `SapCustomerProfileModule`, reversing 009B3C's public-owner seam. Both account and
+  workspace reads materialize the full scoped portfolio before slicing, then re-fetch/evaluate per
+  row (readiness twice), so one-row tests hide unbounded duplication.
+- **Medium — real and fixture account truth can be composed:** after loading a real 009J account,
+  later `LoanAccount360` tabs fall back to `loanAccounts[0]` and render mock ledger/document/default
+  facts plus local interest/closure calculations. This conflicts with 009J's “do not imply later
+  owner truth” boundary and the frontend mock ratchet. 009L must make those tabs unavailable or
+  explicitly non-production until existing final-removal owner 010M supplies real servicing truth.
+- **Medium — the prior MP14 selection regression remains open:** no reviewed commit adds the required
+  two finance-relevant applications in opposite list orders through unit and browser selection.
 
-### Epic 009 closure — MP14 selection regression evidence
-
-- **Medium:** 009I2 correctly passes the parent-selected application id and the real route selects
-  a deterministic application, but its binding test requirement called for two finance-relevant
-  applications in opposite list orders. The list test uses one finance-relevant and one returned
-  application; the MP14 unit/browser tests request one selected id. Record this edge-coverage gap
-  for Epic 009 closure rather than creating another immediate leaf correction.
+One root-owner corrective, `009L`, groups the S36-S41, workspace-authority/evidence, SAP-posting,
+query/module-boundary, negative-matrix, MP14, and visual-proof symptoms. It is ordered after 009K and
+before Epic 010; 010A depends on it so servicing cannot build on an unclosed disbursement boundary.
 
 ## Closed in this review
 
-- `009H9B` makes exact-cap stale recovery terminal, singular, fenced, and operator-reviewable; the
-  retained tests and twice-run PostgreSQL race evidence cover exact/below/already-exhausted paths.
-- `009H9C` separates Email and SMS adapters, rejects unsupported/unsafe channel requests before
-  writes, and retains immutable generic provider acceptance with replay reconciliation.
-- `009I2` removes client application ranking and consumes the explicit selected application id.
-- `009I2` projects independent documentation, SAP, initiation, CFC, transfer, and advice times or
-  honest nulls from their current owners.
-- `009I2` restores the approved portal composition and supplies the three declared screenshots plus
-  two independently passing trusted-browser runs.
+- `009H9D` validates every required queued template fact and keeps blank, malformed, drifted, or
+  recomputed-checksum provenance legacy-partial/ambiguous instead of promoting it.
+- `009H9D` enforces exact generic-versus-advice permission plus assigned ownership for exception
+  collection, detail, and resolution; the three current copied contract tests pass.
+- `009H9D` normalizes provider vocabulary to `email`/`sms` and implements strict stable pagination
+  beyond 100 rows with standard validation/redaction.
+- `009H9D` restores public communications-owner channel/adapter/job interfaces and observable
+  Email/SMS/cross-channel idempotency tests without private Celery/process calls.
 
 ## Review evidence
 
-- Focused retained backend suites: 74 tests pass; six PostgreSQL-only races skip locally. The
-  accepted slices retain their independent twice-run PostgreSQL evidence.
-- Three review-only contract probes fail on the intended assertions: incomplete frozen provenance,
-  cross-kind exception read authority, and cross-kind resolution authority.
-- Evidence: `.ralph/runs/2026-07-19_014802_architecture_review/evidence/terminal-logs/` and the
-  adjacent `evidence/review-probes/review_contract_probes.py`.
-- No epic completed in the reviewed range, so no newly completed epic's M##-FR matrix required a
-  closure audit. `CONTEXT.md` remains truthful, and no slice is currently marked `Blocked`.
+- Current 009H9D closure tests: 3 passed. Retained 009J/009K backend tests: 10 passed. Focused 009J/
+  009K frontend tests: 14 passed. Full product gates were not repeated in this documentation-only
+  review; the unchanged product commits retain their orchestrator gate evidence.
+- Two review-only Epic 009 probes fail on the intended assertions: admitted Senior Finance returns
+  500, and an incoherent approved disbursement remains in the workspace. A direct contract check
+  proves both real mutation owners reject the raw browser `datetime-local` timestamp.
+- Evidence: `.ralph/runs/2026-07-19_041708_architecture_review/evidence/`.
+- Epic audit: M07-FR-001-008/010 and M08-FR-001-011 have retained backend owners, but M07-FR-009 is
+  missing and S36-S41 reachability/evidence is partial as above. `CONTEXT.md` remains truthful. No
+  slice is marked `Blocked`, so no stale block required re-parking. No new ADR was needed because
+  009L restores existing source and public-owner contracts rather than choosing a new architecture.
 
 Older findings and exact prior citations remain searchable in the historical ledger; they are not
 repeated here unless current code reproduces them.

@@ -1,0 +1,4 @@
+ M docs/slices/010A-loan-account-schedule-and-ledger.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-19_041708_architecture_review/
+?? docs/slices/009L-epic-009-staff-workflow-and-sap-posting-closure.md
