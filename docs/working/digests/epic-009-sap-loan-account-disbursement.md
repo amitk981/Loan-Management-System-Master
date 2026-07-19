@@ -1,5 +1,16 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009L6 Architecture Review Closure
+
+- Architecture review `2026-07-19_133456_architecture_review` proves 009L5 closed its five retained
+  examples but again copied only a subset of each scalar owner's rules into database selectors.
+  Four independent lifecycle, SAP completion, SAP send, and initiation-body drifts are suppressed
+  after pagination while each envelope still reports `total_count: 1`.
+- 009L6 replaces patch-per-field selectors with owner-selector equivalence, completes the retained
+  1/21/101 consumer/action/error matrix, moves private-helper proof to public interfaces, and gives
+  the new PostgreSQL digest prerequisite explicit production-database and safe-reversal evidence.
+  `CR-012` and Epic 010 remain downstream.
+
 ## 009L5 Architecture Review Closure
 
 - Architecture review `2026-07-19_123045_architecture_review` proves the 009L4 database selectors

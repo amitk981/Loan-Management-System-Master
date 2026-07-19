@@ -19,6 +19,84 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
+## Open findings from 2026-07-19_133456_architecture_review
+
+Reviewed product commit: `1de7c16c` (009L5), relative to successful architecture-review commit
+`6d3cdae1`. The product run and its repair form one committed slice boundary; mechanical Ralph
+state, progress, handoff, and retained run artifacts were excluded from the product critique.
+
+### 009L6 — Epic 009 owner-selector equivalence and matrix closure
+
+- **High — 009L5 patches four named fields but still counts broader identities than its owners
+  project:** requirement 1 says count, pages, offsets, and rows consume the exact owner decision,
+  and requirement 2 forbids incoherent evidence from affecting totals or reachability.
+  `loan_account_lifecycle.py:81-174` admits audit evidence whose team shape, exact key set, request
+  shape, or SAP snapshot will fail `_created_account_decision` at lines 256-306;
+  `sap_customer_profile.py:325-389` checks a send checksum and coarse relations before pagination
+  while `_current_send_evidence` at lines 614-702 still rejects exact audit, task, workflow,
+  workbook, actor, and delivery drift; and `current_disbursement_evidence.py:33-71` checks only a
+  subset of the frozen-owner, initiation-ledger, task, and aggregate rules at lines 113-126 and
+  161-263. `loan_account_360.py:98-140` and `disbursement_workspace.py:173-203` count and offset
+  those broader sets, then silently drop rows through the scalar projectors. Four independent
+  review probes change an omitted lifecycle team field, SAP completion body, SAP send body, and
+  initiation maker-team field: every envelope still reports `total_count: 1` after the public
+  scalar owner suppresses the body. This is the same root-boundary failure recurring after 009L4
+  and 009L5, not four leaf defects.
+- **Medium — the PostgreSQL selector prerequisite is neither ownership-safe nor production-proven:**
+  `0010_enable_pgcrypto_for_exact_selector.py:4-11` uses `CREATE EXTENSION IF NOT EXISTS`, so the
+  migration cannot know it created `pgcrypto`, but reversal unconditionally drops the shared
+  extension. A rollback can remove pre-existing database infrastructure or fail when another
+  consumer depends on it. The 009L5 slice declares runtime capability `none`, so its new
+  PostgreSQL-only digest prerequisite has no declared PostgreSQL acceptance label; SQLite
+  compatibility and a local smoke do not prove the production query path.
+- **Low — the portal regression crosses the private helper seam:**
+  `test_portal_disbursement_status_api.py:804-833` imports and directly tests
+  `_current_pre_payment_stages` even though the application edge is observable through the portal
+  HTTP contract. Codebase-design §26.1 says long-lived tests use the module interface when behavior
+  is observable there. The assertion is real, but it does not prove the public authentication,
+  object-scope, envelope, and timeline composition path.
+
+The prior Medium executable-matrix finding remains open: 009L5 adds only six focused regressions,
+not the required S36/S37/combined-Senior-Finance/CFC 1/21/101 portfolios, full invariant drift
+matrix, action/mutation parity, or independent 400/403/409 surfaces. The prior Low empty-subclass
+duplicate PostgreSQL discovery also remains open. These carried findings are not counted as new;
+009L6 groups them with the selector boundary instead of creating more leaf work.
+
+New corrective `009L6` replaces patch-per-field selectors with an owner-selector equivalence
+boundary and absorbs the matrix, test-seam, PostgreSQL-proof, and safe-extension-ownership work. It
+depends on 009L5; `CR-012` and `010A` now depend on 009L6 so final hosted proof and servicing cannot
+build on incorrect Epic 009 collection truth.
+
+## Closed in this review
+
+- **Portal application edge:** all five retained 009L4 probes are green, including the case where a
+  coherent completion for another application cannot complete the requested application's SAP
+  stage. The completed-request edge remains compatible with reusing the member's retained code on
+  a newly completed request for the current application.
+- **Duplicated lifecycle scalar validator:** `_resolve_created_account` now delegates to the same
+  `_created_account_decision` implementation as bounded bulk resolution. The distinct selector
+  equivalence defect above remains open.
+- **Django private `_state` fixture copying:** the changed Loan Account tests now use a public
+  constructor-based `_copy_for_insert` helper. The newly introduced private portal-helper test is a
+  different, lower-severity interface-test issue.
+
+## Review evidence
+
+- Independent Standards and Spec passes reviewed `git diff 6d3cdae1...HEAD` separately and both
+  identified the partial selector/scalar boundary; the Spec pass also confirmed the required
+  workspace/action/error matrix remains incomplete.
+- The five retained 009L4 probes pass. Four new review-only probes fail on their intended
+  assertions: lifecycle, SAP completion, SAP send, and CFC bodies are suppressed while every
+  pagination envelope reports one stale identity. No production file was changed.
+- Prior independent validation for commit `1de7c16c` retained 1,294 backend tests under coverage,
+  351 frontend tests, Django check, migration sync, and the focused repair proof.
+- Evidence: `.ralph/runs/2026-07-19_133456_architecture_review/evidence/`.
+- Epic audit: M07-FR-001-010 and M08-FR-001-011 retain implemented owners or explicit A-135
+  pending-posting governance, but collection/read truth remains conditional on 009L6. `CONTEXT.md`
+  remains truthful. No slice is marked `Blocked`, so no stale prerequisite required re-parking. No
+  ADR was added because 009L6 restores the already binding owner/selector interface instead of
+  choosing a new durable business rule.
+
 ## Open findings from 2026-07-19_123045_architecture_review
 
 Reviewed product commit: `3b31edc4` (009L4), relative to successful architecture-review commit

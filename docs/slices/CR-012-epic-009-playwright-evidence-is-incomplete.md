@@ -11,6 +11,7 @@ Epic file: `docs/epics/009-sap-loan-account-disbursement.md`
 - 009L
 - 009L4
 - 009L5
+- 009L6
 
 ## Runtime Capabilities
 - `localhost-e2e-server`

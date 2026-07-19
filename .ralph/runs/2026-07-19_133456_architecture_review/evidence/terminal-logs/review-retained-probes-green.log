@@ -1,0 +1,17 @@
+Command:
+REVIEW_PROBE_PATH="$PWD/.ralph/runs/2026-07-19_133456_architecture_review/evidence/review-probes" PYTHONPATH="$REVIEW_PROBE_PATH:$PWD/sfpcl_credit" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test test_009l5_retained_probes.LoanAccountRetainedProbe.test_nonqueryable_creation_drift_affects_neither_total_nor_page test_009l5_retained_probes.SapCompletionRetainedProbe.test_completion_digest_drift_affects_neither_total_nor_page test_009l5_retained_probes.AssignedSapRetainedProbe.test_send_digest_drift_affects_neither_total_nor_page test_009l5_retained_probes.CfcRetainedProbe.test_stale_initiation_affects_neither_total_nor_page test_009l5_retained_probes.PortalRetainedProbe.test_other_application_completion_does_not_complete_requested_application_stage --verbosity 1
+
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 1.240s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_CODE=0
+
+Interpretation: 009L5 turns the five retained 009L4 review probes green. The separate review-only
+009L5 probes demonstrate that other invariants enforced by the same scalar owners still fail exact
+collection identity.

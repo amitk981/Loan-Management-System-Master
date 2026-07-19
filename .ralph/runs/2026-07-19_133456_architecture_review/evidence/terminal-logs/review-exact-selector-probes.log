@@ -1,0 +1,27 @@
+Command:
+REVIEW_PROBE_PATH="$PWD/.ralph/runs/2026-07-19_133456_architecture_review/evidence/review-probes" PYTHONPATH="$REVIEW_PROBE_PATH:$PWD/sfpcl_credit" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test test_009l5_exact_selector_probes.LoanAccountUntestedDriftProbe.test_creation_team_shape_drift_affects_neither_total_nor_page test_009l5_exact_selector_probes.SapCompletionUntestedDriftProbe.test_completion_body_drift_affects_neither_total_nor_page test_009l5_exact_selector_probes.AssignedSapUntestedDriftProbe.test_send_body_drift_affects_neither_total_nor_page test_009l5_exact_selector_probes.CfcUntestedDriftProbe.test_initiation_body_drift_affects_neither_total_nor_page --verbosity 1
+
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+FFFF
+
+FAIL: LoanAccountUntestedDriftProbe
+Expected total_count 0 after creation actor-team evidence changed shape; received 1.
+
+FAIL: SapCompletionUntestedDriftProbe
+Expected total_count 0 after an unchecksummed completion-body field was added; received 1.
+
+FAIL: AssignedSapUntestedDriftProbe
+Expected total_count 0 after an unchecksummed send-body field was added; received 1.
+
+FAIL: CfcUntestedDriftProbe
+Expected total_count 0 after initiation maker-team evidence drifted; received 1.
+
+Ran 4 tests in 1.833s
+FAILED (failures=4)
+EXIT_CODE=1
+
+Interpretation: all four database selectors still admit evidence that their public scalar owners
+reject during projection. The assertion failures are intended review evidence; no product file was
+changed.
