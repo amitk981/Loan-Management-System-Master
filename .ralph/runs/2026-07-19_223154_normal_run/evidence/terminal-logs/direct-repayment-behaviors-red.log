@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+F...
+======================================================================
+FAIL: test_capture_requires_effective_authority_and_serviceable_loan (sfpcl_credit.tests.test_direct_repayment_posting_api.DirectRepaymentPostingApiTests.test_capture_requires_effective_authority_and_serviceable_loan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_223154_normal_run/sfpcl_credit/tests/test_direct_repayment_posting_api.py", line 132, in test_capture_requires_effective_authority_and_serviceable_loan
+    self.assertEqual(response.status_code, expected, response.content)
+AssertionError: 200 != 401 : b'{"success": true, "data": {"repayment_id": "1df36061-93fe-4918-9bea-127d569090d2", "loan_account_id": "50418e0f-a416-4cfc-8735-14c5c8ad1104", "repayment_source": "direct_farmer", "amount_received": "100000.00", "received_date": "2026-12-04", "payment_method": "rtgs", "bank_reference_number": "UTR-DIRECT-VALIDATION-001", "allocation_status": "pending", "sap_posting": {"status": "pending", "due_date": "2026-12-07", "sap_entry_reference": null, "posted_at": null}}, "meta": {"request_id": "req-repayment-001", "timestamp": "2026-07-19T17:08:50.142771Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.642s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

@@ -1,7 +1,7 @@
 # Slice 010B: Direct Repayment Posting
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

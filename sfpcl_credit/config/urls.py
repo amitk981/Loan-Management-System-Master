@@ -57,6 +57,16 @@ urlpatterns = [
         name="loan-account-ledger",
     ),
     path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/repayments/",
+        loan_views.direct_repayment,
+        name="loan-account-direct-repayment",
+    ),
+    path(
+        "api/v1/repayments/<uuid:repayment_id>/mark-sap-posted/",
+        loan_views.repayment_mark_sap_posted,
+        name="repayment-mark-sap-posted",
+    ),
+    path(
         "api/v1/disbursements/<uuid:disbursement_id>/send-advice/",
         disbursement_views.send_disbursement_advice,
         name="disbursement-send-advice",

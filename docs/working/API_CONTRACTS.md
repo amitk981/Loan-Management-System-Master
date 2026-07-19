@@ -4449,3 +4449,26 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   Loan Account rows consume the same send owner as S37. Pending-CFC selection also applies current
   lifecycle, borrower-bank/cancelled-cheque, and source-bank eligibility before count, so scalar
   reconciliation cannot remove a selected identity or shift a page.
+
+## Direct repayment capture and SAP posting (010B)
+
+`POST /api/v1/loan-accounts/{loan_account_id}/repayments/` requires an active authenticated
+`credit_manager` or `accounts_head` with `finance.repayment.create`, source-defined loan scope, and a
+nonblank `Idempotency-Key` of at most 255 characters. It accepts exactly direct-farmer source,
+positive numeric 18,2 amount, ISO received date, `rtgs`/`neft` method, nonblank bank reference and
+remarks, plus an optional statement-line UUID evidence link. The bank reference is NFKC-normalized,
+whitespace-collapsed, trimmed, and uppercase for globally unique duplicate comparison.
+
+Success atomically creates one pending-allocation receipt, one safe receipt audit, one urgent Credit
+Manager task, and one pending next-working-day SAP obligation. It does not update account balances,
+schedule paid amounts, or ledger movements. Exact key/request replay returns
+`{idempotency_replayed: true, original_response: <retained result>}` without writes. Changed or
+cross-loan key reuse and duplicate canonical bank references return `409 CONFLICT`; validation
+returns `400`, missing authority `403`, and inaccessible ids `404`.
+
+`POST /api/v1/repayments/{repayment_id}/mark-sap-posted/` accepts exactly a nonblank bounded
+`sap_entry_reference`, timezone-aware `sap_posted_at`, and optional remarks. It requires the same
+source role/scope plus `finance.repayment.mark_sap_posted`. The one-way pending-to-posted transition
+retains the source SAP reference, actor, timestamp, and safe audit evidence. It records manual SAP
+truth without claiming provider integration and never creates a second receipt, obligation,
+allocation, or financial movement.

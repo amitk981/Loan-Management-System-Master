@@ -1,0 +1,12 @@
+System check identified no issues (0 silenced).
+No changes detected
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 2.986s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_CODE=0

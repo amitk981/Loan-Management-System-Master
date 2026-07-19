@@ -293,3 +293,134 @@ class RepaymentSchedule(models.Model):
                 name="schedule_status_bounded",
             ),
         ]
+
+
+class Repayment(models.Model):
+    repayment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_account = models.ForeignKey(
+        LoanAccount, on_delete=models.PROTECT, related_name="repayments"
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="repayments"
+    )
+    repayment_source = models.CharField(max_length=60, default="direct_farmer", db_index=True)
+    amount_received = models.DecimalField(max_digits=18, decimal_places=2)
+    received_date = models.DateField(db_index=True)
+    payment_method = models.CharField(max_length=60)
+    bank_reference_number = models.CharField(max_length=120)
+    bank_reference_number_normalized = models.CharField(max_length=120, unique=True)
+    bank_statement_line_id = models.UUIDField(null=True, blank=True)
+    remarks = models.CharField(max_length=2000)
+    allocation_status = models.CharField(max_length=60, default="pending", db_index=True)
+    sap_posting_status = models.CharField(max_length=60, default="pending", db_index=True)
+    captured_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="captured_repayments"
+    )
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    capture_audit = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT, related_name="captured_repayment"
+    )
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "repayments"
+        indexes = [
+            models.Index(
+                fields=["loan_account", "received_date"], name="idx_repay_account_date"
+            ),
+            models.Index(
+                fields=["member", "received_date"], name="idx_repay_member_date"
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(amount_received__gt=0), name="repayment_amount_positive"
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    repayment_source__in=("direct_farmer", "subsidiary_deduction")
+                ),
+                name="repayment_source_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    payment_method__in=("rtgs", "neft", "subsidiary_transfer")
+                ),
+                name="repayment_method_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(allocation_status="pending"),
+                name="repayment_allocation_pending",
+            ),
+            models.CheckConstraint(
+                check=models.Q(sap_posting_status__in=("pending", "posted")),
+                name="repayment_sap_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(bank_reference_number="")
+                & ~models.Q(bank_reference_number_normalized="")
+                & ~models.Q(remarks=""),
+                name="repayment_required_text",
+            ),
+        ]
+
+
+class RepaymentSapPostingObligation(models.Model):
+    obligation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    repayment = models.OneToOneField(
+        Repayment, on_delete=models.PROTECT, related_name="sap_posting_obligation"
+    )
+    due_date = models.DateField(db_index=True)
+    status = models.CharField(max_length=60, default="pending", db_index=True)
+    task = models.OneToOneField(
+        "communications.Notification",
+        on_delete=models.PROTECT,
+        related_name="repayment_sap_posting_obligation",
+    )
+    sap_entry_reference = models.CharField(max_length=120, null=True, blank=True)
+    posted_by_user = models.ForeignKey(
+        "identity.User",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="posted_repayment_sap_obligations",
+    )
+    posted_at = models.DateTimeField(null=True, blank=True)
+    posting_audit = models.OneToOneField(
+        "identity.AuditLog",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="posted_repayment_sap_obligation",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "repayment_sap_posting_obligations"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        status="pending",
+                        sap_entry_reference__isnull=True,
+                        posted_by_user__isnull=True,
+                        posted_at__isnull=True,
+                        posting_audit__isnull=True,
+                    )
+                    | models.Q(
+                        status="posted",
+                        sap_entry_reference__isnull=False,
+                        posted_by_user__isnull=False,
+                        posted_at__isnull=False,
+                        posting_audit__isnull=False,
+                    )
+                ),
+                name="repayment_sap_evidence_complete",
+            ),
+            models.CheckConstraint(
+                check=models.Q(sap_entry_reference__isnull=True)
+                | ~models.Q(sap_entry_reference=""),
+                name="repayment_sap_reference_present",
+            ),
+        ]

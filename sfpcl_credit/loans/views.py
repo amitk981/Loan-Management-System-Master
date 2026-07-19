@@ -13,6 +13,14 @@ from sfpcl_credit.loans.modules.loan_account_lifecycle import (
     LoanAccountConflict,
     create_loan_account,
 )
+from sfpcl_credit.loans.modules.direct_repayment_posting import (
+    RepaymentConflict,
+    RepaymentNotFound,
+    RepaymentPermissionDenied,
+    RepaymentValidation,
+    capture_direct_repayment,
+    mark_sap_posted,
+)
 from sfpcl_credit.processes.loan_servicing import (
     LoanServicingReadNotFound,
     LoanServicingReadValidation,
@@ -119,6 +127,56 @@ def ledger(request, loan_account_id):
         return error_response(
             request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
         )
+
+
+@require_http_methods(["POST"])
+def direct_repayment(request, loan_account_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            capture_direct_repayment(
+                actor=actor,
+                loan_account_id=loan_account_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                request=request,
+            ),
+            request,
+        )
+    except RepaymentValidation as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Repayment capture failed validation.", exc.field_errors)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Repayment capture failed validation.", {"body": exc.messages[0]})
+    except RepaymentPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "Repayment capture permission is required.")
+    except RepaymentNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible.")
+    except RepaymentConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def repayment_mark_sap_posted(request, repayment_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            mark_sap_posted(actor=actor, repayment_id=repayment_id, payload=parse_json_body(request), request=request),
+            request,
+        )
+    except RepaymentValidation as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "SAP posting failed validation.", exc.field_errors)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "SAP posting failed validation.", {"body": exc.messages[0]})
+    except RepaymentPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "SAP posting permission is required.")
+    except RepaymentNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
+    except RepaymentConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
 
 
 @require_http_methods(["POST"])
