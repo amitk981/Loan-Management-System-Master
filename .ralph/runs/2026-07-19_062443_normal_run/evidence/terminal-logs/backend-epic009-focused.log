@@ -1,0 +1,55 @@
+Found 41 test(s).
+Using existing test database for alias 'default'...
+System check identified no issues (0 silenced).
+..F....FFFF..............................ss
+======================================================================
+FAIL: test_incoherent_approved_disbursement_is_not_projected (sfpcl_credit.tests.test_disbursement_workspace_api.DisbursementWorkspaceApiTests.test_incoherent_approved_disbursement_is_not_projected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_disbursement_workspace_api.py", line 115, in test_incoherent_approved_disbursement_is_not_projected
+    self.assertEqual(response.json()["data"], [])
+AssertionError: Lists differ: [{'workspace_id': '98a94f6a-6ed7-4669-946b[897 chars] []}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'workspace_id': '98a94f6a-6ed7-4669-946b-9071eed533ab', 'loan_account_id': None, 'disbursement_id': None, 'loan_application_id': '4bf3d05d-52bb-4e2a-b73f-a456ee60a443', 'application_reference_number': 'LO-CHECK-001', 'loan_account_number': None, 'member': {'member_id': '1f7602bd-8d47-4e26-b2e4-80a9a1e57ca0', 'display_name': 'Checklist Borrower 001'}, 'sanctioned_amount': '400000.00', 'disbursement_amount': '400000.00', 'sap': {'request_id': '98a94f6a-6ed7-4669-946b-9071eed533ab', 'status': 'completed', 'customer_code_masked': '******-001'}, 'readiness': {'ready_for_disbursement': False, 'evaluated_at': None, 'checks': []}, 'beneficiary_bank': None, 'source_bank': None, 'initiation_status': None, 'authorisation_status': None, 'bank_transfer_status': None, 'advice_status': 'not_started', 'bank_reference_masked': None, 'initiated_by': None, 'initiated_at': None, 'authorised_at': None, 'disbursed_at': None, 'available_actions': []}
+
+Diff is 1115 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_exact_active_scope_allows_assigned_finance_cfc_and_credit (sfpcl_credit.tests.test_loan_account_reads_api.ActiveLoanAccountReadApiTests.test_exact_active_scope_allows_assigned_finance_cfc_and_credit) (role='senior_manager_finance')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 331, in test_exact_active_scope_allows_assigned_finance_cfc_and_credit
+    self.assertEqual(detail.status_code, 200, detail.content)
+AssertionError: 404 != 200 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "The loan account was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:19:41.911938Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_exact_active_scope_allows_assigned_finance_cfc_and_credit (sfpcl_credit.tests.test_loan_account_reads_api.ActiveLoanAccountReadApiTests.test_exact_active_scope_allows_assigned_finance_cfc_and_credit) (role='chief_financial_controller')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 331, in test_exact_active_scope_allows_assigned_finance_cfc_and_credit
+    self.assertEqual(detail.status_code, 200, detail.content)
+AssertionError: 404 != 200 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "The loan account was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:19:41.937761Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_exact_active_scope_allows_assigned_finance_cfc_and_credit (sfpcl_credit.tests.test_loan_account_reads_api.ActiveLoanAccountReadApiTests.test_exact_active_scope_allows_assigned_finance_cfc_and_credit) (role='credit_manager')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 331, in test_exact_active_scope_allows_assigned_finance_cfc_and_credit
+    self.assertEqual(detail.status_code, 200, detail.content)
+AssertionError: 404 != 200 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "The loan account was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:19:41.961822Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_exact_transfer_projects_active_funded_amounts_and_activation_time (sfpcl_credit.tests.test_loan_account_reads_api.ActiveLoanAccountReadApiTests.test_exact_transfer_projects_active_funded_amounts_and_activation_time)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 276, in test_exact_transfer_projects_active_funded_amounts_and_activation_time
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 404 != 200 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "The loan account was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:19:42.709317Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 41 tests in 19.273s
+
+FAILED (failures=5, skipped=2)
+Preserving test database for alias 'default'...

@@ -1,0 +1,82 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/disbursementApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl-lms
+
+ ❯ src/services/disbursementApi.test.ts (3 tests | 1 failed) 10ms
+   ✓ disbursement workspace API client > reads the paginated server-owned workspace projection 3ms
+   ✓ disbursement workspace API client > sends the exact server action URL and stable idempotency header 1ms
+   × disbursement workspace API client > serializes datetime-local fields as exact timezone-aware request bytes 5ms
+     → expected "spy" to be called with arguments: [ …(2) ]
+
+Received: 
+
+  1st spy call:
+
+  [
+    "http://127.0.0.1:8000/api/v1/sap-customer-profile-requests/sap-1/complete/",
+-   ObjectContaining {
+-     "body": "{\"confirmation_notes\":\"Retained fixed note\",\"sap_customer_code\":\"SAP-001\",\"created_at_sap\":\"2026-07-19T05:00:00.000Z\"}",
++   {
++     "body": "{\"confirmation_notes\":\"Retained fixed note\",\"sap_customer_code\":\"SAP-001\",\"created_at_sap\":\"2026-07-19T10:30\"}",
++     "headers": {
++       "Accept": "application/json",
++       "Authorization": "Bearer finance-token",
++       "Content-Type": "application/json",
++       "X-Request-ID": "web-1784423648550",
++     },
+      "method": "POST",
+    },
+  ]
+
+
+Number of calls: 1
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/disbursementApi.test.ts > disbursement workspace API client > serializes datetime-local fields as exact timezone-aware request bytes
+AssertionError: expected "spy" to be called with arguments: [ …(2) ]
+
+Received: 
+
+  1st spy call:
+
+  [
+    "http://127.0.0.1:8000/api/v1/sap-customer-profile-requests/sap-1/complete/",
+-   ObjectContaining {
+-     "body": "{\"confirmation_notes\":\"Retained fixed note\",\"sap_customer_code\":\"SAP-001\",\"created_at_sap\":\"2026-07-19T05:00:00.000Z\"}",
++   {
++     "body": "{\"confirmation_notes\":\"Retained fixed note\",\"sap_customer_code\":\"SAP-001\",\"created_at_sap\":\"2026-07-19T10:30\"}",
++     "headers": {
++       "Accept": "application/json",
++       "Authorization": "Bearer finance-token",
++       "Content-Type": "application/json",
++       "X-Request-ID": "web-1784423648550",
++     },
+      "method": "POST",
+    },
+  ]
+
+
+Number of calls: 1
+
+ ❯ src/services/disbursementApi.test.ts:85:23
+     83|     });
+     84| 
+     85|     expect(fetchMock).toHaveBeenCalledWith(
+       |                       ^
+     86|       'http://127.0.0.1:8000/api/v1/sap-customer-profile-requests/sap-…
+     87|       expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  06:44:07
+   Duration  469ms (transform 95ms, setup 0ms, collect 94ms, tests 10ms, environment 0ms, prepare 49ms)
+

@@ -6,9 +6,10 @@ import {
 export interface DisbursementActionField {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'money' | 'date' | 'datetime-local' | 'email';
+  type: 'text' | 'textarea' | 'money' | 'date' | 'datetime-local' | 'email' | 'select';
   required: boolean;
   value?: string | null;
+  options?: Array<{ value: string; label: string }>;
 }
 
 export interface DisbursementAction {
@@ -77,6 +78,19 @@ export const submitDisbursementAction = (
   idempotencyKey?: string,
 ) => authenticatedRequest<Record<string, unknown>>(action.action_url, {
   method: action.method,
-  body: { ...(action.fixed_payload ?? {}), ...payload },
+  body: { ...(action.fixed_payload ?? {}), ...awareTimestampPayload(action, payload) },
   ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}),
 });
+
+const awareTimestampPayload = (
+  action: DisbursementAction,
+  payload: Record<string, string>,
+) => Object.fromEntries(Object.entries(payload).map(([name, value]) => {
+  const field = action.fields.find(candidate => candidate.name === name);
+  if (field?.type !== 'datetime-local' || !value) return [name, value];
+  const instant = new Date(value);
+  if (Number.isNaN(instant.getTime())) {
+    throw new Error(`${field.label} must be a valid date and time.`);
+  }
+  return [name, instant.toISOString()];
+}));

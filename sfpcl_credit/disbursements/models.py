@@ -474,6 +474,89 @@ class LoanRegisterUpdate(models.Model):
         ]
 
 
+class InitialLoanPaymentSapPosting(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_POSTED = "posted"
+
+    initial_loan_payment_sap_posting_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    disbursement = models.OneToOneField(
+        Disbursement,
+        on_delete=models.PROTECT,
+        related_name="initial_payment_sap_posting",
+    )
+    bank_transfer = models.OneToOneField(
+        BankTransfer,
+        on_delete=models.PROTECT,
+        related_name="initial_payment_sap_posting",
+    )
+    loan_register_update = models.OneToOneField(
+        LoanRegisterUpdate,
+        on_delete=models.PROTECT,
+        related_name="initial_payment_sap_posting",
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount",
+        on_delete=models.PROTECT,
+        related_name="initial_payment_sap_postings",
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication",
+        on_delete=models.PROTECT,
+        related_name="initial_payment_sap_postings",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="initial_payment_sap_postings",
+    )
+    amount = models.DecimalField(max_digits=18, decimal_places=2)
+    transfer_action_id = models.UUIDField(unique=True)
+    transfer_evidence_digest = models.CharField(max_length=64)
+    posting_status = models.CharField(
+        max_length=40, default=STATUS_PENDING, db_index=True
+    )
+    sap_posting_reference = models.CharField(
+        max_length=120, null=True, blank=True
+    )
+    posted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "initial_loan_payment_sap_postings"
+        indexes = [
+            models.Index(
+                fields=["posting_status", "created_at"],
+                name="idx_initial_sap_status",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(amount__gt=0), name="initial_sap_amount_positive"
+            ),
+            models.CheckConstraint(
+                check=(
+                    Q(
+                        posting_status="pending",
+                        sap_posting_reference__isnull=True,
+                        posted_at__isnull=True,
+                    )
+                    | Q(
+                        posting_status="posted",
+                        sap_posting_reference__isnull=False,
+                        posted_at__isnull=False,
+                    )
+                ),
+                name="initial_sap_posting_lifecycle",
+            ),
+            models.CheckConstraint(
+                check=~Q(transfer_evidence_digest=""),
+                name="initial_sap_evidence_present",
+            ),
+        ]
+
+
 class DisbursementAdviceIntent(models.Model):
     DELIVERY_PENDING = "pending"
     DELIVERY_SENT = "sent"

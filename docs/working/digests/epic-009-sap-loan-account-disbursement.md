@@ -1,5 +1,17 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009L Epic Closure
+
+- Credit Manager S36 and assigned Senior Finance S37 now share the staff workspace through SAP-owned
+  projections; exact roles, permissions, assignment, current evidence, safe assignee choices, optional
+  fields, and aware browser timestamps are enforced without exposing protected SAP workbook facts.
+- Successful transfer atomically creates one singular `pending` initial-payment SAP obligation tied to
+  the exact transfer/register/application/account/amount evidence. A-135 leaves posting confirmation
+  unavailable until governance names its actor, grant, adapter, and immutable acceptance evidence.
+- Loan Account search/status/member filters are implemented; `dpd_bucket` is explicitly deferred to
+  Epic 010. Database pagination precedes row composition, SAP reads cross the public owner facade, and
+  real account summaries cannot render mock repayment/interest/default/closure truth.
+
 ## 009K Staff Disbursement Workspace and Frontend Wiring
 
 - S36-S41 require a walkable staff workflow, while the retained §§29-31 APIs supply mutations and

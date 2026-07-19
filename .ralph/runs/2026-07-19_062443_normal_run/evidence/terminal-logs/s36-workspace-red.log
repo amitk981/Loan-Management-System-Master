@@ -1,0 +1,17 @@
+Found 1 test(s).
+Using existing test database for alias 'default'...
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_credit_manager_gets_safe_s36_create_then_send_actions (sfpcl_credit.tests.test_disbursement_workspace_api.SapStaffWorkspaceApiTests.test_credit_manager_gets_safe_s36_create_then_send_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_disbursement_workspace_api.py", line 138, in test_credit_manager_gets_safe_s36_create_then_send_actions
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 403 != 200 : b'{"success": false, "error": {"code": "FORBIDDEN", "message": "Active Senior Manager Finance or CFC disbursement authority is required.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:03:20.160804Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.042s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...

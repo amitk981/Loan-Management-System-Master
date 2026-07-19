@@ -1,7 +1,7 @@
 # Slice 009L: Epic 009 Staff Workflow and SAP Posting Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement

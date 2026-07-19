@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/loan-accounts/LoanAccount360.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl-lms
+
+ ✓ src/pages/loan-accounts/LoanAccount360.test.tsx (4 tests) 138ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  06:47:13
+   Duration  1.39s (transform 160ms, setup 0ms, collect 360ms, tests 138ms, environment 627ms, prepare 49ms)
+

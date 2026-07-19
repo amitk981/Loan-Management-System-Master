@@ -1,0 +1,31 @@
+Found 1 test(s).
+Using existing test database for alias 'default'...
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_public_success_records_transfer_and_activates_exact_loan_atomically (sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests.test_public_success_records_transfer_and_activates_exact_loan_atomically)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/config.py", line 235, in get_model
+    return self.models[model_name.lower()]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'initialloanpaymentsapposting'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_disbursement_transfer_success_api.py", line 98, in test_public_success_records_transfer_and_activates_exact_loan_atomically
+    posting_model = apps.get_model(
+                    ^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/registry.py", line 213, in get_model
+    return app_config.get_model(model_name, require_ready=require_ready)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/apps/config.py", line 237, in get_model
+    raise LookupError(
+LookupError: App 'disbursements' doesn't have a 'InitialLoanPaymentSapPosting' model.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.761s
+
+FAILED (errors=1)
+Preserving test database for alias 'default'...

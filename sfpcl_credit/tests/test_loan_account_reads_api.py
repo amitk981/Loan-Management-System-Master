@@ -1,4 +1,6 @@
+from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from uuid import uuid4
 
@@ -95,6 +97,16 @@ class LoanAccountReadApiTests(TestCase):
         ):
             self.assertNotIn(forbidden, serialized)
 
+    def test_populated_loan_account_collection_has_a_query_ceiling(self):
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(
+                "/api/v1/loan-accounts/?page=1&page_size=20", **self.auth
+            )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        self.assertLessEqual(len(queries), 30)
+
     def test_portfolio_authority_requires_both_source_role_and_current_permission(self):
         cfo = self.fixture._user("cfo", "CFO Portfolio Reader")
         self.fixture._grant(cfo, "finance.loan_account.read")
@@ -124,7 +136,7 @@ class LoanAccountReadApiTests(TestCase):
         self.assertEqual(role_only_detail.status_code, 403)
 
     def test_query_validation_and_missing_detail_are_strict_and_nondisclosing(self):
-        for query in ("search=x", "page=0", "page=2", "page_size=101", "page_size=abc"):
+        for query in ("page=0", "page=2", "page_size=101", "page_size=abc"):
             with self.subTest(query=query):
                 response = self.client.get(
                     f"/api/v1/loan-accounts/?{query}", **self.auth
@@ -136,6 +148,41 @@ class LoanAccountReadApiTests(TestCase):
         )
         self.assertEqual(missing.status_code, 404, missing.content)
         self.assertEqual(missing.json()["error"]["code"], "NOT_FOUND")
+
+    def test_source_supported_filters_and_dpd_deferral_are_explicit(self):
+        matches = (
+            f"search=00025",
+            "loan_account_status=sanctioned",
+            f"member_id={self.account.member_id}",
+        )
+        for query in matches:
+            with self.subTest(query=query):
+                response = self.client.get(
+                    f"/api/v1/loan-accounts/?{query}", **self.auth
+                )
+                self.assertEqual(response.status_code, 200, response.content)
+                self.assertEqual(response.json()["pagination"]["total_count"], 1)
+
+        for query in (
+            "search=does-not-exist",
+            "loan_account_status=active",
+            f"member_id={uuid4()}",
+        ):
+            with self.subTest(query=query):
+                response = self.client.get(
+                    f"/api/v1/loan-accounts/?{query}", **self.auth
+                )
+                self.assertEqual(response.status_code, 200, response.content)
+                self.assertEqual(response.json()["data"], [])
+
+        deferred = self.client.get(
+            "/api/v1/loan-accounts/?dpd_bucket=current", **self.auth
+        )
+        self.assertEqual(deferred.status_code, 400, deferred.content)
+        self.assertEqual(
+            deferred.json()["error"]["field_errors"],
+            {"dpd_bucket": "DPD filtering is owned by Epic 010 and is not available yet."},
+        )
 
     def test_changed_creation_amount_fails_closed_without_existence_disclosure(self):
         LoanAccount.objects.filter(pk=self.account.pk).update(
@@ -234,6 +281,25 @@ class ActiveLoanAccountReadApiTests(TestCase):
         self.auth = fixture.owner.fixture._auth(self.reader)
 
     def test_exact_transfer_projects_active_funded_amounts_and_activation_time(self):
+        from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
+            resolve_post_transfer_evidence,
+        )
+        from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+            get_account_customer_code,
+        )
+
+        self.assertIsNotNone(
+            get_account_customer_code(
+                application_id=self.account.loan_application_id,
+                member_id=self.account.member_id,
+                customer_code_id=self.account.sap_customer_code_id,
+            )
+        )
+        self.assertIsNotNone(
+            resolve_post_transfer_evidence(
+                application_id=self.account.loan_application_id
+            )
+        )
         response = self.client.get(
             f"/api/v1/loan-accounts/{self.account.pk}/", **self.auth
         )

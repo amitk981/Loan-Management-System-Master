@@ -17,8 +17,13 @@ from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
 from sfpcl_credit.domain_errors import DomainPermissionDenied
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.models import LoanAccount
+from sfpcl_credit.loans.modules.loan_account_read import LoanAccountReadPermissionDenied
 from sfpcl_credit.processes.loan_account_360 import list_accounts
-from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest
+from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+    assigned_workspace_rows,
+    get_account_customer_code,
+    staff_workspace_rows,
+)
 
 
 class DisbursementWorkspaceValidation(Exception):
@@ -39,15 +44,28 @@ def list_workspace(*, actor, query_params):
         _is_cfc(actor, roles)
         and "finance.disbursement.authorise" in permissions
     )
-    if not (can_initiate or can_authorise):
+    can_create_sap = (
+        "credit_manager" in roles
+        and "finance.sap_request.create" in permissions
+    )
+    can_complete_sap = (
+        "senior_manager_finance" in roles
+        and "finance.sap_request.complete" in permissions
+    )
+    if not (can_initiate or can_authorise or can_create_sap or can_complete_sap):
         raise DomainPermissionDenied(
             "Active Senior Manager Finance or CFC disbursement authority is required."
         )
 
-    if can_initiate:
-        account_rows, account_pagination = list_accounts(
-            actor=actor, query_params={"page": "1", "page_size": "100"}
-        )
+    if can_create_sap:
+        projections = [_project_s36(row) for row in staff_workspace_rows(actor=actor)]
+    elif can_initiate:
+        try:
+            account_rows, account_pagination = list_accounts(
+                actor=actor, query_params={"page": "1", "page_size": "100"}
+            )
+        except LoanAccountReadPermissionDenied:
+            account_rows, account_pagination = [], {"total_pages": 1}
         for account_page in range(2, account_pagination["total_pages"] + 1):
             page_rows, _ = list_accounts(
                 actor=actor,
@@ -55,24 +73,34 @@ def list_workspace(*, actor, query_params):
             )
             account_rows.extend(page_rows)
         account_projections = [
-            _project_account(actor=actor, account_row=row, permissions=permissions)
+            projection
             for row in account_rows
+            if (
+                projection := _project_account(
+                    actor=actor, account_row=row, permissions=permissions
+                )
+            )
+            is not None
         ]
         represented_applications = {
-            row["loan_application_id"] for row in account_projections
+            row["loan_application_id"] for row in account_rows
         }
-        sap_requests = (
-            SapCustomerProfileRequest.objects.select_related(
-                "loan_application", "member", "sap_customer_code"
-            )
-            .filter(assigned_to_user=actor)
-            .order_by("-created_at", "-sap_customer_profile_request_id")
+        assigned_rows = assigned_workspace_rows(actor=actor)
+        represented_applications.update(
+            str(value)
+            for value in LoanAccount.objects.filter(
+                loan_application_id__in=[
+                    row["loan_application_id"] for row in assigned_rows
+                ]
+            ).values_list("loan_application_id", flat=True)
         )
         projections = [
-            _project_sap_request(row)
-            for row in sap_requests
-            if str(row.loan_application_id) not in represented_applications
+            _project_s36(row)
+            for row in assigned_rows
+            if row["loan_application_id"] not in represented_applications
         ] + account_projections
+    elif can_complete_sap:
+        projections = [_project_s36(row) for row in assigned_workspace_rows(actor=actor)]
     else:
         candidates = (
             Disbursement.objects.select_related(
@@ -126,6 +154,8 @@ def _project_account(*, actor, account_row, permissions):
         .first()
     )
     if disbursement is not None:
+        if not _disbursement_is_current(disbursement):
+            return None
         return _project_disbursement(
             actor=actor, row=disbursement, permissions=permissions
         )
@@ -184,35 +214,27 @@ def _project_account(*, actor, account_row, permissions):
     )
 
 
-def _project_sap_request(row):
-    actions = []
-    if row.request_status == SapCustomerProfileRequest.STATUS_SENT:
-        actions.append(
-            _action(
-                "complete_sap_request", "Confirm SAP customer code",
-                f"/api/v1/sap-customer-profile-requests/{row.pk}/complete/",
-                "finance.sap_customer_code.complete", True, None,
-                [
-                    _field("sap_customer_code", "SAP customer code", "text"),
-                    _field("sap_vendor_code", "SAP vendor code", "text", required=False),
-                    _field("created_at_sap", "SAP creation date and time", "datetime-local"),
-                    _field("confirmation_document_id", "Confirmation document ID", "text", required=False),
-                    _field("confirmation_notes", "Finance comments", "textarea"),
-                ],
-            )
-        )
+def _project_s36(row):
     return {
-        "workspace_id": str(row.pk),
+        "workspace_id": row["workspace_id"],
         "loan_account_id": None,
         "disbursement_id": None,
-        "loan_application_id": str(row.loan_application_id),
-        "application_reference_number": row.loan_application.application_reference_number,
+        "loan_application_id": row["loan_application_id"],
+        "application_reference_number": row["application_reference_number"],
         "loan_account_number": None,
-        "member": {"member_id": str(row.member_id), "display_name": row.member.display_name},
-        "sanctioned_amount": f"{row.sanctioned_amount:.2f}",
-        "disbursement_amount": f"{row.sanctioned_amount:.2f}",
-        "sap": {"request_id": str(row.pk), "status": row.request_status, "customer_code_masked": _mask_code(row.sap_customer_code.sap_customer_code) if row.sap_customer_code_id else None},
-        "readiness": {"ready_for_disbursement": False, "evaluated_at": None, "checks": [{"code": "sap_customer_code_present", "label": "SAP customer code present", "status": "fail", "reason": "SAP setup must be completed before the loan account and readiness review are available."}]},
+        "member": row["member"],
+        "sanctioned_amount": row["sanctioned_amount"],
+        "disbursement_amount": row["sanctioned_amount"],
+        "sap": {
+            "request_id": row["request_id"],
+            "status": row["request_status"],
+            "customer_code_masked": row.get("customer_code_masked"),
+        },
+        "readiness": {
+            "ready_for_disbursement": False,
+            "evaluated_at": None,
+            "checks": [],
+        },
         "beneficiary_bank": None,
         "source_bank": None,
         "initiation_status": None,
@@ -224,7 +246,7 @@ def _project_sap_request(row):
         "initiated_at": None,
         "authorised_at": None,
         "disbursed_at": None,
-        "available_actions": actions,
+        "available_actions": row["available_actions"],
     }
 
 
@@ -311,9 +333,9 @@ def _base_projection(*, workspace_id, account, disbursement, readiness, sap_requ
         "sanctioned_amount": f"{account.sanctioned_amount:.2f}",
         "disbursement_amount": f"{amount:.2f}",
         "sap": {
-            "request_id": _string(sap_request.pk) if sap_request else None,
-            "status": sap_request.request_status if sap_request else "not_started",
-            "customer_code_masked": _mask_code(account.sap_customer_code.sap_customer_code) if account.sap_customer_code_id else None,
+            "request_id": _string(sap_request.profile_request_id) if sap_request else None,
+            "status": "completed" if sap_request else "not_started",
+            "customer_code_masked": sap_request.customer_code_masked if sap_request else None,
         },
         "readiness": readiness,
         "beneficiary_bank": _bank(beneficiary, include_ifsc=True),
@@ -332,11 +354,11 @@ def _base_projection(*, workspace_id, account, disbursement, readiness, sap_requ
 
 
 def _sap_request(account):
-    return SapCustomerProfileRequest.objects.filter(
-        loan_application_id=account.loan_application_id,
+    return get_account_customer_code(
+        application_id=account.loan_application_id,
         member_id=account.member_id,
-        sap_customer_code_id=account.sap_customer_code_id,
-    ).order_by("-created_at", "-sap_customer_profile_request_id").first()
+        customer_code_id=account.sap_customer_code_id,
+    )
 
 
 def _action(code, label, url, permission, enabled, reason, fields, fixed_payload=None):
@@ -377,7 +399,7 @@ def _disbursement_is_current(row):
 
 
 def _is_cfc(actor, roles):
-    return "chief_financial_controller" in roles or getattr(actor, "approval_authority_type", None) == "chief_financial_controller"
+    return "chief_financial_controller" in roles
 
 
 def _pagination(query_params):
@@ -405,10 +427,6 @@ def _timestamp(value):
 
 def _string(value):
     return str(value) if value is not None else None
-
-
-def _mask_code(value):
-    return f"******{value[-4:]}" if value else None
 
 
 def _mask_reference(value):

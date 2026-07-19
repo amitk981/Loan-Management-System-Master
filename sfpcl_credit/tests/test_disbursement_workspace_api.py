@@ -1,6 +1,12 @@
+from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 
 from sfpcl_credit.disbursements.models import Disbursement
+from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
+    resolve_current_disbursement_evidence,
+)
+from sfpcl_credit.identity.models import RolePermission
 from sfpcl_credit.tests.api_contracts import assert_pagination_shape
 
 
@@ -70,3 +76,155 @@ class DisbursementWorkspaceApiTests(TestCase):
                 )
                 self.assertEqual(response.status_code, 400, response.content)
                 self.assertEqual(response.json()["error"]["code"], "VALIDATION_ERROR")
+
+    def test_admitted_senior_finance_reader_does_not_hit_internal_permission(self):
+        self.client.raise_request_exception = False
+
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture.fixture._auth(self.fixture.fixture.actor),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+
+    def test_incoherent_approved_disbursement_is_not_projected(self):
+        approved = self.fixture._post(
+            "approved", "Independent transfer authorisation retained."
+        )
+        self.assertEqual(approved.status_code, 200, approved.content)
+        self.fixture.fixture.fixture._grant(
+            self.fixture.fixture.actor, "finance.loan_account.read"
+        )
+        Disbursement.objects.filter(pk=self.row.pk).update(
+            final_verification_comments=(
+                "Changed after the immutable initiation ledger."
+            )
+        )
+        self.row.refresh_from_db()
+        self.assertIsNone(
+            resolve_current_disbursement_evidence(
+                disbursement_id=self.row.pk,
+                allowed_authorisation_statuses=("approved",),
+            )
+        )
+
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture.fixture._auth(self.fixture.fixture.actor),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["data"], [])
+
+
+class SapStaffWorkspaceApiTests(TestCase):
+    def setUp(self):
+        from sfpcl_credit.tests.test_sap_customer_profile_request_api import (
+            SapCustomerProfileRequestApiTests,
+        )
+
+        self.fixture = SapCustomerProfileRequestApiTests(
+            "test_credit_manager_creates_draft_request_after_terminal_sanction"
+        )
+        self.fixture.setUp()
+        self.client = Client()
+
+    def tearDown(self):
+        self.fixture.tearDown()
+
+    def test_credit_manager_gets_safe_s36_create_then_send_actions(self):
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture._auth(self.fixture.credit_manager),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        row = response.json()["data"][0]
+        self.assertEqual(row["loan_application_id"], str(self.fixture.application.pk))
+        self.assertEqual(
+            row["application_reference_number"],
+            self.fixture.application.application_reference_number,
+        )
+        self.assertEqual(
+            row["available_actions"][0]["action_code"], "create_sap_request"
+        )
+        action = row["available_actions"][0]
+        self.assertEqual(
+            action["action_url"],
+            f"/api/v1/loan-applications/{self.fixture.application.pk}/sap-customer-profile-request/",
+        )
+        self.assertEqual(action["fields"][0]["type"], "select")
+        self.assertEqual(
+            action["fields"][0]["options"],
+            [
+                {
+                    "value": str(self.fixture.assignee.pk),
+                    "label": self.fixture.assignee.full_name,
+                }
+            ],
+        )
+        serialized = str(row)
+        self.assertNotIn("aadhaar", serialized.lower())
+        self.assertNotIn("pan_number", serialized.lower())
+        self.assertNotIn("excel_file", serialized.lower())
+
+        created = self.fixture._post_request("workspace-s36-create")
+        self.assertEqual(created.status_code, 200, created.content)
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture._auth(self.fixture.credit_manager),
+        )
+        action = response.json()["data"][0]["available_actions"][0]
+        self.assertEqual(action["action_code"], "send_sap_request")
+        self.assertEqual(action["required_permission"], "finance.sap_request.send")
+        self.assertEqual(action["fields"][0]["name"], "remarks")
+
+    def test_populated_s36_collection_has_a_query_ceiling(self):
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(
+                "/api/v1/disbursement-workspaces/?page=1&page_size=20",
+                **self.fixture._auth(self.fixture.credit_manager),
+            )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        self.assertLessEqual(len(queries), 30)
+
+    def test_exact_assignee_gets_optional_s37_completion_action(self):
+        request_id = self.fixture._create_and_send("workspace-s37")
+
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture._auth(self.fixture.assignee),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        row = response.json()["data"][0]
+        action = row["available_actions"][0]
+        self.assertEqual(action["action_code"], "complete_sap_request")
+        self.assertEqual(
+            action["required_permission"], "finance.sap_request.complete"
+        )
+        required = {field["name"]: field["required"] for field in action["fields"]}
+        self.assertEqual(
+            required,
+            {
+                "sap_customer_code": True,
+                "sap_vendor_code": False,
+                "created_at_sap": False,
+                "confirmation_document_id": False,
+                "confirmation_notes": False,
+            },
+        )
+        self.assertEqual(row["sap"]["request_id"], request_id)
+
+        RolePermission.objects.filter(
+            role=self.fixture.assignee.primary_role,
+            permission__permission_code="finance.sap_request.complete",
+        ).delete()
+        denied = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture._auth(self.fixture.assignee),
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)

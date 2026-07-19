@@ -62,6 +62,38 @@ describe('disbursement workspace API client', () => {
       }),
     );
   });
+
+  it('serializes datetime-local fields as exact timezone-aware request bytes', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok({ request_status: 'completed' }));
+    vi.stubGlobal('fetch', fetchMock);
+    const action: DisbursementAction = {
+      action_code: 'complete_sap_request', label: 'Confirm SAP customer code', enabled: true,
+      disabled_reason: null, required_permission: 'finance.sap_request.complete',
+      action_url: '/api/v1/sap-customer-profile-requests/sap-1/complete/', method: 'POST',
+      fields: [
+        { name: 'sap_customer_code', label: 'SAP code', type: 'text', required: true },
+        { name: 'created_at_sap', label: 'Created at', type: 'datetime-local', required: false },
+      ],
+      fixed_payload: { confirmation_notes: 'Retained fixed note' },
+    };
+    const localValue = '2026-07-19T10:30';
+
+    await submitDisbursementAction(action, {
+      sap_customer_code: 'SAP-001', created_at_sap: localValue,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/sap-customer-profile-requests/sap-1/complete/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          confirmation_notes: 'Retained fixed note',
+          sap_customer_code: 'SAP-001',
+          created_at_sap: new Date(localValue).toISOString(),
+        }),
+      }),
+    );
+  });
 });
 
 const workspace = {

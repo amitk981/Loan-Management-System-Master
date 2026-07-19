@@ -1,8 +1,10 @@
 """Read-only cross-owner projection for the initial Loan Account 360 view."""
 
 from math import ceil
+from uuid import UUID
 
 from django.db import transaction
+from django.db.models import Q
 
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
     resolve_current_disbursement_evidence,
@@ -16,7 +18,7 @@ from sfpcl_credit.loans.modules.loan_account_read import (
     resolve_creation_truth,
     scoped_account_candidates,
 )
-from sfpcl_credit.sap_workflow.models import SapCustomerCode, SapCustomerProfileRequest
+from sfpcl_credit.sap_workflow.modules.sap_customer_profile import get_account_customer_code
 
 
 class LoanAccountProjectionNotFound(Exception):
@@ -30,27 +32,34 @@ class LoanAccountProjectionValidation(Exception):
 
 @transaction.atomic
 def list_accounts(*, actor, query_params):
-    page, page_size = _pagination(query_params)
-    projections = [
-        projection
-        for account in scoped_account_candidates(actor=actor).select_related(
+    page, page_size, filters = _query(query_params)
+    candidates = _apply_filters(
+        scoped_account_candidates(actor=actor).select_related(
             "loan_application",
             "member",
             "sanction_decision",
             "terms",
             "sap_customer_code",
-        )
+        ),
+        filters,
+    )
+    candidate_count = candidates.count()
+    candidate_pages = ceil(candidate_count / page_size) if candidate_count else 1
+    if page > candidate_pages:
+        raise LoanAccountProjectionValidation({"page": "Page is out of range."})
+    start = (page - 1) * page_size
+    page_accounts = list(candidates[start : start + page_size])
+    projections = [
+        projection
+        for account in page_accounts
         if account_is_scoped(
             actor=actor, account=account, cfc_scope_resolver=_has_cfc_scope
         )
         and (projection := _project(account)) is not None
     ]
-    total_count = len(projections)
+    total_count = candidate_count - (len(page_accounts) - len(projections))
     total_pages = ceil(total_count / page_size) if total_count else 1
-    if page > total_pages:
-        raise LoanAccountProjectionValidation({"page": "Page is out of range."})
-    start = (page - 1) * page_size
-    return projections[start : start + page_size], {
+    return projections, {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
@@ -179,43 +188,81 @@ def _has_cfc_scope(account):
 
 
 def _sap_is_current_for_account(account):
-    code = account.sap_customer_code
-    requests = list(
-        SapCustomerProfileRequest.objects.select_related(
-            "assigned_to_user__primary_role"
-        )
-        .filter(
-            loan_application_id=account.loan_application_id,
-            member_id=account.member_id,
-            request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
-            sap_customer_code_id=account.sap_customer_code_id,
-        )
-        .order_by("created_at", "sap_customer_profile_request_id")[:2]
+    decision = get_account_customer_code(
+        application_id=account.loan_application_id,
+        member_id=account.member_id,
+        customer_code_id=account.sap_customer_code_id,
     )
-    if len(requests) != 1:
-        return False
-    request = requests[0]
     return bool(
-        code.status == SapCustomerCode.STATUS_ACTIVE
-        and code.member_id == account.member_id
-        and request.completed_at
-        and request.assigned_to_user.can_authenticate()
-        and request.assigned_to_user.primary_role.status == "active"
-        and request.assigned_to_user.primary_role.role_code
-        == "senior_manager_finance"
+        decision
+        and decision.customer_code_id == account.sap_customer_code_id
+        and decision.member_id == account.member_id
+        and decision.loan_application_id == account.loan_application_id
     )
 
 
-def _pagination(query_params):
-    unknown = set(query_params) - {"page", "page_size"}
+def _query(query_params):
+    allowed = {
+        "page",
+        "page_size",
+        "search",
+        "loan_account_status",
+        "member_id",
+        "dpd_bucket",
+    }
+    unknown = set(query_params) - allowed
     if unknown:
         raise LoanAccountProjectionValidation(
             {key: "Unknown query parameter." for key in sorted(unknown)}
         )
+    search = str(query_params.get("search", "")).strip()
+    if len(search) > 120:
+        raise LoanAccountProjectionValidation(
+            {"search": "Must be at most 120 characters."}
+        )
+    status = str(query_params.get("loan_account_status", "")).strip()
+    if status and status not in {"sanctioned", "active"}:
+        raise LoanAccountProjectionValidation(
+            {"loan_account_status": "Select a current Epic 009 loan account status."}
+        )
+    member_id = None
+    raw_member_id = query_params.get("member_id")
+    if raw_member_id not in (None, ""):
+        try:
+            member_id = UUID(str(raw_member_id))
+        except (TypeError, ValueError, AttributeError) as exc:
+            raise LoanAccountProjectionValidation(
+                {"member_id": "Must be a valid UUID."}
+            ) from exc
+    if str(query_params.get("dpd_bucket", "")).strip():
+        raise LoanAccountProjectionValidation(
+            {
+                "dpd_bucket": (
+                    "DPD filtering is owned by Epic 010 and is not available yet."
+                )
+            }
+        )
     return (
         _positive_int("page", query_params.get("page"), 1),
         _positive_int("page_size", query_params.get("page_size"), 20, maximum=100),
+        {"search": search, "status": status, "member_id": member_id},
     )
+
+
+def _apply_filters(queryset, filters):
+    search = filters["search"]
+    if search:
+        queryset = queryset.filter(
+            Q(loan_account_number__icontains=search)
+            | Q(loan_application__application_reference_number__icontains=search)
+            | Q(member__legal_name__icontains=search)
+            | Q(member__folio_number__icontains=search)
+        )
+    if filters["status"]:
+        queryset = queryset.filter(loan_account_status=filters["status"])
+    if filters["member_id"]:
+        queryset = queryset.filter(member_id=filters["member_id"])
+    return queryset
 
 
 def _positive_int(name, raw, default, maximum=None):

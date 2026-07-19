@@ -14,6 +14,7 @@ from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
     DisbursementAdviceIntent,
+    InitialLoanPaymentSapPosting,
     LoanRegisterUpdate,
 )
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
@@ -63,10 +64,11 @@ def _mark_transfer_successful(
                 "transfer_success_actor_user",
                 "transfer_success_audit",
                 "transfer_success_workflow_event",
-            "transfer_success_loan_status_history",
-            "register_update",
-            "loan_register_update",
+                "transfer_success_loan_status_history",
+                "register_update",
+                "loan_register_update",
                 "advice_intent",
+                "initial_payment_sap_posting",
             )
             .filter(
                 transfer_success_idempotency_key_digest=cleaned[
@@ -152,6 +154,7 @@ def _mark_transfer_successful(
         loan_status_history_id = uuid.uuid4()
         loan_register_update_id = uuid.uuid4()
         advice_intent_id = uuid.uuid4()
+        initial_sap_posting_id = uuid.uuid4()
         request_id = _request_id(request)
         ip_address = request_ip(request) if request else ""
         user_agent = request_user_agent(request) if request else ""
@@ -171,6 +174,7 @@ def _mark_transfer_successful(
                     f"{row.disbursement_amount:.2f}",
                     str(loan_register_update_id),
                     str(advice_intent_id),
+                    str(initial_sap_posting_id),
                 )
             )
         )
@@ -191,6 +195,7 @@ def _mark_transfer_successful(
             "loan_status_history_id": str(loan_status_history_id),
             "loan_register_update_id": str(loan_register_update_id),
             "disbursement_advice_communication_id": str(advice_intent_id),
+            "initial_loan_payment_sap_posting_id": str(initial_sap_posting_id),
             "bank_reference_digest": reference_digest,
             "bank_reference_masked": masked_reference,
             "bank_transfer_evidence_document_id": str(evidence.document.pk),
@@ -324,6 +329,20 @@ def _mark_transfer_successful(
             transfer_workflow_event=workflow,
             created_at=cleaned["disbursed_at"],
         )
+        initial_sap_posting = InitialLoanPaymentSapPosting.objects.create(
+            initial_loan_payment_sap_posting_id=initial_sap_posting_id,
+            disbursement=row,
+            bank_transfer=transfer,
+            loan_register_update=register_update,
+            loan_account=account,
+            loan_application_id=row.loan_application_id,
+            member_id=row.member_id,
+            amount=row.disbursement_amount,
+            transfer_action_id=action_id,
+            transfer_evidence_digest=evidence_digest,
+            posting_status=InitialLoanPaymentSapPosting.STATUS_PENDING,
+            created_at=cleaned["disbursed_at"],
+        )
         row.bank_transfer_status = "successful"
         row.bank_reference_number = cleaned["bank_reference_normalized"]
         row.disbursed_at = cleaned["disbursed_at"]
@@ -368,15 +387,23 @@ def _mark_transfer_successful(
         )
         row._state.fields_cache["loan_register_update"] = register_update
         row._state.fields_cache["advice_intent"] = advice_intent
+        row._state.fields_cache["initial_payment_sap_posting"] = initial_sap_posting
         return serialize_transfer_success(row)
 
 
 def serialize_transfer_success(row):
+    posting = row.initial_payment_sap_posting
     return {
         "disbursement_id": str(row.pk),
         "bank_transfer_status": "successful",
         "loan_account_status": "active",
         "disbursement_advice_communication_id": str(row.advice_intent.pk),
+        "initial_payment_sap_posting": {
+            "posting_status": posting.posting_status,
+            "sap_posting_reference_masked": _masked_reference(
+                posting.sap_posting_reference
+            ),
+        },
     }
 
 
@@ -510,6 +537,7 @@ def _require_transferable_account(row, account):
         or LoanStatusHistory.objects.filter(
             loan_account=account, from_status="sanctioned", to_status="active"
         ).exists()
+        or InitialLoanPaymentSapPosting.objects.filter(disbursement=row).exists()
     ):
         raise DisbursementTransferConflict(
             "The approved account is no longer in the exact unfunded transfer state."
@@ -558,10 +586,12 @@ def completed_success_is_coherent(row):
         transfer = row.bank_transfer
         register_update = row.loan_register_update
         advice_intent = row.advice_intent
+        posting = row.initial_payment_sap_posting
     except (
         BankTransfer.DoesNotExist,
         LoanRegisterUpdate.DoesNotExist,
         DisbursementAdviceIntent.DoesNotExist,
+        InitialLoanPaymentSapPosting.DoesNotExist,
     ):
         return False
     account = row.loan_account
@@ -596,6 +626,7 @@ def completed_success_is_coherent(row):
                 f"{row.disbursement_amount:.2f}",
                 str(register_update.pk),
                 str(advice_intent.pk),
+                str(posting.pk),
             )
         )
     )
@@ -616,6 +647,7 @@ def completed_success_is_coherent(row):
         "loan_status_history_id": str(history.pk),
         "loan_register_update_id": str(register_update.pk),
         "disbursement_advice_communication_id": str(advice_intent.pk),
+        "initial_loan_payment_sap_posting_id": str(posting.pk),
         "bank_reference_digest": reference_digest,
         "bank_reference_masked": _masked_reference(
             transfer.bank_reference_number_normalized
@@ -702,6 +734,33 @@ def completed_success_is_coherent(row):
             DisbursementAdviceIntent.DELIVERY_PENDING,
             DisbursementAdviceIntent.DELIVERY_SENT,
         }
+        and posting.disbursement_id == row.pk
+        and posting.bank_transfer_id == transfer.pk
+        and posting.loan_register_update_id == register_update.pk
+        and posting.loan_account_id == row.loan_account_id
+        and posting.loan_application_id == row.loan_application_id
+        and posting.member_id == row.member_id
+        and posting.amount == row.disbursement_amount
+        and posting.transfer_action_id == row.transfer_success_action_id
+        and posting.transfer_evidence_digest == row.transfer_success_evidence_digest
+        and posting.posting_status
+        in {
+            InitialLoanPaymentSapPosting.STATUS_PENDING,
+            InitialLoanPaymentSapPosting.STATUS_POSTED,
+        }
+        and (
+            (
+                posting.posting_status == InitialLoanPaymentSapPosting.STATUS_PENDING
+                and posting.sap_posting_reference is None
+                and posting.posted_at is None
+            )
+            or (
+                posting.posting_status == InitialLoanPaymentSapPosting.STATUS_POSTED
+                and bool(posting.sap_posting_reference)
+                and posting.posted_at is not None
+            )
+        )
+        and posting.created_at == row.disbursed_at
         and account.loan_account_status == "active"
         and account.disbursed_amount == row.disbursement_amount
         and account.principal_outstanding == row.disbursement_amount
@@ -775,6 +834,8 @@ def _normalize_reference(value):
 
 
 def _masked_reference(value):
+    if not value:
+        return None
     if len(value) <= 4:
         return "*" * len(value)
     return "*" * (len(value) - 4) + value[-4:]

@@ -71,6 +71,8 @@ describe('009J Loan Account 360 initial API view', () => {
     expect(screen.queryByText('Scheduled Instalment')).toBeNull();
     expect(screen.queryByText('DPD Bucket')).toBeNull();
     expect(screen.queryByText('Next Action')).toBeNull();
+    expect(screen.getByText('Servicing views are not available yet.')).toBeTruthy();
+    expect(screen.queryByText('Loan Ledger')).toBeNull();
   });
 
   it('shows honest empty, failure, and unauthorized states without mock fallback', async () => {
@@ -103,7 +105,7 @@ describe('009J Loan Account 360 initial API view', () => {
     expect(apiSource).not.toContain('fetch(');
     expect(pageSource).toContain('fetchLoanAccounts');
     expect(pageSource).toContain('fetchLoanAccount');
-    expect(pageSource.match(/from '..\/..\/data\/mockData'/g)).toHaveLength(1);
+    expect(pageSource).not.toContain("from '../../data/mockData'");
     expect(pageSource).not.toContain('monthlyEMI');
   });
 });

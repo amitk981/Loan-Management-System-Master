@@ -1,0 +1,31 @@
+Found 2 test(s).
+Using existing test database for alias 'default'...
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_admitted_senior_finance_reader_does_not_hit_internal_permission (sfpcl_credit.tests.test_disbursement_workspace_api.DisbursementWorkspaceApiTests.test_admitted_senior_finance_reader_does_not_hit_internal_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_disbursement_workspace_api.py", line 85, in test_admitted_senior_finance_reader_does_not_hit_internal_permission
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 500 != 200 : b'\n<!doctype html>\n<html lang="en">\n<head>\n  <title>Server Error (500)</title>\n</head>\n<body>\n  <h1>Server Error (500)</h1><p></p>\n</body>\n</html>\n'
+
+======================================================================
+FAIL: test_incoherent_approved_disbursement_is_not_projected (sfpcl_credit.tests.test_disbursement_workspace_api.DisbursementWorkspaceApiTests.test_incoherent_approved_disbursement_is_not_projected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_disbursement_workspace_api.py", line 114, in test_incoherent_approved_disbursement_is_not_projected
+    self.assertEqual(response.json()["data"], [])
+AssertionError: Lists differ: [{'workspace_id': '594824f3-1098-4747-ba8a[3790 chars] []}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'workspace_id': '594824f3-1098-4747-ba8a-0e10b3b8b91a', 'loan_account_id': '3ceb3527-2a62-46ca-b76b-30b9031a507c', 'disbursement_id': '594824f3-1098-4747-ba8a-0e10b3b8b91a', 'loan_application_id': '6e3dfaa7-7b5b-4bce-8618-f2d2da5db7be', 'application_reference_number': 'LO-CHECK-001', 'loan_account_number': 'LN-REAL-OWNER-001', 'member': {'member_id': 'edd95bf5-d4fd-4aa5-9e48-06f8d2bd3409', 'display_name': 'Checklist Borrower 001'}, 'sanctioned_amount': '400000.00', 'disbursement_amount': '400000.00', 'sap': {'request_id': '7a73db3a-2d60-4d4c-b8d5-444e779c3aeb', 'status': 'completed', 'customer_code_masked': '******-001'}, 'readiness': {'loan_account_id': '3ceb3527-2a62-46ca-b76b-30b9031a507c', 'loan_application_id': '6e3dfaa7-7b5b-4bce-8618-f2d2da5db7be', 'ready_for_disbursement': False, 'evaluated_at': '2026-07-19T01:00:28.259685Z', 'checks': [{'code': 'sanction_approved', 'label': 'Sanction approved', 'status': 'pass'}, {'code': 'loan_account_sanctioned', 'label': 'Loan account is sanctioned', 'status': 'pass'}, {'code': 'exception_approval_complete', 'label': 'Exception approval complete', 'status': 'pass'}, {'code': 'general_meeting_approval_complete', 'label': 'General meeting approval complete', 'status': 'pass'}, {'code': 'kyc_complete', 'label': 'KYC complete', 'status': 'pass'}, {'code': 'appraisal_complete', 'label': 'Appraisal complete', 'status': 'pass'}, {'code': 'documentation_complete', 'label': 'Documentation checklist complete', 'status': 'pass'}, {'code': 'company_secretary_approval', 'label': 'Company Secretary checklist approval', 'status': 'pass'}, {'code': 'credit_manager_approval', 'label': 'Credit Manager checklist approval', 'status': 'pass'}, {'code': 'sanction_committee_approval', 'label': 'Sanction Committee checklist approval', 'status': 'pass'}, {'code': 'security_package_complete', 'label': 'Security package complete', 'status': 'pass'}, {'code': 'poa_complete', 'label': 'Power of Attorney complete', 'status': 'pass'}, {'code': 'term_sheet_complete', 'label': 'Term Sheet complete', 'status': 'pass'}, {'code': 'loan_agreement_complete', 'label': 'Loan Agreement complete', 'status': 'pass'}, {'code': 'sh4_complete', 'label': 'SH-4 complete when applicable', 'status': 'pass'}, {'code': 'cdsl_pledge_complete', 'label': 'CDSL pledge complete when applicable', 'status': 'pass'}, {'code': 'blank_dated_cheque_received', 'label': 'Blank-dated cheque received', 'status': 'pass'}, {'code': 'cancelled_cheque_verified', 'label': 'Cancelled cheque verified', 'status': 'pass'}, {'code': 'bank_account_verified', 'label': 'Borrower bank account verified', 'status': 'pass'}, {'code': 'signature_mismatch_resolved', 'label': 'Signature mismatch resolved', 'status': 'pass'}, {'code': 'sap_customer_code_present', 'label': 'SAP customer code present', 'status': 'fail', 'reason': 'The account is not coherently bound to the current active SAP code.'}, {'code': 'source_bank_account_configured', 'label': 'Source bank account configured', 'status': 'pass'}, {'code': 'amount_within_sanction', 'label': 'Disbursement amount within sanction', 'status': 'pass'}]}, 'beneficiary_bank': {'account_holder_name': 'Checklist Borrower 001', 'account_number_masked': '******4321', 'bank_name': 'HDFC Bank', 'ifsc_code': 'HDFC0001234', 'branch_name': ''}, 'source_bank': {'account_holder_name': 'SFPCL', 'account_number_masked': '******9001', 'bank_name': 'RBL Bank'}, 'initiation_status': 'initiated', 'authorisation_status': 'approved', 'bank_transfer_status': 'pending', 'advice_status': 'not_started', 'bank_reference_masked': None, 'initiated_by': {'user_id': '520312f2-a749-477b-b9db-c818223b711b', 'full_name': 'Checklist Senior Finance'}, 'initiated_at': '2026-07-19T01:00:28.151798Z', 'authorised_at': '2026-07-19T01:00:28.173368Z', 'disbursed_at': None, 'available_actions': []}
+
+Diff is 6296 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.264s
+
+FAILED (failures=2)
+Preserving test database for alias 'default'...

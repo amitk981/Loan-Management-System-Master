@@ -8,6 +8,7 @@ import uuid
 
 from django.core import signing
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -26,7 +27,11 @@ from sfpcl_credit.sap_workflow.modules.sap_customer_code import (
     read_member_code as _read_member_code,
     send_request as _send_request,
 )
-from sfpcl_credit.sap_workflow.modules.sap_customer_request import create_request as _create_request
+from sfpcl_credit.sap_workflow.modules.sap_customer_request import (
+    create_request as _create_request,
+    current_terminal_sanction,
+)
+from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.sap_workflow.adapters import (
@@ -68,6 +73,216 @@ def read_member_code(*, actor, member_id, request):
         return result
 
 
+def staff_workspace_rows(*, actor):
+    """Project safe S36 actions through the SAP owner's mutation interface."""
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        not actor.can_authenticate()
+        or "credit_manager" not in roles
+        or "finance.sap_request.create" not in permissions
+    ):
+        raise DomainPermissionDenied(
+            "Active Credit Manager SAP request authority is required."
+        )
+    assignees = [
+        candidate
+        for candidate in User.objects.select_related("primary_role")
+        .filter(
+            status=User.ACTIVE_STATUS,
+            primary_role__role_code="senior_manager_finance",
+            primary_role__status="active",
+        )
+        .order_by("full_name", "user_id")
+        if "finance.sap_request.complete"
+        in auth_service.effective_permission_codes(candidate)
+    ]
+    candidates = (
+        LoanApplication.objects.select_related("member")
+        .filter(application_status=LoanApplication.STATUS_APPROVED_BY_SANCTION)
+        .filter(Q(created_by_user=actor) | Q(received_by_user=actor))
+        .prefetch_related("sap_customer_profile_requests")
+        .order_by("-updated_at", "loan_application_id")
+    )
+    rows = []
+    for application in candidates:
+        try:
+            decision = current_terminal_sanction(application)
+        except DomainInvalidStateError:
+            continue
+        requests = sorted(
+            application.sap_customer_profile_requests.all(),
+            key=lambda row: (row.created_at, row.pk),
+            reverse=True,
+        )
+        if len(requests) > 1:
+            continue
+        profile_request = requests[0] if requests else None
+        actions = []
+        if profile_request is None and assignees:
+            actions.append(
+                {
+                    "action_code": "create_sap_request",
+                    "label": "Create SAP request",
+                    "enabled": True,
+                    "disabled_reason": None,
+                    "required_permission": "finance.sap_request.create",
+                    "action_url": (
+                        f"/api/v1/loan-applications/{application.pk}/"
+                        "sap-customer-profile-request/"
+                    ),
+                    "method": "POST",
+                    "fields": [
+                        {
+                            "name": "assigned_to_user_id",
+                            "label": "Senior Manager - Finance",
+                            "type": "select",
+                            "required": True,
+                            "value": None,
+                            "options": [
+                                {"value": str(user.pk), "label": user.full_name}
+                                for user in assignees
+                            ],
+                        }
+                    ],
+                    "fixed_payload": {},
+                }
+            )
+        elif (
+            profile_request is not None
+            and profile_request.request_status == profile_request.STATUS_DRAFT
+            and profile_request.requested_by_user_id == actor.pk
+            and "finance.sap_request.send" in permissions
+        ):
+            actions.append(
+                {
+                    "action_code": "send_sap_request",
+                    "label": "Send SAP request",
+                    "enabled": True,
+                    "disabled_reason": None,
+                    "required_permission": "finance.sap_request.send",
+                    "action_url": (
+                        f"/api/v1/sap-customer-profile-requests/"
+                        f"{profile_request.pk}/send/"
+                    ),
+                    "method": "POST",
+                    "fields": [
+                        {
+                            "name": "remarks",
+                            "label": "Delivery remarks",
+                            "type": "textarea",
+                            "required": True,
+                            "value": None,
+                        }
+                    ],
+                    "fixed_payload": {},
+                }
+            )
+        rows.append(
+            {
+                "workspace_id": str(profile_request.pk if profile_request else application.pk),
+                "loan_application_id": str(application.pk),
+                "application_reference_number": application.application_reference_number,
+                "member": {
+                    "member_id": str(application.member_id),
+                    "display_name": application.member.display_name,
+                },
+                "sanctioned_amount": f"{decision.sanctioned_amount:.2f}",
+                "request_id": str(profile_request.pk) if profile_request else None,
+                "request_status": (
+                    profile_request.request_status if profile_request else "not_started"
+                ),
+                "available_actions": actions,
+            }
+        )
+    return rows
+
+
+def assigned_workspace_rows(*, actor):
+    """Project only current S37 requests assigned to the governed Finance actor."""
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        not actor.can_authenticate()
+        or "senior_manager_finance" not in roles
+        or "finance.sap_request.complete" not in permissions
+    ):
+        raise DomainPermissionDenied(
+            "Active Senior Manager Finance SAP completion authority is required."
+        )
+    requests = (
+        SapCustomerProfileRequest.objects.select_related(
+            "loan_application", "member", "sap_customer_code", "assigned_to_user__primary_role",
+            "requested_by_user__primary_role", "excel_file", "sent_communication", "sent_task",
+        )
+        .filter(assigned_to_user=actor)
+        .order_by("-created_at", "-sap_customer_profile_request_id")
+    )
+    rows = []
+    for profile_request in requests:
+        if (
+            profile_request.request_status == profile_request.STATUS_SENT
+            and not _current_send_evidence(profile_request)
+        ):
+            continue
+        actions = []
+        if profile_request.request_status == profile_request.STATUS_SENT:
+            actions.append(
+                {
+                    "action_code": "complete_sap_request",
+                    "label": "Confirm SAP customer code",
+                    "enabled": True,
+                    "disabled_reason": None,
+                    "required_permission": "finance.sap_request.complete",
+                    "action_url": (
+                        f"/api/v1/sap-customer-profile-requests/"
+                        f"{profile_request.pk}/complete/"
+                    ),
+                    "method": "POST",
+                    "fields": [
+                        _workspace_field("sap_customer_code", "SAP customer code", "text"),
+                        _workspace_field("sap_vendor_code", "SAP vendor code", "text", required=False),
+                        _workspace_field("created_at_sap", "SAP creation date and time", "datetime-local", required=False),
+                        _workspace_field("confirmation_document_id", "Confirmation document ID", "text", required=False),
+                        _workspace_field("confirmation_notes", "Finance comments", "textarea", required=False),
+                    ],
+                    "fixed_payload": {},
+                }
+            )
+        rows.append(
+            {
+                "workspace_id": str(profile_request.pk),
+                "loan_application_id": str(profile_request.loan_application_id),
+                "application_reference_number": (
+                    profile_request.loan_application.application_reference_number
+                ),
+                "member": {
+                    "member_id": str(profile_request.member_id),
+                    "display_name": profile_request.member.display_name,
+                },
+                "sanctioned_amount": f"{profile_request.sanctioned_amount:.2f}",
+                "request_id": str(profile_request.pk),
+                "request_status": profile_request.request_status,
+                "customer_code_masked": (
+                    f"******{profile_request.sap_customer_code.sap_customer_code[-4:]}"
+                    if profile_request.sap_customer_code_id else None
+                ),
+                "available_actions": actions,
+            }
+        )
+    return rows
+
+
+def _workspace_field(name, label, field_type, *, required=True):
+    return {
+        "name": name,
+        "label": label,
+        "type": field_type,
+        "required": required,
+        "value": None,
+    }
+
+
 @dataclass(frozen=True)
 class SapCustomerCodeDecision:
     customer_code_id: uuid.UUID
@@ -76,6 +291,7 @@ class SapCustomerCodeDecision:
     loan_application_id: uuid.UUID
     status: str
     completed_at: object
+    customer_code_masked: str
 
 
 def is_current_finance_assignee(*, application_id, member_id, actor_id):
@@ -136,6 +352,46 @@ def get_customer_code_for_member(member_id, *, for_update=False):
         loan_application_id=request.loan_application_id,
         status=code.status,
         completed_at=request.completed_at,
+        customer_code_masked=f"******{code.sap_customer_code[-4:]}",
+    )
+
+
+def get_account_customer_code(*, application_id, member_id, customer_code_id):
+    """Resolve the singular completed SAP/account edge for trusted read modules."""
+    requests = list(
+        SapCustomerProfileRequest.objects.select_related(
+            "assigned_to_user__primary_role", "sap_customer_code"
+        )
+        .filter(
+            loan_application_id=application_id,
+            member_id=member_id,
+            request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
+            sap_customer_code_id=customer_code_id,
+        )
+        .order_by("created_at", "sap_customer_profile_request_id")[:2]
+    )
+    if len(requests) != 1:
+        return None
+    request = requests[0]
+    code = request.sap_customer_code
+    if not (
+        code.status == SapCustomerCode.STATUS_ACTIVE
+        and code.member_id == member_id
+        and request.completed_at
+        and request.assigned_to_user.can_authenticate()
+        and request.assigned_to_user.primary_role.status == "active"
+        and request.assigned_to_user.primary_role.role_code
+        == "senior_manager_finance"
+    ):
+        return None
+    return SapCustomerCodeDecision(
+        customer_code_id=code.pk,
+        member_id=code.member_id,
+        profile_request_id=request.pk,
+        loan_application_id=request.loan_application_id,
+        status=code.status,
+        completed_at=request.completed_at,
+        customer_code_masked=f"******{code.sap_customer_code[-4:]}",
     )
 
 

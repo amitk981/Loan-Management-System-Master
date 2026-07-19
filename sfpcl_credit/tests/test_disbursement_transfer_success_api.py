@@ -5,6 +5,7 @@ from unittest import skipUnless
 from uuid import UUID, uuid4
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.apps import apps
 from django.db.models.deletion import ProtectedError
 from django.db import (
     IntegrityError,
@@ -94,6 +95,9 @@ class DisbursementTransferSuccessApiTests(TestCase):
         self.assertEqual(data["bank_transfer_status"], "successful")
         self.assertEqual(data["loan_account_status"], "active")
         UUID(data["disbursement_advice_communication_id"])
+        posting_model = apps.get_model(
+            "disbursements", "InitialLoanPaymentSapPosting"
+        )
         row.refresh_from_db()
         account.refresh_from_db()
         self.assertEqual(row.authorisation_status, "approved")
@@ -132,6 +136,7 @@ class DisbursementTransferSuccessApiTests(TestCase):
         self.assertEqual(workflow.entity_id, row.pk)
         register_update = LoanRegisterUpdate.objects.get(disbursement=row)
         advice_intent = DisbursementAdviceIntent.objects.get(disbursement=row)
+        posting = posting_model.objects.get(disbursement=row)
         self.assertEqual(register_update.bank_transfer_id, transfer.pk)
         self.assertEqual(register_update.loan_account_id, account.pk)
         self.assertEqual(register_update.loan_application_id, row.loan_application_id)
@@ -142,6 +147,24 @@ class DisbursementTransferSuccessApiTests(TestCase):
         self.assertEqual(advice_intent.bank_transfer_id, transfer.pk)
         self.assertEqual(advice_intent.delivery_status, "pending")
         self.assertEqual(advice_intent.transfer_action_id, row.transfer_success_action_id)
+        self.assertEqual(posting.bank_transfer_id, transfer.pk)
+        self.assertEqual(posting.loan_register_update_id, register_update.pk)
+        self.assertEqual(posting.loan_account_id, account.pk)
+        self.assertEqual(posting.loan_application_id, row.loan_application_id)
+        self.assertEqual(posting.member_id, row.member_id)
+        self.assertEqual(posting.amount, row.disbursement_amount)
+        self.assertEqual(posting.transfer_action_id, row.transfer_success_action_id)
+        self.assertEqual(
+            posting.transfer_evidence_digest, row.transfer_success_evidence_digest
+        )
+        self.assertEqual(posting.posting_status, "pending")
+        self.assertIsNone(posting.sap_posting_reference)
+        self.assertIsNone(posting.posted_at)
+        self.assertEqual(posting.created_at, row.disbursed_at)
+        self.assertEqual(
+            data["initial_payment_sap_posting"],
+            {"posting_status": "pending", "sap_posting_reference_masked": None},
+        )
         self.assertEqual(
             data["disbursement_advice_communication_id"], str(advice_intent.pk)
         )

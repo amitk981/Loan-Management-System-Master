@@ -1,0 +1,67 @@
+Found 1 test(s).
+Using existing test database for alias 'default'...
+System check identified no issues (0 silenced).
+FFFFFFF
+======================================================================
+FAIL: test_source_supported_filters_and_dpd_deferral_are_explicit (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_source_supported_filters_and_dpd_deferral_are_explicit) (query='search=00025')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 151, in test_source_supported_filters_and_dpd_deferral_are_explicit
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan account query failed validation.", "details": {}, "field_errors": {"search": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:12:31.990368Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_source_supported_filters_and_dpd_deferral_are_explicit (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_source_supported_filters_and_dpd_deferral_are_explicit) (query='loan_account_status=sanctioned')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 151, in test_source_supported_filters_and_dpd_deferral_are_explicit
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan account query failed validation.", "details": {}, "field_errors": {"loan_account_status": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:12:31.992096Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_source_supported_filters_and_dpd_deferral_are_explicit (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_source_supported_filters_and_dpd_deferral_are_explicit) (query='member_id=9087bd3f-76fb-47c6-8d29-7d854f734076')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 151, in test_source_supported_filters_and_dpd_deferral_are_explicit
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan account query failed validation.", "details": {}, "field_errors": {"member_id": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:12:31.993205Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_source_supported_filters_and_dpd_deferral_are_explicit (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_source_supported_filters_and_dpd_deferral_are_explicit) (query='search=does-not-exist')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 163, in test_source_supported_filters_and_dpd_deferral_are_explicit
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan account query failed validation.", "details": {}, "field_errors": {"search": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:12:31.994456Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_source_supported_filters_and_dpd_deferral_are_explicit (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_source_supported_filters_and_dpd_deferral_are_explicit) (query='loan_account_status=active')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 163, in test_source_supported_filters_and_dpd_deferral_are_explicit
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan account query failed validation.", "details": {}, "field_errors": {"loan_account_status": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:12:31.995602Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_source_supported_filters_and_dpd_deferral_are_explicit (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_source_supported_filters_and_dpd_deferral_are_explicit) (query='member_id=e6fc6c71-bad4-4af4-9905-816f0b6664a8')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 163, in test_source_supported_filters_and_dpd_deferral_are_explicit
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan account query failed validation.", "details": {}, "field_errors": {"member_id": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-19T01:12:31.996715Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_source_supported_filters_and_dpd_deferral_are_explicit (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_source_supported_filters_and_dpd_deferral_are_explicit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 170, in test_source_supported_filters_and_dpd_deferral_are_explicit
+    self.assertEqual(
+AssertionError: {'dpd_bucket': 'Unknown query parameter.'} != {'dpd_bucket': 'DPD filtering is owned by Epic 010 and is not available yet.'}
+- {'dpd_bucket': 'Unknown query parameter.'}
++ {'dpd_bucket': 'DPD filtering is owned by Epic 010 and is not available yet.'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.053s
+
+FAILED (failures=7)
+Preserving test database for alias 'default'...

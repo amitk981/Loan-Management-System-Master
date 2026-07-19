@@ -4313,7 +4313,9 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
 ## Loan Account 360 initial reads (009J)
 
 - `GET /api/v1/loan-accounts/?page=1&page_size=20` returns the standard strict pagination envelope.
-  Only `page` and `page_size` are accepted; both are positive integers, `page_size` is at most 100,
+  `page`, `page_size`, `search`, `loan_account_status`, and `member_id` are supported; page values
+  are positive and `page_size` is at most 100. `dpd_bucket` is recognized but returns an explicit
+  Epic 010 deferral until the DPD owner exists; other parameters remain unknown.
   and an out-of-range page returns `400 VALIDATION_ERROR`. Results are deterministically ordered by
   newest account creation and UUID. Scope is applied before pagination and incoherent accounts are
   excluded rather than projected from mutable labels.
@@ -4345,8 +4347,9 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   envelope. It accepts only positive `page` and `page_size` values, caps page size at 100, and
   rejects out-of-range pages and unknown parameters with `400 VALIDATION_ERROR`.
 - The collection requires an active effective Senior Manager Finance role with
-  `finance.disbursement.initiate`, or current CFC authority with
-  `finance.disbursement.authorise`. Role alone, permission alone, intake assignment, or a raw id
+  `finance.disbursement.initiate`, current CFC authority with `finance.disbursement.authorise`,
+  exact Credit Manager `finance.sap_request.create`, or assigned Senior Finance
+  `finance.sap_request.complete`. Role alone, permission alone, intake assignment, or a raw id
   grants no row. Senior Finance rows reuse the canonical scoped Loan Account read owner; CFC rows
   require the retained CFC-task relation created by the exact initiation owner.
 - Each item contains safe account/application/member display facts, Money strings, masked SAP code,
@@ -4363,3 +4366,9 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   values, idempotency digests, network context, audit bodies, and provider internals are excluded.
   The collection is transactionally read-only and writes no audit, workflow, task, payment,
   account, register, advice, or borrower truth.
+- S36 create/send and S37 completion descriptors come from the SAP module, expose only fixed
+  application/member display facts and active permissioned assignee choices, and mark every optional
+  completion field optional. Browser `datetime-local` values are serialized as aware ISO-8601 instants.
+- §31.4 success also returns `initial_payment_sap_posting` with safe `posting_status` and masked/null
+  reference. The singular obligation is atomically tied to transfer/register evidence and begins
+  `pending`; no confirmation endpoint exists under A-135.

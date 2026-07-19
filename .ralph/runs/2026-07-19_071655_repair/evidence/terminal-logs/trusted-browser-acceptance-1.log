@@ -1,0 +1,24 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_062443_normal_run/.ralph/runs/2026-07-19_071655_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/epic-009-staff-disbursement-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[19/Jul/2026 01:53:25] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/dashboard/
+[2m[WebServer] [22mUnauthorized: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 01:53:30] "GET /api/v1/dashboard/ HTTP/1.1" 401 223
+[2m[WebServer] [22m[19/Jul/2026 01:53:30] "GET /api/v1/dashboard/ HTTP/1.1" 401 223
+  ✓  1 [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:10:5 › S36-S41 and initial Loan Account 360 remain walkable and safely rendered (3.1s)
+
+  1 passed (27.9s)
+
+Duration milliseconds: 28489
+Exit code: 0

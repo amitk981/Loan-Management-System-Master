@@ -693,14 +693,14 @@ class CommunicationReceiptOwnerMigrationTests(TransactionTestCase):
         ("communications", "0003_notification"),
         (
             "disbursements",
-            "0007_remove_disbursement_disb_success_evidence_complete_and_more",
+            "0008_initial_loan_payment_sap_posting",
         ),
     ]
     migrate_to = [
         ("communications", "0004_advice_outbox_and_receipt_owner"),
         (
             "disbursements",
-            "0007_remove_disbursement_disb_success_evidence_complete_and_more",
+            "0008_initial_loan_payment_sap_posting",
         ),
     ]
 
