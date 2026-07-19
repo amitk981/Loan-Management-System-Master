@@ -4476,7 +4476,8 @@ allocation, or financial movement.
 ## Principal-first repayment allocation (010C)
 
 `POST /api/v1/repayments/{repayment_id}/allocate/` accepts exactly
-`allocation_rule: principal_first` and nonblank remarks of at most 2,000 characters. It requires an
+`allocation_rule: principal_first`, nonblank remarks of at most 2,000 characters, and a nonblank
+`Idempotency-Key` of at most 200 characters. It requires an
 active `credit_manager` or `accounts_head`, `finance.repayment.allocate`, and the same source-defined
 loan-object scope as repayment capture. Missing authentication returns `401`; malformed input `400`;
 missing authority `403`; inaccessible receipt/account ids `404`; ineligible or incoherent retained
@@ -4487,15 +4488,20 @@ The allocator locks the receipt, account, and schedule rows in one transaction. 
 interest outstanding. Charges receive zero until an approved waterfall exists. Any charge-facing or
 excess remainder is retained as non-negative `unallocated_amount`, status
 `allocated_with_exception`, and reason `charge_or_excess_policy_not_configured`; balances never go
-negative. Schedule paid amounts follow A-139. Exact payoff reaches zero and status `repaid`.
+negative. It admits only a coherent terminal SAP posting decision and rejects ordinary allocation of
+a `manual_match_exception`. Schedule paid amounts follow A-139, and the exact principal/interest
+allocation must fit the locked schedule capacity before any write. Each changed schedule row retains
+an immutable per-allocation application record for later reproduction or reversal. Exact payoff
+reaches zero and status `repaid`.
 
 Success returns the immutable allocation id/receipt id, `allocation_rule`,
 `allocation_rule_version`, allocation status, principal/interest/charge/unallocated decimal strings,
 nullable exception reason, and the server-owned post-allocation account balances. It atomically
 updates account/schedule truth, appends one immutable repayment ledger row, and writes one safe
 allocation audit containing before/after amounts, actor/roles, rule/version, timestamp-owned row, and
-request evidence. Exact replay returns the same retained success projection with no second financial
-effect. Database one-to-one and arithmetic constraints independently prevent duplicate allocations,
+request evidence. Exact key/request replay returns the same retained success projection with no
+second financial effect. Missing, changed, cross-receipt, or different-key replay returns zero-write
+`400`/`409`. Database one-to-one and arithmetic constraints independently prevent duplicate allocations,
 duplicate ledger movements, negative balances, unconfigured charge allocation, and inconsistent
 before/after totals.
 
@@ -4505,6 +4511,41 @@ reference, zero debit, only the amount actually allocated as credit, post-alloca
 principal/interest/total balances, retained actor snapshot, current receipt SAP status, and fixed safe
 remarks. Unallocated money is observable on the allocation result and is not misrepresented as a
 ledger credit.
+
+## Manual allocation approval and financial reversal (010C2)
+
+`POST /api/v1/repayments/{repayment_id}/manual-allocation-approvals/` accepts exactly
+`loan_account_id`, positive 18,2 `amount`, and a nonblank `reason` of at most 500 characters, plus a
+nonblank `Idempotency-Key` of at most 200 characters. It requires the explicitly assigned critical
+`finance.repayment.manual_allocation_approve` permission; no default role receives that permission.
+The action succeeds only when the receipt is posted, pending allocation, and linked by 010D's
+coherent `bank_statement.line_manually_matched` evidence. Destination, amount, receipt, and statement
+line must match exactly. Success returns immutable approval/receipt/account/line ids, approved amount,
+terminal `approved` decision, and timestamp. Exact replay returns retained truth; missing, changed,
+foreign, drifted, or already-approved attempts are zero-write `400`/`409`.
+
+`POST /api/v1/repayments/{repayment_id}/manual-allocate/` accepts exactly `approval_id`,
+`allocation_rule: principal_first`, and nonblank `remarks` of at most 2,000 characters, plus the
+allocation `Idempotency-Key`. It requires ordinary source-backed allocation role, permission, and
+object scope. The terminal approval must cover the exact receipt, loan, amount, and bank line; then
+the action delegates all schedule/account/allocation/ledger math to the canonical 010C allocator.
+Response and replay semantics match ordinary allocation.
+
+`POST /api/v1/repayments/{repayment_id}/reverse/` accepts exactly a nonblank `reason` of at most 500
+characters and a nonblank `Idempotency-Key` of at most 200 characters. It requires the explicitly
+assigned critical `finance.repayment.reverse` permission in addition to ordinary allocation
+authority and object scope; no default role receives reversal authority. The server owns the amount
+and original source. It accepts only the current unreversed allocation state, restores account and
+per-schedule balances from immutable allocation-application evidence, changes the receipt allocation
+status to `reversed`, and appends one immutable reversal plus one debit ledger movement. Original
+receipt, allocation, schedule-application, and credit-ledger rows are never edited or deleted. Exact
+replay returns retained truth; missing, changed, cross-receipt, stale, foreign, and duplicate attempts
+fail before financial writes.
+
+Approval, allocation, and reversal evidence retains actor/role, exact linked evidence identities,
+before/after money, safe reason hashes, and request/timestamp truth. Free-text reasons, bank
+narration, SAP references, and other sensitive bank content are not copied into audit JSON or error
+messages; mandatory bounded reasons remain on their immutable governed records.
 
 ## Bank statement evidence matching and reconciliation (010D)
 

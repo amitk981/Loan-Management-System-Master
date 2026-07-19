@@ -92,6 +92,21 @@ urlpatterns = [
         name="repayment-allocate",
     ),
     path(
+        "api/v1/repayments/<uuid:repayment_id>/manual-allocation-approvals/",
+        loan_views.repayment_manual_allocation_approve,
+        name="repayment-manual-allocation-approve",
+    ),
+    path(
+        "api/v1/repayments/<uuid:repayment_id>/manual-allocate/",
+        loan_views.repayment_manual_allocate,
+        name="repayment-manual-allocate",
+    ),
+    path(
+        "api/v1/repayments/<uuid:repayment_id>/reverse/",
+        loan_views.repayment_reverse,
+        name="repayment-reverse",
+    ),
+    path(
         "api/v1/disbursements/<uuid:disbursement_id>/send-advice/",
         disbursement_views.send_disbursement_advice,
         name="disbursement-send-advice",

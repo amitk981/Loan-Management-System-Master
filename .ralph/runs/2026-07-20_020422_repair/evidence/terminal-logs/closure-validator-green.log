@@ -1,0 +1,6 @@
+Command:
+source scripts/lib/ralph-architecture-review.sh
+ralph_validate_review_finding_closure "$PWD" "$PWD/docs/slices/010C2-manual-allocation-and-financial-reversal-controls.md" "$PWD/.ralph/runs/2026-07-20_020422_repair"
+
+PASS: validated semantic closure for 1 finding(s) and 6 acceptance id(s).
+Exit code: 0

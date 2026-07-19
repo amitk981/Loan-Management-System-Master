@@ -28,6 +28,14 @@ from sfpcl_credit.loans.modules.repayment_allocator import (
     RepaymentAllocationPermissionDenied,
     RepaymentAllocationValidation,
 )
+from sfpcl_credit.loans.modules.repayment_adjustments import (
+    RepaymentAdjustmentConflict,
+    RepaymentAdjustmentNotFound,
+    RepaymentAdjustmentPermissionDenied,
+    RepaymentAdjustmentValidation,
+    approve_manual_allocation,
+    reverse_repayment,
+)
 from sfpcl_credit.loans.modules.bank_statement_matching import (
     BankStatementConflict,
     BankStatementNotFound,
@@ -207,6 +215,7 @@ def repayment_allocate(request, repayment_id):
                 actor=actor,
                 repayment_id=repayment_id,
                 payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
                 request=request,
             ),
             request,
@@ -224,6 +233,85 @@ def repayment_allocate(request, repayment_id):
     except RepaymentAllocationNotFound:
         return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
     except RepaymentAllocationConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def repayment_manual_allocation_approve(request, repayment_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            approve_manual_allocation(
+                actor=actor,
+                repayment_id=repayment_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                request=request,
+            ),
+            request,
+        )
+    except RepaymentAdjustmentValidation as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Manual allocation approval failed validation.", exc.field_errors)
+    except RepaymentAdjustmentPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "Elevated manual allocation approval permission is required.")
+    except RepaymentAdjustmentNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
+    except RepaymentAdjustmentConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def repayment_manual_allocate(request, repayment_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            RepaymentAllocator.allocate(
+                actor=actor,
+                repayment_id=repayment_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                manual=True,
+                request=request,
+            ),
+            request,
+        )
+    except RepaymentAllocationValidation as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Manual allocation failed validation.", exc.field_errors)
+    except RepaymentAllocationPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "Repayment allocation permission is required.")
+    except RepaymentAllocationNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
+    except RepaymentAllocationConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def repayment_reverse(request, repayment_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            reverse_repayment(
+                actor=actor,
+                repayment_id=repayment_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                request=request,
+            ),
+            request,
+        )
+    except RepaymentAdjustmentValidation as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Repayment reversal failed validation.", exc.field_errors)
+    except RepaymentAdjustmentPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "Elevated financial reversal permission is required.")
+    except RepaymentAdjustmentNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
+    except RepaymentAdjustmentConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
 
 

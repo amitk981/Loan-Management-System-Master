@@ -1,0 +1,23 @@
+Verified permanent test selectors:
+sfpcl_credit/tests/test_repayment_adjustment_api.py::RepaymentAdjustmentApiTests::test_allocation_requires_posted_sap_decision_and_idempotency_key
+sfpcl_credit/tests/test_repayment_adjustment_api.py::RepaymentAdjustmentPostgreSQLAcceptanceTests::test_cross_receipt_idempotency_reuse_is_zero_write_conflict
+sfpcl_credit/tests/test_repayment_adjustment_api.py::RepaymentAdjustmentApiTests::test_allocation_fails_closed_when_schedule_cannot_absorb_exact_amount
+sfpcl_credit/tests/test_repayment_adjustment_api.py::RepaymentAdjustmentApiTests::test_manual_exception_allocation_requires_exact_terminal_approval
+sfpcl_credit/tests/test_repayment_adjustment_api.py::RepaymentAdjustmentApiTests::test_reversal_appends_compensating_truth_and_preserves_original_rows
+sfpcl_credit/tests/test_repayment_adjustment_api.py::RepaymentAdjustmentCatalogueTests::test_default_role_catalogue_grants_only_source_allocation_authority
+
+Focused SQLite-backed API/catalogue command result:
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.....
+Ran 5 tests in 2.804s
+OK
+
+Focused PostgreSQL command result:
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 2.706s
+OK
+
+Exit code: 0

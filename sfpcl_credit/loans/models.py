@@ -370,6 +370,7 @@ class Repayment(models.Model):
                         "pending",
                         "allocated",
                         "allocated_with_exception",
+                        "reversed",
                     )
                 ),
                 name="repayment_allocation_status_bounded",
@@ -408,6 +409,59 @@ class AppendOnlyRepaymentEvidenceQuerySet(models.QuerySet):
         raise ValidationError({"repayment_evidence": "Repayment evidence is append-only."})
 
 
+class ManualAllocationApproval(models.Model):
+    manual_allocation_approval_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    repayment = models.OneToOneField(
+        Repayment, on_delete=models.PROTECT, related_name="manual_allocation_approval"
+    )
+    loan_account = models.ForeignKey(
+        LoanAccount, on_delete=models.PROTECT, related_name="manual_allocation_approvals"
+    )
+    bank_statement_line_id = models.UUIDField()
+    approved_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    approval_reason = models.CharField(max_length=500)
+    approved_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="manual_allocation_approvals"
+    )
+    approval_audit = models.OneToOneField(
+        "identity.AuditLog",
+        on_delete=models.PROTECT,
+        related_name="manual_allocation_approval",
+    )
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    approved_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    objects = AppendOnlyRepaymentEvidenceQuerySet.as_manager()
+
+    class Meta:
+        db_table = "manual_allocation_approvals"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(approved_amount__gt=0),
+                name="manual_allocation_approval_amount_positive",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(approval_reason=""),
+                name="manual_allocation_approval_reason_required",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"manual_allocation_approval": "Manual allocation approval is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"manual_allocation_approval": "Manual allocation approval is immutable."}
+        )
+
+
 class RepaymentAllocation(models.Model):
     repayment_allocation_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -440,6 +494,20 @@ class RepaymentAllocation(models.Model):
     allocation_rule = models.CharField(max_length=80, default="principal_first")
     allocation_rule_version = models.CharField(max_length=40, default="v1")
     exception_reason = models.CharField(max_length=120, null=True, blank=True)
+    decision_reason = models.CharField(max_length=500, default="Principal-first allocation.")
+    idempotency_key_digest = models.CharField(
+        max_length=64, null=True, blank=True, unique=True
+    )
+    payload_digest = models.CharField(max_length=64, null=True, blank=True)
+    manual_approval = models.OneToOneField(
+        ManualAllocationApproval,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="allocation",
+    )
+    loan_status_before = models.CharField(max_length=80, default="active")
+    loan_status_after = models.CharField(max_length=80, default="partially_repaid")
     allocated_by_user = models.ForeignKey(
         "identity.User", on_delete=models.PROTECT, related_name="repayment_allocations"
     )
@@ -479,6 +547,10 @@ class RepaymentAllocation(models.Model):
             models.CheckConstraint(
                 check=models.Q(allocated_to_charges=0),
                 name="repayment_allocation_no_unconfigured_charges",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(decision_reason=""),
+                name="repayment_allocation_reason_required",
             ),
             models.CheckConstraint(
                 check=models.Q(
@@ -526,6 +598,59 @@ class RepaymentAllocation(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError({"repayment_allocation": "Repayment allocation is immutable."})
+
+
+class RepaymentScheduleAllocation(models.Model):
+    repayment_schedule_allocation_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    allocation = models.ForeignKey(
+        RepaymentAllocation,
+        on_delete=models.PROTECT,
+        related_name="schedule_applications",
+    )
+    repayment_schedule = models.ForeignKey(
+        RepaymentSchedule,
+        on_delete=models.PROTECT,
+        related_name="allocation_applications",
+    )
+    principal_applied = models.DecimalField(max_digits=18, decimal_places=2)
+    interest_applied = models.DecimalField(max_digits=18, decimal_places=2)
+    schedule_status_before = models.CharField(max_length=60)
+    schedule_status_after = models.CharField(max_length=60)
+
+    objects = AppendOnlyRepaymentEvidenceQuerySet.as_manager()
+
+    class Meta:
+        db_table = "repayment_schedule_allocations"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["allocation", "repayment_schedule"],
+                name="uniq_allocation_schedule_application",
+            ),
+            models.CheckConstraint(
+                check=models.Q(principal_applied__gte=0)
+                & models.Q(interest_applied__gte=0),
+                name="schedule_allocation_amounts_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=models.Q(principal_applied__gt=0)
+                | models.Q(interest_applied__gt=0),
+                name="schedule_allocation_has_amount",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"schedule_allocation": "Schedule allocation evidence is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"schedule_allocation": "Schedule allocation evidence is immutable."}
+        )
 
 
 class RepaymentLedgerEntry(models.Model):
@@ -583,6 +708,126 @@ class RepaymentLedgerEntry(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError({"repayment_ledger_entry": "Repayment ledger is append-only."})
+
+
+class RepaymentReversal(models.Model):
+    repayment_reversal_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    allocation = models.OneToOneField(
+        RepaymentAllocation, on_delete=models.PROTECT, related_name="reversal"
+    )
+    repayment = models.OneToOneField(
+        Repayment, on_delete=models.PROTECT, related_name="reversal"
+    )
+    loan_account = models.ForeignKey(
+        LoanAccount, on_delete=models.PROTECT, related_name="repayment_reversals"
+    )
+    reversal_reason = models.CharField(max_length=500)
+    principal_restored = models.DecimalField(max_digits=18, decimal_places=2)
+    interest_restored = models.DecimalField(max_digits=18, decimal_places=2)
+    charges_restored = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    total_before = models.DecimalField(max_digits=18, decimal_places=2)
+    total_after = models.DecimalField(max_digits=18, decimal_places=2)
+    reversed_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="repayment_reversals"
+    )
+    reversal_audit = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT, related_name="repayment_reversal"
+    )
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    reversed_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    objects = AppendOnlyRepaymentEvidenceQuerySet.as_manager()
+
+    class Meta:
+        db_table = "repayment_reversals"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(principal_restored__gte=0)
+                & models.Q(interest_restored__gte=0)
+                & models.Q(charges_restored=0)
+                & models.Q(total_before__gte=0)
+                & models.Q(total_after__gte=0),
+                name="repayment_reversal_amounts_valid",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(reversal_reason=""),
+                name="repayment_reversal_reason_required",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"repayment_reversal": "Repayment reversal is immutable."})
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"repayment_reversal": "Repayment reversal is immutable."})
+
+
+class RepaymentReversalLedgerEntry(models.Model):
+    repayment_reversal_ledger_entry_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    reversal = models.OneToOneField(
+        RepaymentReversal, on_delete=models.PROTECT, related_name="ledger_entry"
+    )
+    loan_account = models.ForeignKey(
+        LoanAccount,
+        on_delete=models.PROTECT,
+        related_name="repayment_reversal_ledger_entries",
+    )
+    transaction_date = models.DateField(db_index=True)
+    debit_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    principal_balance = models.DecimalField(max_digits=18, decimal_places=2)
+    interest_balance = models.DecimalField(max_digits=18, decimal_places=2)
+    charges_balance = models.DecimalField(max_digits=18, decimal_places=2)
+    total_outstanding = models.DecimalField(max_digits=18, decimal_places=2)
+    actor_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="repayment_reversal_ledger_entries",
+    )
+    actor_display_name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    objects = AppendOnlyRepaymentEvidenceQuerySet.as_manager()
+
+    class Meta:
+        db_table = "repayment_reversal_ledger_entries"
+        ordering = ["created_at", "repayment_reversal_ledger_entry_id"]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(debit_amount__gt=0)
+                & models.Q(principal_balance__gte=0)
+                & models.Q(interest_balance__gte=0)
+                & models.Q(charges_balance__gte=0)
+                & models.Q(total_outstanding__gte=0),
+                name="repayment_reversal_ledger_amounts_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    total_outstanding=models.F("principal_balance")
+                    + models.F("interest_balance")
+                    + models.F("charges_balance")
+                ),
+                name="repayment_reversal_ledger_total_parts",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"repayment_reversal_ledger": "Repayment reversal ledger is append-only."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"repayment_reversal_ledger": "Repayment reversal ledger is append-only."}
+        )
 
 
 class RepaymentSapPostingObligation(models.Model):

@@ -185,6 +185,12 @@ PERMISSIONS = [
     ("finance.disbursement.send_advice", "Send disbursement advice", "high"),
     ("finance.repayment.create", "Capture repayment", "high"),
     ("finance.repayment.allocate", "Allocate repayment", "critical"),
+    (
+        "finance.repayment.manual_allocation_approve",
+        "Approve exceptional manual repayment allocation",
+        "critical",
+    ),
+    ("finance.repayment.reverse", "Reverse posted repayment", "critical"),
     ("finance.repayment.mark_sap_posted", "Mark SAP posting", "high"),
     ("finance.bank_statement.read", "View bank statement reconciliation", "medium"),
     ("finance.bank_statement.import", "Import bank statements", "high"),
@@ -509,6 +515,8 @@ ROLE_PERMISSIONS = {
     ],
     "accounts_head": [
         "finance.loan_account.read",
+        "finance.repayment.create",
+        "finance.repayment.allocate",
         "finance.bank_statement.read",
         "finance.bank_statement.import",
         "finance.bank_statement.match",

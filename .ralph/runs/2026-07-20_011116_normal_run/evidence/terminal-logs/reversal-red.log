@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_reversal_appends_compensating_truth_and_preserves_original_rows (sfpcl_credit.tests.test_repayment_adjustment_api.RepaymentAdjustmentApiTests.test_reversal_appends_compensating_truth_and_preserves_original_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_011116_normal_run/sfpcl_credit/tests/test_repayment_adjustment_api.py", line 178, in test_reversal_appends_compensating_truth_and_preserves_original_rows
+    from sfpcl_credit.loans.models import (
+ImportError: cannot import name 'RepaymentReversal' from 'sfpcl_credit.loans.models' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_011116_normal_run/sfpcl_credit/loans/models.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.647s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

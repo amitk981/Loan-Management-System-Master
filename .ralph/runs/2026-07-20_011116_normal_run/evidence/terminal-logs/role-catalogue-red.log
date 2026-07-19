@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_default_role_catalogue_grants_only_source_allocation_authority (sfpcl_credit.tests.test_repayment_adjustment_api.RepaymentAdjustmentCatalogueTests.test_default_role_catalogue_grants_only_source_allocation_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_011116_normal_run/sfpcl_credit/tests/test_repayment_adjustment_api.py", line 390, in test_default_role_catalogue_grants_only_source_allocation_authority
+    self.assertEqual(
+AssertionError: Items in the second set but not the first:
+'accounts_head'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.101s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

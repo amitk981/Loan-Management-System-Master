@@ -1,0 +1,6 @@
+Command:
+source scripts/lib/ralph-architecture-review.sh
+ralph_validate_review_finding_closure "$PWD" "$PWD/docs/slices/010C2-manual-allocation-and-financial-reversal-controls.md" "$PWD/.ralph/runs/2026-07-20_011116_normal_run"
+
+Permanent test for AR-010-ALLOCATION-001 must bind a permanent test file to an exact selector: `sfpcl_credit.tests.test_repayment_adjustment_api.RepaymentAdjustmentApiTests.test_allocation_requires_posted_sap_decision_and_idempotency_key`
+Exit code: 1

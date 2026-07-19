@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_allocation_fails_closed_when_schedule_cannot_absorb_exact_amount (sfpcl_credit.tests.test_repayment_adjustment_api.RepaymentAdjustmentApiTests.test_allocation_fails_closed_when_schedule_cannot_absorb_exact_amount)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_011116_normal_run/sfpcl_credit/tests/test_repayment_adjustment_api.py", line 92, in test_allocation_fails_closed_when_schedule_cannot_absorb_exact_amount
+    self.assertEqual(empty.status_code, 409, empty.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"repayment_allocation_id": "6c7b38fe-4b2b-4e3e-8603-6954e2963f23", "repayment_id": "72840f98-76ea-458a-baa5-b1bfb879de21", "allocation_rule": "principal_first", "allocation_rule_version": "v1", "allocation_status": "allocated", "allocated_to_principal": "100000.00", "allocated_to_interest": "0.00", "allocated_to_charges": "0.00", "unallocated_amount": "0.00", "exception_reason": null, "loan_account": {"principal_outstanding": "300000.00", "interest_outstanding": "0.00", "charges_outstanding": "0.00", "total_outstanding": "300000.00"}}, "meta": {"request_id": "req-adjustment-allocation", "timestamp": "2026-07-19T19:48:31.847285Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.674s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

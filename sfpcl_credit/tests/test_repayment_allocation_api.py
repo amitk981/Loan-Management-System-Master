@@ -31,6 +31,7 @@ class RepaymentAllocationApiTests(TestCase):
 
         captured = self.fixture._capture(self.fixture._payload(), "allocation-partial")
         repayment_id = captured.json()["data"]["repayment_id"]
+        self._schedule("400000.00")
 
         allocated = self._allocate(repayment_id)
 
@@ -144,6 +145,8 @@ class RepaymentAllocationApiTests(TestCase):
         }
         captured = self.fixture._capture(payload, "allocation-payoff")
         repayment_id = captured.json()["data"]["repayment_id"]
+        self._schedule("400000.00")
+        self._ensure_posted(repayment_id)
         capture_truth = (
             Repayment.objects.values().get(pk=repayment_id),
             RepaymentSapPostingObligation.objects.values().get(repayment_id=repayment_id),
@@ -151,9 +154,17 @@ class RepaymentAllocationApiTests(TestCase):
 
         first = self._allocate(repayment_id)
         replay = self._allocate(repayment_id)
+        changed = self._allocate(
+            repayment_id,
+            payload={
+                "allocation_rule": "principal_first",
+                "remarks": "Changed replay must not reuse retained truth.",
+            },
+        )
 
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(changed.status_code, 409, changed.content)
         self.assertEqual(replay.json()["data"], first.json()["data"])
         account = LoanAccount.objects.get(pk=self.account.pk)
         self.assertEqual(str(account.principal_outstanding), "0.00")
@@ -250,10 +261,10 @@ class RepaymentAllocationApiTests(TestCase):
             loan_account=self.account,
             installment_number=1,
             due_date=self.account.repayment_date,
-            principal_due="1000.00",
+            principal_due="400000.00",
             interest_due="0.00",
             charges_due="0.00",
-            total_due="1000.00",
+            total_due="400000.00",
             schedule_status="pending",
         )
         captured = self.fixture._capture(self.fixture._payload(), "allocation-db-rules")
@@ -272,7 +283,7 @@ class RepaymentAllocationApiTests(TestCase):
             )
         with self.assertRaises(IntegrityError), transaction.atomic():
             RepaymentSchedule._base_manager.filter(pk=schedule.pk).update(
-                paid_principal="1000.01"
+                paid_principal="400000.01"
             )
         allocation.exception_reason = "changed"
         ledger.actor_display_name = "Changed"
@@ -289,6 +300,7 @@ class RepaymentAllocationApiTests(TestCase):
                 mutation()
 
     def _allocate(self, repayment_id, payload=None, auth=None):
+        self._ensure_posted(repayment_id)
         return self.client.post(
             f"/api/v1/repayments/{repayment_id}/allocate/",
             data=json.dumps(
@@ -302,5 +314,35 @@ class RepaymentAllocationApiTests(TestCase):
             HTTP_X_REQUEST_ID="req-allocation-001",
             HTTP_USER_AGENT="allocation contract test",
             REMOTE_ADDR="203.0.113.51",
+            HTTP_IDEMPOTENCY_KEY=f"allocation-{repayment_id}",
             **(self.auth if auth is None else auth),
+        )
+
+    def _ensure_posted(self, repayment_id):
+        from sfpcl_credit.loans.models import Repayment
+
+        repayment = Repayment.objects.filter(pk=repayment_id).first()
+        if repayment is not None and repayment.sap_posting_status == "pending":
+            response = self.fixture._mark(
+                repayment_id,
+                {
+                    "sap_entry_reference": f"SAP-{repayment_id}",
+                    "sap_posted_at": "2026-12-05T10:00:00Z",
+                    "remarks": "Posting confirmed before allocation.",
+                },
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+
+    def _schedule(self, principal):
+        from sfpcl_credit.loans.models import RepaymentSchedule
+
+        return RepaymentSchedule.objects.create(
+            loan_account=self.account,
+            installment_number=1,
+            due_date=self.account.repayment_date,
+            principal_due=principal,
+            interest_due="0.00",
+            charges_due="0.00",
+            total_due=principal,
+            schedule_status="pending",
         )

@@ -49,6 +49,16 @@ def get_ledger(*, actor, loan_account_id, query_params):
             "allocation__repayment", "actor_user"
         ).order_by("created_at", "repayment_ledger_entry_id")
     )
+    rows.extend(
+        _reversal_ledger_row(entry)
+        for entry in account.repayment_reversal_ledger_entries.select_related(
+            "reversal__repayment", "actor_user"
+        ).order_by("created_at", "repayment_reversal_ledger_entry_id")
+    )
+    disbursement_rows = rows[:1] if transfer is not None else []
+    movement_rows = rows[1:] if transfer is not None else rows
+    movement_rows.sort(key=lambda row: row.pop("_sort_key"))
+    rows = disbursement_rows + movement_rows
     pagination = _pagination_result(
         page=page, page_size=page_size, total_count=len(rows)
     )
@@ -168,6 +178,7 @@ def _disbursement_ledger_row(transfer):
 def _repayment_ledger_row(entry):
     repayment = entry.allocation.repayment
     return {
+        "_sort_key": (entry.created_at, str(entry.pk)),
         "transaction_date": entry.transaction_date.isoformat(),
         "transaction_type": "repayment",
         "owner_reference": {
@@ -186,6 +197,31 @@ def _repayment_ledger_row(entry):
         },
         "sap_status": repayment.sap_posting_status,
         "remarks": "Repayment allocated principal first.",
+    }
+
+
+def _reversal_ledger_row(entry):
+    repayment = entry.reversal.repayment
+    return {
+        "_sort_key": (entry.created_at, str(entry.pk)),
+        "transaction_date": entry.transaction_date.isoformat(),
+        "transaction_type": "reversal",
+        "owner_reference": {
+            "entity_type": "repayment_reversal",
+            "entity_id": str(entry.reversal_id),
+        },
+        "reference": repayment.bank_reference_number,
+        "debit": _decimal(entry.debit_amount),
+        "credit": "0.00",
+        "principal_balance": _decimal(entry.principal_balance),
+        "interest_balance": _decimal(entry.interest_balance),
+        "total_outstanding": _decimal(entry.total_outstanding),
+        "actor": {
+            "user_id": str(entry.actor_user_id),
+            "display_name": entry.actor_display_name,
+        },
+        "sap_status": repayment.sap_posting_status,
+        "remarks": "Repayment reversed by compensating entry.",
     }
 
 

@@ -1,0 +1,11 @@
+Permanent test selector:
+sfpcl_credit/tests/test_repayment_adjustment_api.py::RepaymentAdjustmentApiTests::test_allocation_requires_posted_sap_decision_and_idempotency_key
+
+Retained TDD RED from run 2026-07-20_011116_normal_run:
+Found 1 test(s).
+F
+FAIL: test_allocation_requires_posted_sap_decision_and_idempotency_key (sfpcl_credit.tests.test_repayment_adjustment_api.RepaymentAdjustmentApiTests.test_allocation_requires_posted_sap_decision_and_idempotency_key)
+AssertionError: 200 != 409; a SAP-pending receipt was incorrectly admitted to allocation.
+Ran 1 test in 0.679s
+FAILED (failures=1)
+Exit code: 1

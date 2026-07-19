@@ -1,7 +1,7 @@
 # Slice 010C2: Allocation Admission, Manual Allocation, and Financial Reversal Controls
 
 ## Status
-Not Started
+Complete
 
 ## Runtime Capabilities
 - `postgresql-five-race-acceptance`
