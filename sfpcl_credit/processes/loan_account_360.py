@@ -9,6 +9,9 @@ from django.db.models import F, Q
 from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
     filter_accounts_with_current_transfer,
 )
+from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
+    filter_accounts_with_current_initiation,
+)
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
@@ -85,13 +88,10 @@ def _eligible_account_candidates(*, actor, filters, candidate_owner):
     queryset = filter_accounts_with_current_transfer(
         queryset.filter(sanctioned | active)
     )
+    queryset = filter_accounts_with_current_initiation(queryset)
     queryset = SapCustomerProfileModule.filter_current_account_completions(queryset)
     roles = set(auth_service.effective_role_codes(actor))
-    permissions = set(auth_service.effective_permission_codes(actor))
-    if (
-        roles == {"senior_manager_finance"}
-        and "finance.disbursement.initiate" not in permissions
-    ):
+    if roles == {"senior_manager_finance"}:
         queryset = queryset.filter(_latest_sap_assignee_id=actor.pk)
     elif roles == {"chief_financial_controller"}:
         queryset = queryset.filter(

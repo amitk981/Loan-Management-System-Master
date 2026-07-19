@@ -3,6 +3,26 @@
 from django.db import migrations, models
 
 
+def backfill_delivery_storage_checksums(apps, schema_editor):
+    """Reconcile only legacy deliveries already bound to their retained file identity."""
+    Request = apps.get_model("sap_workflow", "SapCustomerProfileRequest")
+    rows = Request.objects.select_related("excel_file").filter(
+        request_status__in=("sent", "completed"),
+        delivery_storage_checksum_sha256="",
+        delivery_file_id_snapshot__isnull=False,
+    )
+    updates = []
+    for row in rows.iterator(chunk_size=500):
+        checksum = row.excel_file.checksum_sha256 or ""
+        if row.delivery_file_id_snapshot == row.excel_file_id and len(checksum) == 64:
+            row.delivery_storage_checksum_sha256 = checksum
+            updates.append(row)
+    if updates:
+        Request.objects.bulk_update(
+            updates, ["delivery_storage_checksum_sha256"], batch_size=500
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -14,5 +34,9 @@ class Migration(migrations.Migration):
             model_name='sapcustomerprofilerequest',
             name='delivery_storage_checksum_sha256',
             field=models.CharField(blank=True, max_length=64),
+        ),
+        migrations.RunPython(
+            backfill_delivery_storage_checksums,
+            reverse_code=migrations.RunPython.noop,
         ),
     ]

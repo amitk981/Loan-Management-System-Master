@@ -1,9 +1,14 @@
 """Public regressions for the converged Epic 009 read boundary."""
 
 import inspect
+from importlib import import_module
 
 from django.test import Client, TestCase
 
+from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
+    resolve_post_transfer_evidence,
+)
+from sfpcl_credit.identity import epic009_e2e_fixture
 from sfpcl_credit.identity.management.commands import seed_epic_009_e2e_fixture
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest
@@ -12,6 +17,37 @@ from sfpcl_credit.tests import test_loan_account_reads_api as account_tests
 
 
 class Epic009ReadBoundaryConvergenceTests(TestCase):
+    def test_transfer_file_drift_hides_public_account_list_and_detail(self):
+        fixture = account_tests.ActiveLoanAccountReadApiTests(
+            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
+        )
+        fixture.setUp()
+        evidence = fixture.fixture.evidence
+        evidence.checksum_sha256 = "0" * 64
+        evidence.save(update_fields=["checksum_sha256"])
+
+        self.assertIsNone(
+            resolve_post_transfer_evidence(
+                application_id=fixture.account.loan_application_id
+            )
+        )
+
+        listing = Client().get("/api/v1/loan-accounts/", **fixture.auth)
+        detail = Client().get(
+            f"/api/v1/loan-accounts/{fixture.account.pk}/", **fixture.auth
+        )
+
+        self.assertEqual(listing.status_code, 200, listing.content)
+        self.assertEqual(
+            (
+                listing.json()["pagination"]["total_count"],
+                listing.json()["data"],
+                detail.status_code,
+            ),
+            (0, [], 404),
+            detail.content,
+        )
+
     def test_initiation_authority_does_not_replace_public_account_read_permission(self):
         fixture = workspace_tests.DisbursementWorkspaceApiTests(
             "test_admitted_senior_finance_reader_does_not_hit_internal_permission"
@@ -26,6 +62,27 @@ class Epic009ReadBoundaryConvergenceTests(TestCase):
 
         self.assertEqual(response.status_code, 403, response.content)
         self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+
+    def test_stale_senior_finance_initiation_is_excluded_before_count(self):
+        fixture = workspace_tests.DisbursementWorkspaceApiTests(
+            "test_admitted_senior_finance_reader_does_not_hit_internal_permission"
+        )
+        fixture.setUp()
+        Disbursement = type(fixture.row)
+        Disbursement.objects.filter(pk=fixture.row.pk).update(
+            final_verification_comments="Changed after immutable initiation evidence."
+        )
+
+        response = Client().get(
+            "/api/v1/disbursement-workspaces/",
+            **fixture.fixture.fixture._auth(fixture.fixture.fixture.actor),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(
+            (response.json()["pagination"]["total_count"], response.json()["data"]),
+            (0, []),
+        )
 
     def test_completed_account_send_ledger_drift_is_excluded_before_count(self):
         fixture = account_tests.ActiveLoanAccountReadApiTests(
@@ -48,6 +105,56 @@ class Epic009ReadBoundaryConvergenceTests(TestCase):
             (response.json()["pagination"]["total_count"], response.json()["data"]),
             (0, []),
         )
+
+    def test_legacy_sap_delivery_checksum_backfill_preserves_only_coherent_rows(self):
+        fixture = account_tests.ActiveLoanAccountReadApiTests(
+            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
+        )
+        fixture.setUp()
+        coherent = SapCustomerProfileRequest.objects.get(
+            loan_application_id=fixture.account.loan_application_id,
+            request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
+        )
+        coherent.delivery_storage_checksum_sha256 = ""
+        coherent.save(update_fields=["delivery_storage_checksum_sha256"])
+        migration = import_module(
+            "sfpcl_credit.sap_workflow.migrations."
+            "0002_sapcustomerprofilerequest_delivery_storage_checksum_sha256"
+        )
+        migration.backfill_delivery_storage_checksums(
+            type("Apps", (), {"get_model": staticmethod(
+                lambda app, model: SapCustomerProfileRequest
+                if (app, model) == ("sap_workflow", "SapCustomerProfileRequest")
+                else fixture.account._meta.apps.get_model(app, model)
+            )})(),
+            None,
+        )
+
+        coherent.refresh_from_db()
+        self.assertEqual(
+            coherent.delivery_storage_checksum_sha256,
+            coherent.excel_file.checksum_sha256,
+        )
+        retained_snapshot = coherent.delivery_file_id_snapshot
+        coherent.delivery_file_id_snapshot = None
+        coherent.delivery_storage_checksum_sha256 = ""
+        coherent.save(
+            update_fields=[
+                "delivery_file_id_snapshot",
+                "delivery_storage_checksum_sha256",
+            ]
+        )
+        migration.backfill_delivery_storage_checksums(
+            type("Apps", (), {"get_model": staticmethod(
+                lambda app, model: SapCustomerProfileRequest
+                if (app, model) == ("sap_workflow", "SapCustomerProfileRequest")
+                else fixture.account._meta.apps.get_model(app, model)
+            )})(),
+            None,
+        )
+        coherent.refresh_from_db()
+        self.assertEqual(coherent.delivery_storage_checksum_sha256, "")
+        self.assertIsNotNone(retained_snapshot)
 
     def test_completed_account_send_audit_drift_is_excluded_before_count(self):
         fixture = account_tests.ActiveLoanAccountReadApiTests(
@@ -127,7 +234,12 @@ class Epic009ReadBoundaryConvergenceTests(TestCase):
                 type(row).objects.filter(pk=row.pk).update(**{field: original})
 
     def test_runtime_epic009_seed_uses_no_testcase_or_private_test_helpers(self):
-        source = inspect.getsource(seed_epic_009_e2e_fixture)
+        source = "\n".join(
+            (
+                inspect.getsource(seed_epic_009_e2e_fixture),
+                inspect.getsource(epic009_e2e_fixture),
+            )
+        )
 
         self.assertNotIn("sfpcl_credit.tests", source)
         self.assertNotIn(".setUp()", source)

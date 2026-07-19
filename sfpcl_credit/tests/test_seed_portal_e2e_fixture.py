@@ -6,6 +6,7 @@ from django.core.management.base import CommandError
 from django.test import Client, TestCase, override_settings
 
 from sfpcl_credit.applications.models import ApplicationDeficiency, LoanApplication
+from sfpcl_credit.documents.models import DocumentTemplate
 from sfpcl_credit.identity.models import PortalAccount
 from sfpcl_credit.legal_documents.models import LoanDocument
 
@@ -19,6 +20,25 @@ COMPLIANCE_EMAIL = "e2e.portal.compliance@sfpcl.example"
     DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-portal-e2e-seed-")
 )
 class SeedPortalE2eFixtureTests(TestCase):
+    def test_epic009_then_portal_seed_order_reuses_governed_template_identities(self):
+        with patch.dict(
+            "os.environ",
+            {"SFPCL_DEBUG": "true", "SFPCL_ALLOW_E2E_SEED": "true"},
+        ):
+            call_command("seed_epic_009_e2e_fixture")
+            call_command("seed_portal_e2e_fixture")
+            call_command("seed_portal_e2e_fixture")
+
+        for document_type in ("term_sheet", "power_of_attorney"):
+            self.assertEqual(
+                DocumentTemplate.objects.filter(
+                    document_type=document_type,
+                    borrower_type="individual_farmer",
+                    template_version="1.0",
+                ).count(),
+                1,
+            )
+
     def test_seed_refuses_without_both_isolated_e2e_guards(self):
         with self.assertRaisesMessage(CommandError, "isolated E2E seed guards"):
             call_command("seed_portal_e2e_fixture")

@@ -418,15 +418,17 @@ class Command(BaseCommand):
             uploaded_by_user=actor,
             sensitivity_level="confidential",
         )
-        template = DocumentTemplate.objects.create(
-            template_code="portal-e2e-term-sheet-v1",
-            template_name="Portal E2E Term Sheet",
+        template, _ = DocumentTemplate.objects.get_or_create(
             document_type="term_sheet",
             borrower_type="individual_farmer",
             template_version="1.0",
-            merge_fields_json=[],
-            approval_status="approved",
-            effective_from=timezone.localdate(),
+            defaults={
+                "template_code": "portal-e2e-term-sheet-v1",
+                "template_name": "Portal E2E Term Sheet",
+                "merge_fields_json": [],
+                "approval_status": "approved",
+                "effective_from": timezone.localdate(),
+            },
         )
         return LoanDocument.objects.create(
             loan_application=application,
@@ -461,15 +463,17 @@ class Command(BaseCommand):
             uploaded_by_user=actor,
             sensitivity_level="confidential",
         )
-        template = DocumentTemplate.objects.create(
-            template_code="portal-e2e-power-of-attorney-v1",
-            template_name="Portal E2E Power of Attorney",
+        template, _ = DocumentTemplate.objects.get_or_create(
             document_type="power_of_attorney",
             borrower_type="individual_farmer",
             template_version="1.0",
-            merge_fields_json=[],
-            approval_status="approved",
-            effective_from=timezone.localdate(),
+            defaults={
+                "template_code": "portal-e2e-power-of-attorney-v1",
+                "template_name": "Portal E2E Power of Attorney",
+                "merge_fields_json": [],
+                "approval_status": "approved",
+                "effective_from": timezone.localdate(),
+            },
         )
         return LoanDocument.objects.create(
             loan_application=application,

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
 
-from django.db.models import Exists, OuterRef, Q, Subquery
+from django.db.models import Exists, F, OuterRef, Q, Subquery
 
 from sfpcl_credit.disbursements.models import Disbursement
 from sfpcl_credit.disbursements.modules.disbursement_transfer_success import (
@@ -74,6 +74,12 @@ def filter_accounts_with_current_transfer(queryset):
         transfer_success_audit__isnull=False,
         transfer_success_workflow_event__isnull=False,
         transfer_success_loan_status_history__isnull=False,
+        loan_register_update__evidence_checksum_sha256=F(
+            "bank_transfer_evidence_document__checksum_sha256"
+        ),
+        advice_intent__evidence_checksum_sha256=F(
+            "bank_transfer_evidence_document__checksum_sha256"
+        ),
     ).order_by("-disbursed_at", "-disbursement_id")
     return queryset.annotate(
         _selector_activated_at=Subquery(current.values("disbursed_at")[:1]),

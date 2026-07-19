@@ -1,7 +1,7 @@
 # Slice CR-013: Close the Epic 009 owner boundary without exposing stale or unowned accounts
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement

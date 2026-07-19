@@ -126,6 +126,7 @@ class DisbursementWorkspaceApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 0)
         self.assertEqual(response.json()["data"], [])
 
     def test_stale_initiation_affects_neither_total_nor_page(self):

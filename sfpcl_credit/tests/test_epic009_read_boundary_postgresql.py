@@ -33,25 +33,23 @@ class Epic009ReadBoundaryPostgreSQLAcceptanceTests(TestCase):
         test_cfc_selector_executes_sha256_and_excludes_comment_drift
     )
 
-    def test_completed_account_send_owner_is_excluded_before_count(self):
+    def test_transfer_file_owner_is_excluded_before_count_and_detail(self):
         fixture = account_tests.ActiveLoanAccountReadApiTests(
-            "test_completion_digest_drift_affects_neither_total_nor_page"
+            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
         )
         fixture.setUp()
-        request = SapCustomerProfileRequest.objects.select_related(
-            "sent_communication"
-        ).get(
-            loan_application_id=fixture.account.loan_application_id,
-            request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
-        )
-        request.sent_communication.body_snapshot = "PostgreSQL send-owner drift."
-        request.sent_communication.save(update_fields=["body_snapshot"])
+        fixture.fixture.evidence.checksum_sha256 = "0" * 64
+        fixture.fixture.evidence.save(update_fields=["checksum_sha256"])
 
         response = Client().get("/api/v1/loan-accounts/", **fixture.auth)
+        detail = Client().get(
+            f"/api/v1/loan-accounts/{fixture.account.pk}/", **fixture.auth
+        )
 
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(response.json()["pagination"]["total_count"], 0)
         self.assertEqual(response.json()["data"], [])
+        self.assertEqual(detail.status_code, 404, detail.content)
 
     def test_s37_file_digest_owner_is_excluded_before_count(self):
         fixture = workspace_tests.SapStaffWorkspaceApiTests(

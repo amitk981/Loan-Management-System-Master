@@ -4,7 +4,17 @@ from dataclasses import dataclass
 import hashlib
 import json
 
-from django.db.models import BooleanField, F, Func, IntegerField, JSONField, Value
+from django.db.models import (
+    BooleanField,
+    Exists,
+    F,
+    Func,
+    IntegerField,
+    JSONField,
+    OuterRef,
+    Q,
+    Value,
+)
 from django.db.models.fields.json import KeyTextTransform, KeyTransform
 from django.db.models.functions import Cast, Coalesce, NullIf, SHA256
 
@@ -82,9 +92,9 @@ class CurrentDisbursementEvidence:
     initiated_at: object
 
 
-def filter_current_pending_disbursements(queryset):
+def filter_current_pending_disbursements(queryset, *, require_open_task=True):
     """Filter the database-pageable identity set for the pending CFC decision."""
-    return queryset.annotate(
+    filtered = queryset.annotate(
         _current_comment_digest=SHA256("final_verification_comments"),
         _audit_comment_digest=KeyTextTransform(
             "final_verification_comment_digest",
@@ -193,11 +203,6 @@ def filter_current_pending_disbursements(queryset):
         cfc_task__sender_user_id=F("initiated_by_user_id"),
         cfc_task__severity="urgent",
         cfc_task__title="Disbursement awaiting CFC authorisation",
-        cfc_task__action_label="Review disbursement",
-        cfc_task__action_url=F("_audit_cfc_action_url"),
-        cfc_task__message=F("_audit_cfc_task_message"),
-        cfc_task__read_at__isnull=True,
-        cfc_task__read_by_user_id__isnull=True,
         borrower_bank_account__status="active",
         borrower_bank_account__verification_status="verified",
         borrower_bank_account__owner_party_type="member",
@@ -231,6 +236,63 @@ def filter_current_pending_disbursements(queryset):
         loan_account__interest_outstanding=0,
         loan_account__charges_outstanding=0,
         loan_account__total_outstanding=0,
+    )
+    if require_open_task:
+        return filtered.filter(
+            cfc_task__action_label="Review disbursement",
+            cfc_task__action_url=F("_audit_cfc_action_url"),
+            cfc_task__message=F("_audit_cfc_task_message"),
+            cfc_task__read_at__isnull=True,
+            cfc_task__read_by_user_id__isnull=True,
+        )
+    return filtered
+
+
+def filter_accounts_with_current_initiation(queryset):
+    """Keep account identities only when any retained initiation is current.
+
+    Active accounts are governed by the post-transfer owner. A sanctioned account may have no
+    initiation yet, but once an initiation exists its exact current decision owns whether the
+    account remains countable or actionable.
+    """
+    all_initiations = Disbursement.objects.filter(loan_account_id=OuterRef("pk"))
+    current_initiations = filter_current_pending_disbursements(all_initiations)
+    approved_initiations = filter_current_pending_disbursements(
+        all_initiations.filter(
+            authorisation_status="approved", bank_transfer_status="pending"
+        ),
+        require_open_task=False,
+    ).filter(
+        authorised_by_user__isnull=False,
+        authorised_at__isnull=False,
+        authorisation_action_id__isnull=False,
+        authorisation_evidence_digest__isnull=False,
+        authorisation_request_id__isnull=False,
+        authorisation_audit__action="disbursement.authorised",
+        authorisation_audit__entity_type="disbursement",
+        authorisation_audit__entity_id=F("pk"),
+        authorisation_audit__actor_user_id=F("authorised_by_user_id"),
+        authorisation_workflow_event__workflow_name="DisbursementAuthorisation",
+        authorisation_workflow_event__entity_type="disbursement",
+        authorisation_workflow_event__entity_id=F("pk"),
+        authorisation_workflow_event__from_state="pending",
+        authorisation_workflow_event__to_state="approved",
+        authorisation_workflow_event__triggered_by_user_id=F("authorised_by_user_id"),
+        checker_role_code="chief_financial_controller",
+        cfc_task__read_at=F("authorised_at"),
+        cfc_task__read_by_user_id=F("authorised_by_user_id"),
+        cfc_task__action_label="Approved",
+        cfc_task__action_url="",
+    )
+    return queryset.annotate(
+        _has_retained_initiation=Exists(all_initiations),
+        _has_current_initiation=Exists(current_initiations),
+        _has_approved_initiation=Exists(approved_initiations),
+    ).filter(
+        Q(loan_account_status="active")
+        | Q(_has_retained_initiation=False)
+        | Q(_has_current_initiation=True)
+        | Q(_has_approved_initiation=True)
     )
 
 
@@ -445,6 +507,7 @@ def _aggregate_has_no_later_truth(row, account):
 
 __all__ = [
     "CurrentDisbursementEvidence",
+    "filter_accounts_with_current_initiation",
     "filter_current_pending_disbursements",
     "resolve_current_disbursement_evidence",
 ]
