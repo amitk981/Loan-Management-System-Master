@@ -217,6 +217,48 @@ artifact_file="$run_dir/ralph-artifact-validation.md"
 changed_paths="$( (cd "$worktree_dir" && git status --porcelain) \
   | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"
 
+# Review-generated corrective slices carry a semantic closure interface in
+# their trusted fixed-point slice file. Check both versions so a candidate
+# cannot bypass validation by deleting the heading; the helper then requires
+# exact fixed-point continuity. Ordinary slices still skip this lane.
+review_closure_contract_present=0
+if [[ "$mode" != "architecture_review" && -f "$slice_file" ]]; then
+  slice_relative="docs/slices/${slice_id}.md"
+  baseline_slice_text="$(git -C "$worktree_dir" show "HEAD:$slice_relative" 2>/dev/null || true)"
+  if grep -q '^## Review Finding Closure[[:space:]]*$' <<< "$baseline_slice_text" \
+      || grep -q '^## Review Finding Closure[[:space:]]*$' "$slice_file"; then
+    review_closure_contract_present=1
+  fi
+fi
+if (( review_closure_contract_present == 1 )); then
+  review_closure_results="$run_dir/review-closure-contract-results.md"
+  review_closure_output=""
+  if review_closure_output="$(ralph_validate_review_finding_closure \
+      "$worktree_dir" "$slice_file" "$run_dir" 2>&1)"; then
+    {
+      echo "# Review Closure Contract Results"
+      echo
+      printf '%s\n' "$review_closure_output"
+    } > "$review_closure_results"
+  else
+    {
+      echo "# Review Closure Contract Results"
+      echo
+      echo "FAIL: corrective-slice semantic closure evidence is incomplete."
+      [[ -n "$review_closure_output" ]] && printf '%s\n' "$review_closure_output"
+    } > "$review_closure_results"
+    {
+      echo "# Validation Failure Summary"
+      echo
+      echo "## review-closure-contract-results.md"
+      echo
+      cat "$review_closure_results"
+    } > "$run_dir/failure-summary.md"
+    echo "Corrective-slice semantic closure validation failed before product gates." >&2
+    exit 1
+  fi
+fi
+
 candidate_hash_before="$(ralph_candidate_hash "$worktree_dir")"
 commit_candidate_hash_before="$(ralph_candidate_hash "$worktree_dir" \
   --exclude "docs/slices/${slice_id}.md" \
@@ -264,6 +306,13 @@ elif [[ "$mode" == "architecture_review" ]]; then
       echo "- New Medium: $new_medium"
       echo "- New Low: $new_low"
       echo "- Corrective slices added: $corrective_added"
+      if ! ralph_validate_architecture_review_manifest \
+          "$run_dir/review-packet.md" "$worktree_dir" \
+          "$findings_closed" "$new_critical" "$new_high" "$new_medium" "$new_low"; then
+        echo "FAIL: finding closure manifest is missing, inconsistent, or lacks executable evidence."
+        exit 1
+      fi
+      echo "PASS: stable finding identities, reproducers, metrics, and corrective contracts agree."
       if ! actual_corrective_added="$(ralph_architecture_review_new_corrective_count \
           "$worktree_dir")"; then
         echo "FAIL: new corrective slice files do not satisfy the executable queue contract."

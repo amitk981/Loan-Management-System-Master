@@ -8,6 +8,74 @@
 
 Review cadence is adaptive but fail-closed. It remains every four completed slices while a review finds any new Critical/High issue. Two consecutive reviews with zero new Critical/High findings expand the interval to eight; any later Critical/High finding resets it to four. An epic boundary always sets a review due regardless of the current interval, including the final project boundary. Boundary ownership comes from each slice's explicit `## Parent Epic` metadata, including CR slices; Ralph does not close an epic while any Not Started or Blocked slice owned by that epic remains. A due boundary is temporarily deferred in memory—not rewritten in tracked state—while explicit same-epic corrective work remains. A due review is otherwise a mandatory product-work barrier: Ralph allows two bounded attempts and then stops without advancing the queue; it also refuses completion or product work unless a validated review clears the due flag. `review-packet.md` convergence metrics are machine-validated against corrective slice additions before a review can merge. A corrective review cycle admits one grouped corrective and at most one repair successor; a third corrective generation fails closed instead of growing another review/slice loop. After that configured cap is exhausted, only a High-risk CR with an exact `## Architecture Review Finalizer` declaration and a matching protected `[approved-finalizer]` owner entry may close the boundary. It still runs every declared product, regression, PostgreSQL, browser, migration, and coverage gate; failure repairs that same quarantined CR, while success clears the exhausted cycle and proceeds without another immediate review. Ordinary slices and review agents cannot grant themselves finalizer authority.
 
+### Semantic finding closure contract
+
+Every architecture review must give findings stable identities instead of relying on narrative and
+aggregate counts. Its `review-packet.md` contains exactly one `## Finding Closure Manifest` section.
+A clean review writes `- None`; otherwise it uses this exact table:
+
+```markdown
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-OWNER-001 | ROOT-010-OWNER-DECISION | High | New | .ralph/runs/<review-run>/evidence/review-probes/owner-boundary.log | 010A1 | - |
+```
+
+- IDs are uppercase, hyphenated, and permanent. A recurrence is `Carried` under the same Finding ID
+  and Root ID; it is never renamed as `New`. `New` IDs must not exist at the fixed point, while
+  `Carried` and `Closed` IDs must already exist in the fixed-point `REVIEW_FINDINGS.md`.
+- Each manifest row corresponds bijectively to one changed stable section in
+  `docs/working/REVIEW_FINDINGS.md`, beginning `## <Finding ID>` and containing the exact standalone
+  line `Root: <Root ID>`. Review changes outside those structured sections fail validation.
+- Every row names a non-empty retained reproducer under the current review's committed
+  `.ralph/runs/<run>/evidence/` tree. The evidence contains exact `Finding ID:` and `Root ID:` lines;
+  Critical/High reproducers also contain a failing signal. `Closed` rows name similarly bound
+  closure evidence with a positive passing signal, explicit zero exit, and no failure signal, and use `-` for Corrective Slice. Open Critical/High rows name exactly
+  one actionable corrective.
+- The manifest's `New` severities and `Closed` rows must equal `## Convergence Metrics`. Every ID and
+  exact `Root: <Root ID>` is retained in `docs/working/REVIEW_FINDINGS.md`.
+- A corrective named by the manifest carries this exact slice section, including explicit acceptance
+  IDs. This is the executable interface between the reviewer and implementer:
+
+```markdown
+## Review Finding Closure
+| Finding ID | Root ID | Reproducer | Acceptance IDs |
+|---|---|---|---|
+| AR-010-OWNER-001 | ROOT-010-OWNER-DECISION | .ralph/runs/<review-run>/evidence/review-probes/owner-boundary.log | AC-1, AC-2 |
+```
+
+The same corrective slice labels every top-level acceptance criterion, and the union of those labels
+must exactly equal the contract's Acceptance IDs—no promised criterion can remain outside evidence:
+
+```markdown
+## Acceptance Criteria
+- [AC-1] Canonical owner rejection removes the identity from counts, pages, and rows.
+- [AC-2] Detail, actions, and mutations reject the same identity through permanent public tests.
+```
+
+A product run whose slice has that section must create `review-closure-evidence.md` in its current
+run folder before independent validation:
+
+```markdown
+## Finding Evidence
+| Finding ID | Root ID | Permanent Test | RED Evidence | GREEN Evidence |
+|---|---|---|---|---|
+| AR-010-OWNER-001 | ROOT-010-OWNER-DECISION | backend/tests/test_owner.py::test_boundary | evidence/terminal-logs/owner-red.log | evidence/terminal-logs/owner-green.log |
+
+## Acceptance Evidence
+| Acceptance ID | Test | Evidence |
+|---|---|---|
+| AC-1 | backend/tests/test_owner.py::test_boundary | evidence/terminal-logs/owner-green.log |
+| AC-2 | backend/tests/test_owner.py::test_matrix | evidence/terminal-logs/owner-matrix.log |
+```
+
+The validator reads the closure contract from the fixed-point slice, requires the candidate slice
+to remain byte-for-byte identical, and checks exact ID/root continuity, a discoverable permanent
+test file plus parser/declaration-resolvable selector, distinct non-empty RED and GREEN logs containing that exact test
+specification and failing/positive-passing-plus-explicit-zero-exit signals, and exactly one similarly bound evidence row for every
+declared acceptance ID. Missing, ignored, unrelated, or candidate-weakened evidence stops before
+expensive product gates and repairs the same slice; a green full suite cannot substitute for this
+closure contract.
+
 ## Start Commands
 - Run the whole queue autonomously ("run ralph loop"): `./scripts/ralph-loop.sh`
 - Bootstrap/verify setup: `./scripts/afk-dev.sh --mode bootstrap`

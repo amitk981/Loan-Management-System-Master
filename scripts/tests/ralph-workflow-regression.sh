@@ -1029,6 +1029,10 @@ architecture_scope_helper="scripts/lib/ralph-architecture-review.sh"
   || fail "missing architecture-review change-scope helper"
 # shellcheck source=../lib/ralph-architecture-review.sh
 source "$architecture_scope_helper"
+declare -F ralph_validate_architecture_review_manifest >/dev/null \
+  || fail "missing structured architecture-review finding manifest validator"
+declare -F ralph_validate_review_finding_closure >/dev/null \
+  || fail "missing corrective-slice closure evidence validator"
 metrics_packet="$fixture_dir/architecture-review-packet.md"
 cat > "$metrics_packet" <<'EOF'
 # Review Packet
@@ -1049,6 +1053,345 @@ EOF
 sed 's/- New High: 0/- New High: unknown/' "$metrics_packet" > "$metrics_packet.invalid"
 if ralph_architecture_review_metrics "$metrics_packet.invalid" >/dev/null 2>&1; then
   fail "architecture-review convergence metrics accepted a non-numeric severity count"
+fi
+
+semantic_review_repo="$fixture_dir/semantic-review-repo"
+mkdir -p "$semantic_review_repo/docs/slices" \
+  "$semantic_review_repo/docs/working" \
+  "$semantic_review_repo/.ralph/runs/review-run/evidence/review-probes"
+git init -q "$semantic_review_repo"
+git -C "$semantic_review_repo" config user.name "Ralph Regression"
+git -C "$semantic_review_repo" config user.email "ralph-regression@example.invalid"
+printf '# Review findings\n\n' > "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md"
+git -C "$semantic_review_repo" add .
+git -C "$semantic_review_repo" commit -qm fixture
+printf 'Finding ID: AR-010-OWNER-001\nRoot ID: ROOT-010-OWNER-DECISION\nFAIL: public assertion expected 0 rows, observed 1\n' \
+  > "$semantic_review_repo/.ralph/runs/review-run/evidence/review-probes/owner-boundary.txt"
+cat >> "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md" <<'EOF'
+## AR-010-OWNER-001 — collection owner disagreement
+
+Root: ROOT-010-OWNER-DECISION
+EOF
+cat > "$semantic_review_repo/docs/slices/010A1-owner-correction.md" <<'EOF'
+# Slice 010A1
+
+## Status
+Not Started
+
+## Depends On
+- 010A
+
+## Review Finding Closure
+| Finding ID | Root ID | Reproducer | Acceptance IDs |
+|---|---|---|---|
+| AR-010-OWNER-001 | ROOT-010-OWNER-DECISION | .ralph/runs/review-run/evidence/review-probes/owner-boundary.txt | AC-1, AC-2 |
+
+## Acceptance Criteria
+- [AC-1] Canonical owner rejection removes the account from collection truth.
+- [AC-2] The permanent public regression proves count, row, and detail parity.
+EOF
+semantic_packet="$semantic_review_repo/.ralph/runs/review-run/review-packet.md"
+cat > "$semantic_packet" <<'EOF'
+# Review Packet
+
+## Convergence Metrics
+- Findings closed: 0
+- New Critical: 0
+- New High: 1
+- New Medium: 0
+- New Low: 0
+- Corrective slices added: 1
+
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-OWNER-001 | ROOT-010-OWNER-DECISION | High | New | .ralph/runs/review-run/evidence/review-probes/owner-boundary.txt | 010A1 | - |
+EOF
+ralph_validate_architecture_review_manifest \
+  "$semantic_packet" "$semantic_review_repo" 0 0 1 0 0 \
+  || fail "valid structured architecture-review finding manifest was rejected"
+cp "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md" \
+  "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md.without-hidden"
+cat >> "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md" <<'EOF'
+
+## AR-010-HIDDEN-001 — unreported high finding
+
+Root: ROOT-010-HIDDEN-OWNER
+EOF
+if ralph_validate_architecture_review_manifest \
+    "$semantic_packet" "$semantic_review_repo" 0 0 1 0 0 \
+    >/dev/null 2>&1; then
+  fail "architecture review hid a changed findings-ledger entry outside its manifest"
+fi
+mv "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md.without-hidden" \
+  "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md"
+sed 's/- New High: 1/- New High: 0/' "$semantic_packet" \
+  > "$semantic_packet.metrics-mismatch"
+if ralph_validate_architecture_review_manifest \
+    "$semantic_packet.metrics-mismatch" "$semantic_review_repo" 0 0 0 0 0 \
+    >/dev/null 2>&1; then
+  fail "finding manifest escaped convergence-metric reconciliation"
+fi
+sed 's#review-probes/owner-boundary.txt#review-probes/missing.txt#' "$semantic_packet" \
+  > "$semantic_packet.missing-reproducer"
+if ralph_validate_architecture_review_manifest \
+    "$semantic_packet.missing-reproducer" "$semantic_review_repo" 0 0 1 0 0 \
+    >/dev/null 2>&1; then
+  fail "finding manifest accepted a missing public reproducer"
+fi
+mkdir -p "$semantic_review_repo/.ralph/runs/older-review/evidence/review-probes"
+cp "$semantic_review_repo/.ralph/runs/review-run/evidence/review-probes/owner-boundary.txt" \
+  "$semantic_review_repo/.ralph/runs/older-review/evidence/review-probes/owner-boundary.txt"
+sed 's#\.ralph/runs/review-run/evidence/#.ralph/runs/older-review/evidence/#g' \
+  "$semantic_packet" > "$semantic_packet.stale-evidence"
+if ralph_validate_architecture_review_manifest \
+    "$semantic_packet.stale-evidence" "$semantic_review_repo" 0 0 1 0 0 \
+    >/dev/null 2>&1; then
+  fail "finding manifest accepted evidence from a different architecture-review run"
+fi
+cp "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md.with-contract"
+python3 - "$semantic_review_repo/docs/slices/010A1-owner-correction.md" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text().split("## Review Finding Closure", 1)[0])
+PY
+if ralph_validate_architecture_review_manifest \
+    "$semantic_packet" "$semantic_review_repo" 0 0 1 0 0 \
+    >/dev/null 2>&1; then
+  fail "finding manifest accepted a corrective slice without an exact closure contract"
+fi
+mv "$semantic_review_repo/docs/slices/010A1-owner-correction.md.with-contract" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md"
+cp "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md.with-criteria"
+sed 's/\[AC-2\]/[AC-3]/' \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md.with-criteria" \
+  > "$semantic_review_repo/docs/slices/010A1-owner-correction.md"
+if ralph_validate_architecture_review_manifest \
+    "$semantic_packet" "$semantic_review_repo" 0 0 1 0 0 \
+    >/dev/null 2>&1; then
+  fail "finding manifest accepted closure ids that omit a labelled acceptance criterion"
+fi
+mv "$semantic_review_repo/docs/slices/010A1-owner-correction.md.with-criteria" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md"
+git -C "$semantic_review_repo" add \
+  docs/working/REVIEW_FINDINGS.md \
+  docs/slices/010A1-owner-correction.md \
+  .ralph/runs/review-run/evidence/review-probes/owner-boundary.txt
+git -C "$semantic_review_repo" commit -qm "admit semantic corrective fixture"
+
+cp "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md" \
+  "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md.before-relabel"
+cat >> "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md" <<'EOF'
+
+## AR-010-OWNER-002 — relabelled collection owner disagreement
+
+Root: ROOT-010-OWNER-DECISION
+EOF
+sed 's/AR-010-OWNER-001/AR-010-OWNER-002/g; s/Slice 010A1/Slice 010A2/' \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  > "$semantic_review_repo/docs/slices/010A2-owner-correction.md"
+printf 'Finding ID: AR-010-OWNER-002\nRoot ID: ROOT-010-OWNER-DECISION\nFAIL: recurring public owner mismatch\n' \
+  > "$semantic_review_repo/.ralph/runs/review-run/evidence/review-probes/root-relabel.txt"
+sed 's/AR-010-OWNER-001/AR-010-OWNER-002/g; s/010A1/010A2/g; s#owner-boundary.txt#root-relabel.txt#g' \
+  "$semantic_packet" > "$semantic_packet.root-relabel"
+if ralph_validate_architecture_review_manifest \
+    "$semantic_packet.root-relabel" "$semantic_review_repo" 0 0 1 0 0 \
+    >/dev/null 2>&1; then
+  fail "architecture review relabelled an existing root as a New finding"
+fi
+mv "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md.before-relabel" \
+  "$semantic_review_repo/docs/working/REVIEW_FINDINGS.md"
+rm "$semantic_review_repo/docs/slices/010A2-owner-correction.md" \
+  "$semantic_review_repo/.ralph/runs/review-run/evidence/review-probes/root-relabel.txt"
+
+closure_run="$semantic_review_repo/.ralph/runs/corrective-run"
+mkdir -p "$closure_run/evidence/terminal-logs" \
+  "$semantic_review_repo/backend/tests"
+test_spec='backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden'
+printf 'def test_failed_owner_boundary_is_hidden():\n    canonical_owner = None\n    response = {"total_count": 0, "rows": [], "detail_status": 404}\n    assert canonical_owner is None\n    assert response == {"total_count": 0, "rows": [], "detail_status": 404}\n' \
+  > "$semantic_review_repo/backend/tests/test_owner_boundary.py"
+printf 'Test: %s\nFAILED: expected zero rows\nExit code: 1\n' "$test_spec" \
+  > "$closure_run/evidence/terminal-logs/owner-red.log"
+printf 'Test: %s\n1 passed\nExit code: 0\n' "$test_spec" \
+  > "$closure_run/evidence/terminal-logs/owner-green.log"
+printf 'Test: %s\n2 passed\nExit code: 0\n' "$test_spec" \
+  > "$closure_run/evidence/terminal-logs/owner-acceptance.log"
+cat > "$closure_run/review-closure-evidence.md" <<'EOF'
+# Review Closure Evidence
+
+## Finding Evidence
+| Finding ID | Root ID | Permanent Test | RED Evidence | GREEN Evidence |
+|---|---|---|---|---|
+| AR-010-OWNER-001 | ROOT-010-OWNER-DECISION | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden | evidence/terminal-logs/owner-red.log | evidence/terminal-logs/owner-green.log |
+
+## Acceptance Evidence
+| Acceptance ID | Test | Evidence |
+|---|---|---|
+| AC-1 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden | evidence/terminal-logs/owner-acceptance.log |
+| AC-2 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden | evidence/terminal-logs/owner-acceptance.log |
+EOF
+ralph_validate_review_finding_closure \
+  "$semantic_review_repo" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  "$closure_run" \
+  || fail "valid corrective-slice semantic closure evidence was rejected"
+cp "$closure_run/review-closure-evidence.md" \
+  "$closure_run/review-closure-evidence.md.valid-selector"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed 's/::test_failed_owner_boundary_is_hidden/::MissingClass.test_failed_owner_boundary_is_hidden/g' \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.invalid-selector"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.invalid-selector" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+sed 's/::test_failed_owner_boundary_is_hidden/::MissingClass.test_failed_owner_boundary_is_hidden/g' \
+  "$closure_run/review-closure-evidence.md.valid-selector" \
+  > "$closure_run/review-closure-evidence.md"
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "corrective closure accepted a nonexistent Python test container selector"
+fi
+mv "$closure_run/review-closure-evidence.md.valid-selector" \
+  "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed 's/::MissingClass.test_failed_owner_boundary_is_hidden/::test_failed_owner_boundary_is_hidden/g' \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.valid-selector"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.valid-selector" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+cp "$closure_run/evidence/terminal-logs/owner-green.log" \
+  "$closure_run/evidence/terminal-logs/owner-green.log.clean"
+printf 'Test: %s\n0 passed, 1 failed\nExit code: 1\n' "$test_spec" \
+  > "$closure_run/evidence/terminal-logs/owner-green.log"
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "corrective closure accepted a failing result containing the word passed"
+fi
+mv "$closure_run/evidence/terminal-logs/owner-green.log.clean" \
+  "$closure_run/evidence/terminal-logs/owner-green.log"
+typescript_runtime="$repo_root/sfpcl-lms/node_modules/typescript"
+[[ -d "$typescript_runtime" ]] \
+  || fail "frontend TypeScript parser runtime is unavailable for semantic-closure regression"
+mkdir -p "$semantic_review_repo/frontend/src" \
+  "$semantic_review_repo/frontend/node_modules"
+ln -s "$typescript_runtime" \
+  "$semantic_review_repo/frontend/node_modules/typescript"
+cat > "$semantic_review_repo/frontend/src/semantic-closure.test.ts" <<'EOF'
+// test("commented selector", () => undefined)
+const fixture = 'test("string fixture selector", () => undefined)'
+test.describe("suite only", () => undefined)
+test("actual selector", () => {
+  expect(fixture).toContain("string fixture selector")
+})
+EOF
+cp "$closure_run/review-closure-evidence.md" \
+  "$closure_run/review-closure-evidence.md.python-test"
+frontend_test_spec='frontend/src/semantic-closure.test.ts::actual selector'
+sed "s#${test_spec}#${frontend_test_spec}#g" \
+  "$closure_run/review-closure-evidence.md.python-test" \
+  > "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed "s#${test_spec}#${frontend_test_spec}#g" \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.frontend"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.frontend" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+ralph_validate_review_finding_closure \
+  "$semantic_review_repo" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  "$closure_run" \
+  || fail "parser-backed frontend test declaration was not resolved"
+sed 's/actual selector/commented selector/g' \
+  "$closure_run/review-closure-evidence.md" \
+  > "$closure_run/review-closure-evidence.md.commented"
+mv "$closure_run/review-closure-evidence.md.commented" \
+  "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed 's/actual selector/commented selector/g' \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.commented"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.commented" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "corrective closure treated a commented frontend test as a declaration"
+fi
+sed 's/commented selector/suite only/g' \
+  "$closure_run/review-closure-evidence.md" \
+  > "$closure_run/review-closure-evidence.md.describe"
+mv "$closure_run/review-closure-evidence.md.describe" \
+  "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed 's/commented selector/suite only/g' \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.describe"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.describe" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "corrective closure treated test.describe as an executable frontend test"
+fi
+mv "$closure_run/review-closure-evidence.md.python-test" \
+  "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed "s#frontend/src/semantic-closure.test.ts::suite only#${test_spec}#g" \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.python"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.python" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+rm -rf "$semantic_review_repo/frontend"
+cp "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md.before-bypass"
+python3 - "$semantic_review_repo/docs/slices/010A1-owner-correction.md" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text().split("## Review Finding Closure", 1)[0])
+PY
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "corrective candidate deleted its fixed-point closure contract"
+fi
+mv "$semantic_review_repo/docs/slices/010A1-owner-correction.md.before-bypass" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md"
+cp "$closure_run/evidence/terminal-logs/owner-green.log" \
+  "$closure_run/evidence/terminal-logs/owner-green.log.bound"
+sed '/^Test: /d' "$closure_run/evidence/terminal-logs/owner-green.log.bound" \
+  > "$closure_run/evidence/terminal-logs/owner-green.log"
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "corrective closure accepted GREEN evidence unrelated to its permanent test selector"
+fi
+mv "$closure_run/evidence/terminal-logs/owner-green.log.bound" \
+  "$closure_run/evidence/terminal-logs/owner-green.log"
+rm "$closure_run/evidence/terminal-logs/owner-red.log"
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "corrective closure accepted missing RED evidence"
 fi
 adaptive_config="$fixture_dir/adaptive-review-config.yaml"
 cat > "$adaptive_config" <<'EOF'
@@ -1414,6 +1757,7 @@ Complete
 - None
 EOF
 printf 'baseline finding\n' > "$architecture_validator_repo/docs/working/REVIEW_FINDINGS.md"
+printf 'baseline context\n' > "$architecture_validator_repo/docs/working/CONTEXT.md"
 for artifact in prompt.md changed-files.txt final-summary.md; do
   printf 'fixture\n' > "$architecture_validator_run_dir/$artifact"
 done
@@ -1425,19 +1769,22 @@ cat > "$architecture_validator_run_dir/review-packet.md" <<'EOF'
 Ready for independent validation
 
 ## Convergence Metrics
-- Findings closed: 1
+- Findings closed: 0
 - New Critical: 0
 - New High: 0
-- New Medium: 1
+- New Medium: 0
 - New Low: 0
 - Corrective slices added: 0
+
+## Finding Closure Manifest
+- None
 EOF
 git init -q "$architecture_validator_repo"
 git -C "$architecture_validator_repo" config user.name "Ralph Regression"
 git -C "$architecture_validator_repo" config user.email "ralph-regression@example.invalid"
 git -C "$architecture_validator_repo" add .
 git -C "$architecture_validator_repo" commit -qm fixture
-printf 'review finding\n' >> "$architecture_validator_repo/docs/working/REVIEW_FINDINGS.md"
+printf 'review-confirmed context\n' >> "$architecture_validator_repo/docs/working/CONTEXT.md"
 scripts/ralph-validate.sh \
   --run-id "$architecture_validator_run" \
   --worktree "$architecture_validator_repo" \
@@ -1454,6 +1801,29 @@ done
 grep -qF 'PASS: architecture review reported machine-readable convergence metrics.' \
   "$architecture_validator_run_dir/architecture-review-metrics-results.md" \
   || fail "architecture-review lane did not preserve validated convergence metrics"
+grep -qF 'PASS: stable finding identities, reproducers, metrics, and corrective contracts agree.' \
+  "$architecture_validator_run_dir/architecture-review-metrics-results.md" \
+  || fail "architecture-review lane did not enforce semantic finding closure"
+cp "$architecture_validator_run_dir/review-packet.md" \
+  "$architecture_validator_run_dir/review-packet.md.valid"
+python3 - "$architecture_validator_run_dir/review-packet.md" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text().split("## Finding Closure Manifest", 1)[0])
+PY
+if scripts/ralph-validate.sh \
+    --run-id "$architecture_validator_run" \
+    --worktree "$architecture_validator_repo" \
+    --mode architecture_review \
+    --slice architecture-review \
+    > "$fixture_dir/architecture-validator-missing-manifest.stdout" \
+    2> "$fixture_dir/architecture-validator-missing-manifest.stderr"; then
+  fail "architecture-review lane accepted missing semantic finding manifest"
+fi
+mv "$architecture_validator_run_dir/review-packet.md.valid" \
+  "$architecture_validator_run_dir/review-packet.md"
 python3 - "$architecture_validator_run_dir/review-packet.md" <<'PY'
 import sys
 from pathlib import Path
