@@ -19,6 +19,85 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
+## Open findings from 2026-07-19_123045_architecture_review
+
+Reviewed product commit: `3b31edc4` (009L4), relative to successful architecture-review commit
+`f8eb78be`. The prior independently validated product run and its two repairs are one committed
+slice boundary; mechanical Ralph artifacts were excluded from the product critique.
+
+### 009L5 — Epic 009 exact selector and consumer parity closure
+
+- **High — exact collection identities still disagree with totals and offsets:** 009L4 requirements
+  2-3 say count and database pagination operate on the exact eligible identity set, with incoherent
+  rows affecting neither totals nor reachability. `loan_account_360.py:104-147` counts and offsets a
+  queryable superset before scalar lifecycle/SAP/transfer reconciliation. The lifecycle selector
+  omits exact JSON-shape and nonempty actor-role checks enforced later at
+  `loan_account_lifecycle.py:255-305`; the SAP selector similarly omits the completion/send digest,
+  actor, assignment, workbook, and exact audit checks enforced at
+  `sap_customer_profile.py:539-652`. S37 counts its coarse send query before dropping rows through
+  `_current_send_evidence`, and the CFC branch at `disbursement_workspace.py:171-203` counts raw
+  pending task rows before `_disbursement_is_current`. Four retained review probes independently
+  drift creation roles, completion digest, send checksum, and initiation evidence: every body is
+  suppressed, but every pagination envelope still reports `total_count: 1`. A four-row overscan
+  cannot repair a false positive before the requested offset, so totals leak existence and later
+  valid rows can shift or strand.
+- **High — the member portal does not enforce the canonical application edge:** requirement 1 says
+  every consumer delegates to one member/application/customer-code completion decision and rejects
+  cross-application evidence identically. `_current_pre_payment_stages` in
+  `portal_disbursement_status.py:462-472` checks only member and active status; it never compares
+  `sap.loan_application_id` with the requested application. A review-only unit probe supplies a
+  coherent current completion for another application and the requested application's `sap_setup`
+  stage incorrectly becomes true. This can advance an application's borrower-visible finance stage
+  on evidence that Loan Account/readiness consumers reject, leaving M07-FR-010 conditional.
+- **Medium — the lifecycle owner now has two scalar evidence validators:**
+  `loan_account_lifecycle.py:255-325` adds `_created_account_decision` for bulk reconciliation while
+  the prior single-row validator remains around lines 367-436 with substantially duplicated field,
+  audit, workflow, and projection checks. Codebase-design §§26/42 require one testable owner
+  interface and centralised workflow rules; the duplication is already a likely source of selector
+  drift and should collapse while the High selector defect is corrected.
+- **Low — new acceptance tests overstate their interface fidelity:** the 101-row pagination fixture
+  in `test_loan_account_reads_api.py:314-402` copies Django private `_state` and immutable-ledger rows
+  rather than using the owner interface required by codebase-design §26. The MP14 test at
+  `MP14_DisbursementStatus.test.tsx:128-150` calls its case “surrounding list order” but only swaps
+  one explicit-id prop; it does not model a surrounding list. The assertions are real for their
+  narrower behavior, but they do not close the named matrix by themselves.
+
+The prior Medium executable-matrix finding remains open: 009L4 added 1/21/101 Loan Account cases,
+but not equivalent S36/S37/Senior-Finance/CFC portfolios, more-than-four drift runs, the full
+consumer/action/mutation matrix, transport bytes, or independent 400/403/409 surfaces. The prior
+Low empty-subclass duplicate PostgreSQL discovery also remains open. These carried findings are not
+counted as new; both naturally fold into 009L5 rather than creating leaf slices.
+
+New corrective `009L5` groups the selector, portal-consumer, duplicated-validator, and executable-
+proof symptoms at the Epic 009 read boundary. It depends on 009L4; `CR-012` and Epic 010 now depend
+on 009L5 so hosted browser proof and servicing cannot build on known incorrect product truth.
+
+## Closed in this review
+
+- **Member/account facade divergence:** `get_account_customer_code` now delegates to
+  `get_customer_code_for_member`, so the exact prior newer-incoherent cross-application probe is
+  green for those two consumers. The newly found portal application-edge defect is distinct and
+  remains owned by 009L5.
+- **Full-portfolio projection and page walking:** Loan Account and combined Senior Finance reads now
+  issue database count/offset/limit queries and reconcile only the page plus a constant window.
+  Work no longer scales by deeply projecting the entire portfolio, although the new High finding
+  means the bounded identity set and its reported totals are not yet exact.
+
+## Review evidence
+
+- Independent Standards and Spec passes reviewed `git diff f8eb78be...3b31edc4` separately; both
+  identified the selector/count boundary, and the Spec pass identified the portal consumer gap.
+- Five review-only probes fail on their intended assertions: four envelopes report one stale row
+  after their projector rejects it, and one portal application accepts another application's SAP
+  completion. No production file was changed.
+- Prior independent validation for commit `3b31edc4` retained 1,288 backend tests under coverage,
+  349 frontend tests, all frontend gates, Django check, migration sync, and the focused repair proof.
+- Evidence: `.ralph/runs/2026-07-19_123045_architecture_review/evidence/`.
+- Epic audit: M07-FR-001-009 and M08-FR-001-011 retain implemented owners or explicit A-135 pending
+  governance; M07-FR-010 remains conditional on 009L5's exact application edge and selector truth.
+  `CONTEXT.md` remains truthful. No slice is marked `Blocked`, so no stale prerequisite required
+  re-parking. No ADR was added because 009L5 restores already binding owner/selector contracts.
+
 ## Open findings from 2026-07-19_104332_architecture_review
 
 Reviewed product commit: `547c6835` (009L3), relative to successful architecture-review commit

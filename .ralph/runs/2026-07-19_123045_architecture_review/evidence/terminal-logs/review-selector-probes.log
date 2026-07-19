@@ -1,0 +1,27 @@
+Command:
+REVIEW_PROBE_PATH="$PWD/.ralph/runs/2026-07-19_123045_architecture_review/evidence/review-probes" PYTHONPATH="$REVIEW_PROBE_PATH:$PWD/sfpcl_credit" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test test_009l4_selector_contract_probes.LoanAccountExactCountProbe.test_nonqueryable_creation_drift_affects_neither_total_nor_page test_009l4_selector_contract_probes.SapCompletionExactCountProbe.test_completion_digest_drift_affects_neither_total_nor_page test_009l4_selector_contract_probes.AssignedSapExactCountProbe.test_send_digest_drift_affects_neither_total_nor_page test_009l4_selector_contract_probes.CfcExactCountProbe.test_stale_initiation_affects_neither_total_nor_page --verbosity 1
+
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+FFFF
+
+FAIL: LoanAccountExactCountProbe
+Expected total_count 0 after nonempty actor-role evidence was removed; received 1.
+
+FAIL: SapCompletionExactCountProbe
+Expected total_count 0 after the completion digest drifted; received 1.
+
+FAIL: AssignedSapExactCountProbe
+Expected total_count 0 after the send checksum drifted; received 1.
+
+FAIL: CfcExactCountProbe
+Expected total_count 0 after immutable initiation comments drifted; received 1.
+
+Ran 4 tests in 1.890s
+FAILED (failures=4)
+EXIT_CODE=1
+
+Interpretation: every stricter projector suppresses the row body, but its broader database count
+still reports the row. These are intended architecture-review assertion failures; no product file
+was changed.

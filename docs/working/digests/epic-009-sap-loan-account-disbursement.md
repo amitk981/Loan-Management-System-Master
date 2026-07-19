@@ -1,5 +1,18 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009L5 Architecture Review Closure
+
+- Architecture review `2026-07-19_123045_architecture_review` proves the 009L4 database selectors
+  are broader than their owner-level projectors. Creation-role, completion-digest, send-checksum,
+  and initiation-evidence drift all suppress row bodies while leaving `total_count: 1`; count,
+  offset, and projection therefore do not yet share one exact eligible identity set.
+- The member portal checks a current SAP decision's member/status but not its application edge. A
+  coherent completion for another application can mark the requested application's SAP stage
+  complete, contrary to M07-FR-010 and 009L4's all-consumer contract.
+- 009L5 owns these two High root findings, collapses the duplicated lifecycle validator, completes
+  mixed 1/21/101 workspace and action/error matrices, and turns the five retained review probes
+  green. `CR-012` remains the separate hosted browser-evidence owner and runs after 009L5.
+
 ## 009L4 Architecture Review Closure
 
 - Architecture review `2026-07-19_104332_architecture_review` proves member and account reads still

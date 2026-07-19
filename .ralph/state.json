@@ -285,22 +285,21 @@
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-19_121251_repair",
+  "last_run_id": "2026-07-19_123045_architecture_review",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
-  "architecture_review_due": true,
+  "slices_completed_since_architecture_review": 0,
+  "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
   "architecture_review_interval": 4,
   "architecture_review_clean_streak": 0,
   "last_architecture_review_metrics": {
-    "findings_closed": 3,
+    "findings_closed": 2,
     "new_critical": 0,
-    "new_high": 1,
-    "new_medium": 2,
+    "new_high": 2,
+    "new_medium": 1,
     "new_low": 1,
     "corrective_slices_added": 1
-  },
-  "architecture_review_due_reason": "epic_boundary:009->010"
+  }
 }

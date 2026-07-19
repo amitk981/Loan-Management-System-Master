@@ -1,0 +1,18 @@
+Command:
+REVIEW_PROBE_PATH="$PWD/.ralph/runs/2026-07-19_123045_architecture_review/evidence/review-probes" PYTHONPATH="$REVIEW_PROBE_PATH:$PWD/sfpcl_credit" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test test_009l4_selector_contract_probes.PortalCanonicalSapEdgeProbe.test_other_application_completion_does_not_complete_requested_application_stage --verbosity 1
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+
+FAIL: PortalCanonicalSapEdgeProbe
+Expected sap_setup false when the current member completion belonged to a different application;
+received true.
+
+Ran 1 test in 0.002s
+FAILED (failures=1)
+EXIT_CODE=1
+
+Interpretation: the member-portal pre-payment stage checks member/status but not the canonical
+application edge required by 009L4. The failure is the intended review assertion; no product file
+was changed.
