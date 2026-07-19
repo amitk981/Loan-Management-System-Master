@@ -1,0 +1,39 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+FFF
+======================================================================
+FAIL: test_mutation_authorised_credit_manager_can_reach_s36_candidate (test_009l_contract_probes.CreditManagerSapWorkspaceScopeProbe.test_mutation_authorised_credit_manager_can_reach_s36_candidate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_093632_architecture_review/.ralph/runs/2026-07-19_093632_architecture_review/evidence/review-probes/test_009l_contract_probes.py", line 51, in test_mutation_authorised_credit_manager_can_reach_s36_candidate
+    self.assertEqual(
+AssertionError: 0 != 1 : S36 must not hide an action its public mutation owner accepts.
+
+======================================================================
+FAIL: test_primary_role_without_governed_cfc_authority_gets_no_actions (test_009l_contract_probes.GovernedCfcWorkspaceAuthorityProbe.test_primary_role_without_governed_cfc_authority_gets_no_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_093632_architecture_review/.ralph/runs/2026-07-19_093632_architecture_review/evidence/review-probes/test_009l_contract_probes.py", line 117, in test_primary_role_without_governed_cfc_authority_gets_no_actions
+    self.assertEqual(
+AssertionError: Lists differ: [{'action_code': 'authorise_disbursement',[767 chars] {}}] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+{'action_code': 'authorise_disbursement', 'label': 'Authorise payment', 'enabled': True, 'disabled_reason': None, 'required_permission': 'finance.disbursement.authorise', 'action_url': '/api/v1/disbursements/da0bb01e-8691-445b-8ec3-ebc7ecb21c1d/authorise/', 'method': 'POST', 'fields': [{'name': 'comments', 'label': 'CFC comments', 'type': 'textarea', 'required': True, 'value': None}], 'fixed_payload': {}}
+
+Diff is 1017 characters long. Set self.maxDiff to None to see it. : The workspace must not advertise actions rejected by the mutation owner.
+
+======================================================================
+FAIL: test_account_facade_rejects_drift_rejected_by_canonical_member_facade (test_009l_contract_probes.SapCompletionEvidenceFacadeProbe.test_account_facade_rejects_drift_rejected_by_canonical_member_facade)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_093632_architecture_review/.ralph/runs/2026-07-19_093632_architecture_review/evidence/review-probes/test_009l_contract_probes.py", line 85, in test_account_facade_rejects_drift_rejected_by_canonical_member_facade
+    self.assertIsNone(
+AssertionError: SapCustomerCodeDecision(customer_code_id=UUID('e98ab840-8b38-4b67-a5a8-ef8c6d538865'), member_id=UUID('854ab957-a86c-4814-ae75-d436adc519a8'), profile_request_id=UUID('b66f626c-34c9-41b1-8ed8-75d6dcaba49d'), loan_application_id=UUID('265d8b7f-ca09-4392-8669-ec96b75fe6b6'), status='active', completed_at=datetime.datetime(2026, 7, 19, 4, 15, 12, 394995, tzinfo=datetime.timezone.utc), customer_code_masked='******-001') is not None : Every SAP read facade must enforce the same immutable completion evidence.
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.319s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

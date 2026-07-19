@@ -1,0 +1,5 @@
+ M docs/slices/010A-loan-account-schedule-and-ledger.md
+ M docs/slices/CR-012-epic-009-playwright-evidence-is-incomplete.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-19_093632_architecture_review/
+?? docs/slices/009L3-epic-009-authority-evidence-and-pagination-closure.md

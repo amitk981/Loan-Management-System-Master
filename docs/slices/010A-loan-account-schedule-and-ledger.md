@@ -18,6 +18,7 @@ calculating balances in the browser.
 ## Depends On
 - 009J
 - 009L
+- 009L3
 - CR-012
 
 ## Runtime Capabilities

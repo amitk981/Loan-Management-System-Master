@@ -1,0 +1,95 @@
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/browser-local-attempt.log:11: trailing whitespace.
++  1) [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:10:5 › S36-S41 and initial Loan Account 360 remain walkable and safely rendered 
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/browser-local-attempt.log:24: trailing whitespace.
++    [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:10:5 › S36-S41 and initial Loan Account 360 remain walkable and safely rendered 
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/codex-summary.md:33: trailing whitespace.
++ 
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-aware-timestamp-green.log:15: new blank line at EOF.
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-aware-timestamp-red.log:15: trailing whitespace.
++Received: 
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-aware-timestamp-red.log:44: trailing whitespace.
++Received: 
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-aware-timestamp-red.log:69: trailing whitespace.
++     84| 
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-aware-timestamp-red.log:82: new blank line at EOF.
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-epic009-focused.log:19: new blank line at EOF.
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-full.log:93: new blank line at EOF.
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-lint-final.log:4: new blank line at EOF.
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/frontend-typecheck-final.log:4: new blank line at EOF.
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/loan-account-safe-tabs-green.log:15: new blank line at EOF.
+.ralph/runs/2026-07-19_062443_normal_run/evidence/terminal-logs/loan-account-safe-tabs-red.log:1071: new blank line at EOF.
+.ralph/runs/2026-07-19_071655_repair/evidence/terminal-logs/codex-summary.md:18: trailing whitespace.
++ 
+.ralph/runs/2026-07-19_071655_repair/evidence/terminal-logs/codex-summary.md:37: trailing whitespace.
++ 
+.ralph/runs/2026-07-19_071655_repair/evidence/terminal-logs/codex-summary.md:74: trailing whitespace.
++ 
+e74d535914af6d26df3804a12adf29490e7909ab1547461a1ca13101f5ae9e1a  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/cfc-authorisation.png
+12427b032b5fa7ef6c4c10000a4a84c3abb6fafb6998563c80c006e958abb3bd  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/disbursement-readiness-blockers.png
+10b436a2c5a632f8e72b6a10accd17f2cb0db10fe01165b320f3a4929c413428  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/loan-account-active-summary.png
+1344750d532ef5eb7b4c2173791a96c1b0e3fbcb00a4cca5d13f067ec48a82fd  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/loan-account-safe-error.png
+ef2ee7e2b2ef0fccb96fbe2c2fce6daada5f689c0b57f2fd477a1500b32992f3  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/loan-account-sanctioned-summary.png
+12427b032b5fa7ef6c4c10000a4a84c3abb6fafb6998563c80c006e958abb3bd  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/payment-initiation.png
+12427b032b5fa7ef6c4c10000a4a84c3abb6fafb6998563c80c006e958abb3bd  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/sap-request-and-confirmation.png
+1d930aba93a0db5d0cb0b8de63d406a9c24e8a3323f3ed4a32b3d68541eb48c9  .ralph/runs/2026-07-19_071655_repair/evidence/screenshots/transfer-and-advice-success.png
+13:  await page.addInitScript(() => localStorage.setItem('sfpcl_staff_auth_session', JSON.stringify({ accessToken: 'epic009', refreshToken: 'epic009' })));
+14:  await page.route('**/api/v1/auth/me/', route => json(route, user));
+15:  await page.route('**/api/v1/disbursement-workspaces/**', route => json(route, [workspace], pagination));
+16:  await page.route('**/api/v1/loan-accounts/**', route => { const list = new URL(route.request().url()).pathname === '/api/v1/loan-accounts/'; return json(route, list ? [loan(accountStatus)] : loan(accountStatus), list ? pagination : undefined); });
+20:  await page.getByText('LN-E2E-009').click();
+21:  await shot(page, 'loan-account-sanctioned-summary.png');
+24:  await page.getByText('LN-E2E-009').click();
+26:  await shot(page, 'loan-account-active-summary.png');
+30:  await shot(page, 'sap-request-and-confirmation.png');
+34:  await shot(page, 'disbursement-readiness-blockers.png');
+37:  await shot(page, 'payment-initiation.png');
+40:  await shot(page, 'cfc-authorisation.png');
+43:  await shot(page, 'transfer-and-advice-success.png');
+46:  await page.route('**/api/v1/loan-accounts/**', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code: 'UNAVAILABLE', message: 'Safe account error.' } }) }));
+49:  await shot(page, 'loan-account-safe-error.png');
+sfpcl_credit/processes/loan_account_360.py:17:    account_is_scoped,
+sfpcl_credit/processes/loan_account_360.py:46:    candidate_count = candidates.count()
+sfpcl_credit/processes/loan_account_360.py:47:    candidate_pages = ceil(candidate_count / page_size) if candidate_count else 1
+sfpcl_credit/processes/loan_account_360.py:51:    page_accounts = list(candidates[start : start + page_size])
+sfpcl_credit/processes/loan_account_360.py:54:        for account in page_accounts
+sfpcl_credit/processes/loan_account_360.py:55:        if account_is_scoped(
+sfpcl_credit/processes/loan_account_360.py:60:    total_count = candidate_count - (len(page_accounts) - len(projections))
+sfpcl_credit/processes/loan_account_360.py:89:        and account_is_scoped(
+sfpcl_credit/processes/disbursement_workspace.py:23:    assigned_workspace_rows,
+sfpcl_credit/processes/disbursement_workspace.py:25:    staff_workspace_rows,
+sfpcl_credit/processes/disbursement_workspace.py:61:        projections = [_project_s36(row) for row in staff_workspace_rows(actor=actor)]
+sfpcl_credit/processes/disbursement_workspace.py:88:        assigned_rows = assigned_workspace_rows(actor=actor)
+sfpcl_credit/processes/disbursement_workspace.py:103:        projections = [_project_s36(row) for row in assigned_workspace_rows(actor=actor)]
+sfpcl_credit/processes/disbursement_workspace.py:125:    total_count = len(projections)
+sfpcl_credit/processes/disbursement_workspace.py:130:    return projections[start : start + page_size], {
+sfpcl_credit/processes/disbursement_workspace.py:24:    get_account_customer_code,
+sfpcl_credit/processes/disbursement_workspace.py:357:    return get_account_customer_code(
+sfpcl_credit/processes/disbursement_workspace.py:401:def _is_cfc(actor, roles):
+sfpcl_credit/disbursements/modules/disbursement_authorisation.py:267:        or checker.approval_authority_type != CFC_ROLE
+sfpcl_credit/sap_workflow/modules/sap_customer_profile.py:346:    if request.sap_customer_code_id != code.pk or not _current_completed_code_evidence(request, code):
+sfpcl_credit/sap_workflow/modules/sap_customer_profile.py:359:def get_account_customer_code(*, application_id, member_id, customer_code_id):
+sfpcl_credit/sap_workflow/modules/sap_customer_profile.py:398:def _current_completed_code_evidence(request, code):
+sfpcl_credit/sap_workflow/modules/sap_customer_profile.py:879:    if code is None or not _current_completed_code_evidence(row, code):
+sfpcl_credit/disbursements/models.py:477:class InitialLoanPaymentSapPosting(models.Model):
+sfpcl_credit/disbursements/models.py:479:    STATUS_POSTED = "posted"
+sfpcl_credit/disbursements/models.py:520:    sap_posting_reference = models.CharField(
+sfpcl_credit/disbursements/models.py:523:    posted_at = models.DateTimeField(null=True, blank=True)
+sfpcl_credit/disbursements/models.py:542:                        sap_posting_reference__isnull=True,
+sfpcl_credit/disbursements/models.py:543:                        posted_at__isnull=True,
+sfpcl_credit/disbursements/models.py:547:                        sap_posting_reference__isnull=False,
+sfpcl_credit/disbursements/models.py:548:                        posted_at__isnull=False,
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:17:    InitialLoanPaymentSapPosting,
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:332:        initial_sap_posting = InitialLoanPaymentSapPosting.objects.create(
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:343:            posting_status=InitialLoanPaymentSapPosting.STATUS_PENDING,
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:403:            "sap_posting_reference_masked": _masked_reference(
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:404:                posting.sap_posting_reference
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:540:        or InitialLoanPaymentSapPosting.objects.filter(disbursement=row).exists()
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:594:        InitialLoanPaymentSapPosting.DoesNotExist,
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:748:            InitialLoanPaymentSapPosting.STATUS_PENDING,
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:749:            InitialLoanPaymentSapPosting.STATUS_POSTED,
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:753:                posting.posting_status == InitialLoanPaymentSapPosting.STATUS_PENDING
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:754:                and posting.sap_posting_reference is None
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:755:                and posting.posted_at is None
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:758:                posting.posting_status == InitialLoanPaymentSapPosting.STATUS_POSTED
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:759:                and bool(posting.sap_posting_reference)
+sfpcl_credit/disbursements/modules/disbursement_transfer_success.py:760:                and posting.posted_at is not None
