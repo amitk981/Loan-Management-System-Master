@@ -35,6 +35,7 @@ split_failed_run_id="${RALPH_SPLIT_FAILED_RUN_ID:-}"
 split_total_lines="${RALPH_SPLIT_TOTAL_LINES:-}"
 split_max_lines="${RALPH_SPLIT_MAX_LINES:-}"
 split_corrective_run_id="${RALPH_SPLIT_CORRECTIVE_RUN_ID:-}"
+architecture_finalizer_epic=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -174,6 +175,15 @@ if [[ "$mode" != "architecture_review" ]]; then
   fi
   if [[ "$risk_level" == "High" ]]; then
     echo "High-risk slice $slice_id proceeding under the owner's standing approval (see $approvals_file)."
+  fi
+  if grep -q '^## Architecture Review Finalizer[[:space:]]*$' "$selected_slice_path"; then
+    if ! architecture_finalizer_epic="$(ralph_architecture_review_finalizer_epic \
+        "$repo_root/.ralph/config.yaml" "$repo_root/.ralph/state.json" \
+        "$repo_root/$selected_slice_path" "$repo_root/$approvals_file")"; then
+      echo "Slice $slice_id declares an invalid, unapproved, or non-exhausted architecture-review finalizer; refusing to run it." >&2
+      exit 2
+    fi
+    echo "Owner-approved Epic $architecture_finalizer_epic boundary finalizer: successful full gates will close the exhausted review cycle without another immediate review."
   fi
 fi
 
@@ -635,6 +645,41 @@ EOF
   exit "$validation_rc"
 fi
 
+if [[ -n "$architecture_finalizer_epic" ]]; then
+  finalizer_results="$run_dir/architecture-review-finalizer-results.md"
+  candidate_finalizer_epic="$(ralph_architecture_review_finalizer_epic \
+    "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
+    "$worktree_dir/docs/slices/$slice_file" \
+    "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" 2>/dev/null || true)"
+  if [[ "$candidate_finalizer_epic" != "$architecture_finalizer_epic" ]]; then
+    cat > "$finalizer_results" <<EOF
+# Architecture Review Finalizer Results
+
+FAIL: the independently validated candidate did not preserve the exact protected
+Epic $architecture_finalizer_epic finalizer contract.
+EOF
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Validation Failure Summary
+
+architecture-review-finalizer-results.md:- FAIL: the candidate changed or invalidated the owner-approved finalizer contract.
+EOF
+    if (( no_worktree == 0 )); then
+      ralph_write_repair_context \
+        "$repo_root/.ralph/repair-context.json" \
+        "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+        "$run_dir/failure-summary.md"
+    fi
+    exit 1
+  fi
+  cat > "$finalizer_results" <<EOF
+# Architecture Review Finalizer Results
+
+PASS: protected owner approval, Epic $architecture_finalizer_epic ownership,
+exhausted corrective generation, and candidate declaration remain exact.
+Successful full product gates authorize this run to close the exhausted boundary.
+EOF
+fi
+
 cat > "$run_dir/final-summary.md" <<EOF
 # Final Summary
 
@@ -768,10 +813,16 @@ state["blocked_slices"] = blocked
 path.write_text(json.dumps(state, indent=2) + "\n")
 PY
 
+if [[ "$mode" != "architecture_review" && -n "$architecture_finalizer_epic" ]]; then
+  ralph_finalize_architecture_review_cycle \
+    "$worktree_dir/.ralph/state.json" "$architecture_finalizer_epic" \
+    "$slice_id" "$run_id" || exit 1
+fi
+
 # An epic boundary is always a review checkpoint, even after the cadence has
 # safely expanded. Determine the next grabbable product slice only after the
 # orchestrator has completed the selected slice's status transition.
-if [[ "$mode" != "architecture_review" ]]; then
+if [[ "$mode" != "architecture_review" && -z "$architecture_finalizer_epic" ]]; then
   next_slice_file="$(ralph_first_grabbable_slice "$worktree_dir/docs/slices" 2>/dev/null || true)"
   next_slice_id="${next_slice_file%.md}"
   remaining_after="$(ralph_remaining_slices "$worktree_dir/docs/slices")"

@@ -187,57 +187,74 @@ ralph_architecture_review_boundary_reason() {
   fi
 }
 
-# Remove only boundary reasons disproved by explicit pending Parent Epic work.
-# Cadence, failed-review, and completion reasons remain fail-closed. When this
-# repairs a terminal-corrective false positive, retain one corrective generation
-# so the eventual real epic checkpoint uses the targeted closure lane.
-ralph_reconcile_architecture_review_due() {
+# Return the review decision the loop should enforce without rewriting durable
+# state. A boundary reason is temporarily deferred while explicit same-epic
+# work remains; cadence, failed-review, completion, malformed, and mixed reasons
+# remain fail-closed. Keeping the durable due flag preserves the targeted cycle
+# until the terminal corrective actually completes.
+ralph_architecture_review_effective_due() {
   local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
-  local due reason part epic kept="" repaired_epic=""
+  local due reason part epic kept=0 deferred=0
   local boundary_pattern='^epic_boundary:([0-9][0-9][0-9])->'
   due="$(ralph_architecture_review_due "$state_file")" || return 1
-  [[ "$due" == "True" ]] || return 0
-reason="$(python3 - "$state_file" <<'PY'
+  if [[ "$due" != "True" ]]; then
+    printf 'False\n'
+    return 0
+  fi
+  reason="$(python3 - "$state_file" <<'PY'
 import json, sys
 print(json.load(open(sys.argv[1])).get("architecture_review_due_reason", ""))
 PY
 )"
-  [[ -n "$reason" ]] || return 0
+  if [[ -z "$reason" ]]; then
+    printf 'True\n'
+    return 0
+  fi
   IFS='+' read -r -a parts <<< "$reason"
   for part in "${parts[@]}"; do
     if [[ "$part" =~ $boundary_pattern ]]; then
       epic="${BASH_REMATCH[1]}"
       if ralph_queue_has_unfinished_parent_epic "$slice_dir" "$epic"; then
-        repaired_epic="$epic"
+        deferred=1
         continue
       fi
     fi
-    kept="${kept:+$kept+}$part"
+    kept=1
   done
-  [[ -n "$repaired_epic" ]] || return 0
-  python3 - "$state_file" "$kept" "$repaired_epic" <<'PY'
-import json
-import sys
-from pathlib import Path
+  if (( kept == 1 || deferred == 0 )); then
+    printf 'True\n'
+  else
+    printf 'False\n'
+  fi
+}
 
-path = Path(sys.argv[1])
-kept = sys.argv[2]
-epic = sys.argv[3]
-state = json.loads(path.read_text())
-state["architecture_review_due"] = bool(kept)
-if kept:
-    state["architecture_review_due_reason"] = kept
-else:
-    state.pop("architecture_review_due_reason", None)
-if int(state.get("last_architecture_review_metrics", {}).get("corrective_slices_added", 0)) > 0:
-    state["architecture_review_cycle_epic"] = epic
-    state["architecture_review_corrective_generation"] = max(
-        1, int(state.get("architecture_review_corrective_generation", 0))
-    )
-path.write_text(json.dumps(state, indent=2) + "\n")
+# Retained for the startup diagnostic interface. Reconciliation is deliberately
+# read-only: mutating tracked state here makes clean-tree preflight reject the
+# orchestrator's own change before a candidate worktree exists.
+ralph_reconcile_architecture_review_due() {
+  local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
+  local durable effective reason epic
+  local boundary_pattern='^epic_boundary:([0-9][0-9][0-9])->'
+  durable="$(ralph_architecture_review_due "$state_file")" || return 1
+  effective="$(ralph_architecture_review_effective_due "$state_file" "$slice_dir")" || return 1
+  if [[ "$durable" == "True" && "$effective" == "False" ]]; then
+    reason="$(python3 - "$state_file" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1])).get("architecture_review_due_reason", ""))
 PY
-  printf 'Reconciled premature architecture-review boundary for Epic %s; same-epic work remains.\n' \
-    "$repaired_epic"
+)"
+    IFS='+' read -r -a parts <<< "$reason"
+    for part in "${parts[@]}"; do
+      if [[ "$part" =~ $boundary_pattern ]]; then
+        epic="${BASH_REMATCH[1]}"
+        if ralph_queue_has_unfinished_parent_epic "$slice_dir" "$epic"; then
+          printf 'Deferred premature architecture-review boundary for Epic %s; same-epic work remains.\n' \
+            "$epic"
+          return 0
+        fi
+      fi
+    done
+  fi
 }
 
 ralph_validate_architecture_review_convergence() {
@@ -266,6 +283,123 @@ PY
     echo "Architecture review exceeded the $maximum-generation corrective cap; refusing another successor." >&2
     return 1
   fi
+}
+
+# Validate the narrow owner-controlled exit for an exhausted corrective cycle.
+# A slice declaration is insufficient: the protected approvals file must name
+# the exact CR, epic, and generation, and durable state must prove the configured
+# corrective-generation cap has actually been reached.
+ralph_architecture_review_finalizer_epic() {
+  local config="${1:?config is required}" state_file="${2:?state file is required}"
+  local slice_file="${3:?slice file is required}" approvals_file="${4:?approvals file is required}"
+  local base slice_id approval_id fields epic generation maximum state_values
+  local due cycle state_generation reason risk parent reason_pattern
+  [[ -f "$slice_file" && -f "$approvals_file" ]] || return 1
+  base="$(basename "$slice_file")"
+  [[ "$base" =~ ^(CR-[0-9][0-9][0-9][0-9]*)-.+\.md$ ]] || return 1
+  approval_id="${BASH_REMATCH[1]}"
+  slice_id="${base%.md}"
+  [[ "$(awk '/^## Status[[:space:]]*$/ {getline; print; exit}' "$slice_file")" == "Not Started" ]] \
+    || return 1
+  risk="$(awk '/^## Risk Level[[:space:]]*$/ {getline; print; exit}' "$slice_file" | xargs || true)"
+  [[ "$risk" == "High" ]] || return 1
+  fields="$(awk '
+    /^## Architecture Review Finalizer[[:space:]]*$/ {
+      sections += 1
+      inside = (sections == 1)
+      next
+    }
+    inside && /^## / { inside = 0 }
+    inside && /^- Epic: / {
+      epic_count += 1
+      epic = $0
+      sub(/^- Epic: /, "", epic)
+      next
+    }
+    inside && /^- Exhausted corrective generation: / {
+      generation_count += 1
+      generation = $0
+      sub(/^- Exhausted corrective generation: /, "", generation)
+      next
+    }
+    inside && /[^[:space:]]/ { unknown += 1 }
+    END {
+      if (sections == 1 && epic_count == 1 && generation_count == 1 && unknown == 0) {
+        print epic "\t" generation
+      }
+    }
+  ' "$slice_file")"
+  IFS=$'\t' read -r epic generation <<< "$fields"
+  [[ "$epic" =~ ^[0-9][0-9][0-9]$ && "$generation" =~ ^[1-9][0-9]*$ ]] || return 1
+  maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+  maximum="${maximum:-2}"
+  [[ "$maximum" =~ ^[1-9][0-9]*$ ]] || return 1
+  state_values="$(python3 - "$state_file" <<'PY'
+import json
+import sys
+
+try:
+    state = json.load(open(sys.argv[1]))
+    due = state.get("architecture_review_due")
+    cycle = state.get("architecture_review_cycle_epic", "")
+    generation = int(state.get("architecture_review_corrective_generation", 0))
+    reason = state.get("architecture_review_due_reason", "")
+except (OSError, TypeError, ValueError, json.JSONDecodeError):
+    raise SystemExit(1)
+if not isinstance(due, bool) or not isinstance(cycle, str) or not isinstance(reason, str):
+    raise SystemExit(1)
+print(f"{'True' if due else 'False'}\t{cycle}\t{generation}\t{reason}")
+PY
+)" || return 1
+  IFS=$'\t' read -r due cycle state_generation reason <<< "$state_values"
+  [[ "$due" == "True" && "$cycle" == "$epic" \
+      && "$state_generation" == "$generation" ]] || return 1
+  (( generation >= maximum )) || return 1
+  reason_pattern="(^|\\+)epic_(boundary:${epic}->[0-9][0-9][0-9]|completion:${epic})(\\+|$)"
+  [[ "$reason" =~ $reason_pattern ]] || return 1
+  parent="$(ralph_slice_parent_epics "$(dirname "$slice_file")" "$slice_id")"
+  printf '%s\n' "$parent" | grep -Fxq "$epic" || return 1
+  grep -qF -- \
+    "- [approved-finalizer] $approval_id | Epic $epic | generation $generation |" \
+    "$approvals_file" || return 1
+  printf '%s\n' "$epic"
+}
+
+# Apply the trusted post-validation transition. Only the orchestrator calls
+# this after every declared product gate passes; candidate content cannot grant
+# itself authority to clear an exhausted architecture-review cycle.
+ralph_finalize_architecture_review_cycle() {
+  local state_file="${1:?state file is required}" epic="${2:?epic is required}"
+  local slice_id="${3:?slice id is required}" run_id="${4:?run id is required}"
+  [[ "$epic" =~ ^[0-9][0-9][0-9]$ \
+      && "$slice_id" =~ ^CR-[0-9][A-Za-z0-9._-]*$ \
+      && "$run_id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || return 1
+  python3 - "$state_file" "$epic" "$slice_id" "$run_id" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+epic, slice_id, run_id = sys.argv[2:]
+state = json.loads(path.read_text())
+if state.get("architecture_review_due") is not True:
+    raise SystemExit("architecture-review finalizer requires a due review")
+if state.get("architecture_review_cycle_epic") != epic:
+    raise SystemExit("architecture-review finalizer epic does not match the active cycle")
+if int(state.get("architecture_review_corrective_generation", 0)) < 1:
+    raise SystemExit("architecture-review finalizer requires a corrective generation")
+state["architecture_review_due"] = False
+state.pop("architecture_review_due_reason", None)
+state.pop("architecture_review_cycle_epic", None)
+state.pop("architecture_review_corrective_generation", None)
+state["slices_completed_since_architecture_review"] = 0
+state["last_architecture_review_finalizer"] = {
+    "epic": epic,
+    "slice_id": slice_id,
+    "run_id": run_id,
+}
+path.write_text(json.dumps(state, indent=2) + "\n")
+PY
 }
 
 ralph_architecture_review_scope_instruction() {

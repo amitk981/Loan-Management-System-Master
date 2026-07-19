@@ -120,6 +120,41 @@ grep -qF 'Stopped incomplete after reaching max iterations (1).' \
   "$loop_limit_repo/loop.stdout" \
   || fail "unfinished loop limit did not report its exact outcome"
 
+# A failure before Ralph creates a quarantined candidate (for example, a
+# preflight cleanliness failure) is not product-repairable. The loop must stop
+# after the original attempt instead of spending the repair budget on empty
+# failure signatures and claiming that independent validation reproduced one.
+cat > "$loop_limit_repo/scripts/afk-dev.sh" <<'EOF'
+#!/usr/bin/env bash
+counter=".ralph/afk-call-count"
+count=0
+[[ -f "$counter" ]] && count="$(cat "$counter")"
+printf '%s\n' "$((count + 1))" > "$counter"
+exit 1
+EOF
+chmod +x "$loop_limit_repo/scripts/afk-dev.sh"
+set +e
+(
+  cd "$loop_limit_repo"
+  ./scripts/ralph-loop.sh 1 > no-context.stdout 2>&1
+)
+no_context_rc=$?
+set -e
+[[ "$no_context_rc" == 1 ]] \
+  || fail "pre-candidate failure returned $no_context_rc instead of stopping with its original status"
+[[ "$(cat "$loop_limit_repo/.ralph/afk-call-count")" == 1 ]] \
+  || fail "pre-candidate failure incorrectly launched product repair attempts"
+grep -qF 'Run failed before a quarantined candidate existed; product repair cannot apply.' \
+  "$loop_limit_repo/no-context.stdout" \
+  || fail "pre-candidate failure did not explain why repair was skipped"
+if grep -qF 'Independent validation reproduced the current failure signature' \
+    "$loop_limit_repo/no-context.stdout"; then
+  fail "pre-candidate failure fabricated an independent-validation signature"
+fi
+if grep -qF 'All bounded repair attempts failed' "$loop_limit_repo/no-context.stdout"; then
+  fail "pre-candidate failure claimed that nonexistent repair attempts ran"
+fi
+
 merge_repo="$fixture_dir/merge-repo"
 git init -q -b integration "$merge_repo"
 git -C "$merge_repo" config user.name "Ralph Regression"
@@ -1081,32 +1116,31 @@ cat > "$false_boundary_state" <<'EOF'
 {
   "architecture_review_due": true,
   "architecture_review_due_reason": "epic_boundary:009->010",
+  "architecture_review_cycle_epic": "009",
+  "architecture_review_corrective_generation": 1,
   "last_architecture_review_metrics": {"corrective_slices_added": 1}
 }
 EOF
+cp "$false_boundary_state" "$false_boundary_state.before"
 ralph_reconcile_architecture_review_due "$false_boundary_state" "$parent_epic_repo"
+cmp -s "$false_boundary_state.before" "$false_boundary_state" \
+  || fail "architecture-review reconciliation dirtied tracked orchestrator state before preflight"
+declare -F ralph_architecture_review_effective_due >/dev/null \
+  || fail "missing read-only effective architecture-review due predicate"
+[[ "$(ralph_architecture_review_effective_due \
+      "$false_boundary_state" "$parent_epic_repo")" == False ]] \
+  || fail "same-parent terminal corrective did not defer the premature boundary review"
 python3 - "$false_boundary_state" <<'PY'
 import json
 import sys
 
 state = json.load(open(sys.argv[1]))
-if state.get("architecture_review_due") is not False:
-    raise SystemExit("false parent-epic boundary remained due")
+if state.get("architecture_review_due") is not True:
+    raise SystemExit("read-only deferral rewrote the durable due flag")
 if state.get("architecture_review_cycle_epic") != "009":
-    raise SystemExit("reconciled corrective cycle lost its epic")
+    raise SystemExit("deferred corrective cycle lost its epic")
 if state.get("architecture_review_corrective_generation") != 1:
-    raise SystemExit("reconciled corrective cycle lost its first generation")
-PY
-python3 - "$false_boundary_state" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-state = json.loads(path.read_text())
-state["architecture_review_due"] = True
-state["architecture_review_due_reason"] = "epic_boundary:009->010"
-path.write_text(json.dumps(state) + "\n")
+    raise SystemExit("deferred corrective cycle lost its first generation")
 PY
 scope_instruction="$(ralph_architecture_review_scope_instruction "$false_boundary_state")"
 [[ "$scope_instruction" == *"targeted corrective-closure review generation 1 for Epic 009"* ]] \
@@ -1127,6 +1161,88 @@ if ralph_validate_architecture_review_convergence \
 fi
 ralph_validate_architecture_review_convergence "$convergence_config" "$adaptive_state" 0 \
   || fail "clean closure review was blocked by the convergence cap"
+
+# After the corrective-generation budget is exhausted, only a protected,
+# owner-approved CR may finalize the epic boundary. Its successful full gates
+# replace another immediate review/task generation; ordinary slices cannot
+# claim this terminal transition.
+finalizer_slice="$parent_epic_repo/CR-013-finalizer.md"
+cat > "$finalizer_slice" <<'EOF'
+# Slice CR-013: Finalizer fixture
+## Status
+Not Started
+## Parent Epic
+Epic 009: Fixture
+## Depends On
+- CR-012
+## Architecture Review Finalizer
+- Epic: 009
+- Exhausted corrective generation: 2
+## Risk Level
+High
+EOF
+finalizer_state="$fixture_dir/finalizer-state.json"
+cat > "$finalizer_state" <<'EOF'
+{
+  "architecture_review_due": true,
+  "architecture_review_due_reason": "epic_boundary:009->010",
+  "architecture_review_cycle_epic": "009",
+  "architecture_review_corrective_generation": 2,
+  "slices_completed_since_architecture_review": 1
+}
+EOF
+finalizer_approvals="$fixture_dir/finalizer-approvals.md"
+printf '# Finalizer approvals\n' > "$finalizer_approvals"
+declare -F ralph_architecture_review_finalizer_epic >/dev/null \
+  || fail "missing architecture-review finalizer validation interface"
+if ralph_architecture_review_finalizer_epic \
+    "$convergence_config" "$finalizer_state" "$finalizer_slice" \
+    "$finalizer_approvals" >/dev/null 2>&1; then
+  fail "unapproved slice claimed the exhausted architecture-review finalizer"
+fi
+printf '%s\n' \
+  '- [approved-finalizer] CR-013 | Epic 009 | generation 2 | owner regression approval' \
+  >> "$finalizer_approvals"
+[[ "$(ralph_architecture_review_finalizer_epic \
+      "$convergence_config" "$finalizer_state" "$finalizer_slice" \
+      "$finalizer_approvals")" == 009 ]] \
+  || fail "protected owner-approved exhausted-cycle finalizer was rejected"
+python3 - "$finalizer_state" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_corrective_generation"] = 1
+path.write_text(json.dumps(state) + "\n")
+PY
+if ralph_architecture_review_finalizer_epic \
+    "$convergence_config" "$finalizer_state" "$finalizer_slice" \
+    "$finalizer_approvals" >/dev/null 2>&1; then
+  fail "finalizer bypassed a corrective generation that was not exhausted"
+fi
+sed 's/"architecture_review_corrective_generation": 1/"architecture_review_corrective_generation": 2/' \
+  "$finalizer_state" > "$finalizer_state.restored"
+mv "$finalizer_state.restored" "$finalizer_state"
+declare -F ralph_finalize_architecture_review_cycle >/dev/null \
+  || fail "missing trusted architecture-review cycle finalization interface"
+ralph_finalize_architecture_review_cycle \
+  "$finalizer_state" 009 CR-013-finalizer finalizer-run
+python3 - "$finalizer_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+if state.get("architecture_review_due") is not False:
+    raise SystemExit("validated finalizer did not clear the exhausted boundary")
+if "architecture_review_due_reason" in state:
+    raise SystemExit("validated finalizer retained a stale boundary reason")
+if "architecture_review_cycle_epic" in state or "architecture_review_corrective_generation" in state:
+    raise SystemExit("validated finalizer retained the exhausted corrective cycle")
+if state.get("slices_completed_since_architecture_review") != 0:
+    raise SystemExit("validated finalizer did not reset the review cadence")
+if state.get("last_architecture_review_finalizer") != {
+    "epic": "009", "slice_id": "CR-013-finalizer", "run_id": "finalizer-run"
+}:
+    raise SystemExit("validated finalizer audit record is incomplete")
+PY
 [[ "$(ralph_architecture_review_boundary_reason 009K-close '' \
       '010A-parked (Blocked)')" == "epic_boundary:009->010" ]] \
   || fail "a blocked next epic hid its mandatory boundary review"
@@ -2432,8 +2548,8 @@ rg -qF 'max_iterations="${1:-250}"' scripts/ralph-loop.sh \
   || fail "default Ralph loop budget cannot drain the prepared remaining queue"
 rg -qF 'exit "$RALPH_EXIT_ITERATION_LIMIT"' scripts/ralph-loop.sh \
   || fail "max-iteration exhaustion reports success for unfinished work"
-rg -qF 'ralph_architecture_review_due .ralph/state.json' scripts/ralph-loop.sh \
-  || fail "loop does not fail closed when architecture-review state is unreadable"
+rg -qF 'ralph_architecture_review_effective_due' scripts/ralph-loop.sh \
+  || fail "loop does not use the read-only fail-closed architecture-review decision"
 rg -qF 'Owner/architecture preparation maintains an 8-10 slice ready runway' AGENTS.md \
   || fail "repository rules do not assign future-slice preparation to a bounded planning lane"
 if rg -qF 'Before finishing, sharpen the next 1-2 `Not Started` slice files' AGENTS.md; then
@@ -2444,6 +2560,10 @@ if rg -qF 'Update state, progress, handoff, and slice status.' AGENTS.md; then
 fi
 rg -qF 'state = json.loads(trusted_path.read_text())' scripts/ralph-run.sh \
   || fail "orchestrator rebuilds successful state from an agent-modifiable candidate"
+rg -qF 'ralph_architecture_review_finalizer_epic' scripts/ralph-run.sh \
+  || fail "runner does not validate the protected exhausted-cycle finalizer"
+rg -qF 'ralph_finalize_architecture_review_cycle' scripts/ralph-run.sh \
+  || fail "runner does not close a validated finalizer without another immediate review"
 rg -qF 'COMMIT_QUARANTINED: post-commit integrity failure' scripts/ralph-run.sh \
   || fail "post-commit failures can re-enter incompatible product repair"
 rg -qF 'if (( no_worktree == 0 ))' scripts/ralph-run.sh \

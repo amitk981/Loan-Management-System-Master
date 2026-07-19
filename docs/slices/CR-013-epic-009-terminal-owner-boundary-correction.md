@@ -10,6 +10,10 @@ Epic file: `docs/epics/009-sap-loan-account-disbursement.md`
 ## Depends On
 - 009L7
 
+## Architecture Review Finalizer
+- Epic: 009
+- Exhausted corrective generation: 2
+
 ## Runtime Capabilities
 - `postgresql-five-race-acceptance`
 - `localhost-e2e-server`

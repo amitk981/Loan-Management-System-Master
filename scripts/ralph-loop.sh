@@ -84,6 +84,7 @@ active_tool="${AGENT_TOOL:-${default_tool:-codex}}"
 limit_fallback="$(awk -F': *' '/^[[:space:]]*limit_fallback:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' .ralph/config.yaml | xargs || true)"
 limit_fallback="${limit_fallback:-true}"
 exhausted_tools=""
+bounded_repair_started=0
 
 # Advisory context-occupancy monitor. After a run, report the agent's PEAK
 # per-call context vs the model window and record a note when it enters the
@@ -130,11 +131,17 @@ run_bounded_repair() {
   local current_failure_signature="" next_failure_signature=""
   local repairs_for_signature=0 total_repair_attempts=0
   local repair_args=()
+  bounded_repair_started=0
 
-  if ralph_repair_context_is_resumable "$repo_root" "$repo_root/.ralph/repair-context.json"; then
-    current_failure_signature="$(ralph_repair_context_value "$repo_root/.ralph/repair-context.json" failure_signature)"
-    echo "Repair will reuse the quarantined failed worktree." | tee -a "$loop_log"
+  if ! ralph_repair_context_is_resumable \
+      "$repo_root" "$repo_root/.ralph/repair-context.json"; then
+    echo "Run failed before a quarantined candidate existed; product repair cannot apply. Stopping with the original failure for owner diagnosis." | tee -a "$loop_log"
+    return "$repair_status"
   fi
+  current_failure_signature="$(ralph_repair_context_value \
+    "$repo_root/.ralph/repair-context.json" failure_signature)"
+  bounded_repair_started=1
+  echo "Repair will reuse the quarantined failed worktree." | tee -a "$loop_log"
   echo "Run failed. Repairing the same slice until green: up to $max_repair_attempts attempt(s) per unchanged failure and $max_progressive_repair_attempts progressive attempt(s) overall." | tee -a "$loop_log"
 
   while (( total_repair_attempts < max_progressive_repair_attempts )); do
@@ -296,7 +303,8 @@ for ((i = 1; i <= max_iterations; i++)); do
   progress_line | tee -a "$loop_log"
   echo "Agent: $active_tool" | tee -a "$loop_log"
 
-  if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+  if ! review_due="$(ralph_architecture_review_effective_due \
+      .ralph/state.json docs/slices)"; then
     echo "Stopping: cannot read a valid architecture-review state; refusing to run or declare completion." | tee -a "$loop_log"
     exit 2
   fi
@@ -329,7 +337,8 @@ for ((i = 1; i <= max_iterations; i++)); do
       continue
     fi
     review_failures_this_loop=0
-    if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+    if ! review_due="$(ralph_architecture_review_effective_due \
+        .ralph/state.json docs/slices)"; then
       echo "Stopping: validated review left unreadable architecture-review state; product work was not started." | tee -a "$loop_log"
       exit 2
     fi
@@ -346,7 +355,8 @@ for ((i = 1; i <= max_iterations; i++)); do
   outcome="$(ralph_outcome_for_status "$status")"
   case "$outcome" in
     queue_empty)
-      if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+      if ! review_due="$(ralph_architecture_review_effective_due \
+          .ralph/state.json docs/slices)"; then
         echo "Stopping: cannot read a valid architecture-review state; refusing to declare final completion." | tee -a "$loop_log"
         exit 2
       fi
@@ -400,13 +410,18 @@ for ((i = 1; i <= max_iterations; i++)); do
       exit "$RALPH_EXIT_BROWSER_INFRASTRUCTURE"
     fi
     if (( repair_status != 0 )); then
-      echo "All bounded repair attempts failed. Stopping for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"
+      if (( bounded_repair_started == 1 )); then
+        echo "All bounded repair attempts failed. Stopping for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"
+      else
+        echo "The run failed before product repair was possible. Stopping for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"
+      fi
       exit 1
     fi
   fi
 done
 
-if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+if ! review_due="$(ralph_architecture_review_effective_due \
+    .ralph/state.json docs/slices)"; then
   echo "Stopping at the iteration limit: architecture-review state is invalid." | tee -a "$loop_log"
   exit 2
 fi

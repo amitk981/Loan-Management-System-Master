@@ -25,6 +25,15 @@ Runs check this list before starting and refuse vetoed slices.
 
 (none)
 
+## Architecture review finalizers
+
+These approvals are narrower than standing High-risk approval. A listed CR may close an
+architecture-review boundary without another immediate review only after the configured corrective
+generation is exhausted and every declared product, regression, PostgreSQL, browser, migration,
+and coverage gate passes. The protected exact line is validated by the orchestrator.
+
+- [approved-finalizer] CR-013 | Epic 009 | generation 2 | 2026-07-19 owner-authorized terminal root-boundary correction
+
 ## History
 
 - 2026-07-02: Per-slice approvals model replaced by standing approval + veto at the owner's explicit request. Previously seeded approvals (002B2, 002C, 002D) are superseded by the standing approval.
