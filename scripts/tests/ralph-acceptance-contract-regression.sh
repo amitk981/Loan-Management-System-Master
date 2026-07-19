@@ -261,9 +261,47 @@ fi
 run_one="$fixture_dir/browser-evidence/run-1"
 run_two="$fixture_dir/browser-evidence/run-2"
 mkdir -p "$run_one" "$run_two"
-# PNG signature plus a small payload is sufficient for the evidence seam; the
-# real Playwright run produces complete PNG files.
-printf '\211PNG\r\n\032\nrun-one' > "$run_one/flow.png"
+
+write_test_png() {
+  local path="$1" variant="$2"
+  python3 - "$path" "$variant" <<'PY'
+import struct
+import sys
+import zlib
+from pathlib import Path
+
+path = Path(sys.argv[1])
+variant = int(sys.argv[2])
+width = height = 2
+pixel = bytes(((40 * variant) % 256, 80, 160, 255))
+raw = b"".join(b"\x00" + pixel * width for _ in range(height))
+
+def chunk(kind: bytes, payload: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(payload))
+        + kind
+        + payload
+        + struct.pack(">I", zlib.crc32(kind + payload) & 0xFFFFFFFF)
+    )
+
+png = (
+    b"\x89PNG\r\n\x1a\n"
+    + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+    + chunk(b"IDAT", zlib.compress(raw))
+    + chunk(b"IEND", b"")
+)
+path.write_bytes(png)
+PY
+}
+
+# A signature-only payload is not reviewable screenshot evidence.
+printf '\211PNG\r\n\032\nnot-an-image' > "$run_one/flow.png"
+if ralph_write_trusted_browser_screenshot_manifest \
+    "$fixture_dir/browser-valid.md" "$run_one" "$fixture_dir/corrupt.sha256" \
+    >/dev/null 2>&1; then
+  fail "corrupt signature-only PNG evidence passed"
+fi
+write_test_png "$run_one/flow.png" 1
 ralph_write_trusted_browser_screenshot_manifest \
   "$fixture_dir/browser-valid.md" "$run_one" "$fixture_dir/run-1.sha256" \
   || fail "valid first-run screenshot evidence was rejected"
@@ -277,7 +315,7 @@ if ralph_write_trusted_browser_screenshot_manifest \
   fail "second run accepted a symlink to first-run screenshot evidence"
 fi
 rm "$run_two/flow.png"
-printf '\211PNG\r\n\032\nrun-two' > "$run_two/flow.png"
+write_test_png "$run_two/flow.png" 2
 ralph_write_trusted_browser_screenshot_manifest \
   "$fixture_dir/browser-valid.md" "$run_two" "$fixture_dir/run-2.sha256" \
   || fail "valid second-run screenshot evidence was rejected"

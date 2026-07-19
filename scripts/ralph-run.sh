@@ -188,10 +188,14 @@ if (( no_worktree == 0 )); then
   fi
 fi
 printf '%s\n%s\n%s\n' "$run_id" "$$" "$lock_worktree_hint" > "$lock_file"
+worktree_owner_recorded=0
 
 on_exit() {
   local status=$?
-  rm -f "$lock_file"
+  if ! ralph_release_run_lock "$repo_root" "$lock_file" "$lock_worktree_hint" \
+      "$worktree_owner_recorded" "$no_worktree"; then
+    echo "WARN: run-lock cleanup could not prove safe removal; preserving $lock_file for recovery." >&2
+  fi
   if (( status != 0 )) && [[ "$run_dir" != "$main_run_dir" && -d "$run_dir" ]]; then
     mkdir -p "$main_run_dir"
     cp -R "$run_dir/." "$main_run_dir/" 2>/dev/null || true
@@ -244,6 +248,7 @@ if (( no_worktree == 0 )); then
   ralph_record_worktree_owner \
     "$repo_root" "$worktree_dir" "$branch_name" \
     "$stable_worktree_id" "$run_id" "$worktree_owner_slice_id" >/dev/null || exit 1
+  worktree_owner_recorded=1
   ralph_restore_worktree_bookkeeping "$repo_root" "$worktree_dir" || exit 1
   ralph_restore_selected_slice_status \
     "$worktree_dir" "docs/slices/$slice_file" || exit 1

@@ -320,6 +320,37 @@ mkdir -p "$bootstrap_worktree/.ralph/runs/bootstrap-run"
 printf '%s\n' bootstrap > "$bootstrap_worktree/.ralph/runs/bootstrap-run/evidence.txt"
 printf 'bootstrap-run\n99999999\n%s\n' "$bootstrap_worktree" \
   > "$recovery_repo/.ralph/locks/bootstrap-run.lock"
+declare -F ralph_release_run_lock >/dev/null \
+  || fail "worktree ownership helper has no catchable-termination lock policy"
+trap - ERR
+set +e
+run_bootstrap_termination_fixture() {
+  bash -c '
+    set -euo pipefail
+    source "$1"
+    fixture_repo="$2"
+    fixture_lock="$3"
+    fixture_worktree="$4"
+    termination_cleanup() {
+      ralph_release_run_lock \
+        "$fixture_repo" "$fixture_lock" "$fixture_worktree" 0 0 >/dev/null
+    }
+    trap termination_cleanup EXIT
+    kill -TERM "$$"
+  ' _ "$repo_root/scripts/lib/ralph-worktree-ownership.sh" \
+    "$recovery_repo" "$recovery_repo/.ralph/locks/bootstrap-run.lock" \
+    "$bootstrap_worktree"
+}
+run_bootstrap_termination_fixture >/dev/null 2>&1
+bootstrap_term_rc=$?
+set -e
+trap unexpected_error ERR
+[[ "$bootstrap_term_rc" == "143" ]] \
+  || fail "bootstrap termination fixture returned $bootstrap_term_rc instead of 143"
+[[ -f "$recovery_repo/.ralph/locks/bootstrap-run.lock" ]] \
+  || fail "catchable termination deleted the only bootstrap ownership proof"
+rg -qF 'ralph_release_run_lock "$repo_root"' scripts/ralph-run.sh \
+  || fail "ralph-run EXIT trap does not use the bootstrap-safe lock policy"
 (
   cd "$recovery_repo"
   ./scripts/ralph-recover.sh > bootstrap-recovery.stdout

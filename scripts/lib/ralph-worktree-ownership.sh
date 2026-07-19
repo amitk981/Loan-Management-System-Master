@@ -203,6 +203,46 @@ ralph_worktree_owner_has_live_lock() {
   return 1
 }
 
+# Release a run lock on ordinary exits, but preserve the lock when a registered
+# worktree exists and durable ownership has not yet been recorded. That narrow
+# state is the only trusted evidence recovery has if SIGTERM/SIGHUP lands after
+# `git worktree add` and before ralph_record_worktree_owner completes.
+ralph_release_run_lock() {
+  local repo_root="${1:?repository root is required}"
+  local lock_file="${2:?lock file is required}"
+  local worktree_hint="${3:-}"
+  local owner_recorded="${4:?owner-recorded flag is required}"
+  local no_worktree="${5:?no-worktree flag is required}"
+  local expected_lock_dir actual_lock_dir resolved_worktree expected_worktree_root
+
+  [[ "$owner_recorded" =~ ^[01]$ && "$no_worktree" =~ ^[01]$ ]] || return 1
+  expected_lock_dir="$(cd "$repo_root/.ralph/locks" 2>/dev/null && pwd -P)" || return 1
+  actual_lock_dir="$(cd "$(dirname "$lock_file")" 2>/dev/null && pwd -P)" || return 1
+  [[ "$actual_lock_dir" == "$expected_lock_dir" \
+      && "$(basename "$lock_file")" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.lock$ ]] \
+    || return 1
+
+  if [[ "$owner_recorded" == "1" || "$no_worktree" == "1" ]]; then
+    rm -f -- "$lock_file"
+    return 0
+  fi
+
+  if [[ -n "$worktree_hint" && -d "$worktree_hint" ]]; then
+    resolved_worktree="$(cd "$worktree_hint" 2>/dev/null && pwd -P)" || return 1
+    expected_worktree_root="$(cd "$repo_root/.ralph/worktrees" 2>/dev/null && pwd -P)" \
+      || return 1
+    [[ "$resolved_worktree" == "$expected_worktree_root/"* ]] || return 1
+    if git -C "$repo_root" worktree list --porcelain \
+        | awk '$1 == "worktree" {print substr($0, 10)}' \
+        | grep -Fxq "$resolved_worktree"; then
+      echo "Preserving bootstrap lock until durable worktree ownership can be recovered: $lock_file" >&2
+      return 0
+    fi
+  fi
+
+  rm -f -- "$lock_file"
+}
+
 ralph_remove_worktree_owner() {
   local repo_root="${1:?repository root is required}"
   local worktree="${2:?worktree path is required}" owner_file
