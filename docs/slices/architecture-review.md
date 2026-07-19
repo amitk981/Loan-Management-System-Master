@@ -26,10 +26,10 @@ Low
 
 ## Last Review
 
-Run `2026-07-19_014802_architecture_review` independently reviewed 009H9A, 009H9B, 009H9C, and
-009I2 after product boundary `e3d965ad` across separate Standards and Spec passes. Seventy-four
-focused backend and ten focused frontend tests pass. Three review-only probes fail on the intended
-assertions: incomplete checksummed provenance becomes verified, and advice-only authority can read
-and resolve generic exceptions. Findings are recorded newest-first in
-`docs/working/REVIEW_FINDINGS.md`; root-owner corrective 009H9D is dependency-ordered before 009J.
-No production code changed.
+Run `2026-07-19_180917_architecture_review` independently reviewed 009L6 and CR-012 after fixed
+point `399fb954` across separate Standards and Spec passes. Fourteen retained focused tests pass,
+and both CR-012 nine-file manifests verify with nine distinct hashes. Three review-only public HTTP
+probes fail on the intended assertions: two selector envelopes report one stale identity with an
+empty body, and initiation permission exposes a public Loan Account without the required read
+grant. Findings are recorded newest-first in `docs/working/REVIEW_FINDINGS.md`; the one final
+grouped corrective 009L7 is dependency-ordered before Epic 010. No production code changed.

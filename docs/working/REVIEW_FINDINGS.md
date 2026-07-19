@@ -19,6 +19,96 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
+## Open findings from 2026-07-19_180917_architecture_review
+
+Reviewed product commits: `50d91369` (009L6) and `fe4b0ecb` (CR-012), relative to successful
+architecture-review commit `399fb954`. The intervening `d17954b8` changes Ralph orchestration and
+is outside this targeted product-closure critique. Normal/repair attempts and mechanical state,
+progress, handoff, and retained run artifacts were treated as evidence rather than separate slices.
+
+### 009L7 — Epic 009 read-boundary convergence closure
+
+- **Retained High — the owner/selector root remains open after 009L6:** requirements 1-3 say every
+  identity selected before count/offset must consume the same complete owner decision as its scalar
+  projector, including send, file-integrity, completion, audit/workflow, readiness, bank/source,
+  and aggregate facts. `filter_current_account_completions` in
+  `sap_customer_profile.py:611-696` validates the completion manifest but omits the completed
+  request's send-delivery owner that `_current_completed_code_evidence` rechecks at lines 700-813.
+  `_assigned_workspace_requests` at lines 389-507 checks Annexure-I metadata but not the actual
+  verified workbook/file integrity required by `_current_send_evidence` at lines 766-854. Two
+  public review probes independently drift a completed account's send communication and an S37
+  request's file checksum: both envelopes report `total_count: 1` while projection returns `[]`.
+  This is the same active root-owner symptom mapped to 009L6, not a newly relabelled finding.
+- **High — initiation authority now widens the public Loan Account read contract:** 009L6 changed
+  `loan_account_read.py:28-61` so Senior Finance plus `finance.disbursement.initiate` substitutes
+  for `finance.loan_account.read` and immediately returns the entire portfolio. The public list and
+  detail views use that owner directly; list projection at `loan_account_360.py:124-145` does not
+  reapply assignment scope. A review probe using the retained real initiation fixture receives
+  `200` plus an eligible Loan Account without the read permission, where auth §34.7 and the binding
+  API contract require `403` and current SAP-assignment scope. This is a new authorization and
+  nondisclosure regression, not merely missing test coverage.
+- **Carried Medium — the declared five-branch matrix is still partial:** requirement 5 names mixed
+  1/21/101 portfolios for Loan Account, S36, S37, combined Senior Finance, and CFC, more than four
+  adjacent drifts, all scalar components/consumers, paired action/mutation behavior, query ceilings,
+  and independent error surfaces. 009L6 adds ten one-row equivalence tests and four PostgreSQL
+  examples; the 21/101 and >4-row cases remain Loan-Account-only, and there is no equivalent
+  S36/S37/combined/CFC matrix. This is the previously carried Medium, not a new finding.
+- **Medium — the CR-012 runtime seed crosses private test seams:** guarded command
+  `seed_epic_009_e2e_fixture.py:101-163` imports a `TestCase`, invokes `setUp`, and calls private
+  `_real_owner_initiation_fixture`, `_grant`, and `_user` helpers. The guards contain operational
+  exposure, but codebase-design §§26/42 require runtime callers and long-lived tests to consume a
+  public owner interface; ordinary test refactors can now break browser provisioning.
+- **Medium — ordinary full Playwright execution omits the Epic 009 seed:**
+  `playwright.config.ts:31-40` selects the Epic 009 seed only when that filename appears in argv,
+  while `testMatch` at lines 43-44 includes the spec in `npm run e2e`. An all-spec run therefore
+  provisions the older fixture family but still collects the Epic 009 contract, contrary to the
+  advertised README command. Targeted trusted acceptance passes and is not invalidated by this
+  distinct full-suite configuration defect.
+- **Low — selector helpers and test fixtures remain duplicated across seams:** `_JsonObjectKeyCount`
+  and `_JsonValuesEqual` are copied in lifecycle, SAP, and disbursement owners; several tests
+  instantiate other `TestCase` classes and private helpers. Assertions are substantive, but the
+  repetition weakens locality under codebase-design §§26/42 and contributed to the partial-rule
+  recurrence.
+
+The one additional root repair permitted in this corrective cycle is `009L7`. It groups the
+retained selector root, the new read-authorization regression, the executable matrix, and CR-012's
+fixture/config boundary instead of adding leaf patches. `010A` now depends on 009L7. A recurrence
+of this same root after 009L7 must fail closed under the bounded-generation policy.
+
+## Closed in this review
+
+- **PostgreSQL prerequisite ownership:** migration 0010 now records whether this app created
+  `pgcrypto`, reverses only app-owned creation, and the declared four-test exact-selector label ran
+  twice on PostgreSQL. The prior unsafe unconditional extension reversal finding is closed.
+- **Public portal test seam:** the other-application SAP completion regression now exercises the
+  authenticated portal HTTP contract instead of importing `_current_pre_payment_stages`. The prior
+  private-helper finding is closed.
+- **Duplicate PostgreSQL discovery:** the empty duplicate acceptance subclass was removed and
+  replaced by one declared four-test production label. The prior duplicate-discovery finding is
+  closed.
+- **CR-012 browser evidence:** both trusted runs use real form login and owned Django endpoints,
+  retain all nine declared structurally valid PNGs, and produce manifests with nine distinct hashes
+  that exactly match the retained files. No owned-API route fulfilment is present. The new fixture
+  architecture/full-suite observations above do not negate the targeted browser acceptance.
+
+## Review evidence
+
+- Independent Standards and Spec passes reviewed `399fb954..50d91369` and
+  `d17954b8..fe4b0ecb` separately. Both identify the authorization regression and continuing
+  selector/scalar split; the Spec pass finds CR-012's targeted contract complete.
+- Three review-only public HTTP probes fail on the intended assertions: two report `(1, [])` rather
+  than `(0, [])` after send/file drift, and an initiator without `finance.loan_account.read`
+  receives `200` plus a Loan Account rather than `403`.
+- CR-012's two nine-file manifests independently pass SHA-256 verification, contain nine distinct
+  values, and name only valid PNGs. Prior independent validation retained 1,311 backend tests under
+  coverage, 352 frontend tests, and two successful trusted browser runs.
+- Evidence: `.ralph/runs/2026-07-19_180917_architecture_review/evidence/`.
+- Epic audit: M07-FR-001-010 and M08-FR-001-011 retain implemented owners or explicit A-135
+  pending-posting governance, but collection and public authorization truth remain conditional on
+  009L7. `CONTEXT.md` remains truthful. No slice is marked `Blocked`, so no stale prerequisite
+  required re-parking. No ADR was added because 009L7 restores already binding owner, permission,
+  test-seam, and execution contracts rather than selecting a new durable business rule.
+
 ## Open findings from 2026-07-19_133456_architecture_review
 
 Reviewed product commit: `1de7c16c` (009L5), relative to successful architecture-review commit

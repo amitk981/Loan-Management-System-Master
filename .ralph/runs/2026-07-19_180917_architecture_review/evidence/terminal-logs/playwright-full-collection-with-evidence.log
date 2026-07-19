@@ -1,0 +1,41 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test --list
+
+Listing tests:
+  [chromium] › application-detail-controller.e2e.spec.ts:53:7 › ApplicationDetail production controller › renders loading and success, then submits and refreshes through mocked HTTP
+  [chromium] › application-detail-controller.e2e.spec.ts:78:7 › ApplicationDetail production controller › renders the production error state when detail HTTP fails
+  [chromium] › approval-register-settings.e2e.spec.ts:10:5 › S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigation
+  [chromium] › auth-negative.e2e.spec.ts:30:7 › auth negatives and restricted staff UI › no stored session shows staff login and exposes no tracer route
+  [chromium] › auth-negative.e2e.spec.ts:41:7 › auth negatives and restricted staff UI › invalid credentials keep the user on the login screen with an error
+  [chromium] › auth-negative.e2e.spec.ts:53:7 › auth negatives and restricted staff UI › zero-permission staff sees the neutral dashboard, no tracer nav, no settings
+  [chromium] › auth-negative.e2e.spec.ts:76:7 › auth negatives and restricted staff UI › tracer-only staff sees Tracer but no other protected staff workspaces
+  [chromium] › auth-negative.e2e.spec.ts:93:7 › auth negatives and restricted staff UI › invalid stored session restores to staff login before protected shell items render
+  [chromium] › completeness-workbench.e2e.spec.ts:9:5 › completeness workbench uses backend actions and captures required states
+  [chromium] › epic-006-closure.e2e.spec.ts:19:5 › appraisal workbench preserves the staged prototype across the required state matrix
+  [chromium] › epic-006-closure.e2e.spec.ts:86:5 › real Django and two real finance roles reach exactly one pending sanction case
+  [chromium] › epic-009-authority-evidence-pagination-closure.e2e.spec.ts:10:5 › Loan Account 360 retains every governed tab as explicitly unavailable
+  [chromium] › epic-009-authority-evidence-pagination-closure.e2e.spec.ts:27:5 › MP14 uses the selected finance application in both opposite list orders
+  [chromium] › epic-009-staff-disbursement-closure.e2e.spec.ts:36:5 › S36-S41 and initial Loan Account 360 use real Django and retain distinct evidence
+  [chromium] › exception-register-evidence.e2e.spec.ts:9:5 › S25 renders frozen comments and supporting metadata without granting download authority
+  [chromium] › member-governance-closure.e2e.spec.ts:17:5 › member creation, canonical update, approved identity correction, and denial use real sessions
+  [chromium] › member-governance-closure.e2e.spec.ts:97:5 › witness capture and correction refetch canonical resources and surface stale and denied states
+  [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions
+  [chromium] › member-portal-deficiency-response.e2e.spec.ts:11:5 › MP11 uploads and resubmits through the real Django lifecycle boundary
+  [chromium] › member-portal-documentation-actions.e2e.spec.ts:11:5 › MP07 uses the real portal session, upload, current download, and denial boundary
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:10:5 › available projection renders only the three server amounts
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:22:5 › unavailable projection has no invented zero or internal reason
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:31:5 › over-limit advisory is derived only from the server flag
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation
+  [chromium] › portal-auth-interaction.e2e.spec.ts:27:7 › portal auth rendered interaction authority (005FA4) › empty and populated portal forms have one real-session path
+  [chromium] › portal-auth-interaction.e2e.spec.ts:77:7 › portal auth rendered interaction authority (005FA4) › failed network logout clears the backend identity and every protected surface
+  [chromium] › portal-disbursement-status.spec.ts:11:5 › MP14 preserves the borrower composition for current SAP-complete processing
+  [chromium] › portal-disbursement-status.spec.ts:27:5 › MP14 preserves masked transfer facts and accepted-advice availability
+  [chromium] › portal-disbursement-status.spec.ts:41:5 › MP14 renders a safe unavailable state for an exact status failure
+  [chromium] › portal-nominee-detail.e2e.spec.ts:3:5 › portal detail renders every safe nominee fact and no sensitive controls
+  [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states
+  [chromium] › staff-documentation-workspace.e2e.spec.ts:19:5 › 008M5 persists staff documentation actions through real Django
+  [chromium] › tracer.e2e.spec.ts:8:7 › staff tracer lifecycle (production auth path) › login screen matches the approved visual baseline
+  [chromium] › tracer.e2e.spec.ts:14:7 › staff tracer lifecycle (production auth path) › logs in, walks the tracer to a closed loan, with dashboard + tracer baselines
+  [chromium] › witness-correction-authority.e2e.spec.ts:16:5 › contact and maker-checker identity corrections persist through routed real sessions
+Total: 35 tests in 20 files

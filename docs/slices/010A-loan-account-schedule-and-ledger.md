@@ -22,6 +22,7 @@ calculating balances in the browser.
 - 009L5
 - 009L6
 - CR-012
+- 009L7
 
 ## Runtime Capabilities
 

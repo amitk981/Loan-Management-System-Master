@@ -1,5 +1,19 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009L7 Read-Boundary Convergence Closure
+
+- Targeted review `2026-07-19_180917_architecture_review` proves 009L6 still counts identities that
+  its scalar owners suppress: a completed account with drifted SAP send delivery and an assigned
+  S37 request with changed file-integrity metadata each return `total_count: 1` with an empty body.
+- 009L6 also made `finance.disbursement.initiate` a substitute for the binding
+  `finance.loan_account.read` grant and portfolio scope. A real public HTTP probe returns an eligible
+  Loan Account to a Senior Finance initiator without the read permission, contrary to auth §34.7
+  and the retained Loan Account API contract.
+- 009L7 is the one final grouped repair admitted for this corrective cycle. It separates public
+  reads from workspace initiation candidates, replaces post-page scalar reconciliation with one
+  owner decision, completes the five-branch matrix, and moves CR-012's guarded seed off private test
+  internals while making targeted and full Playwright seeding coexist. Epic 010 remains downstream.
+
 ## 009L6 Architecture Review Closure
 
 - Architecture review `2026-07-19_133456_architecture_review` proves 009L5 closed its five retained

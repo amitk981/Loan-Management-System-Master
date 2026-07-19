@@ -1,0 +1,24 @@
+CR-012 retained browser evidence verification
+run-1
+cfc-authorisation.png: OK
+disbursement-readiness-blockers.png: OK
+loan-account-active-summary.png: OK
+loan-account-list.png: OK
+loan-account-safe-error.png: OK
+loan-account-sanctioned-summary.png: OK
+payment-initiation.png: OK
+sap-request-and-confirmation.png: OK
+transfer-and-advice-success.png: OK
+distinct_hashes=9
+run-2
+cfc-authorisation.png: OK
+disbursement-readiness-blockers.png: OK
+loan-account-active-summary.png: OK
+loan-account-list.png: OK
+loan-account-safe-error.png: OK
+loan-account-sanctioned-summary.png: OK
+payment-initiation.png: OK
+sap-request-and-confirmation.png: OK
+transfer-and-advice-success.png: OK
+distinct_hashes=9
+owned_api_route_stub_hits=0
