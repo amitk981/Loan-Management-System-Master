@@ -8,16 +8,21 @@ from decimal import Decimal, InvalidOperation
 from math import ceil
 
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from sfpcl_credit.api import request_ip, request_user_agent
+from sfpcl_credit.configurations.modules.source_bank_governance import (
+    resolve_source_bank_account,
+)
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.models import (
     BankStatementImport,
     BankStatementLine,
+    LoanAccount,
     Repayment,
 )
 
@@ -26,6 +31,13 @@ READ_PERMISSION = "finance.bank_statement.read"
 IMPORT_PERMISSION = "finance.bank_statement.import"
 MATCH_PERMISSION = "finance.bank_statement.match"
 FINANCE_ROLES = {"credit_manager", "accounts_head", "senior_manager_finance"}
+SERVICEABLE_STATUSES = {
+    "active",
+    "partially_repaid",
+    "overdue",
+    "grace_period",
+    "extended",
+}
 MAX_FILE_BYTES = 1_000_000
 MAX_LINES = 500
 REQUIRED_COLUMNS = {
@@ -68,7 +80,7 @@ def import_statement(*, actor, request):
             "The idempotency key was already used for a different statement import."
         )
     retained = BankStatementImport.objects.filter(
-        sfpcl_bank_account=cleaned["sfpcl_bank_account"],
+        collection_bank_account_id=cleaned["collection_bank_account_id"],
         source_checksum_sha256=cleaned["checksum"],
     ).first()
     if retained is not None:
@@ -82,7 +94,7 @@ def import_statement(*, actor, request):
         if retained is not None and retained.payload_digest == cleaned["payload_digest"]:
             return _serialize_import(retained, replayed=True)
         retained = BankStatementImport.objects.filter(
-            sfpcl_bank_account=cleaned["sfpcl_bank_account"],
+            collection_bank_account_id=cleaned["collection_bank_account_id"],
             source_checksum_sha256=cleaned["checksum"],
         ).first()
         if retained is not None:
@@ -108,6 +120,7 @@ def list_statement_lines(*, actor, query_params):
     rows = BankStatementLine.objects.select_related("matched_repayment").order_by(
         "created_at", "bank_statement_line_id"
     )
+    rows = _statement_lines_in_scope(actor, rows)
     if match_status:
         rows = rows.filter(match_status=match_status)
     total_count = rows.count()
@@ -136,12 +149,52 @@ def manual_match_statement_line(*, actor, line_id, payload, request=None):
     )
 
 
+def claim_statement_line_for_direct_capture(*, actor, line_id, repayment, request=None):
+    if not _has_authority(actor, MATCH_PERMISSION):
+        raise BankStatementPermissionDenied
+    line = (
+        BankStatementLine.objects.select_for_update(of=("self",))
+        .filter(pk=line_id)
+        .first()
+    )
+    if line is None:
+        raise BankStatementNotFound
+    if not _repayment_in_scope(actor, repayment):
+        raise BankStatementNotFound
+    if line.match_status != "unmatched" or line.matched_repayment_id is not None:
+        raise BankStatementConflict("The statement line is already decided.")
+    if not (
+        line.parse_status == "parsed"
+        and line.amount == repayment.amount_received
+        and line.transaction_date == repayment.received_date
+        and line.reference_normalized == repayment.bank_reference_number_normalized
+        and _normalize_account(line.loan_account_reference)
+        == repayment.loan_account.loan_account_number_normalized
+        and _narration_supports_candidate(line.narration, repayment)
+    ):
+        raise BankStatementValidation(
+            {"bank_statement_line_id": "The statement line does not match the receipt facts."}
+        )
+    _match(
+        line=line,
+        repayment=repayment,
+        actor=actor,
+        reason_code="direct_capture_exact_statement_evidence",
+        decision_reason="Direct capture used exact retained statement evidence.",
+        action="bank_statement.line_claimed_for_direct_receipt",
+        request=request,
+    )
+    return line
+
+
 @transaction.atomic
 def record_statement_exception(*, actor, line_id, payload, request=None):
     _require_authority(actor, MATCH_PERMISSION)
     cleaned = _validate_exception(payload)
     line = BankStatementLine.objects.select_for_update().filter(pk=line_id).first()
-    if line is None:
+    if line is None or not _statement_lines_in_scope(
+        actor, BankStatementLine.objects.filter(pk=line.pk)
+    ).exists():
         raise BankStatementNotFound
     if line.match_status == "matched":
         raise BankStatementConflict("A matched statement line cannot be marked exceptional.")
@@ -160,7 +213,7 @@ def record_statement_exception(*, actor, line_id, payload, request=None):
         "request_id": request.headers.get("X-Request-ID", "") if request else "",
     }
     manifest = json.dumps(evidence, sort_keys=True, separators=(",", ":"))
-    AuditLog.objects.create(
+    audit = AuditLog.objects.create(
         actor_user=actor,
         actor_type="user",
         action="bank_statement.line_exception_recorded",
@@ -177,12 +230,16 @@ def record_statement_exception(*, actor, line_id, payload, request=None):
     line.match_reason_code = cleaned["reason_code"]
     line.matched_by_user = actor
     line.match_decision_reason = cleaned["reason"]
+    line.match_audit = audit
+    line.matched_at = decided_at
     line.save(
         update_fields=[
             "match_status",
             "match_reason_code",
             "matched_by_user",
             "match_decision_reason",
+            "match_audit",
+            "matched_at",
         ]
     )
     return _serialize_line(line)
@@ -210,9 +267,13 @@ def _manual_match_statement_line(*, actor, line_id, cleaned, request):
     )
     if repayment is None or not _repayment_in_scope(actor, repayment):
         raise BankStatementNotFound
+    if _normalize_account(line.loan_account_reference) != (
+        repayment.loan_account.loan_account_number_normalized
+    ):
+        raise BankStatementNotFound
     if line.matched_repayment_id == repayment.pk:
         return _serialize_line(line)
-    if line.matched_repayment_id is not None:
+    if line.match_status != "unmatched" or line.matched_repayment_id is not None:
         raise BankStatementConflict("The statement line is already matched.")
     if repayment.bank_statement_line_id is not None:
         raise BankStatementConflict("The repayment is already matched to another statement line.")
@@ -223,7 +284,6 @@ def _manual_match_statement_line(*, actor, line_id, cleaned, request):
         reason_code="authorised_manual_evidence_match",
         decision_reason=cleaned["reason"],
         action="bank_statement.line_manually_matched",
-        receipt_statement_status="manual_match_exception",
         request=request,
     )
     line.refresh_from_db()
@@ -249,7 +309,7 @@ def _create_import(*, actor, request, cleaned):
     )
     statement_import = BankStatementImport.objects.create(
         source_document=document,
-        sfpcl_bank_account=cleaned["sfpcl_bank_account"],
+        collection_bank_account_id=cleaned["collection_bank_account_id"],
         source_checksum_sha256=cleaned["checksum"],
         idempotency_key_digest=cleaned["idempotency_key_digest"],
         payload_digest=cleaned["payload_digest"],
@@ -365,14 +425,40 @@ def _attempt_exact_match(*, line, actor, request):
         _set_unmatched(line, "no_exact_receipt_candidate")
         return
     if len(candidates) != 1:
-        _set_exception(line, "ambiguous_receipt_candidates")
+        _set_exception(
+            line,
+            "ambiguous_receipt_candidates",
+            actor=actor,
+            request=request,
+        )
         return
     repayment = candidates[0]
+    if not _has_authority(actor, MATCH_PERMISSION) or not _repayment_in_scope(
+        actor, repayment
+    ):
+        _set_unmatched(line, "match_authority_or_scope_required")
+        return
+    if (
+        repayment.repayment_source == "subsidiary_deduction"
+        and _subsidiary_narration_is_ambiguous(line.narration, repayment)
+    ):
+        _set_unmatched(line, "ambiguous_borrower_or_application_narration")
+        return
     if not _narration_supports_candidate(line.narration, repayment):
-        _set_unmatched(line, "missing_borrower_or_application_narration")
+        _set_unmatched(
+            line,
+            "missing_borrower_and_application_narration"
+            if repayment.repayment_source == "subsidiary_deduction"
+            else "missing_borrower_or_application_narration",
+        )
         return
     if repayment.bank_statement_line_id is not None:
-        _set_exception(line, "counterpart_already_matched")
+        _set_exception(
+            line,
+            "counterpart_already_matched",
+            actor=actor,
+            request=request,
+        )
         return
     _match(
         line=line,
@@ -381,7 +467,6 @@ def _attempt_exact_match(*, line, actor, request):
         reason_code="exact_reference_amount_date_account",
         decision_reason="Automatic exact evidence match.",
         action="bank_statement.line_auto_matched",
-        receipt_statement_status="matched_exact",
         request=request,
     )
 
@@ -394,7 +479,6 @@ def _match(
     reason_code,
     decision_reason,
     action,
-    receipt_statement_status,
     request,
 ):
     matched_at = timezone.now()
@@ -441,9 +525,6 @@ def _match(
             "matched_at",
         ]
     )
-    repayment.bank_statement_line_id = line.pk
-    repayment.statement_match_status = receipt_statement_status
-    repayment.save(update_fields=["bank_statement_line_id", "statement_match_status"])
 
 
 def _set_unmatched(line, reason_code):
@@ -452,23 +533,76 @@ def _set_unmatched(line, reason_code):
     line.save(update_fields=["match_status", "match_reason_code"])
 
 
-def _set_exception(line, reason_code):
+def _set_exception(line, reason_code, *, actor, request):
+    decided_at = timezone.now()
+    evidence = {
+        "bank_statement_line_id": str(line.pk),
+        "bank_statement_import_id": str(line.statement_import_id),
+        "actor_user_id": str(actor.pk),
+        "actor_role_codes": auth_service.effective_role_codes(actor),
+        "match_reason_code": reason_code,
+        "decided_at": decided_at.isoformat().replace("+00:00", "Z"),
+        "request_id": request.headers.get("X-Request-ID", "") if request else "",
+    }
+    manifest = json.dumps(evidence, sort_keys=True, separators=(",", ":"))
+    audit = AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action="bank_statement.line_automatic_exception",
+        entity_type="bank_statement_line",
+        entity_id=line.pk,
+        old_value_json=None,
+        new_value_json=evidence,
+        selector_manifest_json=manifest,
+        selector_manifest_sha256=hashlib.sha256(manifest.encode()).hexdigest(),
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
     line.match_status = "exception"
     line.match_reason_code = reason_code
-    line.save(update_fields=["match_status", "match_reason_code"])
+    line.matched_by_user = actor
+    line.match_audit = audit
+    line.matched_at = decided_at
+    line.save(
+        update_fields=[
+            "match_status",
+            "match_reason_code",
+            "matched_by_user",
+            "match_audit",
+            "matched_at",
+        ]
+    )
 
 
 def _validate_upload(request, actor):
     errors = {}
-    for name in sorted(set(request.POST) - {"sfpcl_bank_account"}):
+    for name in sorted(set(request.POST) - {"collection_bank_account_id"}):
         errors[name] = "Unknown field."
     for name in sorted(set(request.FILES) - {"file"}):
         errors[name] = "Unknown field."
     uploaded_file = request.FILES.get("file")
-    bank_account = _normalize(request.POST.get("sfpcl_bank_account", ""))
+    try:
+        collection_bank_account_id = uuid.UUID(
+            str(request.POST.get("collection_bank_account_id", ""))
+        )
+    except (TypeError, ValueError, AttributeError):
+        collection_bank_account_id = None
+        errors["collection_bank_account_id"] = (
+            "Must be the governed collection bank account UUID."
+        )
+    governed_account = resolve_source_bank_account()
+    if (
+        collection_bank_account_id is not None
+        and (
+            governed_account is None
+            or governed_account.source_bank_account_id
+            != collection_bank_account_id
+        )
+    ):
+        errors["collection_bank_account_id"] = (
+            "Must identify the active governed collection bank account."
+        )
     key = str(request.headers.get("Idempotency-Key", "")).strip()
-    if not bank_account or len(bank_account) > 120:
-        errors["sfpcl_bank_account"] = "Must be nonblank and at most 120 characters."
     if not key or len(key) > 255:
         errors["idempotency_key"] = "Must be nonblank and at most 255 characters."
     if uploaded_file is None:
@@ -509,7 +643,7 @@ def _validate_upload(request, actor):
         json.dumps(
             {
                 "actor_id": str(actor.pk),
-                "sfpcl_bank_account": bank_account,
+                "collection_bank_account_id": str(collection_bank_account_id),
                 "checksum": checksum,
             },
             sort_keys=True,
@@ -518,7 +652,7 @@ def _validate_upload(request, actor):
     ).hexdigest()
     return {
         "file": uploaded_file,
-        "sfpcl_bank_account": bank_account,
+        "collection_bank_account_id": collection_bank_account_id,
         "rows": rows,
         "checksum": checksum,
         "idempotency_key_digest": key_digest,
@@ -565,7 +699,6 @@ def _serialize_import(statement_import, replayed=False):
     return {
         "bank_statement_import_id": str(statement_import.pk),
         "source_document_id": str(statement_import.source_document_id),
-        "sfpcl_bank_account": statement_import.sfpcl_bank_account,
         "import_status": statement_import.import_status,
         "line_count": len(lines),
         "matched_count": sum(line.match_status == "matched" for line in lines),
@@ -591,8 +724,12 @@ def _serialize_line(line):
         "repayment_evidence": (
             {
                 "repayment_id": str(repayment.pk),
-                "bank_statement_line_id": str(repayment.bank_statement_line_id),
-                "statement_match_status": repayment.statement_match_status,
+                "bank_statement_line_id": str(line.pk),
+                "statement_match_status": (
+                    "manual_match_exception"
+                    if line.match_reason_code == "authorised_manual_evidence_match"
+                    else "matched_exact"
+                ),
                 "allocation_status": repayment.allocation_status,
             }
             if repayment is not None
@@ -602,20 +739,45 @@ def _serialize_line(line):
 
 
 def _require_authority(actor, permission):
-    if (
-        not actor.can_authenticate()
-        or permission not in auth_service.effective_permission_codes(actor)
-        or not set(auth_service.effective_role_codes(actor)).intersection(FINANCE_ROLES)
-    ):
+    if not _has_authority(actor, permission):
         raise BankStatementPermissionDenied
+
+
+def _has_authority(actor, permission):
+    return bool(
+        actor.can_authenticate()
+        and permission in auth_service.effective_permission_codes(actor)
+        and set(auth_service.effective_role_codes(actor)).intersection(FINANCE_ROLES)
+    )
 
 
 def _repayment_in_scope(actor, repayment):
     roles = set(auth_service.effective_role_codes(actor))
     return bool(roles & {"accounts_head", "senior_manager_finance"}) or (
         "credit_manager" in roles
-        and repayment.loan_account.loan_account_status
-        in {"active", "partially_repaid", "overdue", "grace_period", "extended"}
+        and repayment.loan_account.loan_account_status in SERVICEABLE_STATUSES
+    )
+
+
+def _statement_lines_in_scope(actor, rows):
+    roles = set(auth_service.effective_role_codes(actor))
+    if roles & {"accounts_head", "senior_manager_finance"}:
+        return rows
+    if "credit_manager" not in roles:
+        return rows.none()
+    visible_account_numbers = LoanAccount.objects.filter(
+        loan_account_status__in=SERVICEABLE_STATUSES
+    ).values("loan_account_number")
+    return rows.filter(
+        Q(
+            matched_repayment__loan_account__loan_account_status__in=(
+                SERVICEABLE_STATUSES
+            )
+        )
+        | Q(
+            matched_repayment__isnull=True,
+            loan_account_reference__in=visible_account_numbers,
+        )
     )
 
 
@@ -623,6 +785,19 @@ def _narration_supports_candidate(narration, repayment):
     normalized_narration = _normalize(narration)
     application = repayment.loan_account.loan_application
     member = repayment.loan_account.member
+    if repayment.repayment_source == "subsidiary_deduction":
+        borrower_identifiers = {
+            _normalize(member.legal_name),
+            _normalize(member.display_name),
+        }
+        return bool(
+            _normalize(application.application_reference_number)
+            in normalized_narration
+            and any(
+                identifier and identifier in normalized_narration
+                for identifier in borrower_identifiers
+            )
+        )
     identifiers = {
         repayment.loan_account.loan_account_number,
         application.application_reference_number,
@@ -633,6 +808,16 @@ def _narration_supports_candidate(narration, repayment):
         normalized and normalized in normalized_narration
         for normalized in (_normalize(value) for value in identifiers if value)
     )
+
+
+def _subsidiary_narration_is_ambiguous(narration, repayment):
+    normalized_tokens = set(_normalize(narration).split())
+    if not normalized_tokens:
+        return False
+    application_model = repayment.loan_account.loan_application.__class__
+    return application_model.objects.exclude(
+        pk=repayment.loan_account.loan_application_id
+    ).filter(application_reference_number__in=normalized_tokens).exists()
 
 
 def _bounded(value, limit):
@@ -668,6 +853,7 @@ __all__ = [
     "BankStatementValidation",
     "import_statement",
     "list_statement_lines",
+    "claim_statement_line_for_direct_capture",
     "manual_match_statement_line",
     "record_statement_exception",
 ]

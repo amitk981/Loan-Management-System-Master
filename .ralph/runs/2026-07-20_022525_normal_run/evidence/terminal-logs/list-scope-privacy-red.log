@@ -1,0 +1,24 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_statement_list_hides_out_of_scope_matches_counts_and_private_facts (sfpcl_credit.tests.test_statement_evidence_owner_scope_closure.StatementEvidenceOwnerScopeClosureTests.test_statement_list_hides_out_of_scope_matches_counts_and_private_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_022525_normal_run/sfpcl_credit/tests/test_statement_evidence_owner_scope_closure.py", line 232, in test_statement_list_hides_out_of_scope_matches_counts_and_private_facts
+    self.assertEqual(response.json()["data"], [])
+AssertionError: Lists differ: [{'bank_statement_line_id': 'dd492b5e-6550[521 chars]g'}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'bank_statement_line_id': 'dd492b5e-6550-43a1-9932-f65de8b8712b', 'line_number': 1, 'transaction_date': '2026-12-13', 'value_date': '2026-12-13', 'amount': '47000.00', 'parse_status': 'parsed', 'match_status': 'matched', 'match_reason_code': 'exact_reference_amount_date_account', 'matched_repayment_id': '01c89f81-d4fd-4d2c-b32f-2cf52f01f33d', 'repayment_evidence': {'repayment_id': '01c89f81-d4fd-4d2c-b32f-2cf52f01f33d', 'bank_statement_line_id': 'dd492b5e-6550-43a1-9932-f65de8b8712b', 'statement_match_status': 'matched_exact', 'allocation_status': 'pending'}}
+
+Diff is 693 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.640s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

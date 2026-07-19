@@ -290,14 +290,15 @@
     "010B-direct-repayment-posting",
     "010C-principal-first-allocation",
     "010D-bank-statement-matching-unmatched-receipts",
-    "010C2-manual-allocation-and-financial-reversal-controls"
+    "010C2-manual-allocation-and-financial-reversal-controls",
+    "010D2-statement-evidence-owner-and-scope-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-20_020422_repair",
+  "last_run_id": "2026-07-20_022525_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

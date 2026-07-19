@@ -1,7 +1,7 @@
 # Slice 010D2: Statement Evidence Owner and Scope Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

@@ -1,0 +1,14 @@
+Creating test database for alias 'default'...
+Found 14 test(s).
+System check identified no issues (0 silenced).
+..............
+----------------------------------------------------------------------
+Ran 14 tests in 8.253s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0
+System check identified no issues (0 silenced).
+manage.py check exit code: 0
+No changes detected
+makemigrations --check exit code: 0

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_statement_line_is_the_only_database_relationship_owner (sfpcl_credit.tests.test_statement_evidence_owner_scope_closure.StatementEvidenceOwnerScopeClosureTests.test_statement_line_is_the_only_database_relationship_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_022525_normal_run/sfpcl_credit/tests/test_statement_evidence_owner_scope_closure.py", line 23, in test_statement_line_is_the_only_database_relationship_owner
+    with self.assertRaises(FieldDoesNotExist):
+AssertionError: FieldDoesNotExist not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.608s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

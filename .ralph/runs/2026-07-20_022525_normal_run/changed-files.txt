@@ -1,0 +1,12 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/loans/modules/bank_statement_matching.py
+ M sfpcl_credit/loans/modules/direct_repayment_posting.py
+ M sfpcl_credit/tests/test_bank_statement_matching_api.py
+ M sfpcl_credit/tests/test_direct_repayment_posting_api.py
+ M sfpcl_credit/tests/test_repayment_adjustment_api.py
+?? .ralph/runs/2026-07-20_022525_normal_run/
+?? sfpcl_credit/loans/migrations/0007_statement_evidence_owner_scope_closure.py
+?? sfpcl_credit/tests/test_statement_evidence_boundary_postgresql.py
+?? sfpcl_credit/tests/test_statement_evidence_owner_migration.py
+?? sfpcl_credit/tests/test_statement_evidence_owner_scope_closure.py

@@ -4549,17 +4549,24 @@ messages; mandatory bounded reasons remain on their immutable governed records.
 
 ## Bank statement evidence matching and reconciliation (010D)
 
-`POST /api/v1/bank-statement-imports/` accepts multipart `file` and `sfpcl_bank_account`, plus a
+`POST /api/v1/bank-statement-imports/` accepts multipart `file` and
+`collection_bank_account_id`, plus a
 nonblank `Idempotency-Key` of at most 255 characters. Files are restricted UTF-8 CSV, at most
 1,000,000 bytes and 500 data lines, with exactly `transaction_date`, `value_date`, `amount`,
 `narration`, `reference`, and `loan_account_number` columns. The retained file uses the central
-restricted document-storage/provenance seam. Exact key/body replay and the same file checksum for
-the same SFPCL account reuse one import; changed key reuse returns `409 CONFLICT`.
+restricted document-storage/provenance seam. `collection_bank_account_id` must be the opaque UUID of
+the current active SFPCL account selected by the central source-bank governance seam; raw account
+numbers and unverified labels are rejected and the identifier is not echoed. Exact key/body replay
+and the same file checksum for the same governed account reuse one import; changed key reuse returns
+`409 CONFLICT`.
 
 The importer persists bounded statement facts and safe parse/match reason codes. It automatically
 links only one receipt whose normalized bank reference, positive 18,2 amount, received date, and
-canonical loan-account number all match exactly and whose narration also contains the account,
-application, or borrower identity. Missing reference/account/narration facts remain unmatched;
+canonical loan-account number all match exactly. A direct receipt additionally requires an exact
+account, application, or borrower narration identity. A subsidiary receipt requires both borrower
+name and application reference; either fact alone and account-only narration remain unmatched.
+Automatic matching requires `finance.bank_statement.match` and the same loan-object scope as manual
+matching. Missing reference/account/narration facts remain unmatched;
 invalid row facts and conflicting/already-consumed counterparts remain exceptions. It never creates
 a receipt or allocation, updates a financial balance/schedule/ledger, or marks SAP posted. Success
 returns import/document ids, safe counts/statuses, and line ids/dates/amount/status/reason facts; it
@@ -4567,12 +4574,16 @@ does not return narration or the raw bank reference.
 
 `GET /api/v1/bank-statement-lines/?match_status=unmatched|matched|exception&page=1&page_size=20`
 returns the strict standard list envelope in deterministic creation/id order. Unknown query fields,
-invalid statuses, and invalid/out-of-range pagination return `400 VALIDATION_ERROR`.
+invalid statuses, and invalid/out-of-range pagination return `400 VALIDATION_ERROR`. Filtering by
+effective loan-object scope happens before counts and pagination, so inaccessible line, receipt, and
+aggregate identities are not disclosed.
 
 `POST /api/v1/bank-statement-lines/{line_id}/match/` accepts exactly `repayment_id` and a nonblank
 manual `reason` of at most 500 characters. It locks both line and receipt, records the actor/roles,
 safe reason code and timestamp in audit evidence, links each side once, and returns a safe nested
-receipt-evidence projection. Manual evidence decisions set receipt `statement_match_status` to
+receipt-evidence projection. `BankStatementLine.matched_repayment` is the sole database relationship
+owner; receipt `bank_statement_line_id` and `statement_match_status` values are derived projections,
+never independently writable truth. Manual evidence decisions project `statement_match_status` as
 `manual_match_exception` for the later governed reconciliation/allocation owner while leaving
 `allocation_status` unchanged. Already-consumed counterparts return `409 CONFLICT`; inaccessible
 identities return `404`.

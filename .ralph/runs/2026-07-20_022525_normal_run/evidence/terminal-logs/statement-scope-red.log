@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_import_time_auto_match_respects_permission_and_loan_object_scope (sfpcl_credit.tests.test_statement_evidence_owner_scope_closure.StatementEvidenceOwnerScopeClosureTests.test_import_time_auto_match_respects_permission_and_loan_object_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_022525_normal_run/sfpcl_credit/tests/test_statement_evidence_owner_scope_closure.py", line 88, in test_import_time_auto_match_respects_permission_and_loan_object_scope
+    self.assertEqual(response.json()["data"]["matched_count"], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.655s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

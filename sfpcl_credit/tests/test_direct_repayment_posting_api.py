@@ -38,7 +38,6 @@ class DirectRepaymentPostingApiTests(TestCase):
             "received_date": "2026-12-01",
             "payment_method": "neft",
             "bank_reference_number": " UTR-Direct-001 ",
-            "bank_statement_line_id": "8b7523c9-a5b4-47f8-8860-a1152b981f0a",
             "remarks": "Confirmed against the bank statement.",
         }
 
@@ -256,4 +255,3 @@ class DirectRepaymentPostingApiTests(TestCase):
             REMOTE_ADDR="203.0.113.50",
             **(self.auth if actor_auth is None else actor_auth),
         )
-

@@ -398,11 +398,17 @@ class BankStatementMatchingApiTests(TestCase):
         )
 
     def _upload(self, content, *, key, name="statement.csv", content_type="text/csv"):
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            resolve_source_bank_account,
+        )
+
         return self.client.post(
             "/api/v1/bank-statement-imports/",
             data={
                 "file": SimpleUploadedFile(name, content.encode(), content_type=content_type),
-                "sfpcl_bank_account": "SFPCL-COLLECTION-001",
+                "collection_bank_account_id": str(
+                    resolve_source_bank_account().source_bank_account_id
+                ),
             },
             HTTP_IDEMPOTENCY_KEY=key,
             HTTP_X_REQUEST_ID="req-bank-statement-001",

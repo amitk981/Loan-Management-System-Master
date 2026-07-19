@@ -278,6 +278,10 @@ class RepaymentAdjustmentApiTests(TestCase):
         return repayment_id
 
     def _manual_exception_receipt(self):
+        from sfpcl_credit.configurations.modules.source_bank_governance import (
+            resolve_source_bank_account,
+        )
+
         self.fixture.fixture.fixture.owner.fixture.fixture._grant(
             self.actor,
             "finance.bank_statement.read",
@@ -296,7 +300,9 @@ class RepaymentAdjustmentApiTests(TestCase):
                 "file": SimpleUploadedFile(
                     "manual.csv", content.encode(), content_type="text/csv"
                 ),
-                "sfpcl_bank_account": "SFPCL-COLLECTION-001",
+                "collection_bank_account_id": str(
+                    resolve_source_bank_account().source_bank_account_id
+                ),
             },
             HTTP_IDEMPOTENCY_KEY="manual-adjustment-statement",
             **self.auth,

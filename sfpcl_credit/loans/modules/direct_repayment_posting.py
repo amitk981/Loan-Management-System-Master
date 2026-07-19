@@ -13,7 +13,12 @@ from django.utils.dateparse import parse_date, parse_datetime
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.loans.models import LoanAccount, Repayment, RepaymentSapPostingObligation
+from sfpcl_credit.loans.models import (
+    BankStatementLine,
+    LoanAccount,
+    Repayment,
+    RepaymentSapPostingObligation,
+)
 
 
 CREATE_PERMISSION = "finance.repayment.create"
@@ -83,6 +88,14 @@ def _capture(*, actor, loan_account_id, cleaned, payload_digest, request):
         raise RepaymentConflict("The idempotency key was already used for a different request.")
     if account.loan_account_status not in SERVICEABLE_STATUSES or account.disbursed_amount <= 0:
         raise RepaymentConflict("The loan is not serviceable for direct repayment capture.")
+    if cleaned["bank_statement_line_id"] is not None and not (
+        BankStatementLine.objects.select_for_update()
+        .filter(pk=cleaned["bank_statement_line_id"])
+        .exists()
+    ):
+        raise RepaymentValidation(
+            {"bank_statement_line_id": "Must identify an existing bank statement line."}
+        )
     if Repayment.objects.filter(
         bank_reference_number_normalized=cleaned["bank_reference_number_normalized"]
     ).exists():
@@ -121,7 +134,6 @@ def _capture(*, actor, loan_account_id, cleaned, payload_digest, request):
         payment_method=cleaned["payment_method"],
         bank_reference_number=cleaned["bank_reference_number"],
         bank_reference_number_normalized=cleaned["bank_reference_number_normalized"],
-        bank_statement_line_id=cleaned["bank_statement_line_id"],
         remarks=cleaned["remarks"],
         captured_by_user=actor,
         idempotency_key_digest=cleaned["idempotency_key_digest"],
@@ -129,6 +141,30 @@ def _capture(*, actor, loan_account_id, cleaned, payload_digest, request):
         capture_audit=audit,
         created_at=created_at,
     )
+    if cleaned["bank_statement_line_id"] is not None:
+        from sfpcl_credit.loans.modules.bank_statement_matching import (
+            BankStatementConflict,
+            BankStatementNotFound,
+            BankStatementPermissionDenied,
+            BankStatementValidation,
+            claim_statement_line_for_direct_capture,
+        )
+
+        try:
+            claim_statement_line_for_direct_capture(
+                actor=actor,
+                line_id=cleaned["bank_statement_line_id"],
+                repayment=repayment,
+                request=request,
+            )
+        except BankStatementPermissionDenied as exc:
+            raise RepaymentPermissionDenied from exc
+        except BankStatementNotFound as exc:
+            raise RepaymentNotFound from exc
+        except BankStatementValidation as exc:
+            raise RepaymentValidation(exc.field_errors) from exc
+        except BankStatementConflict as exc:
+            raise RepaymentConflict(str(exc)) from exc
     due_date = _next_working_day(cleaned["received_date"])
     Notification = apps.get_model("communications", "Notification")
     task = Notification.objects.create(

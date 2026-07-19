@@ -1,0 +1,4 @@
+System check identified no issues (0 silenced).
+manage.py check exit code: 0
+No changes detected
+makemigrations --check exit code: 0

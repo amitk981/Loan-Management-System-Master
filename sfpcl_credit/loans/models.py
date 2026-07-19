@@ -321,10 +321,6 @@ class Repayment(models.Model):
     payment_method = models.CharField(max_length=60)
     bank_reference_number = models.CharField(max_length=120)
     bank_reference_number_normalized = models.CharField(max_length=120, unique=True)
-    bank_statement_line_id = models.UUIDField(null=True, blank=True, unique=True)
-    statement_match_status = models.CharField(
-        max_length=40, default="not_linked", db_index=True
-    )
     remarks = models.CharField(max_length=2000)
     allocation_status = models.CharField(max_length=60, default="pending", db_index=True)
     sap_posting_status = models.CharField(max_length=60, default="pending", db_index=True)
@@ -380,22 +376,31 @@ class Repayment(models.Model):
                 name="repayment_sap_status_bounded",
             ),
             models.CheckConstraint(
-                check=models.Q(
-                    statement_match_status__in=(
-                        "not_linked",
-                        "matched_exact",
-                        "manual_match_exception",
-                    )
-                ),
-                name="repayment_statement_match_status_bounded",
-            ),
-            models.CheckConstraint(
                 check=~models.Q(bank_reference_number="")
                 & ~models.Q(bank_reference_number_normalized="")
                 & ~models.Q(remarks=""),
                 name="repayment_required_text",
             ),
         ]
+
+    @property
+    def bank_statement_line_id(self):
+        try:
+            return self.matched_bank_statement_line.pk
+        except BankStatementLine.DoesNotExist:
+            return None
+
+    @property
+    def statement_match_status(self):
+        try:
+            line = self.matched_bank_statement_line
+        except BankStatementLine.DoesNotExist:
+            return "not_linked"
+        return (
+            "manual_match_exception"
+            if line.match_reason_code == "authorised_manual_evidence_match"
+            else "matched_exact"
+        )
 
 
 class AppendOnlyRepaymentEvidenceQuerySet(models.QuerySet):
@@ -409,6 +414,52 @@ class AppendOnlyRepaymentEvidenceQuerySet(models.QuerySet):
         raise ValidationError({"repayment_evidence": "Repayment evidence is append-only."})
 
 
+class StatementLinkMigrationException(models.Model):
+    statement_link_migration_exception_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    repayment = models.OneToOneField(
+        Repayment,
+        on_delete=models.PROTECT,
+        related_name="statement_link_migration_exception",
+    )
+    legacy_statement_line_id = models.UUIDField()
+    reason_code = models.CharField(max_length=80)
+    resolution_status = models.CharField(max_length=40, default="unresolved")
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    objects = AppendOnlyRepaymentEvidenceQuerySet.as_manager()
+
+    class Meta:
+        db_table = "statement_link_migration_exceptions"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    reason_code__in=(
+                        "legacy_statement_line_orphan",
+                        "legacy_statement_link_incomplete",
+                        "legacy_statement_link_contradiction",
+                    )
+                ),
+                name="statement_link_migration_reason_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(resolution_status="unresolved"),
+                name="statement_link_migration_unresolved",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"statement_link_migration_exception": "Migration evidence is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"statement_link_migration_exception": "Migration evidence is immutable."}
+        )
 class ManualAllocationApproval(models.Model):
     manual_allocation_approval_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -899,7 +950,14 @@ class BankStatementImport(models.Model):
         on_delete=models.PROTECT,
         related_name="bank_statement_import",
     )
-    sfpcl_bank_account = models.CharField(max_length=120, db_index=True)
+    collection_bank_account = models.ForeignKey(
+        "members.BankAccount",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="bank_statement_imports",
+    )
+    legacy_collection_account_encrypted = models.TextField(blank=True)
     source_checksum_sha256 = models.CharField(max_length=64)
     idempotency_key_digest = models.CharField(max_length=64, unique=True)
     payload_digest = models.CharField(max_length=64)
@@ -915,16 +973,12 @@ class BankStatementImport(models.Model):
         db_table = "bank_statement_imports"
         constraints = [
             models.UniqueConstraint(
-                fields=["sfpcl_bank_account", "source_checksum_sha256"],
+                fields=["collection_bank_account", "source_checksum_sha256"],
                 name="uniq_bank_statement_account_checksum",
             ),
             models.CheckConstraint(
                 check=models.Q(import_status__in=("parsed", "parsed_with_exceptions")),
                 name="bank_statement_import_status_bounded",
-            ),
-            models.CheckConstraint(
-                check=~models.Q(sfpcl_bank_account=""),
-                name="bank_statement_import_account_required",
             ),
         ]
 
@@ -1010,8 +1064,18 @@ class BankStatementLine(models.Model):
                     | (
                         ~models.Q(match_status="matched")
                         & models.Q(matched_repayment__isnull=True)
-                        & models.Q(match_audit__isnull=True)
-                        & models.Q(matched_at__isnull=True)
+                        & (
+                            models.Q(
+                                match_status="exception",
+                                match_audit__isnull=False,
+                                matched_by_user__isnull=False,
+                                matched_at__isnull=False,
+                            )
+                            | models.Q(
+                                match_audit__isnull=True,
+                                matched_at__isnull=True,
+                            )
+                        )
                     )
                 ),
                 name="bank_statement_match_evidence_coherent",

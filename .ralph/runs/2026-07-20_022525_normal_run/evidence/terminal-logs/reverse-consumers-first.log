@@ -1,0 +1,29 @@
+Creating test database for alias 'default'...
+Found 27 test(s).
+System check identified no issues (0 silenced).
+....F..........F.......ssss
+======================================================================
+FAIL: test_valid_direct_receipt_and_exact_replay_create_one_pending_obligation (sfpcl_credit.tests.test_direct_repayment_posting_api.DirectRepaymentPostingApiTests.test_valid_direct_receipt_and_exact_replay_create_one_pending_obligation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_022525_normal_run/sfpcl_credit/tests/test_direct_repayment_posting_api.py", line 48, in test_valid_direct_receipt_and_exact_replay_create_one_pending_obligation
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Repayment capture failed validation.", "details": {}, "field_errors": {"bank_statement_line_id": "Must identify an existing bank statement line."}}, "meta": {"request_id": "req-repayment-001", "timestamp": "2026-07-19T21:13:22.545694Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_manual_exception_allocation_requires_exact_terminal_approval (sfpcl_credit.tests.test_repayment_adjustment_api.RepaymentAdjustmentApiTests.test_manual_exception_allocation_requires_exact_terminal_approval)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_022525_normal_run/sfpcl_credit/tests/test_repayment_adjustment_api.py", line 129, in test_manual_exception_allocation_requires_exact_terminal_approval
+    repayment_id = self._manual_exception_receipt()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_022525_normal_run/sfpcl_credit/tests/test_repayment_adjustment_api.py", line 304, in _manual_exception_receipt
+    self.assertEqual(imported.status_code, 200, imported.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Bank statement import failed validation.", "details": {}, "field_errors": {"sfpcl_bank_account": "Unknown field.", "collection_bank_account_id": "Must be the governed collection bank account UUID."}}, "meta": {"request_id": null, "timestamp": "2026-07-19T21:13:29.023808Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 27 tests in 12.973s
+
+FAILED (failures=2, skipped=4)
+Destroying test database for alias 'default'...
+Exit code: 1
