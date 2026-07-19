@@ -21,6 +21,13 @@ from sfpcl_credit.loans.modules.direct_repayment_posting import (
     capture_direct_repayment,
     mark_sap_posted,
 )
+from sfpcl_credit.loans.modules.repayment_allocator import (
+    RepaymentAllocator,
+    RepaymentAllocationConflict,
+    RepaymentAllocationNotFound,
+    RepaymentAllocationPermissionDenied,
+    RepaymentAllocationValidation,
+)
 from sfpcl_credit.processes.loan_servicing import (
     LoanServicingReadNotFound,
     LoanServicingReadValidation,
@@ -176,6 +183,37 @@ def repayment_mark_sap_posted(request, repayment_id):
     except RepaymentNotFound:
         return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
     except RepaymentConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def repayment_allocate(request, repayment_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            RepaymentAllocator.allocate(
+                actor=actor,
+                repayment_id=repayment_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except RepaymentAllocationValidation as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Repayment allocation failed validation.", exc.field_errors
+        )
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Repayment allocation failed validation.", {"body": exc.messages[0]}
+        )
+    except RepaymentAllocationPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "Repayment allocation permission is required.")
+    except RepaymentAllocationNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
+    except RepaymentAllocationConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
 
 

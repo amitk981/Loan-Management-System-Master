@@ -4472,3 +4472,36 @@ source role/scope plus `finance.repayment.mark_sap_posted`. The one-way pending-
 retains the source SAP reference, actor, timestamp, and safe audit evidence. It records manual SAP
 truth without claiming provider integration and never creates a second receipt, obligation,
 allocation, or financial movement.
+
+## Principal-first repayment allocation (010C)
+
+`POST /api/v1/repayments/{repayment_id}/allocate/` accepts exactly
+`allocation_rule: principal_first` and nonblank remarks of at most 2,000 characters. It requires an
+active `credit_manager` or `accounts_head`, `finance.repayment.allocate`, and the same source-defined
+loan-object scope as repayment capture. Missing authentication returns `401`; malformed input `400`;
+missing authority `403`; inaccessible receipt/account ids `404`; ineligible or incoherent retained
+receipt/balance evidence returns zero-write `409 CONFLICT`.
+
+The allocator locks the receipt, account, and schedule rows in one transaction. It applies
+`min(receipt, principal outstanding)` to principal, then applies only the remaining amount up to
+interest outstanding. Charges receive zero until an approved waterfall exists. Any charge-facing or
+excess remainder is retained as non-negative `unallocated_amount`, status
+`allocated_with_exception`, and reason `charge_or_excess_policy_not_configured`; balances never go
+negative. Schedule paid amounts follow A-139. Exact payoff reaches zero and status `repaid`.
+
+Success returns the immutable allocation id/receipt id, `allocation_rule`,
+`allocation_rule_version`, allocation status, principal/interest/charge/unallocated decimal strings,
+nullable exception reason, and the server-owned post-allocation account balances. It atomically
+updates account/schedule truth, appends one immutable repayment ledger row, and writes one safe
+allocation audit containing before/after amounts, actor/roles, rule/version, timestamp-owned row, and
+request evidence. Exact replay returns the same retained success projection with no second financial
+effect. Database one-to-one and arithmetic constraints independently prevent duplicate allocations,
+duplicate ledger movements, negative balances, unconfigured charge allocation, and inconsistent
+before/after totals.
+
+The 010A ledger preserves the canonical disbursement row and appends repayment rows ordered by their
+immutable creation identity. A repayment row exposes the allocation owner reference, captured bank
+reference, zero debit, only the amount actually allocated as credit, post-allocation running
+principal/interest/total balances, retained actor snapshot, current receipt SAP status, and fixed safe
+remarks. Unallocated money is observable on the allocation result and is not misrepresented as a
+ledger credit.

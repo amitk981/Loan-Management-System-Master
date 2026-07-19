@@ -1,7 +1,7 @@
 # Slice 010C: Principal-First Allocation
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

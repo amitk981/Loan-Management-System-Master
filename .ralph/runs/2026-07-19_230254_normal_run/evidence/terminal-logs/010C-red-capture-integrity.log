@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_incoherent_capture_evidence_is_zero_write_conflict (sfpcl_credit.tests.test_repayment_allocation_api.RepaymentAllocationApiTests.test_incoherent_capture_evidence_is_zero_write_conflict)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_230254_normal_run/sfpcl_credit/tests/test_repayment_allocation_api.py", line 181, in test_incoherent_capture_evidence_is_zero_write_conflict
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"repayment_allocation_id": "8b0e9660-1d40-4c55-ba79-5b190ddd9599", "repayment_id": "922f3cd4-1741-4946-92df-6d48f173ae41", "allocation_rule": "principal_first_v1", "allocation_status": "allocated", "allocated_to_principal": "100000.00", "allocated_to_interest": "0.00", "allocated_to_charges": "0.00", "unallocated_amount": "0.00", "loan_account": {"principal_outstanding": "300000.00", "interest_outstanding": "0.00", "charges_outstanding": "0.00", "total_outstanding": "300000.00"}}, "meta": {"request_id": "req-allocation-001", "timestamp": "2026-07-19T17:40:45.551158Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.670s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

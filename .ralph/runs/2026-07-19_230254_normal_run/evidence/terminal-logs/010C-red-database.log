@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_database_enforces_balance_arithmetic_and_evidence_is_append_only (sfpcl_credit.tests.test_repayment_allocation_api.RepaymentAllocationApiTests.test_database_enforces_balance_arithmetic_and_evidence_is_append_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_230254_normal_run/sfpcl_credit/tests/test_repayment_allocation_api.py", line 249, in test_database_enforces_balance_arithmetic_and_evidence_is_append_only
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.669s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

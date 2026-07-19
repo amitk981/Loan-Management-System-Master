@@ -1,0 +1,11 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/loans/views.py
+ M sfpcl_credit/processes/loan_servicing.py
+ M sfpcl_credit/tests/test_servicing_postgresql_acceptance.py
+?? .ralph/runs/2026-07-19_230254_normal_run/
+?? sfpcl_credit/loans/migrations/0004_principal_first_allocation.py
+?? sfpcl_credit/loans/modules/repayment_allocator.py
+?? sfpcl_credit/tests/test_repayment_allocation_api.py

@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_crossing_receipt_updates_schedule_then_retains_charges_and_excess (sfpcl_credit.tests.test_repayment_allocation_api.RepaymentAllocationApiTests.test_crossing_receipt_updates_schedule_then_retains_charges_and_excess)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_230254_normal_run/sfpcl_credit/tests/test_repayment_allocation_api.py", line 120, in test_crossing_receipt_updates_schedule_then_retains_charges_and_excess
+    self.assertEqual(str(schedule.paid_principal), "40000.00")
+AssertionError: '0.00' != '40000.00'
+- 0.00
++ 40000.00
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.719s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
