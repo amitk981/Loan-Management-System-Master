@@ -4,7 +4,7 @@ from math import ceil
 from uuid import UUID
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
     resolve_current_disbursement_evidence,
@@ -43,23 +43,21 @@ def list_accounts(*, actor, query_params):
         ),
         filters,
     )
-    candidate_count = candidates.count()
-    candidate_pages = ceil(candidate_count / page_size) if candidate_count else 1
-    if page > candidate_pages:
-        raise LoanAccountProjectionValidation({"page": "Page is out of range."})
-    start = (page - 1) * page_size
-    page_accounts = list(candidates[start : start + page_size])
+    candidates = _database_coherent_candidates(candidates)
     projections = [
         projection
-        for account in page_accounts
+        for account in candidates
         if account_is_scoped(
             actor=actor, account=account, cfc_scope_resolver=_has_cfc_scope
         )
         and (projection := _project(account)) is not None
     ]
-    total_count = candidate_count - (len(page_accounts) - len(projections))
+    total_count = len(projections)
     total_pages = ceil(total_count / page_size) if total_count else 1
-    return projections, {
+    if page > total_pages:
+        raise LoanAccountProjectionValidation({"page": "Page is out of range."})
+    start = (page - 1) * page_size
+    return projections[start : start + page_size], {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
@@ -99,8 +97,10 @@ def get_account(*, actor, loan_account_id):
 def _project(account):
     if resolve_creation_truth(account=account) is None:
         return None
+    sap_decision = None
     if account.sap_customer_code_id:
-        if not _sap_is_current_for_account(account):
+        sap_decision = _sap_is_current_for_account(account)
+        if sap_decision is None:
             return None
     activated_at = None
     if account.loan_account_status == "sanctioned":
@@ -150,9 +150,7 @@ def _project(account):
             "display_name": account.member.display_name,
         },
         "sap_customer_code": (
-            account.sap_customer_code.sap_customer_code
-            if account.sap_customer_code_id
-            else None
+            sap_decision.customer_code_masked if sap_decision else None
         ),
         "loan_type": account.loan_type,
         "facility_type": account.terms.facility_type,
@@ -193,11 +191,15 @@ def _sap_is_current_for_account(account):
         member_id=account.member_id,
         customer_code_id=account.sap_customer_code_id,
     )
-    return bool(
+    return (
+        decision
+        if (
         decision
         and decision.customer_code_id == account.sap_customer_code_id
         and decision.member_id == account.member_id
         and decision.loan_application_id == account.loan_application_id
+        )
+        else None
     )
 
 
@@ -263,6 +265,45 @@ def _apply_filters(queryset, filters):
     if filters["member_id"]:
         queryset = queryset.filter(member_id=filters["member_id"])
     return queryset
+
+
+def _database_coherent_candidates(queryset):
+    """Exclude relational/state drift before count and database pagination."""
+    queryset = queryset.filter(
+        loan_application__member_id=F("member_id"),
+        sanction_decision__loan_application_id=F("loan_application_id"),
+        terms__loan_amount=F("sanctioned_amount"),
+        terms__facility_type=F("loan_type"),
+        terms__interest_rate_type=F("interest_rate_type"),
+        terms__rate_of_interest=F("current_interest_rate"),
+        terms__repayment_date=F("repayment_date"),
+    )
+    sanctioned = Q(
+        loan_account_status="sanctioned",
+        disbursed_amount=0,
+        principal_outstanding=0,
+        interest_outstanding=0,
+        charges_outstanding=0,
+        total_outstanding=0,
+        tenure_start_date__isnull=True,
+        tenure_end_date__isnull=True,
+    )
+    active = Q(
+        loan_account_status="active",
+        disbursed_amount__gt=0,
+        principal_outstanding=F("disbursed_amount"),
+        total_outstanding=F("disbursed_amount"),
+        interest_outstanding=0,
+        charges_outstanding=0,
+        tenure_start_date__isnull=False,
+        disbursements__bank_transfer_status="successful",
+        disbursements__disbursement_amount=F("disbursed_amount"),
+        disbursements__loan_application_id=F("loan_application_id"),
+        disbursements__member_id=F("member_id"),
+        disbursements__register_update__isnull=False,
+        disbursements__initial_payment_sap_posting__posting_status="pending",
+    )
+    return queryset.filter(sanctioned | active).distinct()
 
 
 def _positive_int(name, raw, default, maximum=None):

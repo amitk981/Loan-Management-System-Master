@@ -67,6 +67,18 @@ class DisbursementWorkspaceApiTests(TestCase):
         self.assertEqual(denied.status_code, 403, denied.content)
         self.assertEqual(denied.json()["error"]["code"], "FORBIDDEN")
 
+    def test_primary_cfc_role_without_governed_authority_discloses_no_row_or_action(self):
+        self.fixture.cfc.approval_authority_type = ""
+        self.fixture.cfc.save(update_fields=["approval_authority_type"])
+
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture.fixture._auth(self.fixture.cfc),
+        )
+
+        self.assertEqual(response.status_code, 403, response.content)
+        self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+
     def test_query_validation_is_strict(self):
         for query in ("page=0", "page_size=101", "status=pending"):
             with self.subTest(query=query):
@@ -179,6 +191,32 @@ class SapStaffWorkspaceApiTests(TestCase):
         self.assertEqual(action["action_code"], "send_sap_request")
         self.assertEqual(action["required_permission"], "finance.sap_request.send")
         self.assertEqual(action["fields"][0]["name"], "remarks")
+
+    def test_every_credit_manager_accepted_by_create_owner_reaches_s36_candidate(self):
+        other_credit_manager = self.fixture._user(
+            "credit_manager",
+            "Current Credit Manager Outside Intake Ownership",
+            "finance.sap_request.create",
+            "finance.sap_request.send",
+        )
+
+        workspace = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture._auth(other_credit_manager),
+        )
+        mutation = self.client.post(
+            (
+                f"/api/v1/loan-applications/{self.fixture.application.pk}/"
+                "sap-customer-profile-request/"
+            ),
+            {"assigned_to_user_id": str(self.fixture.assignee.pk)},
+            content_type="application/json",
+            **self.fixture._auth(other_credit_manager),
+        )
+
+        self.assertEqual(mutation.status_code, 200, mutation.content)
+        self.assertEqual(workspace.status_code, 200, workspace.content)
+        self.assertEqual(workspace.json()["pagination"]["total_count"], 1)
 
     def test_populated_s36_collection_has_a_query_ceiling(self):
         with CaptureQueriesContext(connection) as queries:

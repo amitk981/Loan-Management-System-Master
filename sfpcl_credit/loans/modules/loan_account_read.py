@@ -1,5 +1,7 @@
 """Loan-owned authority and immutable creation truth for ordinary account reads."""
 
+from django.db.models import F, Q
+
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.identity.modules import auth_service
@@ -39,7 +41,49 @@ def scoped_account_candidates(*, actor):
         )
     ):
         raise LoanAccountReadPermissionDenied
-    return LoanAccount.objects.order_by("-created_at", "loan_account_id")
+    portfolio_scope = bool(roles.intersection({"accounts_head", "cfo"}))
+    if "internal_auditor" in roles and ApprovalCaseReadScopeGrant.objects.filter(
+        role__role_code="internal_auditor",
+        scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+        status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+    ).exists():
+        portfolio_scope = True
+    if portfolio_scope:
+        return LoanAccount.objects.order_by("-created_at", "loan_account_id")
+    scope = Q(pk__in=[])
+    if "credit_manager" in roles:
+        scope |= Q(
+            loan_account_status__in={
+                "active",
+                "partially_repaid",
+                "overdue",
+                "grace_period",
+                "extended",
+                "non_recoverable_under_review",
+            }
+        )
+    if "senior_manager_finance" in roles:
+        scope |= Q(
+            loan_application__sap_customer_profile_requests__assigned_to_user=actor,
+            loan_application__sap_customer_profile_requests__member_id=F("member_id"),
+            loan_application__sap_customer_profile_requests__assigned_to_user__status="active",
+            loan_application__sap_customer_profile_requests__assigned_to_user__primary_role__status="active",
+            loan_application__sap_customer_profile_requests__assigned_to_user__primary_role__role_code="senior_manager_finance",
+        )
+    if "chief_financial_controller" in roles:
+        scope |= Q(
+            disbursements__cfc_task__recipient_role_code="chief_financial_controller",
+            disbursements__authorisation_status__in=("pending", "approved", "rejected"),
+        )
+    if "company_secretary" in roles:
+        scope |= Q(
+            loan_application__application_status=LoanApplication.STATUS_APPROVED_BY_SANCTION
+        )
+    return (
+        LoanAccount.objects.filter(scope)
+        .distinct()
+        .order_by("-created_at", "loan_account_id")
+    )
 
 
 def account_is_scoped(*, actor, account, cfc_scope_resolver):

@@ -743,23 +743,9 @@ def completed_success_is_coherent(row):
         and posting.amount == row.disbursement_amount
         and posting.transfer_action_id == row.transfer_success_action_id
         and posting.transfer_evidence_digest == row.transfer_success_evidence_digest
-        and posting.posting_status
-        in {
-            InitialLoanPaymentSapPosting.STATUS_PENDING,
-            InitialLoanPaymentSapPosting.STATUS_POSTED,
-        }
-        and (
-            (
-                posting.posting_status == InitialLoanPaymentSapPosting.STATUS_PENDING
-                and posting.sap_posting_reference is None
-                and posting.posted_at is None
-            )
-            or (
-                posting.posting_status == InitialLoanPaymentSapPosting.STATUS_POSTED
-                and bool(posting.sap_posting_reference)
-                and posting.posted_at is not None
-            )
-        )
+        and posting.posting_status == InitialLoanPaymentSapPosting.STATUS_PENDING
+        and posting.sap_posting_reference is None
+        and posting.posted_at is None
         and posting.created_at == row.disbursed_at
         and account.loan_account_status == "active"
         and account.disbursed_amount == row.disbursement_amount

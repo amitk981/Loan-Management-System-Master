@@ -1,0 +1,4 @@
+Listing tests:
+  [chromium] › epic-009-authority-evidence-pagination-closure.e2e.spec.ts:10:5 › Loan Account 360 retains every governed tab as explicitly unavailable
+  [chromium] › epic-009-authority-evidence-pagination-closure.e2e.spec.ts:27:5 › MP14 uses the selected finance application in both opposite list orders
+Total: 2 tests in 1 file

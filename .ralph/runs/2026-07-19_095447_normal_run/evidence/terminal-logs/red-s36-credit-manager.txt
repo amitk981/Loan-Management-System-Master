@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_every_credit_manager_accepted_by_create_owner_reaches_s36_candidate (sfpcl_credit.tests.test_disbursement_workspace_api.SapStaffWorkspaceApiTests.test_every_credit_manager_accepted_by_create_owner_reaches_s36_candidate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_095447_normal_run/sfpcl_credit/tests/test_disbursement_workspace_api.py", line 207, in test_every_credit_manager_accepted_by_create_owner_reaches_s36_candidate
+    self.assertEqual(workspace.json()["pagination"]["total_count"], 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.058s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

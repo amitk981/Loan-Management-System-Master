@@ -255,25 +255,29 @@ def _locked_checker(actor):
         .filter(pk=getattr(actor, "pk", None), status=User.ACTIVE_STATUS)
         .first()
     )
-    roles = set(auth_service.effective_role_codes(checker)) if checker else set()
-    permission = Permission.objects.filter(permission_code=AUTHORISE_PERMISSION).first()
-    permissions = (
-        set(auth_service.effective_permission_codes(checker)) if checker else set()
-    )
-    if (
-        checker is None
-        or not checker.can_authenticate()
-        or checker.primary_role.status != "active"
-        or checker.approval_authority_type != CFC_ROLE
-        or CFC_ROLE not in roles
-        or permission is None
-        or permission.risk_level != Permission.RISK_CRITICAL
-        or AUTHORISE_PERMISSION not in permissions
-    ):
+    if not has_current_authorisation_authority(checker):
         raise DomainPermissionDenied(
             "Active governed CFC disbursement authorisation authority is required."
         )
     return checker
+
+
+def has_current_authorisation_authority(actor):
+    """Use the mutation owner's complete governed CFC authority decision for reads."""
+    if actor is None or not actor.can_authenticate():
+        return False
+    primary_role = getattr(actor, "primary_role", None)
+    permission = Permission.objects.filter(permission_code=AUTHORISE_PERMISSION).first()
+    return bool(
+        primary_role
+        and primary_role.status == "active"
+        and actor.approval_authority_type == CFC_ROLE
+        and CFC_ROLE in set(auth_service.effective_role_codes(actor))
+        and permission is not None
+        and permission.risk_level == Permission.RISK_CRITICAL
+        and AUTHORISE_PERMISSION
+        in set(auth_service.effective_permission_codes(actor))
+    )
 
 
 def is_current_terminal_authorisation(row, cleaned, *, require_pending_transfer=True):

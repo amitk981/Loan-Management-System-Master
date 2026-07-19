@@ -8,6 +8,9 @@ from sfpcl_credit.disbursements.models import Disbursement
 from sfpcl_credit.disbursements.modules.disbursement_readiness import (
     DisbursementReadinessModule,
 )
+from sfpcl_credit.disbursements.modules.disbursement_authorisation import (
+    has_current_authorisation_authority,
+)
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
     resolve_current_disbursement_evidence,
 )
@@ -40,10 +43,7 @@ def list_workspace(*, actor, query_params):
         "senior_manager_finance" in roles
         and "finance.disbursement.initiate" in permissions
     )
-    can_authorise = (
-        _is_cfc(actor, roles)
-        and "finance.disbursement.authorise" in permissions
-    )
+    can_authorise = has_current_authorisation_authority(actor)
     can_create_sap = (
         "credit_manager" in roles
         and "finance.sap_request.create" in permissions
@@ -267,9 +267,7 @@ def _project_disbursement(*, actor, row, permissions):
             "checks": [],
         }
     actions = []
-    if row.authorisation_status == "pending" and _is_cfc(
-        actor, set(auth_service.effective_role_codes(actor))
-    ) and "finance.disbursement.authorise" in permissions:
+    if row.authorisation_status == "pending" and has_current_authorisation_authority(actor):
         fields = [_field("comments", "CFC comments", "textarea")]
         actions.extend(
             [

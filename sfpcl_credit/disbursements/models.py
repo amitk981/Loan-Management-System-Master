@@ -476,7 +476,6 @@ class LoanRegisterUpdate(models.Model):
 
 class InitialLoanPaymentSapPosting(models.Model):
     STATUS_PENDING = "pending"
-    STATUS_POSTED = "posted"
 
     initial_loan_payment_sap_posting_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -536,17 +535,10 @@ class InitialLoanPaymentSapPosting(models.Model):
                 check=Q(amount__gt=0), name="initial_sap_amount_positive"
             ),
             models.CheckConstraint(
-                check=(
-                    Q(
-                        posting_status="pending",
-                        sap_posting_reference__isnull=True,
-                        posted_at__isnull=True,
-                    )
-                    | Q(
-                        posting_status="posted",
-                        sap_posting_reference__isnull=False,
-                        posted_at__isnull=False,
-                    )
+                check=Q(
+                    posting_status="pending",
+                    sap_posting_reference__isnull=True,
+                    posted_at__isnull=True,
                 ),
                 name="initial_sap_posting_lifecycle",
             ),

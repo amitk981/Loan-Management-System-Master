@@ -1,0 +1,29 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_095447_normal_run/.ralph/runs/2026-07-19_102625_repair/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/epic-009-authority-evidence-pagination-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/epic-009-authority-evidence-pagination-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[19/Jul/2026 05:01:37] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:73210) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 05:01:41] "GET /api/v1/dashboard/ HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/dashboard/
+[2m[WebServer] [22m[19/Jul/2026 05:01:41] "GET /api/v1/dashboard/ HTTP/1.1" 401 223
+  ✓  1 [chromium] › epic-009-authority-evidence-pagination-closure.e2e.spec.ts:10:5 › Loan Account 360 retains every governed tab as explicitly unavailable (2.5s)
+  ✓  2 [chromium] › epic-009-authority-evidence-pagination-closure.e2e.spec.ts:27:5 › MP14 uses the selected finance application in both opposite list orders (2.9s)
+
+  2 passed (31.6s)
+
+Duration milliseconds: 32501
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_095447_normal_run/.ralph/runs/2026-07-19_102625_repair/evidence/trusted-browser-screenshots-2.sha256

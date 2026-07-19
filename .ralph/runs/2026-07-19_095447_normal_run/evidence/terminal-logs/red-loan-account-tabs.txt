@@ -1,0 +1,889 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/loan-accounts/LoanAccount360.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_095447_normal_run/sfpcl-lms
+
+ ❯ src/pages/loan-accounts/LoanAccount360.test.tsx (4 tests | 1 failed) 137ms
+   ✓ 009J Loan Account 360 initial API view > loads the scoped account list and routes the selected server identity 96ms
+   × 009J Loan Account 360 initial API view > renders the header, KPI row, and Summary from exact active server values 28ms
+     → Unable to find an element with the text: Summary. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-2 flex-wrap"[39m
+          [36m>[39m
+            [36m<h1[39m
+              [33mclass[39m=[32m"text-xl font-bold text-slate-900 num"[39m
+            [36m>[39m
+              [0mLN-API-001[0m
+            [36m</h1>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-green-50 text-green-900 border-green-100 text-xs px-2.5 py-1 h-6"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mActive[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-3 mt-0.5 text-sm text-slate-500"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mAPI Borrower[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0m·[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"num"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+              [0m disbursed[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0m·[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0mSAP: [0m
+              [36m<span[39m
+                [33mclass[39m=[32m"num font-medium text-slate-900"[39m
+              [36m>[39m
+                [0mSAP-API-001[0m
+              [36m</span>[39m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-5 gap-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mSanctioned[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mDisbursed[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mOutstanding Principal[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mOutstanding Interest[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹0.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mTotal Outstanding[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card space-y-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-3 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAccount Number[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mLN-API-001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mApplication Number[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mLO-API-001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMember[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mAPI Borrower[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mLoan Type[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mShort Term[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFacility Type[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mShort Term[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mInterest Rate[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m9.2500% Floating[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mTenure[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m12 months[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mTenure Start[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m22 Jun 2026[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mTenure End[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m—[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mRepayment Due[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m22 Jun 2027[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mSAP Customer Code[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mSAP-API-001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mCreated[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m20 Jun 2026 at 03:30 pm[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mActivated[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m22 Jun 2026 at 07:30 pm[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-t pt-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between text-sm"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-slate-500"[39m
+            [36m>[39m
+              [0mLinked Application:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-green-600 flex items-center gap-1 font-medium num"[39m
+            [36m>[39m
+              [0mLO-API-001[0m
+              [0m [0m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-arrow-right"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 12h14"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m12 5 7 7-7 7"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-lock text-slate-400 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<rect[39m
+            [33mheight[39m=[32m"11"[39m
+            [33mrx[39m=[32m"2"[39m
+            [33mry[39m=[32m"2"[39m
+            [33mwidth[39m=[32m"18"[39m
+            [33mx[39m=[32m"3"[39m
+            [33my[39m=[32m"11"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700"[39m
+          [36m>[39m
+            [0mServicing views are not available yet.[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mRepayment, interest, monitoring, default, and closure records will appear after their governed Epic 010 owners are connected.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ 009J Loan Account 360 initial API view > shows honest empty, failure, and unauthorized states without mock fallback 12ms
+   ✓ 009J Loan Account 360 initial API view > uses only the shared authenticated boundary for the initial API projection 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/loan-accounts/LoanAccount360.test.tsx > 009J Loan Account 360 initial API view > renders the header, KPI row, and Summary from exact active server values
+TestingLibraryElementError: Unable to find an element with the text: Summary. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-2 flex-wrap"[39m
+          [36m>[39m
+            [36m<h1[39m
+              [33mclass[39m=[32m"text-xl font-bold text-slate-900 num"[39m
+            [36m>[39m
+              [0mLN-API-001[0m
+            [36m</h1>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-green-50 text-green-900 border-green-100 text-xs px-2.5 py-1 h-6"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mActive[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-3 mt-0.5 text-sm text-slate-500"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mAPI Borrower[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0m·[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"num"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+              [0m disbursed[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0m·[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0mSAP: [0m
+              [36m<span[39m
+                [33mclass[39m=[32m"num font-medium text-slate-900"[39m
+              [36m>[39m
+                [0mSAP-API-001[0m
+              [36m</span>[39m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-5 gap-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mSanctioned[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mDisbursed[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mOutstanding Principal[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mOutstanding Interest[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹0.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+          [36m>[39m
+            [0mTotal Outstanding[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+          [36m>[39m
+            [0m₹4,00,000.00[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card space-y-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-3 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAccount Number[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mLN-API-001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mApplication Number[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mLO-API-001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMember[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mAPI Borrower[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mLoan Type[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mShort Term[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFacility Type[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mShort Term[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mInterest Rate[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m9.2500% Floating[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mTenure[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m12 months[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mTenure Start[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m22 Jun 2026[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mTenure End[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m—[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mRepayment Due[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m22 Jun 2027[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mSAP Customer Code[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0mSAP-API-001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mCreated[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m20 Jun 2026 at 03:30 pm[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mActivated[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5"[39m
+            [36m>[39m
+              [0m22 Jun 2026 at 07:30 pm[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-t pt-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between text-sm"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-slate-500"[39m
+            [36m>[39m
+              [0mLinked Application:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-green-600 flex items-center gap-1 font-medium num"[39m
+            [36m>[39m
+              [0mLO-API-001[0m
+              [0m [0m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-arrow-right"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 12h14"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m12 5 7 7-7 7"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-lock text-slate-400 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<rect[39m
+            [33mheight[39m=[32m"11"[39m
+            [33mrx[39m=[32m"2"[39m
+            [33mry[39m=[32m"2"[39m
+            [33mwidth[39m=[32m"18"[39m
+            [33mx[39m=[32m"3"[39m
+            [33my[39m=[32m"11"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700"[39m
+          [36m>[39m
+            [0mServicing views are not available yet.[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mRepayment, interest, monitoring, default, and closure records will appear after their governed Epic 010 owners are connected.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/loan-accounts/LoanAccount360.test.tsx:74:19
+     72|     expect(screen.queryByText('DPD Bucket')).toBeNull();
+     73|     expect(screen.queryByText('Next Action')).toBeNull();
+     74|     expect(screen.getByText('Summary')).toBeTruthy();
+       |                   ^
+     75|     expect(screen.getByText('Loan Ledger')).toBeTruthy();
+     76|     expect(screen.getByText('Repayment Schedule')).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  10:09:51
+   Duration  979ms (transform 111ms, setup 0ms, collect 276ms, tests 137ms, environment 307ms, prepare 45ms)
+

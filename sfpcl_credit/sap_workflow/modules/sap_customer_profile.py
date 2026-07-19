@@ -8,7 +8,6 @@ import uuid
 
 from django.core import signing
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -100,7 +99,6 @@ def staff_workspace_rows(*, actor):
     candidates = (
         LoanApplication.objects.select_related("member")
         .filter(application_status=LoanApplication.STATUS_APPROVED_BY_SANCTION)
-        .filter(Q(created_by_user=actor) | Q(received_by_user=actor))
         .prefetch_related("sap_customer_profile_requests")
         .order_by("-updated_at", "loan_application_id")
     )
@@ -357,10 +355,15 @@ def get_customer_code_for_member(member_id, *, for_update=False):
 
 
 def get_account_customer_code(*, application_id, member_id, customer_code_id):
-    """Resolve the singular completed SAP/account edge for trusted read modules."""
+    """Bind account reads to the canonical immutable SAP completion decision."""
     requests = list(
         SapCustomerProfileRequest.objects.select_related(
-            "assigned_to_user__primary_role", "sap_customer_code"
+            "assigned_to_user__primary_role",
+            "requested_by_user__primary_role",
+            "excel_file",
+            "sent_communication",
+            "sent_task",
+            "sap_customer_code",
         )
         .filter(
             loan_application_id=application_id,
@@ -374,14 +377,10 @@ def get_account_customer_code(*, application_id, member_id, customer_code_id):
         return None
     request = requests[0]
     code = request.sap_customer_code
-    if not (
-        code.status == SapCustomerCode.STATUS_ACTIVE
-        and code.member_id == member_id
-        and request.completed_at
-        and request.assigned_to_user.can_authenticate()
-        and request.assigned_to_user.primary_role.status == "active"
-        and request.assigned_to_user.primary_role.role_code
-        == "senior_manager_finance"
+    if (
+        code.status != SapCustomerCode.STATUS_ACTIVE
+        or code.member_id != member_id
+        or not _current_completed_code_evidence(request, code)
     ):
         return None
     return SapCustomerCodeDecision(

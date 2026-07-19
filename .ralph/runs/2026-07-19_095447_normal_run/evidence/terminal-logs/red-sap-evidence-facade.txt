@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_account_and_member_facades_reject_the_same_completion_evidence_drift (sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests.test_account_and_member_facades_reject_the_same_completion_evidence_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_095447_normal_run/sfpcl_credit/tests/test_disbursement_transfer_success_api.py", line 201, in test_account_and_member_facades_reject_the_same_completion_evidence_drift
+    self.assertIsNone(
+AssertionError: SapCustomerCodeDecision(customer_code_id=UUID('fe9e0705-cecd-48e6-9f7c-7e81592bee75'), member_id=UUID('b5b54c2c-5883-4b4f-a57a-37a158e965e1'), profile_request_id=UUID('c967c417-4487-4b94-a5b7-38a9f2863112'), loan_application_id=UUID('e3b8c20b-c243-4f9e-85ee-25d3e7e73b72'), status='active', completed_at=datetime.datetime(2026, 7, 19, 4, 30, 0, 765165, tzinfo=datetime.timezone.utc), customer_code_masked='******-001') is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.695s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

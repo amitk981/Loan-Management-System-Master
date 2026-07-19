@@ -22,6 +22,7 @@ from sfpcl_credit.disbursements.models import (
     BankTransfer,
     Disbursement,
     DisbursementAdviceIntent,
+    InitialLoanPaymentSapPosting,
     LoanRegisterUpdate,
 )
 from sfpcl_credit.disbursements.modules.disbursement_workflow import (
@@ -41,6 +42,10 @@ from sfpcl_credit.loans.models import LoanAccount, LoanStatusHistory
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
 from sfpcl_credit.tests.test_disbursement_authorisation_api import (
     DisbursementAuthorisationApiTests,
+)
+from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+    get_account_customer_code,
+    get_customer_code_for_member,
 )
 from sfpcl_credit.tracer.models import Repayment
 from sfpcl_credit.workflows.models import WorkflowEvent
@@ -177,6 +182,30 @@ class DisbursementTransferSuccessApiTests(TestCase):
         self.assertEqual(Communication.objects.count(), communication_count)
         self.assertEqual(Repayment.objects.count(), repayment_count)
         self.assertEqual(list(DocumentChecklist.objects.values()), checklist_before)
+
+    def test_account_and_member_facades_reject_the_same_completion_evidence_drift(self):
+        transferred = self._post(
+            bank_reference_number="RBL-SAP-EVIDENCE-0001",
+            disbursed_at=timezone.now(),
+        )
+        self.assertEqual(transferred.status_code, 200, transferred.content)
+        account = self.owner.fixture.application.loan_account
+        account.refresh_from_db()
+        audit = AuditLog.objects.get(
+            action__in=("sap.customer_code_created", "sap.customer_code_reused")
+        )
+        changed = dict(audit.new_value_json)
+        changed["completion_input_digest"] = "0" * 64
+        AuditLog.objects.filter(pk=audit.pk).update(new_value_json=changed)
+
+        self.assertIsNone(get_customer_code_for_member(account.member_id))
+        self.assertIsNone(
+            get_account_customer_code(
+                application_id=account.loan_application_id,
+                member_id=account.member_id,
+                customer_code_id=account.sap_customer_code_id,
+            )
+        )
 
     def test_exact_retry_is_zero_write_and_changed_replays_conflict(self):
         accepted_at = timezone.now()
@@ -524,6 +553,24 @@ class DisbursementTransferSuccessApiTests(TestCase):
                 transfer_success_action_id=None
             )
 
+    def test_database_rejects_evidence_free_initial_payment_posted_state(self):
+        accepted = self._post(
+            bank_reference_number="RBL-PENDING-ONLY-0001",
+            disbursed_at=timezone.now(),
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        posting_model = apps.get_model(
+            "disbursements", "InitialLoanPaymentSapPosting"
+        )
+        posting = posting_model.objects.get()
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            posting_model.objects.filter(pk=posting.pk).update(
+                posting_status="posted",
+                sap_posting_reference="FABRICATED-SAP-POSTING",
+                posted_at=timezone.now(),
+            )
+
     def test_successful_disbursement_protects_its_exact_register_owner_relation(self):
         accepted = self._post(
             bank_reference_number="RBL-REGISTER-OWNER-0001",
@@ -730,6 +777,16 @@ class DisbursementTransferSuccessRaceTests(TransactionTestCase):
         self.assertEqual(LoanRegisterUpdate.objects.filter(disbursement=row).count(), 1)
         self.assertEqual(
             DisbursementAdviceIntent.objects.filter(disbursement=row).count(), 1
+        )
+        postings = InitialLoanPaymentSapPosting.objects.filter(disbursement=row)
+        self.assertEqual(postings.count(), 1)
+        self.assertEqual(postings.get().posting_status, "pending")
+        self.assertEqual(
+            InitialLoanPaymentSapPosting.objects.filter(
+                loan_account=account,
+                loan_application=row.loan_application,
+            ).count(),
+            1,
         )
 
         checklist = DocumentChecklist.objects.get(

@@ -1,0 +1,19 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/loan-accounts/LoanAccount360.test.tsx src/pages/disbursement/DisbursementHub.test.tsx src/pages/disbursement/PaymentAuthorisationHub.test.tsx src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx src/pages/borrower/portal/PortalMemberViews.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_095447_normal_run/sfpcl-lms
+
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (6 tests) 140ms
+ ✓ src/pages/loan-accounts/LoanAccount360.test.tsx (4 tests) 189ms
+ ✓ src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx (4 tests) 199ms
+ ✓ src/pages/disbursement/DisbursementHub.test.tsx (4 tests) 307ms
+ ✓ src/pages/disbursement/PaymentAuthorisationHub.test.tsx (4 tests) 536ms
+
+ Test Files  5 passed (5)
+      Tests  22 passed (22)
+   Start at  10:12:29
+   Duration  1.79s (transform 657ms, setup 0ms, collect 2.41s, tests 1.37s, environment 2.60s, prepare 254ms)
+

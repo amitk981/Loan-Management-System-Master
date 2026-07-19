@@ -286,8 +286,10 @@ class ActiveLoanAccountReadApiTests(TestCase):
         )
         from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
             get_account_customer_code,
+            get_customer_code_for_member,
         )
 
+        self.assertIsNotNone(get_customer_code_for_member(self.account.member_id))
         self.assertIsNotNone(
             get_account_customer_code(
                 application_id=self.account.loan_application_id,
@@ -308,6 +310,8 @@ class ActiveLoanAccountReadApiTests(TestCase):
         assert_success_envelope(self, response.json())
         data = response.json()["data"]
         self.assertEqual(data["loan_account_status"], "active")
+        self.assertEqual(data["sap_customer_code"], "******-001")
+        self.assertNotIn("READY-REAL-OWNER-001", str(response.json()))
         self.assertEqual(data["sanctioned_amount"], "400000.00")
         self.assertEqual(data["disbursed_amount"], "400000.00")
         self.assertEqual(data["principal_outstanding"], "400000.00")

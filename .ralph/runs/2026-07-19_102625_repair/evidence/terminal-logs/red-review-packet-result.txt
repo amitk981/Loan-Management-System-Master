@@ -1,0 +1,7 @@
+Command:
+for packet in .ralph/runs/2026-07-19_095447_normal_run/review-packet.md .ralph/runs/2026-07-19_102625_repair/review-packet.md; do result=$(awk '/^## Result$/{getline; print; exit}' "$packet"); if [ "$result" = 'Ready for independent validation' ]; then echo "PASS $packet: $result"; else echo "FAIL $packet: expected Ready for independent validation, got $result"; exit_code=1; fi; done; exit ${exit_code:-0}
+
+Exit code: 1
+
+FAIL .ralph/runs/2026-07-19_095447_normal_run/review-packet.md: expected Ready for independent validation, got PASS
+FAIL .ralph/runs/2026-07-19_102625_repair/review-packet.md: expected Ready for independent validation, got In Progress

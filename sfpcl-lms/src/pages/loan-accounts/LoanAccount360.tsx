@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ChevronLeft, Lock } from 'lucide-react';
+import Tabs from '../../components/ui/Tabs';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
 import { AuthSessionError } from '../../services/authSession';
@@ -28,6 +29,20 @@ const label = (value: string) => value
   .replace(/_/g, ' ')
   .replace(/\b\w/g, character => character.toUpperCase());
 
+const ACCOUNT_TABS = [
+  { id: 'summary', label: 'Summary' },
+  { id: 'ledger', label: 'Loan Ledger' },
+  { id: 'schedule', label: 'Repayment Schedule' },
+  { id: 'interest', label: 'Interest Invoices' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'security', label: 'Security' },
+  { id: 'monitoring', label: 'Monitoring' },
+  { id: 'defaults', label: 'Default History' },
+  { id: 'communications', label: 'Communications' },
+  { id: 'closure', label: 'Closure' },
+  { id: 'audit', label: 'Audit Trail' },
+];
+
 interface LoanAccount360Props {
   loanAccountId: string | null;
   onSelect: (id: string) => void;
@@ -35,6 +50,7 @@ interface LoanAccount360Props {
 }
 
 const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect, onBack }) => {
+  const [activeTab, setActiveTab] = useState(0);
   const [accounts, setAccounts] = useState<LoanAccountProjection[]>([]);
   const [account, setAccount] = useState<LoanAccountProjection | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,11 +145,21 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
           ['Total Outstanding', account.total_outstanding],
         ].map(([key, value]) => <div key={key} className="rounded-lg border p-3 bg-slate-50 border-slate-200"><p className="text-xs text-slate-500 font-medium">{key}</p><p className="text-lg font-bold num mt-0.5 text-slate-900">{fmtDecimal(value)}</p></div>)}
       </div>
-      <div className="card space-y-5">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{facts.map(([key, value]) => <div key={key} className="bg-slate-50 rounded-lg p-3"><p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{key}</p><p className="text-sm font-semibold text-slate-900 mt-0.5">{value}</p></div>)}</div>
-        <div className="border-t pt-4"><div className="flex items-center justify-between text-sm"><span className="text-slate-500">Linked Application:</span><span className="text-green-600 flex items-center gap-1 font-medium num">{account.application_reference_number || account.loan_application_id} <ArrowRight size={12} /></span></div></div>
-      </div>
-      <div className="card flex items-start gap-3"><Lock size={16} className="text-slate-400 mt-0.5" /><div><p className="text-sm font-semibold text-slate-700">Servicing views are not available yet.</p><p className="text-xs text-slate-500 mt-0.5">Repayment, interest, monitoring, default, and closure records will appear after their governed Epic 010 owners are connected.</p></div></div>
+      <Tabs tabs={ACCOUNT_TABS} activeIndex={activeTab} onChange={setActiveTab}>
+        <div className="card space-y-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{facts.map(([key, value]) => <div key={key} className="bg-slate-50 rounded-lg p-3"><p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{key}</p><p className="text-sm font-semibold text-slate-900 mt-0.5">{value}</p></div>)}</div>
+          <div className="border-t pt-4"><div className="flex items-center justify-between text-sm"><span className="text-slate-500">Linked Application:</span><span className="text-green-600 flex items-center gap-1 font-medium num">{account.application_reference_number || account.loan_application_id} <ArrowRight size={12} /></span></div></div>
+        </div>
+        {ACCOUNT_TABS.slice(1).map(tab => (
+          <div key={tab.id} className="card flex items-start gap-3">
+            <Lock size={16} className="text-slate-400 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-slate-700">{tab.label} is not available yet.</p>
+              <p className="text-xs text-slate-500 mt-0.5">This view will appear after its governed Epic 010 owner is connected.</p>
+            </div>
+          </div>
+        ))}
+      </Tabs>
     </div>
   );
 };

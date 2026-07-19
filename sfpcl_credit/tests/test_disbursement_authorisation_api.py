@@ -37,6 +37,9 @@ class DisbursementAuthorisationApiTests(TestCase):
             **owner.fixture._auth(facts["actor"]),
         )
         self.assertEqual(initiated.status_code, 200, initiated.content)
+        # Retain the nested fixture owner so its temporary Annexure-I storage
+        # remains available for downstream immutable-evidence assertions.
+        self.fixture_owner = owner
         from sfpcl_credit.identity.models import User
 
         def user_on_role(role, full_name):

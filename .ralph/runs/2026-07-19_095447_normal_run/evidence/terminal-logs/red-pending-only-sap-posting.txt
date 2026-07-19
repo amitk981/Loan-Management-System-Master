@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_database_rejects_evidence_free_initial_payment_posted_state (sfpcl_credit.tests.test_disbursement_transfer_success_api.DisbursementTransferSuccessApiTests.test_database_rejects_evidence_free_initial_payment_posted_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_095447_normal_run/sfpcl_credit/tests/test_disbursement_transfer_success_api.py", line 566, in test_database_rejects_evidence_free_initial_payment_posted_state
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.672s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

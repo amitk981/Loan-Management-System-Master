@@ -21,7 +21,7 @@ const account: LoanAccountProjection = {
   loan_account_id: 'account-1', loan_account_number: 'LN-API-001',
   loan_application_id: 'application-1', application_reference_number: 'LO-API-001',
   member: { member_id: 'member-1', display_name: 'API Borrower' },
-  sap_customer_code: 'SAP-API-001', loan_type: 'short_term', facility_type: 'short_term',
+  sap_customer_code: '******-001', loan_type: 'short_term', facility_type: 'short_term',
   interest_rate_type: 'floating', current_interest_rate: '9.2500',
   sanctioned_amount: '400000.00', disbursed_amount: '400000.00',
   principal_outstanding: '400000.00', interest_outstanding: '0.00',
@@ -71,8 +71,12 @@ describe('009J Loan Account 360 initial API view', () => {
     expect(screen.queryByText('Scheduled Instalment')).toBeNull();
     expect(screen.queryByText('DPD Bucket')).toBeNull();
     expect(screen.queryByText('Next Action')).toBeNull();
-    expect(screen.getByText('Servicing views are not available yet.')).toBeTruthy();
-    expect(screen.queryByText('Loan Ledger')).toBeNull();
+    expect(screen.getByText('Summary')).toBeTruthy();
+    expect(screen.getByText('Loan Ledger')).toBeTruthy();
+    expect(screen.getByText('Repayment Schedule')).toBeTruthy();
+    await userEvent.click(screen.getByText('Loan Ledger'));
+    expect(screen.getByText('Loan Ledger is not available yet.')).toBeTruthy();
+    expect(screen.getByText(/governed Epic 010 owner/i)).toBeTruthy();
   });
 
   it('shows honest empty, failure, and unauthorized states without mock fallback', async () => {
