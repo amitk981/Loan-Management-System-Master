@@ -13,6 +13,9 @@ from sfpcl_credit.tests.test_repayment_allocation_api import RepaymentAllocation
 from sfpcl_credit.tests.test_bank_statement_matching_api import (
     BankStatementMatchingApiTests,
 )
+from sfpcl_credit.tests.test_subsidiary_deduction_reconciliation_api import (
+    SubsidiaryDeductionReconciliationApiTests,
+)
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
@@ -84,6 +87,152 @@ class DirectRepaymentPostingPostgreSQLAcceptanceTests(TransactionTestCase):
         self.assertEqual(
             AuditLog.objects.filter(action="repayment.receipt_created").count(), 1
         )
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class SubsidiaryDeductionPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = SubsidiaryDeductionReconciliationApiTests(
+            "test_verified_agreement_allows_subsidiary_deduction_capture"
+        )
+        fixture.setUp()
+        fixture._verified_tri_party_agreement()
+        self.fixture = fixture
+        self.capture_url = f"/api/v1/loan-accounts/{fixture.account.pk}/repayments/"
+
+    def test_concurrent_same_deduction_retains_one_receipt_evidence_and_task(self):
+        payload = self.fixture._payload()
+        barrier = Barrier(2)
+
+        def submit(_):
+            close_old_connections()
+            barrier.wait()
+            response = Client().post(
+                self.capture_url,
+                data=json.dumps(payload),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="postgres-subsidiary-capture",
+                **self.fixture.auth,
+            )
+            close_old_connections()
+            return response.status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, range(2)))
+
+        from sfpcl_credit.communications.models import Notification
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import (
+            Repayment,
+            RepaymentSapPostingObligation,
+            SubsidiaryDeductionEvidence,
+        )
+
+        self.assertEqual(statuses, [200, 200])
+        self.assertEqual(Repayment.objects.count(), 1)
+        self.assertEqual(SubsidiaryDeductionEvidence.objects.count(), 1)
+        self.assertEqual(RepaymentSapPostingObligation.objects.count(), 1)
+        self.assertEqual(
+            Notification.objects.filter(
+                notification_type="subsidiary_repayment_treasury_verification"
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action="repayment.receipt_created").count(), 1
+        )
+
+    def test_concurrent_verification_and_allocation_retain_one_match_and_movement(self):
+        from sfpcl_credit.loans.models import (
+            RepaymentAllocation,
+            RepaymentLedgerEntry,
+            RepaymentSchedule,
+        )
+
+        captured = self.fixture._capture(
+            self.fixture._payload(), "postgres-subsidiary-e2e"
+        )
+        repayment_id = captured.json()["data"]["repayment_id"]
+        imported = self.fixture.fixture._upload(
+            "transaction_date,value_date,amount,narration,reference,loan_account_number\n"
+            f"2026-12-15,2026-12-15,75000.00,Payment for "
+            f"{self.fixture.account.member.legal_name} application "
+            f"{self.fixture.account.loan_application.application_reference_number},"
+            f"SUB-TRANSFER-001,{self.fixture.account.loan_account_number}\n",
+            key="postgres-subsidiary-statement",
+        )
+        self.assertEqual(imported.status_code, 200, imported.content)
+        RepaymentSchedule.objects.create(
+            loan_account=self.fixture.account,
+            installment_number=1,
+            due_date=self.fixture.account.repayment_date,
+            principal_due=self.fixture.account.principal_outstanding,
+            interest_due=self.fixture.account.interest_outstanding,
+            charges_due=self.fixture.account.charges_outstanding,
+            total_due=self.fixture.account.total_outstanding,
+            schedule_status="pending",
+        )
+        verify_url = (
+            f"/api/v1/repayments/{repayment_id}/verify-subsidiary-deduction/"
+        )
+        verify_statuses = self._race_post(
+            verify_url,
+            {"remarks": "Concurrent Treasury evidence verification."},
+            key=None,
+        )
+        self.assertEqual(verify_statuses, [200, 200])
+        posted = self.fixture._mark_sap(repayment_id)
+        self.assertEqual(posted.status_code, 200, posted.content)
+        allocation_statuses = self._race_post(
+            f"/api/v1/repayments/{repayment_id}/allocate/",
+            {
+                "allocation_rule": "principal_first",
+                "remarks": "Concurrent canonical subsidiary allocation.",
+            },
+            key="postgres-subsidiary-allocation",
+        )
+
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import BankStatementLine
+
+        self.assertEqual(allocation_statuses, [200, 200])
+        self.assertEqual(
+            BankStatementLine.objects.filter(
+                matched_repayment_id=repayment_id, match_status="matched"
+            ).count(),
+            1,
+        )
+        self.assertEqual(RepaymentAllocation.objects.count(), 1)
+        self.assertEqual(RepaymentLedgerEntry.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="repayment.subsidiary_treasury_verified"
+            ).count(),
+            1,
+        )
+
+    def _race_post(self, url, payload, *, key):
+        barrier = Barrier(2)
+
+        def submit(_):
+            close_old_connections()
+            barrier.wait()
+            headers = dict(self.fixture.auth)
+            if key is not None:
+                headers["HTTP_IDEMPOTENCY_KEY"] = key
+            response = Client().post(
+                url,
+                data=json.dumps(payload),
+                content_type="application/json",
+                **headers,
+            )
+            close_old_connections()
+            return response.status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            return sorted(pool.map(submit, range(2)))
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

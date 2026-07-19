@@ -1,0 +1,12 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.600s
+
+OK
+Destroying test database for alias 'default'...
+
+TEST_SPEC=sfpcl_credit.tests.test_subsidiary_deduction_reconciliation_api.SubsidiaryDeductionReconciliationApiTests.test_verified_agreement_allows_subsidiary_deduction_capture
+EXIT_CODE=0

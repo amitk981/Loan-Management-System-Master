@@ -1,0 +1,12 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+----------------------------------------------------------------------
+Ran 2 tests in 1.243s
+
+OK
+Destroying test database for alias 'default'...
+
+TEST_SPEC=010D exact generic match + subsidiary narration matrix
+EXIT_CODE=0

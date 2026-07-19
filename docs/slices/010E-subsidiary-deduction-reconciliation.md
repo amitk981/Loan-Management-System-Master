@@ -1,7 +1,7 @@
 # Slice 010E: Subsidiary Deduction Reconciliation
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

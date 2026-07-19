@@ -87,6 +87,11 @@ urlpatterns = [
         name="repayment-mark-sap-posted",
     ),
     path(
+        "api/v1/repayments/<uuid:repayment_id>/verify-subsidiary-deduction/",
+        loan_views.subsidiary_deduction_verify,
+        name="repayment-subsidiary-deduction-verify",
+    ),
+    path(
         "api/v1/repayments/<uuid:repayment_id>/allocate/",
         loan_views.repayment_allocate,
         name="repayment-allocate",

@@ -18,6 +18,7 @@ from sfpcl_credit.loans.models import (
     LoanAccount,
     Repayment,
     RepaymentSapPostingObligation,
+    SubsidiaryDeductionEvidence,
 )
 
 
@@ -198,7 +199,30 @@ def mark_sap_posted(*, actor, repayment_id, payload, request=None):
     )
     if obligation is None or not _in_scope(actor, obligation.repayment.loan_account):
         raise RepaymentNotFound
+    if obligation.repayment.repayment_source == "subsidiary_deduction":
+        try:
+            evidence = obligation.repayment.subsidiary_deduction_evidence
+        except SubsidiaryDeductionEvidence.DoesNotExist as exc:
+            raise RepaymentConflict(
+                "Subsidiary reconciliation evidence is required before SAP posting."
+            ) from exc
+        if (
+            evidence.reconciliation_status != "reconciled"
+            or evidence.treasury_verification_status != "verified"
+        ):
+            raise RepaymentConflict(
+                "Treasury verification of reconciled statement evidence is required before SAP posting."
+            )
     if obligation.status != "pending":
+        if (
+            obligation.repayment.repayment_source == "subsidiary_deduction"
+            and obligation.sap_entry_reference == cleaned["sap_entry_reference"]
+            and obligation.posted_at == cleaned["sap_posted_at"]
+            and obligation.posting_audit.actor_user_id == actor.pk
+            and (obligation.posting_audit.new_value_json or {}).get("remarks_sha256")
+            == hashlib.sha256(cleaned["remarks"].encode()).hexdigest()
+        ):
+            return _serialize(obligation.repayment, obligation)
         raise RepaymentConflict("The repayment SAP posting is already final.")
     evidence = {
         "repayment_id": str(obligation.repayment_id),
@@ -207,6 +231,7 @@ def mark_sap_posted(*, actor, repayment_id, payload, request=None):
         "actor_role_codes": auth_service.effective_role_codes(actor),
         "sap_posting_status": "posted",
         "sap_posted_at": cleaned["sap_posted_at"].isoformat().replace("+00:00", "Z"),
+        "remarks_sha256": hashlib.sha256(cleaned["remarks"].encode()).hexdigest(),
         "request_id": request.headers.get("X-Request-ID", "") if request else "",
     }
     audit = _audit(
@@ -314,9 +339,16 @@ def _validate_posting(payload):
     posted_at = parse_datetime(str(payload.get("sap_posted_at", "")))
     if posted_at is None or timezone.is_naive(posted_at):
         errors["sap_posted_at"] = "Must be a timezone-aware timestamp."
+    remarks = str(payload.get("remarks", "")).strip()
+    if len(remarks) > 2000:
+        errors["remarks"] = "Must be at most 2000 characters."
     if errors:
         raise RepaymentValidation(errors)
-    return {"sap_entry_reference": reference, "sap_posted_at": posted_at}
+    return {
+        "sap_entry_reference": reference,
+        "sap_posted_at": posted_at,
+        "remarks": remarks,
+    }
 
 
 def _next_working_day(received_date):

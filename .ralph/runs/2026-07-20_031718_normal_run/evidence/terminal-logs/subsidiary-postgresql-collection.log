@@ -1,0 +1,13 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+ss
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK (skipped=2)
+Destroying test database for alias 'default'...
+
+TEST_SPEC=sfpcl_credit.tests.test_servicing_postgresql_acceptance.SubsidiaryDeductionPostgreSQLAcceptanceTests
+EXPECTED_TESTS=2
+EXIT_CODE=0

@@ -102,6 +102,9 @@ authoritative; this file avoids reopening the full source set during ordinary ex
 - Require subsidiary/produce/transfer facts and tri-party agreement. Missing borrower/application
   narration prevents auto-match and creates an exception; Treasury verification precedes SAP posting.
 - Reuse statement matching and allocation owners; do not duplicate either policy.
+- The cited source calls `subsidiary_company_id` a foreign key but defines no subsidiary-company
+  registry, lifecycle, or lookup owner. Retain a required opaque UUID under A-144 until governance
+  supplies that owner; do not infer identity from a company label.
 - Sources: product §11.23; flow §28; functional BR-058/059 and M09; API §32.3;
   tests MOD-REP-003/004, INT-SUB-001–007, E2E-012.
 

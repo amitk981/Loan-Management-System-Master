@@ -21,6 +21,10 @@ from sfpcl_credit.loans.modules.direct_repayment_posting import (
     capture_direct_repayment,
     mark_sap_posted,
 )
+from sfpcl_credit.loans.modules.subsidiary_deduction_reconciliation import (
+    capture_subsidiary_deduction,
+    verify_treasury_reconciliation,
+)
 from sfpcl_credit.loans.modules.repayment_allocator import (
     RepaymentAllocator,
     RepaymentAllocationConflict,
@@ -160,11 +164,17 @@ def direct_repayment(request, loan_account_id):
     if response is not None:
         return response
     try:
+        payload = parse_json_body(request)
+        capture = (
+            capture_subsidiary_deduction
+            if payload.get("repayment_source") == "subsidiary_deduction"
+            else capture_direct_repayment
+        )
         return success_response(
-            capture_direct_repayment(
+            capture(
                 actor=actor,
                 loan_account_id=loan_account_id,
-                payload=parse_json_body(request),
+                payload=payload,
                 idempotency_key=request.headers.get("Idempotency-Key"),
                 request=request,
             ),
@@ -200,6 +210,41 @@ def repayment_mark_sap_posted(request, repayment_id):
         return error_response(request, 403, "FORBIDDEN", "SAP posting permission is required.")
     except RepaymentNotFound:
         return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
+    except RepaymentConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def subsidiary_deduction_verify(request, repayment_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            verify_treasury_reconciliation(
+                actor=actor,
+                repayment_id=repayment_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except RepaymentValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Subsidiary verification failed validation.",
+            exc.field_errors,
+        )
+    except RepaymentPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Repayment allocation permission is required."
+        )
+    except RepaymentNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible."
+        )
     except RepaymentConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
 

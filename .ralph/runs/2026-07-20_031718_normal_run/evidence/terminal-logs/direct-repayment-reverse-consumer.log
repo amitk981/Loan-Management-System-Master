@@ -1,0 +1,12 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 2.875s
+
+OK
+Destroying test database for alias 'default'...
+
+TEST_SPEC=sfpcl_credit.tests.test_direct_repayment_posting_api
+EXIT_CODE=0

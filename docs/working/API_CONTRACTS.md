@@ -4599,3 +4599,48 @@ Read/import/match require respectively `finance.bank_statement.read`,
 `credit_manager`, `accounts_head`, or `senior_manager_finance` role. Missing authentication returns
 `401`; role- or permission-only callers receive `403`. Statement narration, raw references, manual
 reasons, and file bytes never enter ordinary API errors, list responses, or reconciliation audits.
+
+## Subsidiary deduction reconciliation (010E)
+
+`POST /api/v1/loan-accounts/{loan_account_id}/repayments/` dispatches
+`repayment_source: subsidiary_deduction` to the subsidiary owner. In addition to positive numeric
+18,2 amount, ISO received date, nonblank remarks, and a bounded `Idempotency-Key`, it requires
+`payment_method: subsidiary_transfer`, a UUID `subsidiary_company_id`, nonblank bounded
+`produce_payment_reference`, and matching nonblank `bank_reference_number` and
+`transfer_reference`. The transfer reference is NFKC-normalized, whitespace-collapsed, and globally
+duplicate-protected; the normalized produce reference is duplicate-protected per subsidiary UUID.
+An optional `bank_statement_line_id` is accepted only through 010D's exact claim interface and
+therefore also requires its matching authority; malformed, inaccessible, already-decided, or
+fact-mismatched lines fail the entire capture transaction. 010D remains the canonical relationship
+owner.
+
+Capture requires an active `credit_manager` or `accounts_head`, `finance.repayment.create`, the
+existing loan-object scope, a funded serviceable account, and the legal-document owner's current
+executed, verified, renderer-valid tri-party agreement. Success atomically retains one pending
+receipt, distinct subsidiary/agreement/reference evidence, safe receipt audit, urgent Treasury task,
+and pending SAP obligation. It never matches a statement line, verifies Treasury evidence, posts
+SAP, allocates money, or changes account/schedule/ledger truth. Exact request/key replay returns the
+retained response without writes; missing agreement and duplicate/changed references return
+zero-write `409 CONFLICT`.
+
+010D exact matching requires the transfer reference, amount, received date, account number, borrower
+name, and application reference. Missing or conflicting narration stays in the existing unmatched
+queue with a safe reason. Authorised manual matching remains possible through 010D and is retained
+as `manual_match_exception`; neither match path changes balances.
+
+`POST /api/v1/repayments/{repayment_id}/verify-subsidiary-deduction/` accepts exactly nonblank
+`remarks` of at most 2,000 characters. It requires `finance.repayment.allocate`, the same active
+Credit Manager/Accounts role and object scope, the unchanged captured agreement, and one canonical
+010D exact or authorised match. An amount above current total outstanding records
+`reconciliation_status: exception` while Treasury status remains pending; it cannot proceed to SAP
+or allocation. Success records separate `reconciled` and `treasury_verification_status: verified`
+facts with actor, role, statement/agreement identities, timestamp, safe remarks digest, request, and
+audit evidence. Exact actor/body replay is zero-write; changed replay is `409 CONFLICT`.
+
+For subsidiary receipts, `POST /api/v1/repayments/{repayment_id}/mark-sap-posted/` additionally
+requires coherent reconciliation and Treasury verification. SAP reference, timestamp, and remarks
+digest define the exact replay; the same request returns retained truth while a changed terminal
+request conflicts. The canonical 010C allocation owner additionally requires the same subsidiary
+evidence and canonical statement relationship before it may perform its existing posted-SAP,
+principal-first, schedule, account, ledger, audit, and idempotency checks. No subsidiary module code
+calculates or writes an allocation or balance directly.

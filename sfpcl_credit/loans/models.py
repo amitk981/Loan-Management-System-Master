@@ -403,6 +403,94 @@ class Repayment(models.Model):
         )
 
 
+class SubsidiaryDeductionEvidence(models.Model):
+    subsidiary_deduction_evidence_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    repayment = models.OneToOneField(
+        Repayment,
+        on_delete=models.PROTECT,
+        related_name="subsidiary_deduction_evidence",
+    )
+    subsidiary_company_id = models.UUIDField(db_index=True)
+    produce_payment_reference = models.CharField(max_length=255)
+    produce_payment_reference_normalized = models.CharField(max_length=255)
+    transfer_reference = models.CharField(max_length=120)
+    transfer_reference_normalized = models.CharField(max_length=120, unique=True)
+    tri_party_agreement = models.ForeignKey(
+        "legal_documents.LoanDocument",
+        on_delete=models.PROTECT,
+        related_name="subsidiary_deduction_evidence",
+    )
+    reconciliation_status = models.CharField(
+        max_length=60, default="pending_statement", db_index=True
+    )
+    treasury_verification_status = models.CharField(
+        max_length=60, default="pending", db_index=True
+    )
+    treasury_verified_by_user = models.ForeignKey(
+        "identity.User",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="verified_subsidiary_deductions",
+    )
+    treasury_verified_at = models.DateTimeField(null=True, blank=True)
+    treasury_verification_audit = models.OneToOneField(
+        "identity.AuditLog",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="subsidiary_treasury_verification",
+    )
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "subsidiary_deduction_evidence"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subsidiary_company_id", "produce_payment_reference_normalized"],
+                name="uniq_subsidiary_produce_reference",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    reconciliation_status__in=(
+                        "pending_statement",
+                        "reconciled",
+                        "exception",
+                    )
+                ),
+                name="subsidiary_reconciliation_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        treasury_verification_status="pending",
+                        treasury_verified_by_user__isnull=True,
+                        treasury_verified_at__isnull=True,
+                        treasury_verification_audit__isnull=True,
+                    )
+                    | models.Q(
+                        treasury_verification_status="verified",
+                        treasury_verified_by_user__isnull=False,
+                        treasury_verified_at__isnull=False,
+                        treasury_verification_audit__isnull=False,
+                    )
+                ),
+                name="subsidiary_treasury_evidence_coherent",
+            ),
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(produce_payment_reference="")
+                    & ~models.Q(produce_payment_reference_normalized="")
+                    & ~models.Q(transfer_reference="")
+                    & ~models.Q(transfer_reference_normalized="")
+                ),
+                name="subsidiary_references_required",
+            ),
+        ]
+
+
 class AppendOnlyRepaymentEvidenceQuerySet(models.QuerySet):
     def update(self, **kwargs):
         raise ValidationError({"repayment_evidence": "Repayment evidence is append-only."})

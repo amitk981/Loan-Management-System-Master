@@ -135,6 +135,21 @@ class RepaymentAllocator:
             raise RepaymentAllocationConflict(
                 "A retained posted SAP decision is required before allocation."
             )
+        if repayment.repayment_source == "subsidiary_deduction":
+            try:
+                subsidiary = repayment.subsidiary_deduction_evidence
+            except Repayment.subsidiary_deduction_evidence.RelatedObjectDoesNotExist:
+                raise RepaymentAllocationConflict(
+                    "Subsidiary reconciliation evidence is required before allocation."
+                )
+            if (
+                subsidiary.reconciliation_status != "reconciled"
+                or subsidiary.treasury_verification_status != "verified"
+                or repayment.bank_statement_line_id is None
+            ):
+                raise RepaymentAllocationConflict(
+                    "Reconciled and Treasury-verified subsidiary evidence is required before allocation."
+                )
         manual_approval = cls._manual_approval(
             repayment=repayment,
             approval_id=cleaned["approval_id"],

@@ -1,0 +1,13 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/digests/epic-010-servicing-repayments-interest-monitoring.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/loans/modules/direct_repayment_posting.py
+ M sfpcl_credit/loans/modules/repayment_allocator.py
+ M sfpcl_credit/loans/views.py
+ M sfpcl_credit/tests/test_servicing_postgresql_acceptance.py
+?? .ralph/runs/2026-07-20_031718_normal_run/
+?? sfpcl_credit/loans/migrations/0008_subsidiary_deduction_reconciliation.py
+?? sfpcl_credit/loans/modules/subsidiary_deduction_reconciliation.py
+?? sfpcl_credit/tests/test_subsidiary_deduction_reconciliation_api.py
