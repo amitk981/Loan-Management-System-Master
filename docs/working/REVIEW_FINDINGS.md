@@ -19,6 +19,77 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
+## Targeted closure review 2026-07-19_193824_architecture_review — Epic 009 generation 2
+
+Reviewed product commit: `4f8febd3` (009L7), relative to successful architecture-review commit
+`e748f8ca`. This review was limited to the final corrective diff, the active 009L7 finding lineage,
+and its declared acceptance evidence.
+
+### Result — convergence failure; fail closed
+
+- **Retained High — the owner/selector root still exposes evidence its scalar owner rejects:**
+  `filter_accounts_with_current_transfer` in `post_transfer_evidence.py:51-81` admits an active
+  account from coarse disbursement/related-row existence fields, while
+  `completed_success_is_coherent` at `disbursement_transfer_success.py:609-821` additionally owns
+  exact transfer-file provenance, register/advice/posting relations, audit/workflow bodies, actor,
+  history, and activation evidence. `loan_account_360.py:161-216` now treats the selector as final
+  and no longer consumes that owner. A review-only public HTTP probe changes the retained transfer
+  document checksum, first proves `resolve_post_transfer_evidence` returns `None`, then receives
+  `total_count: 1`, the active row, and detail `200` instead of zero rows and `404`. This is the same
+  root-owner recurrence mapped through 009L4-009L7, not a new finding.
+- **Retained High — exact object scope is only partially restored:** 009L7 correctly requires
+  `finance.loan_account.read`, so initiation authority alone no longer opens list/detail. However,
+  `loan_account_read.py:65-77` still starts Senior Finance scope from any assigned request and CFC
+  scope from raw task/status rows; `loan_account_360.py:91-104` skips the latest-assignee restriction
+  when the reader also holds initiation authority and removed the exact scalar scope resolver.
+  Thus the permission substitution is fixed but the active finding's current-object-scope contract
+  remains conditional. This is another symptom of the same retained owner-boundary root.
+- **Retained High symptom — combined workspace still counts before a later drop:**
+  `disbursement_workspace.py:93-140` counts initiation candidates, while lines 203-205 and 264-299
+  later resolve a latest disbursement and silently omit a projection when its scalar current owner
+  rejects it. Requirement 2's count/page/body identity is therefore still not one decision.
+- **Retained Medium — the executable five-branch matrix remains partial:** the new convergence
+  suite adds six substantive one-row HTTP tests, but not S36/S37/combined/CFC 1/21/101 portfolios,
+  more than four adjacent invalids, complete page edges, every scalar component/consumer, paired
+  actions and mutations, stable query ceilings, or independent 400/403/404/409 behavior. Existing
+  21/101 coverage remains Loan-Account-only.
+- **Retained Medium — the browser fixture's public seam is only indirection:**
+  `identity/epic009_e2e_fixture.py:14-26,43` imports a `TestCase`, calls `setUp`, and invokes private
+  `_real_owner_initiation_fixture` and `_user` helpers. The new source-inspection test examines only
+  the management command, so it misses the transitive codebase-design §26 violation.
+- **Retained Low — duplicated selector/test helpers remain:** JSON key/equality expressions are
+  copied across owner modules, and new tests continue to instantiate other `TestCase` fixtures.
+
+009L7 is already the final grouped repair admitted for this corrective cycle. No third leaf
+corrective or completed-slice mapping is valid. Ralph must stop at the Epic 009 boundary; owner-level
+architecture work must replace the partial SQL-predicate/scalar-owner split with one materialized or
+otherwise complete owner decision before Epic 010 can begin.
+
+## Closed in this review
+
+- **Ordinary/full Playwright fixture union:** `playwright.seed.ts` selects the union of staff,
+  portal, and Epic 009 fixture families; the focused three-test seed suite passes, and retained full
+  collection evidence covers 35 tests from 20 files.
+- **Permission-gate portion only:** an initiator without `finance.loan_account.read` now receives the
+  required `403`. This is a verified sub-closure, not a closed finding, because exact current object
+  scope remains open above.
+
+## Review evidence
+
+- Independent Standards and Spec passes reviewed `git diff e748f8ca...HEAD` and agree that the same
+  owner-boundary root and declared matrix/fixture obligations remain incomplete.
+- Retained 009L7 regressions pass: 6 backend tests. The focused Playwright seed suite passes: 3
+  tests. Both trusted browser manifests independently verify all nine retained PNGs.
+- The review-only public transfer-file probe fails on its intended assertion with
+  `(total_count=1, one row, detail=200)` instead of `(0, [], 404)` after the canonical transfer owner
+  rejects the checksum-drifted evidence.
+- Evidence: `.ralph/runs/2026-07-19_193824_architecture_review/evidence/`.
+- Epic audit: M07-FR-001-010 and M08-FR-001-011 retain implemented owners or explicit A-135
+  pending-posting governance, but their public collection/read truth remains conditional on the
+  unresolved owner boundary. `CONTEXT.md` remains truthful. No slice is marked `Blocked`, so no
+  stale prerequisite required re-parking. No ADR was added because no new durable design decision
+  was accepted; this review rejects a recurrence of the already binding owner contract.
+
 ## Open findings from 2026-07-19_180917_architecture_review
 
 Reviewed product commits: `50d91369` (009L6) and `fe4b0ecb` (CR-012), relative to successful

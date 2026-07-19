@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_transfer_file_drift_is_excluded_from_public_list_and_detail (test_009l7_closure_probes.Epic009L7ClosureReviewProbes.test_transfer_file_drift_is_excluded_from_public_list_and_detail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_193824_architecture_review/.ralph/runs/2026-07-19_193824_architecture_review/evidence/review-probes/test_009l7_closure_probes.py", line 33, in test_transfer_file_drift_is_excluded_from_public_list_and_detail
+    self.assertEqual(
+AssertionError: Tuples differ: (1, [{'loan_account_id': '9cd4643a-e7d4-45[888 chars] 200) != (0, [], 404)
+
+First differing element 0:
+1
+0
+
+Diff is 1085 characters long. Set self.maxDiff to None to see it. : b'{"success": true, "data": {"loan_account_id": "9cd4643a-e7d4-45f7-ac7d-e3de8456e2e8", "loan_account_number": "LN-REAL-OWNER-001", "loan_application_id": "0e3c95e6-aa95-459b-aea2-1bfd22d972e3", "application_reference_number": "LO-CHECK-001", "member": {"member_id": "21be0e8c-f62e-4bb4-b42d-6080e1230a15", "display_name": "Checklist Borrower 001"}, "sap_customer_code": "******-001", "loan_type": "short_term", "facility_type": "short_term", "interest_rate_type": "floating", "current_interest_rate": "9.0000", "sanctioned_amount": "400000.00", "disbursed_amount": "400000.00", "principal_outstanding": "400000.00", "interest_outstanding": "0.00", "charges_outstanding": "0.00", "total_outstanding": "400000.00", "loan_account_status": "active", "tenure_start_date": "2026-07-19", "tenure_end_date": null, "repayment_date": "2026-07-19", "tenure_months": 12, "created_at": "2026-07-19T14:15:17.438293Z", "activated_at": "2026-07-19T14:15:17.726075Z"}, "meta": {"request_id": null, "timestamp": "2026-07-19T14:15:17.865299Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.880s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
