@@ -42,6 +42,12 @@ authoritative; this file avoids reopening the full source set during ordinary ex
    do not imply mutation. Portal users see only authenticated-member projections.
 10. High-contention financial operations require a real PostgreSQL race test in addition to unit/API
     tests. Exact replay must have one retained result and one financial effect.
+11. M09-FR-010 and direct-repayment flow §27 order the principal/interest balance transition after
+    the retained SAP posting decision. A captured or evidence-matched receipt alone cannot admit an
+    ordinary financial allocation.
+12. `bank_statement_line_id` is a canonical relationship, not a caller-asserted UUID. Subsidiary
+    auto-match requires both borrower name and loan application number under M09-FR-007; one fact or
+    an account number alone is insufficient.
 
 ## Dependency and ownership boundaries
 
@@ -85,6 +91,9 @@ authoritative; this file avoids reopening the full source set during ordinary ex
 
 - Model manual statement imports/lines; match exact, high-confidence UTR/amount/date/borrower/loan
   facts, retain ambiguous/missing facts in an unmatched queue, and audit authorised manual matches.
+- Keep one referentially coherent statement-line/receipt owner; import and automatic/manual match
+  apply the same permission and loan-object scope. For subsidiary evidence, borrower name and loan
+  application number are both mandatory rather than alternative narration hints.
 - A statement line cannot be consumed twice. Matching does not allocate or alter balances.
 - Sources: flow §27.4; functional M09-FR-008/009; roadmap §§15.2–15.4; tests API-REP-006/007.
 

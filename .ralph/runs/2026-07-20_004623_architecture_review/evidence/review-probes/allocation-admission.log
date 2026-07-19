@@ -1,0 +1,12 @@
+Finding ID: AR-010-ALLOCATION-001
+Root ID: ROOT-010-ALLOCATION-ADMISSION
+Probe: evidence/review-probes/test_allocation_admission.py
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-20_004623_architecture_review/evidence/review-probes/test_allocation_admission.py
+Exit code: 1
+Found 2 tests.
+FAIL: test_manual_match_exception_requires_010c2_approval_before_allocation
+AssertionError: 200 != 409; the ordinary allocator reduced principal by 75000.00 after a manual-match exception without 010C2 terminal approval.
+FAIL: test_pending_sap_receipt_cannot_change_financial_balances
+AssertionError: 200 != 409; the ordinary allocator reduced principal by 100000.00 while the receipt SAP-posting obligation remained pending.
+Result: FAILED (failures=2). Both probes used authenticated public HTTP endpoints and asserted zero financial writes at the rejected admission boundary.
+Related contract inspection: the allocation view never reads the source-required Idempotency-Key; changed replays return retained success, mandatory remarks are discarded, Accounts Head lacks the default create/allocate grants promised by the API contract, and _apply_to_schedules does not fail when schedule capacity is smaller than the account-level allocation.

@@ -32,11 +32,14 @@ member self-service portal.
 
 - Epics 002–008 established the platform, origination, approval, documentation, security, member
   portal, and their corrective integrity contracts.
-- Epic 009 implements SAP setup and disbursement. The queue is closing communications migration,
-  retry, channel, provider-evidence, member-status, Loan Account 360, and wiring contracts before
-  servicing begins.
-- Epics 010–012 own servicing/repayment, monitoring/default/compliance, reporting, operational
-  hardening, end-to-end acceptance, and final release evidence.
+- Epic 009's SAP setup/disbursement boundary is complete, including its terminal owner/evidence
+  correction and hosted staff/member acceptance.
+- Epic 010 servicing is active. Schedule/ledger reads, direct receipt capture, principal-first
+  allocation, and bank-statement reconciliation foundations are implemented; current corrective
+  work closes their financial-admission and statement-evidence owner boundaries before subsidiary
+  reconciliation and interest processing continue.
+- The remainder of Epics 010–012 owns servicing/repayment, monitoring/default/compliance, reporting,
+  operational hardening, end-to-end acceptance, and final release evidence.
 - Current slice and dependency facts must be read from `docs/working/HANDOFF.md` and the selected
   slice; do not infer them from this summary.
 

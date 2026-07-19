@@ -1,0 +1,12 @@
+Finding ID: AR-010-STATEMENT-001
+Root ID: ROOT-010-STATEMENT-EVIDENCE
+Probe: evidence/review-probes/test_statement_evidence_boundary.py
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-20_004623_architecture_review/evidence/review-probes/test_statement_evidence_boundary.py
+Exit code: 1
+Found 2 tests.
+FAIL: test_direct_capture_rejects_nonexistent_statement_line_evidence
+AssertionError: 200 != 400; capture retained a random nonexistent BankStatementLine UUID as repayment evidence.
+FAIL: test_import_time_auto_match_respects_permission_and_loan_object_scope
+AssertionError: matched_count 1 != 0; an import-only actor auto-matched a receipt after its loan was moved outside Credit Manager servicing scope.
+Result: FAILED (failures=2). Both probes used public HTTP endpoints; the retained responses showed the orphan UUID and the unauthorized matched counterpart.
+Related contract inspection: Repayment.bank_statement_line_id and BankStatementLine.matched_repayment are independently mutable relationship truths; SFPCL collection-account input is stored/returned raw; and the generic matcher accepts any one narration identifier although M09-FR-007 requires both borrower name and application number for subsidiary matching.

@@ -1,0 +1,18 @@
+Architecture review focused validation
+Run ID: 2026-07-20_004623_architecture_review
+
+METRICS: 0  0  2  2  0  1
+PASS: validated 4 stable finding manifest rows.
+PASS: slice queue parses and drains.
+PASS: architecture-review path scope permits only docs/ and this run's retained evidence.
+Corrective slices added: 1; existing corrective mappings: 1.
+PASS: Critical/High admission has actionable corrective work.
+PASS: corrective generation remains within the configured convergence cap.
+PASS: git diff --check.
+PASS: exact review-packet Result is Ready for independent validation.
+PASS: required execution plan, risk assessment, review packet, and final summary are non-empty.
+PASS: newest-first finding placement preserves the fixed-point REVIEW_FINDINGS remainder.
+Candidate files: 24 (within 30); tracked diff lines: 135; current run artifacts: 660 lines.
+PASS: final combined check repeated metrics 0/0/2/2/0/1, four-row manifest, scope,
+corrective counts (added 1, mapped 1), convergence, queue drainage, exact Result, and diff limits.
+Exit code: 0

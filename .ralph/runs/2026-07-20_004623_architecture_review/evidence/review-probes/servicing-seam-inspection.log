@@ -1,0 +1,6 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Inspection: sfpcl_credit/loans/modules/repayment_allocator.py:47,99-135,216-227; sfpcl_credit/loans/modules/direct_repayment_posting.py:132-149; the five new servicing test modules.
+Observed: allocation validates mandatory remarks but discards the returned value and retains no reason in its immutable row or audit evidence. The repayment module creates the communications-owned Notification directly, while servicing modules duplicate low-level AuditLog construction. New tests instantiate other TestCase classes, call setUp/private helpers, and traverse multi-owner fixture chains.
+Contract: docs/source/security-privacy.md audit reason/comment requirement; docs/working/CONTEXT.md immutable evidence/facade direction; docs/source/codebase-design.md deep-module and public-test-seam direction.
+Disposition: New Medium; consolidate public servicing fixtures and owner facades while 010C2/010D2 close the higher-severity command boundaries.

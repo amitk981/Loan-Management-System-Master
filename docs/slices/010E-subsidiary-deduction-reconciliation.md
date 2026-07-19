@@ -16,7 +16,7 @@ Borrowers receive credit for genuine subsidiary deductions while unclear or unsu
 remain visible for review instead of changing balances automatically.
 
 ## Depends On
-- 010D
+- 010D2
 
 ## Runtime Capabilities
 

@@ -1,4 +1,4 @@
-# Slice 010C2: Manual Allocation and Financial Reversal Controls
+# Slice 010C2: Allocation Admission, Manual Allocation, and Financial Reversal Controls
 
 ## Status
 Not Started
@@ -25,6 +25,11 @@ reason, and complete audit evidence while balances remain reproducible.
 ## Depends On
 - 010D
 
+## Review Finding Closure
+| Finding ID | Root ID | Reproducer | Acceptance IDs |
+|---|---|---|---|
+| AR-010-ALLOCATION-001 | ROOT-010-ALLOCATION-ADMISSION | .ralph/runs/2026-07-20_004623_architecture_review/evidence/review-probes/allocation-admission.log | AC-ALLOC-1, AC-ALLOC-2, AC-ALLOC-3, AC-ALLOC-4, AC-ALLOC-5, AC-ALLOC-6 |
+
 ## Source References
 - `docs/source/functional-spec.md` M09-FR-009 and M09-FR-010 through M09-FR-011
 - `docs/source/screen-spec.md` S44 Actions and Controls, especially reversal with permission/reason
@@ -44,6 +49,16 @@ None in this slice; `010M` owns staff frontend wiring.
 None.
 
 ## Backend/API Scope
+- Close the ordinary allocation admission boundary before adding correction actions: require the
+  source ordering between confirmed SAP posting and balance mutation, reject 010D manual-match
+  exceptions unless this slice's terminal approval covers the exact proposed allocation, and keep
+  every rejection zero-write. Apply the same canonical decision to public action and mutation paths.
+- Add the source-required `Idempotency-Key` contract to allocation. Exact key/request replay returns
+  retained truth; changed, cross-receipt, or missing keys fail before balance/audit/ledger writes.
+- Reconcile the default role catalogue with the source-approved Credit Manager and Accounts
+  authorities for repayment capture/allocation, without widening CFO/Auditor/read-only roles.
+- Fail closed when schedule capacity/evidence cannot absorb the exact account-level principal and
+  interest allocation. Persist the mandatory safe reason/remarks with immutable decision evidence.
 - Consume the unmatched/exception receipt and bank-line decision owned by 010D. Add the public
   manual-allocation action for that exact exception; it must reference terminal approval evidence,
   accept a mandatory bounded reason, and delegate the actual balance transition to the canonical
@@ -84,6 +99,11 @@ and every denial without copying bank evidence or sensitive values.
 - Expected tests: 4
 
 ## Test Cases
+- RED then GREEN: an SAP-pending receipt and a manually matched exception without terminal approval
+  both return conflict with byte-for-byte unchanged account, schedule, allocation, ledger, and audit
+  truth; a correctly posted ordinary receipt remains allocatable by both source-approved roles.
+- RED then GREEN: missing/changed/cross-receipt idempotency keys and insufficient or empty schedule
+  capacity fail closed; 1/21/101 schedule rows reconcile exactly with account and ledger balances.
 - RED then GREEN: approved exception allocation succeeds once and delegates principal-first math to
   010C; missing/pending/foreign approval, amount drift, and changed replay produce zero writes.
 - RED then GREEN: authorised reversal appends one compensating movement and restores the exact prior
@@ -102,9 +122,18 @@ compensating ledger proof; twice-run PostgreSQL acceptance; reverse-consumer and
 High
 
 ## Acceptance Criteria
-- Exception allocation and reversal are explicit, approved, reasoned, atomic, idempotent, and audited.
-- No path rewrites immutable ledger history or bypasses the 010C allocation owner.
-- Required focused, PostgreSQL, reverse-consumer, and full gates pass.
+- [AC-ALLOC-1] One canonical admission decision requires source-ordered posting and blocks unapproved
+  manual-match exceptions before every ordinary allocation financial write.
+- [AC-ALLOC-2] Allocation requires a bounded Idempotency-Key; exact replay retains one result while
+  missing, changed, and cross-receipt reuse are zero-write conflicts.
+- [AC-ALLOC-3] Account, schedule, allocation, and ledger amounts reconcile exactly; insufficient or
+  incoherent schedule capacity cannot silently discard an allocated amount.
+- [AC-ALLOC-4] The immutable decision retains the mandatory safe reason, actor, role, posting,
+  approval, and before/after evidence without sensitive bank content.
+- [AC-ALLOC-5] Approved exception allocation and reversal are explicit, atomic, idempotent, and
+  append compensating truth without rewriting the 010C ledger owner.
+- [AC-ALLOC-6] Credit Manager and Accounts default authority matches the source catalogue, read-only
+  roles remain denied, and focused/PostgreSQL/reverse-consumer/full gates pass.
 
 ## Done Checklist
 - [ ] Execution plan written

@@ -1,0 +1,6 @@
+Finding ID: AR-010-LEDGER-001
+Root ID: ROOT-010-LEDGER-PAGINATION
+Inspection: sfpcl_credit/processes/loan_servicing.py:42-55 and sfpcl_credit/tests/test_loan_schedule_ledger_api.py:337-356
+Observed: get_ledger materializes every repayment_ledger_entry into a Python list before calculating total_count and slicing the requested page. The query-ceiling test populates twenty schedule rows but only the one disbursement ledger row, so it cannot detect work or memory growing with ledger cardinality.
+Contract: docs/slices/010A-loan-account-schedule-and-ledger.md requirement 5 requires query-bounded stable pagination.
+Disposition: New Medium; bundle database count/window pagination and a 1/21/101 ledger-cardinality regression into the Epic 010 ledger closure.
