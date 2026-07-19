@@ -1,0 +1,4 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_changed_creation_audit_body_is_excluded_from_count_and_page --verbosity 2
+Result: FAIL (expected RED)
+AssertionError: pagination.total_count was 1 instead of 0 after the canonical creation audit outcome was tampered.
+

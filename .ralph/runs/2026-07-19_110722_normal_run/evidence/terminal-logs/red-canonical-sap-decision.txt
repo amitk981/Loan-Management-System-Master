@@ -1,0 +1,9 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_loan_account_reads_api.ActiveLoanAccountReadApiTests.test_member_and_account_sap_reads_reject_newer_cross_application_drift_identically --verbosity 2
+
+Result: FAILED as expected (1 test, 1 failure).
+
+Observed failure:
+`member_decision` was `None`, while `account_decision` returned an older
+`SapCustomerCodeDecision`. This reproduces the retained architecture-review probe and proves the
+two public SAP consumers selected different completion truth before implementation.

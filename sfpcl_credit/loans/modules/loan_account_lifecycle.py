@@ -1,9 +1,12 @@
 from dataclasses import dataclass
+from collections import defaultdict
 from decimal import Decimal
 import re
 import uuid
 
 from django.db import IntegrityError, transaction
+from django.db.models import CharField, Count, Exists, F, OuterRef, Subquery, Value
+from django.db.models.functions import Cast, Replace
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.applications.models import LoanApplication
@@ -75,6 +78,101 @@ class ReadinessAccountFacts:
     relationships_coherent: bool
 
 
+def filter_created_accounts(queryset):
+    """Apply the lifecycle owner's queryable immutable-creation contract."""
+    histories = LoanStatusHistory.objects.filter(
+        loan_account_id=OuterRef("pk"),
+        from_status__isnull=True,
+        to_status=LoanAccount.STATUS_SANCTIONED,
+        reason="Created from exact current terminal sanction.",
+        loan_application_id_snapshot=OuterRef("loan_application_id"),
+        member_id_snapshot=OuterRef("member_id"),
+        sanction_decision_id_snapshot=OuterRef("sanction_decision_id"),
+        loan_terms_id_snapshot=OuterRef("terms__pk"),
+        replay_flag=False,
+        outcome="created",
+    )
+    audits = AuditLog.objects.annotate(
+        _evidence_account_id=Replace(
+            Cast("new_value_json__loan_account_id", CharField()), Value("-"), Value("")
+        ),
+        _evidence_application_id=Replace(
+            Cast("new_value_json__loan_application_id", CharField()), Value("-"), Value("")
+        ),
+        _evidence_member_id=Replace(
+            Cast("new_value_json__member_id", CharField()), Value("-"), Value("")
+        ),
+        _evidence_sanction_id=Replace(
+            Cast("new_value_json__sanction_decision_id", CharField()), Value("-"), Value("")
+        ),
+        _evidence_terms_id=Replace(
+            Cast("new_value_json__loan_terms_id", CharField()), Value("-"), Value("")
+        ),
+    ).filter(
+        action=CREATED_ACTION,
+        entity_type="loan_account",
+        entity_id=OuterRef("pk"),
+        actor_type="user",
+        old_value_json={},
+        _evidence_account_id=Cast(OuterRef("pk"), CharField()),
+        _evidence_application_id=Cast(OuterRef("loan_application_id"), CharField()),
+        _evidence_member_id=Cast(OuterRef("member_id"), CharField()),
+        _evidence_sanction_id=Cast(OuterRef("sanction_decision_id"), CharField()),
+        _evidence_terms_id=Cast(OuterRef("terms__pk"), CharField()),
+        new_value_json__loan_account_status=LoanAccount.STATUS_SANCTIONED,
+        new_value_json__replay=False,
+        new_value_json__outcome="created",
+    )
+    workflows = WorkflowEvent.objects.filter(
+        workflow_name="LoanAccountCreated",
+        entity_type="loan_account",
+        entity_id=OuterRef("pk"),
+        from_state__isnull=True,
+        to_state=LoanAccount.STATUS_SANCTIONED,
+        trigger_reason="Created from exact current terminal sanction.",
+    )
+
+    def singular(rows, group):
+        return (
+            rows.order_by()
+            .values(group)
+            .annotate(total=Count("pk"))
+            .values("total")
+        )
+
+    return queryset.annotate(
+        _has_creation_history=Exists(histories),
+        _has_creation_audit=Exists(audits),
+        _has_creation_workflow=Exists(workflows),
+        _creation_history_count=Subquery(singular(histories, "loan_account_id")[:1]),
+        _creation_audit_count=Subquery(singular(audits, "entity_id")[:1]),
+        _creation_workflow_count=Subquery(singular(workflows, "entity_id")[:1]),
+        _creation_history_actor_id=Subquery(
+            histories.values("changed_by_user_id")[:1]
+        ),
+        _creation_audit_actor_id=Subquery(audits.values("actor_user_id")[:1]),
+        _creation_workflow_actor_id=Subquery(
+            workflows.values("triggered_by_user_id")[:1]
+        ),
+    ).filter(
+        _has_creation_history=True,
+        _has_creation_audit=True,
+        _has_creation_workflow=True,
+        _creation_history_count=1,
+        _creation_audit_count=1,
+        _creation_workflow_count=1,
+        _creation_history_actor_id=F("_creation_audit_actor_id"),
+        _creation_audit_actor_id=F("_creation_workflow_actor_id"),
+        loan_application__member_id=F("member_id"),
+        sanction_decision__loan_application_id=F("loan_application_id"),
+        terms__loan_amount=F("sanctioned_amount"),
+        terms__facility_type=F("loan_type"),
+        terms__interest_rate_type=F("interest_rate_type"),
+        terms__rate_of_interest=F("current_interest_rate"),
+        terms__repayment_date=F("repayment_date"),
+    )
+
+
 @dataclass(frozen=True)
 class DisbursementAccountDecision:
     loan_account_id: uuid.UUID
@@ -109,6 +207,121 @@ def resolve_loan_account_creation(*, loan_account_id):
     return _resolve_created_account(
         loan_account_id=loan_account_id,
         require_unfunded_sanctioned=False,
+    )
+
+
+def resolve_loan_account_creations(accounts):
+    """Bulk-resolve exact creation evidence for one bounded read window."""
+    accounts = list(accounts)
+    account_ids = [account.pk for account in accounts]
+    histories_by_account = defaultdict(list)
+    for row in LoanStatusHistory.objects.filter(
+        loan_account_id__in=account_ids,
+        from_status__isnull=True,
+        to_status=LoanAccount.STATUS_SANCTIONED,
+        outcome="created",
+    ).order_by("changed_at", "loan_status_history_id"):
+        histories_by_account[row.loan_account_id].append(row)
+    audits_by_account = defaultdict(list)
+    for row in AuditLog.objects.filter(
+        action=CREATED_ACTION,
+        entity_type="loan_account",
+        entity_id__in=account_ids,
+    ).order_by("created_at", "audit_log_id"):
+        audits_by_account[row.entity_id].append(row)
+    workflows_by_account = defaultdict(list)
+    for row in WorkflowEvent.objects.filter(
+        workflow_name="LoanAccountCreated",
+        entity_type="loan_account",
+        entity_id__in=account_ids,
+    ).order_by("created_at", "workflow_event_id"):
+        workflows_by_account[row.entity_id].append(row)
+    return {
+        account.pk: decision
+        for account in accounts
+        if (
+            decision := _created_account_decision(
+                account,
+                histories_by_account[account.pk],
+                audits_by_account[account.pk],
+                workflows_by_account[account.pk],
+                require_unfunded_sanctioned=False,
+            )
+        )
+        is not None
+    }
+
+
+def _created_account_decision(
+    account, histories, audits, workflows, *, require_unfunded_sanctioned
+):
+    if len(histories) != 1 or len(audits) != 1 or len(workflows) != 1:
+        return None
+    history, audit, workflow = histories[0], audits[0], workflows[0]
+    evidence = audit.new_value_json or {}
+    expected = {
+        "loan_account_id": str(account.pk),
+        "loan_application_id": str(account.loan_application_id),
+        "member_id": str(account.member_id),
+        "sanction_decision_id": str(account.sanction_decision_id),
+        "sap_customer_code_id": (
+            str(account.sap_customer_code_id) if account.sap_customer_code_id else None
+        ),
+        "loan_terms_id": str(account.terms.pk),
+        "loan_account_status": LoanAccount.STATUS_SANCTIONED,
+        "replay": False,
+        "outcome": "created",
+    }
+    if (
+        require_unfunded_sanctioned
+        and account.loan_account_status != LoanAccount.STATUS_SANCTIONED
+        or account.loan_application.member_id != account.member_id
+        or account.sanction_decision.loan_application_id != account.loan_application_id
+        or account.terms.loan_account_id != account.pk
+        or history.from_status is not None
+        or history.to_status != LoanAccount.STATUS_SANCTIONED
+        or history.reason != "Created from exact current terminal sanction."
+        or history.changed_by_user_id != audit.actor_user_id
+        or history.changed_by_user_id != workflow.triggered_by_user_id
+        or history.loan_application_id_snapshot != account.loan_application_id
+        or history.member_id_snapshot != account.member_id
+        or history.sanction_decision_id_snapshot != account.sanction_decision_id
+        or history.sap_customer_code_id_snapshot != account.sap_customer_code_id
+        or history.loan_terms_id_snapshot != account.terms.pk
+        or history.replay_flag is not False
+        or history.outcome != "created"
+        or audit.old_value_json != {}
+        or set(evidence)
+        != set(expected) | {"actor_role_codes", "actor_team_codes", "request_id"}
+        or any(evidence.get(key) != value for key, value in expected.items())
+        or not isinstance(evidence.get("actor_role_codes"), list)
+        or not evidence.get("actor_role_codes")
+        or not isinstance(evidence.get("actor_team_codes"), list)
+        or evidence.get("request_id") is not None
+        and not isinstance(evidence.get("request_id"), str)
+        or workflow.from_state is not None
+        or workflow.to_state != LoanAccount.STATUS_SANCTIONED
+        or workflow.trigger_reason != "Created from exact current terminal sanction."
+    ):
+        return None
+    return DisbursementAccountDecision(
+        loan_account_id=account.pk,
+        loan_application_id=account.loan_application_id,
+        member_id=account.member_id,
+        sanction_decision_id=account.sanction_decision_id,
+        sap_customer_code_id=account.sap_customer_code_id,
+        loan_terms_id=account.terms.pk,
+        creation_status_history_id=history.pk,
+        creation_audit_id=audit.pk,
+        creation_workflow_event_id=workflow.pk,
+        loan_account_status=account.loan_account_status,
+        sanctioned_amount=account.sanctioned_amount,
+        loan_amount=account.terms.loan_amount,
+        disbursed_amount=account.disbursed_amount,
+        principal_outstanding=account.principal_outstanding,
+        interest_outstanding=account.interest_outstanding,
+        charges_outstanding=account.charges_outstanding,
+        total_outstanding=account.total_outstanding,
     )
 
 

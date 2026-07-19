@@ -9,6 +9,7 @@ from sfpcl_credit.disbursements.modules.disbursement_readiness import (
     DisbursementReadinessModule,
 )
 from sfpcl_credit.disbursements.modules.disbursement_authorisation import (
+    can_authorise_disbursement,
     has_current_authorisation_authority,
 )
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
@@ -17,14 +18,27 @@ from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
 from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
     resolve_post_transfer_evidence,
 )
+from sfpcl_credit.disbursements.modules.disbursement_transfer_success import (
+    can_mark_transfer_success,
+)
+from sfpcl_credit.disbursements.modules.disbursement_advice import (
+    can_send_disbursement_advice,
+)
 from sfpcl_credit.domain_errors import DomainPermissionDenied
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.models import LoanAccount
-from sfpcl_credit.loans.modules.loan_account_read import LoanAccountReadPermissionDenied
-from sfpcl_credit.processes.loan_account_360 import list_accounts
+from sfpcl_credit.loans.modules.loan_account_read import (
+    LoanAccountReadPermissionDenied,
+)
+from sfpcl_credit.processes.loan_account_360 import (
+    eligible_account_candidates,
+    list_account_window,
+)
 from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+    assigned_workspace_row_count,
     assigned_workspace_rows,
     get_account_customer_code,
+    staff_workspace_row_count,
     staff_workspace_rows,
 )
 
@@ -58,49 +72,102 @@ def list_workspace(*, actor, query_params):
         )
 
     if can_create_sap:
-        projections = [_project_s36(row) for row in staff_workspace_rows(actor=actor)]
-    elif can_initiate:
-        try:
-            account_rows, account_pagination = list_accounts(
-                actor=actor, query_params={"page": "1", "page_size": "100"}
-            )
-        except LoanAccountReadPermissionDenied:
-            account_rows, account_pagination = [], {"total_pages": 1}
-        for account_page in range(2, account_pagination["total_pages"] + 1):
-            page_rows, _ = list_accounts(
-                actor=actor,
-                query_params={"page": str(account_page), "page_size": "100"},
-            )
-            account_rows.extend(page_rows)
-        account_projections = [
-            projection
-            for row in account_rows
-            if (
-                projection := _project_account(
-                    actor=actor, account_row=row, permissions=permissions
-                )
-            )
-            is not None
-        ]
-        represented_applications = {
-            row["loan_application_id"] for row in account_rows
-        }
-        assigned_rows = assigned_workspace_rows(actor=actor)
-        represented_applications.update(
-            str(value)
-            for value in LoanAccount.objects.filter(
-                loan_application_id__in=[
-                    row["loan_application_id"] for row in assigned_rows
-                ]
-            ).values_list("loan_application_id", flat=True)
-        )
+        total_count = staff_workspace_row_count(actor=actor)
+        total_pages = ceil(total_count / page_size) if total_count else 1
+        if page > total_pages:
+            raise DisbursementWorkspaceValidation({"page": "Page is out of range."})
         projections = [
             _project_s36(row)
-            for row in assigned_rows
-            if row["loan_application_id"] not in represented_applications
-        ] + account_projections
+            for row in staff_workspace_rows(
+                actor=actor,
+                offset=(page - 1) * page_size,
+                limit=page_size,
+            )
+        ]
+        return projections, {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
+    elif can_initiate:
+        filters = {"search": "", "status": "", "member_id": None}
+        try:
+            account_total = eligible_account_candidates(
+                actor=actor, filters=filters
+            ).count()
+        except LoanAccountReadPermissionDenied:
+            account_total = 0
+        sap_total = (
+            assigned_workspace_row_count(
+                actor=actor, without_loan_account=True
+            )
+            if can_complete_sap
+            else 0
+        )
+        total_count = sap_total + account_total
+        total_pages = ceil(total_count / page_size) if total_count else 1
+        if page > total_pages:
+            raise DisbursementWorkspaceValidation({"page": "Page is out of range."})
+        start = (page - 1) * page_size
+        sap_offset = min(start, sap_total)
+        sap_limit = min(page_size, max(0, sap_total - sap_offset))
+        projections = [
+            _project_s36(row)
+            for row in assigned_workspace_rows(
+                actor=actor,
+                without_loan_account=True,
+                offset=sap_offset,
+                limit=sap_limit,
+            )
+        ]
+        account_limit = page_size - len(projections)
+        account_offset = max(0, start - sap_total)
+        if account_limit and account_offset < account_total:
+            account_rows = list_account_window(
+                actor=actor,
+                filters=filters,
+                offset=account_offset,
+                limit=account_limit,
+            )
+            projections.extend(
+                _project_account_rows(
+                    actor=actor,
+                    account_rows=account_rows,
+                    permissions=permissions,
+                )
+            )
+        return projections, {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
     elif can_complete_sap:
-        projections = [_project_s36(row) for row in assigned_workspace_rows(actor=actor)]
+        total_count = assigned_workspace_row_count(actor=actor)
+        total_pages = ceil(total_count / page_size) if total_count else 1
+        if page > total_pages:
+            raise DisbursementWorkspaceValidation({"page": "Page is out of range."})
+        projections = [
+            _project_s36(row)
+            for row in assigned_workspace_rows(
+                actor=actor,
+                offset=(page - 1) * page_size,
+                limit=page_size,
+            )
+        ]
+        return projections, {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
     else:
         candidates = (
             Disbursement.objects.select_related(
@@ -116,43 +183,30 @@ def list_workspace(*, actor, query_params):
             .filter(authorisation_status="pending")
             .order_by("-initiated_at", "-disbursement_id")
         )
+        total_count = candidates.count()
+        total_pages = ceil(total_count / page_size) if total_count else 1
+        if page > total_pages:
+            raise DisbursementWorkspaceValidation({"page": "Page is out of range."})
+        start = (page - 1) * page_size
         projections = [
             _project_disbursement(actor=actor, row=row, permissions=permissions)
-            for row in candidates
+            for row in candidates[start : start + page_size + 4]
             if _disbursement_is_current(row)
-        ]
+        ][:page_size]
+        return projections, {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
 
-    total_count = len(projections)
-    total_pages = ceil(total_count / page_size) if total_count else 1
-    if page > total_pages:
-        raise DisbursementWorkspaceValidation({"page": "Page is out of range."})
-    start = (page - 1) * page_size
-    return projections[start : start + page_size], {
-        "page": page,
-        "page_size": page_size,
-        "total_count": total_count,
-        "total_pages": total_pages,
-        "has_next": page < total_pages,
-        "has_previous": page > 1,
-    }
-
-
-def _project_account(*, actor, account_row, permissions):
-    account = (
-        LoanAccount.objects.select_related(
-            "loan_application", "member", "sap_customer_code"
-        )
-        .filter(pk=account_row["loan_account_id"])
-        .first()
-    )
-    disbursement = (
-        Disbursement.objects.select_related(
-            "borrower_bank_account", "source_bank_account", "initiated_by_user"
-        )
-        .filter(loan_account_id=account.pk)
-        .order_by("-initiated_at", "-disbursement_id")
-        .first()
-    )
+def _project_account(
+    *, actor, account_row, permissions, account=None, disbursement=None
+):
+    if account is None:
+        return None
     if disbursement is not None:
         if not _disbursement_is_current(disbursement):
             return None
@@ -214,6 +268,44 @@ def _project_account(*, actor, account_row, permissions):
     )
 
 
+def _project_account_rows(*, actor, account_rows, permissions):
+    account_ids = [row["loan_account_id"] for row in account_rows]
+    accounts = {
+        str(row.pk): row
+        for row in LoanAccount.objects.select_related(
+            "loan_application", "member", "sap_customer_code"
+        ).filter(pk__in=account_ids)
+    }
+    disbursements = {}
+    for row in (
+        Disbursement.objects.select_related(
+            "loan_account__loan_application",
+            "loan_account__member",
+            "loan_account__sap_customer_code",
+            "borrower_bank_account",
+            "source_bank_account",
+            "initiated_by_user",
+        )
+        .filter(loan_account_id__in=account_ids)
+        .order_by("loan_account_id", "-initiated_at", "-disbursement_id")
+    ):
+        disbursements.setdefault(str(row.loan_account_id), row)
+    return [
+        projection
+        for row in account_rows
+        if (
+            projection := _project_account(
+                actor=actor,
+                account_row=row,
+                permissions=permissions,
+                account=accounts.get(row["loan_account_id"]),
+                disbursement=disbursements.get(row["loan_account_id"]),
+            )
+        )
+        is not None
+    ]
+
+
 def _project_s36(row):
     return {
         "workspace_id": row["workspace_id"],
@@ -267,7 +359,7 @@ def _project_disbursement(*, actor, row, permissions):
             "checks": [],
         }
     actions = []
-    if row.authorisation_status == "pending" and has_current_authorisation_authority(actor):
+    if can_authorise_disbursement(actor=actor, row=row):
         fields = [_field("comments", "CFC comments", "textarea")]
         actions.extend(
             [
@@ -283,7 +375,7 @@ def _project_disbursement(*, actor, row, permissions):
                 ),
             ]
         )
-    if row.authorisation_status == "approved" and row.bank_transfer_status == "pending" and "finance.disbursement.mark_success" in permissions:
+    if can_mark_transfer_success(actor=actor, row=row):
         actions.append(
             _action(
                 "mark_transfer_successful", "Record transfer success",
@@ -296,7 +388,7 @@ def _project_disbursement(*, actor, row, permissions):
                 ],
             )
         )
-    if row.bank_transfer_status == "successful" and row.disbursement_advice_communication_id is None and "finance.disbursement.send_advice" in permissions:
+    if can_send_disbursement_advice(actor=actor, row=row):
         actions.append(
             _action(
                 "send_disbursement_advice", "Send disbursement advice",

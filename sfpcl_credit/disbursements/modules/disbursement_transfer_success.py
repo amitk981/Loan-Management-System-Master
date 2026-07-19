@@ -47,6 +47,31 @@ class DuplicateBankReference(DisbursementTransferConflict):
     code = "DUPLICATE_BANK_REFERENCE"
 
 
+def can_mark_transfer_success(*, actor, row):
+    """Return the mutation owner's current row-level transfer authority."""
+    try:
+        operator = _locked_operator(actor)
+        _require_operator_scope(operator, row)
+        current = resolve_current_disbursement_evidence(
+            disbursement_id=row.pk,
+            allowed_authorisation_statuses=("approved",),
+        )
+        _require_transferable_account(row, row.loan_account)
+    except (DomainPermissionDenied, DomainObjectAccessDenied, DisbursementTransferConflict):
+        return False
+    return bool(
+        current
+        and row.bank_transfer_status == "pending"
+        and current.authorisation_action_id == row.authorisation_action_id
+        and current.authorisation_audit_id == row.authorisation_audit_id
+        and current.authorisation_workflow_event_id
+        == row.authorisation_workflow_event_id
+        and current.authorisation_evidence_digest == row.authorisation_evidence_digest
+        and current.authorised_by_user_id == row.authorised_by_user_id
+        and current.authorised_at == row.authorised_at
+    )
+
+
 def _mark_transfer_successful(
     *, actor, disbursement_id, payload, idempotency_key, request=None
 ):

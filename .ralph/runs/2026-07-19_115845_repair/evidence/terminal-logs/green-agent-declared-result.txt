@@ -1,0 +1,14 @@
+Feedback command:
+  source scripts/lib/ralph-fast-candidate-checks.sh
+  ralph_review_packet_declares_ready \
+    .ralph/runs/2026-07-19_115845_repair/review-packet.md
+
+Observed output:
+  PASS: review-packet.md declares the exact ready result and remains mergeable.
+  Result heading count: 1
+  Declared result: Ready for independent validation
+  PASS: no contradictory do-not-commit/merge declaration found.
+
+Exit code: 0
+
+The authoritative fast-check helper now accepts the active repair packet.

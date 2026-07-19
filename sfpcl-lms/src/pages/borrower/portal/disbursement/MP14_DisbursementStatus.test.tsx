@@ -124,6 +124,30 @@ describe('MP14 disbursement status', () => {
     expect(statusMock).toHaveBeenCalledTimes(1);
     expect(statusMock).toHaveBeenCalledWith('app-selected');
   });
+
+  it.each([
+    ['app-newer', 'app-older'],
+    ['app-older', 'app-newer'],
+  ])('keeps explicit-id selection when the surrounding list order is %s then %s', async (first, selected) => {
+    const view = render(
+      <MP14_DisbursementStatus
+        selectedApplicationId={first}
+        onNavigateToApplications={vi.fn()}
+      />,
+    );
+    expect((await screen.findAllByText('Loan amount transferred.')).length).toBeGreaterThan(0);
+
+    view.rerender(
+      <MP14_DisbursementStatus
+        selectedApplicationId={selected}
+        onNavigateToApplications={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(statusMock).toHaveBeenLastCalledWith(selected));
+    expect(statusMock).toHaveBeenNthCalledWith(1, first);
+    expect(statusMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 const disbursedProjection: PortalDisbursementStatus = {

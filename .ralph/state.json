@@ -279,15 +279,16 @@
     "009J-loan-account-360-initial-view",
     "009K-disbursement-and-cfc-frontend-wiring",
     "009L-epic-009-staff-workflow-and-sap-posting-closure",
-    "009L3-epic-009-authority-evidence-and-pagination-closure"
+    "009L3-epic-009-authority-evidence-and-pagination-closure",
+    "009L4-epic-009-canonical-read-and-bounded-pagination-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-19_104332_architecture_review",
+  "last_run_id": "2026-07-19_121251_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 1,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -300,5 +301,6 @@
     "new_medium": 2,
     "new_low": 1,
     "corrective_slices_added": 1
-  }
+  },
+  "architecture_review_due_reason": "epic_boundary:009->010"
 }

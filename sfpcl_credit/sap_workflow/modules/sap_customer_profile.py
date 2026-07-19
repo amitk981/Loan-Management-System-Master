@@ -8,6 +8,7 @@ import uuid
 
 from django.core import signing
 from django.db import transaction
+from django.db.models import Count, Exists, F, OuterRef, Q, Subquery
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -31,6 +32,7 @@ from sfpcl_credit.sap_workflow.modules.sap_customer_request import (
     current_terminal_sanction,
 )
 from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.approvals.models import ApprovalCase, SanctionDecision
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.sap_workflow.adapters import (
@@ -72,18 +74,16 @@ def read_member_code(*, actor, member_id, request):
         return result
 
 
-def staff_workspace_rows(*, actor):
+def staff_workspace_row_count(*, actor):
+    """Count exact current S36 application identities before pagination."""
+    _require_staff_workspace_authority(actor)
+    return _staff_workspace_applications(actor=actor).count()
+
+
+def staff_workspace_rows(*, actor, offset=0, limit=None):
     """Project safe S36 actions through the SAP owner's mutation interface."""
-    roles = set(auth_service.effective_role_codes(actor))
     permissions = set(auth_service.effective_permission_codes(actor))
-    if (
-        not actor.can_authenticate()
-        or "credit_manager" not in roles
-        or "finance.sap_request.create" not in permissions
-    ):
-        raise DomainPermissionDenied(
-            "Active Credit Manager SAP request authority is required."
-        )
+    _require_staff_workspace_authority(actor)
     assignees = [
         candidate
         for candidate in User.objects.select_related("primary_role")
@@ -96,18 +96,15 @@ def staff_workspace_rows(*, actor):
         if "finance.sap_request.complete"
         in auth_service.effective_permission_codes(candidate)
     ]
-    candidates = (
-        LoanApplication.objects.select_related("member")
-        .filter(application_status=LoanApplication.STATUS_APPROVED_BY_SANCTION)
-        .prefetch_related("sap_customer_profile_requests")
-        .order_by("-updated_at", "loan_application_id")
+    candidates = _staff_workspace_applications(actor=actor).select_related("member").prefetch_related(
+        "sap_customer_profile_requests"
     )
+    if limit is not None:
+        candidates = candidates[offset : offset + limit]
+    elif offset:
+        candidates = candidates[offset:]
     rows = []
     for application in candidates:
-        try:
-            decision = current_terminal_sanction(application)
-        except DomainInvalidStateError:
-            continue
         requests = sorted(
             application.sap_customer_profile_requests.all(),
             key=lambda row: (row.created_at, row.pk),
@@ -185,7 +182,7 @@ def staff_workspace_rows(*, actor):
                     "member_id": str(application.member_id),
                     "display_name": application.member.display_name,
                 },
-                "sanctioned_amount": f"{decision.sanctioned_amount:.2f}",
+                "sanctioned_amount": f"{application._terminal_sanctioned_amount:.2f}",
                 "request_id": str(profile_request.pk) if profile_request else None,
                 "request_status": (
                     profile_request.request_status if profile_request else "not_started"
@@ -196,26 +193,80 @@ def staff_workspace_rows(*, actor):
     return rows
 
 
-def assigned_workspace_rows(*, actor):
-    """Project only current S37 requests assigned to the governed Finance actor."""
+def _require_staff_workspace_authority(actor):
     roles = set(auth_service.effective_role_codes(actor))
     permissions = set(auth_service.effective_permission_codes(actor))
     if (
         not actor.can_authenticate()
-        or "senior_manager_finance" not in roles
-        or "finance.sap_request.complete" not in permissions
+        or "credit_manager" not in roles
+        or "finance.sap_request.create" not in permissions
     ):
         raise DomainPermissionDenied(
-            "Active Senior Manager Finance SAP completion authority is required."
+            "Active Credit Manager SAP request authority is required."
         )
-    requests = (
-        SapCustomerProfileRequest.objects.select_related(
-            "loan_application", "member", "sap_customer_code", "assigned_to_user__primary_role",
-            "requested_by_user__primary_role", "excel_file", "sent_communication", "sent_task",
-        )
-        .filter(assigned_to_user=actor)
-        .order_by("-created_at", "-sap_customer_profile_request_id")
+
+
+def _staff_workspace_applications(*, actor):
+    latest_case = ApprovalCase.objects.filter(
+        loan_application_id=OuterRef("pk")
+    ).order_by("-cycle_number", "-submitted_at", "-approval_case_id")
+    current_sanction = SanctionDecision.objects.filter(
+        loan_application_id=OuterRef("pk"),
+        approval_case_id=OuterRef("_latest_case_id"),
+        decision="sanctioned",
+        sanctioned_amount__gt=0,
+        recorded_at__isnull=False,
+    ).order_by("sanction_decision_id")
+    request_counts = (
+        SapCustomerProfileRequest.objects.filter(loan_application_id=OuterRef("pk"))
+        .order_by()
+        .values("loan_application_id")
+        .annotate(total=Count("pk"))
+        .values("total")
     )
+    return (
+        LoanApplication.objects.annotate(
+            _latest_case_id=Subquery(latest_case.values("approval_case_id")[:1]),
+            _latest_case_status=Subquery(latest_case.values("current_status")[:1]),
+            _has_current_sanction=Exists(current_sanction),
+            _terminal_sanctioned_amount=Subquery(
+                current_sanction.values("sanctioned_amount")[:1]
+            ),
+            _sap_request_count=Subquery(request_counts[:1]),
+        )
+        .filter(
+            application_status=LoanApplication.STATUS_APPROVED_BY_SANCTION,
+            _latest_case_status=ApprovalCase.STATUS_APPROVED,
+            _has_current_sanction=True,
+        )
+        .filter(
+            Q(current_stage=LoanApplication.STAGE_CREDIT_ASSESSMENT)
+            | Q(created_by_user_id=actor.pk)
+            | Q(received_by_user_id=actor.pk)
+        )
+        .filter(Q(_sap_request_count__isnull=True) | Q(_sap_request_count=1))
+        .order_by("-updated_at", "loan_application_id")
+    )
+
+
+def assigned_workspace_row_count(*, actor, without_loan_account=False):
+    """Count the database-bounded S37 candidate identities for combined pagination."""
+    return _assigned_workspace_requests(
+        actor=actor, without_loan_account=without_loan_account
+    ).count()
+
+
+def assigned_workspace_rows(
+    *, actor, without_loan_account=False, offset=0, limit=None
+):
+    """Project only current S37 requests assigned to the governed Finance actor."""
+    requests = _assigned_workspace_requests(
+        actor=actor, without_loan_account=without_loan_account
+    )
+    if limit is not None:
+        requests = requests[offset : offset + limit]
+    elif offset:
+        requests = requests[offset:]
     rows = []
     for profile_request in requests:
         if (
@@ -269,6 +320,70 @@ def assigned_workspace_rows(*, actor):
             }
         )
     return rows
+
+
+def _assigned_workspace_requests(*, actor, without_loan_account):
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        not actor.can_authenticate()
+        or "senior_manager_finance" not in roles
+        or "finance.sap_request.complete" not in permissions
+    ):
+        raise DomainPermissionDenied(
+            "Active Senior Manager Finance SAP completion authority is required."
+        )
+    send_audits = (
+        AuditLog.objects.filter(
+            entity_type="sap_customer_profile_request",
+            entity_id=OuterRef("pk"),
+            action="finance.sap_customer_code.sent",
+        )
+        .order_by()
+        .values("entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    send_workflows = (
+        WorkflowEvent.objects.filter(
+            workflow_name="SAPCustomerCodeSent",
+            entity_type="sap_customer_profile_request",
+            entity_id=OuterRef("pk"),
+            from_state=SapCustomerProfileRequest.STATUS_DRAFT,
+            to_state=SapCustomerProfileRequest.STATUS_SENT,
+            trigger_reason="finance.sap_customer_code.sent",
+        )
+        .order_by()
+        .values("entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    requests = (
+        SapCustomerProfileRequest.objects.select_related(
+            "loan_application", "member", "sap_customer_code", "assigned_to_user__primary_role",
+            "requested_by_user__primary_role", "excel_file", "sent_communication", "sent_task",
+        )
+        .annotate(
+            _send_audit_count=Subquery(send_audits[:1]),
+            _send_workflow_count=Subquery(send_workflows[:1]),
+        )
+        .filter(
+            assigned_to_user=actor,
+            request_status=SapCustomerProfileRequest.STATUS_SENT,
+            sent_at__isnull=False,
+            sent_communication_id__isnull=False,
+            sent_task_id__isnull=False,
+            delivery_reference__isnull=False,
+            delivery_file_id_snapshot=F("excel_file_id"),
+            delivery_assignee_id_snapshot=F("assigned_to_user_id"),
+            _send_audit_count=1,
+            _send_workflow_count=1,
+        )
+        .order_by("-created_at", "-sap_customer_profile_request_id")
+    )
+    if without_loan_account:
+        requests = requests.filter(loan_application__loan_account__isnull=True)
+    return requests
 
 
 def _workspace_field(name, label, field_type, *, required=True):
@@ -355,42 +470,69 @@ def get_customer_code_for_member(member_id, *, for_update=False):
 
 
 def get_account_customer_code(*, application_id, member_id, customer_code_id):
-    """Bind account reads to the canonical immutable SAP completion decision."""
-    requests = list(
-        SapCustomerProfileRequest.objects.select_related(
-            "assigned_to_user__primary_role",
-            "requested_by_user__primary_role",
-            "excel_file",
-            "sent_communication",
-            "sent_task",
-            "sap_customer_code",
-        )
-        .filter(
-            loan_application_id=application_id,
-            member_id=member_id,
-            request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
-            sap_customer_code_id=customer_code_id,
-        )
-        .order_by("created_at", "sap_customer_profile_request_id")[:2]
+    """Validate an account edge against the one current member completion decision."""
+    decision = get_customer_code_for_member(member_id)
+    return (
+        decision
+        if decision is not None
+        and decision.customer_code_id == customer_code_id
+        and decision.member_id == member_id
+        and decision.loan_application_id == application_id
+        else None
     )
-    if len(requests) != 1:
-        return None
-    request = requests[0]
-    code = request.sap_customer_code
-    if (
-        code.status != SapCustomerCode.STATUS_ACTIVE
-        or code.member_id != member_id
-        or not _current_completed_code_evidence(request, code)
-    ):
-        return None
-    return SapCustomerCodeDecision(
-        customer_code_id=code.pk,
-        member_id=code.member_id,
-        profile_request_id=request.pk,
-        loan_application_id=request.loan_application_id,
-        status=code.status,
-        completed_at=request.completed_at,
-        customer_code_masked=f"******{code.sap_customer_code[-4:]}",
+
+
+def filter_current_account_completions(queryset):
+    """Apply the one current member-completion decision to account identity queries."""
+    latest = SapCustomerProfileRequest.objects.filter(
+        member_id=OuterRef("member_id")
+    ).order_by("-created_at", "-sap_customer_profile_request_id")
+    queryset = queryset.annotate(
+        _latest_sap_request_id=Subquery(
+            latest.values("sap_customer_profile_request_id")[:1]
+        ),
+        _latest_sap_status=Subquery(latest.values("request_status")[:1]),
+        _latest_sap_application_id=Subquery(latest.values("loan_application_id")[:1]),
+        _latest_sap_code_id=Subquery(latest.values("sap_customer_code_id")[:1]),
+        _latest_sap_assignee_id=Subquery(latest.values("assigned_to_user_id")[:1]),
+    )
+    completion_audits = (
+        AuditLog.objects.filter(
+            entity_type="sap_customer_profile_request",
+            entity_id=OuterRef("_latest_sap_request_id"),
+            action__in=("sap.customer_code_created", "sap.customer_code_reused"),
+        )
+        .order_by()
+        .values("entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    completion_workflows = (
+        WorkflowEvent.objects.filter(
+            entity_type="sap_customer_profile_request",
+            entity_id=OuterRef("_latest_sap_request_id"),
+            workflow_name="SAPCustomerCodeCompleted",
+        )
+        .order_by()
+        .values("entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    queryset = queryset.annotate(
+        _completion_audit_count=Subquery(completion_audits[:1]),
+        _completion_workflow_count=Subquery(completion_workflows[:1]),
+    )
+    return queryset.filter(
+        Q(sap_customer_code_id__isnull=True)
+        | Q(
+            sap_customer_code__status=SapCustomerCode.STATUS_ACTIVE,
+            sap_customer_code__member_id=F("member_id"),
+            _latest_sap_status=SapCustomerProfileRequest.STATUS_COMPLETED,
+            _latest_sap_application_id=F("loan_application_id"),
+            _latest_sap_code_id=F("sap_customer_code_id"),
+            _completion_audit_count=1,
+            _completion_workflow_count=1,
+        )
     )
 
 
@@ -931,6 +1073,7 @@ class SapCustomerProfileModule:
     send_request = staticmethod(send_request)
     complete = staticmethod(complete_request)
     get_customer_code_for_member = staticmethod(get_customer_code_for_member)
+    filter_current_account_completions = staticmethod(filter_current_account_completions)
     is_current_finance_assignee = staticmethod(is_current_finance_assignee)
     issue_delivery_capability = staticmethod(issue_delivery_capability)
     read_delivered_annexure = staticmethod(read_delivered_annexure)
@@ -940,8 +1083,11 @@ __all__ = [
     "SapCustomerProfileModule",
     "SapCustomerCodeDecision",
     "SapRequestConflict",
+    "assigned_workspace_row_count",
+    "assigned_workspace_rows",
     "complete_request",
     "create_request",
+    "filter_current_account_completions",
     "issue_delivery_capability",
     "is_current_finance_assignee",
     "get_customer_code_for_member",
@@ -949,4 +1095,6 @@ __all__ = [
     "record_delivery_denial",
     "read_member_code",
     "send_request",
+    "staff_workspace_row_count",
+    "staff_workspace_rows",
 ]

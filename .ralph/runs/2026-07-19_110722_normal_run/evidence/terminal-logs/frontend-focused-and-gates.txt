@@ -1,0 +1,13 @@
+Commands:
+- npm test -- --run src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx
+- npm run typecheck
+- npm run lint
+- npm run build
+
+Result: PASSED.
+
+- Vitest: 1 file, 6 tests passed.
+- TypeScript: `tsc --noEmit` passed.
+- ESLint: `eslint src` passed.
+- Vite: 1,882 modules transformed; final production build completed in 2.13s.
+- The retained Vite CJS deprecation and large-chunk warnings are pre-existing non-failing output.

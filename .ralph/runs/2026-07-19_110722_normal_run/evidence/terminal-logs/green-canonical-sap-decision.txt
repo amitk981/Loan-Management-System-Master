@@ -1,0 +1,8 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_loan_account_reads_api.ActiveLoanAccountReadApiTests.test_member_and_account_sap_reads_reject_newer_cross_application_drift_identically --verbosity 1
+
+Result: PASSED (1 test).
+
+The account-specific facade now validates its exact application/customer-code edge against the
+single current member completion decision, so both consumers fail closed on newer incoherent SAP
+evidence.

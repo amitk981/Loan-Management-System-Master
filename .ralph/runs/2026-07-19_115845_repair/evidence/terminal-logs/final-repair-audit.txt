@@ -1,0 +1,15 @@
+Commands checked:
+
+- `git diff --check`
+- modified/untracked paths against Ralph's protected-path allowlist
+- exact repair review-packet and final-summary result declarations
+- unreplaced repair-template markers
+
+Observed output:
+
+  final-summary.md: Result: Ready for independent validation
+  review-packet.md: ## Result
+  review-packet.md: Ready for independent validation
+  PASS: diff check, protected-path audit, exact result, and template-removal checks passed.
+
+Exit code: 0

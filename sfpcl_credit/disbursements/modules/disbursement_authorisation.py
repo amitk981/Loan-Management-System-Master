@@ -280,6 +280,18 @@ def has_current_authorisation_authority(actor):
     )
 
 
+def can_authorise_disbursement(*, actor, row):
+    """Return the mutation owner's current row-level checker decision."""
+    if (
+        not has_current_authorisation_authority(actor)
+        or row.authorisation_status != Disbursement.AUTHORISATION_PENDING
+        or row.initiated_by_user_id == actor.pk
+    ):
+        return False
+    current = resolve_current_disbursement_evidence(disbursement_id=row.pk)
+    return bool(current and current.disbursement_id == row.pk)
+
+
 def is_current_terminal_authorisation(row, cleaned, *, require_pending_transfer=True):
     initiation = row.initiation_audit.new_value_json or {}
     initiation_request_id = initiation.get("request_id")
@@ -387,6 +399,8 @@ def _sha256(value):
 
 
 __all__ = [
+    "can_authorise_disbursement",
     "DisbursementAuthorisationConflict",
+    "has_current_authorisation_authority",
     "is_current_terminal_authorisation",
 ]

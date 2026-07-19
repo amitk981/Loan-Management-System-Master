@@ -1,0 +1,8 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_second_page_is_truthful_and_query_bounded_at_twenty_one_rows --verbosity 1
+
+Result: FAILED as expected (1 test, 1 failure).
+
+The mixed eligible/denied portfolio returned the correct row and total, but the request executed
+90 queries against a ceiling of 35. This proves the existing implementation deep-projected all 21
+eligible rows before selecting the one-row second page.

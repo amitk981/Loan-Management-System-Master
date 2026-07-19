@@ -1,0 +1,42 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_110722_normal_run/sfpcl-lms
+
+ ✓ src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx (6 tests) 279ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  12:17:25
+   Duration  1.65s (transform 333ms, setup 0ms, collect 553ms, tests 279ms, environment 406ms, prepare 97ms)
+
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+vite v5.4.21 building for production...
+transforming...
+✓ 1882 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-CQWrqu3T.css     50.82 kB │ gzip:   8.79 kB
+dist/assets/index-ChIcNoRf.js   1,084.50 kB │ gzip: 237.73 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.24s

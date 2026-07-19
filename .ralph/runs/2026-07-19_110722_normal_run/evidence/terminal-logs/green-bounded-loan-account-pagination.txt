@@ -1,0 +1,14 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_second_page_is_truthful_and_query_bounded_at_twenty_one_rows sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_sanctioned_list_and_detail_are_exact_paginated_zero_write_projections sfpcl_credit.tests.test_loan_account_reads_api.ActiveLoanAccountReadApiTests.test_exact_transfer_projects_active_funded_amounts_and_activation_time --verbosity 1
+
+Result: PASSED (3 tests).
+
+The 21-row mixed portfolio now returns the one reachable row on page two, excludes the incoherent
+identity from the total, and stays within the fixed 35-query ceiling. Sanctioned detail/list and
+active transfer projections remain green.
+
+Additional boundary command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_second_page_is_truthful_and_query_bounded_at_twenty_one_rows sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_last_page_is_truthful_and_query_bounded_at_one_hundred_one_rows sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_query_validation_and_missing_detail_are_strict_and_nondisclosing --verbosity 1
+
+Result: PASSED (3 tests). The 101-row mixed portfolio retained the same 35-query ceiling and a
+truthful one-row final page; out-of-range and malformed pagination remained strict.

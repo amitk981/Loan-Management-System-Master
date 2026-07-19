@@ -10,15 +10,24 @@ from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
     resolve_current_disbursement_evidence,
 )
 from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
+    filter_accounts_with_current_transfer,
     resolve_post_transfer_evidence,
 )
+from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
     account_is_scoped,
     resolve_creation_truth,
     scoped_account_candidates,
 )
-from sfpcl_credit.sap_workflow.modules.sap_customer_profile import get_account_customer_code
+from sfpcl_credit.loans.modules.loan_account_lifecycle import (
+    filter_created_accounts,
+    resolve_loan_account_creations,
+)
+from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
+    SapCustomerProfileModule,
+    get_account_customer_code,
+)
 
 
 class LoanAccountProjectionNotFound(Exception):
@@ -30,34 +39,81 @@ class LoanAccountProjectionValidation(Exception):
         self.field_errors = field_errors
 
 
+# Exact selectors own totals. This small overscan only reconciles evidence that
+# can change between the count and projection queries (or immutable-file checks
+# that cannot be expressed by the database selector).
+RECONCILIATION_WINDOW = 4
+
+
+def eligible_account_candidates(*, actor, filters):
+    """Compose the canonical database-pageable Epic 009 read identity set."""
+    queryset = scoped_account_candidates(actor=actor)
+    search = filters["search"]
+    if search:
+        queryset = queryset.filter(
+            Q(loan_account_number__icontains=search)
+            | Q(loan_application__application_reference_number__icontains=search)
+            | Q(member__legal_name__icontains=search)
+            | Q(member__folio_number__icontains=search)
+        )
+    if filters["status"]:
+        queryset = queryset.filter(loan_account_status=filters["status"])
+    if filters["member_id"]:
+        queryset = queryset.filter(member_id=filters["member_id"])
+
+    queryset = filter_created_accounts(queryset)
+    sanctioned = Q(
+        loan_account_status="sanctioned",
+        disbursed_amount=0,
+        principal_outstanding=0,
+        interest_outstanding=0,
+        charges_outstanding=0,
+        total_outstanding=0,
+        tenure_start_date__isnull=True,
+        tenure_end_date__isnull=True,
+    )
+    active = Q(
+        loan_account_status="active",
+        disbursed_amount__gt=0,
+        principal_outstanding=F("disbursed_amount"),
+        total_outstanding=F("disbursed_amount"),
+        interest_outstanding=0,
+        charges_outstanding=0,
+        tenure_start_date__isnull=False,
+    )
+    queryset = filter_accounts_with_current_transfer(
+        queryset.filter(sanctioned | active)
+    )
+    queryset = SapCustomerProfileModule.filter_current_account_completions(queryset)
+    roles = set(auth_service.effective_role_codes(actor))
+    if roles == {"senior_manager_finance"}:
+        queryset = queryset.filter(_latest_sap_assignee_id=actor.pk)
+    elif roles == {"chief_financial_controller"}:
+        queryset = queryset.filter(
+            disbursements__cfc_task__recipient_role_code="chief_financial_controller",
+            disbursements__authorisation_status__in=(
+                "pending",
+                "approved",
+                "rejected",
+            ),
+        )
+    return queryset.distinct()
+
+
 @transaction.atomic
 def list_accounts(*, actor, query_params):
     page, page_size, filters = _query(query_params)
-    candidates = _apply_filters(
-        scoped_account_candidates(actor=actor).select_related(
-            "loan_application",
-            "member",
-            "sanction_decision",
-            "terms",
-            "sap_customer_code",
-        ),
-        filters,
-    )
-    candidates = _database_coherent_candidates(candidates)
-    projections = [
-        projection
-        for account in candidates
-        if account_is_scoped(
-            actor=actor, account=account, cfc_scope_resolver=_has_cfc_scope
-        )
-        and (projection := _project(account)) is not None
-    ]
-    total_count = len(projections)
+    total_count = eligible_account_candidates(actor=actor, filters=filters).count()
     total_pages = ceil(total_count / page_size) if total_count else 1
     if page > total_pages:
         raise LoanAccountProjectionValidation({"page": "Page is out of range."})
-    start = (page - 1) * page_size
-    return projections[start : start + page_size], {
+    projections = list_account_window(
+        actor=actor,
+        filters=filters,
+        offset=(page - 1) * page_size,
+        limit=page_size,
+    )
+    return projections, {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
@@ -65,6 +121,30 @@ def list_accounts(*, actor, query_params):
         "has_next": page < total_pages,
         "has_previous": page > 1,
     }
+
+
+def list_account_window(*, actor, filters, offset, limit):
+    """Project one bounded canonical identity window for collection composition."""
+    candidates = eligible_account_candidates(actor=actor, filters=filters).select_related(
+        "loan_application",
+        "member",
+        "sanction_decision",
+        "terms",
+        "sap_customer_code",
+    )
+    accounts = list(candidates[offset : offset + limit + RECONCILIATION_WINDOW])
+    creation_decisions = resolve_loan_account_creations(accounts)
+    projections = [
+        projection
+        for account in accounts
+        if (
+            projection := _project(
+                account, creation_decision=creation_decisions.get(account.pk, False)
+            )
+        )
+        is not None
+    ]
+    return projections[:limit]
 
 
 @transaction.atomic
@@ -94,14 +174,17 @@ def get_account(*, actor, loan_account_id):
     return projection
 
 
-def _project(account):
-    if resolve_creation_truth(account=account) is None:
+def _project(account, *, creation_decision=None):
+    if creation_decision is False or (
+        creation_decision is None and resolve_creation_truth(account=account) is None
+    ):
         return None
     sap_decision = None
     if account.sap_customer_code_id:
         sap_decision = _sap_is_current_for_account(account)
         if sap_decision is None:
             return None
+        sap_masked = sap_decision.customer_code_masked
     activated_at = None
     if account.loan_account_status == "sanctioned":
         if any(
@@ -150,7 +233,7 @@ def _project(account):
             "display_name": account.member.display_name,
         },
         "sap_customer_code": (
-            sap_decision.customer_code_masked if sap_decision else None
+            sap_masked if account.sap_customer_code_id else None
         ),
         "loan_type": account.loan_type,
         "facility_type": account.terms.facility_type,
@@ -251,61 +334,6 @@ def _query(query_params):
     )
 
 
-def _apply_filters(queryset, filters):
-    search = filters["search"]
-    if search:
-        queryset = queryset.filter(
-            Q(loan_account_number__icontains=search)
-            | Q(loan_application__application_reference_number__icontains=search)
-            | Q(member__legal_name__icontains=search)
-            | Q(member__folio_number__icontains=search)
-        )
-    if filters["status"]:
-        queryset = queryset.filter(loan_account_status=filters["status"])
-    if filters["member_id"]:
-        queryset = queryset.filter(member_id=filters["member_id"])
-    return queryset
-
-
-def _database_coherent_candidates(queryset):
-    """Exclude relational/state drift before count and database pagination."""
-    queryset = queryset.filter(
-        loan_application__member_id=F("member_id"),
-        sanction_decision__loan_application_id=F("loan_application_id"),
-        terms__loan_amount=F("sanctioned_amount"),
-        terms__facility_type=F("loan_type"),
-        terms__interest_rate_type=F("interest_rate_type"),
-        terms__rate_of_interest=F("current_interest_rate"),
-        terms__repayment_date=F("repayment_date"),
-    )
-    sanctioned = Q(
-        loan_account_status="sanctioned",
-        disbursed_amount=0,
-        principal_outstanding=0,
-        interest_outstanding=0,
-        charges_outstanding=0,
-        total_outstanding=0,
-        tenure_start_date__isnull=True,
-        tenure_end_date__isnull=True,
-    )
-    active = Q(
-        loan_account_status="active",
-        disbursed_amount__gt=0,
-        principal_outstanding=F("disbursed_amount"),
-        total_outstanding=F("disbursed_amount"),
-        interest_outstanding=0,
-        charges_outstanding=0,
-        tenure_start_date__isnull=False,
-        disbursements__bank_transfer_status="successful",
-        disbursements__disbursement_amount=F("disbursed_amount"),
-        disbursements__loan_application_id=F("loan_application_id"),
-        disbursements__member_id=F("member_id"),
-        disbursements__register_update__isnull=False,
-        disbursements__initial_payment_sap_posting__posting_status="pending",
-    )
-    return queryset.filter(sanctioned | active).distinct()
-
-
 def _positive_int(name, raw, default, maximum=None):
     if raw in (None, ""):
         return default
@@ -340,5 +368,6 @@ __all__ = [
     "LoanAccountProjectionValidation",
     "LoanAccountReadPermissionDenied",
     "get_account",
+    "list_account_window",
     "list_accounts",
 ]

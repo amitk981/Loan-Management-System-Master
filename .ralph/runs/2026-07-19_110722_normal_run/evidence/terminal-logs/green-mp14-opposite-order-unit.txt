@@ -1,0 +1,7 @@
+Command:
+npm test -- --run src/pages/borrower/portal/disbursement/MP14_DisbursementStatus.test.tsx
+
+Result: PASSED (1 file, 6 tests).
+
+The added parameterized unit matrix renders both surrounding application orders and proves MP14
+requests the explicit parent-selected application id after each order change.

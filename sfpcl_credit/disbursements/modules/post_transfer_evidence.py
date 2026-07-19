@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
 
+from django.db.models import Exists, OuterRef, Q, Subquery
+
 from sfpcl_credit.disbursements.models import Disbursement
 from sfpcl_credit.disbursements.modules.disbursement_transfer_success import (
     completed_success_is_coherent,
@@ -44,6 +46,39 @@ class PostTransferEvidence:
                 self.transfer_workflow_event_id
             ),
         }
+
+
+def filter_accounts_with_current_transfer(queryset):
+    """Apply the transfer owner's queryable activation identity contract.
+
+    Sanctioned accounts require no transfer. Active accounts must have exactly one
+    successful transfer edge with the required register and pending SAP-posting
+    records. The bounded projection reconciles the selected window through
+    ``resolve_post_transfer_evidence`` to cover non-queryable upload provenance.
+    """
+    current = Disbursement.objects.filter(
+        loan_account_id=OuterRef("pk"),
+        loan_application_id=OuterRef("loan_application_id"),
+        member_id=OuterRef("member_id"),
+        disbursement_amount=OuterRef("disbursed_amount"),
+        bank_transfer_status="successful",
+        authorisation_status="approved",
+        disbursed_at__isnull=False,
+        register_update__isnull=False,
+        loan_register_update__isnull=False,
+        advice_intent__isnull=False,
+        initial_payment_sap_posting__posting_status="pending",
+        initial_payment_sap_posting__sap_posting_reference__isnull=True,
+        initial_payment_sap_posting__posted_at__isnull=True,
+        transfer_success_action_id__isnull=False,
+        transfer_success_audit__isnull=False,
+        transfer_success_workflow_event__isnull=False,
+        transfer_success_loan_status_history__isnull=False,
+    ).order_by("-disbursed_at", "-disbursement_id")
+    return queryset.annotate(
+        _selector_activated_at=Subquery(current.values("disbursed_at")[:1]),
+        _has_current_transfer=Exists(current),
+    ).filter(Q(loan_account_status="sanctioned") | Q(_has_current_transfer=True))
 
 
 def resolve_post_transfer_evidence(*, application_id, for_update=False):

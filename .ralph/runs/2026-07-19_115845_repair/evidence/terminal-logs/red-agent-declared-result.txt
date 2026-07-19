@@ -1,0 +1,12 @@
+Feedback command:
+  result_line=$(awk '/^## Result/{getline; print; exit}' \
+    .ralph/runs/2026-07-19_110722_normal_run/review-packet.md)
+  printf '%s\n' "Observed Result: $result_line"
+  test "$result_line" = "Ready for independent validation"
+
+Observed output:
+  Observed Result: Blocked after repeated independent review failure
+
+Exit code: 1
+
+The command directly reproduces the exact cheap-validation symptom recorded in failure-summary.md.

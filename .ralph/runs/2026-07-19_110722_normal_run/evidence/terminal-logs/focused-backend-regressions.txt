@@ -1,0 +1,24 @@
+Command: mandated Ralph Python interpreter with 33 focused tests covering the complete
+`test_loan_account_reads_api` and `test_disbursement_workspace_api` modules plus SAP
+send/complete/read, SAP drift/readiness, initiation 400/403/state matrices, CFC maker-checker,
+transfer facade/replay/validation, and portal current-SAP reverse consumption.
+
+Result: PASSED (33 tests in 8.770s).
+
+Output summary:
+Found 33 test(s).
+System check identified no issues (0 silenced).
+.................................
+Ran 33 tests in 8.770s
+OK
+
+Final expanded owner-boundary command covered the complete Loan Account read, workspace, SAP
+request, transfer-success, and disbursement-advice modules.
+
+Final result: PASSED (110 tests in 46.580s; 7 skipped).
+
+Output summary:
+Found 110 test(s).
+System check identified no issues (0 silenced).
+Ran 110 tests in 46.580s
+OK (skipped=7)

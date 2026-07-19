@@ -52,6 +52,20 @@ class DisbursementAdviceDeliveryFailed(DisbursementAdviceConflict):
         self.failure_code = failure_code
 
 
+def can_send_disbursement_advice(*, actor, row):
+    """Return the mutation owner's current row-level advice authority."""
+    try:
+        operator = _locked_operator(actor)
+        _require_operator_scope(operator, row)
+        _canonical_email(row.member.email)
+    except (DomainPermissionDenied, DomainObjectAccessDenied, DisbursementAdviceConflict):
+        return False
+    return bool(
+        row.disbursement_advice_communication_id is None
+        and completed_success_is_coherent(row)
+    )
+
+
 @dataclass(frozen=True)
 class _AdviceContext:
     operator: User

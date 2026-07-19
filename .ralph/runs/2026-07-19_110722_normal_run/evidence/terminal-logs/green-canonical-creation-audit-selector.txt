@@ -1,0 +1,4 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_changed_creation_audit_body_is_excluded_from_count_and_page --verbosity 1
+Result: PASS
+Ran 1 test in 0.052s - OK
+
