@@ -13,6 +13,7 @@ from sfpcl_credit.disbursements.modules.disbursement_authorisation import (
     has_current_authorisation_authority,
 )
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
+    filter_current_pending_disbursements,
     resolve_current_disbursement_evidence,
 )
 from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
@@ -169,7 +170,7 @@ def list_workspace(*, actor, query_params):
             "has_previous": page > 1,
         }
     else:
-        candidates = (
+        candidates = filter_current_pending_disbursements(
             Disbursement.objects.select_related(
                 "loan_account__sap_customer_code",
                 "loan_application",
@@ -181,8 +182,7 @@ def list_workspace(*, actor, query_params):
             )
             .filter(cfc_task__recipient_role_code="chief_financial_controller")
             .filter(authorisation_status="pending")
-            .order_by("-initiated_at", "-disbursement_id")
-        )
+        ).order_by("-initiated_at", "-disbursement_id")
         total_count = candidates.count()
         total_pages = ceil(total_count / page_size) if total_count else 1
         if page > total_pages:
@@ -190,9 +190,9 @@ def list_workspace(*, actor, query_params):
         start = (page - 1) * page_size
         projections = [
             _project_disbursement(actor=actor, row=row, permissions=permissions)
-            for row in candidates[start : start + page_size + 4]
+            for row in candidates[start : start + page_size]
             if _disbursement_is_current(row)
-        ][:page_size]
+        ]
         return projections, {
             "page": page,
             "page_size": page_size,

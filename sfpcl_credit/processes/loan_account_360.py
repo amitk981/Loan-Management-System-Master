@@ -39,12 +39,6 @@ class LoanAccountProjectionValidation(Exception):
         self.field_errors = field_errors
 
 
-# Exact selectors own totals. This small overscan only reconciles evidence that
-# can change between the count and projection queries (or immutable-file checks
-# that cannot be expressed by the database selector).
-RECONCILIATION_WINDOW = 4
-
-
 def eligible_account_candidates(*, actor, filters):
     """Compose the canonical database-pageable Epic 009 read identity set."""
     queryset = scoped_account_candidates(actor=actor)
@@ -132,7 +126,7 @@ def list_account_window(*, actor, filters, offset, limit):
         "terms",
         "sap_customer_code",
     )
-    accounts = list(candidates[offset : offset + limit + RECONCILIATION_WINDOW])
+    accounts = list(candidates[offset : offset + limit])
     creation_decisions = resolve_loan_account_creations(accounts)
     projections = [
         projection
@@ -144,7 +138,7 @@ def list_account_window(*, actor, filters, offset, limit):
         )
         is not None
     ]
-    return projections[:limit]
+    return projections
 
 
 @transaction.atomic

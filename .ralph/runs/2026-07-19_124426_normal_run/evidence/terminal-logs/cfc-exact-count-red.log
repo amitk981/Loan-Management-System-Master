@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_stale_initiation_affects_neither_total_nor_page (sfpcl_credit.tests.test_disbursement_workspace_api.DisbursementWorkspaceApiTests.test_stale_initiation_affects_neither_total_nor_page)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_disbursement_workspace_api.py", line 144, in test_stale_initiation_affects_neither_total_nor_page
+    self.assertEqual(response.json()["pagination"]["total_count"], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.674s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

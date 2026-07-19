@@ -1,0 +1,66 @@
+Creating test database for alias 'default'...
+Found 44 test(s).
+System check identified no issues (0 silenced).
+......EEE.....................F.............
+======================================================================
+ERROR: test_mixed_full_first_page_query_count_is_independent_of_page_rows (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_full_first_page_query_count_is_independent_of_page_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 118, in test_mixed_full_first_page_query_count_is_independent_of_page_rows
+    created_ids = [self._clone_created_account(index) for index in range(20)]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 118, in <listcomp>
+    created_ids = [self._clone_created_account(index) for index in range(20)]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 368, in _clone_created_account
+    terms.save(force_insert=True)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/loans/models.py", line 173, in save
+    raise ValidationError({"loan_terms": "Loan terms are immutable."})
+django.core.exceptions.ValidationError: {'loan_terms': ['Loan terms are immutable.']}
+
+======================================================================
+ERROR: test_mixed_last_page_is_truthful_and_query_bounded_at_one_hundred_one_rows (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_last_page_is_truthful_and_query_bounded_at_one_hundred_one_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 134, in test_mixed_last_page_is_truthful_and_query_bounded_at_one_hundred_one_rows
+    self._assert_mixed_page_is_bounded(eligible_count=101, page=6)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 139, in _assert_mixed_page_is_bounded
+    created_ids.append(self._clone_created_account(index))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 368, in _clone_created_account
+    terms.save(force_insert=True)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/loans/models.py", line 173, in save
+    raise ValidationError({"loan_terms": "Loan terms are immutable."})
+django.core.exceptions.ValidationError: {'loan_terms': ['Loan terms are immutable.']}
+
+======================================================================
+ERROR: test_mixed_second_page_is_truthful_and_query_bounded_at_twenty_one_rows (sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_second_page_is_truthful_and_query_bounded_at_twenty_one_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 115, in test_mixed_second_page_is_truthful_and_query_bounded_at_twenty_one_rows
+    self._assert_mixed_page_is_bounded(eligible_count=21, page=2)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 139, in _assert_mixed_page_is_bounded
+    created_ids.append(self._clone_created_account(index))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_loan_account_reads_api.py", line 368, in _clone_created_account
+    terms.save(force_insert=True)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/loans/models.py", line 173, in save
+    raise ValidationError({"loan_terms": "Loan terms are immutable."})
+django.core.exceptions.ValidationError: {'loan_terms': ['Loan terms are immutable.']}
+
+======================================================================
+FAIL: test_current_sap_completion_without_initiation_stops_at_payment_pending (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalDisbursementStageApiTests.test_current_sap_completion_without_initiation_stops_at_payment_pending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 557, in test_current_sap_completion_without_initiation_stops_at_payment_pending
+    self.assertEqual(timeline["sap_setup"]["status"], "complete")
+AssertionError: 'pending' != 'complete'
+- pending
++ complete
+
+
+----------------------------------------------------------------------
+Ran 44 tests in 16.858s
+
+FAILED (failures=1, errors=3)
+Destroying test database for alias 'default'...

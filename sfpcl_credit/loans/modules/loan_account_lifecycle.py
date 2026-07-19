@@ -122,6 +122,7 @@ def filter_created_accounts(queryset):
         new_value_json__loan_account_status=LoanAccount.STATUS_SANCTIONED,
         new_value_json__replay=False,
         new_value_json__outcome="created",
+        new_value_json__actor_role_codes__0__isnull=False,
     )
     workflows = WorkflowEvent.objects.filter(
         workflow_name="LoanAccountCreated",
@@ -364,75 +365,12 @@ def _resolve_created_account(*, loan_account_id, require_unfunded_sanctioned):
         )
         .order_by("created_at", "workflow_event_id")[:2]
     )
-    if len(histories) != 1 or len(audits) != 1 or len(workflows) != 1:
-        return None
-    history, audit, workflow = histories[0], audits[0], workflows[0]
-    evidence = audit.new_value_json or {}
-    expected = {
-        "loan_account_id": str(account.pk),
-        "loan_application_id": str(account.loan_application_id),
-        "member_id": str(account.member_id),
-        "sanction_decision_id": str(account.sanction_decision_id),
-        "sap_customer_code_id": (
-            str(account.sap_customer_code_id) if account.sap_customer_code_id else None
-        ),
-        "loan_terms_id": str(account.terms.pk),
-        "loan_account_status": LoanAccount.STATUS_SANCTIONED,
-        "replay": False,
-        "outcome": "created",
-    }
-    if (
-        (
-            require_unfunded_sanctioned
-            and account.loan_account_status != LoanAccount.STATUS_SANCTIONED
-        )
-        or account.loan_application.member_id != account.member_id
-        or account.sanction_decision.loan_application_id != account.loan_application_id
-        or account.terms.loan_account_id != account.pk
-        or history.from_status is not None
-        or history.to_status != LoanAccount.STATUS_SANCTIONED
-        or history.reason != "Created from exact current terminal sanction."
-        or history.changed_by_user_id != audit.actor_user_id
-        or history.changed_by_user_id != workflow.triggered_by_user_id
-        or history.loan_application_id_snapshot != account.loan_application_id
-        or history.member_id_snapshot != account.member_id
-        or history.sanction_decision_id_snapshot != account.sanction_decision_id
-        or history.sap_customer_code_id_snapshot != account.sap_customer_code_id
-        or history.loan_terms_id_snapshot != account.terms.pk
-        or history.replay_flag is not False
-        or history.outcome != "created"
-        or audit.old_value_json != {}
-        or set(evidence)
-        != set(expected) | {"actor_role_codes", "actor_team_codes", "request_id"}
-        or any(evidence.get(key) != value for key, value in expected.items())
-        or not isinstance(evidence.get("actor_role_codes"), list)
-        or not evidence.get("actor_role_codes")
-        or not isinstance(evidence.get("actor_team_codes"), list)
-        or evidence.get("request_id") is not None
-        and not isinstance(evidence.get("request_id"), str)
-        or workflow.from_state is not None
-        or workflow.to_state != LoanAccount.STATUS_SANCTIONED
-        or workflow.trigger_reason != "Created from exact current terminal sanction."
-    ):
-        return None
-    return DisbursementAccountDecision(
-        loan_account_id=account.pk,
-        loan_application_id=account.loan_application_id,
-        member_id=account.member_id,
-        sanction_decision_id=account.sanction_decision_id,
-        sap_customer_code_id=account.sap_customer_code_id,
-        loan_terms_id=account.terms.pk,
-        creation_status_history_id=history.pk,
-        creation_audit_id=audit.pk,
-        creation_workflow_event_id=workflow.pk,
-        loan_account_status=account.loan_account_status,
-        sanctioned_amount=account.sanctioned_amount,
-        loan_amount=account.terms.loan_amount,
-        disbursed_amount=account.disbursed_amount,
-        principal_outstanding=account.principal_outstanding,
-        interest_outstanding=account.interest_outstanding,
-        charges_outstanding=account.charges_outstanding,
-        total_outstanding=account.total_outstanding,
+    return _created_account_decision(
+        account,
+        histories,
+        audits,
+        workflows,
+        require_unfunded_sanctioned=require_unfunded_sanctioned,
     )
 
 

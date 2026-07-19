@@ -4340,11 +4340,11 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   comments, request/network/idempotency facts, member identity/contact values, register identities,
   and advice/provider identities are never returned. Both reads are transactionally zero-write and
   create no audit or workflow event.
-- 009L4 makes the collection identity set owner-composed: lifecycle creation, the latest canonical
+- 009L5 makes the collection identity set owner-composed and exact: lifecycle creation, the latest canonical
   SAP member/application/code decision, and post-transfer evidence are filtered before count and
-  database pagination. Projection reconciles only the requested page plus four rows for
-  non-queryable immutable-file or transaction-race drift; query count remains independent of
-  portfolio size.
+  database pagination. Count, offsets, total pages, and projection consume the same requested
+  database identity window; evidence-incoherent rows cannot inflate totals or shift page reachability,
+  and query count remains independent of portfolio size.
 
 ## Staff disbursement workspace (009K)
 
@@ -4377,8 +4377,9 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
 - §31.4 success also returns `initial_payment_sap_posting` with safe `posting_status` and masked/null
   reference. The singular obligation is atomically tied to transfer/register evidence and begins
   `pending`; no confirmation endpoint exists under A-135.
-- 009L4 paginates S36 candidates, assigned S37 deliveries, CFC initiation rows, and the combined
+- 009L5 paginates exact S36 candidates, assigned S37 deliveries, CFC initiation rows, and the combined
   Senior Finance S37/Loan Account sequence at their database identity boundaries. The combined
   order is all current assigned S37 rows followed by eligible Loan Accounts, with offsets applied
-  arithmetically across that seam. Transfer-success and advice descriptors delegate to their
+  arithmetically across that seam. Their exact owner decisions determine count, offsets, total
+  pages, and projected rows without reconciliation overscan. Transfer-success and advice descriptors delegate to their
   mutation owners' current actor/object/evidence predicates instead of role/status inference.

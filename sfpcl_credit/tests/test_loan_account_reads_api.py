@@ -1,4 +1,4 @@
-from copy import copy
+from copy import deepcopy
 from datetime import timedelta
 from uuid import uuid4
 
@@ -9,11 +9,22 @@ from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.loans.models import LoanAccount, LoanStatusHistory
+from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest
 from sfpcl_credit.tests.api_contracts import (
     assert_pagination_shape,
     assert_success_envelope,
 )
 from sfpcl_credit.workflows.models import WorkflowEvent
+
+
+def _copy_for_insert(instance):
+    """Build a fresh model through Django's public model-constructor interface."""
+    values = {
+        field.attname: deepcopy(getattr(instance, field.attname))
+        for field in instance._meta.concrete_fields
+        if not field.primary_key
+    }
+    return type(instance)(**values)
 
 
 class LoanAccountReadApiTests(TestCase):
@@ -128,6 +139,35 @@ class LoanAccountReadApiTests(TestCase):
         self.assertEqual(response.json()["pagination"]["total_count"], 20)
         self.assertEqual(len(response.json()["data"]), 20)
         self.assertLessEqual(len(queries), 35)
+
+    def test_six_consecutive_drifted_rows_do_not_shift_exact_pages(self):
+        created_ids = [self._clone_created_account(index) for index in range(26)]
+        for account_id in created_ids[-6:]:
+            audit = AuditLog.objects.get(
+                action="finance.loan_account.created", entity_id=account_id
+            )
+            audit.new_value_json = {
+                **audit.new_value_json,
+                "actor_role_codes": [],
+            }
+            audit.save(update_fields=["new_value_json"])
+
+        first = self.client.get(
+            "/api/v1/loan-accounts/?page=1&page_size=20", **self.auth
+        )
+        last = self.client.get(
+            "/api/v1/loan-accounts/?page=2&page_size=20", **self.auth
+        )
+
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(last.status_code, 200, last.content)
+        self.assertEqual(first.json()["pagination"]["total_count"], 21)
+        self.assertEqual(first.json()["pagination"]["total_pages"], 2)
+        self.assertEqual(len(first.json()["data"]), 20)
+        self.assertEqual(
+            [row["loan_account_id"] for row in last.json()["data"]],
+            [str(self.account.pk)],
+        )
 
     def test_mixed_last_page_is_truthful_and_query_bounded_at_one_hundred_one_rows(self):
         self._assert_mixed_page_is_bounded(eligible_count=101, page=6)
@@ -258,6 +298,23 @@ class LoanAccountReadApiTests(TestCase):
         self.assertEqual(listing.json()["pagination"]["total_count"], 0)
         self.assertEqual(listing.json()["data"], [])
 
+    def test_nonqueryable_creation_drift_affects_neither_total_nor_page(self):
+        audit = AuditLog.objects.get(
+            action="finance.loan_account.created",
+            entity_id=self.account.pk,
+        )
+        audit.new_value_json = {
+            **audit.new_value_json,
+            "actor_role_codes": [],
+        }
+        audit.save(update_fields=["new_value_json"])
+
+        response = self.client.get("/api/v1/loan-accounts/", **self.auth)
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 0)
+        self.assertEqual(response.json()["data"], [])
+
     def test_source_role_scope_matrix_is_identical_for_list_and_detail(self):
         from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 
@@ -312,9 +369,7 @@ class LoanAccountReadApiTests(TestCase):
         )
 
     def _clone_created_account(self, index):
-        application = copy(self.account.loan_application)
-        application._state = copy(self.account.loan_application._state)
-        application._state.adding = True
+        application = _copy_for_insert(self.account.loan_application)
         application.pk = uuid4()
         application.application_reference_number = f"LO-PAGE-{index:03d}"
         application.created_at = self.account.loan_application.created_at + timedelta(
@@ -324,25 +379,19 @@ class LoanAccountReadApiTests(TestCase):
         application.save(force_insert=True)
 
         original_case = self.account.sanction_decision.approval_case
-        approval_case = copy(original_case)
-        approval_case._state = copy(original_case._state)
-        approval_case._state.adding = True
+        approval_case = _copy_for_insert(original_case)
         approval_case.pk = uuid4()
         approval_case.loan_application = application
         approval_case.workflow_event = None
         approval_case.save(force_insert=True)
 
-        sanction = copy(self.account.sanction_decision)
-        sanction._state = copy(self.account.sanction_decision._state)
-        sanction._state.adding = True
+        sanction = _copy_for_insert(self.account.sanction_decision)
         sanction.pk = uuid4()
         sanction.loan_application = application
         sanction.approval_case = approval_case
         sanction.save(force_insert=True)
 
-        account = copy(self.account)
-        account._state = copy(self.account._state)
-        account._state.adding = True
+        account = _copy_for_insert(self.account)
         account.pk = uuid4()
         account.loan_application = application
         account.sanction_decision = sanction
@@ -351,18 +400,14 @@ class LoanAccountReadApiTests(TestCase):
         account.created_at = self.account.created_at + timedelta(seconds=index + 1)
         account.save(force_insert=True)
 
-        terms = copy(self.account.terms)
-        terms._state = copy(self.account.terms._state)
-        terms._state.adding = True
+        terms = _copy_for_insert(self.account.terms)
         terms.pk = uuid4()
         terms.loan_account = account
         terms.created_at = account.created_at
         terms.save(force_insert=True)
 
         original_history = self.account.status_history.get(outcome="created")
-        history = copy(original_history)
-        history._state = copy(original_history._state)
-        history._state.adding = True
+        history = _copy_for_insert(original_history)
         history.pk = uuid4()
         history.loan_account = account
         history.loan_application_id_snapshot = application.pk
@@ -374,9 +419,7 @@ class LoanAccountReadApiTests(TestCase):
         original_audit = AuditLog.objects.get(
             action="finance.loan_account.created", entity_id=self.account.pk
         )
-        audit = copy(original_audit)
-        audit._state = copy(original_audit._state)
-        audit._state.adding = True
+        audit = _copy_for_insert(original_audit)
         audit.pk = uuid4()
         audit.entity_id = account.pk
         audit.created_at = account.created_at
@@ -392,9 +435,7 @@ class LoanAccountReadApiTests(TestCase):
         original_workflow = WorkflowEvent.objects.get(
             workflow_name="LoanAccountCreated", entity_id=self.account.pk
         )
-        workflow = copy(original_workflow)
-        workflow._state = copy(original_workflow._state)
-        workflow._state.adding = True
+        workflow = _copy_for_insert(original_workflow)
         workflow.pk = uuid4()
         workflow.entity_id = account.pk
         workflow.created_at = account.created_at
@@ -506,16 +547,12 @@ class ActiveLoanAccountReadApiTests(TestCase):
             loan_application_id=self.account.loan_application_id,
             request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
         )
-        later_application = copy(original.loan_application)
-        later_application._state = copy(original.loan_application._state)
-        later_application._state.adding = True
+        later_application = _copy_for_insert(original.loan_application)
         later_application.pk = uuid4()
         later_application.application_reference_number = "LO-READ-CROSS-APP"
         later_application.created_at = original.loan_application.created_at + timedelta(days=1)
         later_application.save(force_insert=True)
-        stale_cross_application = copy(original)
-        stale_cross_application._state = copy(original._state)
-        stale_cross_application._state.adding = True
+        stale_cross_application = _copy_for_insert(original)
         stale_cross_application.pk = uuid4()
         stale_cross_application.loan_application = later_application
         stale_cross_application.created_at = original.created_at + timedelta(days=1)
@@ -530,6 +567,28 @@ class ActiveLoanAccountReadApiTests(TestCase):
 
         self.assertIsNone(member_decision)
         self.assertIsNone(account_decision)
+
+    def test_completion_digest_drift_affects_neither_total_nor_page(self):
+        request = SapCustomerProfileRequest.objects.get(
+            loan_application_id=self.account.loan_application_id,
+            request_status=SapCustomerProfileRequest.STATUS_COMPLETED,
+        )
+        audit = AuditLog.objects.get(
+            entity_type="sap_customer_profile_request",
+            entity_id=request.pk,
+            action__in=("sap.customer_code_created", "sap.customer_code_reused"),
+        )
+        audit.new_value_json = {
+            **audit.new_value_json,
+            "completion_input_digest": "0" * 64,
+        }
+        audit.save(update_fields=["new_value_json"])
+
+        response = self.client.get("/api/v1/loan-accounts/", **self.auth)
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 0)
+        self.assertEqual(response.json()["data"], [])
 
     def test_exact_active_scope_allows_assigned_finance_cfc_and_credit(self):
         finance = self.fixture.owner.fixture.actor

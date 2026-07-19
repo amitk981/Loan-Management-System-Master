@@ -468,6 +468,7 @@ def _current_pre_payment_stages(*, application_id, member_id):
     sap_is_current = bool(
         sap
         and sap.member_id == member_id
+        and sap.loan_application_id == application_id
         and sap.status == "active"
     )
     return {

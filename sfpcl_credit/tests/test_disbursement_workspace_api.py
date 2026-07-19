@@ -6,7 +6,7 @@ from sfpcl_credit.disbursements.models import Disbursement
 from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
     resolve_current_disbursement_evidence,
 )
-from sfpcl_credit.identity.models import RolePermission
+from sfpcl_credit.identity.models import AuditLog, RolePermission
 from sfpcl_credit.tests.api_contracts import assert_pagination_shape
 
 
@@ -126,6 +126,22 @@ class DisbursementWorkspaceApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["data"], [])
+
+    def test_stale_initiation_affects_neither_total_nor_page(self):
+        Disbursement.objects.filter(pk=self.row.pk).update(
+            final_verification_comments=(
+                "Changed after immutable initiation evidence."
+            )
+        )
+
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture.fixture._auth(self.fixture.cfc),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 0)
         self.assertEqual(response.json()["data"], [])
 
 
@@ -266,3 +282,25 @@ class SapStaffWorkspaceApiTests(TestCase):
             **self.fixture._auth(self.fixture.assignee),
         )
         self.assertEqual(denied.status_code, 403, denied.content)
+
+    def test_send_digest_drift_affects_neither_total_nor_page(self):
+        request_id = self.fixture._create_and_send("s37-selector-drift")
+        audit = AuditLog.objects.get(
+            entity_type="sap_customer_profile_request",
+            entity_id=request_id,
+            action="finance.sap_customer_code.sent",
+        )
+        audit.new_value_json = {
+            **audit.new_value_json,
+            "annexure_checksum_sha256": "0" * 64,
+        }
+        audit.save(update_fields=["new_value_json"])
+
+        response = self.client.get(
+            "/api/v1/disbursement-workspaces/",
+            **self.fixture._auth(self.fixture.assignee),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 0)
+        self.assertEqual(response.json()["data"], [])

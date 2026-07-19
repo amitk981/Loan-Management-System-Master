@@ -338,6 +338,9 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
             entity_type="sap_customer_profile_request",
             entity_id=OuterRef("pk"),
             action="finance.sap_customer_code.sent",
+            new_value_json__annexure_checksum_sha256=OuterRef(
+                "delivery_checksum_sha256"
+            ),
         )
         .order_by()
         .values("entity_id")
@@ -495,12 +498,18 @@ def filter_current_account_completions(queryset):
         _latest_sap_application_id=Subquery(latest.values("loan_application_id")[:1]),
         _latest_sap_code_id=Subquery(latest.values("sap_customer_code_id")[:1]),
         _latest_sap_assignee_id=Subquery(latest.values("assigned_to_user_id")[:1]),
+        _latest_sap_completion_digest=Subquery(
+            latest.values("completion_input_digest")[:1]
+        ),
     )
     completion_audits = (
         AuditLog.objects.filter(
             entity_type="sap_customer_profile_request",
             entity_id=OuterRef("_latest_sap_request_id"),
             action__in=("sap.customer_code_created", "sap.customer_code_reused"),
+            new_value_json__completion_input_digest=OuterRef(
+                "_latest_sap_completion_digest"
+            ),
         )
         .order_by()
         .values("entity_id")

@@ -3,6 +3,9 @@
 from dataclasses import dataclass
 import hashlib
 
+from django.db.models import F
+from django.db.models.functions import SHA256
+
 from sfpcl_credit.disbursements.models import Disbursement
 
 
@@ -25,6 +28,47 @@ class CurrentDisbursementEvidence:
     authorised_by_user_id: object | None
     authorised_at: object | None
     initiated_at: object
+
+
+def filter_current_pending_disbursements(queryset):
+    """Filter the database-pageable identity set for the pending CFC decision."""
+    return queryset.annotate(
+        _current_comment_digest=SHA256("final_verification_comments")
+    ).filter(
+        initiation_status=Disbursement.INITIATED,
+        initiation_audit__action="disbursement.initiated",
+        initiation_audit__entity_type="disbursement",
+        initiation_audit__entity_id=F("pk"),
+        initiation_audit__actor_user_id=F("initiated_by_user_id"),
+        initiation_audit__new_value_json__final_verification_comment_digest=F(
+            "_current_comment_digest"
+        ),
+        initiation_workflow_event__workflow_name="DisbursementInitiated",
+        initiation_workflow_event__entity_type="disbursement",
+        initiation_workflow_event__entity_id=F("pk"),
+        initiation_workflow_event__from_state__isnull=True,
+        initiation_workflow_event__to_state=Disbursement.INITIATED,
+        initiation_workflow_event__triggered_by_user_id=F("initiated_by_user_id"),
+        cfc_task__notification_type="disbursement_authorisation",
+        cfc_task__category="Finance",
+        cfc_task__related_entity_type="disbursement",
+        cfc_task__related_entity_id=F("pk"),
+        cfc_task__recipient_role_code="chief_financial_controller",
+        cfc_task__sender_user_id=F("initiated_by_user_id"),
+        cfc_task__read_at__isnull=True,
+        cfc_task__read_by_user_id__isnull=True,
+        bank_transfer_status=Disbursement.TRANSFER_PENDING,
+        bank_reference_number__isnull=True,
+        disbursed_at__isnull=True,
+        disbursement_advice_communication_id__isnull=True,
+        loan_register_updated_flag=False,
+        loan_account__loan_account_status="sanctioned",
+        loan_account__disbursed_amount=0,
+        loan_account__principal_outstanding=0,
+        loan_account__interest_outstanding=0,
+        loan_account__charges_outstanding=0,
+        loan_account__total_outstanding=0,
+    )
 
 
 def resolve_current_disbursement_evidence(
@@ -219,4 +263,8 @@ def _aggregate_has_no_later_truth(row, account):
     )
 
 
-__all__ = ["CurrentDisbursementEvidence", "resolve_current_disbursement_evidence"]
+__all__ = [
+    "CurrentDisbursementEvidence",
+    "filter_current_pending_disbursements",
+    "resolve_current_disbursement_evidence",
+]

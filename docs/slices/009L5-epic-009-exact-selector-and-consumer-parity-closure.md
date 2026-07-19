@@ -1,7 +1,7 @@
 # Slice 009L5: Epic 009 Exact Selector and Consumer Parity Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement

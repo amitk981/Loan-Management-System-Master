@@ -4,9 +4,13 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from django.db import connection
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
+
+from sfpcl_credit.processes.portal_disbursement_status import (
+    _current_pre_payment_stages,
+)
 
 from sfpcl_credit.communications.models import CommunicationDeliveryOutbox
 from sfpcl_credit.communications.modules.communication_dispatcher import (
@@ -520,9 +524,7 @@ class PortalDisbursementStageApiTests(TestCase):
                     customer_code_id=sap_code_id,
                     member_id=owner.application.member_id,
                     profile_request_id=uuid4(),
-                    # A member-level SAP code can legitimately originate on an
-                    # earlier application and be reused by this loan account.
-                    loan_application_id=uuid4(),
+                    loan_application_id=owner.application.pk,
                     status="active",
                     completed_at=sap_completed_at,
                 ),
@@ -799,3 +801,33 @@ class PortalDisbursementStageApiTests(TestCase):
     @staticmethod
     def _status_url(row):
         return f"/api/v1/portal/applications/{row.loan_application_id}/disbursement-status/"
+class PortalCanonicalSapEdgeTests(SimpleTestCase):
+    @patch(
+        "sfpcl_credit.processes.portal_disbursement_status.resolve_legal_readiness",
+        return_value=SimpleNamespace(
+            documentation_complete=True,
+            documentation_completed_at=None,
+        ),
+    )
+    @patch(
+        "sfpcl_credit.processes.portal_disbursement_status.get_customer_code_for_member"
+    )
+    def test_other_application_completion_does_not_complete_requested_application_stage(
+        self, member_code, _legal
+    ):
+        application_id = uuid4()
+        member_id = uuid4()
+        member_code.return_value = SimpleNamespace(
+            customer_code_id=uuid4(),
+            member_id=member_id,
+            loan_application_id=uuid4(),
+            status="active",
+            completed_at=None,
+        )
+
+        stages = _current_pre_payment_stages(
+            application_id=application_id,
+            member_id=member_id,
+        )
+
+        self.assertFalse(stages["completed"]["sap_setup"])

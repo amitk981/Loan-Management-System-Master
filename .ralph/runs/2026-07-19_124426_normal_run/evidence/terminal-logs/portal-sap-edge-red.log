@@ -1,0 +1,20 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_other_application_completion_does_not_complete_requested_application_stage (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalCanonicalSapEdgeTests.test_other_application_completion_does_not_complete_requested_application_stage) ... FAIL
+
+======================================================================
+FAIL: test_other_application_completion_does_not_complete_requested_application_stage (sfpcl_credit.tests.test_portal_disbursement_status_api.PortalCanonicalSapEdgeTests.test_other_application_completion_does_not_complete_requested_application_stage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1369, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_124426_normal_run/sfpcl_credit/tests/test_portal_disbursement_status_api.py", line 837, in test_other_application_completion_does_not_complete_requested_application_stage
+    self.assertFalse(stages["completed"]["sap_setup"])
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
