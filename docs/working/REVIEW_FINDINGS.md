@@ -19,89 +19,80 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
-## Open findings from 2026-07-19_093632_architecture_review
+## Open findings from 2026-07-19_104332_architecture_review
 
-Reviewed product commit: `de3d0f0c` (009L), relative to successful architecture-review commit
-`4e44116d`. Later commits on `staging` are Ralph infrastructure/queue maintenance rather than
-completed product slices. Epic 009's M07/M08 boundary was re-audited because 009L was its closure.
+Reviewed product commit: `547c6835` (009L3), relative to successful architecture-review commit
+`eacf85e3`. Commit `692589f5` only retains candidate-hash proof; `755525c2` is Ralph infrastructure
+and is outside the completed product-slice review. Epic 009's M07/M08 boundary was re-audited because
+009L3 is its product corrective closure.
 
-### 009L3 — Epic 009 authority, evidence, and pagination closure
+### 009L4 — Epic 009 canonical read and bounded pagination closure
 
-- **High — Loan Account scope/evidence is applied after count and database slicing:**
-  `loan_account_360.list_accounts` counts and slices the broad role-qualified queryset before
-  `account_is_scoped` and immutable `_project` checks, then subtracts only invalid rows on the
-  current page. Denied/incoherent accounts therefore affect totals and page reachability, can leave
-  an empty page while later valid rows are stranded, and disclose portfolio shape across object
-  scopes. This violates the working 009J contract's explicit “scope before pagination” rule,
-  auth §19.3 nondisclosure, and 009L requirement 6.
-- **High — action and SAP evidence decisions still differ across public owners:** three current
-  review probes fail. A second Credit Manager can successfully invoke the canonical create mutation
-  but receives zero S36 rows because the new selector narrows candidates to intake creator/receiver.
-  A primary-role CFC whose governed `approval_authority_type` is removed still receives authorise/
-  reject actions that the mutation rejects. After a SAP completion audit digest is changed, the
-  canonical member facade returns no code while new `get_account_customer_code` still returns it.
-  These reproduce the prior authority/current-evidence root and add the S36 reachability defect;
-  they contradict auth §§16.3/19.2/20.1 and 009L requirements 1-3.
-- **High — the new posting ledger can fabricate SAP success:** A-135 and 009L require confirmation
-  to remain unavailable until governance names an actor, permission, adapter, and immutable
-  acceptance evidence. The model nevertheless permits `posted` with only a mutable reference/time,
-  and `completed_success_is_coherent` accepts that shape without actor, grant, adapter, provider/
-  manual evidence, audit, or workflow truth. Pending M07-FR-009 tracking exists, but its false
-  terminal state is a financial/data-integrity contract violation.
-- **Medium — query/test closure remains portfolio-shallow:** the workspace still walks every
-  Loan Account page, materializes all SAP/CFC rows, re-fetches accounts/disbursements/banks, and
-  evaluates readiness twice before Python slicing. Its query ceilings use one row. The declared
-  009J drift matrix, 009K action-parity matrix, and MP14 opposite-order unit/real-browser selection
-  remain incomplete. The retained PostgreSQL race test does not assert an
-  `InitialLoanPaymentSapPosting` count even though the post-completion digest says it proves one.
-- **Medium — Loan Account 360 was redesigned instead of safely unwired:** removing mock servicing
-  facts was correct, but 009L deleted the established tabbed 360 composition and replaced it with a
-  facts grid plus lock card. That exceeds the allowed visibility/data changes and conflicts with
-  `FRONTEND_DESIGN_RULES.md`'s no-layout-redesign rule. Existing tabs must remain in the approved
-  shell with their 010M-owned bodies explicitly unavailable and fixture-free.
+- **High — SAP consumers still choose different completion records:** requirement 3 says member,
+  account, readiness, workspace, and Loan Account reads must use one canonical completion decision
+  and reject duplicate/newer-stale/cross-application evidence identically. The member facade selects
+  the newest member request in `sap_customer_profile.py:305-350`, while the account facade still
+  independently selects an application/customer-code-specific request in lines 353-393. A retained
+  review probe adds a newer incoherent cross-application completion: the canonical member decision
+  returns unavailable, but the account decision accepts the older completion. This can let Loan
+  Account/readiness consumers trust SAP truth rejected by the SAP member owner, contradicting
+  M07-FR-010 and the slice's binding disbursement gate.
+- **Medium — truthful pages still require unbounded duplicated evidence work:** 009L3 fixed the
+  previous count/leakage defect, but `loan_account_360.list_accounts` now materializes and deeply
+  projects every eligible account before Python slicing (`loan_account_360.py:46-60`). Its database
+  filter repeats a partial copy of lifecycle/transfer invariants owned elsewhere, and the staff
+  workspace calls the full scan for every nominal 100-row page (`disbursement_workspace.py:62-74`)
+  before slicing again. Work therefore grows with the full portfolio and can approach repeated
+  full scans, contrary to requirements 4/7 and codebase-design §§16/42. The one-row ceilings cannot
+  prove the required 1/21/101 behavior.
+- **Medium — the declared executable closure remains partial:** the diff adds one S36 allow case,
+  one CFC governed-authority denial, one SAP digest drift, and pending-posting assertions, but not
+  the full role/permission/task/maker-checker/current-evidence action matrix, independent SAP
+  component/consumer matrix, 21/101-row mixed-scope pagination, exact create/send/complete/transfer
+  transport/error matrix, or MP14 opposite-order unit case required by 009L3. The new browser case
+  proves opposite-order selection with fulfilled routes; `CR-012` correctly remains the separate
+  owner of the nine-state real-Django browser workflow.
+- **Low — acceptance tests overstate or duplicate their observable scope:** the exact PostgreSQL
+  label is an empty subclass of an already discovered race class, so the full suite discovers the
+  same two races twice instead of replacing the prior surface as codebase-design §26.2 directs. The
+  browser test named “every governed tab” opens only Loan Ledger and checks that two other buttons
+  exist; the remaining unavailable tab bodies are not exercised.
 
-`009L3` groups the product root boundary: action/mutation parity, canonical SAP evidence, scope-first
-pagination, pending-only posting truth, populated matrices, and prototype-safe unavailability. It
-depends on 009L and is ordered before both CR-012 and Epic 010.
-
-### CR-012 — Epic 009 trusted-browser evidence
-
-- **High — 009L's retained browser pass does not execute the declared real workflow:** the spec
-  injects a token, fulfils auth/workspace/Loan Account routes in Playwright, mutates local objects,
-  never submits S36-S41 actions, and fabricates its 503. It omits the required Loan Account list
-  screenshot; SAP confirmation, readiness, and initiation PNGs have the same SHA-256. The passing
-  run therefore cannot prove real Django authority, request bytes, 400/403/409, duplicate UTR,
-  replay, refresh, or distinct UI states. Existing Not Started corrective `CR-012` exactly covers
-  this new evidence finding and now depends on 009L3; no duplicate corrective was added.
+New corrective `009L4` groups these symptoms at the SAP/read-selector/workspace root and is ordered
+after 009L3, before existing `CR-012`, and before Epic 010. `CR-012` continues to own only the real-
+Django screenshot/evidence contract; no duplicate browser corrective was added.
 
 ## Closed in this review
 
-- M07-FR-009 now has one atomic singular pending obligation linked to the transfer, register,
-  application, account, member, amount, action, and evidence digest. The missing-capability finding
-  is closed; 009L3 separately removes the unsupported evidence-free `posted` state.
-- Loan Account 360 no longer composes a real selected account with another borrower's mock repayment,
-  interest, default, document, or closure facts. The truth-composition finding is closed; the new
-  layout-fidelity finding above owns how the safe unavailable state is presented.
+- **Scope-first pagination correctness:** denied or immutable-evidence-incoherent Loan Accounts are
+  now excluded before totals and Python page slicing, so they no longer leak counts or strand later
+  valid rows. `009L4` owns the distinct bounded-query and selector-locality remainder.
+- **Pending-only initial SAP posting:** model and database constraints now reject `posted`, current
+  transfer evidence requires one pending obligation, and both retained five-way PostgreSQL races
+  assert its singular status. A-135 remains explicit; no unsupported SAP success is fabricated.
+- **Loan Account 360 layout fidelity:** the approved eleven-tab shell is restored with existing
+  `Tabs`; Epic 010 bodies remain explicitly unavailable without mock servicing facts or new styling.
 
-009L also fixed the prior Senior Finance 500, incoherent-disbursement projection, supported filters,
-and aware timestamp serialization, but those were symptoms inside broader findings that remain open
-until the matrices and exact owner parity above close.
+The S36 all-Credit-Manager reachability and governed CFC admission probes also pass, but canonical
+SAP/action-matrix closure remains grouped under 009L4 rather than counting those symptoms as a
+separate closed root finding.
 
 ## Review evidence
 
-- Retained current tests remain green: 43 focused backend tests passed with 2 PostgreSQL-only skips;
-  19 focused frontend tests passed. Full product gates were not repeated in this documentation-only
-  review; `de3d0f0c` retains the orchestrator's authoritative coverage and browser gate records.
-- Three review-only contract probes fail on the intended assertions: mutation-authorised S36 row
-  omission, CFC action widening, and cross-facade SAP evidence disagreement.
-- Static evidence records the post-slice pagination order, posting lifecycle acceptance, mocked
-  browser routes, and screenshot hashes. Three of eight screenshots are byte-identical.
-- Evidence: `.ralph/runs/2026-07-19_093632_architecture_review/evidence/`.
-- Epic audit: M07-FR-001-010 and M08-FR-001-011 now have retained owners or explicit A-135 pending
-  governance, subject to the open correctness/evidence findings above. `CONTEXT.md` remains truthful.
-  No slice is marked `Blocked`, so no stale prerequisite required re-parking. No ADR was added: both
-  correctives restore binding source/public-owner/frontend contracts rather than choosing a new
-  durable architecture.
+- Independent 009L3 validation retained a green complete backend coverage run, 349 frontend tests,
+  two twice-run PostgreSQL acceptance tests, and two twice-run declared browser tests at commit
+  `547c6835`; unchanged product gates were not repeated in this documentation-only review.
+- One review-only contract probe fails on the intended assertion: a newer incoherent cross-
+  application completion is rejected by the canonical member facade while the account facade still
+  returns the older masked code decision.
+- Static inspection records the full-portfolio projection/page-walk, one-row query ceilings,
+  incomplete matrices, exact pending-only constraint, restored tab shell, and acceptance-test
+  duplication/coverage boundaries.
+- Evidence: `.ralph/runs/2026-07-19_104332_architecture_review/evidence/`.
+- Epic audit: M07-FR-001-010 and M08-FR-001-011 retain implemented owners or explicit A-135 pending
+  governance, but M07-FR-010 remains conditional on 009L4's canonical decision. `CONTEXT.md` remains
+  truthful. No slice is marked `Blocked`, so no stale prerequisite required re-parking. No ADR was
+  added because the corrective restores already binding owner/selector contracts.
 
 Older findings and exact prior citations remain searchable in Git and retained review packets; they
 are not repeated unless current code reproduces them.

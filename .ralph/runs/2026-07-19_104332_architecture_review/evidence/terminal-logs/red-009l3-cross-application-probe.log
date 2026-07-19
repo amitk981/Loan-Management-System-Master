@@ -1,0 +1,24 @@
+Command:
+REVIEW_PROBE_PATH="$PWD/.ralph/runs/2026-07-19_104332_architecture_review/evidence/review-probes" PYTHONPATH="$REVIEW_PROBE_PATH:$PWD/sfpcl_credit" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test test_009l3_contract_probes --verbosity 1
+
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_member_and_account_facades_reject_newer_cross_application_drift_identically (test_009l3_contract_probes.Epic009L3ContractReviewProbes.test_member_and_account_facades_reject_newer_cross_application_drift_identically)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File ".../evidence/review-probes/test_009l3_contract_probes.py", line 68, in test_member_and_account_facades_reject_newer_cross_application_drift_identically
+    self.assertIsNone(account_decision)
+AssertionError: SapCustomerCodeDecision(...) is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.607s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+Interpretation: the newer incoherent cross-application request makes the member facade return None,
+but the account facade still selects and accepts the older application-specific completion. The
+failure is the intended architecture-review assertion; no product file was changed.

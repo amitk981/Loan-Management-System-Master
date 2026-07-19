@@ -1,5 +1,23 @@
 # Epic 009 Digest — SAP, Loan Account, and Disbursement
 
+## 009L4 Architecture Review Closure
+
+- Architecture review `2026-07-19_104332_architecture_review` proves member and account reads still
+  choose different SAP completion records. A newer incoherent cross-application request makes the
+  canonical member decision unavailable while the application-specific account facade accepts the
+  older completion. M07-FR-010 therefore remains conditional on one SAP-owned current-completion
+  decision shared by every downstream consumer.
+- 009L3 corrected count leakage by validating all rows before Python slicing, but that implementation
+  deep-projects the entire eligible Loan Account portfolio. The staff workspace then walks every
+  nominal account page and slices again. 009L4 must retain truthful totals while moving complex
+  eligibility behind one bounded selector and proving stable work at 1, 21, and 101 mixed rows.
+- S36 reachability, governed CFC admission, pending-only initial posting, masked SAP output, transfer
+  winner/posting singularity, and the restored S42 tab shell remain retained contracts. 009L4 closes
+  the omitted SAP-component/consumer, action/mutation, transport/error, pagination, and MP14 unit
+  matrices without duplicating CR-012's hosted nine-state UI evidence.
+- A-135 remains binding: no initial-payment SAP confirmation actor, permission, adapter, or success
+  evidence exists, so the obligation stays pending-only.
+
 ## 009L Epic Closure
 
 - Credit Manager S36 and assigned Senior Finance S37 now share the staff workspace through SAP-owned
