@@ -1,0 +1,15 @@
+Creating test database for alias 'default'...
+Found 15 test(s).
+System check identified no issues (0 silenced).
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.564s
+
+OK
+Destroying test database for alias 'default'...
+API_HARNESS_EXIT_CODE=0
+System check identified no issues (0 silenced).
+CHECK_EXIT_CODE=0
+No changes detected
+MIGRATIONS_EXIT_CODE=0
+EXIT_CODE=0

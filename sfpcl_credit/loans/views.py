@@ -28,6 +28,16 @@ from sfpcl_credit.loans.modules.repayment_allocator import (
     RepaymentAllocationPermissionDenied,
     RepaymentAllocationValidation,
 )
+from sfpcl_credit.loans.modules.bank_statement_matching import (
+    BankStatementConflict,
+    BankStatementNotFound,
+    BankStatementPermissionDenied,
+    BankStatementValidation,
+    import_statement,
+    list_statement_lines,
+    manual_match_statement_line,
+    record_statement_exception,
+)
 from sfpcl_credit.processes.loan_servicing import (
     LoanServicingReadNotFound,
     LoanServicingReadValidation,
@@ -214,6 +224,133 @@ def repayment_allocate(request, repayment_id):
     except RepaymentAllocationNotFound:
         return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
     except RepaymentAllocationConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def bank_statement_import(request):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(import_statement(actor=actor, request=request), request)
+    except BankStatementValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank statement import failed validation.",
+            exc.field_errors,
+        )
+    except BankStatementPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Bank statement import permission is required."
+        )
+    except BankStatementConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["GET"])
+def bank_statement_line_list(request):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data, pagination = list_statement_lines(actor=actor, query_params=request.GET)
+        return list_response(data, pagination, request)
+    except BankStatementValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank statement line query failed validation.",
+            exc.field_errors,
+        )
+    except BankStatementPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Bank statement read permission is required."
+        )
+
+
+@require_http_methods(["POST"])
+def bank_statement_line_match(request, bank_statement_line_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            manual_match_statement_line(
+                actor=actor,
+                line_id=bank_statement_line_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except BankStatementValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank statement match failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank statement match failed validation.",
+            {"body": exc.messages[0]},
+        )
+    except BankStatementPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Bank statement match permission is required."
+        )
+    except BankStatementNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The statement line or repayment was not found or is inaccessible."
+        )
+    except BankStatementConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def bank_statement_line_exception(request, bank_statement_line_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            record_statement_exception(
+                actor=actor,
+                line_id=bank_statement_line_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except BankStatementValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank statement exception failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Bank statement exception failed validation.", {"body": exc.messages[0]}
+        )
+    except BankStatementPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Bank statement match permission is required."
+        )
+    except BankStatementNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The statement line was not found or is inaccessible."
+        )
+    except BankStatementConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
 
 

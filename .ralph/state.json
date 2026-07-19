@@ -288,15 +288,16 @@
     "CR-013-epic-009-terminal-owner-boundary-correction",
     "010A-loan-account-schedule-and-ledger",
     "010B-direct-repayment-posting",
-    "010C-principal-first-allocation"
+    "010C-principal-first-allocation",
+    "010D-bank-statement-matching-unmatched-receipts"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-19_230254_normal_run",
+  "last_run_id": "2026-07-20_002403_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -314,5 +315,6 @@
     "epic": "009",
     "slice_id": "CR-013-epic-009-terminal-owner-boundary-correction",
     "run_id": "2026-07-19_201636_normal_run"
-  }
+  },
+  "architecture_review_due_reason": "cadence:4"
 }

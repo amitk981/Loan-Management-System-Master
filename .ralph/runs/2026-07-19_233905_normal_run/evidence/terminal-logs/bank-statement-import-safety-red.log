@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_import_replay_file_validation_and_permission_fail_closed_without_duplicates (sfpcl_credit.tests.test_bank_statement_matching_api.BankStatementMatchingApiTests.test_import_replay_file_validation_and_permission_fail_closed_without_duplicates)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_233905_normal_run/sfpcl_credit/tests/test_bank_statement_matching_api.py", line 224, in test_import_replay_file_validation_and_permission_fail_closed_without_duplicates
+    self.assertTrue(same_file_new_key.json()["data"]["idempotency_replayed"])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.622s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

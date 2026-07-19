@@ -315,6 +315,12 @@ def _serialize(repayment, obligation):
         "received_date": repayment.received_date.isoformat(),
         "payment_method": repayment.payment_method,
         "bank_reference_number": repayment.bank_reference_number,
+        "bank_statement_line_id": (
+            str(repayment.bank_statement_line_id)
+            if repayment.bank_statement_line_id
+            else None
+        ),
+        "statement_match_status": repayment.statement_match_status,
         "allocation_status": repayment.allocation_status,
         "sap_posting": {
             "status": obligation.status,

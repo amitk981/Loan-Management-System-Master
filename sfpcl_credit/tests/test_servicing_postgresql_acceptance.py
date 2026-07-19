@@ -10,6 +10,9 @@ from sfpcl_credit.tests.test_direct_repayment_posting_api import (
     DirectRepaymentPostingApiTests,
 )
 from sfpcl_credit.tests.test_repayment_allocation_api import RepaymentAllocationApiTests
+from sfpcl_credit.tests.test_bank_statement_matching_api import (
+    BankStatementMatchingApiTests,
+)
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
@@ -136,3 +139,84 @@ class PrincipalFirstAllocationPostgreSQLAcceptanceTests(TransactionTestCase):
         self.assertEqual(RepaymentAllocation.objects.count(), 1)
         self.assertEqual(RepaymentLedgerEntry.objects.count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="repayment.allocated").count(), 1)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class BankStatementMatchingPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = BankStatementMatchingApiTests(
+            "test_manual_match_requires_reason_and_one_receipt_cannot_be_consumed_twice"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        captured = fixture.fixture._capture(
+            {
+                **fixture.fixture._payload(),
+                "amount_received": "60000.00",
+                "received_date": "2026-12-09",
+                "bank_reference_number": "UTR-PG-STATEMENT-MATCH",
+            },
+            "postgres-statement-receipt",
+        )
+        self.repayment_id = captured.json()["data"]["repayment_id"]
+        imported = fixture._upload(
+            "transaction_date,value_date,amount,narration,reference,loan_account_number\n"
+            f"2026-12-09,2026-12-09,60000.00,Race candidate A,UNKNOWN-PG-A,"
+            f"{fixture.account.loan_account_number}\n"
+            f"2026-12-09,2026-12-09,60000.00,Race candidate B,UNKNOWN-PG-B,"
+            f"{fixture.account.loan_account_number}\n",
+            key="postgres-statement-import",
+        ).json()["data"]
+        self.line_ids = [line["bank_statement_line_id"] for line in imported["lines"]]
+
+    def test_concurrent_manual_matches_retain_one_statement_counterpart(self):
+        barrier = Barrier(2)
+
+        def submit(line_id):
+            close_old_connections()
+            barrier.wait()
+            response = Client().post(
+                f"/api/v1/bank-statement-lines/{line_id}/match/",
+                data=json.dumps(
+                    {
+                        "repayment_id": self.repayment_id,
+                        "reason": "Authorised concurrent reconciliation review.",
+                    }
+                ),
+                content_type="application/json",
+                **self.fixture.auth,
+            )
+            close_old_connections()
+            return response.status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, self.line_ids))
+
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import BankStatementLine, Repayment
+
+        self.assertEqual(statuses, [200, 409])
+        repayment = Repayment.objects.get(pk=self.repayment_id)
+        self.assertEqual(repayment.statement_match_status, "manual_match_exception")
+        self.assertEqual(
+            BankStatementLine.objects.filter(
+                matched_repayment_id=self.repayment_id, match_status="matched"
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            str(repayment.bank_statement_line_id),
+            str(
+                BankStatementLine.objects.get(
+                    matched_repayment_id=self.repayment_id
+                ).pk
+            ),
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="bank_statement.line_manually_matched"
+            ).count(),
+            1,
+        )

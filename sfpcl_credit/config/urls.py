@@ -32,6 +32,26 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/bank-statement-imports/",
+        loan_views.bank_statement_import,
+        name="bank-statement-import",
+    ),
+    path(
+        "api/v1/bank-statement-lines/",
+        loan_views.bank_statement_line_list,
+        name="bank-statement-line-list",
+    ),
+    path(
+        "api/v1/bank-statement-lines/<uuid:bank_statement_line_id>/match/",
+        loan_views.bank_statement_line_match,
+        name="bank-statement-line-match",
+    ),
+    path(
+        "api/v1/bank-statement-lines/<uuid:bank_statement_line_id>/exception/",
+        loan_views.bank_statement_line_exception,
+        name="bank-statement-line-exception",
+    ),
+    path(
         "api/v1/disbursement-workspaces/",
         disbursement_views.workspace_list,
         name="disbursement-workspace-list",

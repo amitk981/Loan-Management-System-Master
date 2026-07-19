@@ -1,0 +1,15 @@
+Creating test database for alias 'default'...
+Found 19 test(s).
+System check identified no issues (0 silenced).
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 12.264s
+
+OK
+Destroying test database for alias 'default'...
+System check identified no issues (0 silenced).
+No changes detected
+FOCUSED_TEST_EXIT_CODE=0
+DJANGO_CHECK_EXIT_CODE=0
+MIGRATION_SYNC_EXIT_CODE=0
+EXIT_CODE=0

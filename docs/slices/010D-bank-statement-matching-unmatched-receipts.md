@@ -1,7 +1,7 @@
 # Slice 010D: Bank Statement Matching and Unmatched Receipts
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

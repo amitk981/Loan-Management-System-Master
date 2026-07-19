@@ -321,7 +321,10 @@ class Repayment(models.Model):
     payment_method = models.CharField(max_length=60)
     bank_reference_number = models.CharField(max_length=120)
     bank_reference_number_normalized = models.CharField(max_length=120, unique=True)
-    bank_statement_line_id = models.UUIDField(null=True, blank=True)
+    bank_statement_line_id = models.UUIDField(null=True, blank=True, unique=True)
+    statement_match_status = models.CharField(
+        max_length=40, default="not_linked", db_index=True
+    )
     remarks = models.CharField(max_length=2000)
     allocation_status = models.CharField(max_length=60, default="pending", db_index=True)
     sap_posting_status = models.CharField(max_length=60, default="pending", db_index=True)
@@ -374,6 +377,16 @@ class Repayment(models.Model):
             models.CheckConstraint(
                 check=models.Q(sap_posting_status__in=("pending", "posted")),
                 name="repayment_sap_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    statement_match_status__in=(
+                        "not_linked",
+                        "matched_exact",
+                        "manual_match_exception",
+                    )
+                ),
+                name="repayment_statement_match_status_bounded",
             ),
             models.CheckConstraint(
                 check=~models.Q(bank_reference_number="")
@@ -628,5 +641,134 @@ class RepaymentSapPostingObligation(models.Model):
                 check=models.Q(sap_entry_reference__isnull=True)
                 | ~models.Q(sap_entry_reference=""),
                 name="repayment_sap_reference_present",
+            ),
+        ]
+
+
+class BankStatementImport(models.Model):
+    bank_statement_import_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    source_document = models.OneToOneField(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="bank_statement_import",
+    )
+    sfpcl_bank_account = models.CharField(max_length=120, db_index=True)
+    source_checksum_sha256 = models.CharField(max_length=64)
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    import_status = models.CharField(max_length=40, default="parsed", db_index=True)
+    imported_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="bank_statement_imports",
+    )
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "bank_statement_imports"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sfpcl_bank_account", "source_checksum_sha256"],
+                name="uniq_bank_statement_account_checksum",
+            ),
+            models.CheckConstraint(
+                check=models.Q(import_status__in=("parsed", "parsed_with_exceptions")),
+                name="bank_statement_import_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(sfpcl_bank_account=""),
+                name="bank_statement_import_account_required",
+            ),
+        ]
+
+
+class BankStatementLine(models.Model):
+    bank_statement_line_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    statement_import = models.ForeignKey(
+        BankStatementImport,
+        on_delete=models.PROTECT,
+        related_name="lines",
+    )
+    line_number = models.PositiveIntegerField()
+    transaction_date = models.DateField(null=True, blank=True, db_index=True)
+    value_date = models.DateField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    narration = models.CharField(max_length=500, blank=True)
+    reference = models.CharField(max_length=120, blank=True)
+    reference_normalized = models.CharField(max_length=120, blank=True, db_index=True)
+    loan_account_reference = models.CharField(max_length=120, blank=True)
+    parse_status = models.CharField(max_length=40, default="parsed", db_index=True)
+    match_status = models.CharField(max_length=40, default="unmatched", db_index=True)
+    match_reason_code = models.CharField(max_length=80)
+    matched_repayment = models.OneToOneField(
+        Repayment,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="matched_bank_statement_line",
+    )
+    matched_by_user = models.ForeignKey(
+        "identity.User",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="matched_bank_statement_lines",
+    )
+    match_decision_reason = models.CharField(max_length=500, blank=True)
+    match_audit = models.OneToOneField(
+        "identity.AuditLog",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="bank_statement_match",
+    )
+    matched_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "bank_statement_lines"
+        ordering = ["statement_import_id", "line_number", "bank_statement_line_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["statement_import", "line_number"],
+                name="uniq_bank_statement_import_line",
+            ),
+            models.CheckConstraint(
+                check=models.Q(line_number__gt=0),
+                name="bank_statement_line_number_positive",
+            ),
+            models.CheckConstraint(
+                check=models.Q(amount__isnull=True) | models.Q(amount__gt=0),
+                name="bank_statement_line_amount_positive",
+            ),
+            models.CheckConstraint(
+                check=models.Q(parse_status__in=("parsed", "parse_failed")),
+                name="bank_statement_parse_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(match_status__in=("unmatched", "matched", "exception")),
+                name="bank_statement_match_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        match_status="matched",
+                        matched_repayment__isnull=False,
+                        matched_by_user__isnull=False,
+                        match_audit__isnull=False,
+                        matched_at__isnull=False,
+                    )
+                    | (
+                        ~models.Q(match_status="matched")
+                        & models.Q(matched_repayment__isnull=True)
+                        & models.Q(match_audit__isnull=True)
+                        & models.Q(matched_at__isnull=True)
+                    )
+                ),
+                name="bank_statement_match_evidence_coherent",
             ),
         ]

@@ -1,0 +1,12 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/loans/modules/direct_repayment_posting.py
+ M sfpcl_credit/loans/views.py
+ M sfpcl_credit/tests/test_servicing_postgresql_acceptance.py
+?? .ralph/runs/2026-07-19_233905_normal_run/
+?? sfpcl_credit/loans/migrations/0005_bankstatementimport_bankstatementline_and_more.py
+?? sfpcl_credit/loans/modules/bank_statement_matching.py
+?? sfpcl_credit/tests/test_bank_statement_matching_api.py

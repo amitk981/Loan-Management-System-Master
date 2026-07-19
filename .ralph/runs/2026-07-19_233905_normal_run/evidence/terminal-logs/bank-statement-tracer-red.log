@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exact_statement_evidence_matches_one_receipt_without_financial_mutation (sfpcl_credit.tests.test_bank_statement_matching_api.BankStatementMatchingApiTests.test_exact_statement_evidence_matches_one_receipt_without_financial_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_233905_normal_run/sfpcl_credit/tests/test_bank_statement_matching_api.py", line 60, in test_exact_statement_evidence_matches_one_receipt_without_financial_mutation
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 404 != 200 : b'\n<!doctype html>\n<html lang="en">\n<head>\n  <title>Not Found</title>\n</head>\n<body>\n  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>\n</body>\n</html>\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.655s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

@@ -4505,3 +4505,45 @@ reference, zero debit, only the amount actually allocated as credit, post-alloca
 principal/interest/total balances, retained actor snapshot, current receipt SAP status, and fixed safe
 remarks. Unallocated money is observable on the allocation result and is not misrepresented as a
 ledger credit.
+
+## Bank statement evidence matching and reconciliation (010D)
+
+`POST /api/v1/bank-statement-imports/` accepts multipart `file` and `sfpcl_bank_account`, plus a
+nonblank `Idempotency-Key` of at most 255 characters. Files are restricted UTF-8 CSV, at most
+1,000,000 bytes and 500 data lines, with exactly `transaction_date`, `value_date`, `amount`,
+`narration`, `reference`, and `loan_account_number` columns. The retained file uses the central
+restricted document-storage/provenance seam. Exact key/body replay and the same file checksum for
+the same SFPCL account reuse one import; changed key reuse returns `409 CONFLICT`.
+
+The importer persists bounded statement facts and safe parse/match reason codes. It automatically
+links only one receipt whose normalized bank reference, positive 18,2 amount, received date, and
+canonical loan-account number all match exactly and whose narration also contains the account,
+application, or borrower identity. Missing reference/account/narration facts remain unmatched;
+invalid row facts and conflicting/already-consumed counterparts remain exceptions. It never creates
+a receipt or allocation, updates a financial balance/schedule/ledger, or marks SAP posted. Success
+returns import/document ids, safe counts/statuses, and line ids/dates/amount/status/reason facts; it
+does not return narration or the raw bank reference.
+
+`GET /api/v1/bank-statement-lines/?match_status=unmatched|matched|exception&page=1&page_size=20`
+returns the strict standard list envelope in deterministic creation/id order. Unknown query fields,
+invalid statuses, and invalid/out-of-range pagination return `400 VALIDATION_ERROR`.
+
+`POST /api/v1/bank-statement-lines/{line_id}/match/` accepts exactly `repayment_id` and a nonblank
+manual `reason` of at most 500 characters. It locks both line and receipt, records the actor/roles,
+safe reason code and timestamp in audit evidence, links each side once, and returns a safe nested
+receipt-evidence projection. Manual evidence decisions set receipt `statement_match_status` to
+`manual_match_exception` for the later governed reconciliation/allocation owner while leaving
+`allocation_status` unchanged. Already-consumed counterparts return `409 CONFLICT`; inaccessible
+identities return `404`.
+
+`POST /api/v1/bank-statement-lines/{line_id}/exception/` accepts exactly a nonblank bounded `reason`
+and one safe `reason_code`: `evidence_conflict`, `counterpart_not_captured`, or
+`requires_investigation`. It records an auditable exception without linking or moving money. A
+matched line cannot be changed to an exception, and a retained exception decision cannot be
+rewritten under a different code.
+
+Read/import/match require respectively `finance.bank_statement.read`,
+`finance.bank_statement.import`, and `finance.bank_statement.match`, plus an active source-authorized
+`credit_manager`, `accounts_head`, or `senior_manager_finance` role. Missing authentication returns
+`401`; role- or permission-only callers receive `403`. Statement narration, raw references, manual
+reasons, and file bytes never enter ordinary API errors, list responses, or reconciliation audits.
