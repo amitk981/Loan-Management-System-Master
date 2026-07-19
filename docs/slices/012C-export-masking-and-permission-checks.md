@@ -18,6 +18,10 @@ requested and downloaded sensitive information and why.
 ## Depends On
 - 012B
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - `docs/source/security-privacy.md` sections 14.3-14.4, 24, and 32
 - `docs/source/product-requirements.md` sections 11.31-11.32

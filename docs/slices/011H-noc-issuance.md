@@ -15,6 +15,15 @@ Borrowers receive authoritative no-dues evidence promptly after financial closur
 ## Depends On
 - 011G
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.NocIssuancePostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/api-contracts.md` §36.3
 - `docs/source/data-model.md` §22.2

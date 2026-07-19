@@ -56,8 +56,9 @@ elif [[ -n "$slice_id" && "$mode" != "architecture_review" ]]; then
     echo "Selected slice file is missing: $slice_file" >&2
     exit 2
   fi
-  ralph_validate_slice_capabilities "$slice_file" || exit 2
+  ralph_validate_slice_runtime_requirements "$slice_file" || exit 2
   if ralph_slice_has_capability "$slice_file" "$RALPH_CAPABILITY_POSTGRESQL_FIVE_RACE_ACCEPTANCE"; then
+    ralph_validate_trusted_postgresql_acceptance "$slice_file" || exit 2
     postgres_acceptance_required=1
   fi
   if ralph_slice_has_capability "$slice_file" "$RALPH_CAPABILITY_LOCALHOST_E2E_SERVER"; then
@@ -392,16 +393,26 @@ fi
 run_postgresql_acceptance_once() {
   local ordinal="$1"
   local log="$run_dir/evidence/terminal-logs/postgresql-acceptance-validation-${ordinal}.txt"
+  local test_labels=()
+  local test_label=""
+  local expected_count=""
   local rc=0
   local cleanup_rc=0
   local started_ms
   local postgres_test_db
   started_ms="$(ralph_monotonic_ms)"
   postgres_test_db="$(postgresql_test_database_name "$run_id" "$ordinal")"
+  while IFS= read -r test_label; do
+    [[ -n "$test_label" ]] && test_labels+=("$test_label")
+  done < <(ralph_trusted_postgresql_test_labels "$slice_file")
+  expected_count="$(ralph_trusted_postgresql_expected_count "$slice_file")"
   mkdir -p "$(dirname "$log")"
   {
     echo "Command:"
-    echo "SFPCL_POSTGRES_TEST_DB=$postgres_test_db $venv_python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2"
+    printf 'SFPCL_POSTGRES_TEST_DB=%q %q manage.py test' "$postgres_test_db" "$venv_python"
+    printf ' %q' "${test_labels[@]}"
+    echo " --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2"
+    echo "Expected Django test count: $expected_count"
     echo
     echo "Working directory: $backend_dir/"
     echo
@@ -409,9 +420,7 @@ run_postgresql_acceptance_once() {
   if (
     cd "$worktree_dir/$backend_dir"
     SFPCL_POSTGRES_TEST_DB="$postgres_test_db" "$venv_python" manage.py test \
-      sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests \
-      sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests \
-      sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests \
+      "${test_labels[@]}" \
       --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
   ) >> "$log" 2>&1; then
     rc=0
@@ -427,26 +436,32 @@ run_postgresql_acceptance_once() {
   echo "Duration milliseconds: $(( $(ralph_monotonic_ms) - started_ms ))" >> "$log"
   echo "Exit code: $rc" >> "$log"
   echo "Cleanup exit code: $cleanup_rc" >> "$log"
-  (( rc == 0 && cleanup_rc == 0 )) && postgresql_acceptance_log_passes "$log"
+  (( rc == 0 && cleanup_rc == 0 )) \
+    && postgresql_acceptance_log_passes "$log" "$expected_count"
 }
 
 run_trusted_browser_acceptance_once() {
   local ordinal="$1"
   local log="$run_dir/evidence/terminal-logs/trusted-browser-acceptance-${ordinal}.log"
+  local screenshot_dir="$run_dir/evidence/screenshots/run-${ordinal}"
+  local screenshot_manifest="$run_dir/evidence/trusted-browser-screenshots-${ordinal}.sha256"
   local specs=()
   local spec=""
   local rc=0
+  local evidence_rc=1
   local started_ms
   started_ms="$(ralph_monotonic_ms)"
   while IFS= read -r spec; do
     [[ -n "$spec" ]] && specs+=("$spec")
   done < <(ralph_trusted_e2e_specs "$slice_file")
 
-  mkdir -p "$(dirname "$log")" "$run_dir/evidence/screenshots"
+  rm -rf "$screenshot_dir"
+  rm -f "$screenshot_manifest"
+  mkdir -p "$(dirname "$log")" "$screenshot_dir"
   {
     echo "Command:"
     printf 'RALPH_EVIDENCE_DIR=%q E2E_DJANGO_PYTHON=%q npm run e2e --' \
-      "$run_dir/evidence/screenshots" "$venv_python"
+      "$screenshot_dir" "$venv_python"
     printf ' %q' "${specs[@]}"
     echo
     echo
@@ -457,7 +472,7 @@ run_trusted_browser_acceptance_once() {
   if (
     cd "$project_path"
     [[ -z "$node_bin_dir" ]] || export PATH="$node_bin_dir:$PATH"
-    RALPH_EVIDENCE_DIR="$run_dir/evidence/screenshots" \
+    RALPH_EVIDENCE_DIR="$screenshot_dir" \
       E2E_DJANGO_PYTHON="$venv_python" \
       npm run e2e -- "${specs[@]}"
   ) >> "$log" 2>&1; then
@@ -465,10 +480,18 @@ run_trusted_browser_acceptance_once() {
   else
     rc=$?
   fi
+  if (( rc == 0 )); then
+    if ralph_write_trusted_browser_screenshot_manifest \
+        "$slice_file" "$screenshot_dir" "$screenshot_manifest" >> "$log" 2>&1; then
+      evidence_rc=0
+    fi
+  fi
   echo >> "$log"
   echo "Duration milliseconds: $(( $(ralph_monotonic_ms) - started_ms ))" >> "$log"
   echo "Exit code: $rc" >> "$log"
-  (( rc == 0 ))
+  echo "Screenshot evidence exit code: $evidence_rc" >> "$log"
+  echo "Screenshot manifest: $screenshot_manifest" >> "$log"
+  (( rc == 0 && evidence_rc == 0 ))
 }
 
 write_postgresql_environment() {
@@ -493,14 +516,15 @@ write_postgresql_environment() {
   return 1
 }
 
-# Any slice declaring the PostgreSQL five-race capability must execute those
-# races independently through the orchestrator. The permission selector and
-# acceptance gate consume the same declaration so future slice names cannot
-# cause them to drift apart. Run both repetitions even when the first fails.
+# Any slice declaring the PostgreSQL capability must execute its exact trusted
+# Django labels and expected count independently through the orchestrator. The
+# permission selector and slice-owned acceptance contract cannot drift apart.
+# Run both repetitions even when the first fails.
 if [[ "$mode" =~ ^(normal_run|repair)$ && "$postgres_acceptance_required" == "1" ]]; then
   postgres_first=0
   postgres_second=0
   postgres_environment=0
+  postgres_expected_count="$(ralph_trusted_postgresql_expected_count "$slice_file")"
   run_postgresql_acceptance_once 1 && postgres_first=1
   run_postgresql_acceptance_once 2 && postgres_second=1
   if (( postgres_first == 1 && postgres_second == 1 )); then
@@ -509,8 +533,11 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$postgres_acceptance_required" == "1"
   {
     echo "# PostgreSQL Acceptance Results"
     echo
-    (( postgres_first == 1 )) && echo "- PASS: first independent run executed all five tests successfully." || echo "- FAIL: first independent run did not satisfy all acceptance predicates."
-    (( postgres_second == 1 )) && echo "- PASS: second independent run executed all five tests successfully." || echo "- FAIL: second independent run did not satisfy all acceptance predicates."
+    echo "- Contract expected tests: $postgres_expected_count"
+    echo "- Contract labels:"
+    ralph_trusted_postgresql_test_labels "$slice_file" | sed 's/^/  - /'
+    (( postgres_first == 1 )) && echo "- PASS: first independent run executed the exact slice contract successfully." || echo "- FAIL: first independent run did not satisfy the slice contract and exact count."
+    (( postgres_second == 1 )) && echo "- PASS: second independent run executed the exact slice contract successfully." || echo "- FAIL: second independent run did not satisfy the slice contract and exact count."
     (( postgres_environment == 1 )) && echo "- PASS: PostgreSQL server and non-secret connection facts were recorded." || echo "- FAIL: PostgreSQL environment evidence is missing."
   } > "$run_dir/postgresql-acceptance-results.md"
   if (( postgres_first == 1 && postgres_second == 1 && postgres_environment == 1 )); then
@@ -563,27 +590,17 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; t
   browser_first=0
   browser_second=0
   browser_second_deferred=0
-  browser_screenshots=1
   ralph_validate_trusted_browser_acceptance "$slice_file" "$project_path" && browser_contract=1
   rg -q "git rev-parse .*--git-common-dir" "$project_path/e2e/README.md" && browser_readme=1
   rg -q "timezoneId: 'Asia/Kolkata'" "$project_path/playwright.config.ts" && browser_timezone=1
 
   if (( browser_contract == 1 && browser_readme == 1 && browser_timezone == 1 )); then
-    while IFS= read -r screenshot; do
-      [[ -n "$screenshot" ]] && rm -f "$run_dir/evidence/screenshots/$screenshot"
-    done < <(ralph_trusted_e2e_screenshots "$slice_file")
     if run_trusted_browser_acceptance_once 1; then
       browser_first=1
       run_trusted_browser_acceptance_once 2 && browser_second=1
     else
       browser_second_deferred=1
     fi
-    while IFS= read -r screenshot; do
-      [[ -z "$screenshot" ]] && continue
-      [[ -s "$run_dir/evidence/screenshots/$screenshot" ]] || browser_screenshots=0
-    done < <(ralph_trusted_e2e_screenshots "$slice_file")
-  else
-    browser_screenshots=0
   fi
 
   {
@@ -600,7 +617,8 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; t
     else
       echo "- FAIL: second trusted slice-specific browser run did not pass."
     fi
-    (( browser_screenshots == 1 )) && echo "- PASS: every declared browser screenshot exists and is non-empty." || echo "- FAIL: one or more declared browser screenshots are missing or empty."
+    (( browser_first == 1 )) && echo "- PASS: first run retained a verified PNG manifest in its isolated evidence directory." || echo "- FAIL: first run screenshot evidence or manifest is incomplete."
+    (( browser_second == 1 )) && echo "- PASS: second run retained a verified PNG manifest in its isolated evidence directory." || echo "- FAIL: second run screenshot evidence or manifest is incomplete."
     echo
     echo "Declared specs:"
     ralph_trusted_e2e_specs "$slice_file" | sed 's/^/- /'
@@ -609,7 +627,7 @@ if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; t
   } > "$run_dir/e2e-results.md"
 
   if (( browser_contract == 1 && browser_readme == 1 && browser_timezone == 1 \
-        && browser_first == 1 && browser_second == 1 && browser_screenshots == 1 )); then
+        && browser_first == 1 && browser_second == 1 )); then
     :
   else
     failures=$((failures + 1))

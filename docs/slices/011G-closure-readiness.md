@@ -16,6 +16,15 @@ Staff can close a settled loan confidently and see exactly why an unsettled loan
 ## Depends On
 - 011F
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.ClosureReadinessPostgreSQLAcceptanceTests`
+- Expected tests: 3
+
 ## Source References
 - `docs/source/api-contracts.md` §§36.1-36.2
 - `docs/source/data-model.md` §22.1

@@ -16,11 +16,24 @@ Accounts, Credit, and CFO work real repayments, interest runs, and overdue monit
 ## Depends On
 - 010L
 
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/servicing-monitoring-workflows.e2e.spec.ts`
+- Screenshot: `servicing-ledger.png`
+- Screenshot: `direct-repayment-posting.png`
+- Screenshot: `interest-management.png`
+- Screenshot: `monitoring-dashboard.png`
+
 ## Source References
 - docs/source/screen-spec.md screens S43-S52 and sections 9.7 (repayment rules), 9.8 (interest rules)
 - docs/source/api-contracts.md sections 32 (repayment), 33 (interest), 34 (monitoring/reminders), 45 (idempotency contract)
 - docs/source/functional-spec.md BR rules for principal-first allocation and 30-April capitalisation
 - docs/source/test-plan.md (financial calculation test expectations)
+- `docs/working/digests/epic-010-servicing-repayments-interest-monitoring.md` §010M–010O
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx
@@ -51,6 +64,11 @@ This slice is the final owner of these files' mock surface — after it, none of
 
 ## Out of Scope
 Member portal loan views (010L done), CFO quarterly MIS backend (010K), default case workflows (011x), global search (010N).
+
+## Evidence Required
+Saved RED/GREEN frontend service/component results for every wired owner; exact request, permission,
+idempotency, error-state, and mock-removal evidence; all four trusted-browser screenshots from two
+passing contract runs; focused reverse-consumer and configured full gates.
 
 ## Risk Level
 High

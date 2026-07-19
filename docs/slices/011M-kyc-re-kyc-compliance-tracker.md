@@ -16,6 +16,15 @@ Credit and Compliance can act before borrower KYC becomes stale without bypassin
 ## Depends On
 - 011L
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_compliance_postgresql_acceptance.RekycSchedulerPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/data-model.md` §23.6
 - `docs/source/api-contracts.md` §18.5 and compliance task APIs §37.2

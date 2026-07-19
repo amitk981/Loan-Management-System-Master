@@ -25,6 +25,10 @@ appear as actionable tasks with priority and SLA instead of hardcoded prototype 
 ## Depends On
 - 012E
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - docs/source/screen-spec.md S03 (Task Inbox: columns, filters, actions)
 - docs/source/api-contracts.md section 43.1 (dashboard `tasks[]` shape: `task_type`, `entity_id`, `title`, `due_at`), section 8 (pagination/filtering; §8.3 reserves `assigned_to_user_id` for task/workflow resources)
@@ -33,6 +37,7 @@ appear as actionable tasks with priority and SLA instead of hardcoded prototype 
 - docs/source/functional-spec.md M04-FR-001 and M04-FR-002 (create the appraisal task after
   application-number generation and assign appraisal preparation to Deputy Manager – Finance)
 - `docs/working/REVIEW_FINDINGS.md` entry for `2026-07-10_173305_architecture_review`
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` §012EA / §012EB
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/tasks/TaskInbox.tsx (columns and layout to serve)
@@ -81,6 +86,11 @@ Task Inbox frontend wiring (012EB). Compliance tasks — they remain a separate 
 api-contracts §37.2 and are not duplicated into this engine. Notification fan-out for tasks
 (003I adapter policies unchanged). Export of task lists (012EB decides whether to reuse 012B
 export jobs). Scheduler UI.
+
+## Evidence Required
+Saved RED/GREEN model/service/API/permission/audit output for all eight task types; migration and
+event-replay/reconciliation idempotency proof; task-state and role mapping; dashboard reverse-consumer
+results, bounded query evidence, and configured full gates.
 
 ## Risk Level
 Medium

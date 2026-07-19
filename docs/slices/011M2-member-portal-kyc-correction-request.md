@@ -19,12 +19,22 @@ Borrowers correct stale KYC facts without an office visit, and re-KYC compliance
 ## Depends On
 - 011M
 
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/portal-kyc-correction.e2e.spec.ts`
+- Screenshot: `portal-kyc-correction-decision.png`
+
 ## Source References
 - docs/source/screen-spec-member-portal.md KYC view/update screens (spec IDs authoritative)
 - docs/source/api-contracts.md portal profile/KYC sections and §26.1 upload
 - docs/source/functional-spec.md KYC and re-KYC requirements
 - docs/slices/004H-kyc-upload-and-verification.md (staff verification contract)
 - docs/slices/006Y-member-create-update-and-identity-governance.md (identity locking/reverification rules)
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011M2
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/borrower/portal/* profile/KYC screens
@@ -44,6 +54,11 @@ Borrowers correct stale KYC facts without an office visit, and re-KYC compliance
 
 ## Out of Scope
 Staff KYC verification workflow changes (004H), re-KYC scheduling rules (011M), grievances (011N), member create/update contract (006Y).
+
+## Evidence Required
+Saved RED/GREEN service/API/permission/audit and frontend output for the selected owner-decision path;
+own-scope and locked-field negative matrix; governed apply/history proof when enabled or complete
+affordance-removal proof when deferred; the declared browser screenshot from two passing runs; full gates.
 
 ## Risk Level
 High

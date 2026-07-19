@@ -17,6 +17,15 @@ Finance applies the approved annual rule consistently, and borrowers can trace w
 ## Depends On
 - 010G
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_servicing_postgresql_acceptance.InterestCapitalisationPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/product-requirements.md` §11.24
 - `docs/source/user-flows.md` §§29.5–29.6

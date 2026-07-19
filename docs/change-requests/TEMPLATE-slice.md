@@ -20,7 +20,24 @@ HOW TO USE (delete this comment block when done):
 Not Started
 
 ## Runtime Capabilities
-- <`postgresql-five-race-acceptance` when the exact authoritative PostgreSQL race gate is required; otherwise `none`. Unknown values fail closed.>
+- <Use exactly `none`, `postgresql-five-race-acceptance`, `localhost-e2e-server`, or the two required capabilities as separate list entries. Unknown or missing values fail closed.>
+
+<!--
+When PostgreSQL evidence is required, add this exact machine-readable section after the
+requirements. Test entries are exact dotted Django labels; Expected tests is the total discovery
+count across those labels:
+
+## Trusted PostgreSQL Acceptance
+- Test: `package.tests.TestCase.test_method`
+- Expected tests: `1`
+
+When localhost/browser evidence is required, add this exact machine-readable section. The spec is
+created by the slice and every PNG must be produced independently by each of two trusted runs:
+
+## Trusted Browser Acceptance
+- Spec: `e2e/<slice>.e2e.spec.ts`
+- Screenshot: `<slice>-success.png`
+-->
 
 ## Parent Epic
 Epic <NNN>: <Epic Title>

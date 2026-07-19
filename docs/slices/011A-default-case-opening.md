@@ -16,6 +16,15 @@ Credit staff see an auditable default case immediately instead of tracking misse
 ## Depends On
 - 010L
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.DefaultCaseOpeningPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/api-contracts.md` §§35.1-35.3
 - `docs/source/data-model.md` §§8 `default_case_status`, 21.1

@@ -16,6 +16,15 @@ Credit teams know which cases remain in grace, were cured, or require intentiona
 ## Depends On
 - 011A
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.GracePeriodPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/api-contracts.md` §35.4
 - `docs/source/data-model.md` §§21.1-21.2

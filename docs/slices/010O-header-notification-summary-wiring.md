@@ -18,10 +18,22 @@ The bell icon shows real unread state; staff stop seeing phantom notifications t
 ## Depends On
 - 010N
 
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/header-notifications.e2e.spec.ts`
+- Screenshot: `header-notifications-populated.png`
+- Screenshot: `header-notifications-empty.png`
+- Screenshot: `header-notifications-error.png`
+
 ## Source References
 - docs/source/screen-spec.md S04 notifications and header shell
 - docs/slices/003IA-notifications-center-ui-wiring.md (list contract, mark-read, 409 STALE_WRITE)
 - docs/slices/003IA2-notification-mark-read-stale-write-hardening.md
+- `docs/working/digests/epic-010-servicing-repayments-interest-monitoring.md` §010M–010O
 
 ## Prototype Reference
 - sfpcl-lms/src/components/layout/Header.tsx
@@ -42,6 +54,11 @@ The bell icon shows real unread state; staff stop seeing phantom notifications t
 
 ## Out of Scope
 Global search (010N), Notifications Center behaviour (003IA), portal notifications (011NA), notification generation rules (owning module slices).
+
+## Evidence Required
+Saved RED/GREEN service/component output for populated, empty, error, unauthorized, mark-read, and
+409 refresh behavior; exact request/response assertions and final mock-removal proof; all three
+trusted-browser screenshots from two passing contract runs; focused notification regressions and full gates.
 
 ## Risk Level
 Low

@@ -42,7 +42,8 @@ ralph_prepare_agent_log() {
 
   python3 - "$root" "$run_id" \
     "${RALPH_RAW_AGENT_LOG_RETENTION_DAYS:-14}" \
-    "${RALPH_RAW_AGENT_LOG_RETENTION_COUNT:-20}" <<'PY'
+    "${RALPH_RAW_AGENT_LOG_RETENTION_COUNT:-20}" \
+    "${RALPH_RAW_AGENT_LOG_RETENTION_BYTES:-67108864}" <<'PY'
 import shutil
 import sys
 import time
@@ -53,6 +54,7 @@ current_run_id = sys.argv[2]
 try:
     retention_days = max(0, int(sys.argv[3]))
     retention_count = max(1, int(sys.argv[4]))
+    retention_bytes = max(1, int(sys.argv[5]))
 except ValueError:
     raise SystemExit("invalid Ralph raw-agent-log retention value")
 
@@ -64,16 +66,42 @@ directories = sorted(
     reverse=True,
 )
 retained = 0
+retained_directories = []
 for directory in directories:
     resolved = directory.resolve()
     if resolved == current:
         retained += 1
+        retained_directories.append(directory)
         continue
     age_days = (now - directory.stat().st_mtime) / 86_400
     if age_days > retention_days or retained >= retention_count:
         shutil.rmtree(directory)
     else:
         retained += 1
+        retained_directories.append(directory)
+
+
+def directory_size(path: Path) -> int:
+    total = 0
+    for candidate in path.rglob("*"):
+        if candidate.is_file() and not candidate.is_symlink():
+            total += candidate.stat().st_size
+    return total
+
+
+# Age/count bounds can still retain many multi-megabyte transcripts. Enforce a
+# total byte ceiling as a final oldest-first pass while always preserving the
+# directory for the run that is about to execute. A single active run may
+# temporarily exceed the ceiling; it becomes eligible for pruning next run.
+sizes = {directory: directory_size(directory) for directory in retained_directories}
+total_bytes = sum(sizes.values())
+for directory in reversed(retained_directories):
+    if total_bytes <= retention_bytes:
+        break
+    if directory.resolve() == current:
+        continue
+    total_bytes -= sizes[directory]
+    shutil.rmtree(directory)
 PY
 }
 
@@ -128,7 +156,7 @@ PY
     echo "Lines: $lines"
     echo "SHA-256: $digest"
     echo "Session ID: $session_id"
-    echo "Raw retention: operator-local, at most ${RALPH_RAW_AGENT_LOG_RETENTION_COUNT:-20} runs or ${RALPH_RAW_AGENT_LOG_RETENTION_DAYS:-14} days."
+    echo "Raw retention: operator-local, at most ${RALPH_RAW_AGENT_LOG_RETENTION_COUNT:-20} runs, ${RALPH_RAW_AGENT_LOG_RETENTION_DAYS:-14} days, or ${RALPH_RAW_AGENT_LOG_RETENTION_BYTES:-67108864} bytes (the active run is always preserved)."
     echo
     echo "## Final Excerpt"
     echo

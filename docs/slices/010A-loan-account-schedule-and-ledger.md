@@ -19,6 +19,10 @@ calculating balances in the browser.
 - 009J
 - 009L
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - `docs/source/product-requirements.md` §11.21
 - `docs/source/data-model.md` §§18.1–18.4

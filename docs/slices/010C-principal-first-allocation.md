@@ -18,6 +18,15 @@ calculations.
 ## Depends On
 - 010B
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_servicing_postgresql_acceptance.PrincipalFirstAllocationPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/product-requirements.md` §11.23
 - `docs/source/functional-spec.md` BR-056 and §11.9 Repayment Allocation Logic

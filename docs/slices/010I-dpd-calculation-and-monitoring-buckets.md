@@ -17,6 +17,15 @@ Credit and CFO see the same reproducible overdue classification instead of manua
 ## Depends On
 - 010H
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_servicing_postgresql_acceptance.DpdSnapshotPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/product-requirements.md` §11.25
 - `docs/source/user-flows.md` §30

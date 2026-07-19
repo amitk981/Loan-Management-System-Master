@@ -16,7 +16,16 @@ Authorised staff can request large registers without blocking the application, f
 and download a reproducible file containing the exact filters they requested.
 
 ## Depends On
-- 012A
+- 012A3
+
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_report_export_postgresql_acceptance.RegisterExportPostgreSQLAcceptanceTests`
+- Expected tests: 1
 
 ## Source References
 - `docs/source/api-contracts.md` sections 40.7-40.8 and 45 (export and idempotency contracts)

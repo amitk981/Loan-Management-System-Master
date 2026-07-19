@@ -16,6 +16,15 @@ Compliance owners and reviewers can see due/overdue obligations and prove comple
 ## Depends On
 - 011J
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_compliance_postgresql_acceptance.ComplianceControlSchedulerPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/api-contracts.md` §§37.1-37.4, 37.7
 - `docs/source/data-model.md` §§23.1-23.3, 23.7-23.8

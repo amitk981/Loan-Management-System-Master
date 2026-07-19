@@ -19,6 +19,10 @@ what passed, what remains open, who must approve it, and which commit the eviden
 ## Depends On
 - 012H
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - `docs/source/test-plan.md` sections 27, 28.3, 33, and 34
 - `docs/source/implementation-roadmap.md` sections 17.4-17.6 and 27.1-27.3
@@ -33,11 +37,11 @@ what passed, what remains open, who must approve it, and which commit the eviden
 - sfpcl-lms/src/pages/Dashboard.tsx
 
 ## Screens Involved
-None to implement. The packet indexes retained screenshots/traces from the relevant completed
+None to implement. The packet indexes retained visual artifacts and traces from the relevant completed
 slices, especially reports/export/audit/dashboard, critical UAT, and deployment smoke evidence.
 
 ## Frontend Scope
-None. Do not repair screens or generate replacement screenshots in this review slice.
+None. Do not repair screens or generate replacement visual artifacts in this review slice.
 
 ## Backend/API Scope
 None. Read existing results and run only non-mutating verification needed to prove evidence paths,

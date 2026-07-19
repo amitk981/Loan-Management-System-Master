@@ -17,11 +17,16 @@ Rotating or leaking the application secret does not expose or brick PAN/Aadhaar 
 - 012E2
 - 008I4
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - docs/source/security-privacy.md key management, encryption-at-rest, and key-separation requirements
 - docs/source/deployment-ops.md secret provisioning expectations
 - docs/source/data-model.md encrypted field inventory (PAN/Aadhaar and related sensitive columns)
 - docs/slices/004I-sensitive-masking-and-reveal-audit.md (current reveal/masking contract)
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` §012E2 / §012E3
 
 ## Prototype Reference
 None (backend/security slice).
@@ -51,6 +56,11 @@ None (backend/security slice).
 
 ## Out of Scope
 Storage/backup encryption implementation (deployment scope, 012H+), JWT key rotation procedures (auth hardening owns), HSM/KMS integration beyond env-provisioned secrets (record as assumption if required).
+
+## Evidence Required
+Saved RED/GREEN key-version, missing-key startup, rotation/resume, reconciliation, and legacy-format
+output; no-plaintext/no-SECRET_KEY fallback proof; CDSL and reveal-audit reverse-consumer results;
+backup key-retention note and configured full gates.
 
 ## Risk Level
 High

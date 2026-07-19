@@ -16,6 +16,15 @@ CFO and Board receive reproducible statutory-limit and registration-risk evidenc
 ## Depends On
 - 011K
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_compliance_postgresql_acceptance.StatutoryTrackerPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/api-contracts.md` §§37.5-37.6
 - `docs/source/data-model.md` §§23.4-23.5

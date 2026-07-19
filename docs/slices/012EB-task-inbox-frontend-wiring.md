@@ -22,11 +22,24 @@ priority and SLA visible, instead of a static prototype table.
 ## Depends On
 - 012EA
 
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/task-inbox.e2e.spec.ts`
+- Screenshot: `task-inbox-populated.png`
+- Screenshot: `task-inbox-filtered.png`
+- Screenshot: `task-inbox-action.png`
+- Screenshot: `task-inbox-unauthorised.png`
+
 ## Source References
 - docs/source/screen-spec.md S03 (Task Inbox: columns, filters, actions)
 - docs/source/api-contracts.md section 8 (pagination/filtering), section 44 (available_actions convention)
 - docs/working/API_CONTRACTS.md task endpoints (added by 012EA)
 - docs/source/information-architecture.md (Task Inbox navigation placement)
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` §012EA / §012EB
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/tasks/TaskInbox.tsx
@@ -62,6 +75,11 @@ priority and SLA visible, instead of a static prototype table.
 ## Out of Scope
 Task engine changes (012EA). Compliance task screens (011K-011M surfaces). Borrower portal
 task views (staff-only screen per S03 access roles). New components beyond existing patterns.
+
+## Evidence Required
+Saved RED/GREEN frontend request/filter/action/navigation output; permission denial, dashboard parity,
+pagination, and final staff-mock-removal proof; all four trusted-browser screenshots from two passing
+contract runs; focused task/dashboard regressions and full gates.
 
 ## Risk Level
 Medium

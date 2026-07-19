@@ -15,6 +15,18 @@ Auditors can sample lifecycle and compliance evidence directly while owners rema
 
 ## Depends On
 - 011N
+- 011M2
+
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/auditor-read-only-epic-011.e2e.spec.ts`
+- Screenshot: `auditor-epic-011-populated.png`
+- Screenshot: `auditor-epic-011-empty.png`
+- Screenshot: `auditor-epic-011-unauthorised.png`
 
 ## Source References
 - `docs/source/auth-permissions.md` §§15.11, 19-20, 22-23, 26.7
@@ -56,7 +68,7 @@ Audit observation mutation, exports/reports/Audit Explorer (Epic 012), changing 
 new visual language, or staff operational UI (011P).
 
 ## Evidence
-Backend GET/mutation permission matrix and object-scope tests; frontend component/route tests,
+Saved RED/GREEN backend GET/mutation permission matrix and object-scope tests; frontend component/route tests,
 typecheck/lint/build; trusted-browser screenshots for populated/empty/unauthorised views; full gates.
 
 ## Risk Level

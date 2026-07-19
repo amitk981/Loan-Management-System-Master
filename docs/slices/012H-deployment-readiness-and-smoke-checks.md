@@ -22,6 +22,15 @@ instead of trusting that green unit tests imply a working deployment.
 ## Depends On
 - 012G
 
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/deployment-smoke-readiness.e2e.spec.ts`
+- Screenshot: `deployment-smoke-readiness.png`
+
 ## Source References
 - docs/source/deployment-ops.md section 6 (environment strategy; staging is the
   production-like release candidate the smoke checks target)
@@ -39,6 +48,7 @@ instead of trusting that green unit tests imply a working deployment.
   vulnerable components, or personal data)
 - docs/source/screen-spec.md section 12 (non-functional requirements: performance,
   accessibility, security)
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` §012H
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/Dashboard.tsx (smoke scenario target)
@@ -110,8 +120,9 @@ and performance smoke checks recorded in the run evidence.
 None.
 
 ## Evidence Required
-Test output; example responses for /health/live/ and /health/ready/ (ready and not-ready);
-a full smoke_check run transcript against the local development server.
+Saved RED/GREEN health and smoke-command output; example responses for `/health/live/` and
+`/health/ready/` (ready and not-ready); a full read-only `smoke_check` transcript against the local
+server; the declared trusted-browser screenshot from two passing contract runs; configured full gates.
 
 ## Risk Level
 Medium

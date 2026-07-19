@@ -16,7 +16,20 @@ Business UAT starts with repeatable evidence that the platform's highest-risk en
 work together, instead of discovering integration failures manually at signoff time.
 
 ## Depends On
-- 012F
+- 012F2
+- 011P
+- 012DA
+- 012EB
+
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/critical-uat-smoke.e2e.spec.ts`
+- Screenshot: `critical-uat-standard-loan.png`
+- Screenshot: `critical-uat-permission-negative.png`
 
 ## Source References
 - `docs/source/test-plan.md` sections 16, 18-22, 27.1-27.2, 28, and 29.4

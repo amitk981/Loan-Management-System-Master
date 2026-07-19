@@ -18,6 +18,10 @@ business and identity data remains protected.
 ## Depends On
 - 012C
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - `docs/source/api-contracts.md` sections 8 and 42
 - `docs/source/product-requirements.md` section 11.32

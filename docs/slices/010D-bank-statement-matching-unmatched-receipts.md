@@ -18,9 +18,18 @@ borrower should receive credit.
 ## Depends On
 - 010C
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_servicing_postgresql_acceptance.BankStatementMatchingPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/user-flows.md` §§27.4, 28.4
-- `docs/source/functional-spec.md` M09-FR-007–009
+- `docs/source/functional-spec.md` M09-FR-007–008 (M09-FR-009 financial allocation is owned by 010C2)
 - `docs/source/data-model.md` §19.5 (`bank_statement_line_id` owner link)
 - `docs/source/implementation-roadmap.md` §§15.2–15.4
 - `docs/source/screen-spec.md` S44–S45
@@ -37,9 +46,11 @@ borrower should receive credit.
 3. Candidate matching may use exact UTR/reference, amount/date, borrower name, and loan
    application/account reference. Auto-match only a singular high-confidence candidate; ambiguous,
    missing, parse-failed, or conflicting lines remain `unmatched`/`exception` with safe reason codes.
-4. An authorised manual match requires a chosen receipt/account, reason, actor, and audit evidence.
-   A line and receipt cannot each be matched to more than one counterpart unless an explicitly
-   approved split policy exists; no such split policy is introduced here.
+4. An authorised manual evidence match requires a chosen receipt/account, reason, actor, and audit
+   evidence. A line and receipt cannot each be matched to more than one counterpart unless an
+   explicitly approved split policy exists; no such split policy is introduced here. This decision
+   leaves the receipt in an explicit exception state for 010C2; it does not perform M09-FR-009's
+   approved financial allocation.
 5. Matching links evidence only. It must not create a repayment, allocate money, alter balances, or
    mark SAP posted.
 6. Enforce finance read/create scope and restrict statement contents from ordinary logs/responses.

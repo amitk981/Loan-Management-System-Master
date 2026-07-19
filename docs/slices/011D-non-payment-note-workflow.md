@@ -16,6 +16,15 @@ The recovery authority receives a complete, traceable case rather than an inform
 ## Depends On
 - 011C
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.NonPaymentNotePostgreSQLAcceptanceTests`
+- Expected tests: 2
+
 ## Source References
 - `docs/source/api-contracts.md` §§35.6-35.7
 - `docs/source/data-model.md` §21.4

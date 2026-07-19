@@ -155,14 +155,20 @@ ralph_slice_dependencies() {
 # must hold the slice back, not silently unblock it.
 ralph_slice_unmet_dependencies() {
   local slice_file="${1:?slice file is required}" slices_dir="${2:-docs/slices}"
-  local dep dep_file unmet=()
+  local dep dep_file dep_matches dep_count unmet=()
   while IFS= read -r dep; do
     [[ -n "$dep" ]] || continue
-    dep_file="$(find "$slices_dir" -maxdepth 1 -type f -name "${dep}-*.md" | sort | head -n 1)"
-    if [[ -z "$dep_file" ]]; then
+    dep_matches="$(find "$slices_dir" -maxdepth 1 -type f -name "${dep}-*.md" | sort)"
+    dep_count="$(printf '%s\n' "$dep_matches" | grep -c . || true)"
+    if [[ "$dep_count" == "0" ]]; then
       unmet+=("${dep}(no-slice-file)")
       continue
     fi
+    if [[ "$dep_count" != "1" ]]; then
+      unmet+=("${dep}(ambiguous-${dep_count})")
+      continue
+    fi
+    dep_file="$dep_matches"
     case "$(ralph_slice_status "$dep_file")" in
       Complete|Superseded) ;;
       *) unmet+=("$dep") ;;
@@ -172,6 +178,101 @@ ralph_slice_unmet_dependencies() {
     printf '%s\n' "${unmet[@]}"
     return 1
   fi
+}
+
+# Resolve an owner-supplied --slice selector without prefix matching. Accept an
+# exact filename/stem or an exact queue id (`<id>-*.md`) only when it resolves
+# once and is currently grabbable. Repair mode has one narrow exception: the
+# exact unfinished slice named by a resumable trusted repair context may resume
+# even if a review parked it or its dependency state changed after failure.
+ralph_resolve_explicit_slice() {
+  local selector="${1:?slice selector is required}"
+  local slices_dir="${2:-docs/slices}" mode="${3:-normal_run}"
+  local repair_context="${4:-.ralph/repair-context.json}"
+  local resolved_dir selector_parent token candidate matches match_count
+  local status unmet context_slice
+
+  resolved_dir="$(cd "$slices_dir" 2>/dev/null && pwd -P)" || {
+    echo "Slice directory is unavailable: $slices_dir" >&2
+    return 1
+  }
+  candidate=""
+  if [[ -f "$selector" && ! -L "$selector" ]]; then
+    selector_parent="$(cd "$(dirname "$selector")" 2>/dev/null && pwd -P)" || return 1
+    [[ "$selector_parent" == "$resolved_dir" ]] || {
+      echo "Explicit slice path must stay inside $resolved_dir: $selector" >&2
+      return 1
+    }
+    candidate="$resolved_dir/$(basename "$selector")"
+  else
+    [[ "$selector" != */* ]] || {
+      echo "Explicit slice path does not exist inside $resolved_dir: $selector" >&2
+      return 1
+    }
+    token="${selector%.md}"
+    [[ "$token" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || {
+      echo "Explicit slice selector is unsafe: $selector" >&2
+      return 1
+    }
+    if [[ -f "$resolved_dir/$token.md" && ! -L "$resolved_dir/$token.md" ]]; then
+      candidate="$resolved_dir/$token.md"
+    else
+      matches="$(find "$resolved_dir" -maxdepth 1 -type f -name "${token}-*.md" | sort)"
+      match_count="$(printf '%s\n' "$matches" | grep -c . || true)"
+      if [[ "$match_count" != "1" ]]; then
+        if [[ "$match_count" == "0" ]]; then
+          echo "Explicit slice selector has no exact match: $selector" >&2
+        else
+          echo "Explicit slice selector is ambiguous ($match_count matches): $selector" >&2
+        fi
+        return 1
+      fi
+      candidate="$matches"
+    fi
+  fi
+
+  [[ "$(basename "$candidate")" != "architecture-review.md" ]] || {
+    echo "The architecture-review pseudo-slice cannot be selected as product work." >&2
+    return 1
+  }
+  status="$(ralph_slice_status "$candidate")"
+  case "$mode" in
+    normal_run)
+      [[ "$status" == "Not Started" ]] || {
+        echo "Explicit slice must be Not Started: $(basename "$candidate") ($status)" >&2
+        return 1
+      }
+      if ! unmet="$(ralph_slice_unmet_dependencies "$candidate" "$resolved_dir")"; then
+        echo "Explicit slice has unmet dependencies: $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')" >&2
+        return 1
+      fi
+      ;;
+    repair)
+      case "$status" in
+        "Not Started"|Blocked) ;;
+        *)
+          echo "Repair context cannot resume a finished slice: $(basename "$candidate") ($status)" >&2
+          return 1
+          ;;
+      esac
+      if ! declare -F ralph_repair_context_is_resumable >/dev/null \
+          || ! declare -F ralph_repair_context_value >/dev/null \
+          || ! ralph_repair_context_is_resumable "$PWD" "$repair_context"; then
+        echo "Explicit repair selection requires a resumable trusted repair context." >&2
+        return 1
+      fi
+      context_slice="$(ralph_repair_context_value "$repair_context" slice_id 2>/dev/null || true)"
+      [[ "$context_slice" == "$(basename "$candidate" .md)" ]] || {
+        echo "Explicit repair selector does not match the trusted failed slice." >&2
+        return 1
+      }
+      ;;
+    *)
+      echo "Explicit slice selection is unsupported in mode: $mode" >&2
+      return 1
+      ;;
+  esac
+  basename "$candidate"
 }
 
 # Print slice paths in execution priority. CR slices can only enter an active

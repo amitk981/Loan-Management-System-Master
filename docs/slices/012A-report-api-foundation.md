@@ -19,6 +19,10 @@ system of record instead of maintaining duplicate spreadsheets.
 ## Depends On
 - 011O
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - `docs/source/product-requirements.md` section 11.31 (system-data reports, role-based list,
   reconciliation)
@@ -46,6 +50,11 @@ None for this slice, except updating frontend documentation or fixtures if requi
   report-specific, read-only selectors; do not put cross-domain query logic in views.
 - Implement `GET` endpoints for application pipeline, documentation readiness, disbursement
   pending, loan portfolio, DPD, and compliance dashboard exactly as `api-contracts.md` 40.1-40.6.
+- In the required-report catalogue, the application-pipeline selector is the Loan Request Register,
+  documentation readiness is the Documentation Readiness Report, loan portfolio is the Loan
+  Register, and DPD is the DPD Report. Disbursement Pending and Compliance Dashboard remain the two
+  additional fixed section-40 APIs; neither is an alias for SAP Pending or the full Disbursement
+  Report owned by 012A2.
 - Support the contracted filters (`from_date`, `to_date`, `status`, `stage`, `as_of_date`,
   `sop_bucket`, `financial_year`), the standard response envelope/pagination, and deterministic
   ordering. Invalid dates, ranges, and controlled values return the standard 400 error.

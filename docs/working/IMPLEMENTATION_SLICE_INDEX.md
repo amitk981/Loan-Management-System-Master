@@ -136,20 +136,24 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 81 | `009I` Member Portal Disbursement Status | Epic 009 | 009H, | High | Yes | Yes | No | Yes |
 | 82 | `009J` Loan Account 360 Initial View | Epic 009 | 009I, | Medium | Yes | Yes | No | Yes |
 | 82a | `009K` Disbursement and CFC Authorization Frontend Wiring | Epic 009 | 009J, | High | Yes | Yes | No | Yes |
-| 83 | `010A` Loan Account Schedule and Ledger | Epic 010 | 009J, | Medium | No | Yes | Yes | Yes |
+| 82b | `009L` Epic 009 Staff Workflow and SAP Posting Closure | Epic 009 | 009K, | High | Yes | Yes | Yes | Yes |
+| 83 | `010A` Loan Account Schedule and Ledger | Epic 010 | 009J and 009L, | Medium | No | Yes | Yes | Yes |
 | 84 | `010B` Direct Repayment Posting | Epic 010 | 010A, | High | No | Yes | Yes | Yes |
 | 85 | `010C` Principal-First Allocation | Epic 010 | 010B, | High | No | Yes | Yes | Yes |
+| 85a | `010C2` Manual Allocation and Financial Reversal Controls | Epic 010 | 010D, | High | No | Yes | Yes | Yes |
 | 86 | `010D` Bank Statement Matching Unmatched Receipts | Epic 010 | 010C, | High | No | Yes | Yes | Yes |
 | 87 | `010E` Subsidiary Deduction Reconciliation | Epic 010 | 010D, | Medium | No | Yes | Yes | Yes |
-| 88 | `010F` Interest Invoice Generation | Epic 010 | 010E, | High | No | Yes | Yes | Yes |
+| 87a | `010E2` Effective Rate Versioning and Borrower Notices | Epic 010 | 010E, | High | No | Yes | Yes | Yes |
+| 88 | `010F` Interest Invoice Generation | Epic 010 | 010E2, | High | No | Yes | Yes | Yes |
 | 89 | `010G` Monthly Interest Accrual | Epic 010 | 010F, | High | No | Yes | Yes | Yes |
 | 90 | `010H` Interest Capitalisation after 30 April | Epic 010 | 010G, | High | No | Yes | Yes | Yes |
 | 91 | `010I` DPD Calculation and Monitoring Buckets | Epic 010 | 010H, | Medium | No | Yes | Yes | Yes |
 | 92 | `010J` Reminder Queue | Epic 010 | 010I, | Medium | No | Yes | Yes | Yes |
 | 93 | `010K` CFO Quarterly MIS | Epic 010 | 010J, | Medium | No | Yes | Yes | Yes |
-| 94 | `010L` Member Portal Repayment View | Epic 010 | 010K, | High | Yes | Yes | No | Yes |
+| 93a | `010K2` Loan Ledger Statements and Export | Epic 010 | 010K, | High | No | Yes | No | Yes |
+| 94 | `010L` Member Portal Repayment View | Epic 010 | 010K2, | High | Yes | Yes | No | Yes |
 | 94a | `010M` Servicing and Monitoring Frontend Wiring | Epic 010 | 010L, | High | Yes | Yes | No | Yes |
-| 94b | `010N` Global Search API and UI | Epic 010 | 010M, | Medium | Yes | Yes | Yes | Yes |
+| 94b | `010N` Global Search API and UI | Epic 010 | 010M, | High | Yes | Yes | Yes | Yes |
 | 94c | `010O` Header Notification Summary Wiring | Epic 003 | 010N, | Low | Yes | Yes | No | Yes |
 | 95 | `011A` Default Case Opening | Epic 011 | 010L, | Medium | No | Yes | Yes | Yes |
 | 96 | `011B` Grace Period Tracking | Epic 011 | 011A, | Medium | No | Yes | Yes | Yes |
@@ -167,19 +171,23 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 107a | `011M2` Member Portal KYC Correction Request | Epic 011 | 011M, | High | Yes | Yes | Yes | Yes |
 | 108 | `011N` Grievance Workflow | Epic 011 | 011M, | Medium | No | Yes | Yes | Yes |
 | 108a | `011NA` Member Portal Notices, Grievances, and Notifications | Epic 011 | 011N, | Medium | Yes | Yes | No | Yes |
-| 109 | `011O` Auditor Read-Only Views | Epic 011 | 011N, | Medium | Yes | Yes | No | Yes |
+| 109 | `011O` Auditor Read-Only Views | Epic 011 | 011N and 011M2, | Medium | Yes | Yes | No | Yes |
 | 109a | `011P` Default, Closure, Compliance, and Grievance Staff Frontend Wiring | Epic 011 | 011O, | Medium | Yes | Yes | No | Yes |
 | 110 | `012A` Report API Foundation | Epic 012 | 011O, | Medium | No | Yes | Yes | Yes |
-| 111 | `012B` Register Exports | Epic 012 | 012A, | Medium | No | Yes | Yes | Yes |
+| 110a | `012A2` Finance and Servicing Report Catalogue | Epic 012 | 012A, | Medium | No | Yes | No | Yes |
+| 110b | `012A3` Default, Compliance, and Audit Report Catalogue | Epic 012 | 012A2, | High | No | Yes | No | Yes |
+| 111 | `012B` Register Exports | Epic 012 | 012A3, | Medium | No | Yes | Yes | Yes |
 | 112 | `012C` Export Masking and Permission Checks | Epic 012 | 012B, | High | No | Yes | Yes | Yes |
 | 113 | `012D` Audit Explorer | Epic 012 | 012C, | Medium | No | Yes | Yes | Yes |
-| 113a | `012DA` Reports, Exports, and Audit Explorer Frontend Wiring | Epic 012 | 012D, | Medium | Yes | Yes | No | Yes |
+| 113a | `012D2` Auditor Observation Workflow | Epic 012 | 012D, | High | No | Yes | Yes | Yes |
+| 113b | `012DA` Reports, Exports, and Audit Explorer Frontend Wiring | Epic 012 | 012D2, | Medium | Yes | Yes | No | Yes |
 | 114 | `012E` Operational Dashboard Hardening | Epic 012 | 012D, | Medium | Yes | Yes | Yes | Yes |
 | 114a0 | `012E2` Tracer and Demo Route Production Isolation | Epic 012 | 012E, | High | Yes | Yes | No | Yes |
 | 114a1 | `012E3` Field-Encryption Key Separation and Rotation | Epic 012 | 012E2, | High | No | Yes | Yes | Yes |
 | 114a | `012EA` Workflow Task Engine and Task Inbox APIs | Epic 012 | 012E, | Medium | No | Yes | Yes | Yes |
 | 114b | `012EB` Task Inbox Frontend Wiring | Epic 012 | 012EA, | Medium | Yes | Yes | No | Yes |
-| 115 | `012F` Security Privacy Regression Checks | Epic 012 | 012E, | High | No | Yes | No | Yes |
-| 116 | `012G` Critical E2E UAT Smoke Scenarios | Epic 012 | 012F, | Medium | No | Yes | No | Yes |
+| 115 | `012F` Security Privacy Regression Checks | Epic 012 | 012E3 and 012EB, | High | No | Yes | No | Yes |
+| 115a | `012F2` Performance Readiness Evidence | Epic 012 | 012F, | Medium | Yes | Yes | No | Yes |
+| 116 | `012G` Critical E2E UAT Smoke Scenarios | Epic 012 | 012F2 and 011P and 012DA and 012EB, | Medium | No | Yes | No | Yes |
 | 117 | `012H` Deployment Readiness and Smoke Checks | Epic 012 | 012G, | Medium | No | Yes | No | Yes |
 | 118 | `012I` Final UAT Review Packet | Epic 012 | 012H, | Medium | Yes | No | No | Yes |

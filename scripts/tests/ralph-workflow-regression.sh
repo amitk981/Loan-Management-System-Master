@@ -97,6 +97,9 @@ cat > "$loop_limit_repo/docs/slices/001A-pending.md" <<'EOF'
 ## Status
 Not Started
 
+## Runtime Capabilities
+- `none`
+
 ## Depends On
 - None
 EOF
@@ -581,7 +584,7 @@ printf '1. Exercise browser fail-fast.\n' > "$browser_failfast_run_dir/execution
 printf 'Low risk fixture.\n' > "$browser_failfast_run_dir/risk-assessment.md"
 cat > "$browser_failfast_run_dir/review-packet.md" <<'EOF'
 ## Result
-In Progress
+Ready for independent validation
 EOF
 git init -q "$browser_failfast_repo"
 git -C "$browser_failfast_repo" config user.name "Ralph Regression"
@@ -649,6 +652,9 @@ cat > "$validator_success_repo/docs/slices/999Z-validator-success.md" <<'EOF'
 ## Status
 Not Started
 
+## Runtime Capabilities
+- `none`
+
 ## Depends On
 - None
 EOF
@@ -659,7 +665,7 @@ printf '1. Exercise validator success.\n' > "$validator_success_run_dir/executio
 printf 'Low risk fixture.\n' > "$validator_success_run_dir/risk-assessment.md"
 cat > "$validator_success_run_dir/review-packet.md" <<'EOF'
 ## Result
-Ready to merge
+Ready for independent validation
 EOF
 git init -q "$validator_success_repo"
 git -C "$validator_success_repo" config user.name "Ralph Regression"
@@ -689,7 +695,7 @@ for artifact in prompt.md changed-files.txt final-summary.md; do
 done
 printf '1. Reject agent-owned state changes.\n' > "$state_guard_run_dir/execution-plan.md"
 printf 'Low risk fixture.\n' > "$state_guard_run_dir/risk-assessment.md"
-printf '## Result\nReady to merge\n' > "$state_guard_run_dir/review-packet.md"
+printf '## Result\nReady for independent validation\n' > "$state_guard_run_dir/review-packet.md"
 printf '%s\n' '{"completed_slices": ["agent-forged-completion"]}' \
   > "$validator_success_repo/.ralph/state.json"
 set +e
@@ -740,6 +746,9 @@ cat > "$missing_backend_repo/docs/slices/999X-missing-backend.md" <<'EOF'
 ## Status
 Not Started
 
+## Runtime Capabilities
+- `none`
+
 ## Depends On
 - None
 
@@ -754,7 +763,7 @@ printf '1. Exercise missing backend failure.\n' \
 printf 'Medium risk fixture.\n' > "$missing_backend_run_dir/risk-assessment.md"
 cat > "$missing_backend_run_dir/review-packet.md" <<'EOF'
 ## Result
-Ready to merge
+Ready for independent validation
 EOF
 git init -q "$missing_backend_repo"
 git -C "$missing_backend_repo" config user.name "Ralph Regression"
@@ -788,7 +797,7 @@ printf '1. Exercise oversized candidate classification.\n' > "$oversized_run_dir
 printf 'Low risk fixture.\n' > "$oversized_run_dir/risk-assessment.md"
 cat > "$oversized_run_dir/review-packet.md" <<'EOF'
 ## Result
-Ready to merge
+Ready for independent validation
 EOF
 awk 'BEGIN { for (i = 1; i <= 2001; i++) print "oversized candidate line " i }' \
   > "$validator_success_repo/frontend/oversized.txt"
@@ -2236,7 +2245,7 @@ RUN_DIR="$adapter_run_dir" \
 WORKTREE_DIR="$adapter_repo" \
 PROMPT_FILE="$adapter_repo/prompt.md" \
 MODE=normal_run \
-SELECTED_SLICE='' \
+SELECTED_SLICE=010A-loan-account-schedule-and-ledger \
 scripts/agent-adapters/codex.sh > "$adapter_repo/adapter.stdout" \
   || fail "Codex adapter argv-capture fixture failed"
 python3 - "$adapter_args" <<'PY'

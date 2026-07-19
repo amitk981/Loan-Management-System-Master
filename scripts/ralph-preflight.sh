@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-node-runtime.sh"
+source "$repo_root/scripts/lib/ralph-slice-selection.sh"
+source "$repo_root/scripts/lib/ralph-repair-context.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -104,12 +106,11 @@ else
 fi
 
 if [[ -n "$selected_slice" ]]; then
-  if [[ -f "$selected_slice" ]]; then
-    pass "Selected slice file exists: $selected_slice"
-  elif compgen -G "docs/slices/${selected_slice}*.md" >/dev/null; then
-    pass "Selected slice exists: $selected_slice"
+  if selection_result="$(ralph_resolve_explicit_slice \
+      "$selected_slice" docs/slices "$mode" .ralph/repair-context.json 2>&1)"; then
+    pass "Selected slice is exact and eligible: $selection_result"
   else
-    fail "Selected slice not found: $selected_slice"
+    fail "$selection_result"
   fi
 else
   compgen -G 'docs/slices/*.md' >/dev/null \

@@ -31,6 +31,7 @@ mkdir -p .ralph/logs
 loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
 last_out=".ralph/logs/last-run-output.log"
 review_failures_this_loop=0
+max_review_attempts=2
 max_repair_attempts="$(ralph_max_repair_attempts .ralph/config.yaml)"
 max_progressive_repair_attempts="$(ralph_max_progressive_repair_attempts .ralph/config.yaml)"
 
@@ -279,7 +280,10 @@ echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
 
 # Recover from any interrupted previous session (limit exhaustion, crash),
 # no matter which agent was driving it.
-./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log"
+if ! ./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log"; then
+  echo "Stopping: interrupted-run recovery failed closed; product work was not started." | tee -a "$loop_log"
+  exit 2
+fi
 
 for ((i = 1; i <= max_iterations; i++)); do
   echo "" | tee -a "$loop_log"
@@ -291,42 +295,44 @@ for ((i = 1; i <= max_iterations; i++)); do
     echo "Stopping: cannot read a valid architecture-review state; refusing to run or declare completion." | tee -a "$loop_log"
     exit 2
   fi
-  if [[ "$review_due" == "True" ]]; then
-    # A failed review keeps architecture_review_due set (it only resets on a
-    # validated success), so without a cap a persistent failure cause taxes
-    # every iteration with a doomed review attempt. Two strikes per loop run,
-    # then continue the queue; the review stays due for the next loop start.
-    if (( review_failures_this_loop >= 2 )); then
-      if [[ -z "$(ralph_remaining_slices docs/slices)" ]]; then
-        echo "Stopping: the product queue is empty, but the mandatory final architecture review failed twice. Refusing to declare final completion." | tee -a "$loop_log"
+  while [[ "$review_due" == "True" ]]; do
+    # A due review is a mandatory queue barrier. Retry it only within the
+    # bounded budget; never advance product work while the due flag remains.
+    if (( review_failures_this_loop >= max_review_attempts )); then
+      echo "Mandatory architecture review failed twice. Stopping before product work." | tee -a "$loop_log"
+      exit 2
+    fi
+    echo "Architecture review is due; running attempt $((review_failures_this_loop + 1))/$max_review_attempts before the next slice." | tee -a "$loop_log"
+    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
+    review_status=$?
+    context_tripwire_check
+    if (( review_status != 0 )); then
+      if (( review_status == RALPH_EXIT_AGENT_LIMIT )); then
+        switch_agent_or_stop
+        continue
+      fi
+      if (( review_status == RALPH_EXIT_MERGE_FAILED )); then
+        echo "Stopping: the validated review branch is preserved after a merge failure; refusing to duplicate the review." | tee -a "$loop_log"
+        exit "$RALPH_EXIT_MERGE_FAILED"
+      fi
+      review_failures_this_loop=$((review_failures_this_loop + 1))
+      if (( review_failures_this_loop >= max_review_attempts )); then
+        echo "Mandatory architecture review failed twice. Stopping before product work." | tee -a "$loop_log"
         exit 2
       fi
-      echo "Architecture review already failed $review_failures_this_loop times this loop; skipping further attempts and continuing the queue (it stays due for the next loop run)." | tee -a "$loop_log"
-    else
-      echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
-      run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
-      review_status=$?
-      context_tripwire_check
-      if (( review_status != 0 )); then
-        if (( review_status == RALPH_EXIT_AGENT_LIMIT )); then
-          switch_agent_or_stop
-          continue
-        fi
-        review_failures_this_loop=$((review_failures_this_loop + 1))
-        if [[ -z "$(ralph_remaining_slices docs/slices)" ]]; then
-          if (( review_failures_this_loop >= 2 )); then
-            echo "Stopping: the product queue is empty, but the mandatory final architecture review failed twice. Refusing to declare final completion." | tee -a "$loop_log"
-            exit 2
-          fi
-          echo "Mandatory final architecture review failed (strike 1/2); retrying before final completion." | tee -a "$loop_log"
-          continue
-        fi
-        echo "Architecture review failed (non-fatal, strike $review_failures_this_loop/2 this loop); continuing with the product queue." | tee -a "$loop_log"
-      else
-        review_failures_this_loop=0
-      fi
+      echo "Mandatory architecture review failed (attempt $review_failures_this_loop/$max_review_attempts); retrying before product work." | tee -a "$loop_log"
+      continue
     fi
-  fi
+    review_failures_this_loop=0
+    if ! review_due="$(ralph_architecture_review_due .ralph/state.json)"; then
+      echo "Stopping: validated review left unreadable architecture-review state; product work was not started." | tee -a "$loop_log"
+      exit 2
+    fi
+    if [[ "$review_due" != "False" ]]; then
+      echo "Stopping: validated review did not clear architecture_review_due; product work was not started." | tee -a "$loop_log"
+      exit 2
+    fi
+  done
 
   run_streamed env AGENT_TOOL="$active_tool" ./scripts/afk-dev.sh 1 --mode normal
   status=$?

@@ -12,6 +12,7 @@ source "$repo_root/scripts/lib/ralph-node-runtime.sh"
 source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
 source "$repo_root/scripts/lib/ralph-browser-runtime.sh"
 source "$repo_root/scripts/lib/ralph-architecture-review.sh"
+source "$repo_root/scripts/lib/ralph-worktree-ownership.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -98,23 +99,27 @@ run_dir="$main_run_dir"
 
 select_slice() {
   if [[ -n "$selected_slice" ]]; then
-    if [[ -f "$selected_slice" ]]; then
-      basename "$selected_slice"
-      return
-    fi
-    local found
-    found="$(find docs/slices -maxdepth 1 -type f -name "${selected_slice}*.md" | sort | head -n 1)"
-    [[ -n "$found" ]] && basename "$found" && return
+    ralph_resolve_explicit_slice \
+      "$selected_slice" docs/slices "$mode" .ralph/repair-context.json
+    return
   fi
   ralph_first_grabbable_slice docs/slices
 }
 
 slice_file=""
 if [[ "$mode" == "architecture_review" ]]; then
+  if [[ -n "$selected_slice" ]]; then
+    echo "Explicit product slice selection is invalid in architecture-review mode." >&2
+    exit 2
+  fi
   slice_id="architecture-review"
   slice_file="architecture-review.md"
 else
-  slice_file="$(select_slice || true)"
+  if [[ -n "$selected_slice" ]]; then
+    slice_file="$(select_slice)" || exit 2
+  else
+    slice_file="$(select_slice || true)"
+  fi
   if [[ -z "$slice_file" ]]; then
     remaining_slices="$(ralph_remaining_slices)"
     mkdir -p "$run_dir"
@@ -150,6 +155,17 @@ EOF
 fi
 
 if [[ "$mode" != "architecture_review" ]]; then
+  selected_slice_path="docs/slices/$slice_file"
+  if ! ralph_validate_slice_runtime_requirements "$selected_slice_path"; then
+    echo "Selected slice has an invalid or incomplete trusted runtime contract: $slice_file" >&2
+    exit 2
+  fi
+  if ralph_slice_has_capability \
+      "$selected_slice_path" "$RALPH_CAPABILITY_POSTGRESQL_FIVE_RACE_ACCEPTANCE" \
+      && ! ralph_validate_trusted_postgresql_acceptance "$selected_slice_path"; then
+    echo "Selected slice has a malformed trusted PostgreSQL acceptance contract: $slice_file" >&2
+    exit 2
+  fi
   risk_level="$(awk '/^## Risk Level/ { getline; print; exit }' "docs/slices/$slice_file" | xargs || true)"
   approvals_file="docs/working/HIGH_RISK_APPROVALS.md"
   if grep -qF -- "[revoked] $slice_id" "$approvals_file" 2>/dev/null; then
@@ -163,7 +179,15 @@ fi
 
 mkdir -p "$repo_root/.ralph/locks"
 lock_file="$repo_root/.ralph/locks/$run_id.lock"
-printf '%s\n%s\n' "$run_id" "$$" > "$lock_file"
+lock_worktree_hint=""
+if (( no_worktree == 0 )); then
+  if [[ -n "$resume_worktree" ]]; then
+    lock_worktree_hint="$(python3 -c 'from pathlib import Path; import sys; print(Path(sys.argv[1]).resolve())' "$resume_worktree")"
+  else
+    lock_worktree_hint="$repo_root/.ralph/worktrees/$run_id"
+  fi
+fi
+printf '%s\n%s\n%s\n' "$run_id" "$$" "$lock_worktree_hint" > "$lock_file"
 
 on_exit() {
   local status=$?
@@ -214,6 +238,12 @@ if (( no_worktree == 0 )); then
     worktree_dir="$repo_root/.ralph/worktrees/$run_id"
     git worktree add -b "$branch_name" "$worktree_dir" HEAD
   fi
+  stable_worktree_id="$(basename "$worktree_dir")"
+  worktree_owner_slice_id="$slice_id"
+  [[ -n "$split_slice_id" ]] && worktree_owner_slice_id="$split_slice_id"
+  ralph_record_worktree_owner \
+    "$repo_root" "$worktree_dir" "$branch_name" \
+    "$stable_worktree_id" "$run_id" "$worktree_owner_slice_id" >/dev/null || exit 1
   ralph_restore_worktree_bookkeeping "$repo_root" "$worktree_dir" || exit 1
   ralph_restore_selected_slice_status \
     "$worktree_dir" "docs/slices/$slice_file" || exit 1
@@ -362,6 +392,7 @@ EOF
       mkdir -p "$main_run_dir"
       cp -R "$run_dir/." "$main_run_dir/" 2>/dev/null || true
       git -C "$repo_root" worktree remove --force "$worktree_dir"
+      ralph_remove_worktree_owner "$repo_root" "$worktree_dir"
       git -C "$repo_root" branch -D "$branch_name" >/dev/null 2>&1 || true
       run_dir="$main_run_dir"
     fi
@@ -428,6 +459,7 @@ Core requirements:
 - Save evidence.
 - Save risk-assessment.md.
 - Save review-packet.md.
+- Before finishing successfully, set review-packet.md `## Result` to exactly `Ready for independent validation`. Missing, partial, or any other result fails closed.
 - The orchestrator owns changed-files.txt, .ralph/state.json, .ralph/progress.md, the selected slice Status transition, and mechanical handoff/progress bookkeeping. Do not edit those mechanical facts. Put substantive next-run risks or decisions in review-packet.md; edit HANDOFF only when it needs non-mechanical context the orchestrator cannot derive.
 - Never run git commit, git add, or git push: your sandbox cannot write the worktree's git metadata and the attempt will fail your run. The orchestrator independently validates and commits passing work after you finish.
 - High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
@@ -871,6 +903,7 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
     if ralph_prepare_worktree_for_ff_merge "$repo_root" "$branch_name" \
         && git -C "$repo_root" merge --ff-only "$branch_name"; then
       git -C "$repo_root" worktree remove --force "$worktree_dir"
+      ralph_remove_worktree_owner "$repo_root" "$worktree_dir"
       git -C "$repo_root" branch -d "$branch_name"
       run_dir="$repo_root/.ralph/runs/$run_id"
       merged=1

@@ -17,7 +17,12 @@ The owner gets one reproducible security-readiness result instead of relying on 
 assuming local functional success implies safe production configuration.
 
 ## Depends On
-- 012E
+- 012E3
+- 012EB
+
+## Runtime Capabilities
+
+- `none`
 
 ## Source References
 - `docs/source/security-privacy.md` sections 10-18, 24-25, 29-30, 32, and 36-37

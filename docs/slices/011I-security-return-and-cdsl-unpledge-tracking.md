@@ -16,6 +16,15 @@ Borrowers recover held security with a complete, auditable chain instead of an u
 ## Depends On
 - 011H
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.SecurityReturnPostgreSQLAcceptanceTests`
+- Expected tests: 2
+
 ## Source References
 - `docs/source/api-contracts.md` §36.4
 - `docs/source/data-model.md` §22.3

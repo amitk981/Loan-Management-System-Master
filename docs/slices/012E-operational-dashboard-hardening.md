@@ -18,6 +18,18 @@ pending work and risk indicators instead of static or partially populated dashbo
 ## Depends On
 - 012D
 
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/operational-dashboard.e2e.spec.ts`
+- Screenshot: `operational-dashboard-populated.png`
+- Screenshot: `operational-dashboard-empty.png`
+- Screenshot: `operational-dashboard-error.png`
+- Screenshot: `operational-dashboard-forbidden.png`
+
 ## Source References
 - `docs/source/api-contracts.md` sections 43-44
 - `docs/source/information-architecture.md` section 9.1

@@ -16,6 +16,15 @@ Compliance and auditors can locate the complete loan file and prove retention ob
 ## Depends On
 - 011I
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.ArchiveRecordPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/api-contracts.md` §36.5
 - `docs/source/data-model.md` §22.4

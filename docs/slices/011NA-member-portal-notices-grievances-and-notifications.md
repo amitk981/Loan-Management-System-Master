@@ -16,11 +16,21 @@ Borrowers can read their real deficiency notes, sanction letters, reminders, inv
 ## Depends On
 - 011N
 
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/member-portal-communications.e2e.spec.ts`
+- Screenshot: `member-portal-communications-mobile.png`
+
 ## Source References
 - docs/source/screen-spec-member-portal.md screens MP19, MP21, MP22, MP23, MP24
 - docs/source/api-contracts.md sections 38 (grievance APIs), 39 (communication APIs)
 - docs/source/content-spec.md (notice wording and help-guide content)
 - docs/source/auth-permissions.md (borrowers see only own records)
+- `docs/working/digests/epic-011-default-recovery-closure-compliance.md` §011NA
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/borrower/portal/notices/MP19_NoticesLetters.tsx
@@ -43,6 +53,11 @@ Borrowers can read their real deficiency notes, sanction letters, reminders, inv
 
 ## Out of Scope
 Staff grievance workflow (011N done), closure/NOC issuance logic (011G/011H), real email/SMS delivery.
+
+## Evidence Required
+Saved RED/GREEN portal projection/object-scope/API and frontend output; audited signed-download and
+cross-member denial proof; exact MP19-MP24 owner mapping and mobile-state coverage; the declared
+trusted-browser screenshot from two passing runs; focused portal regressions and full gates.
 
 ## Risk Level
 Medium

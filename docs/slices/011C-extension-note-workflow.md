@@ -16,6 +16,15 @@ Eligible borrowers receive the source-mandated extension while Credit retains de
 ## Depends On
 - 011B
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.ExtensionNotePostgreSQLAcceptanceTests`
+- Expected tests: 2
+
 ## Source References
 - `docs/source/api-contracts.md` §35.5
 - `docs/source/data-model.md` §21.3

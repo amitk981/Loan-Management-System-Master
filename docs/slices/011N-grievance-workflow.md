@@ -16,6 +16,15 @@ Borrower complaints have an accountable owner and visible, auditable resolution 
 ## Depends On
 - 011M
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_compliance_postgresql_acceptance.GrievanceWorkflowPostgreSQLAcceptanceTests`
+- Expected tests: 2
+
 ## Source References
 - `docs/source/api-contracts.md` §38
 - `docs/source/data-model.md` §24.3

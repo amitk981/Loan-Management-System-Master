@@ -18,6 +18,15 @@ interest, DPD, and reminder truth.
 ## Depends On
 - 010J
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_servicing_postgresql_acceptance.QuarterlyMisPostgreSQLAcceptanceTests`
+- Expected tests: 2
+
 ## Source References
 - `docs/source/product-requirements.md` §11.25
 - `docs/source/user-flows.md` §§30.3–30.5

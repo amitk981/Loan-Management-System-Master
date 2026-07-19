@@ -18,6 +18,15 @@ remain visible for review instead of changing balances automatically.
 ## Depends On
 - 010D
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_servicing_postgresql_acceptance.SubsidiaryDeductionPostgreSQLAcceptanceTests`
+- Expected tests: 2
+
 ## Source References
 - `docs/source/product-requirements.md` §11.23
 - `docs/source/user-flows.md` §28

@@ -4,6 +4,33 @@
 # PostgreSQL, or backend gates consume meaningful time. This function is the
 # authoritative implementation for these checks and writes the same detailed
 # evidence files consumed by repair mode.
+RALPH_AGENT_READY_RESULT="Ready for independent validation"
+
+ralph_agent_declared_result_is_ready() {
+  local declared_result="${1:-}"
+  declared_result="$(printf '%s' "$declared_result" \
+    | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  [[ "$declared_result" == "$RALPH_AGENT_READY_RESULT" ]]
+}
+
+ralph_review_packet_declared_result() {
+  local review_packet="${1:?review packet is required}"
+  awk '/^## Result/{while ((getline line) > 0) { if (line !~ /^[[:space:]]*$/) { print line; exit } }}' \
+    "$review_packet"
+}
+
+ralph_review_packet_declares_ready() {
+  local review_packet="${1:?review packet is required}"
+  local result_heading_count=0
+  local declared_result=""
+  [[ -f "$review_packet" ]] || return 1
+  result_heading_count="$(grep -c '^## Result$' "$review_packet" || true)"
+  [[ "$result_heading_count" == "1" ]] || return 1
+  declared_result="$(ralph_review_packet_declared_result "$review_packet" || true)"
+  ralph_agent_declared_result_is_ready "$declared_result" \
+    && ! grep -qiE 'do not (commit|merge)' "$review_packet"
+}
+
 ralph_run_fast_candidate_checks() {
   local worktree_dir="${1:?worktree directory is required}"
   local run_dir="${2:?run directory is required}"
@@ -18,7 +45,7 @@ ralph_run_fast_candidate_checks() {
   local st_path st_old st_new st_base st_violations=0 st_checked=0
   local max_files max_lines files_changed tracked_lines untracked_lines total_lines f
   local oversized_request_file
-  local review_packet declared_result declared_result_normalized declared_result_is_failure=0
+  local review_packet declared_result
   local impact_file ia_results noop_file agent_changes aq_file dl_file artifact_file declared_file required
   local ownership_file ownership_path ownership_violations=0
 
@@ -296,16 +323,12 @@ PY
   if [[ "$mode" != "normal_run" && "$mode" != "repair" ]]; then
     echo "- SKIP: mode $mode (architecture-review packets may quote failure phrases from findings)." >> "$declared_file"
   elif [[ -f "$review_packet" ]]; then
-    declared_result="$(awk '/^## Result/{while ((getline line) > 0) { if (line !~ /^[[:space:]]*$/) { print line; exit } }}' "$review_packet" | xargs || true)"
-    declared_result_normalized="$(printf '%s' "$declared_result" | tr '[:upper:]' '[:lower:]')"
-    case "$declared_result_normalized" in
-      fail|fail\ *|failed|failed\ *|blocked|blocked\ *) declared_result_is_failure=1 ;;
-    esac
-    if (( declared_result_is_failure == 1 )) || grep -qiE 'do not (commit|merge)' "$review_packet"; then
-      echo "- FAIL: the agent's review-packet.md declares this run failed or unmergeable (Result: ${declared_result:-<none>})." >> "$declared_file"
+    declared_result="$(ralph_review_packet_declared_result "$review_packet" || true)"
+    if ! ralph_review_packet_declares_ready "$review_packet"; then
+      echo "- FAIL: review-packet.md must declare the exact result '$RALPH_AGENT_READY_RESULT' and remain mergeable (Result: ${declared_result:-<none>})." >> "$declared_file"
       failures=$((failures + 1))
     else
-      echo "- PASS: review-packet.md declares no failed/blocked/unmergeable result (Result: ${declared_result:-In Progress})." >> "$declared_file"
+      echo "- PASS: review-packet.md declares the exact ready result and remains mergeable." >> "$declared_file"
     fi
   else
     echo "- FAIL: review-packet.md is missing." >> "$declared_file"

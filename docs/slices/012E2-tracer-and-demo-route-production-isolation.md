@@ -16,12 +16,17 @@ No demo user, tracer route, or role-switching shortcut is reachable in a product
 ## Depends On
 - 012E
 
+## Runtime Capabilities
+
+- `none`
+
 ## Source References
 - docs/source/security-privacy.md production configuration and environment isolation requirements
 - docs/source/deployment-ops.md environment/settings expectations
 - docs/working/ASSUMPTIONS.md A-011
 - docs/slices/002EX-early-end-to-end-tracer-bullet.md (tracer surface inventory)
 - docs/slices/002K-seed-data-and-demo-users.md and 002K2 (demo user/permission isolation)
+- `docs/working/digests/epic-012-reports-exports-hardening-uat.md` §012E2 / §012E3
 
 ## Prototype Reference
 - sfpcl-lms dev-only Tracer screen and any demo role-switching affordances (RoleContext)
@@ -40,6 +45,11 @@ No demo user, tracer route, or role-switching shortcut is reachable in a product
 
 ## Out of Scope
 Production settings hardening beyond this boundary (012F enumerates it), secret/key management (012E3), deployment pipeline (012H).
+
+## Evidence Required
+Saved RED/GREEN production-settings tests for every inventoried backend, frontend, seed, and role-switch
+surface; production-build/static exclusion proof; development tracer reverse-consumer results;
+updated A-011 disposition and configured full gates.
 
 ## Risk Level
 High

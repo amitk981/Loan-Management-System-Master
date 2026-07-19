@@ -1153,3 +1153,15 @@ Sources distilled while sharpening 009A on 2026-07-15: `implementation-roadmap.m
   generic/advice failure classes, redaction, authority/staleness, changed evidence, and accepted
   provider crash closure. Two PostgreSQL executions of the five-scanner/five-worker terminal race
   retain one job/exception/task/audit/workflow winner, no fourth attempt, and no provider call.
+
+## 009L post-completion PostgreSQL proof — 2026-07-19
+
+- The 009L run completed its full gates and twice-run browser contract, but its slice metadata did
+  not request an independent PostgreSQL lane for the successful-transfer/SAP-posting race.
+- Owner maintenance therefore executed the two exact
+  `DisbursementTransferSuccessRaceTests` methods twice against separate PostgreSQL test databases at
+  commit `de3d0f0c`. Both repetitions discovered and ran exactly two tests, reported `OK`, and
+  destroyed their isolated databases. The tests retain one transfer winner and one initial-payment
+  SAP posting obligation.
+- No 009L product change or status rewrite was needed. Future financial slices declare exact
+  `Trusted PostgreSQL Acceptance` labels/counts and the orchestrator runs each contract twice.

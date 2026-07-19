@@ -16,7 +16,19 @@ An authenticated member can understand their current loan and confirmed repaymen
 another borrower or internal finance/SAP data.
 
 ## Depends On
-- 010K
+- 010K2
+
+## Runtime Capabilities
+
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+
+- Spec: `e2e/member-portal-repayment-view.e2e.spec.ts`
+- Screenshot: `member-portal-repayments-populated.png`
+- Screenshot: `member-portal-repayments-empty.png`
+- Screenshot: `member-portal-repayments-error.png`
+- Screenshot: `member-portal-repayments-mobile.png`
 
 ## Source References
 - `docs/source/screen-spec-member-portal.md` MP15–MP18, §§8.6, 9, 14.5, 15

@@ -16,6 +16,15 @@ No security can be invoked from an unapproved or ambiguous recovery recommendati
 ## Depends On
 - 011D
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
+## Trusted PostgreSQL Acceptance
+
+- Test: `sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.RecoveryDecisionPostgreSQLAcceptanceTests`
+- Expected tests: 1
+
 ## Source References
 - `docs/source/api-contracts.md` §35.8
 - `docs/source/data-model.md` §§15.2-15.4, 21.5
