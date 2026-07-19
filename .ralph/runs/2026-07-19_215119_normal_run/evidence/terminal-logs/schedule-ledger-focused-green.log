@@ -1,0 +1,13 @@
+Creating test database for alias 'default'...
+Found 10 test(s).
+System check identified no issues (0 silenced).
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 6.631s
+
+OK
+Destroying test database for alias 'default'...
+
+EXIT_CODE=0
+TEST_SPEC=sfpcl_credit.tests.test_loan_schedule_ledger_api
+SIGNAL=GREEN

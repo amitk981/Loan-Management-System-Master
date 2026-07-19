@@ -1,7 +1,7 @@
 # Slice 010A: Loan Account Schedule and Ledger
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

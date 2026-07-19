@@ -4356,6 +4356,46 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   equality; production PostgreSQL key/type predicates are exercised by the declared exact-selector
   acceptance label.
 
+## Loan repayment schedule and ledger reads (010A)
+
+- `GET /api/v1/loan-accounts/{loan_account_id}/repayment-schedule/?page=1&page_size=20`
+  and `GET /api/v1/loan-accounts/{loan_account_id}/ledger/?page=1&page_size=20` return the
+  standard strict list envelope. They accept only positive `page` and `page_size`, cap page size at
+  100, and return `400 VALIDATION_ERROR` for unknown parameters, malformed values, or an
+  out-of-range page. An empty collection is page 1 of 1 with `total_count: 0`.
+- Both reads reuse the 009J active-user, effective-role, `finance.loan_account.read`, and canonical
+  loan-object scope without widening it. Missing authentication returns the shared `401` contract;
+  a role without permission or permission without a source role returns `403 FORBIDDEN`; missing,
+  cross-scope, and evidence-incoherent account ids share `404 NOT_FOUND`.
+- Schedule rows are ordered by `installment_number`, then immutable UUID. Each row contains
+  `repayment_schedule_id`, integer `installment_number`, ISO due and nullable extended-due dates,
+  decimal-string `principal_due`, `interest_due`, `charges_due`, `total_due`, `paid_principal`,
+  `paid_interest`, `paid_charges`, server-derived `amount_received`, bounded `schedule_status`, and
+  UTC `created_at`. Stored status is `pending`, `paid`, or `overdue`; S43's partially-paid display
+  remains deferred to the allocation owner under A-137. The database requires a positive
+  installment number, non-negative amounts,
+  `total_due = principal_due + interest_due + charges_due`, and unique
+  `(loan_account, installment_number)`. This slice exposes no schedule mutation or generator;
+  retained dates and amounts originate in approved term-sheet/loan-agreement ingestion.
+- The initial ledger is a deterministic read projection over the singular coherent Epic 009
+  successful disbursement owner; it does not copy that owner into a mutable ledger table. The row
+  contains ISO `transaction_date`, `transaction_type: disbursement`, typed `owner_reference`, bank
+  `reference`, decimal-string debit/credit, principal/interest/total running balances, canonical
+  transfer actor id plus display label, the canonical SAP-posting owner's current status, and fixed
+  safe remarks. Only `pending` is currently representable under A-135. The opening
+  disbursement increases principal and total outstanding, so debit and both running balances equal
+  the disbursed amount while credit and interest balance are zero.
+- A sanctioned/unfunded account returns an empty ledger. Changed or incomplete transfer/register/
+  advice/SAP/audit/workflow evidence cannot create a ledger row. Both endpoints are zero-write and
+  introduce no repayment, allocation, interest, DPD, reversal, export, statement, or mutation
+  behavior. Later servicing owners extend this projection with append-only/compensating movements;
+  posted owner history is never updated or deleted through these interfaces.
+- Historical disbursement reconciliation always retains the original funded amount and activation
+  date. It deliberately does not freeze later-owned loan status/outstanding balances or the
+  SAP-posting owner's lifecycle fields, so legitimate repayment, interest, or future SAP posting
+  transitions cannot erase the immutable opening row; relational ids, amounts, action/digest, and
+  owner evidence must still agree.
+
 ## Staff disbursement workspace (009K)
 
 - `GET /api/v1/disbursement-workspaces/?page=1&page_size=20` returns the standard strict pagination

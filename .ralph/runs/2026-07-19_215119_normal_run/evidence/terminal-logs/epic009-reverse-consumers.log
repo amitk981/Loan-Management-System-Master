@@ -1,0 +1,13 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+......
+----------------------------------------------------------------------
+Ran 6 tests in 4.689s
+
+OK
+Destroying test database for alias 'default'...
+
+EXIT_CODE=0
+TEST_SPECS=loan creation + immutable status + active 009J read + scope matrix + transfer success + retained ledger drift
+SIGNAL=GREEN

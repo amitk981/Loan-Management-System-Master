@@ -1,0 +1,13 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+----------------------------------------------------------------------
+Ran 2 tests in 1.456s
+
+OK
+Destroying test database for alias 'default'...
+
+EXIT_CODE=0
+TEST_SPECS=historical activation drift rejected + later servicing balances preserved
+SIGNAL=GREEN

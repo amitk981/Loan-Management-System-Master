@@ -606,7 +606,7 @@ def _current_transfer_evidence(*, document_id, loan_application_id, loan_account
     return provenance
 
 
-def completed_success_is_coherent(row):
+def completed_success_is_coherent(row, *, require_opening_account_state=True):
     try:
         transfer = row.bank_transfer
         register_update = row.loan_register_update
@@ -768,17 +768,27 @@ def completed_success_is_coherent(row):
         and posting.amount == row.disbursement_amount
         and posting.transfer_action_id == row.transfer_success_action_id
         and posting.transfer_evidence_digest == row.transfer_success_evidence_digest
-        and posting.posting_status == InitialLoanPaymentSapPosting.STATUS_PENDING
-        and posting.sap_posting_reference is None
-        and posting.posted_at is None
+        and (
+            not require_opening_account_state
+            or (
+                posting.posting_status == InitialLoanPaymentSapPosting.STATUS_PENDING
+                and posting.sap_posting_reference is None
+                and posting.posted_at is None
+            )
+        )
         and posting.created_at == row.disbursed_at
-        and account.loan_account_status == "active"
         and account.disbursed_amount == row.disbursement_amount
-        and account.principal_outstanding == row.disbursement_amount
-        and account.total_outstanding == row.disbursement_amount
-        and account.interest_outstanding == 0
-        and account.charges_outstanding == 0
         and account.tenure_start_date == row.disbursed_at.date()
+        and (
+            not require_opening_account_state
+            or (
+                account.loan_account_status == "active"
+                and account.principal_outstanding == row.disbursement_amount
+                and account.total_outstanding == row.disbursement_amount
+                and account.interest_outstanding == 0
+                and account.charges_outstanding == 0
+            )
+        )
         and history.changed_by_user_id == row.transfer_success_actor_user_id
         and row.transfer_success_loan_status_history_id == history.pk
         and history.changed_at == row.disbursed_at

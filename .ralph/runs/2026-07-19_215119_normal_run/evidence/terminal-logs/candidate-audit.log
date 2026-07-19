@@ -1,0 +1,39 @@
+REVIEW_RESULT_LINES
+3:## Result
+4:Ready for independent validation
+WORKTREE_STATUS
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/disbursements/modules/disbursement_transfer_success.py
+ M sfpcl_credit/disbursements/modules/post_transfer_evidence.py
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/loans/views.py
+?? .ralph/runs/2026-07-19_215119_normal_run/
+?? sfpcl_credit/loans/migrations/0002_repayment_schedule.py
+?? sfpcl_credit/processes/loan_servicing.py
+?? sfpcl_credit/tests/test_loan_schedule_ledger_api.py
+TRACKED_DIFF_STAT
+ docs/working/API_CONTRACTS.md                      | 40 ++++++++++++
+ docs/working/ASSUMPTIONS.md                        |  2 +
+ sfpcl_credit/config/urls.py                        | 10 +++
+ .../modules/disbursement_transfer_success.py       | 28 ++++++---
+ .../modules/post_transfer_evidence.py              | 40 +++++++++++-
+ sfpcl_credit/loans/models.py                       | 72 ++++++++++++++++++++++
+ sfpcl_credit/loans/views.py                        | 66 ++++++++++++++++++++
+ 7 files changed, 248 insertions(+), 10 deletions(-)
+UNTRACKED_PRODUCT_LINES
+     104 sfpcl_credit/loans/migrations/0002_repayment_schedule.py
+     172 sfpcl_credit/processes/loan_servicing.py
+     395 sfpcl_credit/tests/test_loan_schedule_ledger_api.py
+     671 total
+EMPTY_EVIDENCE_FILES
+.ralph/runs/2026-07-19_215119_normal_run/evidence/terminal-logs/orchestrator-backend-deps.log
+FINAL_GREEN_MARKERS
+.ralph/runs/2026-07-19_215119_normal_run/evidence/terminal-logs/schedule-ledger-focused-green.log:11:EXIT_CODE=0
+.ralph/runs/2026-07-19_215119_normal_run/evidence/terminal-logs/backend-check-and-migrations.log:4:CHECK_EXIT_CODE=0
+.ralph/runs/2026-07-19_215119_normal_run/evidence/terminal-logs/backend-check-and-migrations.log:5:MIGRATION_CHECK_EXIT_CODE=0
+.ralph/runs/2026-07-19_215119_normal_run/evidence/terminal-logs/repayment-schedule-migration-sql.log:12:EXIT_CODE=0
+.ralph/runs/2026-07-19_215119_normal_run/evidence/terminal-logs/epic009-reverse-consumers.log:11:EXIT_CODE=0
+
+EXIT_CODE=0

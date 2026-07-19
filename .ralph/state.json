@@ -285,14 +285,15 @@
     "009L6-epic-009-owner-selector-equivalence-and-matrix-closure",
     "CR-012-epic-009-playwright-evidence-is-incomplete",
     "009L7-epic-009-read-boundary-convergence-closure",
-    "CR-013-epic-009-terminal-owner-boundary-correction"
+    "CR-013-epic-009-terminal-owner-boundary-correction",
+    "010A-loan-account-schedule-and-ledger"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-19_201636_normal_run",
+  "last_run_id": "2026-07-19_215119_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

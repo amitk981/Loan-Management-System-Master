@@ -13,6 +13,12 @@ from sfpcl_credit.loans.modules.loan_account_lifecycle import (
     LoanAccountConflict,
     create_loan_account,
 )
+from sfpcl_credit.processes.loan_servicing import (
+    LoanServicingReadNotFound,
+    LoanServicingReadValidation,
+    get_ledger,
+    get_schedule,
+)
 from sfpcl_credit.processes.loan_account_360 import (
     LoanAccountProjectionNotFound,
     LoanAccountProjectionValidation,
@@ -50,6 +56,66 @@ def account_detail(request, loan_account_id):
     except LoanAccountReadPermissionDenied:
         return error_response(request, 403, "FORBIDDEN", "Loan account read permission is required.")
     except LoanAccountProjectionNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
+        )
+
+
+@require_http_methods(["GET"])
+def repayment_schedule(request, loan_account_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data, pagination = get_schedule(
+            actor=actor,
+            loan_account_id=loan_account_id,
+            query_params=request.GET,
+        )
+        return list_response(data, pagination, request)
+    except LoanServicingReadValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Repayment schedule query failed validation.",
+            exc.field_errors,
+        )
+    except LoanAccountReadPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Loan account read permission is required."
+        )
+    except LoanServicingReadNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
+        )
+
+
+@require_http_methods(["GET"])
+def ledger(request, loan_account_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data, pagination = get_ledger(
+            actor=actor,
+            loan_account_id=loan_account_id,
+            query_params=request.GET,
+        )
+        return list_response(data, pagination, request)
+    except LoanServicingReadValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Loan ledger query failed validation.",
+            exc.field_errors,
+        )
+    except LoanAccountReadPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Loan account read permission is required."
+        )
+    except LoanServicingReadNotFound:
         return error_response(
             request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
         )

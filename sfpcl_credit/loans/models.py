@@ -221,3 +221,75 @@ class LoanStatusHistory(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError({"loan_status_history": "Loan status history is append-only."})
+
+
+class RepaymentSchedule(models.Model):
+    repayment_schedule_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_account = models.ForeignKey(
+        LoanAccount, on_delete=models.PROTECT, related_name="repayment_schedule_lines"
+    )
+    installment_number = models.PositiveIntegerField()
+    due_date = models.DateField(db_index=True)
+    principal_due = models.DecimalField(max_digits=18, decimal_places=2)
+    interest_due = models.DecimalField(max_digits=18, decimal_places=2)
+    charges_due = models.DecimalField(max_digits=18, decimal_places=2)
+    total_due = models.DecimalField(max_digits=18, decimal_places=2)
+    paid_principal = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    paid_interest = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    paid_charges = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    schedule_status = models.CharField(max_length=60, db_index=True)
+    extended_due_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "repayment_schedules"
+        ordering = ["installment_number", "repayment_schedule_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_account", "due_date"], name="idx_schedule_account_due"
+            )
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["loan_account", "installment_number"],
+                name="uniq_schedule_installment",
+            ),
+            models.CheckConstraint(
+                check=models.Q(installment_number__gt=0),
+                name="schedule_installment_positive",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(principal_due__gte=0)
+                    & models.Q(interest_due__gte=0)
+                    & models.Q(charges_due__gte=0)
+                    & models.Q(total_due__gte=0)
+                    & models.Q(paid_principal__gte=0)
+                    & models.Q(paid_interest__gte=0)
+                    & models.Q(paid_charges__gte=0)
+                ),
+                name="schedule_amounts_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    total_due=(
+                        models.F("principal_due")
+                        + models.F("interest_due")
+                        + models.F("charges_due")
+                    )
+                ),
+                name="schedule_total_matches_parts",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    schedule_status__in=(
+                        "pending",
+                        "paid",
+                        "overdue",
+                    )
+                ),
+                name="schedule_status_bounded",
+            ),
+        ]

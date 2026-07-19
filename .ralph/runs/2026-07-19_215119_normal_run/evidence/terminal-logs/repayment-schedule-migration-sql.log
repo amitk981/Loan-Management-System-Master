@@ -1,0 +1,13 @@
+BEGIN;
+--
+-- Create model RepaymentSchedule
+--
+CREATE TABLE "repayment_schedules" ("repayment_schedule_id" char(32) NOT NULL PRIMARY KEY, "installment_number" integer unsigned NOT NULL CHECK ("installment_number" >= 0), "due_date" date NOT NULL, "principal_due" decimal NOT NULL, "interest_due" decimal NOT NULL, "charges_due" decimal NOT NULL, "total_due" decimal NOT NULL, "paid_principal" decimal NOT NULL, "paid_interest" decimal NOT NULL, "paid_charges" decimal NOT NULL, "schedule_status" varchar(60) NOT NULL, "extended_due_date" date NULL, "created_at" datetime NOT NULL, "loan_account_id" char(32) NOT NULL REFERENCES "loan_accounts" ("loan_account_id") DEFERRABLE INITIALLY DEFERRED, CONSTRAINT "uniq_schedule_installment" UNIQUE ("loan_account_id", "installment_number"), CONSTRAINT "schedule_installment_positive" CHECK ("installment_number" > 0), CONSTRAINT "schedule_amounts_nonnegative" CHECK (("principal_due" >= '0' AND "interest_due" >= '0' AND "charges_due" >= '0' AND "total_due" >= '0' AND "paid_principal" >= '0' AND "paid_interest" >= '0' AND "paid_charges" >= '0')), CONSTRAINT "schedule_total_matches_parts" CHECK ("total_due" = (CAST(((CAST(("principal_due" + "interest_due") AS NUMERIC)) + "charges_due") AS NUMERIC))), CONSTRAINT "schedule_status_bounded" CHECK ("schedule_status" IN ('pending', 'paid', 'overdue')));
+CREATE INDEX "repayment_schedules_due_date_05367462" ON "repayment_schedules" ("due_date");
+CREATE INDEX "repayment_schedules_schedule_status_ed99a1e6" ON "repayment_schedules" ("schedule_status");
+CREATE INDEX "repayment_schedules_loan_account_id_e0907084" ON "repayment_schedules" ("loan_account_id");
+CREATE INDEX "idx_schedule_account_due" ON "repayment_schedules" ("loan_account_id", "due_date");
+COMMIT;
+
+EXIT_CODE=0
+MIGRATION=loans.0002_repayment_schedule

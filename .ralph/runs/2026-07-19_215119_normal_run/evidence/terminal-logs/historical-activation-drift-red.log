@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_historical_ledger_rejects_drifted_immutable_activation_amount (sfpcl_credit.tests.test_loan_schedule_ledger_api.LoanScheduleLedgerApiTests.test_historical_ledger_rejects_drifted_immutable_activation_amount)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_215119_normal_run/sfpcl_credit/tests/test_loan_schedule_ledger_api.py", line 244, in test_historical_ledger_rejects_drifted_immutable_activation_amount
+    self.assertEqual(response.status_code, 404, response.content)
+AssertionError: 200 != 404 : b'{"success": true, "data": [{"transaction_date": "2026-07-19", "transaction_type": "disbursement", "owner_reference": {"entity_type": "disbursement", "entity_id": "b2d65bdf-6f02-4226-96c2-c4547685b965"}, "reference": "RBL-READ-UTR-001", "debit": "400000.00", "credit": "0.00", "principal_balance": "400000.00", "interest_balance": "0.00", "total_outstanding": "400000.00", "actor": {"user_id": "4595ff96-7471-4818-9d09-62c4ebf490dc", "display_name": "CFC Authoriser"}, "sap_status": "pending", "remarks": "Initial loan disbursement."}], "pagination": {"page": 1, "page_size": 20, "total_count": 1, "total_pages": 1, "has_next": false, "has_previous": false}, "meta": {"request_id": null, "timestamp": "2026-07-19T16:47:29.538891Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.708s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_CODE=1
+TEST_SPEC=sfpcl_credit.tests.test_loan_schedule_ledger_api.LoanScheduleLedgerApiTests.test_historical_ledger_rejects_drifted_immutable_activation_amount
+SIGNAL=EXPECTED_RED

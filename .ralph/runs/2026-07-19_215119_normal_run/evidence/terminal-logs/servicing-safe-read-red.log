@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_later_servicing_balances_preserve_schedule_and_opening_disbursement (sfpcl_credit.tests.test_loan_schedule_ledger_api.LoanScheduleLedgerApiTests.test_later_servicing_balances_preserve_schedule_and_opening_disbursement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_215119_normal_run/sfpcl_credit/tests/test_loan_schedule_ledger_api.py", line 223, in test_later_servicing_balances_preserve_schedule_and_opening_disbursement
+    self.assertEqual(schedule.status_code, 200, schedule.content)
+AssertionError: 404 != 200 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "The loan account was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-19T16:40:52.394191Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 1.068s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_CODE=1
+TEST_SPEC=sfpcl_credit.tests.test_loan_schedule_ledger_api.LoanScheduleLedgerApiTests.test_later_servicing_balances_preserve_schedule_and_opening_disbursement
+SIGNAL=EXPECTED_RED

@@ -18,9 +18,12 @@ class PostTransferEvidence:
     member_id: UUID
     amount: Decimal
     initiated_by_user_id: UUID
+    transfer_actor_user_id: UUID
+    transfer_actor_display_name: str
     transfer_action_id: UUID
     transfer_evidence_digest: str
     bank_transfer_id: UUID
+    bank_reference_number: str
     loan_register_update_id: UUID
     advice_intent_id: UUID
     transfer_audit_id: UUID
@@ -28,6 +31,7 @@ class PostTransferEvidence:
     initiated_at: object
     authorised_at: object
     disbursed_at: object
+    sap_posting_status: str
 
     def checklist_evidence(self):
         return {
@@ -88,6 +92,25 @@ def filter_accounts_with_current_transfer(queryset):
 
 
 def resolve_post_transfer_evidence(*, application_id, for_update=False):
+    return _resolve_post_transfer_evidence(
+        application_id=application_id,
+        for_update=for_update,
+        require_opening_account_state=True,
+    )
+
+
+def resolve_historical_post_transfer_evidence(*, application_id):
+    """Return immutable transfer truth without freezing later servicing balances."""
+    return _resolve_post_transfer_evidence(
+        application_id=application_id,
+        for_update=False,
+        require_opening_account_state=False,
+    )
+
+
+def _resolve_post_transfer_evidence(
+    *, application_id, for_update, require_opening_account_state
+):
     query = Disbursement.objects
     if for_update:
         query = query.select_for_update(of=("self",))
@@ -106,6 +129,7 @@ def resolve_post_transfer_evidence(*, application_id, for_update=False):
             "register_update",
             "loan_register_update",
             "advice_intent",
+            "initial_payment_sap_posting",
         )
         .filter(
             loan_application_id=application_id,
@@ -113,7 +137,9 @@ def resolve_post_transfer_evidence(*, application_id, for_update=False):
         )
         .order_by("disbursement_id")[:2]
     )
-    if len(rows) != 1 or not completed_success_is_coherent(rows[0]):
+    if len(rows) != 1 or not completed_success_is_coherent(
+        rows[0], require_opening_account_state=require_opening_account_state
+    ):
         return None
     row = rows[0]
     return PostTransferEvidence(
@@ -123,9 +149,12 @@ def resolve_post_transfer_evidence(*, application_id, for_update=False):
         member_id=row.member_id,
         amount=row.disbursement_amount,
         initiated_by_user_id=row.initiated_by_user_id,
+        transfer_actor_user_id=row.transfer_success_actor_user_id,
+        transfer_actor_display_name=row.transfer_success_actor_user.full_name,
         transfer_action_id=row.transfer_success_action_id,
         transfer_evidence_digest=row.transfer_success_evidence_digest,
         bank_transfer_id=row.bank_transfer.pk,
+        bank_reference_number=row.bank_transfer.bank_reference_number,
         loan_register_update_id=row.loan_register_update.pk,
         advice_intent_id=row.advice_intent.pk,
         transfer_audit_id=row.transfer_success_audit_id,
@@ -133,4 +162,13 @@ def resolve_post_transfer_evidence(*, application_id, for_update=False):
         initiated_at=row.initiated_at,
         authorised_at=row.authorised_at,
         disbursed_at=row.disbursed_at,
+        sap_posting_status=row.initial_payment_sap_posting.posting_status,
     )
+
+
+__all__ = [
+    "PostTransferEvidence",
+    "filter_accounts_with_current_transfer",
+    "resolve_historical_post_transfer_evidence",
+    "resolve_post_transfer_evidence",
+]

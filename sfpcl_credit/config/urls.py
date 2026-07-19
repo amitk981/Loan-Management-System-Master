@@ -47,6 +47,16 @@ urlpatterns = [
         name="loan-account-detail",
     ),
     path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/repayment-schedule/",
+        loan_views.repayment_schedule,
+        name="loan-account-repayment-schedule",
+    ),
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/ledger/",
+        loan_views.ledger,
+        name="loan-account-ledger",
+    ),
+    path(
         "api/v1/disbursements/<uuid:disbursement_id>/send-advice/",
         disbursement_views.send_disbursement_advice,
         name="disbursement-send-advice",
