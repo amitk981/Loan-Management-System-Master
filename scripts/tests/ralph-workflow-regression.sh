@@ -1042,6 +1042,88 @@ fi
 [[ "$(ralph_architecture_review_boundary_reason 009K-close 010A-start \
       '010A-start (Not Started)')" == "epic_boundary:009->010" ]] \
   || fail "cross-epic completion did not require an architecture review"
+
+parent_epic_repo="$fixture_dir/parent-epic-review-repo"
+mkdir -p "$parent_epic_repo"
+cat > "$parent_epic_repo/009L6-close.md" <<'EOF'
+# Slice 009L6
+## Status
+Complete
+## Parent Epic
+Epic 009: SAP, Loan Account Creation, and Disbursement
+EOF
+cat > "$parent_epic_repo/CR-012-proof.md" <<'EOF'
+# Slice CR-012
+## Status
+Not Started
+## Parent Epic
+Epic 009: SAP, Loan Account Creation, and Disbursement
+EOF
+cat > "$parent_epic_repo/010A-start.md" <<'EOF'
+# Slice 010A
+## Status
+Not Started
+## Parent Epic
+Epic 010: Servicing, Repayments, Interest, and Monitoring
+EOF
+[[ -z "$(ralph_architecture_review_boundary_reason 009L6-close CR-012-proof \
+      $'CR-012-proof (Not Started)\n010A-start (Not Started)' "$parent_epic_repo")" ]] \
+  || fail "same-parent change request was skipped by epic-boundary detection"
+[[ "$(ralph_architecture_review_boundary_reason CR-012-proof 010A-start \
+      '010A-start (Not Started)' "$parent_epic_repo")" == "epic_boundary:009->010" ]] \
+  || fail "final same-parent change request did not trigger the real epic boundary"
+
+false_boundary_state="$fixture_dir/false-boundary-state.json"
+cat > "$false_boundary_state" <<'EOF'
+{
+  "architecture_review_due": true,
+  "architecture_review_due_reason": "epic_boundary:009->010",
+  "last_architecture_review_metrics": {"corrective_slices_added": 1}
+}
+EOF
+ralph_reconcile_architecture_review_due "$false_boundary_state" "$parent_epic_repo"
+python3 - "$false_boundary_state" <<'PY'
+import json
+import sys
+
+state = json.load(open(sys.argv[1]))
+if state.get("architecture_review_due") is not False:
+    raise SystemExit("false parent-epic boundary remained due")
+if state.get("architecture_review_cycle_epic") != "009":
+    raise SystemExit("reconciled corrective cycle lost its epic")
+if state.get("architecture_review_corrective_generation") != 1:
+    raise SystemExit("reconciled corrective cycle lost its first generation")
+PY
+python3 - "$false_boundary_state" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_due"] = True
+state["architecture_review_due_reason"] = "epic_boundary:009->010"
+path.write_text(json.dumps(state) + "\n")
+PY
+scope_instruction="$(ralph_architecture_review_scope_instruction "$false_boundary_state")"
+[[ "$scope_instruction" == *"targeted corrective-closure review generation 1 for Epic 009"* ]] \
+  || fail "corrective cycle did not select the targeted closure-review lane"
+
+convergence_config="$fixture_dir/convergence-config.yaml"
+cat > "$convergence_config" <<'EOF'
+run:
+  architecture_review_max_corrective_generations: 2
+EOF
+printf '{"architecture_review_corrective_generation": 1}\n' > "$adaptive_state"
+ralph_validate_architecture_review_convergence "$convergence_config" "$adaptive_state" 1 \
+  || fail "second corrective generation was not admitted"
+printf '{"architecture_review_corrective_generation": 2}\n' > "$adaptive_state"
+if ralph_validate_architecture_review_convergence \
+    "$convergence_config" "$adaptive_state" 1 >/dev/null 2>&1; then
+  fail "third corrective generation escaped the convergence cap"
+fi
+ralph_validate_architecture_review_convergence "$convergence_config" "$adaptive_state" 0 \
+  || fail "clean closure review was blocked by the convergence cap"
 [[ "$(ralph_architecture_review_boundary_reason 009K-close '' \
       '010A-parked (Blocked)')" == "epic_boundary:009->010" ]] \
   || fail "a blocked next epic hid its mandatory boundary review"

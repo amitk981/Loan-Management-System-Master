@@ -415,6 +415,11 @@ split_instruction=""
 split_corrective_instruction=""
 split_read_target="docs/slices/$slice_file"
 architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md. Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work. Bundle Medium findings into the owning slice or epic closure and record Low findings unless they naturally combine with higher-severity work. Group related symptoms by root owner instead of creating one slice per symptom. Report findings closed, new findings by severity, and corrective slices added in review-packet.md under '## Convergence Metrics' using the exact lines '- Findings closed: N', '- New Critical: N', '- New High: N', '- New Medium: N', '- New Low: N', and '- Corrective slices added: N'. A new corrective must be a numeric Not Started slice with a valid Depends On contract. When an actionable existing root-owner slice already covers a new Critical/High finding, do not duplicate it; add one exact '- Existing corrective slice: ID' line per mapped slice under the convergence metrics. Validation requires every mapped ID to resolve to one tracked Not Started or Blocked slice. If corrective additions exceed closures across two reviews, recommend one root-cause boundary correction instead of further leaf patches."
+architecture_scope_instruction="$(ralph_architecture_review_scope_instruction \
+  "$repo_root/.ralph/state.json")"
+if [[ -n "$architecture_scope_instruction" ]]; then
+  architecture_instruction="$architecture_instruction $architecture_scope_instruction"
+fi
 if [[ -n "$split_slice_id" ]]; then
   split_read_target="$split_slice_file"
   printf -v split_origin_marker 'Oversized slice: `%s`' "$split_slice_id"
@@ -718,6 +723,23 @@ elif not "$split_slice_id":
         else int("$arch_base_threshold")
     )
     state["last_architecture_review_metrics"] = metrics
+    if metrics["corrective_slices_added"] > 0:
+        import re
+        cycle_epic = state.get("architecture_review_cycle_epic")
+        if not cycle_epic:
+            match = re.search(
+                r"epic_(?:boundary|completion):([0-9]{3})",
+                state.get("architecture_review_due_reason", ""),
+            )
+            cycle_epic = match.group(1) if match else None
+        if cycle_epic:
+            state["architecture_review_cycle_epic"] = cycle_epic
+        state["architecture_review_corrective_generation"] = (
+            int(state.get("architecture_review_corrective_generation", 0)) + 1
+        )
+    elif metrics["new_critical"] == 0 and metrics["new_high"] == 0:
+        state.pop("architecture_review_cycle_epic", None)
+        state.pop("architecture_review_corrective_generation", None)
     state["slices_completed_since_architecture_review"] = 0
     state["architecture_review_due"] = False
     state.pop("architecture_review_due_reason", None)
@@ -754,7 +776,7 @@ if [[ "$mode" != "architecture_review" ]]; then
   next_slice_id="${next_slice_file%.md}"
   remaining_after="$(ralph_remaining_slices "$worktree_dir/docs/slices")"
   boundary_reason="$(ralph_architecture_review_boundary_reason \
-    "$slice_id" "$next_slice_id" "$remaining_after")"
+    "$slice_id" "$next_slice_id" "$remaining_after" "$worktree_dir/docs/slices")"
   if [[ -n "$boundary_reason" ]]; then
     python3 - "$worktree_dir/.ralph/state.json" "$boundary_reason" <<'PY'
 import json

@@ -290,7 +290,7 @@
   "last_run_id": "2026-07-19_151614_repair",
   "last_run_status": "success",
   "slices_completed_since_architecture_review": 1,
-  "architecture_review_due": true,
+  "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -304,5 +304,6 @@
     "new_low": 1,
     "corrective_slices_added": 1
   },
-  "architecture_review_due_reason": "epic_boundary:009->010"
+  "architecture_review_cycle_epic": "009",
+  "architecture_review_corrective_generation": 1
 }

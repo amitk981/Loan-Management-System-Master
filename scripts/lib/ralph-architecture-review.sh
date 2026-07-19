@@ -102,25 +102,70 @@ ralph_architecture_review_due_after_product() {
   fi
 }
 
-# Return the mandatory review reason introduced by a completed numbered slice.
-# A transition to a different numbered epic is an ordinary boundary; finishing
-# the last actionable slice is the final epic/project-completion boundary.
-# Blocked work prevents a false final-completion checkpoint.
+# Return the Parent Epic numbers declared by one slice. Older fixture slices
+# without metadata retain the numeric-prefix fallback, but real queue decisions
+# prefer the explicit owner so CR-* maintenance work cannot be skipped.
+ralph_slice_parent_epics() {
+  local slice_dir="${1:?slice directory is required}" slice_id="${2:-}"
+  local slice_file="$slice_dir/$slice_id.md" values=""
+  if [[ -f "$slice_file" ]]; then
+    values="$(awk '
+      /^## Parent Epic(s)?[[:space:]]*$/ { inside = 1; next }
+      inside && /^## / { exit }
+      inside { print }
+    ' "$slice_file" | sed -nE 's/.*Epic[[:space:]]+([0-9][0-9][0-9]).*/\1/p' \
+      | sort -u)"
+  fi
+  if [[ -n "$values" ]]; then
+    printf '%s\n' "$values"
+  elif [[ "$slice_id" =~ ^([0-9][0-9][0-9]) ]]; then
+    printf '%s\n' "${BASH_REMATCH[1]}"
+  fi
+}
+
+ralph_queue_has_unfinished_parent_epic() {
+  local slice_dir="${1:?slice directory is required}" epic="${2:-}"
+  local candidate status parent
+  [[ "$epic" =~ ^[0-9][0-9][0-9]$ ]] || return 1
+  for candidate in "$slice_dir"/*.md; do
+    [[ -f "$candidate" ]] || continue
+    [[ "$(basename "$candidate")" != "architecture-review.md" ]] || continue
+    status="$(awk '/^## Status/ { getline; print; exit }' "$candidate")"
+    case "$status" in
+      "Not Started"|Blocked) ;;
+      *) continue ;;
+    esac
+    while IFS= read -r parent; do
+      [[ "$parent" == "$epic" ]] && return 0
+    done < <(ralph_slice_parent_epics "$slice_dir" "$(basename "$candidate" .md)")
+  done
+  return 1
+}
+
+# Return the mandatory review reason introduced by a completed slice. Explicit
+# Parent Epic ownership is authoritative, including for CR-* slices. A review
+# is not due while any actionable/blocked slice from the same epic remains.
 ralph_architecture_review_boundary_reason() {
   local current_slice="${1:-}" next_slice="${2:-}" remaining="${3:-}"
-  local current_epic="" next_epic="" remaining_line
-  if [[ "$current_slice" =~ ^([0-9][0-9][0-9]) ]]; then
-    current_epic="${BASH_REMATCH[1]}"
+  local slice_dir="${4:-docs/slices}" current_epic="" next_epic=""
+  local remaining_line remaining_id parent
+  current_epic="$(ralph_slice_parent_epics "$slice_dir" "$current_slice" | head -1)"
+  if [[ -n "$current_epic" ]]; then
+    while IFS= read -r remaining_line; do
+      [[ -n "$remaining_line" ]] || continue
+      remaining_id="${remaining_line%% (*}"
+      while IFS= read -r parent; do
+        [[ "$parent" == "$current_epic" ]] && return 0
+      done < <(ralph_slice_parent_epics "$slice_dir" "$remaining_id")
+    done <<< "$remaining"
   fi
-  if [[ "$next_slice" =~ ^([0-9][0-9][0-9]) ]]; then
-    next_epic="${BASH_REMATCH[1]}"
-  fi
+  next_epic="$(ralph_slice_parent_epics "$slice_dir" "$next_slice" | head -1)"
   if [[ -z "$next_epic" && -n "$remaining" ]]; then
     while IFS= read -r remaining_line; do
-      if [[ "$remaining_line" =~ ^([0-9][0-9][0-9]) ]]; then
-        next_epic="${BASH_REMATCH[1]}"
-        break
-      fi
+      [[ -n "$remaining_line" ]] || continue
+      remaining_id="${remaining_line%% (*}"
+      next_epic="$(ralph_slice_parent_epics "$slice_dir" "$remaining_id" | head -1)"
+      [[ -n "$next_epic" ]] && break
     done <<< "$remaining"
   fi
   if [[ -n "$current_epic" && -n "$next_epic" && "$next_epic" != "$current_epic" ]]; then
@@ -131,6 +176,111 @@ ralph_architecture_review_boundary_reason() {
       && -n "$current_slice" ]]; then
     printf 'project_completion:%s\n' "$current_slice"
   fi
+}
+
+# Remove only boundary reasons disproved by explicit pending Parent Epic work.
+# Cadence, failed-review, and completion reasons remain fail-closed. When this
+# repairs a terminal-corrective false positive, retain one corrective generation
+# so the eventual real epic checkpoint uses the targeted closure lane.
+ralph_reconcile_architecture_review_due() {
+  local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
+  local due reason part epic kept="" repaired_epic=""
+  local boundary_pattern='^epic_boundary:([0-9][0-9][0-9])->'
+  due="$(ralph_architecture_review_due "$state_file")" || return 1
+  [[ "$due" == "True" ]] || return 0
+reason="$(python3 - "$state_file" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1])).get("architecture_review_due_reason", ""))
+PY
+)"
+  [[ -n "$reason" ]] || return 0
+  IFS='+' read -r -a parts <<< "$reason"
+  for part in "${parts[@]}"; do
+    if [[ "$part" =~ $boundary_pattern ]]; then
+      epic="${BASH_REMATCH[1]}"
+      if ralph_queue_has_unfinished_parent_epic "$slice_dir" "$epic"; then
+        repaired_epic="$epic"
+        continue
+      fi
+    fi
+    kept="${kept:+$kept+}$part"
+  done
+  [[ -n "$repaired_epic" ]] || return 0
+  python3 - "$state_file" "$kept" "$repaired_epic" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+kept = sys.argv[2]
+epic = sys.argv[3]
+state = json.loads(path.read_text())
+state["architecture_review_due"] = bool(kept)
+if kept:
+    state["architecture_review_due_reason"] = kept
+else:
+    state.pop("architecture_review_due_reason", None)
+if int(state.get("last_architecture_review_metrics", {}).get("corrective_slices_added", 0)) > 0:
+    state["architecture_review_cycle_epic"] = epic
+    state["architecture_review_corrective_generation"] = max(
+        1, int(state.get("architecture_review_corrective_generation", 0))
+    )
+path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+  printf 'Reconciled premature architecture-review boundary for Epic %s; same-epic work remains.\n' \
+    "$repaired_epic"
+}
+
+ralph_validate_architecture_review_convergence() {
+  local config="${1:?config is required}" state_file="${2:?state file is required}"
+  local added="${3:-}" maximum generation
+  [[ "$added" =~ ^[0-9]+$ ]] || {
+    echo "Corrective-slice addition count must be a non-negative integer." >&2
+    return 1
+  }
+  (( added > 0 )) || return 0
+  maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+  maximum="${maximum:-2}"
+  generation="$(python3 - "$state_file" <<'PY'
+import json, sys
+try:
+    print(max(0, int(json.load(open(sys.argv[1])).get("architecture_review_corrective_generation", 0))))
+except (OSError, ValueError, TypeError, json.JSONDecodeError):
+    print("invalid")
+PY
+)"
+  if ! [[ "$maximum" =~ ^[1-9][0-9]*$ && "$generation" =~ ^[0-9]+$ ]]; then
+    echo "Invalid architecture-review convergence configuration or state." >&2
+    return 1
+  fi
+  if (( generation + 1 > maximum )); then
+    echo "Architecture review exceeded the $maximum-generation corrective cap; refusing another successor." >&2
+    return 1
+  fi
+}
+
+ralph_architecture_review_scope_instruction() {
+  local state_file="${1:?state file is required}"
+  python3 - "$state_file" <<'PY'
+import json, re, sys
+try:
+    state = json.load(open(sys.argv[1]))
+except (OSError, json.JSONDecodeError):
+    raise SystemExit(0)
+reason = state.get("architecture_review_due_reason", "")
+cycle = state.get("architecture_review_cycle_epic")
+generation = int(state.get("architecture_review_corrective_generation", 0) or 0)
+match = re.search(r"epic_(?:boundary|completion):([0-9]{3})", reason)
+if match and cycle == match.group(1) and generation > 0:
+    print(
+        f"- This is targeted corrective-closure review generation {generation} for Epic {cycle}. "
+        "Review only the diffs since the last successful review, the active findings already mapped "
+        "to this review cycle, and their declared acceptance evidence. Do not rescan unaffected "
+        "historical modules or relabel the same root-owner symptom as a new finding. At most one "
+        "additional root repair may be admitted; a later recurrence must fail closed instead of "
+        "creating another leaf corrective."
+    )
+PY
 }
 
 # Critical/High findings cannot disappear into a metrics packet. Related

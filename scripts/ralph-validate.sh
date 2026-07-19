@@ -287,6 +287,13 @@ elif [[ "$mode" == "architecture_review" ]]; then
         exit 1
       fi
       echo "PASS: Critical/High findings have corrective work admitted when required."
+      if ! ralph_validate_architecture_review_convergence \
+          "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
+          "$corrective_added"; then
+        echo "FAIL: architecture-review corrective cycle did not converge within its bounded budget."
+        exit 1
+      fi
+      echo "PASS: architecture-review corrective generation remains within its bounded budget."
     else
       echo "FAIL: review-packet.md is missing valid convergence metrics."
       exit 1

@@ -284,6 +284,11 @@ if ! ./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log"; then
   echo "Stopping: interrupted-run recovery failed closed; product work was not started." | tee -a "$loop_log"
   exit 2
 fi
+if ! ralph_reconcile_architecture_review_due .ralph/state.json docs/slices \
+    2>&1 | tee -a "$loop_log"; then
+  echo "Stopping: architecture-review boundary reconciliation failed closed." | tee -a "$loop_log"
+  exit 2
+fi
 
 for ((i = 1; i <= max_iterations; i++)); do
   echo "" | tee -a "$loop_log"
