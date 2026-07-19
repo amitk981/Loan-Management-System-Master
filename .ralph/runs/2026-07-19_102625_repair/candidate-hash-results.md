@@ -4,3 +4,7 @@ Before validation: 336c4b517f3d09bbb1be4ecc2d709524c3fe1f3afd1dafe3d21a4fb860363
 Commit candidate before validation: c6c0c9c1888145c64450d018153f61a4a81f4bf59cab1532d1eeaa15496587db
 After validation: 336c4b517f3d09bbb1be4ecc2d709524c3fe1f3afd1dafe3d21a4fb860363137
 PASS: candidate content remained frozen throughout validation.
+
+Before commit: c6c0c9c1888145c64450d018153f61a4a81f4bf59cab1532d1eeaa15496587db
+Committed candidate: c6c0c9c1888145c64450d018153f61a4a81f4bf59cab1532d1eeaa15496587db
+PASS: committed product candidate exactly matches the validated candidate.
