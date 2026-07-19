@@ -10,6 +10,7 @@ from django.core import signing
 from django.db import transaction
 from django.db.models import (
     BooleanField,
+    CharField,
     Count,
     Exists,
     F,
@@ -22,7 +23,7 @@ from django.db.models import (
     Value,
 )
 from django.db.models.fields.json import KeyTextTransform
-from django.db.models.functions import Cast, Coalesce, NullIf, SHA256
+from django.db.models.functions import Cast, Coalesce, Concat, NullIf, SHA256
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -82,6 +83,27 @@ class _JsonObjectKeyCount(Func):
             f"THEN (SELECT COUNT(*) FROM JSONB_OBJECT_KEYS({sql})) ELSE -1 END",
             (*params, *params),
         )
+
+
+class _UuidText(Func):
+    """Render UUIDField values identically on SQLite and PostgreSQL."""
+
+    output_field = CharField()
+    arity = 1
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return (
+            "LOWER(SUBSTR({0},1,8)||'-'||SUBSTR({0},9,4)||'-'||"
+            "SUBSTR({0},13,4)||'-'||SUBSTR({0},17,4)||'-'||SUBSTR({0},21,12))".format(
+                sql
+            ),
+            params * 5,
+        )
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return f"CAST({sql} AS text)", params
 
 
 class _JsonValuesEqual(Func):
@@ -326,11 +348,6 @@ def assigned_workspace_rows(
         requests = requests[offset:]
     rows = []
     for profile_request in requests:
-        if (
-            profile_request.request_status == profile_request.STATUS_SENT
-            and not _current_send_evidence(profile_request)
-        ):
-            continue
         actions = []
         if profile_request.request_status == profile_request.STATUS_SENT:
             actions.append(
@@ -442,6 +459,27 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
         .annotate(total=Count("pk"))
         .values("total")
     )
+    send_communications = (
+        Communication.objects.filter(
+            related_entity_type="sap_customer_profile_request",
+            related_entity_id=OuterRef("pk"),
+        )
+        .order_by()
+        .values("related_entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    send_tasks = (
+        Notification.objects.filter(
+            related_entity_type="sap_customer_profile_request",
+            related_entity_id=OuterRef("pk"),
+            notification_type="sap_customer_profile_request",
+        )
+        .order_by()
+        .values("related_entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
     requests = (
         SapCustomerProfileRequest.objects.select_related(
             "loan_application", "member", "sap_customer_code", "assigned_to_user__primary_role",
@@ -450,6 +488,8 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
         .annotate(
             _send_audit_count=Subquery(send_audits[:1]),
             _send_workflow_count=Subquery(send_workflows[:1]),
+            _send_communication_count=Subquery(send_communications[:1]),
+            _send_task_count=Subquery(send_tasks[:1]),
         )
         .filter(
             assigned_to_user=actor,
@@ -465,6 +505,8 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
             assigned_to_user__primary_role__role_code="senior_manager_finance",
             requested_by_user__status=User.ACTIVE_STATUS,
             sent_communication__recipient_party_type="user",
+            sent_communication__related_entity_type="sap_customer_profile_request",
+            sent_communication__related_entity_id=F("pk"),
             sent_communication__recipient_party_id=F("assigned_to_user_id"),
             sent_communication__recipient_address=F("assigned_to_user__email"),
             sent_communication__channel=Communication.CHANNEL_EMAIL,
@@ -481,6 +523,8 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
             sent_communication__acknowledgement_status__isnull=True,
             sent_communication__external_message_id=F("delivery_reference"),
             sent_task__communication_id=F("sent_communication_id"),
+            sent_task__related_entity_type="sap_customer_profile_request",
+            sent_task__related_entity_id=F("pk"),
             sent_task__notification_type="sap_customer_profile_request",
             sent_task__category="Finance",
             sent_task__severity=Notification.SEVERITY_INFO,
@@ -489,6 +533,11 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
                 "A checksum-verified Annexure-I is ready in the governed SAP workspace."
             ),
             sent_task__action_label="Open SAP delivery",
+            sent_task__action_url=Concat(
+                Value("/api/v1/sap-customer-profile-requests/"),
+                _UuidText(F("pk")),
+                Value("/annexure-i-delivery-capability/"),
+            ),
             sent_task__sender_user_id=F("requested_by_user_id"),
             sent_task__recipient_user_id=F("assigned_to_user_id"),
             sent_task__recipient_role_code="",
@@ -501,9 +550,12 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
             excel_file__storage_provider__gt="",
             excel_file__storage_key__gt="",
             excel_file__checksum_sha256__gt="",
+            excel_file__checksum_sha256=F("delivery_storage_checksum_sha256"),
             excel_file__file_size_bytes__gt=0,
             _send_audit_count=1,
             _send_workflow_count=1,
+            _send_communication_count=1,
+            _send_task_count=1,
         )
         .order_by("-created_at", "-sap_customer_profile_request_id")
     )
@@ -621,8 +673,12 @@ def filter_current_account_completions(queryset):
         _latest_sap_application_id=Subquery(latest.values("loan_application_id")[:1]),
         _latest_sap_code_id=Subquery(latest.values("sap_customer_code_id")[:1]),
         _latest_sap_assignee_id=Subquery(latest.values("assigned_to_user_id")[:1]),
+        _latest_sap_requester_id=Subquery(latest.values("requested_by_user_id")[:1]),
         _latest_sap_completion_digest=Subquery(
             latest.values("completion_input_digest")[:1]
+        ),
+        _latest_sap_delivery_checksum=Subquery(
+            latest.values("delivery_checksum_sha256")[:1]
         ),
     )
     completion_audits = (
@@ -677,13 +733,153 @@ def filter_current_account_completions(queryset):
         .annotate(total=Count("pk"))
         .values("total")
     )
+    completion_send_audits = (
+        AuditLog.objects.annotate(
+            _evidence_key_count=_JsonObjectKeyCount("new_value_json"),
+            _retained_key_count=_JsonObjectKeyCount("old_value_json"),
+            _selector_manifest_matches=_JsonValuesEqual(
+                "new_value_json", "old_value_json__selector_manifest"
+            ),
+            _canonical_manifest_matches=_JsonValuesEqual(
+                "new_value_json",
+                Cast(
+                    Coalesce(
+                        NullIf("selector_manifest_json", Value("")), Value("{}")
+                    ),
+                    JSONField(),
+                ),
+            ),
+            _canonical_manifest_digest=SHA256("selector_manifest_json"),
+            _annexure_checksum_sha256=KeyTextTransform(
+                "annexure_checksum_sha256", "new_value_json"
+            ),
+        )
+        .filter(
+            entity_type="sap_customer_profile_request",
+            entity_id=OuterRef("_latest_sap_request_id"),
+            action="finance.sap_customer_code.sent",
+            actor_type="user",
+            _evidence_key_count=28,
+            _retained_key_count=5,
+            _selector_manifest_matches=True,
+            _canonical_manifest_matches=True,
+            _canonical_manifest_digest=F("selector_manifest_sha256"),
+            _annexure_checksum_sha256=OuterRef("_latest_sap_delivery_checksum"),
+        )
+        .order_by()
+        .values("entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    completion_send_workflows = (
+        WorkflowEvent.objects.filter(
+            workflow_name="SAPCustomerCodeSent",
+            entity_type="sap_customer_profile_request",
+            entity_id=OuterRef("_latest_sap_request_id"),
+            from_state=SapCustomerProfileRequest.STATUS_DRAFT,
+            to_state=SapCustomerProfileRequest.STATUS_SENT,
+            trigger_reason="finance.sap_customer_code.sent",
+            triggered_by_user_id=OuterRef("_latest_sap_requester_id"),
+        )
+        .order_by()
+        .values("entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    send_communications = (
+        Communication.objects.filter(
+            related_entity_type="sap_customer_profile_request",
+            related_entity_id=OuterRef("_latest_sap_request_id"),
+        )
+        .order_by()
+        .values("related_entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
+    send_tasks = (
+        Notification.objects.filter(
+            related_entity_type="sap_customer_profile_request",
+            related_entity_id=OuterRef("_latest_sap_request_id"),
+            notification_type="sap_customer_profile_request",
+        )
+        .order_by()
+        .values("related_entity_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
     queryset = queryset.annotate(
         _completion_audit_count=Subquery(completion_audits[:1]),
         _completion_workflow_count=Subquery(completion_workflows[:1]),
+        _completion_send_audit_count=Subquery(completion_send_audits[:1]),
+        _completion_send_workflow_count=Subquery(completion_send_workflows[:1]),
+        _completion_send_communication_count=Subquery(send_communications[:1]),
+        _completion_send_task_count=Subquery(send_tasks[:1]),
     )
     return queryset.filter(
         Q(sap_customer_code_id__isnull=True)
         | Q(
+            loan_application__sap_customer_profile_requests__sap_customer_profile_request_id=F(
+                "_latest_sap_request_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_communication__body_snapshot=(
+                "A checksum-verified Annexure-I is ready in the governed SAP workspace."
+            ),
+            loan_application__sap_customer_profile_requests__sent_communication__related_entity_type="sap_customer_profile_request",
+            loan_application__sap_customer_profile_requests__sent_communication__related_entity_id=F(
+                "_latest_sap_request_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_communication__recipient_party_type="user",
+            loan_application__sap_customer_profile_requests__sent_communication__recipient_party_id=F(
+                "loan_application__sap_customer_profile_requests__assigned_to_user_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_communication__recipient_address=F(
+                "loan_application__sap_customer_profile_requests__assigned_to_user__email"
+            ),
+            loan_application__sap_customer_profile_requests__sent_communication__channel=Communication.CHANNEL_EMAIL,
+            loan_application__sap_customer_profile_requests__sent_communication__content_template_id__isnull=True,
+            loan_application__sap_customer_profile_requests__sent_communication__sent_by_user_id=F(
+                "loan_application__sap_customer_profile_requests__requested_by_user_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_communication__sent_at__isnull=True,
+            loan_application__sap_customer_profile_requests__sent_communication__subject_snapshot=(
+                "SAP customer profile creation request"
+            ),
+            loan_application__sap_customer_profile_requests__sent_communication__delivery_status="delivered",
+            loan_application__sap_customer_profile_requests__sent_communication__acknowledgement_status__isnull=True,
+            loan_application__sap_customer_profile_requests__sent_communication__external_message_id=F(
+                "loan_application__sap_customer_profile_requests__delivery_reference"
+            ),
+            loan_application__sap_customer_profile_requests__excel_file__checksum_sha256=F(
+                "loan_application__sap_customer_profile_requests__delivery_storage_checksum_sha256"
+            ),
+            loan_application__sap_customer_profile_requests__sent_task__communication_id=F(
+                "loan_application__sap_customer_profile_requests__sent_communication_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_task__related_entity_type="sap_customer_profile_request",
+            loan_application__sap_customer_profile_requests__sent_task__related_entity_id=F(
+                "_latest_sap_request_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_task__notification_type="sap_customer_profile_request",
+            loan_application__sap_customer_profile_requests__sent_task__category="Finance",
+            loan_application__sap_customer_profile_requests__sent_task__severity=Notification.SEVERITY_INFO,
+            loan_application__sap_customer_profile_requests__sent_task__title="SAP customer profile creation request",
+            loan_application__sap_customer_profile_requests__sent_task__message=(
+                "A checksum-verified Annexure-I is ready in the governed SAP workspace."
+            ),
+            loan_application__sap_customer_profile_requests__sent_task__action_label="Open SAP delivery",
+            loan_application__sap_customer_profile_requests__sent_task__action_url=Concat(
+                Value("/api/v1/sap-customer-profile-requests/"),
+                _UuidText(F("_latest_sap_request_id")),
+                Value("/annexure-i-delivery-capability/"),
+            ),
+            loan_application__sap_customer_profile_requests__sent_task__sender_user_id=F(
+                "loan_application__sap_customer_profile_requests__requested_by_user_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_task__recipient_user_id=F(
+                "loan_application__sap_customer_profile_requests__assigned_to_user_id"
+            ),
+            loan_application__sap_customer_profile_requests__sent_task__recipient_role_code="",
+            loan_application__sap_customer_profile_requests__sent_task__recipient_team_code="",
             sap_customer_code__status=SapCustomerCode.STATUS_ACTIVE,
             sap_customer_code__member_id=F("member_id"),
             _latest_sap_status=SapCustomerProfileRequest.STATUS_COMPLETED,
@@ -693,6 +889,10 @@ def filter_current_account_completions(queryset):
             _latest_sap_completion_digest__gt="",
             _completion_audit_count=1,
             _completion_workflow_count=1,
+            _completion_send_audit_count=1,
+            _completion_send_workflow_count=1,
+            _completion_send_communication_count=1,
+            _completion_send_task_count=1,
         )
     )
 
@@ -785,6 +985,9 @@ def _current_send_evidence(request):
         and request.sent_task_id
         and request.delivery_reference
         and len(request.delivery_checksum_sha256 or "") == 64
+        and len(request.delivery_storage_checksum_sha256 or "") == 64
+        and request.excel_file.checksum_sha256
+        == request.delivery_storage_checksum_sha256
         and evidence.get("annexure_checksum_sha256")
         == request.delivery_checksum_sha256
         and evidence.get("assigned_to_user_id") == str(request.assigned_to_user_id)
@@ -834,6 +1037,7 @@ def _exact_annexure_file(request):
     document = request.excel_file
     if (
         document.pk != request.delivery_file_id_snapshot
+        or document.checksum_sha256 != request.delivery_storage_checksum_sha256
         or not document.file_name.lower().endswith(".xlsx")
         or document.file_extension != ".xlsx"
         or document.mime_type != XLSX_MIME_TYPE

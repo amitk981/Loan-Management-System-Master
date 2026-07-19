@@ -28,12 +28,9 @@ from sfpcl_credit.disbursements.modules.disbursement_advice import (
 from sfpcl_credit.domain_errors import DomainPermissionDenied
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.models import LoanAccount
-from sfpcl_credit.loans.modules.loan_account_read import (
-    LoanAccountReadPermissionDenied,
-)
 from sfpcl_credit.processes.loan_account_360 import (
-    eligible_account_candidates,
-    list_account_window,
+    eligible_initiation_account_candidates,
+    list_initiation_account_window,
 )
 from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
     assigned_workspace_row_count,
@@ -95,12 +92,9 @@ def list_workspace(*, actor, query_params):
         }
     elif can_initiate:
         filters = {"search": "", "status": "", "member_id": None}
-        try:
-            account_total = eligible_account_candidates(
-                actor=actor, filters=filters
-            ).count()
-        except LoanAccountReadPermissionDenied:
-            account_total = 0
+        account_total = eligible_initiation_account_candidates(
+            actor=actor, filters=filters
+        ).count()
         sap_total = (
             assigned_workspace_row_count(
                 actor=actor, without_loan_account=True
@@ -127,7 +121,7 @@ def list_workspace(*, actor, query_params):
         account_limit = page_size - len(projections)
         account_offset = max(0, start - sap_total)
         if account_limit and account_offset < account_total:
-            account_rows = list_account_window(
+            account_rows = list_initiation_account_window(
                 actor=actor,
                 filters=filters,
                 offset=account_offset,
@@ -191,7 +185,6 @@ def list_workspace(*, actor, query_params):
         projections = [
             _project_disbursement(actor=actor, row=row, permissions=permissions)
             for row in candidates[start : start + page_size]
-            if _disbursement_is_current(row)
         ]
         return projections, {
             "page": page,

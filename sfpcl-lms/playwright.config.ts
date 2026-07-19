@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 import { resolveChromiumExecutable } from './playwright.browser';
+import { fixtureSeedCommands } from './playwright.seed';
 
 // This config lives in sfpcl-lms/. The Django backend is one level up.
 const repoRoot = path.resolve(__dirname, '..');
@@ -28,12 +29,7 @@ const e2eStorageRoot =
 
 const manage = `"${djangoPython}" sfpcl_credit/manage.py`;
 const chromiumExecutable = resolveChromiumExecutable();
-const epic009Contract = process.argv.some(argument =>
-  argument.includes('epic-009-staff-disbursement-closure.e2e.spec.ts'),
-);
-const seedCommands = epic009Contract
-  ? `${manage} seed_epic_009_e2e_fixture && `
-  : `${manage} seed_role_catalogue && ${manage} seed_e2e_users && ${manage} seed_portal_e2e_fixture && `;
+const seedCommands = fixtureSeedCommands(manage, process.argv.slice(2));
 
 export default defineConfig({
   testDir: './e2e',

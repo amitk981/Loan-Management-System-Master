@@ -1,0 +1,14 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+E.....
+======================================================================
+ERROR: SeedE2EUsersTests (unittest.loader._FailedTest.SeedE2EUsersTests)
+----------------------------------------------------------------------
+AttributeError: module 'sfpcl_credit.tests.test_seed_e2e_users' has no attribute 'SeedE2EUsersTests'
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.866s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

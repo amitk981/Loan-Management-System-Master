@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/playwright.seed.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms
+
+ ✓ src/playwright.seed.test.ts (3 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  18:29:15
+   Duration  333ms (transform 29ms, setup 0ms, collect 28ms, tests 2ms, environment 0ms, prepare 50ms)
+

@@ -18,7 +18,8 @@ from django.test import RequestFactory
 
 from sfpcl_credit.communications.models import Notification
 from sfpcl_credit.documents.services import store_document_upload
-from sfpcl_credit.identity.models import Permission, User
+from sfpcl_credit.identity.epic009_e2e_fixture import build_ready_epic009_fixture
+from sfpcl_credit.identity.models import User
 
 
 E2E_PASSWORD = "ChecklistPass123!"
@@ -100,81 +101,13 @@ class Command(BaseCommand):
 
     @staticmethod
     def _seed_ready_account():
-        # Imported only behind the E2E guards: production startup never imports test helpers.
-        from sfpcl_credit.tests.test_final_documentation_approval_api import (
-            FinalDocumentationApprovalApiTests,
+        return build_ready_epic009_fixture(
+            password=E2E_PASSWORD,
+            finance_email=FINANCE_EMAIL,
+            credit_email=CREDIT_EMAIL,
+            cfc_email=CFC_EMAIL,
+            borrower_email=BORROWER_EMAIL,
         )
-
-        owner = FinalDocumentationApprovalApiTests(
-            "test_disbursement_readiness_real_owners_reach_a126_then_all_pass"
-        )
-        owner.setUp()
-        finance = owner.finance
-        credit = owner.credit
-        # Establish deterministic browser identities before owner services freeze them.
-        Command._make_browser_actor(finance, FINANCE_EMAIL)
-        Command._make_browser_actor(credit, CREDIT_EMAIL)
-        ready = owner._real_owner_initiation_fixture(stop_before_initiation=True)
-        ready["account"].member.email = BORROWER_EMAIL
-        ready["account"].member.save(update_fields=["email"])
-        from sfpcl_credit.loans.modules.loan_account_read import resolve_creation_truth
-        from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
-            get_account_customer_code,
-        )
-
-        if resolve_creation_truth(account=ready["account"]) is None:
-            raise CommandError("Epic 009 fixture produced no current loan creation truth.")
-        if get_account_customer_code(
-            application_id=ready["account"].loan_application_id,
-            member_id=ready["account"].member_id,
-            customer_code_id=ready["account"].sap_customer_code_id,
-        ) is None:
-            raise CommandError("Epic 009 fixture produced no current SAP completion truth.")
-        owner._grant(
-            finance,
-            "finance.loan_account.read",
-            "communications.notification.read",
-            "finance.disbursement.mark_success",
-            "finance.disbursement.send_advice",
-        )
-        advice_permission = Permission.objects.get(
-            permission_code="finance.disbursement.send_advice"
-        )
-        advice_permission.risk_level = Permission.RISK_HIGH
-        advice_permission.save(update_fields=["risk_level"])
-        owner._grant(
-            credit,
-            "finance.loan_account.read",
-            "communications.notification.read",
-        )
-
-        cfc = owner.fixture._user(
-            "chief_financial_controller", "Epic 009 Browser CFC"
-        )
-        Command._make_browser_actor(cfc, CFC_EMAIL)
-        cfc.approval_authority_type = "chief_financial_controller"
-        cfc.save(update_fields=["approval_authority_type"])
-        owner._grant(
-            cfc,
-            "finance.disbursement.authorise",
-            "finance.disbursement.mark_success",
-            "finance.loan_account.read",
-            "communications.notification.read",
-        )
-        return {
-            "owner": owner,
-            "ready": ready,
-            "finance": finance,
-            "credit": credit,
-            "cfc": cfc,
-        }
-
-    @staticmethod
-    def _make_browser_actor(user, email):
-        user.email = email
-        user.status = "active"
-        user.set_password(E2E_PASSWORD)
-        user.save(update_fields=["email", "status", "password_hash"])
 
     @staticmethod
     def _seed_browser_documents_and_notifications(facts):
@@ -193,21 +126,21 @@ class Command(BaseCommand):
 
     @staticmethod
     def _validate_account(facts, stage):
-        from sfpcl_credit.processes.loan_account_360 import _project
-        from sfpcl_credit.loans.modules.loan_account_read import resolve_creation_truth
-        from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
-            get_account_customer_code,
+        from sfpcl_credit.processes.loan_account_360 import (
+            LoanAccountProjectionNotFound,
+            get_account,
         )
 
         facts["ready"]["account"].refresh_from_db()
-        if _project(facts["ready"]["account"]) is None:
-            account = facts["ready"]["account"]
-            raise CommandError(
-                "Epic 009 account projection became incoherent after "
-                f"{stage}: creation={resolve_creation_truth(account=account) is not None}, "
-                "sap="
-                f"{get_account_customer_code(application_id=account.loan_application_id, member_id=account.member_id, customer_code_id=account.sap_customer_code_id) is not None}."
+        try:
+            get_account(
+                actor=facts["finance"],
+                loan_account_id=facts["ready"]["account"].pk,
             )
+        except LoanAccountProjectionNotFound as exc:
+            raise CommandError(
+                f"Epic 009 account became incoherent after {stage}."
+            ) from exc
 
     @staticmethod
     def _set_source_bank_status(bank, status):

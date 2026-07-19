@@ -113,8 +113,12 @@ class SapModelOwnershipMigrationTests(TransactionTestCase):
     def test_forward_and_reverse_transfer_preserve_exact_business_state(self):
         self.executor = MigrationExecutor(connection)
         self.executor.migrate(self.migrate_to)
+        moved_targets = [
+            node for node in self.executor.loader.graph.leaf_nodes()
+            if node[0] != "sap_workflow"
+        ] + self.migrate_to
         moved_apps = self.executor.loader.project_state(
-            self.executor.loader.graph.leaf_nodes()
+            moved_targets
         ).apps
 
         with self.assertRaises(LookupError):

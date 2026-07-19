@@ -1,0 +1,214 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test --list
+
+
+Error: RALPH_EVIDENCE_DIR is required for register/settings visual acceptance
+
+   at approval-register-settings.e2e.spec.ts:7
+
+   5 |
+   6 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+>  7 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for register/settings visual acceptance');
+     |                         ^
+   8 | fs.mkdirSync(evidenceDir, { recursive: true });
+   9 |
+  10 | test('S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigation', async ({ page }) => {
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/approval-register-settings.e2e.spec.ts:7:25)
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at completeness-workbench.e2e.spec.ts:6
+
+  4 |
+  5 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+    |                         ^
+  7 | fs.mkdirSync(evidenceDir, { recursive: true });
+  8 |
+  9 | test('completeness workbench uses backend actions and captures required states', async ({ page }) => {
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/completeness-workbench.e2e.spec.ts:6:25)
+
+Error: RALPH_EVIDENCE_DIR is required for Epic 006 closure
+
+   at epic-006-closure.e2e.spec.ts:7
+
+   5 |
+   6 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+>  7 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for Epic 006 closure');
+     |                         ^
+   8 | fs.mkdirSync(evidenceDir, { recursive: true });
+   9 |
+  10 | const FINANCE_EMAIL = 'e2e.credit.finance@sfpcl.example';
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/epic-006-closure.e2e.spec.ts:7:25)
+
+Error: RALPH_EVIDENCE_DIR is required
+
+   at epic-009-authority-evidence-pagination-closure.e2e.spec.ts:6
+
+  4 |
+  5 | const evidence = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidence) throw new Error('RALPH_EVIDENCE_DIR is required');
+    |                      ^
+  7 | fs.mkdirSync(evidence, { recursive: true });
+  8 | test.use({ viewport: { width: 1280, height: 720 }, timezoneId: 'Asia/Kolkata' });
+  9 |
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/epic-009-authority-evidence-pagination-closure.e2e.spec.ts:6:22)
+
+Error: RALPH_EVIDENCE_DIR is required
+
+   at epic-009-staff-disbursement-closure.e2e.spec.ts:9
+
+   7 |
+   8 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+>  9 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required');
+     |                         ^
+  10 | const djangoPython = process.env.E2E_DJANGO_PYTHON;
+  11 | if (!djangoPython) throw new Error('E2E_DJANGO_PYTHON is required');
+  12 |
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/epic-009-staff-disbursement-closure.e2e.spec.ts:9:25)
+
+Error: RALPH_EVIDENCE_DIR is required for Exception Register visual acceptance
+
+   at exception-register-evidence.e2e.spec.ts:6
+
+  4 |
+  5 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for Exception Register visual acceptance');
+    |                         ^
+  7 | fs.mkdirSync(evidenceDir, { recursive: true });
+  8 |
+  9 | test('S25 renders frozen comments and supporting metadata without granting download authority', async ({ page }) => {
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/exception-register-evidence.e2e.spec.ts:6:25)
+
+Error: RALPH_EVIDENCE_DIR is required for member governance closure
+
+   at member-governance-closure.e2e.spec.ts:7
+
+   5 |
+   6 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+>  7 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for member governance closure');
+     |                         ^
+   8 | fs.mkdirSync(evidenceDir, { recursive: true });
+   9 |
+  10 | const API_ORIGIN = 'http://127.0.0.1:8000';
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts:7:25)
+
+Error: RALPH_EVIDENCE_DIR is required for member governance variants
+
+   at member-governance-variants.e2e.spec.ts:7
+
+   5 |
+   6 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+>  7 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for member governance variants');
+     |                         ^
+   8 | fs.mkdirSync(evidenceDir, { recursive: true });
+   9 |
+  10 | const FINANCE_EMAIL = 'e2e.credit.finance@sfpcl.example';
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:7:25)
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at member-portal-deficiency-response.e2e.spec.ts:6
+
+  4 |
+  5 | const evidenceRoot = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidenceRoot) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+    |                          ^
+  7 | fs.mkdirSync(evidenceRoot, { recursive: true });
+  8 |
+  9 | test.use({ viewport: { width: 390, height: 844 } });
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/member-portal-deficiency-response.e2e.spec.ts:6:26)
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at member-portal-documentation-actions.e2e.spec.ts:6
+
+  4 |
+  5 | const evidenceRoot = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidenceRoot) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+    |                          ^
+  7 | fs.mkdirSync(evidenceRoot, { recursive: true });
+  8 |
+  9 | test.use({ viewport: { width: 1280, height: 720 } });
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/member-portal-documentation-actions.e2e.spec.ts:6:26)
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at portal-application-limit-authority.e2e.spec.ts:7
+
+   5 |
+   6 | const evidenceRoot = process.env.RALPH_EVIDENCE_DIR;
+>  7 | if (!evidenceRoot) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+     |                          ^
+   8 | fs.mkdirSync(evidenceRoot, { recursive: true });
+   9 |
+  10 | test('available projection renders only the three server amounts', async ({ page }) => {
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:7:26)
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at portal-auth-interaction.e2e.spec.ts:6
+
+  4 |
+  5 | const evidenceRoot = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidenceRoot) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+    |                          ^
+  7 | fs.mkdirSync(evidenceRoot, { recursive: true });
+  8 |
+  9 | const portalUser = {
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/portal-auth-interaction.e2e.spec.ts:6:26)
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at portal-disbursement-status.spec.ts:6
+
+  4 |
+  5 | const evidenceRoot = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidenceRoot) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+    |                          ^
+  7 | fs.mkdirSync(evidenceRoot, { recursive: true });
+  8 |
+  9 | test.use({ viewport: { width: 1280, height: 720 } });
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/portal-disbursement-status.spec.ts:6:26)
+
+Error: RALPH_EVIDENCE_DIR is required for sanction workbench visual acceptance
+
+   at sanction-workbench.e2e.spec.ts:6
+
+  4 |
+  5 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+> 6 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for sanction workbench visual acceptance');
+    |                         ^
+  7 | fs.mkdirSync(evidenceDir, { recursive: true });
+  8 |
+  9 | test('sanction workbench preserves the prototype composition across authoritative states', async ({ page }) => {
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/sanction-workbench.e2e.spec.ts:6:25)
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at staff-documentation-workspace.e2e.spec.ts:7
+
+   5 |
+   6 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+>  7 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+     |                         ^
+   8 | fs.mkdirSync(evidenceDir, { recursive: true });
+   9 |
+  10 | test.use({
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/staff-documentation-workspace.e2e.spec.ts:7:25)
+
+Error: RALPH_EVIDENCE_DIR is required for witness correction authority
+
+   at witness-correction-authority.e2e.spec.ts:7
+
+   5 |
+   6 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+>  7 | if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for witness correction authority');
+     |                         ^
+   8 | fs.mkdirSync(evidenceDir, { recursive: true });
+   9 |
+  10 | const FINANCE_EMAIL = 'e2e.credit.finance@sfpcl.example';
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/e2e/witness-correction-authority.e2e.spec.ts:7:25)
+Listing tests:
+Total: 0 tests in 0 files

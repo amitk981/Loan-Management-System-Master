@@ -9,6 +9,8 @@ from django.db.models.fields.json import KeyTextTransform, KeyTransform
 from django.db.models.functions import Cast, Coalesce, NullIf, SHA256
 
 from sfpcl_credit.disbursements.models import Disbursement
+from sfpcl_credit.loans.models import LoanAccount
+from sfpcl_credit.loans.modules.loan_account_lifecycle import filter_created_accounts
 
 
 class _JsonObjectKeyCount(Func):
@@ -137,6 +139,9 @@ def filter_current_pending_disbursements(queryset):
             "initiation_audit__old_value_json"
         ),
     ).filter(
+        loan_account_id__in=filter_created_accounts(
+            LoanAccount.objects.all()
+        ).values("loan_account_id"),
         initiation_status=Disbursement.INITIATED,
         initiation_audit__action="disbursement.initiated",
         initiation_audit__entity_type="disbursement",
@@ -193,6 +198,28 @@ def filter_current_pending_disbursements(queryset):
         cfc_task__message=F("_audit_cfc_task_message"),
         cfc_task__read_at__isnull=True,
         cfc_task__read_by_user_id__isnull=True,
+        borrower_bank_account__status="active",
+        borrower_bank_account__verification_status="verified",
+        borrower_bank_account__owner_party_type="member",
+        borrower_bank_account__owner_party_id=F("member_id"),
+        borrower_bank_account__cancelled_cheque_id=F(
+            "loan_application__cancelled_cheque_id"
+        ),
+        borrower_bank_account__cancelled_cheque__loan_application_id=F(
+            "loan_application_id"
+        ),
+        borrower_bank_account__cancelled_cheque__member_id=F("member_id"),
+        borrower_bank_account__cancelled_cheque__verification_status="verified",
+        borrower_bank_account__cancelled_cheque__account_number_hash=F(
+            "borrower_bank_account__account_number_hash"
+        ),
+        borrower_bank_account__cancelled_cheque__ifsc=F(
+            "borrower_bank_account__ifsc"
+        ),
+        source_bank_account__status="active",
+        source_bank_account__verification_status="verified",
+        source_bank_account__owner_party_type="sfpcl",
+        source_bank_account__source_bank_governance_records__status="active",
         bank_transfer_status=Disbursement.TRANSFER_PENDING,
         bank_reference_number__isnull=True,
         disbursed_at__isnull=True,

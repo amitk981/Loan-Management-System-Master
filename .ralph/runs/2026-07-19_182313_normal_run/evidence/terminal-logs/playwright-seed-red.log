@@ -1,0 +1,32 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/playwright.seed.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/playwright.seed.test.ts [ src/playwright.seed.test.ts ]
+Error: Cannot find module '../playwright.seed' imported from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/src/playwright.seed.test.ts'
+ ❯ src/playwright.seed.test.ts:2:31
+      1| import { describe, expect, it } from 'vitest';
+      2| 
+      3| import { requiredFixtureFamilies } from '../playwright.seed';
+       |                              ^
+      4| 
+      5| describe('Playwright fixture-family selection', () => {
+
+Caused by: Error: Failed to load url ../playwright.seed (resolved id: ../playwright.seed) in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl-lms/src/playwright.seed.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  18:27:29
+   Duration  316ms (transform 23ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 51ms)
+

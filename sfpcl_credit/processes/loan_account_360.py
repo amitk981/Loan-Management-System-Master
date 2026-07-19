@@ -6,27 +6,21 @@ from uuid import UUID
 from django.db import transaction
 from django.db.models import F, Q
 
-from sfpcl_credit.disbursements.modules.current_disbursement_evidence import (
-    resolve_current_disbursement_evidence,
-)
 from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
     filter_accounts_with_current_transfer,
-    resolve_post_transfer_evidence,
 )
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
-    account_is_scoped,
     resolve_creation_truth,
     scoped_account_candidates,
+    scoped_initiation_candidates,
 )
 from sfpcl_credit.loans.modules.loan_account_lifecycle import (
     filter_created_accounts,
-    resolve_loan_account_creations,
 )
 from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
     SapCustomerProfileModule,
-    get_account_customer_code,
 )
 
 
@@ -41,7 +35,20 @@ class LoanAccountProjectionValidation(Exception):
 
 def eligible_account_candidates(*, actor, filters):
     """Compose the canonical database-pageable Epic 009 read identity set."""
-    queryset = scoped_account_candidates(actor=actor)
+    return _eligible_account_candidates(
+        actor=actor, filters=filters, candidate_owner=scoped_account_candidates
+    )
+
+
+def eligible_initiation_account_candidates(*, actor, filters):
+    """Compose initiation candidates through their distinct mutation owner."""
+    return _eligible_account_candidates(
+        actor=actor, filters=filters, candidate_owner=scoped_initiation_candidates
+    ).filter(_latest_sap_assignee_id=actor.pk)
+
+
+def _eligible_account_candidates(*, actor, filters, candidate_owner):
+    queryset = candidate_owner(actor=actor)
     search = filters["search"]
     if search:
         queryset = queryset.filter(
@@ -123,7 +130,28 @@ def list_accounts(*, actor, query_params):
 
 def list_account_window(*, actor, filters, offset, limit):
     """Project one bounded canonical identity window for collection composition."""
-    candidates = eligible_account_candidates(actor=actor, filters=filters).select_related(
+    return _list_account_window(
+        actor=actor,
+        filters=filters,
+        offset=offset,
+        limit=limit,
+        candidate_owner=eligible_account_candidates,
+    )
+
+
+def list_initiation_account_window(*, actor, filters, offset, limit):
+    """Project one bounded initiation-owned identity window."""
+    return _list_account_window(
+        actor=actor,
+        filters=filters,
+        offset=offset,
+        limit=limit,
+        candidate_owner=eligible_initiation_account_candidates,
+    )
+
+
+def _list_account_window(*, actor, filters, offset, limit, candidate_owner):
+    candidates = candidate_owner(actor=actor, filters=filters).select_related(
         "loan_application",
         "member",
         "sanction_decision",
@@ -131,24 +159,15 @@ def list_account_window(*, actor, filters, offset, limit):
         "sap_customer_code",
     )
     accounts = list(candidates[offset : offset + limit])
-    creation_decisions = resolve_loan_account_creations(accounts)
-    projections = [
-        projection
-        for account in accounts
-        if (
-            projection := _project(
-                account, creation_decision=creation_decisions.get(account.pk, False)
-            )
-        )
-        is not None
-    ]
+    projections = [_project(account, owner_selected=True) for account in accounts]
     return projections
 
 
 @transaction.atomic
 def get_account(*, actor, loan_account_id):
+    filters = {"search": "", "status": "", "member_id": None}
     account = (
-        scoped_account_candidates(actor=actor)
+        eligible_account_candidates(actor=actor, filters=filters)
         .select_related(
             "loan_application",
             "member",
@@ -159,30 +178,22 @@ def get_account(*, actor, loan_account_id):
         .filter(pk=loan_account_id)
         .first()
     )
-    projection = (
-        _project(account)
-        if account is not None
-        and account_is_scoped(
-            actor=actor, account=account, cfc_scope_resolver=_has_cfc_scope
-        )
-        else None
-    )
+    projection = _project(account, owner_selected=True) if account is not None else None
     if projection is None:
         raise LoanAccountProjectionNotFound
     return projection
 
 
-def _project(account, *, creation_decision=None):
-    if creation_decision is False or (
+def _project(account, *, creation_decision=None, owner_selected=False):
+    if not owner_selected and (creation_decision is False or (
         creation_decision is None and resolve_creation_truth(account=account) is None
-    ):
+    )):
         return None
-    sap_decision = None
     if account.sap_customer_code_id:
-        sap_decision = _sap_is_current_for_account(account)
-        if sap_decision is None:
+        if owner_selected:
+            sap_masked = f"******{account.sap_customer_code.sap_customer_code[-4:]}"
+        else:
             return None
-        sap_masked = sap_decision.customer_code_masked
     activated_at = None
     if account.loan_account_status == "sanctioned":
         if any(
@@ -200,23 +211,9 @@ def _project(account, *, creation_decision=None):
         ):
             return None
     elif account.loan_account_status == "active":
-        transfer = resolve_post_transfer_evidence(
-            application_id=account.loan_application_id
-        )
-        if (
-            transfer is None
-            or transfer.loan_account_id != account.pk
-            or transfer.loan_application_id != account.loan_application_id
-            or transfer.member_id != account.member_id
-            or transfer.amount != account.disbursed_amount
-            or account.principal_outstanding != transfer.amount
-            or account.total_outstanding != transfer.amount
-            or account.interest_outstanding != 0
-            or account.charges_outstanding != 0
-            or account.tenure_start_date != transfer.disbursed_at.date()
-        ):
+        if not owner_selected:
             return None
-        activated_at = transfer.disbursed_at
+        activated_at = account._selector_activated_at
     else:
         return None
     return {
@@ -251,37 +248,6 @@ def _project(account, *, creation_decision=None):
         "created_at": _timestamp(account.created_at),
         "activated_at": _timestamp(activated_at),
     }
-
-
-def _has_cfc_scope(account):
-    if account.loan_account_status == "active":
-        evidence = resolve_post_transfer_evidence(
-            application_id=account.loan_application_id
-        )
-        return bool(evidence and evidence.loan_account_id == account.pk)
-    current = resolve_current_disbursement_evidence(
-        loan_account_id=account.pk,
-        allowed_authorisation_statuses=("pending", "approved", "rejected"),
-    )
-    return bool(current and current.loan_account_id == account.pk)
-
-
-def _sap_is_current_for_account(account):
-    decision = get_account_customer_code(
-        application_id=account.loan_application_id,
-        member_id=account.member_id,
-        customer_code_id=account.sap_customer_code_id,
-    )
-    return (
-        decision
-        if (
-        decision
-        and decision.customer_code_id == account.sap_customer_code_id
-        and decision.member_id == account.member_id
-        and decision.loan_application_id == account.loan_application_id
-        )
-        else None
-    )
 
 
 def _query(query_params):

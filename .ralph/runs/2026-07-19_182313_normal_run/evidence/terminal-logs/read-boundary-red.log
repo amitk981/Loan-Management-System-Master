@@ -1,0 +1,202 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 4 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, disbursements, documents, finance, identity, legal_documents, loans, members, sap_workflow, scheduler, security_instruments, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying members.0009_member_identity_governance... OK
+  Applying members.0010_member_identity_change_request... OK
+  Applying members.0011_producesupplyrecord... OK
+  Applying members.0012_memberserviceevidence_activememberstatus_and_more... OK
+  Applying members.0013_memberserviceevidence_maker_users_and_more... OK
+  Applying members.0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more... OK
+  Applying documents.0002_documenttemplate... OK
+  Applying documents.0003_documenttemplateidentity... OK
+  Applying applications.0001_initial... OK
+  Applying documents.0004_loandocument... OK
+  Applying legal_documents.0001_transfer_loan_document_owner... OK
+  Applying legal_documents.0002_document_checklists... OK
+  Applying legal_documents.0003_loan_document_renderer_provenance... OK
+  Applying legal_documents.0004_checklistitem_notarisation_status_and_more... OK
+  Applying legal_documents.0005_signature_records... OK
+  Applying legal_documents.0006_stamp_notary_preparer_identity... OK
+  Applying legal_documents.0007_signature_capture_maker... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying legal_documents.0008_securitypackage_powerofattorney_and_more... OK
+  Applying legal_documents.0009_loandocument_verification_remarks... OK
+  Applying legal_documents.0010_stage4_maker_checker_constraints... OK
+  Applying legal_documents.0011_final_documentation_approval_sequence... OK
+  Applying legal_documents.0012_portal_documentation_submission... OK
+  Applying configurations.0001_initial... OK
+  Applying configurations.0002_version_history_approval_evidence... OK
+  Applying applications.0011_witness... OK
+  Applying applications.0012_witness_verification_evidence... OK
+  Applying applications.0013_witness_correction... OK
+  Applying applications.0014_witness_contact_fields... OK
+  Applying applications.0015_applicationdeficiencyresponse... OK
+  Applying applications.0016_bankverificationdecision_and_more... OK
+  Applying applications.0017_bank_decision_terminal_sanction_snapshots... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying credit.0006_legacy_appraisal_history_remediation... OK
+  Applying credit.0007_eligibility_active_member_snapshot... OK
+  Applying approvals.0001_initial... OK
+  Applying approvals.0002_approvalcase_workflow_event... OK
+  Applying approvals.0003_approvalmatrixrule_sanctioncommittee... OK
+  Applying approvals.0004_approval_configuration_history_constraints... OK
+  Applying approvals.0005_approvalconfigurationproposal... OK
+  Applying approvals.0006_approvalcase_configuration_snapshot... OK
+  Applying approvals.0007_approvalcase_enrichment_snapshot... OK
+  Applying approvals.0008_approvalaction... OK
+  Applying approvals.0009_sanction_decision_and_case_closure... OK
+  Applying approvals.0010_approvalcasereadscopegrant_and_more... OK
+  Applying approvals.0011_approvalcase_appraisal_facts_json_and_more... OK
+  Applying approvals.0012_approvalconflictdeclaration_and_more... OK
+  Applying approvals.0013_conflict_projection_scope_closure... OK
+  Applying approvals.0014_exceptionregisterentry_and_more... OK
+  Applying approvals.0015_generalmeetingapproval_and_more... OK
+  Applying approvals.0016_creditsanctionregisterentry... OK
+  Applying approvals.0017_exceptionregisterentry_supporting_documents_json... OK
+  Applying approvals.0018_creditsanctionregisterentry_source_review_facts_json... OK
+  Applying approvals.0019_register_source_facts... OK
+  Applying approvals.0020_approvalaction_approver_display_name... OK
+  Applying documents.0005_deterministic_document_template_constraints... OK
+  Applying finance.0001_initial... OK
+  Applying finance.0002_sap_customer_code_confirmation... OK
+  Applying finance.0003_sap_delivery_replay_contract... OK
+  Applying loans.0001_initial... OK
+  Applying legal_documents.0013_application_evidence_state_anchor... OK
+  Applying legal_documents.0014_staff_documentation_durable_actions... OK
+  Applying disbursements.0001_initial... OK
+  Applying disbursements.0002_cfc_authorisation_evidence... OK
+  Applying disbursements.0003_authorisation_aggregate_integrity... OK
+  Applying disbursements.0004_transfer_success... OK
+  Applying disbursements.0005_disbursementadviceintent_loanregisterupdate_and_more... OK
+  Applying disbursements.0006_disbursementadvicedeliveryreceipt_and_more... OK
+  Applying disbursements.0007_remove_disbursement_disb_success_evidence_complete_and_more... OK
+  Applying communications.0004_advice_outbox_and_receipt_owner... OK
+  Applying communications.0005_advice_evidence_and_legacy_replay_closure... OK
+  Applying communications.0006_communication_delivery_job... OK
+  Applying communications.0007_portal_advice_download_capability... OK
+  Applying communications.0008_legacy_template_provenance_closure... OK
+  Applying communications.0009_generic_delivery_job_identity... OK
+  Applying communications.0010_worker_claim_lease_and_recovery... OK
+  Applying communications.0011_communication_exception_queue... OK
+  Applying communications.0012_generic_provider_evidence... OK
+  Applying communications.0013_exception_provider_vocabulary... OK
+  Applying configurations.0003_source_bank_account_governance... OK
+  Applying configurations.0004_source_bank_governance_history... OK
+  Applying configurations.0005_source_bank_reviewable_rationale... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying disbursements.0008_initial_loan_payment_sap_posting... OK
+  Applying disbursements.0009_initial_sap_posting_pending_only... OK
+  Applying disbursements.0010_enable_pgcrypto_for_exact_selector... OK
+  Applying identity.0004_auditlog_selector_manifest_sha256... OK
+  Applying legal_documents.0015_checklist_constraint_state_owner_anchor... OK
+  Applying sap_workflow.0001_sap_model_owner_state... OK
+  Rendering model states... DONE
+  Applying scheduler.0001_initial... OK
+  Applying security_instruments.0001_transfer_security_ownership... OK
+  Applying security_instruments.0002_sh4sharetransferform_and_more... OK
+  Applying security_instruments.0003_cdslsharepledge_and_more... OK
+  Applying security_instruments.0004_migrate_cdsl_field_encryption... OK
+  Applying security_instruments.0005_blankdatedcheque_and_more... OK
+  Applying security_instruments.0006_migrate_opaque_field_tokens... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_completed_account_send_ledger_drift_is_excluded_before_count (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_completed_account_send_ledger_drift_is_excluded_before_count) ... FAIL
+test_initiation_authority_does_not_replace_public_account_read_permission (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_initiation_authority_does_not_replace_public_account_read_permission) ... FAIL
+test_runtime_epic009_seed_uses_no_testcase_or_private_test_helpers (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_runtime_epic009_seed_uses_no_testcase_or_private_test_helpers) ... FAIL
+test_s37_file_integrity_drift_is_excluded_before_count (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_s37_file_integrity_drift_is_excluded_before_count) ... FAIL
+
+======================================================================
+FAIL: test_completed_account_send_ledger_drift_is_excluded_before_count (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_completed_account_send_ledger_drift_is_excluded_before_count)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl_credit/tests/test_epic009_read_boundary_convergence.py", line 46, in test_completed_account_send_ledger_drift_is_excluded_before_count
+    self.assertEqual(
+AssertionError: Tuples differ: (1, []) != (0, [])
+
+First differing element 0:
+1
+0
+
+- (1, [])
+?  ^
+
++ (0, [])
+?  ^
+
+
+======================================================================
+FAIL: test_initiation_authority_does_not_replace_public_account_read_permission (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_initiation_authority_does_not_replace_public_account_read_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl_credit/tests/test_epic009_read_boundary_convergence.py", line 26, in test_initiation_authority_does_not_replace_public_account_read_permission
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 200 != 403 : b'{"success": true, "data": [{"loan_account_id": "0b90640c-4766-421f-a4e0-10857c02d84c", "loan_account_number": "LN-REAL-OWNER-001", "loan_application_id": "b86f9ffe-4397-4432-9eb1-c19f744a29ff", "application_reference_number": "LO-CHECK-001", "member": {"member_id": "81f20fb3-2efe-4406-9a05-ba06fb2e2b64", "display_name": "Checklist Borrower 001"}, "sap_customer_code": "******-001", "loan_type": "short_term", "facility_type": "short_term", "interest_rate_type": "floating", "current_interest_rate": "9.0000", "sanctioned_amount": "400000.00", "disbursed_amount": "0.00", "principal_outstanding": "0.00", "interest_outstanding": "0.00", "charges_outstanding": "0.00", "total_outstanding": "0.00", "loan_account_status": "sanctioned", "tenure_start_date": null, "tenure_end_date": null, "repayment_date": "2026-07-19", "tenure_months": 12, "created_at": "2026-07-19T12:56:56.535610Z", "activated_at": null}], "pagination": {"page": 1, "page_size": 20, "total_count": 1, "total_pages": 1, "has_next": false, "has_previous": false}, "meta": {"request_id": null, "timestamp": "2026-07-19T12:56:56.859771Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_runtime_epic009_seed_uses_no_testcase_or_private_test_helpers (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_runtime_epic009_seed_uses_no_testcase_or_private_test_helpers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl_credit/tests/test_epic009_read_boundary_convergence.py", line 77, in test_runtime_epic009_seed_uses_no_testcase_or_private_test_helpers
+    self.assertNotIn("sfpcl_credit.tests", source)
+AssertionError: 'sfpcl_credit.tests' unexpectedly found in '"""Seed the isolated real-Django fixture used by Epic 009 browser acceptance.\n\nThis command is deliberately unavailable without both local E2E guards.  The fixture builders\nreuse the repository\'s public-API contract setup so the retained browser proof exercises the same\nimmutable owner evidence as the backend regression suite, rather than maintaining a second hand-\nassembled representation of SAP, documentation, security, and disbursement truth.\n"""\n\nimport os\nfrom pathlib import Path\nfrom unittest.mock import patch\nfrom uuid import UUID\n\nfrom django.conf import settings\nfrom django.core.files.uploadedfile import SimpleUploadedFile\nfrom django.core.management.base import BaseCommand, CommandError\nfrom django.test import RequestFactory\n\nfrom sfpcl_credit.communications.models import Notification\nfrom sfpcl_credit.documents.services import store_document_upload\nfrom sfpcl_credit.identity.models import Permission, User\n\n\nE2E_PASSWORD = "ChecklistPass123!"\nFINANCE_EMAIL = "e2e.epic009.finance@sfpcl.example"\nCREDIT_EMAIL = "e2e.epic009.credit@sfpcl.example"\nCFC_EMAIL = "e2e.epic009.cfc@sfpcl.example"\nBORROWER_EMAIL = "e2e.epic009.borrower@sfpcl.example"\nMISSING_ACCOUNT_ID = UUID("00000000-0000-4000-8000-000000000999")\n\n\nclass _PersistentDirectory:\n    """TemporaryDirectory-compatible wrapper that keeps E2E evidence after seeding."""\n\n    def __init__(self, *args, **kwargs):\n        root = Path(settings.DOCUMENT_STORAGE_ROOT)\n        root.mkdir(parents=True, exist_ok=True)\n        self.name = str(root)\n\n    def cleanup(self):\n        return None\n\n\nclass Command(BaseCommand):\n    help = (\n        "Idempotently seed guarded Epic 009 staff, SAP, loan-account, readiness, and transfer "\n        "evidence for real-Django Playwright acceptance."\n    )\n\n    def add_arguments(self, parser):\n        parser.add_argument(\n            "--make-ready",\n            action="store_true",\n            help="Advance the isolated fixture from its named source-bank blocker to ready.",\n        )\n        parser.add_argument(\n            "--prepare-transfer",\n            action="store_true",\n            help="Create the isolated restricted transfer document after CFC approval.",\n        )\n\n    def handle(self, *args, **options):\n        self._enforce_e2e_guard()\n        if options["make_ready"]:\n            self._make_ready()\n            return\n        if options["prepare_transfer"]:\n            self._prepare_transfer()\n            return\n        if User.objects.filter(email=FINANCE_EMAIL).exists():\n            self.stdout.write("Epic 009 E2E fixture already seeded.")\n            return\n\n        # The contract setup uses TemporaryDirectory because ordinary tests must clean files.\n        # Browser acceptance must retain those same synthetic files while runserver is alive.\n        with patch("tempfile.TemporaryDirectory", _PersistentDirectory):\n            facts = self._seed_ready_account()\n            self._seed_browser_documents_and_notifications(facts)\n            self._validate_account(facts, "browser notifications")\n            self._set_source_bank_status(facts["ready"]["source_bank"], "inactive")\n\n        self.stdout.write(\n            "Epic 009 E2E fixture seeded: completed SAP, sanctioned blocked account, "\n            "Credit Manager, Senior Finance, and CFC actors."\n        )\n\n    @staticmethod\n    def _env_true(name):\n        return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}\n\n    @classmethod\n    def _enforce_e2e_guard(cls):\n        if not cls._env_true("SFPCL_DEBUG") or not cls._env_true(\n            "SFPCL_ALLOW_E2E_SEED"\n        ):\n            raise CommandError(\n                "seed_epic_009_e2e_fixture is for isolated local Playwright databases only. "\n                "Set SFPCL_DEBUG=true and SFPCL_ALLOW_E2E_SEED=true to run it."\n            )\n\n    @staticmethod\n    def _seed_ready_account():\n        # Imported only behind the E2E guards: production startup never imports test helpers.\n        from sfpcl_credit.tests.test_final_documentation_approval_api import (\n            FinalDocumentationApprovalApiTests,\n        )\n\n        owner = FinalDocumentationApprovalApiTests(\n            "test_disbursement_readiness_real_owners_reach_a126_then_all_pass"\n        )\n        owner.setUp()\n        finance = owner.finance\n        credit = owner.credit\n        # Establish deterministic browser identities before owner services freeze them.\n        Command._make_browser_actor(finance, FINANCE_EMAIL)\n        Command._make_browser_actor(credit, CREDIT_EMAIL)\n        ready = owner._real_owner_initiation_fixture(stop_before_initiation=True)\n        ready["account"].member.email = BORROWER_EMAIL\n        ready["account"].member.save(update_fields=["email"])\n        from sfpcl_credit.loans.modules.loan_account_read import resolve_creation_truth\n        from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (\n            get_account_customer_code,\n        )\n\n        if resolve_creation_truth(account=ready["account"]) is None:\n            raise CommandError("Epic 009 fixture produced no current loan creation truth.")\n        if get_account_customer_code(\n            application_id=ready["account"].loan_application_id,\n            member_id=ready["account"].member_id,\n            customer_code_id=ready["account"].sap_customer_code_id,\n        ) is None:\n            raise CommandError("Epic 009 fixture produced no current SAP completion truth.")\n        owner._grant(\n            finance,\n            "finance.loan_account.read",\n            "communications.notification.read",\n            "finance.disbursement.mark_success",\n            "finance.disbursement.send_advice",\n        )\n        advice_permission = Permission.objects.get(\n            permission_code="finance.disbursement.send_advice"\n        )\n        advice_permission.risk_level = Permission.RISK_HIGH\n        advice_permission.save(update_fields=["risk_level"])\n        owner._grant(\n            credit,\n            "finance.loan_account.read",\n            "communications.notification.read",\n        )\n\n        cfc = owner.fixture._user(\n            "chief_financial_controller", "Epic 009 Browser CFC"\n        )\n        Command._make_browser_actor(cfc, CFC_EMAIL)\n        cfc.approval_authority_type = "chief_financial_controller"\n        cfc.save(update_fields=["approval_authority_type"])\n        owner._grant(\n            cfc,\n            "finance.disbursement.authorise",\n            "finance.disbursement.mark_success",\n            "finance.loan_account.read",\n            "communications.notification.read",\n        )\n        return {\n            "owner": owner,\n            "ready": ready,\n            "finance": finance,\n            "credit": credit,\n            "cfc": cfc,\n        }\n\n    @staticmethod\n    def _make_browser_actor(user, email):\n        user.email = email\n        user.status = "active"\n        user.set_password(E2E_PASSWORD)\n        user.save(update_fields=["email", "status", "password_hash"])\n\n    @staticmethod\n    def _seed_browser_documents_and_notifications(facts):\n        Notification.objects.create(\n            notification_type="e2e_missing_loan_account",\n            category="finance",\n            severity=Notification.SEVERITY_WARNING,\n            title="Open inaccessible loan account",\n            message="Exercises a genuine nondisclosing Django response.",\n            related_entity_type="loan_account",\n            related_entity_id=MISSING_ACCOUNT_ID,\n            action_label="Open loan account",\n            action_url=f"/loan-accounts/{MISSING_ACCOUNT_ID}",\n            recipient_user=facts["finance"],\n        )\n\n    @staticmethod\n    def _validate_account(facts, stage):\n        from sfpcl_credit.processes.loan_account_360 import _project\n        from sfpcl_credit.loans.modules.loan_account_read import resolve_creation_truth\n        from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (\n            get_account_customer_code,\n        )\n\n        facts["ready"]["account"].refresh_from_db()\n        if _project(facts["ready"]["account"]) is None:\n            account = facts["ready"]["account"]\n            raise CommandError(\n                "Epic 009 account projection became incoherent after "\n                f"{stage}: creation={resolve_creation_truth(account=account) is not None}, "\n                "sap="\n                f"{get_account_customer_code(application_id=account.loan_application_id, member_id=account.member_id, customer_code_id=account.sap_customer_code_id) is not None}."\n            )\n\n    @staticmethod\n    def _set_source_bank_status(bank, status):\n        bank.status = status\n        bank.save(update_fields=["status"])\n\n    @classmethod\n    def _make_ready(cls):\n        from sfpcl_credit.configurations.models import SourceBankAccountGovernance\n\n        if not User.objects.filter(email=FINANCE_EMAIL).exists():\n            raise CommandError("Seed the Epic 009 E2E fixture before advancing it.")\n        governance = SourceBankAccountGovernance.objects.select_related(\n            "bank_account"\n        ).get(activated_by_user__email=FINANCE_EMAIL, status="active")\n        cls._set_source_bank_status(governance.bank_account, "active")\n\n    @classmethod\n    def _prepare_transfer(cls):\n        from sfpcl_credit.loans.models import LoanAccount\n\n        if Notification.objects.filter(\n            notification_type="e2e_transfer_evidence"\n        ).exists():\n            return\n        finance = User.objects.get(email=FINANCE_EMAIL)\n        account = LoanAccount.objects.get(loan_account_number="LN-REAL-OWNER-001")\n        evidence = store_document_upload(\n            user=finance,\n            request=RequestFactory().post(\n                "/api/v1/documents/", REMOTE_ADDR="127.0.0.1"\n            ),\n            uploaded_file=SimpleUploadedFile(\n                "epic-009-transfer-evidence.pdf",\n                b"%PDF-1.4 synthetic Epic 009 transfer evidence",\n                content_type="application/pdf",\n            ),\n            document_category="finance",\n            sensitivity_level="restricted",\n            related_entity_type="loan_application",\n            related_entity_id=account.loan_application_id,\n        )\n        Notification.objects.create(\n            notification_type="e2e_transfer_evidence",\n            category="finance",\n            severity=Notification.SEVERITY_INFO,\n            title="Epic 009 transfer evidence",\n            message="Synthetic restricted evidence for the isolated browser flow.",\n            related_entity_type="document_file",\n            related_entity_id=evidence.pk,\n            recipient_user=finance,\n        )\n'
+
+======================================================================
+FAIL: test_s37_file_integrity_drift_is_excluded_before_count (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_s37_file_integrity_drift_is_excluded_before_count)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl_credit/tests/test_epic009_read_boundary_convergence.py", line 69, in test_s37_file_integrity_drift_is_excluded_before_count
+    self.assertEqual(
+AssertionError: Tuples differ: (1, []) != (0, [])
+
+First differing element 0:
+1
+0
+
+- (1, [])
+?  ^
+
++ (0, [])
+?  ^
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.482s
+
+FAILED (failures=4)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

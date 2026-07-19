@@ -59,6 +59,7 @@ class SapCustomerProfileRequest(models.Model):
     )
     delivery_reference = models.CharField(max_length=160, blank=True)
     delivery_checksum_sha256 = models.CharField(max_length=64, blank=True)
+    delivery_storage_checksum_sha256 = models.CharField(max_length=64, blank=True)
     delivery_file_id_snapshot = models.UUIDField(null=True, blank=True)
     delivery_assignee_id_snapshot = models.UUIDField(null=True, blank=True)
     delivery_capability_version = models.PositiveIntegerField(default=0)

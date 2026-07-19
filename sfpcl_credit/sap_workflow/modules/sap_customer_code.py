@@ -33,7 +33,7 @@ def send_request(*, actor, request_id, payload, request, storage=None, adapter=N
         if row.request_status == SapCustomerProfileRequest.STATUS_SENT:
             workbook = EncryptedAnnexureStorage(storage).read_verified(row.excel_file)
             checksum = hashlib.sha256(workbook).hexdigest()
-            if row.sent_remarks != values["remarks"] or row.delivery_checksum_sha256 != checksum or row.delivery_file_id_snapshot != row.excel_file_id or row.delivery_assignee_id_snapshot != row.assigned_to_user_id or adapter.get_customer_status(row.delivery_reference).delivery_status != "delivered":
+            if row.sent_remarks != values["remarks"] or row.delivery_checksum_sha256 != checksum or row.delivery_storage_checksum_sha256 != row.excel_file.checksum_sha256 or row.delivery_file_id_snapshot != row.excel_file_id or row.delivery_assignee_id_snapshot != row.assigned_to_user_id or adapter.get_customer_status(row.delivery_reference).delivery_status != "delivered":
                 raise SapRequestConflict("The sent SAP request facts cannot be changed.")
             return serialize_sent_request(row)
         if row.request_status != SapCustomerProfileRequest.STATUS_DRAFT:
@@ -67,9 +67,10 @@ def send_request(*, actor, request_id, payload, request, storage=None, adapter=N
         row.sent_task = task
         row.delivery_reference = delivery.external_reference
         row.delivery_checksum_sha256 = delivery.checksum_sha256
+        row.delivery_storage_checksum_sha256 = row.excel_file.checksum_sha256
         row.delivery_file_id_snapshot = row.excel_file_id
         row.delivery_assignee_id_snapshot = row.assigned_to_user_id
-        row.save(update_fields=["request_status", "sent_at", "sent_remarks", "sent_communication", "sent_task", "delivery_reference", "delivery_checksum_sha256", "delivery_file_id_snapshot", "delivery_assignee_id_snapshot"])
+        row.save(update_fields=["request_status", "sent_at", "sent_remarks", "sent_communication", "sent_task", "delivery_reference", "delivery_checksum_sha256", "delivery_storage_checksum_sha256", "delivery_file_id_snapshot", "delivery_assignee_id_snapshot"])
         communication.delivery_status = delivery.delivery_status
         communication.external_message_id = delivery.external_reference
         communication.save(update_fields=["delivery_status", "external_message_id"])

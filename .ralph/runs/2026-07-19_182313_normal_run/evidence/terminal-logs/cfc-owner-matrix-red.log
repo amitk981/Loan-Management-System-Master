@@ -1,0 +1,66 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFF
+======================================================================
+FAIL: test_cfc_mutable_bank_and_account_owners_are_excluded_before_count (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_cfc_mutable_bank_and_account_owners_are_excluded_before_count) (owner='BankAccount', field='status')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl_credit/tests/test_epic009_read_boundary_convergence.py", line 121, in test_cfc_mutable_bank_and_account_owners_are_excluded_before_count
+    self.assertEqual(
+AssertionError: Tuples differ: (1, []) != (0, [])
+
+First differing element 0:
+1
+0
+
+- (1, [])
+?  ^
+
++ (0, [])
+?  ^
+
+
+======================================================================
+FAIL: test_cfc_mutable_bank_and_account_owners_are_excluded_before_count (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_cfc_mutable_bank_and_account_owners_are_excluded_before_count) (owner='BankAccount', field='status')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl_credit/tests/test_epic009_read_boundary_convergence.py", line 121, in test_cfc_mutable_bank_and_account_owners_are_excluded_before_count
+    self.assertEqual(
+AssertionError: Tuples differ: (1, []) != (0, [])
+
+First differing element 0:
+1
+0
+
+- (1, [])
+?  ^
+
++ (0, [])
+?  ^
+
+
+======================================================================
+FAIL: test_cfc_mutable_bank_and_account_owners_are_excluded_before_count (sfpcl_credit.tests.test_epic009_read_boundary_convergence.Epic009ReadBoundaryConvergenceTests.test_cfc_mutable_bank_and_account_owners_are_excluded_before_count) (owner='LoanAccount', field='sanctioned_amount')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_182313_normal_run/sfpcl_credit/tests/test_epic009_read_boundary_convergence.py", line 121, in test_cfc_mutable_bank_and_account_owners_are_excluded_before_count
+    self.assertEqual(
+AssertionError: Tuples differ: (1, []) != (0, [])
+
+First differing element 0:
+1
+0
+
+- (1, [])
+?  ^
+
++ (0, [])
+?  ^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.722s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

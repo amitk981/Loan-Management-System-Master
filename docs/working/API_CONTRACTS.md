@@ -4330,6 +4330,10 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   CFC uses exact current initiation or post-transfer evidence; Company Secretary uses the terminal
   sanctioned-documentation parent; Internal Auditor additionally requires its active audit-read
   grant. Intake assignment, raw ids, permission alone, and role alone grant nothing.
+- `finance.disbursement.initiate` never substitutes for `finance.loan_account.read`. The staff
+  workspace composes its initiation rows through a distinct mutation-candidate owner, so an actor
+  can receive an initiation action without gaining the public list/detail contract or portfolio
+  scope. Public list and detail retain identical role, permission, and exact-object decisions.
 - Each item contains only account/application ids and display references, member id/display name,
   safe SAP customer code or null, loan/facility/rate types, exact decimal amount/balance strings,
   stable `sanctioned`/`active` status, tenure/repayment dates and months, and UTC creation/activation
@@ -4361,7 +4365,8 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   `finance.disbursement.initiate`, current CFC authority with `finance.disbursement.authorise`,
   exact Credit Manager `finance.sap_request.create`, or assigned Senior Finance
   `finance.sap_request.complete`. Role alone, permission alone, intake assignment, or a raw id
-  grants no row. Senior Finance rows reuse the canonical scoped Loan Account read owner; CFC rows
+  grants no row. Senior Finance initiation rows use the dedicated current-SAP-assignment
+  candidate owner; they do not reuse or weaken the public Loan Account read permission. CFC rows
   require the retained CFC-task relation created by the exact initiation owner.
 - Each item contains safe account/application/member display facts, Money strings, masked SAP code,
   the canonical current readiness projection when the actor can read it, masked beneficiary/source
@@ -4398,3 +4403,9 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   cannot silently drop an admitted row. Selector manifests are written only with newly accepted
   owner evidence; unverifiable legacy evidence remains ineligible rather than being blessed from
   its mutable current body. No manifest field is exposed in a public response.
+- 009L7 makes the send owner complete before count: communication/task identity and cardinality,
+  exact action URL, delivery/workflow/audit evidence, Annexure-I file metadata, an immutable
+  encrypted-storage checksum snapshot, and verified workbook digest must all agree. Completed
+  Loan Account rows consume the same send owner as S37. Pending-CFC selection also applies current
+  lifecycle, borrower-bank/cancelled-cheque, and source-bank eligibility before count, so scalar
+  reconciliation cannot remove a selected identity or shift a page.

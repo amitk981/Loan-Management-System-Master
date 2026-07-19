@@ -53,8 +53,8 @@ def filter_accounts_with_current_transfer(queryset):
 
     Sanctioned accounts require no transfer. Active accounts must have exactly one
     successful transfer edge with the required register and pending SAP-posting
-    records. The bounded projection reconciles the selected window through
-    ``resolve_post_transfer_evidence`` to cover non-queryable upload provenance.
+    records. The selected transfer timestamp is also projected here so collection
+    counts, page boundaries, and row bodies consume the same owner decision.
     """
     current = Disbursement.objects.filter(
         loan_account_id=OuterRef("pk"),
