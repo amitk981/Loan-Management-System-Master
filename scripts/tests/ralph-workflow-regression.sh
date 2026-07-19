@@ -998,6 +998,9 @@ metrics_packet="$fixture_dir/architecture-review-packet.md"
 cat > "$metrics_packet" <<'EOF'
 # Review Packet
 
+## Standards
+- New High: a retained finding mentioned in narrative text is not a metric.
+
 ## Convergence Metrics
 - Findings closed: 3
 - New Critical: 0
@@ -1303,7 +1306,7 @@ printf '1. Exercise documentation-only review validation.\n' \
 printf 'Low risk fixture.\n' > "$architecture_validator_run_dir/risk-assessment.md"
 cat > "$architecture_validator_run_dir/review-packet.md" <<'EOF'
 ## Result
-Ready to merge
+Ready for independent validation
 
 ## Convergence Metrics
 - Findings closed: 1
@@ -1335,6 +1338,28 @@ done
 grep -qF 'PASS: architecture review reported machine-readable convergence metrics.' \
   "$architecture_validator_run_dir/architecture-review-metrics-results.md" \
   || fail "architecture-review lane did not preserve validated convergence metrics"
+python3 - "$architecture_validator_run_dir/review-packet.md" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+path.write_text(
+    path.read_text().replace(
+        "Ready for independent validation",
+        "Convergence failure — stop before product work",
+        1,
+    )
+)
+PY
+if scripts/ralph-validate.sh \
+    --run-id "$architecture_validator_run" \
+    --worktree "$architecture_validator_repo" \
+    --mode architecture_review \
+    --slice architecture-review \
+    > "$fixture_dir/architecture-validator-veto.stdout" \
+    2> "$fixture_dir/architecture-validator-veto.stderr"; then
+  fail "architecture-review lane accepted a non-ready Result and advanced product work"
+fi
 
 # A shadow selector records potential future backend lanes without changing the
 # authoritative full gate. Its recommendations fail closed for high-risk,

@@ -15,7 +15,16 @@ ralph_architecture_review_metrics() {
       "Findings closed" "New Critical" "New High" \
       "New Medium" "New Low" "Corrective slices added"; do
     value="$(awk -F': *' -v label="$label" \
-      '$1 == "- " label { print $2; exit }' "$packet")"
+      '/^## Convergence Metrics[[:space:]]*$/ {
+         sections += 1
+         inside = (sections == 1)
+         next
+       }
+       /^## / { inside = 0 }
+       inside && $1 == "- " label { matches += 1; value = $2 }
+       END {
+         if (sections == 1 && matches == 1) print value
+       }' "$packet")"
     if ! [[ "$value" =~ ^[0-9]+$ ]]; then
       echo "Architecture review metric '$label' must be a non-negative integer." >&2
       return 1

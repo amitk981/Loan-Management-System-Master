@@ -19,7 +19,7 @@ ralph_review_packet_declared_result() {
     "$review_packet"
 }
 
-ralph_review_packet_declares_ready() {
+ralph_review_packet_declares_exact_ready_result() {
   local review_packet="${1:?review packet is required}"
   local result_heading_count=0
   local declared_result=""
@@ -27,7 +27,12 @@ ralph_review_packet_declares_ready() {
   result_heading_count="$(grep -c '^## Result$' "$review_packet" || true)"
   [[ "$result_heading_count" == "1" ]] || return 1
   declared_result="$(ralph_review_packet_declared_result "$review_packet" || true)"
-  ralph_agent_declared_result_is_ready "$declared_result" \
+  ralph_agent_declared_result_is_ready "$declared_result"
+}
+
+ralph_review_packet_declares_ready() {
+  local review_packet="${1:?review packet is required}"
+  ralph_review_packet_declares_exact_ready_result "$review_packet" \
     && ! grep -qiE 'do not (commit|merge)' "$review_packet"
 }
 
@@ -320,11 +325,16 @@ PY
   declared_file="$run_dir/agent-declared-result-check.md"
   printf '# Agent-Declared Result Check\n\n' > "$declared_file"
   review_packet="$run_dir/review-packet.md"
-  if [[ "$mode" != "normal_run" && "$mode" != "repair" ]]; then
-    echo "- SKIP: mode $mode (architecture-review packets may quote failure phrases from findings)." >> "$declared_file"
-  elif [[ -f "$review_packet" ]]; then
+  if [[ -f "$review_packet" ]]; then
     declared_result="$(ralph_review_packet_declared_result "$review_packet" || true)"
-    if ! ralph_review_packet_declares_ready "$review_packet"; then
+    if [[ "$mode" == "architecture_review" ]]; then
+      if ralph_review_packet_declares_exact_ready_result "$review_packet"; then
+        echo "- PASS: architecture review declares the exact ready result." >> "$declared_file"
+      else
+        echo "- FAIL: architecture review must declare the exact result '$RALPH_AGENT_READY_RESULT' (Result: ${declared_result:-<none>})." >> "$declared_file"
+        failures=$((failures + 1))
+      fi
+    elif ! ralph_review_packet_declares_ready "$review_packet"; then
       echo "- FAIL: review-packet.md must declare the exact result '$RALPH_AGENT_READY_RESULT' and remain mergeable (Result: ${declared_result:-<none>})." >> "$declared_file"
       failures=$((failures + 1))
     else
