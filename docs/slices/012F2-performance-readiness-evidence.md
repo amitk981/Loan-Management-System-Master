@@ -52,10 +52,11 @@ hide or relax a performance failure.
   stand in for these target-specific route/batch measurements.
 - Cover login, dashboard, member search, application creation, document upload, approval, report
   export, DPD batch, monthly accrual, and audit query. Exercise async jobs through their public seams.
-- Include bounded worker-restart, Redis-restart, database-pressure, export-queue,
-  large-document/audit, and sustained workflow probes where the repository can execute them safely;
-  the Redis restart must prove no system-of-record data loss. Mark environment-dependent soak
-  execution as mandatory release evidence rather than silently passing it locally.
+- Implement bounded worker-restart, Redis-restart, database-pressure, export-queue,
+  large-document/audit, and sustained-workflow probe definitions and local failure tests. The Redis
+  restart contract must prove no system-of-record data loss. Environment-bound section-24.3 results
+  remain explicitly `release-evidence-required`; they cannot be converted to a pass or approved skip
+  here and are admitted only by terminal slice 012F3 after deployment smoke.
 - Emit a machine-readable summary with versions, commit, environment facts, counts, percentiles,
   failures, approved skips, and hashes. Never include credentials or PII.
 
@@ -75,7 +76,8 @@ disabled to improve results.
 
 ## Validation Rules
 - Thresholds are sourced or explicitly environment-bound; the agent cannot invent or relax them.
-- Mandatory missing/failed scenarios and unapproved skips produce non-zero status.
+- Mandatory missing/failed scenarios and unapproved skips produce non-zero status; a bounded local
+  probe result is distinct from the terminal environment result consumed by 012F3.
 - Runs are seed-deterministic and report warm/cold behavior without mixing measurements.
 
 ## Trusted Browser Acceptance
@@ -88,7 +90,7 @@ disabled to improve results.
 - A representative local run exercises all ten mappings with deterministic fixtures; two browser
   repetitions retain equivalent scenario counts and successful critical-route screenshots.
 - Contract tests fail when any section-24.1 target (including Application Detail, Loan Account 360,
-  Disbursement Readiness, or Capitalisation Dry Run) or the Redis-restart integrity probe is absent.
+  Disbursement Readiness, or Capitalisation Dry Run) or any section-24.3 probe definition is absent.
 - Security, permission, financial correctness, and full-suite gates remain unchanged.
 
 ## Visual Acceptance Criteria
@@ -97,15 +99,16 @@ trusted performance smoke; no new styling or performance-only production state i
 
 ## Evidence Required
 Scenario/threshold matrix; exact commands; environment and dataset manifest; raw bounded results and
-machine summary; controlled failure; two trusted browser runs; applicable soak/stress owner/status;
-full functional/security gates.
+machine summary; controlled failure; two trusted browser runs; section-24.3 command/evidence schema
+and explicit 012F3 handoff; full functional/security gates.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
 - PERF-001 through PERF-010 each have exact repeatable evidence and an unambiguous pass/fail status.
-- R8-AC-004 cannot pass on missing, stale, failed, or silently skipped mandatory performance evidence.
+- The lane and schema cannot mark R8-AC-004 release-ready; 012F3 remains mandatory for fresh,
+  complete section-24.3 environment evidence.
 - Performance tooling does not weaken correctness, security, audit, or production interfaces.
 
 ## Done Checklist

@@ -169,6 +169,7 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 106 | `011L` Section 186 and NBFC Test Trackers | Epic 011 | 011K, | Medium | No | Yes | Yes | Yes |
 | 107 | `011M` KYC Re-KYC Compliance Tracker | Epic 011 | 011L, | High | No | Yes | Yes | Yes |
 | 107a | `011M2` Member Portal KYC Correction Request | Epic 011 | 011M, | High | Yes | Yes | Yes | Yes |
+| 107b | `011M3` Global Search Compliance Results | Epic 011 | 010N and 011M, | High | Yes | Yes | Yes | Yes |
 | 108 | `011N` Grievance Workflow | Epic 011 | 011M, | Medium | No | Yes | Yes | Yes |
 | 108a | `011NA` Member Portal Notices, Grievances, and Notifications | Epic 011 | 011N, | Medium | Yes | Yes | No | Yes |
 | 109 | `011O` Auditor Read-Only Views | Epic 011 | 011N and 011M2, | Medium | Yes | Yes | No | Yes |
@@ -190,4 +191,5 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 115a | `012F2` Performance Readiness Evidence | Epic 012 | 012F, | Medium | Yes | Yes | No | Yes |
 | 116 | `012G` Critical E2E UAT Smoke Scenarios | Epic 012 | 012F2 and 011P and 012DA and 012EB, | Medium | No | Yes | No | Yes |
 | 117 | `012H` Deployment Readiness and Smoke Checks | Epic 012 | 012G, | Medium | No | Yes | No | Yes |
-| 118 | `012I` Final UAT Review Packet | Epic 012 | 012H, | Medium | Yes | No | No | Yes |
+| 117a | `012F3` Soak and Stress Release Evidence Admission | Epic 012 | 012H, | High | No | Yes | No | Yes |
+| 118 | `012I` Final UAT Review Packet | Epic 012 | 012F3, | Medium | Yes | No | No | Yes |

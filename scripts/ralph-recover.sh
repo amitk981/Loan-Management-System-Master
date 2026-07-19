@@ -55,6 +55,35 @@ run_lock_is_live() {
   [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
 }
 
+# `ralph-run.sh` writes the trusted root lock before `git worktree add`. A
+# process can be killed in the few instructions between a successful add and
+# the durable owner-record write. Authenticate only that exact bootstrap shape:
+# worktree basename == lock/run id, lock points back to this worktree, the
+# registered branch encodes the same run plus an existing exact slice stem.
+authenticate_bootstrap_worktree() {
+  local wt_abs="${1:?worktree path is required}"
+  local owner_id="${2:?owner id is required}"
+  local lock="$repo_root/.ralph/locks/$owner_id.lock"
+  local lock_run lock_worktree branch branch_prefix slice_id
+  [[ -f "$lock" && ! -L "$lock" ]] || return 1
+  lock_run="$(sed -n '1p' "$lock" 2>/dev/null || true)"
+  lock_worktree="$(sed -n '3p' "$lock" 2>/dev/null || true)"
+  [[ "$lock_run" == "$owner_id" && -n "$lock_worktree" ]] || return 1
+  lock_worktree="$(python3 -c 'from pathlib import Path; import sys; print(Path(sys.argv[1]).resolve())' "$lock_worktree")"
+  [[ "$lock_worktree" == "$wt_abs" ]] || return 1
+  branch="$(git -C "$wt_abs" symbolic-ref --quiet --short HEAD 2>/dev/null)" || return 1
+  branch_prefix="ralph/${owner_id}_"
+  [[ "$branch" == "$branch_prefix"* ]] || return 1
+  slice_id="${branch#"$branch_prefix"}"
+  [[ "$slice_id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ \
+      && -f "$repo_root/docs/slices/$slice_id.md" \
+      && ! -L "$repo_root/docs/slices/$slice_id.md" ]] || return 1
+  ralph_record_worktree_owner \
+    "$repo_root" "$wt_abs" "$branch" "$owner_id" "$owner_id" "$slice_id" \
+    >/dev/null || return 1
+  echo "  Authenticated interrupted bootstrap worktree from its trusted root lock."
+}
+
 shopt -s nullglob
 for wt in .ralph/worktrees/*/; do
   wt="${wt%/}"
@@ -64,13 +93,15 @@ for wt in .ralph/worktrees/*/; do
   owner_branch=""
   owner_slice_id=""
   run_ids=""
-  if owner_file="$(ralph_worktree_owner_file "$repo_root" "$wt_abs" 2>/dev/null)"; then
-    owner_id="$(ralph_worktree_owner_value "$owner_file" owner_id)"
-    owner_branch="$(ralph_worktree_owner_value "$owner_file" branch)"
-    owner_slice_id="$(ralph_worktree_owner_value "$owner_file" slice_id)"
-    run_ids="$(ralph_worktree_owner_run_ids "$owner_file")"
-  else
-    owner_lookup_rc=$?
+  owner_lookup_rc=0
+  owner_file="$(ralph_worktree_owner_file "$repo_root" "$wt_abs" 2>/dev/null)" \
+    || owner_lookup_rc=$?
+  if [[ "$owner_lookup_rc" == "1" ]] \
+      && authenticate_bootstrap_worktree "$wt_abs" "$owner_id"; then
+    owner_file="$(ralph_worktree_owner_file "$repo_root" "$wt_abs")"
+    owner_lookup_rc=0
+  fi
+  if [[ "$owner_lookup_rc" != "0" ]]; then
     if [[ "$owner_lookup_rc" == "2" ]]; then
       echo "Refusing to recover $owner_id: duplicate or corrupt trusted worktree-owner records." >&2
     else
@@ -79,6 +110,10 @@ for wt in .ralph/worktrees/*/; do
     recovery_errors=$((recovery_errors + 1))
     continue
   fi
+  owner_id="$(ralph_worktree_owner_value "$owner_file" owner_id)"
+  owner_branch="$(ralph_worktree_owner_value "$owner_file" branch)"
+  owner_slice_id="$(ralph_worktree_owner_value "$owner_file" slice_id)"
+  run_ids="$(ralph_worktree_owner_run_ids "$owner_file")"
   append_run_id "$owner_id"
   context_matches=0
   if [[ -n "$context_worktree" && "$context_worktree" == "$wt_abs" ]]; then

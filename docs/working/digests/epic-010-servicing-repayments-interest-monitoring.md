@@ -150,7 +150,9 @@ authoritative; this file avoids reopening the full source set during ordinary ex
 ### 010M–010O — already concrete
 
 - `010M`: staff S43–S52 wiring, final servicing/monitoring mock removal.
-- `010N`: permission-filtered server-side global search; no sensitive/client-side index.
+- `010N`: permission-filtered server-side global-search foundation; no sensitive/client-side index.
+  It delivers six groups and a default-empty provider seam; `011M3` adds the seventh compliance
+  group only after 011K–011M own real compliance records.
 - `010O`: real header notification summary and final `Header.tsx` mock removal.
 
 ## Unresolved policy — required handling

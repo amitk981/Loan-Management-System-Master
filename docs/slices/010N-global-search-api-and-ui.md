@@ -8,13 +8,15 @@ Epic 010: Servicing, Repayments, Interest, and Monitoring (cross-module search; 
 Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 
 ## Goal
-Implement the complete Global Search Results screen (S02): one server-owned search that finds every
-source-defined member, application, account, document, repayment, compliance, and authorised audit
-result without exposing records or sensitive lookup values outside the caller's scope.
+Implement the privacy-safe Global Search Results foundation (S02) over every source-defined domain
+that exists by Epic 010: members, applications, accounts, documents, repayments, and authorised
+audit logs. Expose one registered provider seam so 011M3 can add real compliance records only after
+their 011K–011M source owners exist.
 
 ## User Value
-Staff reach every source-supported record group in seconds without navigating module lists, while
-sensitive exact matching stays hashed, masked, permission-scoped, and absent from browser indexes.
+Staff reach the available source-supported record groups in seconds without navigating module lists,
+while sensitive exact matching stays hashed, masked, permission-scoped, and absent from browser
+indexes; S02 becomes complete only when 011M3 registers the compliance group.
 
 ## Depends On
 - 010M
@@ -43,9 +45,11 @@ sensitive exact matching stays hashed, masked, permission-scoped, and absent fro
 1. Backend: implement the §8.4 endpoint over all S02 inputs: borrower/FPC name, application and loan
    references, folio, number of shares, PAN, Aadhaar last four, mobile, email, SAP customer code,
    cheque number, CDSL pledge sequence, SH-4 reference, and bank-account last four.
-2. Group results exactly as S02 requires: Members, Loan Applications, Loan Accounts, Documents,
-   Repayments, Compliance records, and Audit logs for explicitly authorised users. Each group is
-   independently permission/object scoped, paginated, deterministically ordered, and capped.
+2. Deliver Members, Loan Applications, Loan Accounts, Documents, Repayments, and Audit logs for
+   explicitly authorised users. Each group is independently permission/object scoped, paginated,
+   deterministically ordered, and capped. Define a registered, default-empty compliance provider
+   interface, but do not fabricate or query compliance rows before 011K–011M; 011M3 owns the seventh
+   S02 group and the final all-groups acceptance.
 3. PAN/Aadhaar matching is exact and server-side through the established keyed-hash/search-token
    owner; suffix searches use scoped stored suffixes. Never scan/decrypt raw values, return raw
    PAN/Aadhaar/bank/cheque data, or log the submitted query. Sensitive identifiers stay masked, but
@@ -74,7 +78,8 @@ sensitive exact matching stays hashed, masked, permission-scoped, and absent fro
 - PAN/Aadhaar exact or suffix lookup returns only authorised masked records through search tokens;
   raw values never appear in response, browser state, logs, audit payloads, or query plans.
 - Result-card contract tests cover title, visible source identifier, status/risk, applicable amount,
-  owner, last-updated actor/date, and permission-filtered quick actions for every result group.
+  owner, last-updated actor/date, and permission-filtered quick actions for every group delivered by
+  this slice; the same contract is reused by 011M3.
 - Invalid/short sensitive queries, injection/wildcard attempts, unknown fields, and excessive request
   rate fail safely; indexed-query evidence covers representative volume without table scans.
 
@@ -91,10 +96,12 @@ trusted-browser screenshots from two passing contract runs; focused reverse-cons
 High
 
 ## Acceptance Criteria
-- Global search works end to end with permission-correct, paginated results.
+- The six available global-search groups work end to end with permission-correct, paginated results,
+  and the compliance provider seam returns no invented records before 011M3.
 - S02 result cards expose the required non-sensitive identifiers and fields while masking sensitive
   values and suppressing unauthorised quick actions.
-- All gates pass; screenshots of results and empty state saved.
+- All gates pass; screenshots of base results and empty state are saved. Complete seven-group S02
+  acceptance is deliberately owned by dependency-ordered 011M3.
 
 ## Done Checklist
 - [ ] Execution plan written

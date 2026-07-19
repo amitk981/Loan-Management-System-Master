@@ -299,6 +299,41 @@ set -e
   || fail "recovery cleared a malformed repair context"
 rm "$recovery_repo/.ralph/repair-context.json"
 
+# A crash can occur after `git worktree add` but before the stable owner record
+# is written. The pre-existing trusted root lock, exact registered branch, and
+# queued slice identity narrowly authenticate that bootstrap state so recovery
+# can clean it instead of stopping every future loop.
+mkdir -p "$recovery_repo/docs/slices"
+cat > "$recovery_repo/docs/slices/bootstrap-slice.md" <<'EOF'
+## Status
+Not Started
+
+## Depends On
+- None
+EOF
+git -C "$recovery_repo" add docs/slices/bootstrap-slice.md
+git -C "$recovery_repo" commit -qm 'add bootstrap slice'
+bootstrap_worktree="$recovery_repo/.ralph/worktrees/bootstrap-run"
+git -C "$recovery_repo" worktree add -q -b ralph/bootstrap-run_bootstrap-slice \
+  "$bootstrap_worktree" HEAD
+mkdir -p "$bootstrap_worktree/.ralph/runs/bootstrap-run"
+printf '%s\n' bootstrap > "$bootstrap_worktree/.ralph/runs/bootstrap-run/evidence.txt"
+printf 'bootstrap-run\n99999999\n%s\n' "$bootstrap_worktree" \
+  > "$recovery_repo/.ralph/locks/bootstrap-run.lock"
+(
+  cd "$recovery_repo"
+  ./scripts/ralph-recover.sh > bootstrap-recovery.stdout
+)
+[[ ! -e "$bootstrap_worktree" ]] \
+  || fail "trusted bootstrap worktree was not recovered"
+[[ -f "$recovery_repo/.ralph/runs/bootstrap-run/evidence.txt" ]] \
+  || fail "trusted bootstrap artifacts were not salvaged"
+[[ ! -f "$recovery_repo/.ralph/locks/bootstrap-run.lock" ]] \
+  || fail "trusted bootstrap lock was not cleared"
+grep -qF 'Authenticated interrupted bootstrap worktree from its trusted root lock.' \
+  "$recovery_repo/bootstrap-recovery.stdout" \
+  || fail "bootstrap recovery did not report its narrow authentication path"
+
 legacy_worktree="$recovery_repo/.ralph/worktrees/legacy-run"
 git -C "$recovery_repo" worktree add -q -b ralph/legacy-run_fixture \
   "$legacy_worktree" HEAD

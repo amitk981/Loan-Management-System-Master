@@ -51,10 +51,12 @@ Enforced by `scripts/ralph-validate.sh` on every run:
 - Status-transition check: only the executed slice may change its `## Status`; architecture reviews may re-park other slices (`Blocked` <-> `Not Started`, `Superseded`) but no run may flip a slice it did not execute to `Complete`.
 - Contract fidelity (checked in review, not by script): API-touching slices follow `docs/source/api-contracts.md` §3 (design principles), §6-8 (envelopes, errors, pagination) and §45 (idempotency for financial actions); model-touching slices follow `docs/source/data-model.md` §30 (indexing) and §34 (transactional integrity); backend module layout follows `docs/source/codebase-design.md`.
 
-Slices that require the authoritative PostgreSQL five-race gate declare
-`postgresql-five-race-acceptance` under an exact `## Runtime Capabilities` heading. The declaration
-drives both the scoped Codex socket permission and independent orchestrator validation; unknown
-capabilities fail closed. Ordinary and undeclared slices use the `:workspace` permission profile.
+Slices that require authoritative PostgreSQL acceptance declare the legacy-compatible capability id
+`postgresql-five-race-acceptance` under an exact `## Runtime Capabilities` heading. Despite the
+retained name, the gate now executes the slice-owned exact Django labels and positive expected count
+twice in isolated databases; it is not a hard-coded five-test suite. The declaration drives both the
+scoped Codex socket permission and independent orchestrator validation; unknown capabilities fail
+closed. Ordinary slices explicitly declare `none` and use the `:workspace` permission profile.
 A failing gate fails the whole run; failing work is never committed, merged, or pushed. ESLint arrives via slice 002FL, then flip `quality_gates.lint` to true.
 
 Ordinary `architecture-review` runs have a specialized documentation-only validation lane. The validator first proves that every agent-authored candidate path is under `docs/` or the current review's own `.ralph/runs/<run-id>/` evidence directory; product paths, configuration, orchestrator-owned state/progress, and historical run evidence fail closed. Once that scope proof, the normal artifact checks, queue lint, and frozen-candidate hash pass, repeated frontend/backend product gates are recorded as deliberately skipped because the unchanged product commit already passed them. The orchestrator then applies state, progress, and status facts. Oversized-slice queue rewrites use the same principle with their narrower queue-metadata allowlist.
@@ -78,7 +80,7 @@ Agents must never implement chat-reported bugs directly — template first, alwa
 
 ## Interrupted Runs and Recovery
 A run can die mid-flight (usage-limit exhaustion, crash, closed terminal) under either agent. Recovery is automatic and agent-agnostic:
-- `./scripts/ralph-loop.sh` runs `scripts/ralph-recover.sh` at startup. Trusted ownership metadata under the common Git directory associates one stable worktree with every normal and repair run id that used it. Recovery skips any worktree with an associated live lock, salvages every matching run's artifacts into `.ralph/runs/<run-id>/`, removes only the dead worktree, keeps any branch with unmerged commits, and clears only stale associated locks and a repair context that names that same dead worktree. The still-queued slice then reruns automatically.
+- `./scripts/ralph-loop.sh` runs `scripts/ralph-recover.sh` at startup. Trusted ownership metadata under the common Git directory associates one stable worktree with every normal and repair run id that used it. If the process dies in the tiny bootstrap interval after `git worktree add` but before that metadata write, recovery accepts only an exact dead/live root lock whose run id, recorded worktree, registered Ralph branch, and existing slice stem all agree, then materializes the same ownership record. Recovery skips any worktree with an associated live lock, salvages every matching run's artifacts into `.ralph/runs/<run-id>/`, removes only the dead worktree, keeps any branch with unmerged commits, and clears only stale associated locks and a repair context that names that same dead worktree. The still-queued slice then reruns automatically.
 - Preflight independently auto-removes locks whose owning process is dead; a surviving lock means a run is genuinely still active.
 - Rerunning is always safe: slice status only flips to Complete at the end of a fully-gated run. Never salvage partial work from an interrupted run.
 - Before a manual single run (`afk-dev.sh`), run `./scripts/ralph-recover.sh` first.

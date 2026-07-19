@@ -22,6 +22,9 @@ Not Started
 ## Runtime Capabilities
 - <Use exactly `none`, `postgresql-five-race-acceptance`, `localhost-e2e-server`, or the two required capabilities as separate list entries. Unknown or missing values fail closed.>
 
+<!-- `postgresql-five-race-acceptance` is the retained compatibility id. It runs this slice's exact
+trusted Django labels/count twice; the contract is not required to contain exactly five tests. -->
+
 <!--
 When PostgreSQL evidence is required, add this exact machine-readable section after the
 requirements. Test entries are exact dotted Django labels; Expected tests is the total discovery

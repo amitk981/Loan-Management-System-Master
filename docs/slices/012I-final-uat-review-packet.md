@@ -17,7 +17,7 @@ The owner and business signatories receive one auditable release decision packet
 what passed, what remains open, who must approve it, and which commit the evidence covers.
 
 ## Depends On
-- 012H
+- 012F3
 
 ## Runtime Capabilities
 
@@ -67,6 +67,8 @@ evidence. This documentation review creates no business audit events.
 - Include `UAT-001..026` status/actor, full regression, security/privacy, financial, audit,
   integration, operational/deployment smoke, report reconciliation, performance, and migration
   status when in scope.
+- Require the admitted 012F3 section-24.3 environment bundle; a pending, deferred, locally simulated,
+  stale, or partially successful soak/stress result is mandatory missing evidence and `NOT READY`.
 - Include known defects with severity, owner, acceptance/workaround, assumptions/open decisions,
   backup/rollback/monitoring/support/hypercare/training status, and named signoff slots.
 - Missing evidence, mandatory skips, open Sev 1, unaccepted Sev 2, failed critical tests, or absent
