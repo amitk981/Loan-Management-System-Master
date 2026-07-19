@@ -2308,6 +2308,11 @@ rg -qF 'Only Critical/High correctness, security, financial/data-integrity, or b
   || fail "architecture-review prompt does not enforce severity-based queue admission"
 rg -qF 'Report findings closed, new findings by severity, and corrective slices added' "$runner" \
   || fail "architecture-review prompt omits convergence metrics"
+rg -qF "set the review-packet.md Result section to exactly 'Ready for independent validation'" "$runner" \
+  || fail "run prompt does not safely state the exact agent-declared result"
+if rg -qF 'review-packet.md `## Result`' "$runner"; then
+  fail "unquoted prompt heredoc can execute review result backticks"
+fi
 rg -qF 'ralph_architecture_review_new_corrective_count' scripts/ralph-validate.sh \
   || fail "validator does not enforce the new corrective-slice queue contract"
 rg -qF 'ralph_architecture_review_existing_corrective_count' scripts/ralph-validate.sh \

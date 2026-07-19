@@ -385,7 +385,7 @@ set -e
     && -f "$legacy_worktree/.ralph/runs/legacy-repair/evidence.txt" ]] \
   || fail "legacy recovery removed unsalvageable multi-run evidence"
 
-grep -qF 'set review-packet.md `## Result` to exactly `Ready for independent validation`' \
+grep -qF "set the review-packet.md Result section to exactly 'Ready for independent validation'" \
   scripts/ralph-run.sh \
   || fail "agent prompt does not declare the exact successful review-packet result"
 
