@@ -338,6 +338,9 @@ def _record_audit(*, actor, request, row, action, evidence):
     evidence_digest = hashlib.sha256(
         json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+    selector_manifest_json = json.dumps(
+        evidence, sort_keys=True, separators=(",", ":")
+    )
     AuditLog.objects.create(
         actor_user=actor,
         actor_type="user",
@@ -349,8 +352,11 @@ def _record_audit(*, actor, request, row, action, evidence):
             "evidence_sha256": evidence_digest,
             "request_id": evidence["request_id"],
             "timestamp": evidence["timestamp"],
+            "selector_manifest": evidence,
         },
         new_value_json=evidence,
+        selector_manifest_json=selector_manifest_json,
+        selector_manifest_sha256=evidence_digest,
         ip_address=request_ip(request),
         user_agent=request_user_agent(request),
     )

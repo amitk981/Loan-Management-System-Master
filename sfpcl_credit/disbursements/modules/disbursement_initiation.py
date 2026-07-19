@@ -137,6 +137,11 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             f"verification_digest={comment_digest};"
             f"amount={cleaned['disbursement_amount']:.2f}"
         )
+        cfc_action_url = f"/api/v1/disbursements/{disbursement_id}/authorise/"
+        cfc_task_message = (
+            "A verified manual-bank instruction is awaiting independent review. "
+            f"Amount: {cleaned['disbursement_amount']:.2f}. {trace}"
+        )
         safe_evidence = {
             "disbursement_id": str(disbursement_id),
             "loan_account_id": str(account.loan_account_id),
@@ -162,15 +167,31 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             "user_agent": request_user_agent(request) if request else "",
             "initiated_at": initiated_at.isoformat().replace("+00:00", "Z"),
             "outcome": "initiated",
+            "workflow_trace": trace,
+            "cfc_action_url": cfc_action_url,
+            "cfc_task_message": cfc_task_message,
         }
+        selector_digest = hashlib.sha256(
+            json.dumps(
+                safe_evidence, sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest()
+        selector_manifest_json = json.dumps(
+            safe_evidence, sort_keys=True, separators=(",", ":")
+        )
         audit = AuditLog.objects.create(
             actor_user=maker,
             actor_type="user",
             action="disbursement.initiated",
             entity_type="disbursement",
             entity_id=disbursement_id,
-            old_value_json={},
+            old_value_json={
+                "selector_manifest": safe_evidence,
+                "selector_manifest_sha256": selector_digest,
+            },
             new_value_json=safe_evidence,
+            selector_manifest_json=selector_manifest_json,
+            selector_manifest_sha256=selector_digest,
             ip_address=safe_evidence["ip_address"],
             user_agent=safe_evidence["user_agent"],
         )
@@ -191,15 +212,11 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             category="Finance",
             severity="urgent",
             title="Disbursement awaiting CFC authorisation",
-            message=(
-                "A verified manual-bank instruction is awaiting independent review. "
-                f"Amount: {cleaned['disbursement_amount']:.2f}. "
-                f"{trace}"
-            ),
+            message=cfc_task_message,
             related_entity_type="disbursement",
             related_entity_id=disbursement_id,
             action_label="Review disbursement",
-            action_url=f"/api/v1/disbursements/{disbursement_id}/authorise/",
+            action_url=cfc_action_url,
             sender_user=maker,
             recipient_role_code="chief_financial_controller",
         )

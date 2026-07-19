@@ -1,0 +1,27 @@
+Found 3 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_postgresql_forward_is_idempotent_for_preexisting_extension (sfpcl_credit.tests.test_pgcrypto_migration_ownership.PgcryptoMigrationOwnershipTests.test_postgresql_forward_is_idempotent_for_preexisting_extension) ... FAIL
+test_reverse_drops_only_when_the_durable_marker_proves_app_ownership (sfpcl_credit.tests.test_pgcrypto_migration_ownership.PgcryptoMigrationOwnershipTests.test_reverse_drops_only_when_the_durable_marker_proves_app_ownership) ... FAIL
+test_sqlite_forward_and_reverse_are_noops (sfpcl_credit.tests.test_pgcrypto_migration_ownership.PgcryptoMigrationOwnershipTests.test_sqlite_forward_and_reverse_are_noops) ... ok
+
+======================================================================
+FAIL: test_postgresql_forward_is_idempotent_for_preexisting_extension (sfpcl_credit.tests.test_pgcrypto_migration_ownership.PgcryptoMigrationOwnershipTests.test_postgresql_forward_is_idempotent_for_preexisting_extension)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_135000_normal_run/sfpcl_credit/tests/test_pgcrypto_migration_ownership.py", line 35, in test_postgresql_forward_is_idempotent_for_preexisting_extension
+    self.assertIn("pg_extension", statement)
+AssertionError: 'pg_extension' not found in 'CREATE EXTENSION IF NOT EXISTS pgcrypto'
+
+======================================================================
+FAIL: test_reverse_drops_only_when_the_durable_marker_proves_app_ownership (sfpcl_credit.tests.test_pgcrypto_migration_ownership.PgcryptoMigrationOwnershipTests.test_reverse_drops_only_when_the_durable_marker_proves_app_ownership)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_135000_normal_run/sfpcl_credit/tests/test_pgcrypto_migration_ownership.py", line 45, in test_reverse_drops_only_when_the_durable_marker_proves_app_ownership
+    self.assertEqual(len(editor.executed), 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=2)

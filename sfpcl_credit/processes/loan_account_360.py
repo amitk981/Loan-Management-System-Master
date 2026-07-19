@@ -80,7 +80,11 @@ def eligible_account_candidates(*, actor, filters):
     )
     queryset = SapCustomerProfileModule.filter_current_account_completions(queryset)
     roles = set(auth_service.effective_role_codes(actor))
-    if roles == {"senior_manager_finance"}:
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        roles == {"senior_manager_finance"}
+        and "finance.disbursement.initiate" not in permissions
+    ):
         queryset = queryset.filter(_latest_sap_assignee_id=actor.pk)
     elif roles == {"chief_financial_controller"}:
         queryset = queryset.filter(

@@ -4,13 +4,9 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from django.db import connection
-from django.test import Client, SimpleTestCase, TestCase
+from django.test import Client, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-
-from sfpcl_credit.processes.portal_disbursement_status import (
-    _current_pre_payment_stages,
-)
 
 from sfpcl_credit.communications.models import CommunicationDeliveryOutbox
 from sfpcl_credit.communications.modules.communication_dispatcher import (
@@ -558,6 +554,47 @@ class PortalDisbursementStageApiTests(TestCase):
         self.assertEqual(timeline["payment_initiated"]["status"], "pending")
         self.assertIsNone(timeline["payment_initiated"]["completed_at"])
 
+    def test_other_application_completion_is_pending_through_portal_http_contract(self):
+        from sfpcl_credit.tests.test_disbursement_initiation_api import (
+            DisbursementInitiationApiTests,
+        )
+
+        owner = DisbursementInitiationApiTests(
+            "test_current_ready_payment_is_recorded_once_without_transfer_side_effects"
+        )
+        owner.setUp()
+        portal_user = self._portal_user(owner.application.member)
+
+        with (
+            patch(
+                "sfpcl_credit.processes.portal_disbursement_status.resolve_legal_readiness",
+                return_value=SimpleNamespace(
+                    documentation_complete=True,
+                    documentation_completed_at=None,
+                ),
+            ),
+            patch(
+                "sfpcl_credit.processes.portal_disbursement_status.get_customer_code_for_member",
+                return_value=SimpleNamespace(
+                    customer_code_id=uuid4(),
+                    member_id=owner.application.member_id,
+                    loan_application_id=uuid4(),
+                    status="active",
+                    completed_at=None,
+                ),
+            ),
+        ):
+            response = Client().get(
+                f"/api/v1/portal/applications/{owner.application.pk}/disbursement-status/",
+                headers=self._portal_auth(portal_user),
+            )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        timeline = {
+            item["code"]: item for item in response.json()["data"]["timeline"]
+        }
+        self.assertEqual(timeline["sap_setup"]["status"], "pending")
+
     def test_sanctioned_application_before_loan_account_stays_at_finance_setup(self):
         from sfpcl_credit.tests.test_portal_documentation_actions_api import (
             PortalDocumentationActionsApiTests,
@@ -801,33 +838,3 @@ class PortalDisbursementStageApiTests(TestCase):
     @staticmethod
     def _status_url(row):
         return f"/api/v1/portal/applications/{row.loan_application_id}/disbursement-status/"
-class PortalCanonicalSapEdgeTests(SimpleTestCase):
-    @patch(
-        "sfpcl_credit.processes.portal_disbursement_status.resolve_legal_readiness",
-        return_value=SimpleNamespace(
-            documentation_complete=True,
-            documentation_completed_at=None,
-        ),
-    )
-    @patch(
-        "sfpcl_credit.processes.portal_disbursement_status.get_customer_code_for_member"
-    )
-    def test_other_application_completion_does_not_complete_requested_application_stage(
-        self, member_code, _legal
-    ):
-        application_id = uuid4()
-        member_id = uuid4()
-        member_code.return_value = SimpleNamespace(
-            customer_code_id=uuid4(),
-            member_id=member_id,
-            loan_application_id=uuid4(),
-            status="active",
-            completed_at=None,
-        )
-
-        stages = _current_pre_payment_stages(
-            application_id=application_id,
-            member_id=member_id,
-        )
-
-        self.assertFalse(stages["completed"]["sap_setup"])

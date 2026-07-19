@@ -430,6 +430,18 @@ class LoanAccountReadApiTests(TestCase):
             "sanction_decision_id": str(sanction.pk),
             "loan_terms_id": str(terms.pk),
         }
+        from sfpcl_credit.loans.modules.loan_account_lifecycle import (
+            _canonical_manifest_json,
+            _selector_manifest,
+        )
+
+        audit.old_value_json = _selector_manifest(audit.new_value_json)
+        audit.selector_manifest_json = _canonical_manifest_json(
+            audit.new_value_json
+        )
+        audit.selector_manifest_sha256 = audit.old_value_json[
+            "selector_manifest_sha256"
+        ]
         audit.save(force_insert=True)
 
         original_workflow = WorkflowEvent.objects.get(

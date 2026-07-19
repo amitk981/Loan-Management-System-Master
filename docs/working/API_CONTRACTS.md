@@ -4345,6 +4345,12 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   database pagination. Count, offsets, total pages, and projection consume the same requested
   database identity window; evidence-incoherent rows cannot inflate totals or shift page reachability,
   and query count remains independent of portfolio size.
+- 009L6 binds each lifecycle audit body to its retained owner selector manifest. The database
+  selector and scalar creation decision require the same exact JSON shape/type and manifest,
+  including nullable SAP identity, actor roles/teams, and request evidence, before an identity can
+  affect count or offset. SQLite compares JSON structurally and PostgreSQL uses native `jsonb`
+  equality; production PostgreSQL key/type predicates are exercised by the declared exact-selector
+  acceptance label.
 
 ## Staff disbursement workspace (009K)
 
@@ -4383,3 +4389,12 @@ import established by 009B3A; the former Finance SAP orchestration modules no lo
   arithmetically across that seam. Their exact owner decisions determine count, offsets, total
   pages, and projected rows without reconciliation overscan. Transfer-success and advice descriptors delegate to their
   mutation owners' current actor/object/evidence predicates instead of role/status inference.
+- 009L6 retains an exact selector manifest with each accepted SAP send/completion and disbursement
+  initiation audit. S37 selection additionally reconciles the exact communication/task/file/
+  workflow actor relations; account completion binds its exact completion body and terminal
+  workflow; pending-CFC selection reconciles the exact
+  initiation body, readiness JSON, workflow trace, CFC action URL/message, and unfunded aggregate.
+  A changed existing key or added/removed key is excluded before count/pagination, so projection
+  cannot silently drop an admitted row. Selector manifests are written only with newly accepted
+  owner evidence; unverifiable legacy evidence remains ineligible rather than being blessed from
+  its mutable current body. No manifest field is exposed in a public response.

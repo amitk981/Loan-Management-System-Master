@@ -2,11 +2,61 @@
 
 from dataclasses import dataclass
 import hashlib
+import json
 
-from django.db.models import F
-from django.db.models.functions import SHA256
+from django.db.models import BooleanField, F, Func, IntegerField, JSONField, Value
+from django.db.models.fields.json import KeyTextTransform, KeyTransform
+from django.db.models.functions import Cast, Coalesce, NullIf, SHA256
 
 from sfpcl_credit.disbursements.models import Disbursement
+
+
+class _JsonObjectKeyCount(Func):
+    output_field = IntegerField()
+    arity = 1
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return f"(SELECT COUNT(*) FROM JSON_EACH({sql}))", params
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return (
+            f"CASE WHEN JSONB_TYPEOF({sql}) = 'object' "
+            f"THEN (SELECT COUNT(*) FROM JSONB_OBJECT_KEYS({sql})) ELSE -1 END",
+            (*params, *params),
+        )
+
+
+class _JsonValuesEqual(Func):
+    output_field = BooleanField()
+    arity = 2
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        left_sql, left_params = compiler.compile(self.source_expressions[0])
+        right_sql, right_params = compiler.compile(self.source_expressions[1])
+        return (
+            "NOT EXISTS ("
+            f"SELECT fullkey, type, atom FROM JSON_TREE({left_sql}) "
+            "EXCEPT "
+            f"SELECT fullkey, type, atom FROM JSON_TREE({right_sql})"
+            ") AND NOT EXISTS ("
+            f"SELECT fullkey, type, atom FROM JSON_TREE({right_sql}) "
+            "EXCEPT "
+            f"SELECT fullkey, type, atom FROM JSON_TREE({left_sql})"
+            ")",
+            (
+                *left_params,
+                *right_params,
+                *right_params,
+                *left_params,
+            ),
+        )
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        left_sql, left_params = compiler.compile(self.source_expressions[0])
+        right_sql, right_params = compiler.compile(self.source_expressions[1])
+        return f"{left_sql} = {right_sql}", (*left_params, *right_params)
 
 
 @dataclass(frozen=True)
@@ -33,28 +83,114 @@ class CurrentDisbursementEvidence:
 def filter_current_pending_disbursements(queryset):
     """Filter the database-pageable identity set for the pending CFC decision."""
     return queryset.annotate(
-        _current_comment_digest=SHA256("final_verification_comments")
+        _current_comment_digest=SHA256("final_verification_comments"),
+        _audit_comment_digest=KeyTextTransform(
+            "final_verification_comment_digest",
+            "initiation_audit__new_value_json",
+        ),
+        _audit_maker_role_code=KeyTextTransform(
+            "0",
+            KeyTransform("maker_role_codes", "initiation_audit__new_value_json"),
+        ),
+        _audit_readiness_digest=KeyTextTransform(
+            "readiness_digest", "initiation_audit__new_value_json"
+        ),
+        _audit_idempotency_digest=KeyTextTransform(
+            "idempotency_digest", "initiation_audit__new_value_json"
+        ),
+        _audit_workflow_trace=KeyTextTransform(
+            "workflow_trace", "initiation_audit__new_value_json"
+        ),
+        _audit_cfc_action_url=KeyTextTransform(
+            "cfc_action_url", "initiation_audit__new_value_json"
+        ),
+        _audit_cfc_task_message=KeyTextTransform(
+            "cfc_task_message", "initiation_audit__new_value_json"
+        ),
+        _initiation_evidence_key_count=_JsonObjectKeyCount(
+            "initiation_audit__new_value_json"
+        ),
+        _readiness_evidence_matches=_JsonValuesEqual(
+            "initiation_audit__new_value_json__readiness_evidence",
+            "readiness_evidence_json",
+        ),
+        _initiation_manifest_matches=_JsonValuesEqual(
+            "initiation_audit__new_value_json",
+            "initiation_audit__old_value_json__selector_manifest",
+        ),
+        _canonical_manifest_matches=_JsonValuesEqual(
+            "initiation_audit__new_value_json",
+            Cast(
+                Coalesce(
+                    NullIf(
+                        "initiation_audit__selector_manifest_json", Value("")
+                    ),
+                    Value("{}"),
+                ),
+                JSONField(),
+            ),
+        ),
+        _canonical_manifest_digest=SHA256(
+            "initiation_audit__selector_manifest_json"
+        ),
+        _initiation_retained_key_count=_JsonObjectKeyCount(
+            "initiation_audit__old_value_json"
+        ),
     ).filter(
         initiation_status=Disbursement.INITIATED,
         initiation_audit__action="disbursement.initiated",
         initiation_audit__entity_type="disbursement",
         initiation_audit__entity_id=F("pk"),
         initiation_audit__actor_user_id=F("initiated_by_user_id"),
-        initiation_audit__new_value_json__final_verification_comment_digest=F(
-            "_current_comment_digest"
+        initiation_audit__actor_type="user",
+        _initiation_retained_key_count=2,
+        _initiation_manifest_matches=True,
+        _canonical_manifest_matches=True,
+        _canonical_manifest_digest=F(
+            "initiation_audit__selector_manifest_sha256"
         ),
+        _initiation_evidence_key_count=27,
+        _audit_comment_digest=F("_current_comment_digest"),
+        initiation_audit__new_value_json__maker_team_codes=F(
+            "maker_team_codes_json"
+        ),
+        _audit_maker_role_code=F("maker_role_code"),
+        initiation_audit__new_value_json__maker_role_codes__1__isnull=True,
+        _audit_readiness_digest=F("readiness_digest"),
+        _readiness_evidence_matches=True,
+        _audit_idempotency_digest=F("idempotency_key_digest"),
+        initiation_audit__new_value_json__cfc_assignment_role_code=(
+            "chief_financial_controller"
+        ),
+        initiation_audit__new_value_json__initiation_status=Disbursement.INITIATED,
+        initiation_audit__new_value_json__authorisation_status=(
+            Disbursement.AUTHORISATION_PENDING
+        ),
+        initiation_audit__new_value_json__bank_transfer_status=(
+            Disbursement.TRANSFER_PENDING
+        ),
+        initiation_audit__new_value_json__payment_method=(
+            Disbursement.PAYMENT_METHOD_MANUAL
+        ),
+        initiation_audit__new_value_json__outcome="initiated",
         initiation_workflow_event__workflow_name="DisbursementInitiated",
         initiation_workflow_event__entity_type="disbursement",
         initiation_workflow_event__entity_id=F("pk"),
         initiation_workflow_event__from_state__isnull=True,
         initiation_workflow_event__to_state=Disbursement.INITIATED,
         initiation_workflow_event__triggered_by_user_id=F("initiated_by_user_id"),
+        initiation_workflow_event__trigger_reason=F("_audit_workflow_trace"),
         cfc_task__notification_type="disbursement_authorisation",
         cfc_task__category="Finance",
         cfc_task__related_entity_type="disbursement",
         cfc_task__related_entity_id=F("pk"),
         cfc_task__recipient_role_code="chief_financial_controller",
         cfc_task__sender_user_id=F("initiated_by_user_id"),
+        cfc_task__severity="urgent",
+        cfc_task__title="Disbursement awaiting CFC authorisation",
+        cfc_task__action_label="Review disbursement",
+        cfc_task__action_url=F("_audit_cfc_action_url"),
+        cfc_task__message=F("_audit_cfc_task_message"),
         cfc_task__read_at__isnull=True,
         cfc_task__read_by_user_id__isnull=True,
         bank_transfer_status=Disbursement.TRANSFER_PENDING,
@@ -181,6 +317,7 @@ def _frozen_owners_match(row, evidence, bank, source, account):
 
 def _initiation_ledger_is_coherent(row):
     evidence = row.initiation_audit.new_value_json or {}
+    retained = row.initiation_audit.old_value_json or {}
     request_id = evidence.get("request_id")
     comment_digest = evidence.get("final_verification_comment_digest")
     trace = (
@@ -191,6 +328,19 @@ def _initiation_ledger_is_coherent(row):
     pending_task = row.authorisation_status == Disbursement.AUTHORISATION_PENDING
     return bool(
         row.initiation_status == Disbursement.INITIATED
+        and retained.get("selector_manifest") == evidence
+        and row.initiation_audit.selector_manifest_json
+        == json.dumps(evidence, sort_keys=True, separators=(",", ":"))
+        and row.initiation_audit.selector_manifest_sha256
+        == hashlib.sha256(
+            row.initiation_audit.selector_manifest_json.encode()
+        ).hexdigest()
+        and retained.get("selector_manifest_sha256")
+        == hashlib.sha256(
+            json.dumps(
+                evidence, sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest()
         and request_id
         and comment_digest == hashlib.sha256(
             row.final_verification_comments.encode()
@@ -209,6 +359,7 @@ def _initiation_ledger_is_coherent(row):
         and evidence.get("readiness_digest") == row.readiness_digest
         and evidence.get("readiness_evidence") == row.readiness_evidence_json
         and evidence.get("idempotency_digest") == row.idempotency_key_digest
+        and evidence.get("workflow_trace") == trace
         and row.initiation_audit.action == "disbursement.initiated"
         and row.initiation_audit.entity_type == "disbursement"
         and row.initiation_audit.entity_id == row.pk
@@ -233,6 +384,8 @@ def _initiation_ledger_is_coherent(row):
             not pending_task
             or (
                 task.action_label == "Review disbursement"
+                and evidence.get("cfc_action_url") == task.action_url
+                and evidence.get("cfc_task_message") == task.message
                 and task.action_url
                 == f"/api/v1/disbursements/{row.pk}/authorise/"
                 and task.read_at is None

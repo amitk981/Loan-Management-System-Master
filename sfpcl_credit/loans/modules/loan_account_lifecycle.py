@@ -1,12 +1,27 @@
 from dataclasses import dataclass
 from collections import defaultdict
 from decimal import Decimal
+import hashlib
+import json
 import re
 import uuid
 
 from django.db import IntegrityError, transaction
-from django.db.models import CharField, Count, Exists, F, OuterRef, Subquery, Value
-from django.db.models.functions import Cast, Replace
+from django.db.models import (
+    BooleanField,
+    CharField,
+    Count,
+    Exists,
+    F,
+    Func,
+    IntegerField,
+    JSONField,
+    OuterRef,
+    Subquery,
+    Value,
+)
+from django.db.models.functions import Cast, Coalesce, NullIf, Replace, SHA256
+from django.db.models.fields.json import KeyTextTransform
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.applications.models import LoanApplication
@@ -53,6 +68,66 @@ _CREDIT_MONITORING_STATUSES = {
 }
 
 
+class _JsonObjectKeyType(Func):
+    """Portable JSON object-value type used by exact owner selectors."""
+
+    output_field = CharField()
+    arity = 1
+
+    def __init__(self, expression, *, key):
+        self.key = key
+        super().__init__(expression)
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return f"JSON_TYPE({sql}, %s)", (*params, f'$."{self.key}"')
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return f"JSONB_TYPEOF({sql} -> %s)", (*params, self.key)
+
+
+class _JsonObjectKeyCount(Func):
+    output_field = IntegerField()
+    arity = 1
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return f"(SELECT COUNT(*) FROM JSON_EACH({sql}))", params
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return (
+            f"CASE WHEN JSONB_TYPEOF({sql}) = 'object' "
+            f"THEN (SELECT COUNT(*) FROM JSONB_OBJECT_KEYS({sql})) ELSE -1 END",
+            (*params, *params),
+        )
+
+
+class _JsonValuesEqual(Func):
+    output_field = BooleanField()
+    arity = 2
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        left_sql, left_params = compiler.compile(self.source_expressions[0])
+        right_sql, right_params = compiler.compile(self.source_expressions[1])
+        return (
+            "NOT EXISTS ("
+            f"SELECT fullkey, type, atom FROM JSON_TREE({left_sql}) EXCEPT "
+            f"SELECT fullkey, type, atom FROM JSON_TREE({right_sql})"
+            ") AND NOT EXISTS ("
+            f"SELECT fullkey, type, atom FROM JSON_TREE({right_sql}) EXCEPT "
+            f"SELECT fullkey, type, atom FROM JSON_TREE({left_sql})"
+            ")",
+            (*left_params, *right_params, *right_params, *left_params),
+        )
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        left_sql, left_params = compiler.compile(self.source_expressions[0])
+        right_sql, right_params = compiler.compile(self.source_expressions[1])
+        return f"{left_sql} = {right_sql}", (*left_params, *right_params)
+
+
 class LoanAccountConflict(Exception):
     pass
 
@@ -80,7 +155,11 @@ class ReadinessAccountFacts:
 
 def filter_created_accounts(queryset):
     """Apply the lifecycle owner's queryable immutable-creation contract."""
-    histories = LoanStatusHistory.objects.filter(
+    histories = LoanStatusHistory.objects.annotate(
+        _sap_snapshot=Coalesce(
+            Cast("sap_customer_code_id_snapshot", CharField()), Value("")
+        )
+    ).filter(
         loan_account_id=OuterRef("pk"),
         from_status__isnull=True,
         to_status=LoanAccount.STATUS_SANCTIONED,
@@ -88,41 +167,100 @@ def filter_created_accounts(queryset):
         loan_application_id_snapshot=OuterRef("loan_application_id"),
         member_id_snapshot=OuterRef("member_id"),
         sanction_decision_id_snapshot=OuterRef("sanction_decision_id"),
+        _sap_snapshot=Coalesce(
+            Cast(OuterRef("sap_customer_code_id"), CharField()), Value("")
+        ),
         loan_terms_id_snapshot=OuterRef("terms__pk"),
         replay_flag=False,
         outcome="created",
     )
     audits = AuditLog.objects.annotate(
+        _actor_role_codes_type=_JsonObjectKeyType(
+            "new_value_json", key="actor_role_codes"
+        ),
+        _actor_team_codes_type=_JsonObjectKeyType(
+            "new_value_json", key="actor_team_codes"
+        ),
+        _evidence_key_count=_JsonObjectKeyCount("new_value_json"),
+        _retained_key_count=_JsonObjectKeyCount("old_value_json"),
+        _selector_manifest_matches=_JsonValuesEqual(
+            "new_value_json", "old_value_json__selector_manifest"
+        ),
+        _canonical_manifest_matches=_JsonValuesEqual(
+            "new_value_json",
+            Cast(
+                Coalesce(
+                    NullIf("selector_manifest_json", Value("")), Value("{}")
+                ),
+                JSONField(),
+            ),
+        ),
+        _canonical_manifest_digest=SHA256("selector_manifest_json"),
         _evidence_account_id=Replace(
-            Cast("new_value_json__loan_account_id", CharField()), Value("-"), Value("")
+            KeyTextTransform("loan_account_id", "new_value_json"),
+            Value("-"),
+            Value(""),
+            output_field=CharField(),
         ),
         _evidence_application_id=Replace(
-            Cast("new_value_json__loan_application_id", CharField()), Value("-"), Value("")
+            KeyTextTransform("loan_application_id", "new_value_json"),
+            Value("-"),
+            Value(""),
+            output_field=CharField(),
         ),
         _evidence_member_id=Replace(
-            Cast("new_value_json__member_id", CharField()), Value("-"), Value("")
+            KeyTextTransform("member_id", "new_value_json"),
+            Value("-"),
+            Value(""),
+            output_field=CharField(),
         ),
         _evidence_sanction_id=Replace(
-            Cast("new_value_json__sanction_decision_id", CharField()), Value("-"), Value("")
+            KeyTextTransform("sanction_decision_id", "new_value_json"),
+            Value("-"),
+            Value(""),
+            output_field=CharField(),
         ),
         _evidence_terms_id=Replace(
-            Cast("new_value_json__loan_terms_id", CharField()), Value("-"), Value("")
+            KeyTextTransform("loan_terms_id", "new_value_json"),
+            Value("-"),
+            Value(""),
+            output_field=CharField(),
         ),
     ).filter(
         action=CREATED_ACTION,
         entity_type="loan_account",
         entity_id=OuterRef("pk"),
         actor_type="user",
-        old_value_json={},
-        _evidence_account_id=Cast(OuterRef("pk"), CharField()),
-        _evidence_application_id=Cast(OuterRef("loan_application_id"), CharField()),
-        _evidence_member_id=Cast(OuterRef("member_id"), CharField()),
-        _evidence_sanction_id=Cast(OuterRef("sanction_decision_id"), CharField()),
-        _evidence_terms_id=Cast(OuterRef("terms__pk"), CharField()),
+        _retained_key_count=2,
+        _selector_manifest_matches=True,
+        _canonical_manifest_matches=True,
+        _canonical_manifest_digest=F("selector_manifest_sha256"),
+        _evidence_account_id=Replace(
+            Cast(OuterRef("pk"), CharField()), Value("-"), Value("")
+        ),
+        _evidence_application_id=Replace(
+            Cast(OuterRef("loan_application_id"), CharField()),
+            Value("-"),
+            Value(""),
+        ),
+        _evidence_member_id=Replace(
+            Cast(OuterRef("member_id"), CharField()), Value("-"), Value("")
+        ),
+        _evidence_sanction_id=Replace(
+            Cast(OuterRef("sanction_decision_id"), CharField()),
+            Value("-"),
+            Value(""),
+        ),
+        _evidence_terms_id=Replace(
+            Cast(OuterRef("terms__pk"), CharField()), Value("-"), Value("")
+        ),
         new_value_json__loan_account_status=LoanAccount.STATUS_SANCTIONED,
         new_value_json__replay=False,
         new_value_json__outcome="created",
         new_value_json__actor_role_codes__0__isnull=False,
+        _actor_role_codes_type="array",
+        _actor_team_codes_type="array",
+        _evidence_key_count=12,
     )
     workflows = WorkflowEvent.objects.filter(
         workflow_name="LoanAccountCreated",
@@ -291,7 +429,10 @@ def _created_account_decision(
         or history.loan_terms_id_snapshot != account.terms.pk
         or history.replay_flag is not False
         or history.outcome != "created"
-        or audit.old_value_json != {}
+        or audit.old_value_json != _selector_manifest(evidence)
+        or audit.selector_manifest_json != _canonical_manifest_json(evidence)
+        or audit.selector_manifest_sha256
+        != hashlib.sha256(audit.selector_manifest_json.encode()).hexdigest()
         or set(evidence)
         != set(expected) | {"actor_role_codes", "actor_team_codes", "request_id"}
         or any(evidence.get(key) != value for key, value in expected.items())
@@ -579,14 +720,17 @@ def create_loan_account(*, actor, application_id, payload, request=None, metadat
             outcome="created",
         )
         evidence = _evidence(account, terms, actor, metadata)
+        manifest_json = _canonical_manifest_json(evidence)
         AuditLog.objects.create(
             actor_user=actor,
             actor_type="user",
             action=CREATED_ACTION,
             entity_type="loan_account",
             entity_id=account.pk,
-            old_value_json={},
+            old_value_json=_selector_manifest(evidence),
             new_value_json=evidence,
+            selector_manifest_json=manifest_json,
+            selector_manifest_sha256=hashlib.sha256(manifest_json.encode()).hexdigest(),
             ip_address=metadata.ip_address,
             user_agent=metadata.user_agent,
         )
@@ -822,6 +966,18 @@ def _evidence(account, terms, actor, metadata):
         "actor_team_codes": actor.team_codes(),
         "request_id": metadata.request_id,
     }
+
+
+def _selector_manifest(evidence):
+    digest = hashlib.sha256(_canonical_manifest_json(evidence).encode()).hexdigest()
+    return {
+        "selector_manifest": evidence,
+        "selector_manifest_sha256": digest,
+    }
+
+
+def _canonical_manifest_json(evidence):
+    return json.dumps(evidence, sort_keys=True, separators=(",", ":"))
 
 
 __all__ = [

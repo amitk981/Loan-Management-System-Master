@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.F
+======================================================================
+FAIL: test_initiation_body_drift_affects_neither_total_nor_page (sfpcl_credit.tests.test_epic009_owner_selector_equivalence.CfcOwnerSelectorEquivalenceTests.test_initiation_body_drift_affects_neither_total_nor_page)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-19_135000_normal_run/sfpcl_credit/tests/test_epic009_owner_selector_equivalence.py", line 91, in test_initiation_body_drift_affects_neither_total_nor_page
+    self.assertEqual(response.json()["pagination"]["total_count"], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.669s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -8,7 +8,21 @@ import uuid
 
 from django.core import signing
 from django.db import transaction
-from django.db.models import Count, Exists, F, OuterRef, Q, Subquery
+from django.db.models import (
+    BooleanField,
+    Count,
+    Exists,
+    F,
+    Func,
+    IntegerField,
+    JSONField,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+)
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast, Coalesce, NullIf, SHA256
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -49,6 +63,49 @@ _CAPABILITY_TTL_SECONDS = 15 * 60
 _DELIVERY_ACTION = "sap.annexure_i_downloaded"
 _DELIVERY_DENIED_ACTION = "sap.annexure_i_download_denied"
 _CAPABILITY_ACTION = "sap.annexure_i_capability_issued"
+
+
+class _JsonObjectKeyCount(Func):
+    """Count top-level JSON keys inside an owner selector on SQLite/PostgreSQL."""
+
+    output_field = IntegerField()
+    arity = 1
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return f"(SELECT COUNT(*) FROM JSON_EACH({sql}))", params
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        sql, params = compiler.compile(self.source_expressions[0])
+        return (
+            f"CASE WHEN JSONB_TYPEOF({sql}) = 'object' "
+            f"THEN (SELECT COUNT(*) FROM JSONB_OBJECT_KEYS({sql})) ELSE -1 END",
+            (*params, *params),
+        )
+
+
+class _JsonValuesEqual(Func):
+    output_field = BooleanField()
+    arity = 2
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        left_sql, left_params = compiler.compile(self.source_expressions[0])
+        right_sql, right_params = compiler.compile(self.source_expressions[1])
+        return (
+            "NOT EXISTS ("
+            f"SELECT fullkey, type, atom FROM JSON_TREE({left_sql}) EXCEPT "
+            f"SELECT fullkey, type, atom FROM JSON_TREE({right_sql})"
+            ") AND NOT EXISTS ("
+            f"SELECT fullkey, type, atom FROM JSON_TREE({right_sql}) EXCEPT "
+            f"SELECT fullkey, type, atom FROM JSON_TREE({left_sql})"
+            ")",
+            (*left_params, *right_params, *right_params, *left_params),
+        )
+
+    def as_postgresql(self, compiler, connection, **extra_context):
+        left_sql, left_params = compiler.compile(self.source_expressions[0])
+        right_sql, right_params = compiler.compile(self.source_expressions[1])
+        return f"{left_sql} = {right_sql}", (*left_params, *right_params)
 
 
 def create_request(**kwargs):
@@ -334,13 +391,36 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
             "Active Senior Manager Finance SAP completion authority is required."
         )
     send_audits = (
-        AuditLog.objects.filter(
+        AuditLog.objects.annotate(
+            _evidence_key_count=_JsonObjectKeyCount("new_value_json"),
+            _retained_key_count=_JsonObjectKeyCount("old_value_json"),
+            _selector_manifest_matches=_JsonValuesEqual(
+                "new_value_json", "old_value_json__selector_manifest"
+            ),
+            _canonical_manifest_matches=_JsonValuesEqual(
+                "new_value_json",
+                Cast(
+                    Coalesce(
+                        NullIf("selector_manifest_json", Value("")), Value("{}")
+                    ),
+                    JSONField(),
+                ),
+            ),
+            _canonical_manifest_digest=SHA256("selector_manifest_json"),
+            _annexure_checksum_sha256=KeyTextTransform(
+                "annexure_checksum_sha256", "new_value_json"
+            ),
+        ).filter(
             entity_type="sap_customer_profile_request",
             entity_id=OuterRef("pk"),
             action="finance.sap_customer_code.sent",
-            new_value_json__annexure_checksum_sha256=OuterRef(
-                "delivery_checksum_sha256"
-            ),
+            actor_type="user",
+            _evidence_key_count=28,
+            _retained_key_count=5,
+            _selector_manifest_matches=True,
+            _canonical_manifest_matches=True,
+            _canonical_manifest_digest=F("selector_manifest_sha256"),
+            _annexure_checksum_sha256=OuterRef("delivery_checksum_sha256"),
         )
         .order_by()
         .values("entity_id")
@@ -355,6 +435,7 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
             from_state=SapCustomerProfileRequest.STATUS_DRAFT,
             to_state=SapCustomerProfileRequest.STATUS_SENT,
             trigger_reason="finance.sap_customer_code.sent",
+            triggered_by_user_id=OuterRef("requested_by_user_id"),
         )
         .order_by()
         .values("entity_id")
@@ -379,6 +460,48 @@ def _assigned_workspace_requests(*, actor, without_loan_account):
             delivery_reference__isnull=False,
             delivery_file_id_snapshot=F("excel_file_id"),
             delivery_assignee_id_snapshot=F("assigned_to_user_id"),
+            assigned_to_user__status=User.ACTIVE_STATUS,
+            assigned_to_user__primary_role__status="active",
+            assigned_to_user__primary_role__role_code="senior_manager_finance",
+            requested_by_user__status=User.ACTIVE_STATUS,
+            sent_communication__recipient_party_type="user",
+            sent_communication__recipient_party_id=F("assigned_to_user_id"),
+            sent_communication__recipient_address=F("assigned_to_user__email"),
+            sent_communication__channel=Communication.CHANNEL_EMAIL,
+            sent_communication__content_template_id__isnull=True,
+            sent_communication__subject_snapshot=(
+                "SAP customer profile creation request"
+            ),
+            sent_communication__body_snapshot=(
+                "A checksum-verified Annexure-I is ready in the governed SAP workspace."
+            ),
+            sent_communication__sent_by_user_id=F("requested_by_user_id"),
+            sent_communication__sent_at__isnull=True,
+            sent_communication__delivery_status="delivered",
+            sent_communication__acknowledgement_status__isnull=True,
+            sent_communication__external_message_id=F("delivery_reference"),
+            sent_task__communication_id=F("sent_communication_id"),
+            sent_task__notification_type="sap_customer_profile_request",
+            sent_task__category="Finance",
+            sent_task__severity=Notification.SEVERITY_INFO,
+            sent_task__title="SAP customer profile creation request",
+            sent_task__message=(
+                "A checksum-verified Annexure-I is ready in the governed SAP workspace."
+            ),
+            sent_task__action_label="Open SAP delivery",
+            sent_task__sender_user_id=F("requested_by_user_id"),
+            sent_task__recipient_user_id=F("assigned_to_user_id"),
+            sent_task__recipient_role_code="",
+            sent_task__recipient_team_code="",
+            excel_file__file_name__iendswith=".xlsx",
+            excel_file__file_extension=".xlsx",
+            excel_file__mime_type=XLSX_MIME_TYPE,
+            excel_file__sensitivity_level=DocumentFile.SENSITIVITY_RESTRICTED,
+            excel_file__uploaded_by_user_id=F("requested_by_user_id"),
+            excel_file__storage_provider__gt="",
+            excel_file__storage_key__gt="",
+            excel_file__checksum_sha256__gt="",
+            excel_file__file_size_bytes__gt=0,
             _send_audit_count=1,
             _send_workflow_count=1,
         )
@@ -503,13 +626,36 @@ def filter_current_account_completions(queryset):
         ),
     )
     completion_audits = (
-        AuditLog.objects.filter(
+        AuditLog.objects.annotate(
+            _evidence_key_count=_JsonObjectKeyCount("new_value_json"),
+            _retained_key_count=_JsonObjectKeyCount("old_value_json"),
+            _selector_manifest_matches=_JsonValuesEqual(
+                "new_value_json", "old_value_json__selector_manifest"
+            ),
+            _canonical_manifest_matches=_JsonValuesEqual(
+                "new_value_json",
+                Cast(
+                    Coalesce(
+                        NullIf("selector_manifest_json", Value("")), Value("{}")
+                    ),
+                    JSONField(),
+                ),
+            ),
+            _canonical_manifest_digest=SHA256("selector_manifest_json"),
+            _completion_input_digest=KeyTextTransform(
+                "completion_input_digest", "new_value_json"
+            ),
+        ).filter(
             entity_type="sap_customer_profile_request",
             entity_id=OuterRef("_latest_sap_request_id"),
             action__in=("sap.customer_code_created", "sap.customer_code_reused"),
-            new_value_json__completion_input_digest=OuterRef(
-                "_latest_sap_completion_digest"
-            ),
+            actor_type="user",
+            _evidence_key_count=27,
+            _retained_key_count=5,
+            _selector_manifest_matches=True,
+            _canonical_manifest_matches=True,
+            _canonical_manifest_digest=F("selector_manifest_sha256"),
+            _completion_input_digest=OuterRef("_latest_sap_completion_digest"),
         )
         .order_by()
         .values("entity_id")
@@ -521,6 +667,10 @@ def filter_current_account_completions(queryset):
             entity_type="sap_customer_profile_request",
             entity_id=OuterRef("_latest_sap_request_id"),
             workflow_name="SAPCustomerCodeCompleted",
+            from_state=SapCustomerProfileRequest.STATUS_SENT,
+            to_state=SapCustomerProfileRequest.STATUS_COMPLETED,
+            triggered_by_user_id=OuterRef("_latest_sap_assignee_id"),
+            trigger_reason__in=("sap.customer_code_created", "sap.customer_code_reused"),
         )
         .order_by()
         .values("entity_id")
@@ -539,6 +689,8 @@ def filter_current_account_completions(queryset):
             _latest_sap_status=SapCustomerProfileRequest.STATUS_COMPLETED,
             _latest_sap_application_id=F("loan_application_id"),
             _latest_sap_code_id=F("sap_customer_code_id"),
+            sap_customer_code__created_for_loan_application__member_id=F("member_id"),
+            _latest_sap_completion_digest__gt="",
             _completion_audit_count=1,
             _completion_workflow_count=1,
         )
@@ -708,14 +860,23 @@ def _audit_body_is_intact(audit):
     if not isinstance(evidence, dict) or not isinstance(retained, dict):
         return False
     if set(retained) != {
-        "request_status", "evidence_sha256", "request_id", "timestamp"
+        "request_status",
+        "evidence_sha256",
+        "request_id",
+        "timestamp",
+        "selector_manifest",
     }:
         return False
     digest = hashlib.sha256(
         json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+    manifest_json = json.dumps(evidence, sort_keys=True, separators=(",", ":"))
     return bool(
         retained["evidence_sha256"] == digest
+        and audit.selector_manifest_json == manifest_json
+        and audit.selector_manifest_sha256
+        == hashlib.sha256(manifest_json.encode()).hexdigest()
+        and retained["selector_manifest"] == evidence
         and retained["request_status"] == evidence.get("old_state")
         and retained["request_id"] == evidence.get("request_id")
         and retained["timestamp"] == evidence.get("timestamp")

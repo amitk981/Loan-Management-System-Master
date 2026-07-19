@@ -1,0 +1,19 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl_credit/disbursements/migrations/0010_enable_pgcrypto_for_exact_selector.py
+ M sfpcl_credit/disbursements/modules/current_disbursement_evidence.py
+ M sfpcl_credit/disbursements/modules/disbursement_initiation.py
+ M sfpcl_credit/identity/models.py
+ M sfpcl_credit/loans/modules/loan_account_lifecycle.py
+ M sfpcl_credit/loans/modules/loan_account_read.py
+ M sfpcl_credit/processes/loan_account_360.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_code.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_profile.py
+ D sfpcl_credit/tests/test_epic009_postgresql_acceptance.py
+ M sfpcl_credit/tests/test_loan_account_reads_api.py
+ M sfpcl_credit/tests/test_portal_disbursement_status_api.py
+?? .ralph/runs/2026-07-19_135000_normal_run/
+?? .ralph/runs/2026-07-19_151614_repair/
+?? sfpcl_credit/identity/migrations/0004_auditlog_selector_manifest_sha256.py
+?? sfpcl_credit/tests/test_epic009_exact_selector_postgresql.py
+?? sfpcl_credit/tests/test_epic009_owner_selector_equivalence.py
+?? sfpcl_credit/tests/test_pgcrypto_migration_ownership.py

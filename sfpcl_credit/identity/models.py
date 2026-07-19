@@ -261,6 +261,10 @@ class AuditLog(models.Model):
     entity_id = models.UUIDField(blank=True, null=True, db_index=True)
     old_value_json = models.JSONField(blank=True, null=True)
     new_value_json = models.JSONField(blank=True, null=True)
+    selector_manifest_json = models.TextField(blank=True, default="", db_default="")
+    selector_manifest_sha256 = models.CharField(
+        max_length=64, blank=True, default="", db_default=""
+    )
     ip_address = models.CharField(max_length=80, blank=True)
     user_agent = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)

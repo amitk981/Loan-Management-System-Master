@@ -1,7 +1,7 @@
 # Slice 009L6: Epic 009 Owner-Selector Equivalence and Matrix Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
