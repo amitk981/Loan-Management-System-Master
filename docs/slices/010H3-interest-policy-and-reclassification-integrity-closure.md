@@ -11,6 +11,10 @@ Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 - CR-014
 - 010H2
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
 ## Goal
 Freeze the approved interest calculation policy at approval and make capitalisation either
 reconcile every financial owner exactly or fail with no partial reclassification.

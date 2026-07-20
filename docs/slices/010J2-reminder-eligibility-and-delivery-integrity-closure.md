@@ -11,6 +11,10 @@ Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 - 010I2
 - 010J
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
 ## Goal
 Make quarter-end reminder eligibility a calendar-correct retained decision and keep creation,
 execution-time serviceability, idempotency conflicts, and batch outcomes honest through delivery.

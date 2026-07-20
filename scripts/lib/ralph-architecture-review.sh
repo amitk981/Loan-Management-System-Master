@@ -1561,6 +1561,25 @@ ralph_architecture_review_new_corrective_count() {
       echo "New corrective slice has no Depends On contract: $base" >&2
       return 1
     fi
+    if ! declare -F ralph_validate_slice_runtime_requirements >/dev/null; then
+      echo "Runtime-contract validator is unavailable while admitting new corrective: $base" >&2
+      return 1
+    fi
+    if ! ralph_validate_slice_runtime_requirements "$worktree/$path"; then
+      echo "New corrective slice has an invalid or incomplete runtime contract: $base" >&2
+      return 1
+    fi
+    if ralph_slice_has_capability \
+        "$worktree/$path" "$RALPH_CAPABILITY_POSTGRESQL_FIVE_RACE_ACCEPTANCE"; then
+      if ! declare -F ralph_validate_trusted_postgresql_acceptance >/dev/null; then
+        echo "PostgreSQL acceptance validator is unavailable while admitting new corrective: $base" >&2
+        return 1
+      fi
+      if ! ralph_validate_trusted_postgresql_acceptance "$worktree/$path"; then
+        echo "New corrective slice has a malformed trusted PostgreSQL acceptance contract: $base" >&2
+        return 1
+      fi
+    fi
     count=$((count + 1))
   done < <(git -C "$worktree" ls-files --others --exclude-standard -- docs/slices)
   printf '%s\n' "$count"

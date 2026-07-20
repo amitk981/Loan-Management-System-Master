@@ -10,6 +10,10 @@ Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 ## Depends On
 - 010E4
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
 ## Architecture Review Finalizer
 - Epic: 010
 - Root ID: ROOT-010-RATE-VERSION-OWNER

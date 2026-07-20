@@ -11,6 +11,10 @@ Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 - 010H3
 - 010I
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
 ## Goal
 Bind each Loan Account's current DPD pointer to a valid snapshot owned by that loan and freeze the
 exact policy and source decision needed to reproduce historical monitoring truth.

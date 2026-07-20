@@ -297,7 +297,11 @@ ralph_slice_execution_order() {
 # blocked emergency CRs do not freeze unrelated work: report the blocker and
 # continue through the ordinary queue.
 ralph_first_grabbable_slice() {
-  local slices_dir="${1:-docs/slices}" file unmet
+  local slices_dir="${1:-docs/slices}" file unmet ordered
+  # Buffer the bounded queue before selecting. Returning early from a process
+  # substitution leaves its producer writing into a closed pipe, which floods
+  # unattended loop logs with EPIPE diagnostics and can outlive the caller.
+  ordered="$(ralph_slice_execution_order "$slices_dir")" || return 1
   while IFS= read -r file; do
     [[ -f "$file" ]] || continue
     [[ "$(ralph_slice_status "$file")" == "Not Started" ]] || continue
@@ -306,7 +310,7 @@ ralph_first_grabbable_slice() {
       return 0
     fi
     echo "Skipping $(basename "$file" .md): waiting on $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')" >&2
-  done < <(ralph_slice_execution_order "$slices_dir")
+  done <<< "$ordered"
   return 1
 }
 

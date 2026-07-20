@@ -97,6 +97,35 @@ if ralph_resolve_explicit_slice \
   fail "repair exception accepted a completed slice"
 fi
 
+# Selecting an early CR must fully consume or buffer queue ordering. Returning
+# while a process-substitution producer is still printing hundreds of ordinary
+# slices floods the loop log with EPIPE diagnostics even though routing passes.
+ordering_dir="$fixture_dir/ordering"
+mkdir -p "$ordering_dir"
+make_slice "$ordering_dir" CR-001-ready.md "Not Started" None
+ralph_slice_execution_order() {
+  local index
+  printf '%s\n' "$ordering_dir/CR-001-ready.md"
+  sleep 0.2
+  for index in $(seq 1 200); do
+    printf '%s/%0200d-history.md\n' "$ordering_dir" "$index"
+  done
+  touch "$ordering_dir/producer-complete"
+}
+ordering_stderr="$fixture_dir/ordering.stderr"
+ordered_first="$(ralph_first_grabbable_slice "$ordering_dir" 2>"$ordering_stderr")" \
+  || fail "early CR fixture was not selectable"
+[[ "$ordered_first" == "CR-001-ready.md" ]] \
+  || fail "early CR fixture selected the wrong slice: $ordered_first"
+[[ -f "$ordering_dir/producer-complete" ]] \
+  || fail "queue selection returned while its ordering producer was still active"
+sleep 0.2
+if rg -q 'write error: Broken pipe' "$ordering_stderr"; then
+  fail "early queue selection leaked broken-pipe diagnostics"
+fi
+# Restore the production ordering helper after the stress fixture override.
+source scripts/lib/ralph-slice-selection.sh
+
 # A mandatory review gets two bounded attempts, then stops. Product work must
 # never run while architecture_review_due remains true.
 review_repo="$fixture_dir/review-repo"
@@ -226,6 +255,13 @@ fi
   || fail "review repair followed by terminal rewrite returned $repaired_convergence_rc"
 [[ "$(grep -c -- '--mode architecture-review' "$review_repo/.ralph/invocations.log")" == 3 ]] \
   || fail "review repair plus terminal rewrite did not use exactly three bounded attempts"
+[[ "$(grep -c -- '--resume-failed' "$review_repo/.ralph/invocations.log")" == 2 ]] \
+  || fail "review validation failure did not retain and resume its candidate worktree"
+[[ "$(grep -c -- '--mode normal' "$review_repo/.ralph/invocations.log")" == 1 ]] \
+  || fail "successful same-worktree review repair did not continue queue selection"
+grep -qF 'Architecture review validation failed; repairing its quarantined candidate' \
+  "$review_repo/repaired-convergence-review.stdout" \
+  || fail "review validation failure was not classified as same-worktree repair"
 grep -- '--mode architecture-review' "$review_repo/.ralph/invocations.log" | tail -n 1 \
   | grep -qF 'rewrite=1' \
   || fail "the independent terminal-finalizer attempt was not marked as a rewrite"

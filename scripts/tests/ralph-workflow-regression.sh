@@ -1629,6 +1629,66 @@ if ralph_validate_architecture_review_convergence \
   fail "third correction for the same root escaped the convergence cap"
 fi
 
+# Architecture reviews must not merge a corrective that the normal runner
+# will reject before it can create a repairable worktree. This candidate has a
+# PostgreSQL acceptance contract but deliberately omits Runtime Capabilities.
+runtime_contract_repo="$fixture_dir/runtime-contract-review-repo"
+mkdir -p "$runtime_contract_repo/docs/slices"
+cat > "$runtime_contract_repo/docs/slices/010Z-runtime-contract-gap.md" <<'EOF'
+# Slice 010Z: Runtime contract gap
+## Status
+Not Started
+## Depends On
+- None
+## Trusted PostgreSQL Acceptance
+- Test: example.tests.RuntimeContractTests
+- Expected tests: 1
+## Risk Level
+High
+EOF
+git init -q "$runtime_contract_repo"
+printf '%s\n' seed > "$runtime_contract_repo/seed.txt"
+git -C "$runtime_contract_repo" add seed.txt
+git -C "$runtime_contract_repo" -c user.name='Ralph Regression' \
+  -c user.email='ralph-regression@example.invalid' commit -qm fixture
+if ralph_architecture_review_new_corrective_count "$runtime_contract_repo" \
+    >/dev/null 2>&1; then
+  fail "architecture review admitted a generated slice with no runtime contract"
+fi
+cat > "$runtime_contract_repo/docs/slices/010Z-runtime-contract-gap.md" <<'EOF'
+# Slice 010Z: Malformed PostgreSQL contract
+## Status
+Not Started
+## Depends On
+- None
+## Runtime Capabilities
+- `postgresql-five-race-acceptance`
+## Trusted PostgreSQL Acceptance
+- Expected tests: 1
+## Risk Level
+High
+EOF
+if ralph_architecture_review_new_corrective_count "$runtime_contract_repo" \
+    >/dev/null 2>&1; then
+  fail "architecture review admitted malformed generated PostgreSQL acceptance"
+fi
+cat > "$runtime_contract_repo/docs/slices/010Z-runtime-contract-gap.md" <<'EOF'
+# Slice 010Z: Valid PostgreSQL contract
+## Status
+Not Started
+## Depends On
+- None
+## Runtime Capabilities
+- `postgresql-five-race-acceptance`
+## Trusted PostgreSQL Acceptance
+- Test: example.tests.RuntimeContractTests
+- Expected tests: 1
+## Risk Level
+High
+EOF
+[[ "$(ralph_architecture_review_new_corrective_count "$runtime_contract_repo")" == 1 ]] \
+  || fail "architecture review rejected a valid generated PostgreSQL contract"
+
 # A standing owner policy may admit exactly one terminal CR for an exhausted
 # root. The review transition keeps the exhausted generation stable, maps all
 # grouped roots to the terminal CR, and lets the fully gated CR clear every root
@@ -1648,6 +1708,8 @@ Not Started
 Epic 010: Servicing
 ## Depends On
 - 010J
+## Runtime Capabilities
+- none
 ## Architecture Review Finalizer
 - Epic: 010
 - Root ID: ROOT-010-RATE-VERSION-OWNER
@@ -2019,6 +2081,9 @@ Not Started
 
 ## Depends On
 - 010A
+
+## Runtime Capabilities
+- none
 EOF
 [[ "$(ralph_architecture_review_new_corrective_count "$corrective_repo")" == 1 ]] \
   || fail "valid new numeric corrective slice was not counted"
@@ -2471,6 +2536,12 @@ rg -qF 'RALPH_TERMINAL_FINALIZER_REWRITE' scripts/ralph-run.sh \
   || fail "terminal rewrite does not receive a narrow corrective prompt"
 rg -qF 'one next-numbered CR-NNN terminal finalizer' scripts/ralph-run.sh \
   || fail "architecture reviewer is not instructed to use the standing terminal transition"
+rg -qF 'Every generated corrective slice must declare exactly one `## Runtime Capabilities` section' \
+  scripts/ralph-run.sh \
+  || fail "architecture reviewer is not instructed to emit executable runtime contracts"
+rg -qF 'run `ralph_validate_trusted_postgresql_acceptance` for every candidate' \
+  scripts/ralph-run.sh \
+  || fail "architecture reviewer is not instructed to preflight generated PostgreSQL contracts"
 [[ -x scripts/ralph-supervise.sh ]] \
   || fail "unattended Ralph supervisor is missing or not executable"
 rg -q 'ralph_repair_context_value' scripts/afk-dev.sh \
