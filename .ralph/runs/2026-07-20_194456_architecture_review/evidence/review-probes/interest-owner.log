@@ -1,0 +1,32 @@
+Finding ID: AR-010-INTEREST-001
+Root ID: ROOT-010-INTEREST-CALCULATION-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py InterestConfigurationProbe
+
+Creating test database for alias 'default'...
+F
+======================================================================
+FAIL: test_approved_configuration_is_immutable_before_first_consumption (__main__.InterestConfigurationProbe.test_approved_configuration_is_immutable_before_first_consumption)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File ".ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py", line 73, in test_approved_configuration_is_immutable_before_first_consumption
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+Exit code: 1
+Failing signal: an approved active calculation configuration accepts an in-place day-count change
+before its first consumption, so an approval does not freeze the financial rule it approved.
+
+Related source inspection:
+- sfpcl_credit/interest/modules/as_of_accounting.py:91-97 quantizes every segment with hard-coded
+  ROUND_HALF_UP although the approved configuration has no rounding policy or boundary.
+- the capitalisation path can add the full unpaid invoice amount to principal while reducing
+  account/schedule interest by only the available minimum, rather than rejecting an incoherent
+  reclassification as a zero-write conflict.

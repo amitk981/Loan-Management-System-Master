@@ -16,7 +16,7 @@ CFO reviews a reproducible quarter-end portfolio report whose totals reconcile t
 interest, DPD, and reminder truth.
 
 ## Depends On
-- 010J
+- 010J2
 
 ## Runtime Capabilities
 

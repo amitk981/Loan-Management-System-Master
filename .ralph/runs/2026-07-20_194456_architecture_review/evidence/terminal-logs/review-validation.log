@@ -1,0 +1,32 @@
+Command:
+bash -c 'source scripts/lib/ralph-architecture-review.sh; ralph_architecture_review_metrics ...;
+ralph_validate_architecture_review_manifest ...; ralph_validate_architecture_review_convergence ...'
+
+Metrics:
+0	0	2	0	0	4
+PASS: validated 5 stable finding manifest row(s).
+Convergence transition validation exit code: 0
+
+Command:
+bash -c 'source scripts/lib/ralph-architecture-review.sh;
+ralph_architecture_review_new_corrective_count ...;
+ralph_validate_architecture_review_change_scope ...;
+ralph_validate_architecture_review_admission ...'
+
+PASS: 4 corrective slices; architecture-review scope and admission valid.
+Exit code: 0
+
+Command:
+bash -c 'source scripts/lib/ralph-architecture-review.sh;
+ralph_architecture_review_finalizer_contract .ralph/config.yaml .ralph/state.json
+docs/slices/CR-014-rate-current-date-terminal-finalizer.md
+docs/working/HIGH_RISK_APPROVALS.md true'
+
+010	ROOT-010-RATE-VERSION-OWNER
+Exit code: 0
+
+Command:
+git diff --check
+
+No output.
+Exit code: 0

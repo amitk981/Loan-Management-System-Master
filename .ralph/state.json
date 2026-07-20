@@ -306,9 +306,9 @@
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-20_172102_normal_run",
+  "last_run_id": "2026-07-20_194456_architecture_review",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 4,
+  "slices_completed_since_architecture_review": 0,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
@@ -316,12 +316,12 @@
   "architecture_review_interval": 4,
   "architecture_review_clean_streak": 0,
   "last_architecture_review_metrics": {
-    "findings_closed": 2,
+    "findings_closed": 0,
     "new_critical": 0,
-    "new_high": 1,
+    "new_high": 2,
     "new_medium": 0,
     "new_low": 0,
-    "corrective_slices_added": 2
+    "corrective_slices_added": 4
   },
   "last_architecture_review_finalizer": {
     "epic": "009",
@@ -332,17 +332,31 @@
     "ROOT-010-RATE-VERSION-OWNER": {
       "epic": "010",
       "generation": 2,
-      "corrective_slice": "010E4",
+      "corrective_slice": "CR-014",
       "finding_id": "AR-010-RATE-001",
       "severity": "High"
     },
     "ROOT-010-INTEREST-CALCULATION-OWNER": {
       "epic": "010",
-      "generation": 1,
-      "corrective_slice": "010H2",
+      "generation": 2,
+      "corrective_slice": "010H3",
       "finding_id": "AR-010-INTEREST-001",
+      "severity": "High"
+    },
+    "ROOT-010-DPD-SNAPSHOT-OWNER": {
+      "epic": "010",
+      "generation": 1,
+      "corrective_slice": "010I2",
+      "finding_id": "AR-010-DPD-001",
+      "severity": "High"
+    },
+    "ROOT-010-REMINDER-DELIVERY-OWNER": {
+      "epic": "010",
+      "generation": 1,
+      "corrective_slice": "010J2",
+      "finding_id": "AR-010-REMINDER-001",
       "severity": "High"
     }
   },
-  "architecture_review_due_reason": "cadence:4"
+  "architecture_review_due_reason": "terminal_finalizer:ROOT-010-RATE-VERSION-OWNER"
 }

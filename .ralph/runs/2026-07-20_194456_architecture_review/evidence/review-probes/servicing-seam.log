@@ -1,0 +1,10 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+
+Disposition: Carried Medium
+
+Static review confirms 010I and 010J directly import private loan schedule/allocation and
+communication template/job models instead of consuming public owner facades. Their long-lived and
+PostgreSQL tests also instantiate other Django TestCase classes, call setUp(), and traverse private
+helpers. The assertions themselves are substantive; the architecture risk is shared setup and
+policy coupling that can hide owner drift, as the changed-key review probe demonstrates.

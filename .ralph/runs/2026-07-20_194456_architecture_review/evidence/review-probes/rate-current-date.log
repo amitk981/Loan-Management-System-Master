@@ -1,0 +1,32 @@
+Finding ID: AR-010-RATE-001
+Root ID: ROOT-010-RATE-VERSION-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py RateCurrentDateProbe
+
+Creating test database for alias 'default'...
+F
+======================================================================
+FAIL: test_future_rate_cannot_be_published_before_its_effective_date (__main__.RateCurrentDateProbe.test_future_rate_cannot_be_published_before_its_effective_date)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File ".ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py", line 35, in test_future_rate_cannot_be_published_before_its_effective_date
+    with self.assertRaises(InterestRateConflict):
+AssertionError: InterestRateConflict not raised
+
+----------------------------------------------------------------------
+Ran 1 test
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+Exit code: 1
+Failing signal: a caller can publish a 2026-09-01 successor into the current projection on
+2026-07-20 by supplying the future date to the convergence facade.
+
+Static owner check:
+rg -n "converge_current_rate_projection\\(" sfpcl_credit -g '*.py'
+
+The only non-test match is the function definition at
+sfpcl_credit/configurations/modules/interest_rate_configuration.py:355. No production due-date
+caller converges the projection when the successor actually becomes effective.

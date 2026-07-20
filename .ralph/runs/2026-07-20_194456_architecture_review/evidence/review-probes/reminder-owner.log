@@ -1,0 +1,37 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py ReminderChangedKeyProbe
+
+Creating test database for alias 'default'...
+E
+======================================================================
+ERROR: test_changed_send_key_returns_conflict_instead_of_server_error (__main__.ReminderChangedKeyProbe.test_changed_send_key_returns_conflict_instead_of_server_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File ".ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py", line 122, in test_changed_send_key_returns_conflict_instead_of_server_error
+    changed = fixture.client.post(
+  File "sfpcl_credit/monitoring/views.py", line 191, in send_reminder_view
+    result = send_reminder(...)
+  File "sfpcl_credit/monitoring/modules/reminder_engine.py", line 464, in send_reminder
+    dispatch = dispatch_communication(...)
+  File "sfpcl_credit/communications/modules/communication_dispatcher.py", line 2380, in dispatch_communication
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The idempotency key is already bound to another communication request
+
+----------------------------------------------------------------------
+Ran 1 test
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+
+Exit code: 1
+Failing signal: a changed reminder send key escapes the reminder API instead of producing the
+binding 409 conflict envelope; in an ordinary server this becomes a 500.
+
+Related source inspection:
+- sfpcl_credit/monitoring/modules/reminder_engine.py uses days_past_due >= 365 instead of a retained
+  calendar-anniversary decision, allowing early reminders across leap-year spans.
+- automatic provider work does not own an execution-time recheck of the loan's serviceability and
+  outstanding truth; a later still-overdue snapshot can also invalidate the retained eligible row.

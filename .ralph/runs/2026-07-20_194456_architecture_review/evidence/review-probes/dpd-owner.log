@@ -1,0 +1,30 @@
+Finding ID: AR-010-DPD-001
+Root ID: ROOT-010-DPD-SNAPSHOT-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py DpdPointerProbe
+
+Creating test database for alias 'default'...
+F
+======================================================================
+FAIL: test_current_dpd_pointer_has_database_referential_integrity (__main__.DpdPointerProbe.test_current_dpd_pointer_has_database_referential_integrity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File ".ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py", line 84, in test_current_dpd_pointer_has_database_referential_integrity
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+----------------------------------------------------------------------
+Ran 1 test
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+Exit code: 1
+Failing signal: loans.LoanAccount.current_dpd_status_id accepts an arbitrary UUID even though
+data-model section 20.1 declares it as a foreign key to the retained DPD status owner.
+
+Related source inspection:
+- sfpcl_credit/loans/models.py:74 and loans/migrations/0001_initial.py retain a nullable UUIDField.
+- DPD replay serializes the current live operational-scheme version; operational policy and
+  boundary evidence are not frozen as one immutable calculation decision.

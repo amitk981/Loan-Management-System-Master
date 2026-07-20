@@ -1,0 +1,8 @@
+ M docs/slices/010K-cfo-quarterly-mis.md
+ M docs/working/CONTEXT.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-20_194456_architecture_review/
+?? docs/slices/010H3-interest-policy-and-reclassification-integrity-closure.md
+?? docs/slices/010I2-dpd-pointer-and-policy-integrity-closure.md
+?? docs/slices/010J2-reminder-eligibility-and-delivery-integrity-closure.md
+?? docs/slices/CR-014-rate-current-date-terminal-finalizer.md

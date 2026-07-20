@@ -34,10 +34,11 @@ member self-service portal.
   portal, and their corrective integrity contracts.
 - Epic 009's SAP setup/disbursement boundary is complete, including its terminal owner/evidence
   correction and hosted staff/member acceptance.
-- Epic 010 servicing is active. Schedule/ledger reads, direct receipt capture, principal-first
-  allocation, and bank-statement reconciliation foundations are implemented; current corrective
-  work closes their financial-admission and statement-evidence owner boundaries before subsidiary
-  reconciliation and interest processing continue.
+- Epic 010 servicing is active. Schedule/ledger reads, receipt capture and allocation, statement
+  reconciliation, effective-rate versioning, interest invoice/accrual/capitalisation, DPD, and
+  reminder foundations are implemented. Current corrective work closes their rate-current-date,
+  interest-policy/reclassification, DPD-integrity, and reminder-delivery owner boundaries before
+  MIS, statements, portal views, and frontend wiring continue.
 - The remainder of Epics 010–012 owns servicing/repayment, monitoring/default/compliance, reporting,
   operational hardening, end-to-end acceptance, and final release evidence.
 - Current slice and dependency facts must be read from `docs/working/HANDOFF.md` and the selected
