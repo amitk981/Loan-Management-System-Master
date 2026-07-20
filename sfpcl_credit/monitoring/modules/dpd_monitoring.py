@@ -2,16 +2,16 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 from django.db import transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Q
 from django.utils.dateparse import parse_date
 
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.loans.models import (
-    LoanAccount,
-    RepaymentSchedule,
-    RepaymentScheduleAllocation,
+from sfpcl_credit.loans.models import LoanAccount
+from sfpcl_credit.loans.modules.dpd_source_decision import (
+    DpdSourcePermissionDenied,
+    resolve_locked_dpd_source_decision,
 )
 from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
@@ -23,6 +23,7 @@ from sfpcl_credit.monitoring.models import DpdOperationalBucketScheme, DpdStatus
 READ_PERMISSION = "monitoring.dpd.read"
 CALCULATE_PERMISSION = "monitoring.dpd.calculate"
 CALCULATION_VERSION = "DPD-CALC-1"
+SOP_POLICY_VERSION = "SFPCL-SOP-DPD-1"
 SERVICEABLE_STATUSES = {
     "active",
     "partially_repaid",
@@ -127,7 +128,7 @@ def calculate_portfolio(*, actor, payload, request=None):
                     "dpd_status": snapshot,
                 }
             )
-        except (DpdConflict, LoanAccount.DoesNotExist) as exc:
+        except (DpdConflict, DpdNotFound, DpdPermissionDenied) as exc:
             results.append(
                 {"loan_account_id": str(account_id), "outcome": "failed", "reason": str(exc)}
             )
@@ -158,26 +159,38 @@ def calculate_portfolio(*, actor, payload, request=None):
 
 @transaction.atomic
 def _calculate_locked(*, actor, loan_account_id, as_of_date, request):
-    account = LoanAccount.objects.select_for_update().get(pk=loan_account_id)
+    _require_permission(actor, CALCULATE_PERMISSION)
+    try:
+        source_decision = resolve_locked_dpd_source_decision(
+            actor=actor,
+            loan_account_id=loan_account_id,
+            as_of_date=as_of_date,
+        )
+    except DpdSourcePermissionDenied as exc:
+        raise DpdPermissionDenied from exc
+    if source_decision.loan_account_status not in SERVICEABLE_STATUSES:
+        raise DpdConflict("The loan is not active for DPD calculation.")
     retained = DpdStatus.objects.filter(
-        loan_account=account, as_of_date=as_of_date
+        loan_account_id=source_decision.loan_account_id,
+        as_of_date=as_of_date,
     ).first()
     if retained is not None:
-        _advance_current_pointer(account=account, candidate=retained)
+        _advance_current_pointer(source_decision=source_decision, candidate=retained)
         return serialize_dpd_status(retained)
 
-    calculation = _calculate_amounts(account=account, as_of_date=as_of_date)
+    calculation = _calculate_amounts(source_decision=source_decision)
     scheme = _effective_scheme(as_of_date)
     standard_bucket = _standard_bucket(
         calculation["days_past_due"],
         scheme,
         has_unpaid_schedule=calculation["earliest_unpaid_due_date"] is not None,
     )
+    policy_decision = _freeze_policy_decision(scheme)
     audit = AuditLog.objects.create(
         actor_user=actor,
         action="monitoring.dpd.calculated",
         entity_type="loan_account",
-        entity_id=account.pk,
+        entity_id=source_decision.loan_account_id,
         new_value_json={
             "as_of_date": as_of_date.isoformat(),
             "calculation_version": CALCULATION_VERSION,
@@ -186,7 +199,7 @@ def _calculate_locked(*, actor, loan_account_id, as_of_date, request):
         user_agent=request_user_agent(request) if request is not None else "",
     )
     row = DpdStatus.objects.create(
-        loan_account=account,
+        loan_account_id=source_decision.loan_account_id,
         as_of_date=as_of_date,
         days_past_due=calculation["days_past_due"],
         sop_bucket=_sop_bucket(calculation["earliest_unpaid_due_date"], as_of_date),
@@ -199,74 +212,47 @@ def _calculate_locked(*, actor, loan_account_id, as_of_date, request):
         earliest_unpaid_due_date=calculation["earliest_unpaid_due_date"],
         calculation_version=CALCULATION_VERSION,
         operational_scheme=scheme,
-        calculation_inputs_json=calculation["inputs"],
+        calculation_inputs_json={
+            **calculation["inputs"],
+            "policy_decision": policy_decision,
+        },
         calculated_by_user=actor,
         calculation_audit=audit,
     )
-    _advance_current_pointer(account=account, candidate=row)
+    _advance_current_pointer(source_decision=source_decision, candidate=row)
     return serialize_dpd_status(row)
 
 
-def _advance_current_pointer(*, account, candidate):
-    if account.current_dpd_status_id == candidate.pk:
+def _advance_current_pointer(*, source_decision, candidate):
+    if source_decision.current_dpd_status_id == candidate.pk:
         return
     current_date = DpdStatus.objects.filter(
-        pk=account.current_dpd_status_id,
-        loan_account=account,
+        pk=source_decision.current_dpd_status_id,
+        loan_account_id=source_decision.loan_account_id,
     ).values_list("as_of_date", flat=True).first()
     if current_date is not None and current_date > candidate.as_of_date:
         return
-    account.current_dpd_status_id = candidate.pk
-    account.save(update_fields=["current_dpd_status_id"])
-
-
-def _calculate_amounts(*, account, as_of_date):
-    schedule_rows = list(
-        RepaymentSchedule.objects.filter(
-            loan_account=account, due_date__lte=as_of_date
-        )
-        .prefetch_related(
-            Prefetch(
-                "allocation_applications",
-                queryset=RepaymentScheduleAllocation.objects.select_related(
-                    "allocation__ledger_entry",
-                    "allocation__reversal__ledger_entry",
-                ),
-            )
-        )
-        .order_by("due_date", "installment_number", "repayment_schedule_id")
+    LoanAccount.objects.filter(pk=source_decision.loan_account_id).update(
+        current_dpd_status_id=candidate.pk
     )
+
+
+def _calculate_amounts(*, source_decision):
     principal = Decimal("0.00")
     interest = Decimal("0.00")
     earliest = None
-    applied_allocation_ids = []
     schedule_inputs = []
-    for row in schedule_rows:
-        paid_principal = Decimal("0.00")
-        paid_interest = Decimal("0.00")
-        for application in row.allocation_applications.all():
-            allocation = application.allocation
-            ledger_entry = getattr(allocation, "ledger_entry", None)
-            if ledger_entry is None or ledger_entry.transaction_date > as_of_date:
-                continue
-            paid_principal += application.principal_applied
-            paid_interest += application.interest_applied
-            applied_allocation_ids.append(str(allocation.pk))
-            reversal = getattr(allocation, "reversal", None)
-            reversal_ledger = getattr(reversal, "ledger_entry", None) if reversal else None
-            if reversal_ledger is not None and reversal_ledger.transaction_date <= as_of_date:
-                paid_principal -= application.principal_applied
-                paid_interest -= application.interest_applied
-        principal_remaining = row.principal_due - paid_principal
-        interest_remaining = row.interest_due - paid_interest
+    for row in source_decision.schedule_lines:
+        principal_remaining = row.principal_due - row.principal_paid_as_of
+        interest_remaining = row.interest_due - row.interest_paid_as_of
         schedule_inputs.append(
             {
-                "repayment_schedule_id": str(row.pk),
+                "repayment_schedule_id": str(row.repayment_schedule_id),
                 "due_date": row.due_date.isoformat(),
                 "principal_due": f"{row.principal_due:.2f}",
                 "interest_due": f"{row.interest_due:.2f}",
-                "principal_paid_as_of": f"{paid_principal:.2f}",
-                "interest_paid_as_of": f"{paid_interest:.2f}",
+                "principal_paid_as_of": f"{row.principal_paid_as_of:.2f}",
+                "interest_paid_as_of": f"{row.interest_paid_as_of:.2f}",
             }
         )
         if principal_remaining > 0 or interest_remaining > 0:
@@ -274,14 +260,18 @@ def _calculate_amounts(*, account, as_of_date):
             principal += max(principal_remaining, Decimal("0.00"))
             interest += max(interest_remaining, Decimal("0.00"))
     return {
-        "days_past_due": (as_of_date - earliest).days if earliest else 0,
+        "days_past_due": (
+            (source_decision.as_of_date - earliest).days if earliest else 0
+        ),
         "earliest_unpaid_due_date": earliest,
         "principal_overdue": principal,
         "interest_overdue": interest,
         "inputs": {
             "schedule_lines": schedule_inputs,
-            "applied_allocation_ids": sorted(set(applied_allocation_ids)),
-            "as_of_date": as_of_date.isoformat(),
+            "applied_allocation_ids": [
+                str(value) for value in source_decision.applied_allocation_ids
+            ],
+            "as_of_date": source_decision.as_of_date.isoformat(),
         },
     }
 
@@ -311,15 +301,17 @@ def _anniversary(value, years):
 def _effective_scheme(as_of_date):
     rows = list(
         DpdOperationalBucketScheme.objects.filter(
-            status="active",
             effective_from__lte=as_of_date,
         )
         .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=as_of_date))
-        .order_by("effective_from", "dpd_operational_bucket_scheme_id")[:2]
+        .order_by("effective_from", "dpd_operational_bucket_scheme_id")
     )
-    if len(rows) > 1:
+    active_rows = [row for row in rows if row.status == "active"]
+    if len(active_rows) > 1:
         raise DpdConflict("Multiple operational DPD bucket schemes are effective.")
-    return rows[0] if rows else None
+    if rows and not active_rows:
+        raise DpdConflict("The effective operational DPD bucket scheme is not approved.")
+    return active_rows[0] if active_rows else None
 
 
 def _standard_bucket(days_past_due, scheme, *, has_unpaid_schedule):
@@ -332,6 +324,39 @@ def _standard_bucket(days_past_due, scheme, *, has_unpaid_schedule):
     if days_past_due <= scheme.third_upper_days:
         return "61_90"
     return "over_90"
+
+
+def _freeze_policy_decision(scheme):
+    return {
+        "sop_policy_version": SOP_POLICY_VERSION,
+        "sop_boundary_convention": {
+            "anniversary_basis": "calendar_anniversary",
+            "leap_day_anniversary": "february_28",
+            "first_anniversary_inclusive": True,
+            "second_anniversary_inclusive": True,
+            "third_anniversary_inclusive": True,
+            "after_third_anniversary_bucket": "more_than_three_years",
+        },
+        "operational_scheme_id": str(scheme.pk) if scheme is not None else None,
+        "operational_scheme_version": scheme.version if scheme is not None else None,
+        "operational_effective_from": (
+            scheme.effective_from.isoformat() if scheme is not None else None
+        ),
+        "operational_effective_to": (
+            scheme.effective_to.isoformat()
+            if scheme is not None and scheme.effective_to is not None
+            else None
+        ),
+        "operational_boundaries": (
+            {
+                "first_upper_days": scheme.first_upper_days,
+                "second_upper_days": scheme.second_upper_days,
+                "third_upper_days": scheme.third_upper_days,
+            }
+            if scheme is not None
+            else None
+        ),
+    }
 
 
 def _validate_as_of_payload(payload):
@@ -392,6 +417,8 @@ def _scoped_accounts(actor):
 
 
 def serialize_dpd_status(row):
+    inputs = row.calculation_inputs_json
+    policy_decision = inputs.get("policy_decision", {})
     return {
         "dpd_status_id": str(row.pk),
         "loan_account_id": str(row.loan_account_id),
@@ -404,8 +431,12 @@ def serialize_dpd_status(row):
         "total_overdue_amount": f"{row.total_overdue_amount:.2f}",
         "calculation_version": row.calculation_version,
         "operational_scheme_version": (
-            row.operational_scheme.version if row.operational_scheme_id else None
+            policy_decision.get("operational_scheme_version")
+            if policy_decision
+            else (row.operational_scheme.version if row.operational_scheme_id else None)
         ),
+        "policy_decision": policy_decision,
+        "calculation_inputs": inputs,
         "created_at": row.created_at.isoformat().replace("+00:00", "Z"),
     }
 

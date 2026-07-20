@@ -1,0 +1,19 @@
+Test specification: sfpcl_credit.tests.test_dpd_integrity_closure.DpdPolicyReplayTests.test_effective_but_unapproved_policy_fails_without_snapshot
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_effective_but_unapproved_policy_fails_without_snapshot (sfpcl_credit.tests.test_dpd_integrity_closure.DpdPolicyReplayTests.test_effective_but_unapproved_policy_fails_without_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_010045_normal_run/sfpcl_credit/tests/test_dpd_integrity_closure.py", line 201, in test_effective_but_unapproved_policy_fails_without_snapshot
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"dpd_status_id": "cdb65b64-6cc6-4fad-82f3-21827e7d63c0", "loan_account_id": "ae704f63-28d3-4258-8c9b-7409f40f167e", "as_of_date": "2026-07-01", "days_past_due": 0, "sop_bucket": "current", "standard_bucket": null, "principal_overdue_amount": "0.00", "interest_overdue_amount": "0.00", "total_overdue_amount": "0.00", "calculation_version": "DPD-CALC-1", "operational_scheme_version": null, "policy_decision": {"sop_policy_version": "SFPCL-SOP-DPD-1", "sop_boundary_convention": {"anniversary_basis": "calendar_anniversary", "leap_day_anniversary": "february_28", "first_anniversary_inclusive": true, "second_anniversary_inclusive": true, "third_anniversary_inclusive": true, "after_third_anniversary_bucket": "more_than_three_years"}, "operational_scheme_id": null, "operational_scheme_version": null, "operational_effective_from": null, "operational_effective_to": null, "operational_boundaries": null}, "calculation_inputs": {"schedule_lines": [], "applied_allocation_ids": [], "as_of_date": "2026-07-01", "policy_decision": {"sop_policy_version": "SFPCL-SOP-DPD-1", "sop_boundary_convention": {"anniversary_basis": "calendar_anniversary", "leap_day_anniversary": "february_28", "first_anniversary_inclusive": true, "second_anniversary_inclusive": true, "third_anniversary_inclusive": true, "after_third_anniversary_bucket": "more_than_three_years"}, "operational_scheme_id": null, "operational_scheme_version": null, "operational_effective_from": null, "operational_effective_to": null, "operational_boundaries": null}}, "created_at": "2026-07-20T19:54:01.358534Z"}, "meta": {"request_id": null, "timestamp": "2026-07-20T19:54:01.359078Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.593s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

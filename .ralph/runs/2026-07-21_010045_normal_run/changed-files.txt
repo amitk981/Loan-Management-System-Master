@@ -1,0 +1,9 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/monitoring/modules/dpd_monitoring.py
+ M sfpcl_credit/tests/test_servicing_postgresql_acceptance.py
+?? .ralph/runs/2026-07-21_010045_normal_run/
+?? sfpcl_credit/loans/migrations/0009_dpd_pointer_integrity.py
+?? sfpcl_credit/loans/modules/dpd_source_decision.py
+?? sfpcl_credit/tests/test_dpd_integrity_closure.py

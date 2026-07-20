@@ -1,0 +1,19 @@
+Test specification: sfpcl_credit.tests.test_dpd_integrity_closure.DpdSourceOwnerDecisionTests.test_public_owner_decision_freezes_locked_schedule_truth
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_public_owner_decision_freezes_locked_schedule_truth (sfpcl_credit.tests.test_dpd_integrity_closure.DpdSourceOwnerDecisionTests.test_public_owner_decision_freezes_locked_schedule_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_010045_normal_run/sfpcl_credit/tests/test_dpd_integrity_closure.py", line 124, in test_public_owner_decision_freezes_locked_schedule_truth
+    from sfpcl_credit.loans.modules.dpd_source_decision import (
+ModuleNotFoundError: No module named 'sfpcl_credit.loans.modules.dpd_source_decision'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+Exit code: 1

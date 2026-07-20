@@ -71,7 +71,14 @@ class LoanAccount(models.Model):
     loan_account_status = models.CharField(
         max_length=80, default=STATUS_SANCTIONED, db_index=True
     )
-    current_dpd_status_id = models.UUIDField(null=True, blank=True)
+    current_dpd_status = models.ForeignKey(
+        "monitoring.DpdStatus",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="current_for_loan_accounts",
+        db_column="current_dpd_status_id",
+    )
     created_at = models.DateTimeField(default=timezone.now)
     closed_at = models.DateTimeField(null=True, blank=True)
 

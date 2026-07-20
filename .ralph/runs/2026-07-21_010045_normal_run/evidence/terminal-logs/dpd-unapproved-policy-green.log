@@ -1,0 +1,11 @@
+Test specification: sfpcl_credit.tests.test_dpd_integrity_closure.DpdPolicyReplayTests.test_effective_but_unapproved_policy_fails_without_snapshot
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.594s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

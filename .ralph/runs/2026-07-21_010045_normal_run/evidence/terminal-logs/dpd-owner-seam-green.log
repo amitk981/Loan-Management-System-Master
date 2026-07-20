@@ -1,0 +1,11 @@
+Test specification: sfpcl_credit.tests.test_dpd_integrity_closure.DpdSourceOwnerDecisionTests.test_monitoring_consumes_only_the_public_loan_source_decision
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

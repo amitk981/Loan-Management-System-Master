@@ -1,0 +1,19 @@
+Test specification: sfpcl_credit.tests.test_dpd_monitoring_api.DpdMonitoringApiTests sfpcl_credit.tests.test_dpd_monitoring_api.DpdPaymentTimingApiTests
+Creating test database for alias 'default'...
+Found 8 test(s).
+System check identified no issues (0 silenced).
+F.......
+======================================================================
+FAIL: test_bounded_active_portfolio_reports_each_outcome (sfpcl_credit.tests.test_dpd_monitoring_api.DpdMonitoringApiTests.test_bounded_active_portfolio_reports_each_outcome)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_010045_normal_run/sfpcl_credit/tests/test_dpd_monitoring_api.py", line 179, in test_bounded_active_portfolio_reports_each_outcome
+    self.assertLessEqual(len(queries), 20)
+AssertionError: 22 not less than or equal to 20
+
+----------------------------------------------------------------------
+Ran 8 tests in 4.740s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

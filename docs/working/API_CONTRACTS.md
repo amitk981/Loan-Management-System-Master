@@ -4818,6 +4818,23 @@ loan. One invalid/inactive/inaccessible loan does not hide successful loan resul
 same-loan/date requests serialize on the account and retain one snapshot, one calculation audit, and
 one current pointer.
 
+010I2 strengthens that pointer into a protected relationship to the retained snapshot and enforces
+at the database write boundary that the snapshot belongs to the same loan. Instance, queryset,
+bulk, and direct-SQL writes cannot store dangling or cross-loan identities, and a referenced
+snapshot cannot be deleted. The calculation rechecks monitoring permission and canonical loan scope
+after locking through the public loan-owned source-decision interface; that immutable decision is
+the only schedule/allocation input consumed by monitoring.
+
+Each new response additionally returns `policy_decision` and `calculation_inputs`. The policy
+decision freezes `sop_policy_version`, the exact calendar-anniversary/leap-day/inclusivity
+convention, and optional operational scheme id/version/effective dates/30-60-90 bounds. Source
+inputs freeze ordered schedule lines, paid-as-of amounts, applied allocation identities, and the
+as-of date. Reads and replays serialize these retained bytes rather than current scheme fields.
+Complete absence of an optional operational scheme retains `standard_bucket: null`; an effective
+but non-active scheme or overlapping active schemes returns `409` with no snapshot, audit, or
+pointer write. The additive migration freezes these policy facts for coherent legacy snapshots
+without recalculating DPD and fails closed on dangling or cross-loan legacy pointers.
+
 ## Quarter-end reminder queue (010J)
 
 `POST /api/v1/reminders/quarter-end-runs/` accepts exactly an ISO calendar quarter-end

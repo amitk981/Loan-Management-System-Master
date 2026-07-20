@@ -240,7 +240,7 @@ class InterestPolicyIntegrityPostgreSQLAcceptanceTests(TransactionTestCase):
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
-class DpdSnapshotPostgreSQLAcceptanceTests(TransactionTestCase):
+class DpdOwnerIntegrityPostgreSQLAcceptanceTests(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):
@@ -265,23 +265,7 @@ class DpdSnapshotPostgreSQLAcceptanceTests(TransactionTestCase):
         self.fixture = fixture
 
     def test_same_date_race_retains_one_snapshot_audit_and_current_pointer(self):
-        barrier = Barrier(2)
-
-        def submit(_):
-            close_old_connections()
-            try:
-                barrier.wait(timeout=15)
-                return Client().post(
-                    f"/api/v1/loan-accounts/{self.fixture.account.pk}/dpd-status/calculate/",
-                    data=json.dumps({"as_of_date": "2026-07-01"}),
-                    content_type="application/json",
-                    **self.fixture.auth,
-                ).status_code
-            finally:
-                close_old_connections()
-
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            statuses = sorted(pool.map(submit, range(2)))
+        statuses = sorted(self._race(lambda _: self._post("2026-07-01")))
 
         from sfpcl_credit.identity.models import AuditLog
         from sfpcl_credit.monitoring.models import DpdStatus
@@ -293,6 +277,153 @@ class DpdSnapshotPostgreSQLAcceptanceTests(TransactionTestCase):
             AuditLog.objects.filter(action="monitoring.dpd.calculated").count(), 1
         )
         self.assertEqual(self.fixture.account.current_dpd_status_id, row.pk)
+
+    def test_pointer_mutation_paths_reject_dangling_foreign_and_deleted_snapshots(self):
+        from uuid import uuid4
+
+        from django.db import IntegrityError, transaction
+
+        from sfpcl_credit.monitoring.models import DpdStatus
+        from sfpcl_credit.tests.servicing_builders import clone_servicing_account
+
+        self.assertEqual(self._post("2026-07-01"), 200)
+        snapshot = DpdStatus.objects.get()
+        other = clone_servicing_account(fixture=self.fixture, suffix="dpd-pg-other")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            type(other).objects.filter(pk=other.pk).update(
+                current_dpd_status_id=uuid4()
+            )
+        other.current_dpd_status_id = snapshot.pk
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            other.save(update_fields=["current_dpd_status"])
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            type(other).objects.bulk_update([other], ["current_dpd_status"])
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE loan_accounts SET current_dpd_status_id = %s "
+                    "WHERE loan_account_id = %s",
+                    [str(snapshot.pk), str(other.pk)],
+                )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM dpd_statuses WHERE dpd_status_id = %s",
+                    [str(snapshot.pk)],
+                )
+
+    def test_older_and_newer_date_race_keeps_the_newest_current_pointer(self):
+        from datetime import date
+
+        from sfpcl_credit.monitoring.models import DpdStatus
+
+        statuses = sorted(
+            self._race(
+                lambda index: self._post(
+                    "2026-07-01" if index == 0 else "2026-07-31"
+                )
+            )
+        )
+
+        self.assertEqual(statuses, [200, 200])
+        self.assertEqual(DpdStatus.objects.count(), 2)
+        self.fixture.account.refresh_from_db()
+        self.assertEqual(
+            DpdStatus.objects.get(pk=self.fixture.account.current_dpd_status_id).as_of_date,
+            date(2026, 7, 31),
+        )
+
+    def test_bounded_portfolio_race_retains_one_snapshot_per_identity(self):
+        from datetime import date
+
+        from sfpcl_credit.loans.models import RepaymentSchedule
+        from sfpcl_credit.monitoring.models import DpdStatus
+        from sfpcl_credit.tests.servicing_builders import clone_servicing_account
+
+        accounts = [self.fixture.account]
+        for index in range(2):
+            account = clone_servicing_account(
+                fixture=self.fixture,
+                suffix=f"dpd-pg-portfolio-{index}",
+            )
+            RepaymentSchedule.objects.create(
+                loan_account=account,
+                installment_number=1,
+                due_date=date(2026, 6, 30),
+                principal_due="1000.00",
+                interest_due="100.00",
+                charges_due="0.00",
+                total_due="1100.00",
+                schedule_status="pending",
+            )
+            accounts.append(account)
+        account_ids = [str(account.pk) for account in accounts]
+
+        def submit(_):
+            return Client().post(
+                "/api/v1/dpd-statuses/bulk-calculate/",
+                data=json.dumps(
+                    {
+                        "as_of_date": "2026-07-01",
+                        "loan_account_ids": account_ids,
+                        "include_all_active_loans": False,
+                    }
+                ),
+                content_type="application/json",
+                **self.fixture.auth,
+            ).status_code
+
+        self.assertEqual(sorted(self._race(submit)), [200, 200])
+        self.assertEqual(DpdStatus.objects.count(), 3)
+        for account in accounts:
+            account.refresh_from_db()
+            self.assertEqual(
+                DpdStatus.objects.get(pk=account.current_dpd_status_id).loan_account_id,
+                account.pk,
+            )
+
+    def test_failed_policy_race_leaves_history_and_pointer_empty(self):
+        from datetime import date
+
+        from sfpcl_credit.monitoring.models import DpdOperationalBucketScheme, DpdStatus
+
+        for version in ("DPD-PG-OVERLAP-1", "DPD-PG-OVERLAP-2"):
+            DpdOperationalBucketScheme.objects.create(
+                version=version,
+                effective_from=date(2026, 1, 1),
+            )
+
+        self.assertEqual(
+            sorted(self._race(lambda _: self._post("2026-07-01"))),
+            [409, 409],
+        )
+        self.assertEqual(DpdStatus.objects.count(), 0)
+        self.fixture.account.refresh_from_db()
+        self.assertIsNone(self.fixture.account.current_dpd_status_id)
+
+    def _post(self, as_of_date):
+        return Client().post(
+            f"/api/v1/loan-accounts/{self.fixture.account.pk}/dpd-status/calculate/",
+            data=json.dumps({"as_of_date": as_of_date}),
+            content_type="application/json",
+            **self.fixture.auth,
+        ).status_code
+
+    @staticmethod
+    def _race(submit):
+        barrier = Barrier(2)
+
+        def worker(index):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return submit(index)
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            return list(pool.map(worker, range(2)))
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

@@ -1,0 +1,6 @@
+Command: manage.py check
+System check identified no issues (0 silenced).
+manage.py check exit code: 0
+Command: manage.py makemigrations --check --dry-run
+No changes detected
+makemigrations exit code: 0
