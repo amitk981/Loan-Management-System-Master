@@ -22,6 +22,7 @@ from sfpcl_credit.tests.test_interest_capitalisation_api import (
     InterestCapitalisationApiTests,
 )
 from sfpcl_credit.tests.test_dpd_monitoring_api import DpdMonitoringApiTests
+from sfpcl_credit.tests.test_reminder_queue_api import ReminderQueueApiTests
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
@@ -78,6 +79,106 @@ class DpdSnapshotPostgreSQLAcceptanceTests(TransactionTestCase):
             AuditLog.objects.filter(action="monitoring.dpd.calculated").count(), 1
         )
         self.assertEqual(self.fixture.account.current_dpd_status_id, row.pk)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class ReminderQueuePostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = ReminderQueueApiTests(
+            "test_quarter_end_run_creates_only_beyond_one_year_and_replay_is_zero_write"
+        )
+        fixture.setUp()
+        fixture._make_eligible()
+        self.fixture = fixture
+
+    def test_concurrent_quarter_runs_retain_one_reminder_and_delivery_job(self):
+        barrier = Barrier(2)
+
+        def submit(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    "/api/v1/reminders/quarter-end-runs/",
+                    data=json.dumps(
+                        {
+                            "quarter_end_date": "2026-06-30",
+                            "channel": "sms",
+                            "content_template_id": str(self.fixture.sms_template.pk),
+                        }
+                    ),
+                    content_type="application/json",
+                    **self.fixture.auth,
+                ).status_code
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, range(2)))
+
+        from sfpcl_credit.communications.models import (
+            Communication,
+            CommunicationDeliveryJob,
+        )
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.monitoring.models import Reminder
+
+        self.assertEqual(statuses, [200, 200])
+        self.assertEqual(Reminder.objects.count(), 1)
+        self.assertEqual(
+            Communication.objects.filter(
+                related_entity_type="monitoring_reminder"
+            ).count(),
+            1,
+        )
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="monitoring.reminder.created").count(), 1
+        )
+
+    def test_concurrent_exact_send_replay_retains_one_delivery_job(self):
+        created = Client().post(
+            f"/api/v1/loan-accounts/{self.fixture.account.pk}/reminders/",
+            data=json.dumps(
+                {
+                    "quarter_end_date": "2026-06-30",
+                    "reminder_type": "outstanding_beyond_one_year",
+                    "channel": "sms",
+                    "content_template_id": str(self.fixture.sms_template.pk),
+                    "message_body": "Loan remains outstanding at quarter end.",
+                    "send_now": False,
+                }
+            ),
+            content_type="application/json",
+            **self.fixture.auth,
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        reminder_id = created.json()["data"]["reminder_id"]
+        barrier = Barrier(2)
+
+        def submit(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/reminders/{reminder_id}/send/",
+                    data=json.dumps({}),
+                    content_type="application/json",
+                    HTTP_IDEMPOTENCY_KEY="postgres-reminder-send-replay",
+                    **self.fixture.auth,
+                ).status_code
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, range(2)))
+
+        from sfpcl_credit.communications.models import CommunicationDeliveryJob
+
+        self.assertEqual(statuses, [200, 200])
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

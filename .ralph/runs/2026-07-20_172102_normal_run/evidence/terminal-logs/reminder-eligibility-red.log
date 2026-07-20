@@ -1,0 +1,15 @@
+TEST: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_quarter_end_run_creates_only_beyond_one_year_and_replay_is_zero_write
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_quarter_end_run_creates_only_beyond_one_year_and_replay_is_zero_write (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_quarter_end_run_creates_only_beyond_one_year_and_replay_is_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_172102_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 53, in test_quarter_end_run_creates_only_beyond_one_year_and_replay_is_zero_write
+    from sfpcl_credit.monitoring.models import Reminder
+ImportError: cannot import name 'Reminder' from 'sfpcl_credit.monitoring.models' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_172102_normal_run/sfpcl_credit/monitoring/models.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.631s
+
+FAILED (errors=1)
+EXIT_CODE: 1

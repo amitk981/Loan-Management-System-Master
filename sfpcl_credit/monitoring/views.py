@@ -12,6 +12,13 @@ from sfpcl_credit.monitoring.modules.dpd_monitoring import (
     calculate_portfolio,
     get_current_for_loan,
 )
+from sfpcl_credit.monitoring.modules.reminder_engine import (
+    ReminderConflict,
+    ReminderEngine,
+    ReminderNotFound,
+    ReminderPermissionDenied,
+    ReminderValidation,
+)
 
 
 @require_http_methods(["GET"])
@@ -88,3 +95,105 @@ def dpd_bulk_calculate(request):
         return error_response(
             request, 403, "FORBIDDEN", "DPD calculation permission and loan scope are required."
         )
+
+
+@require_http_methods(["POST"])
+def reminder_quarter_end_run(request):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            ReminderEngine.run_quarter_end(
+                actor=actor, payload=parse_json_body(request), request=request
+            ),
+            request,
+        )
+    except (ReminderValidation, ValidationError) as exc:
+        fields = (
+            exc.field_errors
+            if isinstance(exc, ReminderValidation)
+            else getattr(exc, "message_dict", {"body": exc.messages[0]})
+        )
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Reminder run failed validation.", fields
+        )
+    except ReminderPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Reminder permission and loan scope are required."
+        )
+    except ReminderNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The loan is inaccessible.")
+    except ReminderConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def reminder_collection(request, loan_account_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            ReminderEngine.create_reminder(
+                actor=actor,
+                loan_account_id=loan_account_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except (ReminderValidation, ValidationError) as exc:
+        fields = (
+            exc.field_errors
+            if isinstance(exc, ReminderValidation)
+            else getattr(exc, "message_dict", {"body": exc.messages[0]})
+        )
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Reminder failed validation.", fields
+        )
+    except ReminderPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Reminder permission and loan scope are required."
+        )
+    except ReminderNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
+        )
+    except ReminderConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def reminder_send(request, reminder_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        payload = parse_json_body(request)
+        if payload:
+            raise ReminderValidation({"body": "The send body must be empty."})
+        return success_response(
+            ReminderEngine.send_reminder(
+                actor=actor,
+                reminder_id=reminder_id,
+                idempotency_key=request.headers.get("Idempotency-Key", ""),
+                request=request,
+            ),
+            request,
+        )
+    except (ReminderValidation, ValidationError) as exc:
+        fields = (
+            exc.field_errors
+            if isinstance(exc, ReminderValidation)
+            else getattr(exc, "message_dict", {"body": exc.messages[0]})
+        )
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Reminder send failed validation.", fields
+        )
+    except ReminderPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "Reminder permission is required.")
+    except ReminderNotFound:
+        return error_response(request, 404, "NOT_FOUND", "The reminder was not found or is inaccessible.")
+    except ReminderConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))

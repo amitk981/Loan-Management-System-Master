@@ -1,0 +1,7 @@
+TEST: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_quarter_end_run_creates_only_beyond_one_year_and_replay_is_zero_write
+System check identified no issues (0 silenced).
+----------------------------------------------------------------------
+Ran 1 test in 0.680s
+
+OK
+EXIT_CODE: 0

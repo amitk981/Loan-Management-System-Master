@@ -1,0 +1,7 @@
+TEST: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_phone_log_retains_outcome_and_follow_up_without_provider_communication
+System check identified no issues (0 silenced).
+----------------------------------------------------------------------
+Ran 1 test in 0.616s
+
+OK
+EXIT_CODE: 0

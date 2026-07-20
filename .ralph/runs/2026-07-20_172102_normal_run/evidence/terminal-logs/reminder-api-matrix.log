@@ -1,0 +1,11 @@
+TEST: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests
+Creating test database for alias 'default'...
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 4.167s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_CODE: 0

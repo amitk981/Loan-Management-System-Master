@@ -1,0 +1,7 @@
+TEST: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_stale_electronic_reminder_is_cancelled_before_send
+System check identified no issues (0 silenced).
+----------------------------------------------------------------------
+Ran 1 test in 0.613s
+
+OK
+EXIT_CODE: 0

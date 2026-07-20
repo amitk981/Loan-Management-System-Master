@@ -34,6 +34,21 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/reminders/quarter-end-runs/",
+        monitoring_views.reminder_quarter_end_run,
+        name="reminder-quarter-end-run",
+    ),
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/reminders/",
+        monitoring_views.reminder_collection,
+        name="loan-account-reminder-collection",
+    ),
+    path(
+        "api/v1/reminders/<uuid:reminder_id>/send/",
+        monitoring_views.reminder_send,
+        name="reminder-send",
+    ),
+    path(
         "api/v1/dpd-statuses/bulk-calculate/",
         monitoring_views.dpd_bulk_calculate,
         name="dpd-status-bulk-calculate",

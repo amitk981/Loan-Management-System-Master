@@ -1,0 +1,15 @@
+TEST: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_stale_electronic_reminder_is_cancelled_before_send
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_stale_electronic_reminder_is_cancelled_before_send (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_stale_electronic_reminder_is_cancelled_before_send)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_172102_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 155, in test_stale_electronic_reminder_is_cancelled_before_send
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Reminder failed validation.", "details": {}, "field_errors": {"body": "Use the complete phone reminder fields."}}, "meta": {"request_id": null, "timestamp": "2026-07-20T12:04:50.586230Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.605s
+
+FAILED (failures=1)
+EXIT_CODE: 1

@@ -1,0 +1,11 @@
+TESTS: DPD, schedule/ledger, allocation, communication dispatch/jobs/workers
+Creating test database for alias 'default'...
+Found 59 test(s).
+System check identified no issues (0 silenced).
+...........................................................
+----------------------------------------------------------------------
+Ran 59 tests in 20.770s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_CODE: 0

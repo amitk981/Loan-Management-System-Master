@@ -4817,3 +4817,39 @@ returns `run_id`, as-of date, calculated/skipped/failed counts, and one ordered 
 loan. One invalid/inactive/inaccessible loan does not hide successful loan results. Concurrent
 same-loan/date requests serialize on the account and retain one snapshot, one calculation audit, and
 one current pointer.
+
+## Quarter-end reminder queue (010J)
+
+`POST /api/v1/reminders/quarter-end-runs/` accepts exactly an ISO calendar quarter-end
+`quarter_end_date`, `channel` (`sms` or `email`), and `content_template_id`. It requires
+`monitoring.reminder.create` plus canonical loan-account scope and processes at most 100 scoped
+accounts whose immutable 010I snapshot is for that exact quarter end, is at least in the approved
+one-to-two-year SOP band, has positive overdue truth, and whose current account remains serviceable
+with positive outstanding. It never recalculates DPD or accepts caller eligibility, recipient,
+message, status, money, or provider evidence.
+
+Each eligible account retains one reminder for `(loan account, quarter end,
+outstanding_beyond_one_year, channel)`, including loan/application/member, exact DPD snapshot,
+template/rendered-message snapshot, actor, timestamps, audit, and canonical communication link.
+The communications owner validates the approved/effective template and borrower contact, creates
+the snapshot, and queues its generic delivery job. The reminder reports `queued`; canonical job
+truth supplies later `sent` or `failed` status. Queueing never claims provider acceptance. Exact run
+replay returns the retained row with zero new reminder, communication, job, or audit writes.
+Concurrent PostgreSQL runs lock the account and the database uniqueness rule retains one complete
+identity and delivery chain.
+
+`POST /api/v1/loan-accounts/{loan_account_id}/reminders/` preserves the source §34.3/34.4
+interface and adds the required `quarter_end_date`. SMS/email accepts the source reminder type,
+channel, `content_template_id`, nonblank bounded `message_body`, and boolean `send_now`; the caller
+body cannot override the approved rendered template. Phone accepts reminder type, `phone`, nonblank
+bounded message and call outcome, contacted person (`borrower`, `nominee`, or `representative`), an
+ISO next-follow-up date on/after quarter end, and `send_now: false`. Phone logs store actor/time and
+audit evidence but create no communication or provider row.
+
+`POST /api/v1/reminders/{reminder_id}/send/` accepts an empty body and required nonblank
+`Idempotency-Key`. It rechecks permission, account scope, exact current quarter DPD, positive
+outstanding, and serviceable status under lock before delegating to the communications job seam. A
+resolved/stale loan retains `cancelled` with a safe reason and no job; exact send replay retains one
+job. Missing authentication is `401`, permission is `403`, inaccessible objects are `404`, malformed
+input/contact/template is `400`, and invalid state or changed delivery replay is `409`. Ordinary
+responses never expose recipient, rendered body, or provider-sensitive evidence.
