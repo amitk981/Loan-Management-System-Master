@@ -341,10 +341,17 @@ elif [[ "$mode" == "architecture_review" ]]; then
         exit 1
       fi
       echo "PASS: Critical/High findings have corrective work admitted when required."
-      if ! ralph_validate_architecture_review_convergence \
+      convergence_rc=0
+      ralph_validate_architecture_review_convergence \
           "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
-          "$run_dir/review-packet.md"; then
+          "$run_dir/review-packet.md" "$worktree_dir/docs/slices" \
+          "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" \
+          || convergence_rc=$?
+      if (( convergence_rc != 0 )); then
         echo "FAIL: an architecture-review root did not converge within its bounded budget."
+        if (( convergence_rc == RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE )); then
+          exit "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE"
+        fi
         exit "$RALPH_EXIT_REVIEW_CONVERGENCE"
       fi
       echo "PASS: every architecture-review root remains within its bounded corrective budget."

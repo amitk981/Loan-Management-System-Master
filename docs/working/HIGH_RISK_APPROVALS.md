@@ -34,6 +34,14 @@ migration, and coverage gate passes. New approvals use the exact format
 `CR | Epic NNN | Root ROOT-NNN-* | generation N | reason`; the orchestrator validates every field.
 The completed CR-013 line below is retained in its historical pre-root format.
 
+For unattended execution, the owner additionally authorizes one terminal finalizer per stable
+Root ID after that root reaches the configured generation cap. The orchestrator must prove the
+exact exhausted root and generation, require a High-risk CR, retain permanent finding/reproducer
+contracts, run every full quality gate, and record the consumed root so this policy can never admit
+a second terminal finalizer for the same root.
+
+- [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | 2026-07-20 owner-authorized unattended convergence recovery
+
 - [approved-finalizer] CR-013 | Epic 009 | generation 2 | 2026-07-19 owner-authorized terminal root-boundary correction
 
 ## History

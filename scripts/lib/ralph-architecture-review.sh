@@ -74,6 +74,17 @@ PY
   fi
 }
 
+ralph_architecture_review_auto_finalizer_policy_enabled() {
+  local config="${1:?config is required}" approvals_file="${2:?approvals file is required}"
+  local maximum
+  maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+  maximum="${maximum:-2}"
+  [[ "$maximum" =~ ^[1-9][0-9]*$ ]] || return 1
+  grep -qF -- \
+    "- [approved-finalizer-policy] generation $maximum | one terminal finalizer per Root ID |" \
+    "$approvals_file"
+}
+
 # Print exactly True or False. Missing, malformed, or non-boolean state is an
 # error so callers cannot silently skip a due review or declare completion.
 ralph_architecture_review_due() {
@@ -280,6 +291,7 @@ PY
 ralph_architecture_review_root_transition() {
   local mode="${1:?mode is required}" state_file="${2:?state file is required}"
   local packet="${3:?review packet is required}" maximum="${4:-}"
+  local slice_dir="${5:-}" approvals_file="${6:-}"
   [[ "$mode" == "validate" || "$mode" == "apply" ]] || return 1
   [[ -f "$state_file" && -f "$packet" ]] || return 1
   if [[ "$mode" == "validate" ]] \
@@ -287,16 +299,19 @@ ralph_architecture_review_root_transition() {
     echo "Invalid architecture-review convergence configuration." >&2
     return 1
   fi
-  python3 - "$mode" "$state_file" "$packet" "${maximum:-0}" <<'PY'
+  python3 - "$mode" "$state_file" "$packet" "${maximum:-0}" \
+    "$slice_dir" "$approvals_file" <<'PY'
 import json
 import os
 import re
 import sys
 from pathlib import Path
 
-mode, state_name, packet_name, maximum_value = sys.argv[1:]
+mode, state_name, packet_name, maximum_value, slice_dir_name, approvals_name = sys.argv[1:]
 state_path = Path(state_name)
 packet_path = Path(packet_name)
+slice_dir = Path(slice_dir_name) if slice_dir_name else None
+approvals_path = Path(approvals_name) if approvals_name else None
 
 try:
     state = json.loads(state_path.read_text())
@@ -332,13 +347,78 @@ for line in lines[start:]:
     rows.append(values)
 
 updated = {key: dict(value) for key, value in roots.items()}
-maximum = int(maximum_value) if mode == "validate" else None
+maximum = int(maximum_value)
+terminal_roots = state.get("architecture_review_terminal_roots", [])
+if not isinstance(terminal_roots, list) or not all(isinstance(item, str) for item in terminal_roots):
+    raise SystemExit("architecture_review_terminal_roots must be a string list")
+
+def section_value(text, heading):
+    lines = text.splitlines()
+    try:
+        index = lines.index(heading) + 1
+    except ValueError:
+        return ""
+    while index < len(lines) and not lines[index].strip():
+        index += 1
+    return lines[index].strip() if index < len(lines) and not lines[index].startswith("## ") else ""
+
+def standing_terminal_finalizer(root_id, corrective, current_generation, epic):
+    if slice_dir is None or approvals_path is None or root_id in terminal_roots:
+        return False
+    if current_generation != maximum:
+        return False
+    if not approvals_path.is_file():
+        return False
+    policy = (
+        f"- [approved-finalizer-policy] generation {maximum} | "
+        "one terminal finalizer per Root ID |"
+    )
+    if not any(line.startswith(policy) for line in approvals_path.read_text().splitlines()):
+        return False
+    if not re.fullmatch(r"CR-[0-9]{3,}", corrective):
+        return False
+    matches = list(slice_dir.glob(f"{corrective}-*.md"))
+    if len(matches) != 1:
+        return False
+    text = matches[0].read_text()
+    if section_value(text, "## Status") != "Not Started":
+        return False
+    if section_value(text, "## Risk Level") != "High":
+        return False
+    parent = section_value(text, "## Parent Epic")
+    if re.search(rf"\bEpic {re.escape(epic)}\b", parent) is None:
+        return False
+    lines = text.splitlines()
+    try:
+        start = lines.index("## Architecture Review Finalizer") + 1
+    except ValueError:
+        return False
+    fields = {}
+    while start < len(lines) and not lines[start].startswith("## "):
+        line = lines[start].strip()
+        if line:
+            match = re.fullmatch(r"- (Epic|Root ID|Exhausted corrective generation): (.+)", line)
+            if not match or match.group(1) in fields:
+                return False
+            fields[match.group(1)] = match.group(2)
+        start += 1
+    return fields == {
+        "Epic": epic,
+        "Root ID": root_id,
+        "Exhausted corrective generation": str(current_generation),
+    }
+
 for finding_id, root_id, severity, disposition, _reproducer, corrective, _closure in rows:
     if disposition == "Closed":
         updated.pop(root_id, None)
         continue
     if severity not in {"Critical", "High"} or corrective == "-":
         continue
+    if root_id in terminal_roots:
+        raise SystemExit(
+            f"TERMINAL_RECURRENCE: architecture review root {root_id} already "
+            "consumed its one owner-preauthorized terminal finalizer."
+        )
     epic_match = re.fullmatch(r"ROOT-([0-9]{3})-[A-Z0-9-]+", root_id)
     if not epic_match:
         raise SystemExit(f"Convergence root has no canonical Epic identity: {root_id}")
@@ -346,11 +426,16 @@ for finding_id, root_id, severity, disposition, _reproducer, corrective, _closur
     generation = int(current.get("generation", 0)) if current else 0
     if current is None or current.get("corrective_slice") != corrective:
         generation += 1
-    if maximum is not None and generation > maximum:
-        raise SystemExit(
-            f"Architecture review root {root_id} exceeded the {maximum}-generation "
-            "corrective cap; refusing another successor."
-        )
+    if generation > maximum:
+        if standing_terminal_finalizer(
+            root_id, corrective, int(current.get("generation", 0)), epic_match.group(1)
+        ):
+            generation = int(current["generation"])
+        else:
+            raise SystemExit(
+                f"Architecture review root {root_id} exceeded the {maximum}-generation "
+                "corrective cap; refusing another successor."
+            )
     updated[root_id] = {
         "epic": epic_match.group(1),
         "generation": generation,
@@ -371,16 +456,40 @@ PY
 
 ralph_validate_architecture_review_convergence() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
-  local packet="${3:?review packet is required}" maximum
+  local packet="${3:?review packet is required}" slice_dir="${4:-}"
+  local approvals_file="${5:-}" maximum
   maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
   maximum="${maximum:-2}"
-  ralph_architecture_review_root_transition \
-    validate "$state_file" "$packet" "$maximum"
+  local output rc=0
+  output="$(ralph_architecture_review_root_transition \
+    validate "$state_file" "$packet" "$maximum" "$slice_dir" "$approvals_file" \
+    2>&1)" || rc=$?
+  [[ -n "$output" ]] && printf '%s\n' "$output" >&2
+  if (( rc != 0 )) && printf '%s\n' "$output" | grep -q '^TERMINAL_RECURRENCE:'; then
+    return "${RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE:-28}"
+  fi
+  return "$rc"
 }
 
 ralph_apply_architecture_review_root_transitions() {
-  local state_file="${1:?state file is required}" packet="${2:?review packet is required}"
-  ralph_architecture_review_root_transition apply "$state_file" "$packet" 0
+  local config state_file packet slice_dir approvals_file maximum
+  if [[ "${1:-}" == *.json ]]; then
+    state_file="${1:?state file is required}"
+    packet="${2:?review packet is required}"
+    config="$(dirname "$state_file")/config.yaml"
+    slice_dir="${3:-}"
+    approvals_file="${4:-}"
+  else
+    config="${1:?config is required}"
+    state_file="${2:?state file is required}"
+    packet="${3:?review packet is required}"
+    slice_dir="${4:-}"
+    approvals_file="${5:-}"
+  fi
+  maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" 2>/dev/null | xargs || true)"
+  maximum="${maximum:-2}"
+  ralph_architecture_review_root_transition \
+    apply "$state_file" "$packet" "$maximum" "$slice_dir" "$approvals_file"
 }
 
 # Validate the narrow owner-controlled exit for an exhausted corrective cycle.
@@ -390,8 +499,9 @@ ralph_apply_architecture_review_root_transitions() {
 ralph_architecture_review_finalizer_contract() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
   local slice_file="${3:?slice file is required}" approvals_file="${4:?approvals file is required}"
+  local allow_review_transition="${5:-false}"
   local base slice_id approval_id fields epic root generation maximum state_values
-  local due state_epic state_generation risk parent
+  local due state_epic state_generation terminal_seen risk parent
   [[ -f "$slice_file" && -f "$approvals_file" ]] || return 1
   base="$(basename "$slice_file")"
   [[ "$base" =~ ^(CR-[0-9][0-9][0-9][0-9]*)-.+\.md$ ]] || return 1
@@ -451,23 +561,58 @@ try:
     entry = state.get("architecture_review_root_generations", {}).get(root, {})
     epic = entry.get("epic", "")
     generation = int(entry.get("generation", 0))
+    terminal = root in state.get("architecture_review_terminal_roots", [])
 except (OSError, TypeError, ValueError, json.JSONDecodeError):
     raise SystemExit(1)
 if not isinstance(due, bool) or not isinstance(epic, str):
     raise SystemExit(1)
-print(f"{'True' if due else 'False'}\t{epic}\t{generation}")
+print(f"{'True' if due else 'False'}\t{epic}\t{generation}\t{'True' if terminal else 'False'}")
 PY
 )" || return 1
-  IFS=$'\t' read -r due state_epic state_generation <<< "$state_values"
-  [[ "$due" == "True" && "$state_epic" == "$epic" \
-      && "$state_generation" == "$generation" ]] || return 1
-  (( generation >= maximum )) || return 1
+  IFS=$'\t' read -r due state_epic state_generation terminal_seen <<< "$state_values"
+  [[ ( "$due" == "True" || "$allow_review_transition" == "true" ) \
+      && "$state_epic" == "$epic" \
+      && "$state_generation" == "$generation" && "$terminal_seen" == "False" ]] || return 1
+  (( generation == maximum )) || return 1
   parent="$(ralph_slice_parent_epics "$(dirname "$slice_file")" "$slice_id")"
   printf '%s\n' "$parent" | grep -Fxq "$epic" || return 1
-  grep -qF -- \
-    "- [approved-finalizer] $approval_id | Epic $epic | Root $root | generation $generation |" \
-    "$approvals_file" || return 1
+  if ! grep -qF -- \
+      "- [approved-finalizer] $approval_id | Epic $epic | Root $root | generation $generation |" \
+      "$approvals_file"; then
+    grep -qF -- \
+      "- [approved-finalizer-policy] generation $maximum | one terminal finalizer per Root ID |" \
+      "$approvals_file" || return 1
+  fi
   printf '%s\t%s\n' "$epic" "$root"
+}
+
+# A successful review normally clears its due flag. When that same validated
+# review admitted a standing-policy terminal finalizer, immediately restore a
+# narrow barrier that yields only to the exact first grabbable finalizer.
+ralph_mark_architecture_review_terminal_finalizer_due() {
+  local config="${1:?config is required}" state_file="${2:?state file is required}"
+  local slice_dir="${3:?slice directory is required}"
+  local approvals_file="${4:?approvals file is required}" first contract epic root
+  first="$(ralph_first_grabbable_slice "$slice_dir" || true)"
+  [[ -n "$first" ]] || return 0
+  contract="$(ralph_architecture_review_finalizer_contract \
+    "$config" "$state_file" "$slice_dir/$first" "$approvals_file" true 2>/dev/null || true)"
+  [[ -n "$contract" ]] || return 0
+  IFS=$'\t' read -r epic root <<< "$contract"
+  python3 - "$state_file" "$root" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_due"] = True
+state["architecture_review_due_reason"] = f"terminal_finalizer:{sys.argv[2]}"
+temporary = path.with_name(f"{path.name}.tmp.{os.getpid()}")
+temporary.write_text(json.dumps(state, indent=2) + "\n")
+temporary.replace(path)
+PY
 }
 
 # Compatibility name for callers that only need to test whether the contract
@@ -494,6 +639,10 @@ from pathlib import Path
 
 path = Path(sys.argv[1])
 epic, root, slice_id, run_id = sys.argv[2:]
+approval_match = __import__("re").match(r"^(CR-[0-9]+)", slice_id)
+if approval_match is None:
+    raise SystemExit("architecture-review finalizer has no CR approval identity")
+approval_id = approval_match.group(1)
 state = json.loads(path.read_text())
 if state.get("architecture_review_due") is not True:
     raise SystemExit("architecture-review finalizer requires a due review")
@@ -503,8 +652,19 @@ if not isinstance(entry, dict) or entry.get("epic") != epic:
     raise SystemExit("architecture-review finalizer root does not match the active Epic")
 if int(entry.get("generation", 0)) < 1:
     raise SystemExit("architecture-review finalizer requires an exhausted root generation")
-roots.pop(root)
+terminal_roots = state.get("architecture_review_terminal_roots", [])
+if not isinstance(terminal_roots, list) or root in terminal_roots:
+    raise SystemExit("architecture-review root already consumed its terminal finalizer")
+closed_roots = sorted(
+    root_id for root_id, value in roots.items()
+    if root_id == root or (
+        isinstance(value, dict) and value.get("corrective_slice") == approval_id
+    )
+)
+for root_id in closed_roots:
+    roots.pop(root_id, None)
 state["architecture_review_root_generations"] = roots
+state["architecture_review_terminal_roots"] = sorted(terminal_roots + [root])
 state["architecture_review_due"] = False
 state.pop("architecture_review_due_reason", None)
 state.pop("architecture_review_cycle_epic", None)
@@ -513,6 +673,7 @@ state["slices_completed_since_architecture_review"] = 0
 state["last_architecture_review_finalizer"] = {
     "epic": epic,
     "root_id": root,
+    "root_ids": closed_roots,
     "slice_id": slice_id,
     "run_id": run_id,
 }
@@ -1373,17 +1534,23 @@ print(
 PY
 }
 
-# Count only new, executable numeric corrective slices. Any untracked slice
-# file that is Complete, Superseded, non-numeric, or missing Depends On is an
-# invalid architecture-review candidate rather than evidence of queue action.
+# Count new executable corrective slices. Ordinary review work remains numeric;
+# a CR-NNN file is admitted only when it is the exact standing-policy terminal
+# finalizer for an already exhausted root.
 ralph_architecture_review_new_corrective_count() {
   local worktree="${1:?worktree is required}" path base status count=0
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
     base="$(basename "$path")"
     if ! [[ "$base" =~ ^[0-9][0-9][0-9][A-Za-z0-9]*-.+\.md$ ]]; then
-      echo "New corrective slice is not a numeric queue id: $base" >&2
-      return 1
+      if ! [[ "$base" =~ ^CR-[0-9][0-9][0-9][0-9]*-.+\.md$ ]] \
+          || ! ralph_architecture_review_finalizer_contract \
+            "$worktree/.ralph/config.yaml" "$worktree/.ralph/state.json" \
+            "$worktree/$path" "$worktree/docs/working/HIGH_RISK_APPROVALS.md" \
+            true >/dev/null; then
+        echo "New corrective slice is neither numeric nor an approved terminal finalizer: $base" >&2
+        return 1
+      fi
     fi
     status="$(awk '/^## Status/ { getline; print; exit }' "$worktree/$path")"
     if [[ "$status" != "Not Started" ]]; then

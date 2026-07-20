@@ -110,15 +110,23 @@ esac
 
 if (( resume_failed == 1 )); then
   repair_context="$repo_root/.ralph/repair-context.json"
-  if [[ "$normalized_mode" != "repair" ]]; then
-    echo "--resume-failed is valid only in repair mode." >&2
+  if [[ "$normalized_mode" != "repair" && "$normalized_mode" != "architecture_review" ]]; then
+    echo "--resume-failed is valid only in repair or architecture-review mode." >&2
     exit 2
   fi
   if ! ralph_repair_context_is_resumable "$repo_root" "$repair_context"; then
     echo "Refusing same-worktree repair: structured repair context is missing, stale, or unsafe." >&2
     exit 1
   fi
-  selected_slice="$(ralph_repair_context_value "$repair_context" slice_id)"
+  context_slice="$(ralph_repair_context_value "$repair_context" slice_id)"
+  if [[ "$normalized_mode" == "architecture_review" ]]; then
+    [[ "$context_slice" == "architecture-review" ]] || {
+      echo "Refusing architecture-review resume for non-review context: $context_slice" >&2
+      exit 1
+    }
+  else
+    selected_slice="$context_slice"
+  fi
   resume_worktree="$(ralph_repair_context_value "$repair_context" worktree)"
   failed_run_id="$(ralph_repair_context_value "$repair_context" run_id)"
 fi

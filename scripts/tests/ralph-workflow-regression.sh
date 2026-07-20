@@ -43,6 +43,9 @@ source scripts/lib/ralph-merge-guard.sh
   || fail "iteration-limit status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_REVIEW_CONVERGENCE")" == "review_convergence" ]] \
   || fail "review-convergence status misclassified"
+[[ "$(ralph_outcome_for_status "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE")" == \
+    "review_terminal_recurrence" ]] \
+  || fail "terminal-review recurrence status misclassified"
 [[ "$(ralph_outcome_for_status 1)" == "failed" ]] || fail "generic failure misclassified"
 
 [[ -f scripts/lib/ralph-postgresql-acceptance.sh ]] || fail "missing PostgreSQL acceptance predicate"
@@ -1626,6 +1629,190 @@ if ralph_validate_architecture_review_convergence \
   fail "third correction for the same root escaped the convergence cap"
 fi
 
+# A standing owner policy may admit exactly one terminal CR for an exhausted
+# root. The review transition keeps the exhausted generation stable, maps all
+# grouped roots to the terminal CR, and lets the fully gated CR clear every root
+# that it actually closes without another review/task cycle.
+auto_finalizer_repo="$fixture_dir/auto-finalizer-repo"
+auto_finalizer_dir="$auto_finalizer_repo/docs/slices"
+mkdir -p "$auto_finalizer_repo/.ralph" "$auto_finalizer_dir" \
+  "$auto_finalizer_repo/docs/working"
+auto_finalizer_config="$auto_finalizer_repo/.ralph/config.yaml"
+cp "$convergence_config" "$auto_finalizer_config"
+auto_finalizer_slice="$auto_finalizer_dir/CR-014-servicing-terminal-finalizer.md"
+cat > "$auto_finalizer_slice" <<'EOF'
+# Slice CR-014: Servicing terminal finalizer
+## Status
+Not Started
+## Parent Epic
+Epic 010: Servicing
+## Depends On
+- 010J
+## Architecture Review Finalizer
+- Epic: 010
+- Root ID: ROOT-010-RATE-VERSION-OWNER
+- Exhausted corrective generation: 2
+## Risk Level
+High
+EOF
+cat > "$auto_finalizer_dir/010J-reminder.md" <<'EOF'
+## Status
+Complete
+## Depends On
+- None
+EOF
+auto_finalizer_approvals="$auto_finalizer_repo/docs/working/HIGH_RISK_APPROVALS.md"
+cat > "$auto_finalizer_approvals" <<'EOF'
+# Finalizer approvals
+- [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | owner regression approval
+EOF
+auto_finalizer_packet="$fixture_dir/auto-finalizer-packet.md"
+cat > "$auto_finalizer_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Carried | rate.log | CR-014 | - |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Carried | interest.log | CR-014 | - |
+EOF
+auto_finalizer_state="$auto_finalizer_repo/.ralph/state.json"
+cat > "$auto_finalizer_state" <<'EOF'
+{
+  "architecture_review_due": true,
+  "architecture_review_due_reason": "cadence:4",
+  "architecture_review_root_generations": {
+    "ROOT-010-RATE-VERSION-OWNER": {
+      "epic": "010",
+      "generation": 2,
+      "corrective_slice": "010E4",
+      "finding_id": "AR-010-RATE-001",
+      "severity": "High"
+    },
+    "ROOT-010-INTEREST-OWNER-TRUTH": {
+      "epic": "010",
+      "generation": 1,
+      "corrective_slice": "010H2",
+      "finding_id": "AR-010-INTEREST-001",
+      "severity": "High"
+    }
+  },
+  "architecture_review_terminal_roots": [],
+  "slices_completed_since_architecture_review": 4
+}
+EOF
+git init -q "$auto_finalizer_repo"
+git -C "$auto_finalizer_repo" add .ralph docs/working docs/slices/010J-reminder.md
+git -C "$auto_finalizer_repo" -c user.name='Ralph Regression' \
+  -c user.email='ralph-regression@example.invalid' commit -qm fixture
+[[ "$(ralph_architecture_review_new_corrective_count "$auto_finalizer_repo")" == 1 ]] \
+  || fail "terminal CR was not counted as one validated corrective"
+ralph_validate_architecture_review_convergence \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals" \
+  || fail "standing owner policy did not admit one bounded terminal finalizer"
+
+# The standing generation-2 policy must not legitimize corrupt/legacy state
+# already beyond that exact cap; such a CR would be rejected at product time.
+overcap_state="$auto_finalizer_repo/.ralph/overcap-state.json"
+python3 - "$auto_finalizer_state" "$overcap_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+state["architecture_review_root_generations"]["ROOT-010-RATE-VERSION-OWNER"]["generation"] = 3
+open(sys.argv[2], "w").write(json.dumps(state) + "\n")
+PY
+cat > "$auto_finalizer_dir/CR-015-overcap-finalizer.md" <<'EOF'
+# Slice CR-015: Invalid over-cap finalizer
+## Status
+Not Started
+## Parent Epic
+Epic 010: Servicing
+## Depends On
+- 010J
+## Architecture Review Finalizer
+- Epic: 010
+- Root ID: ROOT-010-RATE-VERSION-OWNER
+- Exhausted corrective generation: 3
+## Risk Level
+High
+EOF
+overcap_packet="$fixture_dir/overcap-finalizer-packet.md"
+cat > "$overcap_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Carried | rate.log | CR-015 | - |
+EOF
+if ralph_validate_architecture_review_convergence \
+    "$auto_finalizer_config" "$overcap_state" "$overcap_packet" \
+    "$auto_finalizer_dir" "$auto_finalizer_approvals" >/dev/null 2>&1; then
+  fail "standing generation-2 policy admitted a corrupt generation-3 root"
+fi
+ralph_apply_architecture_review_root_transitions \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals"
+python3 - "$auto_finalizer_state" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_due"] = False
+state.pop("architecture_review_due_reason", None)
+path.write_text(json.dumps(state) + "\n")
+PY
+ralph_mark_architecture_review_terminal_finalizer_due \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_dir" \
+  "$auto_finalizer_approvals"
+python3 - "$auto_finalizer_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+roots = state["architecture_review_root_generations"]
+if roots["ROOT-010-RATE-VERSION-OWNER"]["generation"] != 2:
+    raise SystemExit("terminal finalizer incorrectly created a third ordinary generation")
+if roots["ROOT-010-RATE-VERSION-OWNER"]["corrective_slice"] != "CR-014":
+    raise SystemExit("exhausted root was not mapped to its terminal finalizer")
+if roots["ROOT-010-INTEREST-OWNER-TRUTH"]["generation"] != 2:
+    raise SystemExit("grouped non-exhausted root did not advance normally")
+if state.get("architecture_review_due_reason") != "terminal_finalizer:ROOT-010-RATE-VERSION-OWNER":
+    raise SystemExit("review did not retain the narrow terminal-finalizer barrier")
+PY
+[[ "$(ralph_architecture_review_effective_due \
+      "$auto_finalizer_state" "$auto_finalizer_dir")" == False ]] \
+  || fail "terminal finalizer did not pass the retained review barrier"
+[[ "$(ralph_architecture_review_finalizer_contract \
+      "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_slice" \
+      "$auto_finalizer_approvals")" == $'010\tROOT-010-RATE-VERSION-OWNER' ]] \
+  || fail "standing finalizer policy did not authorize the exact terminal CR"
+ralph_finalize_architecture_review_cycle \
+  "$auto_finalizer_state" 010 ROOT-010-RATE-VERSION-OWNER \
+  CR-014-servicing-terminal-finalizer auto-finalizer-run
+python3 - "$auto_finalizer_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+roots = state.get("architecture_review_root_generations", {})
+if "ROOT-010-RATE-VERSION-OWNER" in roots or "ROOT-010-INTEREST-OWNER-TRUTH" in roots:
+    raise SystemExit("terminal finalizer retained a grouped root it closed")
+if state.get("architecture_review_terminal_roots") != ["ROOT-010-RATE-VERSION-OWNER"]:
+    raise SystemExit("terminal root history was not retained")
+record = state.get("last_architecture_review_finalizer", {})
+if record.get("root_ids") != [
+    "ROOT-010-INTEREST-OWNER-TRUTH", "ROOT-010-RATE-VERSION-OWNER"
+]:
+    raise SystemExit("terminal finalizer audit omitted grouped roots")
+PY
+terminal_recurrence_packet="$fixture_dir/terminal-recurrence-packet.md"
+cat > "$terminal_recurrence_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Carried | rate.log | 010Z9 | - |
+EOF
+terminal_recurrence_rc=0
+ralph_validate_architecture_review_convergence \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_recurrence_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals" >/dev/null 2>&1 \
+  || terminal_recurrence_rc=$?
+[[ "$terminal_recurrence_rc" == "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE" ]] \
+  || fail "terminally finalized root restarted an ordinary corrective cycle"
+
 # After the corrective-generation budget is exhausted, only a protected,
 # owner-approved CR may finalize the epic boundary. Its successful full gates
 # replace another immediate review/task generation; ordinary slices cannot
@@ -1742,6 +1929,7 @@ if state.get("slices_completed_since_architecture_review") != 0:
     raise SystemExit("validated finalizer did not reset the review cadence")
 if state.get("last_architecture_review_finalizer") != {
     "epic": "009", "root_id": "ROOT-009-OWNER-BOUNDARY",
+    "root_ids": ["ROOT-009-OWNER-BOUNDARY"],
     "slice_id": "CR-013-finalizer", "run_id": "finalizer-run"
 }:
     raise SystemExit("validated finalizer audit record is incomplete")
@@ -2257,6 +2445,8 @@ if rg -n 'grep -q .*No eligible slice found|grep -q .*has been vetoed by the own
 fi
 rg -q 'ralph_max_repair_attempts' scripts/ralph-loop.sh \
   || fail "Ralph loop ignores run.max_retries"
+rg -q '^[[:space:]]*max_retries: 1' .ralph/config.yaml \
+  || fail "unchanged failures still receive more than the one owner-approved repair"
 rg -q 'ralph_max_progressive_repair_attempts' scripts/ralph-loop.sh \
   || fail "Ralph loop ignores the overall progressive repair ceiling"
 rg -q 'repairs_for_signature=0' scripts/ralph-loop.sh \
@@ -2267,6 +2457,22 @@ rg -q 'total_repair_attempts < max_progressive_repair_attempts' scripts/ralph-lo
   || fail "Ralph loop does not continue through distinct failures up to the safety ceiling"
 rg -q -- '--resume-failed' scripts/ralph-loop.sh \
   || fail "Ralph loop does not reuse the failed worktree during bounded repairs"
+rg -qF 'Architecture review validation failed; repairing its quarantined candidate' \
+  scripts/ralph-loop.sh \
+  || fail "architecture-review validation failures still repeat the full critique"
+rg -qF 'converting the validated grouped corrective into the one owner-preauthorized terminal finalizer' \
+  scripts/ralph-loop.sh \
+  || fail "convergence exhaustion has no bounded same-worktree terminal rewrite"
+if sed -n '/review_status == RALPH_EXIT_REVIEW_CONVERGENCE/,/Architecture-review convergence is exhausted/p' \
+    scripts/ralph-loop.sh | rg -q 'review_failures_this_loop=.*\+ 1'; then
+  fail "terminal-finalizer admission still consumes the generic review repair budget"
+fi
+rg -qF 'RALPH_TERMINAL_FINALIZER_REWRITE' scripts/ralph-run.sh \
+  || fail "terminal rewrite does not receive a narrow corrective prompt"
+rg -qF 'one next-numbered CR-NNN terminal finalizer' scripts/ralph-run.sh \
+  || fail "architecture reviewer is not instructed to use the standing terminal transition"
+[[ -x scripts/ralph-supervise.sh ]] \
+  || fail "unattended Ralph supervisor is missing or not executable"
 rg -q 'ralph_repair_context_value' scripts/afk-dev.sh \
   || fail "AFK repair entrypoint does not load structured repair context"
 rg -q -- '--resume-worktree' scripts/ralph-run.sh \
@@ -2368,7 +2574,7 @@ if trusted_retry > corrective_context:
 runner = Path('scripts/ralph-run.sh').read_text()
 if 'oversized-slice-split-results.md' not in runner or 'failure-summary.md' not in runner:
     raise SystemExit('FAIL: corrective split prompt omits prior independent validation evidence')
-if '"$mode" != "architecture_review" || -n "$split_slice_id"' not in runner:
+if 'ralph_write_repair_context' not in runner or 'if (( no_worktree == 0 )); then' not in runner:
     raise SystemExit('FAIL: failed split validation does not publish a trusted retry context')
 if loop.count('if (( split_status == RALPH_EXIT_AGENT_LIMIT )); then') < 2:
     raise SystemExit('FAIL: second split-planning agent exhaustion loses the clean limit stop')
@@ -3102,7 +3308,7 @@ rg -qF 'COMMIT_QUARANTINED: post-commit integrity failure' scripts/ralph-run.sh 
   || fail "post-commit failures can re-enter incompatible product repair"
 rg -qF 'if (( no_worktree == 0 ))' scripts/ralph-run.sh \
   || fail "no-worktree commit failure can dereference an unset quarantine branch"
-rg -qF 'if (( no_worktree == 0 )) && [[ "$mode" != "architecture_review" || -n "$split_slice_id" ]]; then' scripts/ralph-run.sh \
+rg -qF 'if (( no_worktree == 0 )); then' scripts/ralph-run.sh \
   || fail "no-worktree validation failure can publish non-resumable repair context"
 if rg -qF 'prior_due or cadence_due' scripts/ralph-run.sh; then
   fail "inline due logic bypasses the tested mandatory-review transition helper"

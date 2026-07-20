@@ -12,6 +12,7 @@ readonly RALPH_EXIT_QUEUE_BLOCKED=24
 readonly RALPH_EXIT_BROWSER_INFRASTRUCTURE=25
 readonly RALPH_EXIT_ITERATION_LIMIT=26
 readonly RALPH_EXIT_REVIEW_CONVERGENCE=27
+readonly RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE=28
 
 ralph_outcome_for_status() {
   case "${1:?status is required}" in
@@ -24,6 +25,7 @@ ralph_outcome_for_status() {
     "$RALPH_EXIT_BROWSER_INFRASTRUCTURE") echo "browser_infrastructure" ;;
     "$RALPH_EXIT_ITERATION_LIMIT") echo "iteration_limit" ;;
     "$RALPH_EXIT_REVIEW_CONVERGENCE") echo "review_convergence" ;;
+    "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE") echo "review_terminal_recurrence" ;;
     *) echo "failed" ;;
   esac
 }

@@ -32,6 +32,7 @@ loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
 last_out=".ralph/logs/last-run-output.log"
 review_failures_this_loop=0
 max_review_attempts=2
+terminal_finalizer_rewrite=0
 max_repair_attempts="$(ralph_max_repair_attempts .ralph/config.yaml)"
 max_progressive_repair_attempts="$(ralph_max_progressive_repair_attempts .ralph/config.yaml)"
 
@@ -315,8 +316,20 @@ for ((i = 1; i <= max_iterations; i++)); do
       echo "Mandatory architecture review failed twice. Stopping before product work." | tee -a "$loop_log"
       exit 2
     fi
-    echo "Architecture review is due; running attempt $((review_failures_this_loop + 1))/$max_review_attempts before the next slice." | tee -a "$loop_log"
-    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
+    review_args=(1 --mode architecture-review)
+    if ralph_repair_context_is_resumable \
+        "$repo_root" "$repo_root/.ralph/repair-context.json" \
+        && [[ "$(ralph_repair_context_value \
+          "$repo_root/.ralph/repair-context.json" slice_id 2>/dev/null || true)" == \
+          "architecture-review" ]]; then
+      review_args+=(--resume-failed)
+      echo "Architecture review validation failed; repairing its quarantined candidate from the exact failure summary (attempt $((review_failures_this_loop + 1))/$max_review_attempts)." | tee -a "$loop_log"
+    else
+      echo "Architecture review is due; running attempt $((review_failures_this_loop + 1))/$max_review_attempts before the next slice." | tee -a "$loop_log"
+    fi
+    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high \
+      RALPH_TERMINAL_FINALIZER_REWRITE="$terminal_finalizer_rewrite" \
+      ./scripts/afk-dev.sh "${review_args[@]}"
     review_status=$?
     context_tripwire_check
     if (( review_status != 0 )); then
@@ -328,7 +341,20 @@ for ((i = 1; i <= max_iterations; i++)); do
         echo "Stopping: the validated review branch is preserved after a merge failure; refusing to duplicate the review." | tee -a "$loop_log"
         exit "$RALPH_EXIT_MERGE_FAILED"
       fi
+      if (( review_status == RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE )); then
+        echo "Architecture review rediscovered a root that already consumed its terminal finalizer. Stopping immediately; no further automatic correction is authorized for that root." | tee -a "$loop_log"
+        exit "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE"
+      fi
       if (( review_status == RALPH_EXIT_REVIEW_CONVERGENCE )); then
+        if (( terminal_finalizer_rewrite == 0 )) \
+            && ralph_architecture_review_auto_finalizer_policy_enabled \
+              .ralph/config.yaml docs/working/HIGH_RISK_APPROVALS.md \
+            && ralph_repair_context_is_resumable \
+              "$repo_root" "$repo_root/.ralph/repair-context.json"; then
+          terminal_finalizer_rewrite=1
+          echo "Architecture-review convergence reached its ordinary cap; converting the validated grouped corrective into the one owner-preauthorized terminal finalizer in the same quarantined worktree." | tee -a "$loop_log"
+          continue
+        fi
         echo "Architecture-review convergence is exhausted for the same root. Stopping after one classified attempt; do not duplicate the review. See the latest architecture-review-metrics-results.md." | tee -a "$loop_log"
         exit "$RALPH_EXIT_REVIEW_CONVERGENCE"
       fi
@@ -341,6 +367,7 @@ for ((i = 1; i <= max_iterations; i++)); do
       continue
     fi
     review_failures_this_loop=0
+    terminal_finalizer_rewrite=0
     if ! review_due="$(ralph_architecture_review_effective_due \
         .ralph/state.json docs/slices)"; then
       echo "Stopping: validated review left unreadable architecture-review state; product work was not started." | tee -a "$loop_log"

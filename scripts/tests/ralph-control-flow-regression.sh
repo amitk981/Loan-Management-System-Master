@@ -113,15 +113,37 @@ exit 0
 EOF
 cat > "$review_repo/scripts/afk-dev.sh" <<'EOF'
 #!/usr/bin/env bash
-printf '%s\n' "$*" >> .ralph/invocations.log
+printf '%s rewrite=%s\n' "$*" "${RALPH_TERMINAL_FINALIZER_REWRITE:-0}" >> .ralph/invocations.log
 if [[ " $* " == *" --mode architecture-review "* ]]; then
+  if [[ -s .ralph/review-exit-sequence ]]; then
+    review_status="$(sed -n '1p' .ralph/review-exit-sequence)"
+    sed '1d' .ralph/review-exit-sequence > .ralph/review-exit-sequence.next
+    mv .ralph/review-exit-sequence.next .ralph/review-exit-sequence
+    (( review_status != 0 )) && touch .ralph/repair-ready
+    if (( review_status == 0 )); then
+      printf '%s\n' '{"architecture_review_due": false}' > .ralph/state.json
+    fi
+    exit "$review_status"
+  fi
   if [[ -f .ralph/review-exit ]]; then
     exit "$(cat .ralph/review-exit)"
   fi
   [[ -f .ralph/review-succeeds ]] && exit 0
   exit 1
 fi
+[[ -f .ralph/normal-queue-empty ]] && exit 20
 exit 0
+EOF
+cat >> "$review_repo/scripts/lib/ralph-repair-context.sh" <<'EOF'
+
+# Fixture override: model a trusted quarantined architecture-review candidate.
+ralph_repair_context_is_resumable() {
+  [[ -f "$1/.ralph/repair-ready" ]]
+}
+ralph_repair_context_value() {
+  [[ "$2" == "slice_id" ]] || return 1
+  printf '%s\n' architecture-review
+}
 EOF
 chmod +x "$review_repo/scripts/ralph-loop.sh" \
   "$review_repo/scripts/ralph-recover.sh" "$review_repo/scripts/afk-dev.sh"
@@ -176,6 +198,110 @@ set -e
 grep -qF 'Architecture-review convergence is exhausted for the same root.' \
   "$review_repo/convergence-review.stdout" \
   || fail "convergence exhaustion did not report its exact owner action"
+
+# A normal review repair and terminal rewrite have independent budgets. If an
+# ordinary failure is repaired before convergence is discovered, the rewrite
+# must still get exactly one same-worktree attempt.
+rm -f "$review_repo/.ralph/review-exit" "$review_repo/.ralph/repair-ready"
+: > "$review_repo/.ralph/invocations.log"
+mkdir -p "$review_repo/docs/working"
+printf '%s\n' \
+  '- [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | regression' \
+  > "$review_repo/docs/working/HIGH_RISK_APPROVALS.md"
+printf '%s\n' '1' "$RALPH_EXIT_REVIEW_CONVERGENCE" '0' \
+  > "$review_repo/.ralph/review-exit-sequence"
+touch "$review_repo/.ralph/normal-queue-empty"
+printf '%s\n' '{"architecture_review_due": true}' > "$review_repo/.ralph/state.json"
+set +e
+(
+  cd "$review_repo"
+  ./scripts/ralph-loop.sh 1 > repaired-convergence-review.stdout 2>&1
+)
+repaired_convergence_rc=$?
+set -e
+if [[ "$repaired_convergence_rc" != 0 ]]; then
+  sed -n '1,240p' "$review_repo/repaired-convergence-review.stdout" >&2
+fi
+[[ "$repaired_convergence_rc" == 0 ]] \
+  || fail "review repair followed by terminal rewrite returned $repaired_convergence_rc"
+[[ "$(grep -c -- '--mode architecture-review' "$review_repo/.ralph/invocations.log")" == 3 ]] \
+  || fail "review repair plus terminal rewrite did not use exactly three bounded attempts"
+grep -- '--mode architecture-review' "$review_repo/.ralph/invocations.log" | tail -n 1 \
+  | grep -qF 'rewrite=1' \
+  || fail "the independent terminal-finalizer attempt was not marked as a rewrite"
+rm -f "$review_repo/.ralph/normal-queue-empty" "$review_repo/.ralph/repair-ready"
+printf '%s\n' '{"architecture_review_due": true}' > "$review_repo/.ralph/state.json"
+
+source "$repo_root/scripts/lib/ralph-supervisor.sh"
+[[ "$(ralph_supervisor_outcome_for_status 0)" == complete ]] \
+  || fail "supervisor misclassified successful completion"
+[[ "$(ralph_supervisor_outcome_for_status "$RALPH_EXIT_AGENT_LIMIT")" == retry ]] \
+  || fail "supervisor will not wait through an agent limit"
+[[ "$(ralph_supervisor_outcome_for_status "$RALPH_EXIT_BROWSER_INFRASTRUCTURE")" == retry ]] \
+  || fail "supervisor will not retry bounded browser infrastructure recovery"
+[[ "$(ralph_supervisor_outcome_for_status 137)" == retry ]] \
+  || fail "supervisor will not restart after a killed child loop"
+[[ "$(ralph_supervisor_outcome_for_status "$RALPH_EXIT_REVIEW_CONVERGENCE")" == stop ]] \
+  || fail "unapproved convergence exhaustion incorrectly restarts forever"
+[[ "$(ralph_supervisor_outcome_for_status "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE")" == stop ]] \
+  || fail "terminal root recurrence incorrectly restarts forever"
+[[ "$(ralph_supervisor_outcome_for_status 2)" == stop ]] \
+  || fail "unsafe state failure incorrectly restarts forever"
+
+# An owner signal must terminate the supervised loop and its descendants, not
+# merely the outer shell while an agent or validator keeps the run lock alive.
+supervisor_repo="$fixture_dir/supervisor-repo"
+mkdir -p "$supervisor_repo/scripts/lib"
+cp scripts/ralph-supervise.sh "$supervisor_repo/scripts/ralph-supervise.sh"
+cp scripts/lib/ralph-exit-protocol.sh scripts/lib/ralph-supervisor.sh \
+  "$supervisor_repo/scripts/lib/"
+cat > "$supervisor_repo/scripts/ralph-loop.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$$" > loop.pid
+sleep 300 &
+printf '%s\n' "$!" > descendant.pid
+wait
+EOF
+chmod +x "$supervisor_repo/scripts/ralph-supervise.sh" \
+  "$supervisor_repo/scripts/ralph-loop.sh"
+git init -q "$supervisor_repo"
+for owner_signal in TERM INT; do
+  rm -f "$supervisor_repo/loop.pid" "$supervisor_repo/descendant.pid"
+  (
+    cd "$supervisor_repo"
+    exec env RALPH_SUPERVISOR_BASE_DELAY_SECONDS=0 python3 \
+      - "$supervisor_repo/scripts/ralph-supervise.sh" \
+      > supervisor.stdout 2>&1 <<'PY'
+import os
+import signal
+import sys
+
+script = sys.argv[1]
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+signal.signal(signal.SIGTERM, signal.SIG_DFL)
+os.execv(script, [script])
+PY
+  ) &
+  supervisor_pid=$!
+  for _ in {1..100}; do
+    [[ -s "$supervisor_repo/loop.pid" && -s "$supervisor_repo/descendant.pid" ]] && break
+    sleep 0.05
+  done
+  [[ -s "$supervisor_repo/loop.pid" && -s "$supervisor_repo/descendant.pid" ]] \
+    || fail "supervisor $owner_signal fixture did not start its process tree"
+  loop_pid="$(cat "$supervisor_repo/loop.pid")"
+  descendant_pid="$(cat "$supervisor_repo/descendant.pid")"
+  kill -s "$owner_signal" "$supervisor_pid"
+  wait "$supervisor_pid" 2>/dev/null || true
+  for pid in "$loop_pid" "$descendant_pid"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -KILL "$pid" 2>/dev/null || true
+      fail "owner $owner_signal left supervised Ralph process $pid alive"
+    fi
+  done
+  grep -qF 'Supervisor stopped by owner signal.' "$supervisor_repo/supervisor.stdout" \
+    || fail "supervisor did not report the owner $owner_signal stop"
+done
 
 : > "$review_repo/.ralph/invocations.log"
 printf '%s\n' "$RALPH_EXIT_MERGE_FAILED" > "$review_repo/.ralph/review-exit"
