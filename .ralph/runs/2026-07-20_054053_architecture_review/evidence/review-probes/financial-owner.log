@@ -1,0 +1,11 @@
+Finding ID: AR-010-RATE-001
+Root ID: ROOT-010-RATE-VERSION-OWNER
+Finding ID: AR-010-ALLOCATION-001
+Root ID: ROOT-010-ALLOCATION-ADMISSION
+FAILING SIGNAL: AR-010-RATE-001: activation closes an open predecessor without checking consumed dates
+FAILING SIGNAL: AR-010-RATE-001: InterestRateConfig has no immutable manager/save boundary for active rows
+FAILING SIGNAL: AR-010-RATE-001: rate fan-out records history but never advances LoanAccount.current_interest_rate
+FAILING SIGNAL: AR-010-ALLOCATION-001: allocation replay recomputes mutable receipt status instead of the original response
+FAILING SIGNAL: AR-010-RATE-001: activation replay recomputes mutable notice summaries instead of the original response
+REVIEW_PROBE_EXIT: 1
+Exit code: 1

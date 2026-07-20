@@ -1,0 +1,7 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_repayment_adjustment_api.RepaymentAdjustmentApiTests.test_allocation_requires_posted_sap_decision_and_idempotency_key sfpcl_credit.tests.test_statement_evidence_owner_scope_closure.StatementEvidenceOwnerScopeClosureTests.test_direct_capture_rejects_nonexistent_statement_line_evidence --verbosity 1
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+Ran 2 tests in 1.211s
+OK
+EXIT_CODE: 0

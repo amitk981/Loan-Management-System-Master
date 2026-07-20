@@ -1,0 +1,6 @@
+Finding ID: AR-010-STATEMENT-001
+Root ID: ROOT-010-STATEMENT-EVIDENCE
+FAILING SIGNAL: the owner checks conflicting application references but never conflicting borrower identities
+FAILING SIGNAL: AC-STATEMENT-3's ambiguity matrix asserts only the application-conflict branch
+REVIEW_PROBE_EXIT: 1
+Exit code: 1

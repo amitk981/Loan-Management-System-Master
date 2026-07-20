@@ -1,0 +1,8 @@
+Finding ID: AR-010-LEDGER-001
+Root ID: ROOT-010-LEDGER-PAGINATION
+FAILING SIGNAL: ledger still materializes allocation and reversal histories before count/slice
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+FAILING SIGNAL: changed acceptance tests still instantiate other TestCase fixtures and call setUp directly
+REVIEW_PROBE_EXIT: 1
+Exit code: 1
