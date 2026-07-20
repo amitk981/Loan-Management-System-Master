@@ -21,6 +21,63 @@ from sfpcl_credit.tests.test_interest_accrual_api import MonthlyInterestAccrualA
 from sfpcl_credit.tests.test_interest_capitalisation_api import (
     InterestCapitalisationApiTests,
 )
+from sfpcl_credit.tests.test_dpd_monitoring_api import DpdMonitoringApiTests
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class DpdSnapshotPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from datetime import date
+
+        from sfpcl_credit.loans.models import RepaymentSchedule
+
+        fixture = DpdMonitoringApiTests(
+            "test_calculate_first_overdue_day_from_schedule_truth"
+        )
+        fixture.setUp()
+        RepaymentSchedule.objects.create(
+            loan_account=fixture.account,
+            installment_number=1,
+            due_date=date(2026, 6, 30),
+            principal_due="1000.00",
+            interest_due="100.00",
+            charges_due="0.00",
+            total_due="1100.00",
+            schedule_status="pending",
+        )
+        self.fixture = fixture
+
+    def test_same_date_race_retains_one_snapshot_audit_and_current_pointer(self):
+        barrier = Barrier(2)
+
+        def submit(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/loan-accounts/{self.fixture.account.pk}/dpd-status/calculate/",
+                    data=json.dumps({"as_of_date": "2026-07-01"}),
+                    content_type="application/json",
+                    **self.fixture.auth,
+                ).status_code
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, range(2)))
+
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.monitoring.models import DpdStatus
+
+        self.fixture.account.refresh_from_db()
+        row = DpdStatus.objects.get()
+        self.assertEqual(statuses, [200, 200])
+        self.assertEqual(
+            AuditLog.objects.filter(action="monitoring.dpd.calculated").count(), 1
+        )
+        self.assertEqual(self.fixture.account.current_dpd_status_id, row.pk)
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

@@ -1,0 +1,12 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/tests/test_credit_model_ownership_migration.py
+ M sfpcl_credit/tests/test_servicing_postgresql_acceptance.py
+ M sfpcl_credit/tests/test_witness_evidence_migration.py
+?? .ralph/runs/2026-07-20_153054_normal_run/
+?? .ralph/runs/2026-07-20_162904_repair/
+?? sfpcl_credit/monitoring/
+?? sfpcl_credit/tests/test_dpd_monitoring_api.py

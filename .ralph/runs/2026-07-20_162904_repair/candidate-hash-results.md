@@ -1,0 +1,6 @@
+# Candidate Hash Results
+
+Before validation: 8877db31dbcbe3ae6cb3f7fafec6eff308f3939093ec7fe25bd1b8bad48d8efe
+Commit candidate before validation: b50667fd6777737c9ade3158ecdb33e6efedb89b154a6e79243c1119981ceb17
+After validation: 8877db31dbcbe3ae6cb3f7fafec6eff308f3939093ec7fe25bd1b8bad48d8efe
+PASS: candidate content remained frozen throughout validation.

@@ -4781,3 +4781,39 @@ configuration, incoherent account balances, or communication setup failure retur
 error. Permission or object-scope denial returns `403`; malformed/caller-money input returns `400`;
 financial/state conflicts return `409`. A database unique constraint and locked PostgreSQL
 transaction ensure concurrent finalisers retain one capitalisation and one ledger movement.
+
+## DPD calculation and monitoring buckets (010I)
+
+`POST /api/v1/loan-accounts/{loan_account_id}/dpd-status/calculate/` accepts exactly an ISO
+`as_of_date` and requires `monitoring.dpd.calculate` plus canonical loan-account scope. The loan
+must be in an active servicing state. The monitoring owner locks the account, reconstructs each due
+schedule line from immutable principal/interest due amounts and allocation/reversal ledger movements
+whose transaction date is on or before the requested date, and derives days past due from the
+earliest still-unpaid due date. It never accepts caller amounts, dates other than `as_of_date`, or a
+caller bucket.
+
+One immutable snapshot is retained per loan/as-of date. It includes principal, interest and total
+overdue; calendar-anniversary SOP classification (`current`, `one_to_two_years`,
+`two_to_three_years`, `more_than_three_years`); optional separately configured operational
+classification (`0_30`, `31_60`, `61_90`, `over_90`); calculation and operational-scheme versions;
+source inputs; actor/audit evidence; and creation time. No effective operational scheme yields
+`standard_bucket: null`; overlapping effective schemes fail closed. A loan with no unpaid due
+schedule is current with zero amounts and no standard bucket. Exact loan/date replay returns the
+retained response, creates no second audit/snapshot, and cannot move the account's current pointer
+backward from a later as-of snapshot. Calculation never creates reminder, default, extension, or
+workflow state.
+
+`GET /api/v1/loan-accounts/{loan_account_id}/dpd-status/` requires the separate
+`monitoring.dpd.read` permission and the same account scope, and returns the current (greatest
+calculated as-of date) snapshot. Missing authentication returns `401`, missing permission returns
+`403`, inaccessible/missing account or snapshot returns `404`, malformed input returns `400`, and
+inactive loan or ambiguous operational policy returns `409`.
+
+`POST /api/v1/dpd-statuses/bulk-calculate/` accepts exactly `as_of_date`, unique
+`loan_account_ids` (maximum 100), and boolean `include_all_active_loans`. Callers select either one
+or more ids or their bounded scoped active portfolio, never both. It requires
+`monitoring.dpd.calculate`, invokes the same per-loan owner, persists one portfolio-run audit, and
+returns `run_id`, as-of date, calculated/skipped/failed counts, and one ordered outcome per selected
+loan. One invalid/inactive/inaccessible loan does not hide successful loan results. Concurrent
+same-loan/date requests serialize on the account and retain one snapshot, one calculation audit, and
+one current pointer.

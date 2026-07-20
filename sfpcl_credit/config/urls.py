@@ -24,6 +24,7 @@ from sfpcl_credit.identity.views import (
 )
 from sfpcl_credit.legal_documents import views as legal_document_views
 from sfpcl_credit.loans import views as loan_views
+from sfpcl_credit.monitoring import views as monitoring_views
 from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
@@ -32,6 +33,21 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/dpd-statuses/bulk-calculate/",
+        monitoring_views.dpd_bulk_calculate,
+        name="dpd-status-bulk-calculate",
+    ),
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/dpd-status/",
+        monitoring_views.dpd_status,
+        name="loan-account-dpd-status",
+    ),
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/dpd-status/calculate/",
+        monitoring_views.dpd_calculate,
+        name="loan-account-dpd-calculate",
+    ),
     path(
         "api/v1/interest-capitalisations/check/",
         interest_views.capitalisation_check,

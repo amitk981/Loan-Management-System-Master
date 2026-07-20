@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_snapshot_is_unique_per_date_and_append_only (sfpcl_credit.tests.test_dpd_monitoring_api.DpdMonitoringApiTests.test_snapshot_is_unique_per_date_and_append_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_153054_normal_run/sfpcl_credit/tests/test_dpd_monitoring_api.py", line 277, in test_snapshot_is_unique_per_date_and_append_only
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.585s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_calendar_and_configured_operational_bucket_boundaries (sfpcl_credit.tests.test_dpd_monitoring_api.DpdMonitoringApiTests.test_calendar_and_configured_operational_bucket_boundaries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_153054_normal_run/sfpcl_credit/tests/test_dpd_monitoring_api.py", line 220, in test_calendar_and_configured_operational_bucket_boundaries
+    self.assertIsNone(no_unpaid_schedule.json()["data"]["standard_bucket"])
+AssertionError: '0_30' is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.597s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

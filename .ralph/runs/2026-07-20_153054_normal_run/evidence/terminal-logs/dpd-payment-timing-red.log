@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_later_posted_repayment_does_not_reduce_earlier_snapshot (sfpcl_credit.tests.test_dpd_monitoring_api.DpdPaymentTimingApiTests.test_later_posted_repayment_does_not_reduce_earlier_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_153054_normal_run/sfpcl_credit/tests/test_dpd_monitoring_api.py", line 125, in test_later_posted_repayment_does_not_reduce_earlier_snapshot
+    self.assertEqual(
+AssertionError: '0.00' != '100000.00'
+- 0.00
++ 100000.00
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.646s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

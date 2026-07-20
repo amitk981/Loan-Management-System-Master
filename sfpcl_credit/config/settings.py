@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.security_instruments",
     "sfpcl_credit.identity",
     "sfpcl_credit.members",
+    "sfpcl_credit.monitoring",
     "sfpcl_credit.scheduler",
     "sfpcl_credit.tracer",
     "sfpcl_credit.workflows",
