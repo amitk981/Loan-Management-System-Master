@@ -72,11 +72,16 @@ run folder before independent validation:
 
 The validator reads the closure contract from the fixed-point slice, requires the candidate slice
 to remain byte-for-byte identical, and checks exact ID/root continuity, a discoverable permanent
-test file plus parser/declaration-resolvable selector, distinct non-empty RED and GREEN logs containing that exact test
+test file plus parser/declaration-resolvable selector (either `path/to/test.py::Class::test_name` or
+an exact Django dotted test label), distinct non-empty RED and GREEN logs containing that exact test
 specification and failing/positive-passing-plus-explicit-zero-exit signals, and exactly one similarly bound evidence row for every
 declared acceptance ID. Missing, ignored, unrelated, or candidate-weakened evidence stops before
 expensive product gates and repairs the same slice; a green full suite cannot substitute for this
-closure contract.
+closure contract. A blank line terminates each machine-readable Markdown table, so explanatory prose
+may follow that boundary without becoming a malformed row. Corrective agents must run the exact fast
+preflight printed in their prompt—`scripts/ralph-validate-review-closure.sh`—until it passes before
+returning; repair agents likewise clear every error revealed by that same validator in one bounded
+validation-domain repair rather than consuming one turn per formatting symptom.
 
 ## Start Commands
 - Run the whole queue autonomously ("run ralph loop"): `./scripts/ralph-loop.sh`

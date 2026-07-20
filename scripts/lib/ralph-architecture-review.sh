@@ -1011,11 +1011,18 @@ def section(text: str, heading: str) -> list[str] | None:
     next_heading = re.search(r"(?m)^## ", tail)
     if next_heading:
         tail = tail[: next_heading.start()]
-    return [line.strip() for line in tail.splitlines() if line.strip()]
+    # Preserve blank lines: in Markdown they terminate a table. Human-readable
+    # notes after that boundary are not additional machine-readable rows.
+    return [line.strip() for line in tail.splitlines()]
 
 
 def table(lines: list[str] | None, headers: list[str], label: str) -> list[dict[str, str]]:
-    if lines is None or len(lines) < 3:
+    if lines is None:
+        raise SystemExit(f"Missing or empty exact '## {label}' table.")
+    lines = list(lines)
+    while lines and not lines[0]:
+        lines.pop(0)
+    if len(lines) < 3:
         raise SystemExit(f"Missing or empty exact '## {label}' table.")
 
     def cells(line: str) -> list[str]:
@@ -1031,7 +1038,14 @@ def table(lines: list[str] | None, headers: list[str], label: str) -> list[dict[
     ):
         raise SystemExit(f"{label} has an invalid Markdown separator row.")
     rows = []
+    table_ended = False
     for line in lines[2:]:
+        if not line:
+            if rows:
+                table_ended = True
+            continue
+        if table_ended:
+            continue
         values = cells(line)
         if len(values) != len(headers) or any(not value for value in values):
             raise SystemExit(f"{label} contains an incomplete row: {line}")
@@ -1077,9 +1091,32 @@ def candidate_visible(candidate: Path, label: str) -> None:
 
 
 def validate_test_spec(value: str, label: str) -> None:
-    if "::" not in value:
-        raise SystemExit(f"{label} must bind a permanent test file to an exact selector: {value}")
-    path_value, selector = value.split("::", 1)
+    if "::" in value:
+        path_value, selector = value.split("::", 1)
+    else:
+        # Django's native dotted test labels are exact executable selectors.
+        # Resolve the longest importable file prefix, then validate the
+        # remaining class/function path through the same AST checks below.
+        dotted = value.split(".")
+        if len(dotted) < 2 or any(
+            not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", part)
+            for part in dotted
+        ):
+            raise SystemExit(
+                f"{label} must bind a permanent test file to an exact selector: {value}"
+            )
+        path_value = ""
+        selector = ""
+        for split_at in range(len(dotted) - 1, 0, -1):
+            candidate_value = "/".join(dotted[:split_at]) + ".py"
+            if (worktree / candidate_value).is_file():
+                path_value = candidate_value
+                selector = "::".join(dotted[split_at:])
+                break
+        if not path_value or not selector:
+            raise SystemExit(
+                f"{label} has an unresolved Django test selector: {value}"
+            )
     if not selector.strip():
         raise SystemExit(f"{label} has an empty test selector: {value}")
     test_path = safe_file(worktree, path_value, label)

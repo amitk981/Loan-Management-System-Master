@@ -419,9 +419,17 @@ EOF
 fi
 
 if [[ -n "$resume_worktree" ]]; then
-  repair_instruction="- In repair mode: work in this existing quarantined worktree. Diagnose $previous_failure_summary first, preserve the slice's current uncommitted implementation, fix only the demonstrated failure, and rely on full independent revalidation before any commit."
+  repair_instruction="- In repair mode: work in this existing quarantined worktree. Diagnose $previous_failure_summary first and preserve the slice's current uncommitted implementation. Fix the demonstrated failing validation domain only; within that domain, rerun the exact named validator until it passes and correct every error it reports or subsequently reveals. Newly exposed errors from the same validator are part of the same bounded repair, not permission to change unrelated product scope. Rely on full independent revalidation before any commit."
 else
   repair_instruction="- In repair mode: first diagnose the most recent failure — read failure-summary.md in the newest failed .ralph/runs/*/ folder (failed checks, last log lines, changed files); open the full gate logs only if that summary is insufficient, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh."
+fi
+
+closure_preflight_instruction=""
+if [[ "$mode" != "architecture_review" \
+    && -f "$worktree_dir/docs/slices/$slice_file" ]] \
+    && grep -q '^## Review Finding Closure[[:space:]]*$' \
+      "$worktree_dir/docs/slices/$slice_file"; then
+  closure_preflight_instruction="- This corrective slice has a machine-readable closure contract. Before returning, run exactly: ./scripts/ralph-validate-review-closure.sh --slice docs/slices/$slice_file --run-dir .ralph/runs/$run_id . Keep rerunning that fast check until it prints PASS. Markdown prose may follow a table only after a blank line; Python tests may use an exact path::selector or exact Django dotted test label. Do not defer a failure from this command to the orchestrator."
 fi
 
 split_instruction=""
@@ -492,6 +500,7 @@ Core requirements:
 - Prefer docs/working/digests/ over re-reading large docs/source files. Read only the digest shared invariants and the selected slice section by default. If the selected section lacks a required source fact, locate that fact with docs/working/maps/ and rg, then save only the missing distilled fact.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 $repair_instruction
+$closure_preflight_instruction
 $split_instruction
 $split_corrective_instruction
 $architecture_instruction

@@ -1029,6 +1029,9 @@ rg -q 'ralph-agent-logs' scripts/ralph-context-tripwire.py \
 architecture_scope_helper="scripts/lib/ralph-architecture-review.sh"
 [[ -f "$architecture_scope_helper" ]] \
   || fail "missing architecture-review change-scope helper"
+closure_preflight="scripts/ralph-validate-review-closure.sh"
+[[ -x "$closure_preflight" ]] \
+  || fail "missing executable agent-side semantic-closure preflight"
 # shellcheck source=../lib/ralph-slice-selection.sh
 source scripts/lib/ralph-slice-selection.sh
 # shellcheck source=../lib/ralph-architecture-review.sh
@@ -1243,6 +1246,75 @@ ralph_validate_review_finding_closure \
   "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
   "$closure_run" \
   || fail "valid corrective-slice semantic closure evidence was rejected"
+"$repo_root/$closure_preflight" \
+  --worktree "$semantic_review_repo" \
+  --slice "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  --run-dir "$closure_run" \
+  || fail "agent-side semantic-closure preflight rejected valid evidence"
+
+# Human commentary after a blank line is outside the Markdown table, and an
+# exact Django test label is as executable as a path::selector. Both patterns
+# occurred in real corrective runs and must pass the cheap agent-side validator
+# instead of consuming one or more full Ralph repair turns.
+cp "$closure_run/review-closure-evidence.md" \
+  "$closure_run/review-closure-evidence.md.canonical"
+django_test_spec='backend.tests.test_owner_boundary.test_failed_owner_boundary_is_hidden'
+sed "s#${test_spec}#${django_test_spec}#g" \
+  "$closure_run/review-closure-evidence.md.canonical" \
+  > "$closure_run/review-closure-evidence.md"
+cat >> "$closure_run/review-closure-evidence.md" <<'EOF'
+
+Additional human-readable acceptance context is retained above the raw logs.
+EOF
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed "s#${test_spec}#${django_test_spec}#g" \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.django"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.django" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+ralph_validate_review_finding_closure \
+  "$semantic_review_repo" \
+  "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+  "$closure_run" \
+  || fail "valid prose-separated Django closure evidence triggered a repair"
+cp "$closure_run/review-closure-evidence.md" \
+  "$closure_run/review-closure-evidence.md.exact-django"
+dotted_module_only='backend.tests.test_owner_boundary'
+sed "s#${django_test_spec}#${dotted_module_only}#g" \
+  "$closure_run/review-closure-evidence.md.exact-django" \
+  > "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed "s#${django_test_spec}#${dotted_module_only}#g" \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.module-only"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.module-only" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "semantic closure accepted a Django module without an exact test selector"
+fi
+mv "$closure_run/review-closure-evidence.md.exact-django" \
+  "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed "s#${dotted_module_only}#${django_test_spec}#g" \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.exact-django"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.exact-django" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
+mv "$closure_run/review-closure-evidence.md.canonical" \
+  "$closure_run/review-closure-evidence.md"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  sed "s#${django_test_spec}#${test_spec}#g" \
+    "$closure_run/evidence/terminal-logs/$evidence_log" \
+    > "$closure_run/evidence/terminal-logs/$evidence_log.canonical"
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.canonical" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+done
 cp "$closure_run/review-closure-evidence.md" \
   "$closure_run/review-closure-evidence.md.valid-selector"
 for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
@@ -3020,6 +3092,10 @@ rg -qF 'state = json.loads(trusted_path.read_text())' scripts/ralph-run.sh \
   || fail "orchestrator rebuilds successful state from an agent-modifiable candidate"
 rg -qF 'ralph_architecture_review_finalizer_contract' scripts/ralph-run.sh \
   || fail "runner does not validate the protected exhausted-cycle finalizer"
+rg -qF 'ralph-validate-review-closure.sh' scripts/ralph-run.sh \
+  || fail "corrective agent prompt omits the fast semantic-closure preflight"
+rg -qF 'rerun the exact named validator until it passes' scripts/ralph-run.sh \
+  || fail "repair prompt still stops after the first error from one validator"
 rg -qF 'ralph_finalize_architecture_review_cycle' scripts/ralph-run.sh \
   || fail "runner does not close a validated finalizer without another immediate review"
 rg -qF 'COMMIT_QUARANTINED: post-commit integrity failure' scripts/ralph-run.sh \

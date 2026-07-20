@@ -254,6 +254,10 @@ if (( review_closure_contract_present == 1 )); then
       echo "## review-closure-contract-results.md"
       echo
       cat "$review_closure_results"
+      echo
+      echo "Fast reproduction command:"
+      echo "./scripts/ralph-validate-review-closure.sh --slice docs/slices/${slice_id}.md --run-dir .ralph/runs/$(basename "$run_dir")"
+      echo "Repair this validation domain until that command prints PASS; do not stop after its first revealed formatting error."
     } > "$run_dir/failure-summary.md"
     echo "Corrective-slice semantic closure validation failed before product gates." >&2
     exit 1
