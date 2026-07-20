@@ -6,6 +6,7 @@ from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
     resolve_historical_post_transfer_evidence,
 )
 from sfpcl_credit.loans.models import LoanAccount
+from sfpcl_credit.interest.models import InterestCapitalisationLedgerEntry
 from sfpcl_credit.loans.modules.loan_account_lifecycle import filter_created_accounts
 from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
@@ -48,10 +49,14 @@ def get_ledger(*, actor, loan_account_id, query_params):
     reversal_rows = account.repayment_reversal_ledger_entries.select_related(
         "reversal__repayment", "actor_user"
     ).order_by("created_at", "repayment_reversal_ledger_entry_id")
+    capitalisation_rows = account.interest_capitalisation_ledger_entries.select_related(
+        "capitalisation", "actor_user"
+    ).order_by("created_at", "interest_capitalisation_ledger_entry_id")
     total_count = (
         (1 if transfer is not None else 0)
         + repayment_rows.count()
         + reversal_rows.count()
+        + capitalisation_rows.count()
     )
     pagination = _pagination_result(
         page=page, page_size=page_size, total_count=total_count
@@ -69,6 +74,10 @@ def get_ledger(*, actor, loan_account_id, query_params):
         *(
             _reversal_ledger_row(entry)
             for entry in reversal_rows[:movement_end]
+        ),
+        *(
+            _capitalisation_ledger_row(entry)
+            for entry in capitalisation_rows[:movement_end]
         ),
     ]
     movement_rows.sort(key=lambda row: row.pop("_sort_key"))
@@ -236,6 +245,30 @@ def _reversal_ledger_row(entry):
         },
         "sap_status": repayment.sap_posting_status,
         "remarks": "Repayment reversed by compensating entry.",
+    }
+
+
+def _capitalisation_ledger_row(entry: InterestCapitalisationLedgerEntry):
+    return {
+        "_sort_key": (entry.created_at, "interest_capitalisation", str(entry.pk)),
+        "transaction_date": entry.transaction_date.isoformat(),
+        "transaction_type": "interest_capitalisation",
+        "owner_reference": {
+            "entity_type": "interest_capitalisation",
+            "entity_id": str(entry.capitalisation_id),
+        },
+        "reference": entry.capitalisation.financial_year,
+        "debit": _decimal(entry.debit_amount),
+        "credit": "0.00",
+        "principal_balance": _decimal(entry.principal_balance),
+        "interest_balance": _decimal(entry.interest_balance),
+        "total_outstanding": _decimal(entry.total_outstanding),
+        "actor": {
+            "user_id": str(entry.actor_user_id),
+            "display_name": entry.actor_display_name,
+        },
+        "sap_status": "not_applicable",
+        "remarks": "Unpaid interest capitalised after 30 April.",
     }
 
 

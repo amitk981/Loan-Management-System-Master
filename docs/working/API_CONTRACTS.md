@@ -4748,3 +4748,36 @@ bounded `remarks`, plus a nonblank `Idempotency-Key`. It requires either accrual
 same loan-object scope. The action records actor/time and hashed reference/remarks audit evidence,
 updates the retained accrual and its local obligation atomically, and never claims external provider
 delivery. Exact replay is zero-write; changed or second terminal evidence returns `409 CONFLICT`.
+
+## Interest capitalisation after 30 April (010H)
+
+`POST /api/v1/interest-capitalisations/check/` accepts exactly `financial_year` in
+`FY2026-27` form, an ISO `as_of_date`, and `dry_run: true`. It requires
+`finance.interest_capitalise` plus canonical loan-object scope. The check derives each scoped
+serviceable loan's eligible issued invoice balance from retained backend truth and returns an
+explicit reason, old principal, unpaid interest, and projected new principal. It never consumes an
+idempotency key or writes capitalisation, account, ledger, communication, document, or audit truth.
+
+`POST /api/v1/loan-accounts/{loan_account_id}/interest-capitalisations/` accepts exactly
+`financial_year` and an ISO `capitalisation_date` strictly after 30 April, plus a nonblank
+`Idempotency-Key` of at most 200 characters. It does not accept an unpaid amount, revised principal,
+rate/calculation version, recipient, or notification decision from the caller. The interest owner
+locks canonical account, invoice, and accrual truth; requires a coherent serviceable account, one or
+more issued invoices with positive unpaid interest as of the 30-April cutoff, retained borrower
+email, and the approved `interest_capitalisation_notice` template; and derives all monetary values.
+
+Success atomically creates one immutable `(loan account, financial year)` capitalisation and source-
+invoice evidence, increases principal and total outstanding by exactly the eligible unpaid interest,
+appends one debit ledger movement with post-movement balances, stores rate/calculation/accrual
+provenance, queues one official email job, stores one confidential hard-copy PDF artifact, and
+records actor/request audit evidence. The response reports the email job's honest queued/retrying/
+sent/failed state and the letter document id; queueing never claims provider delivery. Historical
+invoice and accrual snapshots remain unchanged, while subsequent principal-as-of calculations and
+the ordinary 010A account/ledger reads use the revised principal.
+
+Exact actor/loan/body/key replay returns the retained chain with no second financial effect. Changed
+or cross-loan key reuse, another key for the same loan/FY, paid/zero/missing invoices, missing notice
+configuration, incoherent account balances, or communication setup failure returns a zero-write
+error. Permission or object-scope denial returns `403`; malformed/caller-money input returns `400`;
+financial/state conflicts return `409`. A database unique constraint and locked PostgreSQL
+transaction ensure concurrent finalisers retain one capitalisation and one ledger movement.

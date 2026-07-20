@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+...E.
+======================================================================
+ERROR: test_permission_and_cross_scope_denials_are_zero_write (sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_permission_and_cross_scope_denials_are_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_092159_normal_run/sfpcl_credit/tests/test_interest_capitalisation_api.py", line 311, in test_permission_and_cross_scope_denials_are_zero_write
+    **root_fixture._auth(outsider),
+      ^^^^^^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute '_auth'
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.029s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

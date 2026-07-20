@@ -28,6 +28,8 @@ class LoanAccountReadPermissionDenied(Exception):
 
 def principal_balance_as_of(*, account, as_of_date):
     """Resolve immutable loan-owned principal truth at the end of a financial period."""
+    from sfpcl_credit.interest.models import InterestCapitalisationLedgerEntry
+
     candidates = []
     for model, id_field in (
         (RepaymentLedgerEntry, "repayment_ledger_entry_id"),
@@ -56,6 +58,33 @@ def principal_balance_as_of(*, account, as_of_date):
                     row["principal_balance"],
                 )
             )
+    capitalisation_row = (
+        InterestCapitalisationLedgerEntry.objects.filter(
+            loan_account=account,
+            transaction_date__lte=as_of_date,
+        )
+        .order_by(
+            "-transaction_date",
+            "-created_at",
+            "-interest_capitalisation_ledger_entry_id",
+        )
+        .values(
+            "transaction_date",
+            "created_at",
+            "interest_capitalisation_ledger_entry_id",
+            "principal_balance",
+        )
+        .first()
+    )
+    if capitalisation_row is not None:
+        candidates.append(
+            (
+                capitalisation_row["transaction_date"],
+                capitalisation_row["created_at"],
+                str(capitalisation_row["interest_capitalisation_ledger_entry_id"]),
+                capitalisation_row["principal_balance"],
+            )
+        )
     if not candidates:
         return account.disbursed_amount
     return max(candidates, key=lambda item: item[:3])[3]

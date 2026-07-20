@@ -1,7 +1,7 @@
 # Slice 010H: Interest Capitalisation after 30 April
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

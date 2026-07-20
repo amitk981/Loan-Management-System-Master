@@ -8,8 +8,9 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Sum
+from django.db.models import F, Q, Sum
 from django.core.files.base import ContentFile
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
@@ -26,6 +27,9 @@ from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.interest.models import (
     AccrualEntry,
     AccrualSapPostingObligation,
+    InterestCapitalisation,
+    InterestCapitalisationInvoiceEvidence,
+    InterestCapitalisationLedgerEntry,
     InterestInvoice,
     InterestInvoiceConfiguration,
 )
@@ -77,6 +81,327 @@ class InterestAccrualNotFound(Exception):
 
 class InterestAccrualConflict(Exception):
     pass
+
+
+class InterestCapitalisationValidation(Exception):
+    def __init__(self, field_errors):
+        self.field_errors = field_errors
+
+
+class InterestCapitalisationPermissionDenied(Exception):
+    pass
+
+
+class InterestCapitalisationConflict(Exception):
+    pass
+
+
+def preview_interest_capitalisations(*, actor, payload):
+    financial_year, as_of_date = _validate_capitalisation_preview(payload)
+    try:
+        _require_permission(actor, "finance.interest_capitalise")
+        accounts = _scoped_accounts(actor).filter(
+            loan_account_status__in=SERVICEABLE_STATUSES
+        )
+    except InterestInvoicePermissionDenied as exc:
+        raise InterestCapitalisationPermissionDenied from exc
+    return {
+        "financial_year": financial_year,
+        "as_of_date": as_of_date.isoformat(),
+        "dry_run": True,
+        "results": [
+            _capitalisation_preview_result(
+                account=account,
+                financial_year=financial_year,
+                as_of_date=as_of_date,
+            )
+            for account in accounts.order_by("loan_account_id")
+        ],
+    }
+
+
+def capitalise_unpaid_interest(
+    *, actor, loan_account_id, payload, idempotency_key, request=None
+):
+    financial_year, capitalisation_date = _validate_capitalisation(
+        payload, idempotency_key
+    )
+    key_digest = _digest_text(idempotency_key.strip())
+    payload_digest = _digest(
+        {
+            "actor_id": str(actor.pk),
+            "loan_account_id": str(loan_account_id),
+            "financial_year": financial_year,
+            "capitalisation_date": capitalisation_date.isoformat(),
+        }
+    )
+    try:
+        return _capitalise(
+            actor=actor,
+            loan_account_id=loan_account_id,
+            financial_year=financial_year,
+            capitalisation_date=capitalisation_date,
+            key_digest=key_digest,
+            payload_digest=payload_digest,
+            request=request,
+        )
+    except IntegrityError as exc:
+        retained = InterestCapitalisation.objects.filter(
+            idempotency_key_digest=key_digest
+        ).first()
+        if retained is not None and retained.payload_digest == payload_digest:
+            return _replay_capitalisation(retained)
+        raise InterestCapitalisationConflict(
+            "Interest has already been capitalised for this loan and financial year."
+        ) from exc
+
+
+@transaction.atomic
+def _capitalise(
+    *, actor, loan_account_id, financial_year, capitalisation_date,
+    key_digest, payload_digest, request
+):
+    from sfpcl_credit.communications.modules.communication_dispatcher import (
+        CommunicationDispatchConflict,
+        CommunicationDispatcher,
+    )
+    from sfpcl_credit.documents.services import DocumentAuditSpec, store_document_upload
+
+    try:
+        _require_permission(actor, "finance.interest_capitalise")
+    except InterestInvoicePermissionDenied as exc:
+        raise InterestCapitalisationPermissionDenied from exc
+    retained = InterestCapitalisation.objects.select_for_update().filter(
+        idempotency_key_digest=key_digest
+    ).first()
+    if retained is not None:
+        if retained.payload_digest == payload_digest:
+            return _replay_capitalisation(retained)
+        raise InterestCapitalisationConflict(
+            "The idempotency key was used for a different capitalisation request."
+        )
+    try:
+        account = (
+            _scoped_accounts(actor)
+            .select_for_update()
+            .select_related("member")
+            .filter(pk=loan_account_id)
+            .first()
+        )
+    except InterestInvoicePermissionDenied as exc:
+        raise InterestCapitalisationPermissionDenied from exc
+    if account is None:
+        raise InterestCapitalisationPermissionDenied
+    retained = InterestCapitalisation.objects.filter(
+        idempotency_key_digest=key_digest
+    ).first()
+    if retained is not None:
+        if retained.payload_digest == payload_digest:
+            return _replay_capitalisation(retained)
+        raise InterestCapitalisationConflict(
+            "The idempotency key was used for a different capitalisation request."
+        )
+    if account.loan_account_status not in SERVICEABLE_STATUSES:
+        raise InterestCapitalisationConflict(
+            "Only a serviceable loan can capitalise unpaid interest."
+        )
+    if account.total_outstanding != (
+        account.principal_outstanding
+        + account.interest_outstanding
+        + account.charges_outstanding
+    ):
+        raise InterestCapitalisationConflict(
+            "The loan balance components conflict with retained account truth."
+        )
+    if InterestCapitalisation.objects.filter(
+        loan_account=account, financial_year=financial_year
+    ).exists():
+        raise InterestCapitalisationConflict(
+            "Interest has already been capitalised for this loan and financial year."
+        )
+    if not account.member.email:
+        raise InterestCapitalisationConflict(
+            "A retained borrower email is required for capitalisation intimation."
+        )
+    start_year = int(_FY_PATTERN.fullmatch(financial_year).group(1))
+    period_start = date(start_year, 4, 1)
+    period_end = date(start_year + 1, 3, 31)
+    eligibility_cutoff = date(start_year + 1, 4, 30)
+    invoices = list(
+        InterestInvoice.objects.select_for_update(of=("self",))
+        .select_related("calculation_configuration")
+        .filter(
+            loan_account=account,
+            financial_year=financial_year,
+            invoice_status=InterestInvoice.STATUS_ISSUED,
+            capitalisation_evidence__isnull=True,
+            invoice_date__lte=eligibility_cutoff,
+            interest_period_end__lte=period_end,
+        )
+        .order_by("interest_invoice_id")
+    )
+    invoice_amounts = [
+        (invoice, (invoice.interest_amount - invoice.interest_paid_amount).quantize(_MONEY))
+        for invoice in invoices
+    ]
+    invoice_amounts = [item for item in invoice_amounts if item[1] > 0]
+    if not invoice_amounts:
+        raise InterestCapitalisationConflict(
+            "No eligible issued unpaid interest invoice exists for this loan and financial year."
+        )
+    accruals = list(
+        AccrualEntry.objects.select_for_update()
+        .filter(
+            loan_account=account,
+            interest_period_start__gte=period_start,
+            interest_period_end__lte=period_end,
+        )
+        .order_by("accrual_entry_id")
+    )
+    unpaid = sum((amount for _, amount in invoice_amounts), Decimal("0.00")).quantize(_MONEY)
+    old_principal = account.principal_outstanding.quantize(_MONEY)
+    new_principal = (old_principal + unpaid).quantize(_MONEY)
+    new_total = (
+        new_principal + account.interest_outstanding + account.charges_outstanding
+    ).quantize(_MONEY)
+    capitalisation_id = uuid.uuid4()
+    merge_data = {
+        "financial_year": financial_year,
+        "unpaid_interest_amount": f"{unpaid:.2f}",
+        "new_principal_amount": f"{new_principal:.2f}",
+    }
+    communication_key = f"interest-capitalisation:{capitalisation_id}:email"
+    try:
+        communication = CommunicationDispatcher.create_from_template(
+            actor=actor,
+            template_code="interest_capitalisation_notice",
+            recipient={
+                "party_type": "borrower",
+                "party_id": account.member_id,
+                "address": account.member.email,
+                "channel": "email",
+            },
+            context={
+                "request": request,
+                "idempotency_key": f"{communication_key}:snapshot",
+                "merge_data": merge_data,
+            },
+            related_entity={
+                "type": "interest_capitalisation",
+                "id": capitalisation_id,
+            },
+        )
+        CommunicationDispatcher.send(
+            communication_id=communication.pk,
+            idempotency_key=f"{communication_key}:delivery",
+        )
+    except (CommunicationDispatchConflict, ValidationError) as exc:
+        raise InterestCapitalisationConflict(
+            "Approved borrower intimation configuration is required."
+        ) from exc
+    letter = store_document_upload(
+        user=actor,
+        request=request,
+        uploaded_file=ContentFile(
+            _render_capitalisation_letter_pdf(
+                account=account,
+                financial_year=financial_year,
+                unpaid=unpaid,
+                new_principal=new_principal,
+                capitalisation_date=capitalisation_date,
+            ),
+            name=f"interest-capitalisation-{account.loan_account_number}-{financial_year}.pdf",
+        ),
+        document_category="interest_capitalisation_letter",
+        sensitivity_level="confidential",
+        related_entity_type="interest_capitalisation",
+        related_entity_id=capitalisation_id,
+        provenance_metadata={
+            "financial_year": financial_year,
+            "loan_account_id": str(account.pk),
+            "unpaid_interest_amount": f"{unpaid:.2f}",
+            "new_principal_amount": f"{new_principal:.2f}",
+        },
+        audit_spec=DocumentAuditSpec(
+            action="interest.capitalisation.letter_created",
+            actor_type="user",
+            metadata={
+                "interest_capitalisation_id": str(capitalisation_id),
+                "financial_year": financial_year,
+            },
+        ),
+    )
+    capitalised_at = timezone.now()
+    audit = AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action="interest.capitalisation.completed",
+        entity_type="interest_capitalisation",
+        entity_id=capitalisation_id,
+        old_value_json={
+            "principal_outstanding": f"{old_principal:.2f}",
+            "financial_year": financial_year,
+        },
+        new_value_json={
+            "interest_capitalisation_id": str(capitalisation_id),
+            "principal_outstanding": f"{new_principal:.2f}",
+            "unpaid_interest_amount": f"{unpaid:.2f}",
+            "actor_user_id": str(actor.pk),
+            "borrower_intimation_email_id": str(communication.pk),
+            "borrower_intimation_letter_document_id": str(letter.pk),
+        },
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+    capitalisation = InterestCapitalisation.objects.create(
+        interest_capitalisation_id=capitalisation_id,
+        loan_account=account,
+        financial_year=financial_year,
+        eligibility_as_of_date=eligibility_cutoff,
+        capitalisation_date=capitalisation_date,
+        old_principal_amount=old_principal,
+        unpaid_interest_amount=unpaid,
+        new_principal_amount=new_principal,
+        rate_versions_json=sorted(
+            {invoice.rate_version_number for invoice, _ in invoice_amounts}
+            | {accrual.rate_version_number for accrual in accruals}
+        ),
+        calculation_versions_json=sorted(
+            {invoice.calculation_version for invoice, _ in invoice_amounts}
+            | {accrual.calculation_version for accrual in accruals}
+        ),
+        source_accrual_ids_json=[str(accrual.pk) for accrual in accruals],
+        borrower_intimation_email=communication,
+        borrower_intimation_letter_document=letter,
+        capitalised_by_user=actor,
+        capitalised_at=capitalised_at,
+        idempotency_key_digest=key_digest,
+        payload_digest=payload_digest,
+        capitalisation_audit=audit,
+    )
+    for invoice, amount in invoice_amounts:
+        InterestCapitalisationInvoiceEvidence.objects.create(
+            capitalisation=capitalisation,
+            interest_invoice=invoice,
+            unpaid_interest_amount=amount,
+        )
+    account.principal_outstanding = new_principal
+    account.total_outstanding = new_total
+    account.save(update_fields=["principal_outstanding", "total_outstanding"])
+    InterestCapitalisationLedgerEntry.objects.create(
+        capitalisation=capitalisation,
+        loan_account=account,
+        transaction_date=capitalisation_date,
+        debit_amount=unpaid,
+        principal_balance=new_principal,
+        interest_balance=account.interest_outstanding,
+        charges_balance=account.charges_outstanding,
+        total_outstanding=new_total,
+        actor_user=actor,
+        actor_display_name=actor.full_name,
+        created_at=capitalised_at,
+    )
+    return serialize_capitalisation(capitalisation)
 
 
 def create_monthly_accrual(*, actor, loan_account_id, payload, idempotency_key, request=None):
@@ -985,6 +1310,134 @@ def _validate_generation(payload, idempotency_key):
     return value, date(start_year, 4, 1), date(start_year + 1, 3, 31)
 
 
+def _validate_capitalisation_preview(payload):
+    allowed = {"financial_year", "as_of_date", "dry_run"}
+    errors = {field: "Unknown field." for field in sorted(set(payload) - allowed)}
+    financial_year = payload.get("financial_year")
+    match = _FY_PATTERN.fullmatch(financial_year) if isinstance(financial_year, str) else None
+    if match is None or int(match.group(2)) != (int(match.group(1)) + 1) % 100:
+        errors["financial_year"] = "Use the format FY2026-27 for one financial year."
+    try:
+        as_of_date = date.fromisoformat(payload.get("as_of_date", ""))
+    except (TypeError, ValueError):
+        as_of_date = None
+        errors["as_of_date"] = "Use an ISO date."
+    if payload.get("dry_run") is not True:
+        errors["dry_run"] = "Capitalisation checks must be dry runs."
+    if errors:
+        raise InterestCapitalisationValidation(errors)
+    return financial_year, as_of_date
+
+
+def _validate_capitalisation(payload, idempotency_key):
+    allowed = {"financial_year", "capitalisation_date"}
+    errors = {field: "Unknown field." for field in sorted(set(payload) - allowed)}
+    financial_year = payload.get("financial_year")
+    match = _FY_PATTERN.fullmatch(financial_year) if isinstance(financial_year, str) else None
+    if match is None or int(match.group(2)) != (int(match.group(1)) + 1) % 100:
+        errors["financial_year"] = "Use the format FY2026-27 for one financial year."
+    try:
+        capitalisation_date = date.fromisoformat(payload.get("capitalisation_date", ""))
+    except (TypeError, ValueError):
+        capitalisation_date = None
+        errors["capitalisation_date"] = "Use an ISO date."
+    if match is not None and capitalisation_date is not None:
+        cutoff = date(int(match.group(1)) + 1, 4, 30)
+        if capitalisation_date <= cutoff:
+            errors["capitalisation_date"] = "Capitalisation must be after 30 April."
+    if (
+        not isinstance(idempotency_key, str)
+        or not idempotency_key.strip()
+        or len(idempotency_key.strip()) > 200
+    ):
+        errors["idempotency_key"] = (
+            "Idempotency-Key header is required and must not exceed 200 characters."
+        )
+    if errors:
+        raise InterestCapitalisationValidation(errors)
+    return financial_year, capitalisation_date
+
+
+def _capitalisation_preview_result(*, account, financial_year, as_of_date):
+    end_year = int(_FY_PATTERN.fullmatch(financial_year).group(1)) + 1
+    cutoff = date(end_year, 4, 30)
+    unpaid = (
+        InterestInvoice.objects.filter(
+            loan_account=account,
+            financial_year=financial_year,
+            invoice_status=InterestInvoice.STATUS_ISSUED,
+            invoice_date__lte=as_of_date,
+            capitalisation_evidence__isnull=True,
+        )
+        .aggregate(
+            amount=Sum(F("interest_amount") - F("interest_paid_amount"))
+        )["amount"]
+        or Decimal("0.00")
+    ).quantize(_MONEY)
+    old_principal = account.principal_outstanding.quantize(_MONEY)
+    already_capitalised = InterestCapitalisation.objects.filter(
+        loan_account=account, financial_year=financial_year
+    ).exists()
+    eligible = as_of_date >= cutoff and unpaid > 0 and not already_capitalised
+    if already_capitalised:
+        reason = "already_capitalised"
+    elif as_of_date < cutoff:
+        reason = "cutoff_not_reached"
+    elif unpaid <= 0:
+        reason = "no_unpaid_interest"
+    else:
+        reason = "eligible_unpaid_interest"
+    return {
+        "loan_account_id": str(account.pk),
+        "eligible": eligible,
+        "reason_code": reason,
+        "old_principal_amount": f"{old_principal:.2f}",
+        "unpaid_interest_amount": f"{unpaid:.2f}",
+        "new_principal_amount": f"{old_principal + unpaid:.2f}",
+    }
+
+
+def serialize_capitalisation(capitalisation):
+    from sfpcl_credit.communications.models import CommunicationDeliveryJob
+
+    delivery_status = (
+        CommunicationDeliveryJob.objects.filter(
+            communication_id=capitalisation.borrower_intimation_email_id
+        ).values_list("status", flat=True).first()
+        or "pending"
+    )
+    return {
+        "interest_capitalisation_id": str(capitalisation.pk),
+        "loan_account_id": str(capitalisation.loan_account_id),
+        "financial_year": capitalisation.financial_year,
+        "eligibility_as_of_date": capitalisation.eligibility_as_of_date.isoformat(),
+        "capitalisation_date": capitalisation.capitalisation_date.isoformat(),
+        "old_principal_amount": f"{capitalisation.old_principal_amount:.2f}",
+        "unpaid_interest_amount": f"{capitalisation.unpaid_interest_amount:.2f}",
+        "new_principal_amount": f"{capitalisation.new_principal_amount:.2f}",
+        "rate_versions": capitalisation.rate_versions_json,
+        "calculation_versions": capitalisation.calculation_versions_json,
+        "status": capitalisation.status,
+        "borrower_intimation": {
+            "email_id": str(capitalisation.borrower_intimation_email_id),
+            "email_delivery_status": delivery_status,
+            "letter_document_id": str(
+                capitalisation.borrower_intimation_letter_document_id
+            ),
+        },
+        "capitalised_by_user_id": str(capitalisation.capitalised_by_user_id),
+        "capitalised_at": capitalisation.capitalised_at.isoformat().replace("+00:00", "Z"),
+        "capitalisation_audit_id": str(capitalisation.capitalisation_audit_id),
+    }
+
+
+def _replay_capitalisation(capitalisation):
+    return {
+        "idempotency_replayed": True,
+        "original_response": serialize_capitalisation(capitalisation),
+    }
+
+
 def _validate_issuance(payload, idempotency_key):
     allowed = {"channel", "recipient_email", "remarks"}
     errors = {field: "Unknown field." for field in sorted(set(payload) - allowed)}
@@ -1080,6 +1533,33 @@ def _render_invoice_pdf(invoice):
         f"Amount due: {invoice.interest_amount:.2f}",
         f"Rate version: {invoice.rate_version_number}",
         f"Calculation version: {invoice.calculation_version}",
+    )
+    y = 800
+    for line in lines:
+        pdf.drawString(50, y, line)
+        y -= 24
+    pdf.showPage()
+    pdf.save()
+    return output.getvalue()
+
+
+def _render_capitalisation_letter_pdf(
+    *, account, financial_year, unpaid, new_principal, capitalisation_date
+):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+
+    output = BytesIO()
+    pdf = canvas.Canvas(output, pagesize=A4, invariant=1)
+    lines = (
+        "SFPCL Interest Capitalisation Intimation",
+        f"Date: {capitalisation_date.isoformat()}",
+        f"Borrower: {account.member.display_name}",
+        f"Loan account: {account.loan_account_number}",
+        f"Financial year: {financial_year}",
+        f"Unpaid interest capitalised: {unpaid:.2f}",
+        f"Revised principal: {new_principal:.2f}",
+        "This letter records the addition of unpaid interest to loan principal.",
     )
     y = 800
     for line in lines:

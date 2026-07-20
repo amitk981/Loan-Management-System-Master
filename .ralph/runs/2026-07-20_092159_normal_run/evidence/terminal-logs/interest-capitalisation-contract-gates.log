@@ -1,0 +1,14 @@
+System check identified no issues (0 silenced).
+No changes detected
+Creating test database for alias 'default'...
+Found 32 test(s).
+System check identified no issues (0 silenced).
+.......Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.........................
+----------------------------------------------------------------------
+Ran 32 tests in 2.423s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_CODE=0

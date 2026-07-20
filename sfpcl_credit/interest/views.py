@@ -8,17 +8,99 @@ from sfpcl_credit.interest.modules.interest_engine import (
     InterestAccrualNotFound,
     InterestAccrualPermissionDenied,
     InterestAccrualValidation,
+    InterestCapitalisationConflict,
+    InterestCapitalisationPermissionDenied,
+    InterestCapitalisationValidation,
     InterestInvoiceConflict,
     InterestInvoiceNotFound,
     InterestInvoicePermissionDenied,
     InterestInvoiceValidation,
     bulk_generate_monthly_accruals,
+    capitalise_unpaid_interest,
     create_monthly_accrual,
     generate_invoice,
     issue_invoice,
     list_invoices,
+    preview_interest_capitalisations,
     record_accrual_sap_status,
 )
+
+
+@require_http_methods(["POST"])
+def capitalisation_check(request):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            preview_interest_capitalisations(
+                actor=actor,
+                payload=parse_json_body(request),
+            ),
+            request,
+        )
+    except (InterestCapitalisationValidation, ValidationError) as exc:
+        fields = (
+            exc.field_errors
+            if isinstance(exc, InterestCapitalisationValidation)
+            else {"body": exc.messages[0]}
+        )
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Interest capitalisation check failed validation.",
+            fields,
+        )
+    except InterestCapitalisationPermissionDenied:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "Interest capitalisation permission and loan scope are required.",
+        )
+    except InterestCapitalisationConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def capitalisation_collection(request, loan_account_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            capitalise_unpaid_interest(
+                actor=actor,
+                loan_account_id=loan_account_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                request=request,
+            ),
+            request,
+        )
+    except (InterestCapitalisationValidation, ValidationError) as exc:
+        fields = (
+            exc.field_errors
+            if isinstance(exc, InterestCapitalisationValidation)
+            else {"body": exc.messages[0]}
+        )
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Interest capitalisation failed validation.",
+            fields,
+        )
+    except InterestCapitalisationPermissionDenied:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "Interest capitalisation permission and loan scope are required.",
+        )
+    except InterestCapitalisationConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
 
 
 @require_http_methods(["POST"])

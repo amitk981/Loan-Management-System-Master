@@ -36,6 +36,15 @@ class LoanAccountProjectionValidation(Exception):
         self.field_errors = field_errors
 
 
+SERVICEABLE_STATUSES = {
+    "active",
+    "partially_repaid",
+    "overdue",
+    "grace_period",
+    "extended",
+}
+
+
 def eligible_account_candidates(*, actor, filters):
     """Compose the canonical database-pageable Epic 009 read identity set."""
     return _eligible_account_candidates(
@@ -76,17 +85,21 @@ def _eligible_account_candidates(*, actor, filters, candidate_owner):
         tenure_start_date__isnull=True,
         tenure_end_date__isnull=True,
     )
-    active = Q(
-        loan_account_status="active",
+    serviceable = Q(
+        loan_account_status__in=SERVICEABLE_STATUSES,
         disbursed_amount__gt=0,
-        principal_outstanding=F("disbursed_amount"),
-        total_outstanding=F("disbursed_amount"),
-        interest_outstanding=0,
-        charges_outstanding=0,
+        principal_outstanding__gte=0,
+        interest_outstanding__gte=0,
+        charges_outstanding__gte=0,
+        total_outstanding=(
+            F("principal_outstanding")
+            + F("interest_outstanding")
+            + F("charges_outstanding")
+        ),
         tenure_start_date__isnull=False,
     )
     queryset = filter_accounts_with_current_transfer(
-        queryset.filter(sanctioned | active)
+        queryset.filter(sanctioned | serviceable)
     )
     queryset = filter_accounts_with_current_initiation(queryset)
     queryset = SapCustomerProfileModule.filter_current_account_completions(queryset)
@@ -210,7 +223,7 @@ def _project(account, *, creation_decision=None, owner_selected=False):
             or account.tenure_end_date is not None
         ):
             return None
-    elif account.loan_account_status == "active":
+    elif account.loan_account_status in SERVICEABLE_STATUSES:
         if not owner_selected:
             return None
         activated_at = account._selector_activated_at
@@ -270,7 +283,7 @@ def _query(query_params):
             {"search": "Must be at most 120 characters."}
         )
     status = str(query_params.get("loan_account_status", "")).strip()
-    if status and status not in {"sanctioned", "active"}:
+    if status and status not in {"sanctioned", *SERVICEABLE_STATUSES}:
         raise LoanAccountProjectionValidation(
             {"loan_account_status": "Select a current Epic 009 loan account status."}
         )

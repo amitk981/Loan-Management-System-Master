@@ -18,6 +18,56 @@ from sfpcl_credit.tests.test_subsidiary_deduction_reconciliation_api import (
 )
 from sfpcl_credit.tests.test_interest_invoice_api import InterestInvoiceApiTests
 from sfpcl_credit.tests.test_interest_accrual_api import MonthlyInterestAccrualApiTests
+from sfpcl_credit.tests.test_interest_capitalisation_api import (
+    InterestCapitalisationApiTests,
+)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class InterestCapitalisationPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = InterestCapitalisationApiTests(
+            "test_may_first_finalisation_moves_principal_once_and_retains_intimation_chain"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+
+    def test_concurrent_finalisation_retains_one_principal_and_ledger_movement(self):
+        barrier = Barrier(2)
+
+        def submit(index):
+            close_old_connections()
+            barrier.wait()
+            response = Client().post(
+                f"/api/v1/loan-accounts/{self.fixture.account.pk}/interest-capitalisations/",
+                data=json.dumps(
+                    {
+                        "financial_year": "FY2026-27",
+                        "capitalisation_date": "2027-05-01",
+                    }
+                ),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"postgres-interest-capitalisation-{index}",
+                **self.fixture.auth,
+            )
+            close_old_connections()
+            return response.status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, range(2)))
+
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationLedgerEntry,
+        )
+
+        self.fixture.account.refresh_from_db()
+        self.assertEqual(statuses, [200, 409])
+        self.assertEqual(InterestCapitalisation.objects.count(), 1)
+        self.assertEqual(InterestCapitalisationLedgerEntry.objects.count(), 1)
+        self.assertEqual(str(self.fixture.account.principal_outstanding), "437000.00")
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

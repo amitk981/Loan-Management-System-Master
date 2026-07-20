@@ -426,3 +426,226 @@ class AccrualSapPostingObligation(models.Model):
                 name="accrual_sap_obligation_status_valid",
             ),
         ]
+
+
+class ImmutableCapitalisationQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError(
+            {"interest_capitalisation": "Capitalisation evidence is immutable."}
+        )
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError(
+            {"interest_capitalisation": "Capitalisation evidence is immutable."}
+        )
+
+    def delete(self):
+        raise ValidationError(
+            {"interest_capitalisation": "Capitalisation evidence is immutable."}
+        )
+
+
+class InterestCapitalisation(models.Model):
+    STATUS_CAPITALISED = "capitalised"
+
+    interest_capitalisation_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisations",
+    )
+    financial_year = models.CharField(max_length=20, db_index=True)
+    eligibility_as_of_date = models.DateField()
+    capitalisation_date = models.DateField(db_index=True)
+    old_principal_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    unpaid_interest_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    new_principal_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    rate_versions_json = models.JSONField(default=list)
+    calculation_versions_json = models.JSONField(default=list)
+    source_accrual_ids_json = models.JSONField(default=list)
+    borrower_intimation_email = models.OneToOneField(
+        "communications.Communication",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation",
+    )
+    borrower_intimation_letter_document = models.OneToOneField(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation_letter",
+    )
+    status = models.CharField(max_length=60, default=STATUS_CAPITALISED, db_index=True)
+    capitalised_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisations",
+    )
+    capitalised_at = models.DateTimeField(default=timezone.now, db_index=True)
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    capitalisation_audit = models.OneToOneField(
+        "identity.AuditLog",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation",
+    )
+
+    objects = ImmutableCapitalisationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "interest_capitalisations"
+        ordering = ["capitalisation_date", "interest_capitalisation_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_account", "capitalisation_date"],
+                name="idx_interest_cap_loan_date",
+            )
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["loan_account", "financial_year"],
+                name="uniq_interest_cap_loan_fy",
+            ),
+            models.CheckConstraint(
+                check=models.Q(status="capitalised"),
+                name="interest_cap_status_final",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(old_principal_amount__gte=0)
+                    & models.Q(unpaid_interest_amount__gt=0)
+                    & models.Q(new_principal_amount__gt=0)
+                ),
+                name="interest_cap_amounts_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    new_principal_amount=(
+                        models.F("old_principal_amount")
+                        + models.F("unpaid_interest_amount")
+                    )
+                ),
+                name="interest_cap_arithmetic",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"interest_capitalisation": "Capitalisation evidence is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_capitalisation": "Capitalisation evidence is immutable."}
+        )
+
+
+class InterestCapitalisationInvoiceEvidence(models.Model):
+    interest_capitalisation_invoice_evidence_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    capitalisation = models.ForeignKey(
+        InterestCapitalisation,
+        on_delete=models.PROTECT,
+        related_name="invoice_evidence",
+    )
+    interest_invoice = models.OneToOneField(
+        InterestInvoice,
+        on_delete=models.PROTECT,
+        related_name="capitalisation_evidence",
+    )
+    unpaid_interest_amount = models.DecimalField(max_digits=18, decimal_places=2)
+
+    objects = ImmutableCapitalisationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "interest_capitalisation_invoice_evidence"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(unpaid_interest_amount__gt=0),
+                name="interest_cap_invoice_amount_positive",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"interest_capitalisation": "Invoice evidence is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_capitalisation": "Invoice evidence is immutable."}
+        )
+
+
+class InterestCapitalisationLedgerEntry(models.Model):
+    interest_capitalisation_ledger_entry_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    capitalisation = models.OneToOneField(
+        InterestCapitalisation,
+        on_delete=models.PROTECT,
+        related_name="ledger_entry",
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation_ledger_entries",
+    )
+    transaction_date = models.DateField(db_index=True)
+    debit_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    principal_balance = models.DecimalField(max_digits=18, decimal_places=2)
+    interest_balance = models.DecimalField(max_digits=18, decimal_places=2)
+    charges_balance = models.DecimalField(max_digits=18, decimal_places=2)
+    total_outstanding = models.DecimalField(max_digits=18, decimal_places=2)
+    actor_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation_ledger_entries",
+    )
+    actor_display_name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    objects = ImmutableCapitalisationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "interest_capitalisation_ledger_entries"
+        ordering = ["created_at", "interest_capitalisation_ledger_entry_id"]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(debit_amount__gt=0)
+                    & models.Q(principal_balance__gte=0)
+                    & models.Q(interest_balance__gte=0)
+                    & models.Q(charges_balance__gte=0)
+                    & models.Q(total_outstanding__gte=0)
+                ),
+                name="interest_cap_ledger_amounts_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    total_outstanding=(
+                        models.F("principal_balance")
+                        + models.F("interest_balance")
+                        + models.F("charges_balance")
+                    )
+                ),
+                name="interest_cap_ledger_total_parts",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"interest_capitalisation": "Capitalisation ledger is append-only."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_capitalisation": "Capitalisation ledger is append-only."}
+        )

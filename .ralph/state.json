@@ -296,15 +296,16 @@
     "010E2-effective-rate-versioning-and-borrower-notices",
     "010E3-servicing-financial-owner-and-replay-convergence",
     "010F-interest-invoice-generation",
-    "010G-monthly-interest-accrual"
+    "010G-monthly-interest-accrual",
+    "010H-interest-capitalisation-after-30-april"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-20_082615_normal_run",
+  "last_run_id": "2026-07-20_101050_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -323,5 +324,6 @@
     "slice_id": "CR-013-epic-009-terminal-owner-boundary-correction",
     "run_id": "2026-07-19_201636_normal_run"
   },
-  "architecture_review_corrective_generation": 2
+  "architecture_review_corrective_generation": 2,
+  "architecture_review_due_reason": "cadence:4"
 }

@@ -1,0 +1,14 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/interest/models.py
+ M sfpcl_credit/interest/modules/interest_engine.py
+ M sfpcl_credit/interest/views.py
+ M sfpcl_credit/loans/modules/loan_account_read.py
+ M sfpcl_credit/processes/loan_account_360.py
+ M sfpcl_credit/processes/loan_servicing.py
+ M sfpcl_credit/tests/test_servicing_postgresql_acceptance.py
+?? .ralph/runs/2026-07-20_092159_normal_run/
+?? .ralph/runs/2026-07-20_101050_repair/
+?? sfpcl_credit/interest/migrations/0003_interestcapitalisation_and_more.py
+?? sfpcl_credit/tests/test_interest_capitalisation_api.py

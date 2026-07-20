@@ -1,0 +1,17 @@
+COMMAND: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_interest_capitalisation_api --noinput -v 1
+Creating test database for alias 'default'...
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 5.024s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_CODE=0
+COMMAND: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check
+System check identified no issues (0 silenced).
+EXIT_CODE=0
+COMMAND: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run
+No changes detected
+EXIT_CODE=0
