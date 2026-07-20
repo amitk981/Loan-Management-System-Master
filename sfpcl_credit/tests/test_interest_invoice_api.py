@@ -6,6 +6,7 @@ from django.test import Client, TestCase
 
 class InterestInvoiceApiTests(TestCase):
     def setUp(self):
+        from sfpcl_credit.communications.models import ContentTemplate
         from sfpcl_credit.tests.test_loan_account_reads_api import (
             ActiveLoanAccountReadApiTests,
         )
@@ -30,15 +31,35 @@ class InterestInvoiceApiTests(TestCase):
 
         from sfpcl_credit.interest.models import InterestInvoiceConfiguration
 
+        self.invoice_template = ContentTemplate.objects.create(
+            template_code="annual_interest_invoice_email",
+            template_name="Annual interest invoice",
+            template_type="email",
+            audience="borrower",
+            subject_template="Interest invoice {{invoice_number}}",
+            body_template=(
+                "Your {{financial_year}} interest invoice {{invoice_number}} "
+                "for {{interest_amount}} is attached."
+            ),
+            variables_json=["financial_year", "invoice_number", "interest_amount"],
+            approval_status="approved",
+            template_version="1",
+            effective_from=date(2026, 1, 1),
+        )
+
         self.configuration = InterestInvoiceConfiguration.objects.create(
             version_number="INV-CALC-1",
             effective_from=date(2026, 4, 1),
             effective_to=date(2027, 3, 31),
             calculation_method="simple_daily",
             day_count_basis=365,
+            monetary_rounding_mode="half_up",
+            monetary_precision="0.01",
+            rounding_application_boundary="whole_decision",
             tax_rate="0.0000",
             fixed_fee_amount="0.00",
             owner_role_codes=["accounts_head"],
+            communication_template=self.invoice_template,
             status="active",
             approved_by_user=self.actor,
         )
@@ -129,7 +150,7 @@ class InterestInvoiceApiTests(TestCase):
                     "principal_amount": "400000.00",
                     "effective_rate": "9.2500",
                     "rate_version_number": "RATE-INVOICE-1",
-                    "gross_interest_amount": "9224.66",
+                    "gross_interest_amount": "9224.657534246575342465753425",
                 },
                 {
                     "period_start": "2026-07-01",
@@ -138,7 +159,7 @@ class InterestInvoiceApiTests(TestCase):
                     "principal_amount": "400000.00",
                     "effective_rate": "10.2500",
                     "rate_version_number": "RATE-INVOICE-2",
-                    "gross_interest_amount": "30778.08",
+                    "gross_interest_amount": "30778.08219178082191780821918",
                 },
             ],
         )
@@ -188,6 +209,9 @@ class InterestInvoiceApiTests(TestCase):
             effective_to=date(2028, 3, 31),
             calculation_method="simple_daily",
             day_count_basis=365,
+            monetary_rounding_mode="half_up",
+            monetary_precision="0.01",
+            rounding_application_boundary="whole_decision",
             tax_rate="0.0000",
             fixed_fee_amount="0.00",
             owner_role_codes=["accounts_head"],
@@ -276,8 +300,8 @@ class InterestInvoiceApiTests(TestCase):
                 for segment in invoice.calculation_segments_json
             ],
             [
-                ("2027-04-01", "2028-02-28", "400000.00", "9.2500", "33857.53"),
-                ("2028-02-29", "2028-03-31", "300000.00", "9.2500", "2432.88"),
+                ("2027-04-01", "2028-02-28", "400000.00", "9.2500", "33857.53424657534246575342466"),
+                ("2028-02-29", "2028-03-31", "300000.00", "9.2500", "2432.876712328767123287671233"),
             ],
         )
 
@@ -319,23 +343,7 @@ class InterestInvoiceApiTests(TestCase):
             InterestInvoiceConfiguration,
         )
 
-        template = ContentTemplate.objects.create(
-            template_code="annual_interest_invoice_email",
-            template_name="Annual interest invoice",
-            template_type="email",
-            audience="borrower",
-            subject_template="Interest invoice {{invoice_number}}",
-            body_template=(
-                "Your {{financial_year}} interest invoice {{invoice_number}} "
-                "for {{interest_amount}} is attached."
-            ),
-            variables_json=["financial_year", "invoice_number", "interest_amount"],
-            approval_status="approved",
-            template_version="1",
-            effective_from=date(2026, 1, 1),
-        )
-        self.configuration.communication_template = template
-        self.configuration.save(update_fields=["communication_template"])
+        template = self.invoice_template
         generated = self._generate("invoice-issue-generate")
         invoice_id = generated.json()["data"]["interest_invoice_id"]
         frozen = InterestInvoice.objects.get(pk=invoice_id)
@@ -444,8 +452,9 @@ class InterestInvoiceApiTests(TestCase):
         self.assertEqual(client_money.status_code, 400, client_money.content)
         self.assertIn("interest_amount", client_money.json()["error"]["field_errors"])
 
-        InterestInvoiceConfiguration.objects.all().delete()
-        missing_config = self._generate("invoice-missing-config")
+        missing_config = self._generate(
+            "invoice-missing-config", {"financial_year": "FY2027-28"}
+        )
         self.assertEqual(missing_config.status_code, 409, missing_config.content)
         self.assertEqual(InterestInvoice.objects.count(), 0)
         self.assertEqual(InterestRateConsumptionSnapshot.objects.count(), 0)

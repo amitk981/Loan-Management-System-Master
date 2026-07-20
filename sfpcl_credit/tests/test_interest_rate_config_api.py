@@ -1,5 +1,6 @@
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor
+import tempfile
 import uuid
 from threading import Barrier
 from types import SimpleNamespace
@@ -7,7 +8,7 @@ from unittest import skipUnless
 
 from django.core.exceptions import ValidationError
 from django.db import close_old_connections, connection, connections
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.communications.models import (
@@ -46,6 +47,9 @@ from sfpcl_credit.tests.servicing_builders import build_servicing_owner_fixture
 INTEREST_RATE_URL = "/api/v1/config/interest-rates/"
 
 
+@override_settings(
+    DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-interest-rate-tests-")
+)
 class InterestRateConfigApiTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -608,6 +612,9 @@ class InterestRateConfigApiTests(TestCase):
             row.delete()
 
 
+@override_settings(
+    DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-interest-rate-pg-tests-")
+)
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
 class InterestRateActivationPostgreSQLAcceptanceTests(TransactionTestCase):
     reset_sequences = True

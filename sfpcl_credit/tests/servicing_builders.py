@@ -4,11 +4,13 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, timedelta
+import json
 from threading import Barrier
 from types import SimpleNamespace
 from uuid import uuid4
 
 from django.db import close_old_connections, connection, connections
+from django.test import Client
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import InterestRateConfig
@@ -33,6 +35,28 @@ class ServicingOwnerFixture:
     maker: User
     checker: User
     request: object
+
+
+@dataclass(frozen=True)
+class InterestCapitalisationFixture:
+    account: object
+    actor: User
+    auth: dict
+
+    def submit(self, *, idempotency_key):
+        return Client().post(
+            f"/api/v1/loan-accounts/{self.account.pk}/interest-capitalisations/",
+            data=json.dumps(
+                {
+                    "financial_year": "FY2026-27",
+                    "capitalisation_date": "2027-05-01",
+                }
+            ),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=idempotency_key,
+            HTTP_X_REQUEST_ID="req-interest-policy-integrity",
+            **self.auth,
+        )
 
 
 def build_servicing_owner_fixture(*, suffix):
@@ -88,6 +112,46 @@ def build_servicing_owner_fixture(*, suffix):
             META={"REMOTE_ADDR": "127.0.0.1"},
             headers={"User-Agent": "servicing-owner-postgresql-acceptance"},
         ),
+    )
+
+
+def build_approved_interest_calculation_policy(
+    *, fixture, version, effective_from=date(2026, 4, 1), effective_to=date(2027, 3, 31)
+):
+    """Create one fully specified approved policy for public owner tests."""
+    from sfpcl_credit.interest.models import InterestInvoiceConfiguration
+
+    return InterestInvoiceConfiguration.objects.create(
+        version_number=version,
+        effective_from=effective_from,
+        effective_to=effective_to,
+        calculation_method="simple_daily",
+        day_count_basis=365,
+        monetary_rounding_mode="half_up",
+        monetary_precision="0.01",
+        rounding_application_boundary="whole_decision",
+        tax_rate="0.0000",
+        fixed_fee_amount="0.00",
+        owner_role_codes=["accounts_head"],
+        status="active",
+        approved_by_user=fixture.maker,
+    )
+
+
+def build_interest_capitalisation_fixture():
+    """Build the complete public API fixture through the retained owner setup."""
+    from sfpcl_credit.tests.test_interest_capitalisation_api import (
+        InterestCapitalisationApiTests,
+    )
+
+    retained = InterestCapitalisationApiTests(
+        "test_may_first_finalisation_moves_principal_once_and_retains_intimation_chain"
+    )
+    retained.setUp()
+    return InterestCapitalisationFixture(
+        account=retained.account,
+        actor=retained.actor,
+        auth=retained.auth,
     )
 
 

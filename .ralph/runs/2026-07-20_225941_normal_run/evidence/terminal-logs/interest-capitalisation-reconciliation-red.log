@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_mismatched_account_interest_rejects_every_capitalisation_side_effect (sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_mismatched_account_interest_rejects_every_capitalisation_side_effect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_225941_normal_run/sfpcl_credit/tests/test_interest_capitalisation_api.py", line 104, in test_mismatched_account_interest_rejects_every_capitalisation_side_effect
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"interest_capitalisation_id": "43fcd4d7-99e3-43c5-bb51-6f9c8b707ec1", "loan_account_id": "71436592-0be6-4fd5-83ef-cf49bc1f9fff", "financial_year": "FY2026-27", "eligibility_as_of_date": "2027-04-30", "capitalisation_date": "2027-05-01", "old_principal_amount": "400000.00", "unpaid_interest_amount": "37000.00", "new_principal_amount": "437000.00", "rate_versions": ["RATE-INVOICE-1"], "calculation_versions": ["INV-CALC-1"], "status": "capitalised", "borrower_intimation": {"email_id": "5e63b846-03cb-4003-b507-0b37e51878eb", "email_delivery_status": "queued", "letter_document_id": "6db7cb86-fbfb-42cd-87ac-250a9e07414b"}, "capitalised_by_user_id": "4eb52c67-80ff-4b04-a6bf-b927350b21bb", "capitalised_at": "2026-07-20T17:44:47.225657Z", "capitalisation_audit_id": "164e410a-ea69-4a20-a17b-e65c719cfd37"}, "meta": {"request_id": "req-interest-capitalisation", "timestamp": "2026-07-20T17:44:47.227032Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.740s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

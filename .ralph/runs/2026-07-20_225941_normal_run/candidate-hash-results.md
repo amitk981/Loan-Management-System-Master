@@ -1,0 +1,6 @@
+# Candidate Hash Results
+
+Before validation: e8e64bfa60de603f9590e45aaff4967335a91366beb3cdefeed66438e6aabfb4
+Commit candidate before validation: f84d0b2595932c3903c30368e33b584c0c57ea298a722d695ba5c9cb78eca87b
+After validation: f31b1b5c3127f310a679c07a7bac4029bc4467c7e06ddd3f6f25db1baef96573
+FAIL: candidate content changed while validation was running.

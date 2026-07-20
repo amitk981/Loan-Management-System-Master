@@ -1,0 +1,6 @@
+TEST_SPEC=sfpcl_credit.tests.test_interest_policy_integrity_closure.InterestPolicyIntegrityClosureTests.test_approved_policy_is_immutable_before_consumption_and_amends_by_version
+Retained RED from run 2026-07-20_225941_normal_run:
+AssertionError: ValidationError not raised
+Ran 1 test in 0.177s
+FAILED (failures=1)
+Exit code: 1

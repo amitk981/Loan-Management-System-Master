@@ -1,0 +1,8 @@
+TEST_SPEC=sfpcl_credit.tests.test_interest_rate_config_api.InterestRateConfigApiTests.test_open_predecessor_cannot_be_closed_before_a_retained_consumption
+Found 1 test(s).
+Ran 1 test in 0.196s
+OK
+Hash before isolated reverse-consumer test: df8b87a0b065d1bb3e730a4020f1d1f5ffce4475d35bf1af07ce8dd7eead4322
+Hash after isolated reverse-consumer test: df8b87a0b065d1bb3e730a4020f1d1f5ffce4475d35bf1af07ce8dd7eead4322
+PASS: reverse consumer kept candidate content frozen with worktree document storage absent.
+Exit code: 0

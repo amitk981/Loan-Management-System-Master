@@ -1,0 +1,31 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+E
+======================================================================
+ERROR: test_approved_policy_rounds_once_after_multi_segment_half_unit_decision (sfpcl_credit.tests.test_interest_policy_integrity_closure.InterestPolicyIntegrityClosureTests.test_approved_policy_rounds_once_after_multi_segment_half_unit_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_225941_normal_run/sfpcl_credit/tests/test_interest_policy_integrity_closure.py", line 47, in test_approved_policy_rounds_once_after_multi_segment_half_unit_decision
+    policy = self._approved_policy("ROUNDING-HALF-UNIT")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_225941_normal_run/sfpcl_credit/tests/test_interest_policy_integrity_closure.py", line 91, in _approved_policy
+    return InterestInvoiceConfiguration.objects.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 677, in create
+    obj = self.model(**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: InterestInvoiceConfiguration() got unexpected keyword arguments: 'monetary_rounding_mode', 'monetary_precision', 'rounding_application_boundary'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.177s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

@@ -1,5 +1,7 @@
 import json
 from datetime import date
+from decimal import Decimal
+from uuid import uuid4
 
 from django.test import Client, TestCase
 
@@ -22,20 +24,6 @@ class InterestCapitalisationApiTests(TestCase):
         )
         self.client = Client()
         self.auth = fixture.auth
-        invoice_template = ContentTemplate.objects.create(
-            template_code="annual_interest_invoice_email_capitalisation_fixture",
-            template_name="Annual interest invoice capitalisation fixture",
-            template_type="email",
-            audience="borrower",
-            subject_template="Interest invoice {{invoice_number}}",
-            body_template="Invoice {{invoice_number}} for {{interest_amount}}.",
-            variables_json=["financial_year", "invoice_number", "interest_amount"],
-            approval_status="approved",
-            template_version="1",
-            effective_from=date(2026, 1, 1),
-        )
-        fixture.configuration.communication_template = invoice_template
-        fixture.configuration.save(update_fields=["communication_template"])
         generated = fixture._generate("capitalisation-source-invoice")
         self.assertEqual(generated.status_code, 200, generated.content)
         issued = fixture._issue(
@@ -43,6 +31,22 @@ class InterestCapitalisationApiTests(TestCase):
             "capitalisation-source-invoice-issue",
         )
         self.assertEqual(issued.status_code, 200, issued.content)
+        from sfpcl_credit.loans.models import RepaymentSchedule
+
+        self.account.interest_outstanding = "37000.00"
+        self.account.total_outstanding = "437000.00"
+        self.account.save(update_fields=["interest_outstanding", "total_outstanding"])
+        self.account.refresh_from_db()
+        self.interest_schedule = RepaymentSchedule.objects.create(
+            loan_account=self.account,
+            installment_number=999,
+            due_date=date(2027, 3, 31),
+            principal_due="0.00",
+            interest_due="37000.00",
+            charges_due="0.00",
+            total_due="37000.00",
+            schedule_status="pending",
+        )
         ContentTemplate.objects.create(
             template_code="interest_capitalisation_notice",
             template_name="Interest capitalisation notice",
@@ -62,6 +66,116 @@ class InterestCapitalisationApiTests(TestCase):
             template_version="1",
             effective_from=date(2026, 1, 1),
         )
+
+    def test_mismatched_account_interest_rejects_every_capitalisation_side_effect(self):
+        from sfpcl_credit.communications.models import (
+            Communication,
+            CommunicationDeliveryJob,
+        )
+        from sfpcl_credit.documents.models import DocumentFile
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationHardCopyTask,
+            InterestCapitalisationInvoiceEvidence,
+            InterestCapitalisationLedgerEntry,
+            InterestCapitalisationScheduleEvidence,
+        )
+        from sfpcl_credit.loans.models import LoanAccount, RepaymentSchedule
+
+        self.account.interest_outstanding = "36999.99"
+        self.account.total_outstanding = "436999.99"
+        self.account.save(update_fields=["interest_outstanding", "total_outstanding"])
+        account_before = LoanAccount.objects.values().get(pk=self.account.pk)
+        schedule_before = list(
+            RepaymentSchedule.objects.filter(loan_account=self.account).values()
+        )
+        counts_before = {
+            "capitalisation": InterestCapitalisation.objects.count(),
+            "invoice_evidence": InterestCapitalisationInvoiceEvidence.objects.count(),
+            "schedule_evidence": InterestCapitalisationScheduleEvidence.objects.count(),
+            "ledger": InterestCapitalisationLedgerEntry.objects.count(),
+            "task": InterestCapitalisationHardCopyTask.objects.count(),
+            "communication": Communication.objects.count(),
+            "delivery_job": CommunicationDeliveryJob.objects.count(),
+            "document": DocumentFile.objects.count(),
+            "audit": AuditLog.objects.count(),
+        }
+
+        response = self._capitalise("capitalisation-account-mismatch")
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(LoanAccount.objects.values().get(pk=self.account.pk), account_before)
+        self.assertEqual(
+            list(RepaymentSchedule.objects.filter(loan_account=self.account).values()),
+            schedule_before,
+        )
+        self.assertEqual(
+            {
+                "capitalisation": InterestCapitalisation.objects.count(),
+                "invoice_evidence": InterestCapitalisationInvoiceEvidence.objects.count(),
+                "schedule_evidence": InterestCapitalisationScheduleEvidence.objects.count(),
+                "ledger": InterestCapitalisationLedgerEntry.objects.count(),
+                "task": InterestCapitalisationHardCopyTask.objects.count(),
+                "communication": Communication.objects.count(),
+                "delivery_job": CommunicationDeliveryJob.objects.count(),
+                "document": DocumentFile.objects.count(),
+                "audit": AuditLog.objects.count(),
+            },
+            counts_before,
+        )
+
+    def test_mismatched_schedule_interest_rejects_every_capitalisation_side_effect(self):
+        self.interest_schedule.interest_due = "36999.99"
+        self.interest_schedule.total_due = "36999.99"
+        self.interest_schedule.save(update_fields=["interest_due", "total_due"])
+        before = self._financial_owner_snapshot()
+
+        response = self._capitalise("capitalisation-schedule-mismatch")
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(self._financial_owner_snapshot(), before)
+
+    def test_mismatched_interest_ledger_rejects_every_capitalisation_side_effect(self):
+        from sfpcl_credit.loans.models import RepaymentLedgerEntry
+
+        allocation = self._interest_allocation(
+            received_date=date(2027, 4, 30),
+            reference="LEDGER-MISMATCH",
+            amount="1.00",
+            apply_to_schedule=False,
+        )
+        RepaymentLedgerEntry.objects.create(
+            allocation=allocation,
+            loan_account=self.account,
+            transaction_date=date(2027, 4, 30),
+            credit_amount="1.00",
+            principal_balance="400000.00",
+            interest_balance="36999.99",
+            charges_balance="0.00",
+            total_outstanding="436999.99",
+            actor_user=self.actor,
+            actor_display_name=self.actor.full_name,
+        )
+        before = self._financial_owner_snapshot()
+
+        response = self._capitalise("capitalisation-ledger-mismatch")
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(self._financial_owner_snapshot(), before)
+
+    def test_mismatched_payment_owner_rejects_every_capitalisation_side_effect(self):
+        self._interest_allocation(
+            received_date=date(2027, 4, 30),
+            reference="PAYMENT-OWNER-MISMATCH",
+            amount="25.00",
+        )
+        before = self._financial_owner_snapshot()
+
+        response = self._capitalise("capitalisation-payment-owner-mismatch")
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(self._financial_owner_snapshot(), before)
 
     def test_preview_derives_eligible_unpaid_interest_and_is_zero_write(self):
         from sfpcl_credit.communications.models import Communication, CommunicationDeliveryJob
@@ -143,6 +257,12 @@ class InterestCapitalisationApiTests(TestCase):
                     invoice._meta.pk.get_db_prep_value(invoice.pk, connection, prepared=False),
                 ],
             )
+        self.account.interest_outstanding = "75.00"
+        self.account.total_outstanding = "400075.00"
+        self.account.save(update_fields=["interest_outstanding", "total_outstanding"])
+        self.interest_schedule.interest_due = "75.00"
+        self.interest_schedule.total_due = "75.00"
+        self.interest_schedule.save(update_fields=["interest_due", "total_due"])
 
         response = self._capitalise("capitalisation-interest-only")
 
@@ -152,91 +272,19 @@ class InterestCapitalisationApiTests(TestCase):
         self.assertEqual(str(capitalisation.new_principal_amount), "400075.00")
 
     def test_interest_allocation_after_invoice_through_cutoff_reduces_capitalisation_once(self):
-        from decimal import Decimal
-
-        from sfpcl_credit.identity.models import AuditLog
         from sfpcl_credit.interest.models import InterestCapitalisation
-        from sfpcl_credit.loans.models import (
-            Repayment,
-            RepaymentAllocation,
-            RepaymentSchedule,
-            RepaymentScheduleAllocation,
+
+        schedule = self.interest_schedule
+        eligible = self._interest_allocation(
+            received_date=date(2027, 4, 30),
+            reference="CUT-OFF-PAYMENT",
+            amount="25.00",
         )
-
-        schedule = RepaymentSchedule.objects.create(
-            loan_account=self.account,
-            installment_number=998,
-            due_date=date(2027, 3, 31),
-            principal_due="0.00",
-            interest_due="65.00",
-            charges_due="0.00",
-            total_due="65.00",
-            schedule_status="pending",
-        )
-
-        def allocation(received_date, reference, amount):
-            repayment_id = __import__("uuid").uuid4()
-            capture_audit = AuditLog.objects.create(
-                actor_user=self.actor,
-                action="repayment.receipt_created",
-                entity_type="repayment",
-                entity_id=repayment_id,
-            )
-            repayment = Repayment.objects.create(
-                repayment_id=repayment_id,
-                loan_account=self.account,
-                member=self.account.member,
-                amount_received=amount,
-                received_date=received_date,
-                payment_method="neft",
-                bank_reference_number=reference,
-                bank_reference_number_normalized=reference,
-                remarks="Retained interest payment evidence.",
-                allocation_status="allocated",
-                sap_posting_status="posted",
-                captured_by_user=self.actor,
-                idempotency_key_digest=f"capture-{reference}",
-                payload_digest=f"payload-{reference}",
-                capture_audit=capture_audit,
-            )
-            allocation_id = __import__("uuid").uuid4()
-            allocation_audit = AuditLog.objects.create(
-                actor_user=self.actor,
-                action="repayment.allocation.completed",
-                entity_type="repayment_allocation",
-                entity_id=allocation_id,
-            )
-            retained = RepaymentAllocation.objects.create(
-                repayment_allocation_id=allocation_id,
-                repayment=repayment,
-                loan_account=self.account,
-                allocated_to_principal="0.00",
-                allocated_to_interest=amount,
-                allocated_to_charges="0.00",
-                unallocated_amount="0.00",
-                principal_before="400000.00",
-                principal_after="400000.00",
-                interest_before=amount,
-                interest_after="0.00",
-                charges_before="0.00",
-                charges_after="0.00",
-                total_before=Decimal("400000.00") + Decimal(amount),
-                total_after="400000.00",
-                allocated_by_user=self.actor,
-                allocation_audit=allocation_audit,
-            )
-            RepaymentScheduleAllocation.objects.create(
-                allocation=retained,
-                repayment_schedule=schedule,
-                principal_applied="0.00",
-                interest_applied=amount,
-                schedule_status_before="pending",
-                schedule_status_after="pending",
-            )
-            return retained
-
-        eligible = allocation(date(2027, 4, 30), "CUT-OFF-PAYMENT", "25.00")
-        allocation(date(2027, 5, 1), "AFTER-CUT-OFF", "40.00")
+        schedule.paid_interest = "25.00"
+        schedule.save(update_fields=["paid_interest"])
+        self.account.interest_outstanding = "36975.00"
+        self.account.total_outstanding = "436975.00"
+        self.account.save(update_fields=["interest_outstanding", "total_outstanding"])
 
         preview = self.client.post(
             "/api/v1/interest-capitalisations/check/",
@@ -265,6 +313,105 @@ class InterestCapitalisationApiTests(TestCase):
             list(capitalisation.payment_evidence.values_list("repayment_allocation_id", flat=True)),
             [eligible.pk],
         )
+
+    def _interest_allocation(
+        self, *, received_date, reference, amount, apply_to_schedule=True
+    ):
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import (
+            Repayment,
+            RepaymentAllocation,
+            RepaymentScheduleAllocation,
+        )
+
+        repayment_id = uuid4()
+        capture_audit = AuditLog.objects.create(
+            actor_user=self.actor,
+            action="repayment.receipt_created",
+            entity_type="repayment",
+            entity_id=repayment_id,
+        )
+        repayment = Repayment.objects.create(
+            repayment_id=repayment_id,
+            loan_account=self.account,
+            member=self.account.member,
+            amount_received=amount,
+            received_date=received_date,
+            payment_method="neft",
+            bank_reference_number=reference,
+            bank_reference_number_normalized=reference,
+            remarks="Retained interest payment evidence.",
+            allocation_status="allocated",
+            sap_posting_status="posted",
+            captured_by_user=self.actor,
+            idempotency_key_digest=f"capture-{reference}",
+            payload_digest=f"payload-{reference}",
+            capture_audit=capture_audit,
+        )
+        allocation_id = uuid4()
+        allocation_audit = AuditLog.objects.create(
+            actor_user=self.actor,
+            action="repayment.allocation.completed",
+            entity_type="repayment_allocation",
+            entity_id=allocation_id,
+        )
+        allocation = RepaymentAllocation.objects.create(
+            repayment_allocation_id=allocation_id,
+            repayment=repayment,
+            loan_account=self.account,
+            allocated_to_principal="0.00",
+            allocated_to_interest=amount,
+            allocated_to_charges="0.00",
+            unallocated_amount="0.00",
+            principal_before="400000.00",
+            principal_after="400000.00",
+            interest_before=amount,
+            interest_after="0.00",
+            charges_before="0.00",
+            charges_after="0.00",
+            total_before=Decimal("400000.00") + Decimal(amount),
+            total_after="400000.00",
+            allocated_by_user=self.actor,
+            allocation_audit=allocation_audit,
+        )
+        if apply_to_schedule:
+            RepaymentScheduleAllocation.objects.create(
+                allocation=allocation,
+                repayment_schedule=self.interest_schedule,
+                principal_applied="0.00",
+                interest_applied=amount,
+                schedule_status_before="pending",
+                schedule_status_after="pending",
+            )
+        return allocation
+
+    def _financial_owner_snapshot(self):
+        from sfpcl_credit.communications.models import Communication
+        from sfpcl_credit.documents.models import DocumentFile
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationHardCopyTask,
+            InterestCapitalisationInvoiceEvidence,
+            InterestCapitalisationLedgerEntry,
+            InterestCapitalisationScheduleEvidence,
+        )
+        from sfpcl_credit.loans.models import LoanAccount, RepaymentSchedule
+
+        return {
+            "account": LoanAccount.objects.values().get(pk=self.account.pk),
+            "schedules": list(
+                RepaymentSchedule.objects.filter(loan_account=self.account).values()
+            ),
+            "capitalisations": InterestCapitalisation.objects.count(),
+            "invoice_evidence": InterestCapitalisationInvoiceEvidence.objects.count(),
+            "schedule_evidence": InterestCapitalisationScheduleEvidence.objects.count(),
+            "capitalisation_ledger": InterestCapitalisationLedgerEntry.objects.count(),
+            "tasks": InterestCapitalisationHardCopyTask.objects.count(),
+            "communications": Communication.objects.count(),
+            "documents": DocumentFile.objects.count(),
+            "audits": AuditLog.objects.count(),
+        }
 
     def test_may_first_finalisation_moves_principal_once_and_retains_intimation_chain(self):
         response = self._capitalise("capitalisation-final-001")
@@ -371,19 +518,7 @@ class InterestCapitalisationApiTests(TestCase):
         )
         from sfpcl_credit.loans.models import RepaymentSchedule
 
-        self.account.interest_outstanding = "37000.00"
-        self.account.total_outstanding = "437000.00"
-        self.account.save(update_fields=["interest_outstanding", "total_outstanding"])
-        schedule = RepaymentSchedule.objects.create(
-            loan_account=self.account,
-            installment_number=999,
-            due_date=date(2027, 3, 31),
-            principal_due="0.00",
-            interest_due="37000.00",
-            charges_due="0.00",
-            total_due="37000.00",
-            schedule_status="pending",
-        )
+        schedule = self.interest_schedule
 
         response = self._capitalise("capitalisation-reclassification")
 

@@ -5,7 +5,7 @@ import uuid
 from calendar import monthrange
 from io import BytesIO
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 from django.db.models import F, Q, Sum
@@ -20,7 +20,6 @@ from sfpcl_credit.configurations.modules.interest_rate_configuration import (
     MissingEffectiveRate,
     consume_effective_rate,
     get_approved_rate_decision,
-    resolve_effective_rate,
 )
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
@@ -41,6 +40,8 @@ from sfpcl_credit.interest.modules.as_of_accounting import decide_interest_as_of
 from sfpcl_credit.loans.models import (
     LoanAccount,
     RepaymentAllocation,
+    RepaymentLedgerEntry,
+    RepaymentReversalLedgerEntry,
     RepaymentSchedule,
     RepaymentScheduleAllocation,
 )
@@ -49,6 +50,7 @@ from sfpcl_credit.loans.modules.loan_account_read import (
     principal_balance_as_of,
     scoped_account_candidates,
 )
+from sfpcl_credit.shared.money import round_monetary
 
 
 CREATE_PERMISSION = "finance.interest_invoice.create"
@@ -305,37 +307,75 @@ def _capitalise(
         (amount for _, amount, _ in invoice_amounts), Decimal("0.00")
     ).quantize(_MONEY)
     old_principal = account.principal_outstanding.quantize(_MONEY)
+    account_interest = account.interest_outstanding.quantize(_MONEY)
+    schedule_rows = list(
+        RepaymentSchedule.objects.select_for_update()
+        .filter(
+            loan_account=account,
+            due_date__range=(period_start, period_end),
+        )
+        .order_by("due_date", "installment_number", "repayment_schedule_id")
+    )
+    schedule_interest = sum(
+        (
+            (schedule.interest_due - schedule.paid_interest).quantize(_MONEY)
+            for schedule in schedule_rows
+        ),
+        Decimal("0.00"),
+    ).quantize(_MONEY)
+    ledger_interest, ledger_source = _latest_interest_ledger_balance(
+        account=account,
+        as_of_date=eligibility_cutoff,
+        no_history_balance=account_interest,
+    )
+    if account_interest != unpaid or schedule_interest != unpaid:
+        raise InterestCapitalisationConflict(
+            "Invoice, account, and schedule interest must reconcile exactly before capitalisation."
+        )
+    if ledger_interest != account_interest:
+        raise InterestCapitalisationConflict(
+            "The interest ledger conflicts with retained account truth."
+        )
+    calculation_policies = {
+        (
+            invoice.calculation_version,
+            invoice.monetary_rounding_mode,
+            str(invoice.monetary_precision) if invoice.monetary_precision is not None else None,
+            invoice.rounding_application_boundary,
+        )
+        for invoice, _, _ in invoice_amounts
+    }
+    if any(None in policy for policy in calculation_policies):
+        raise InterestCapitalisationConflict(
+            "Every capitalised invoice requires retained monetary rounding evidence."
+        )
     new_principal = (old_principal + unpaid).quantize(_MONEY)
-    interest_reclassified = min(account.interest_outstanding, unpaid).quantize(_MONEY)
-    new_interest = (account.interest_outstanding - interest_reclassified).quantize(_MONEY)
+    new_interest = Decimal("0.00")
     new_total = (
         new_principal + new_interest + account.charges_outstanding
     ).quantize(_MONEY)
     schedule_transfers = []
-    remaining_reclassification = interest_reclassified
-    if remaining_reclassification > 0:
-        schedule_rows = RepaymentSchedule.objects.select_for_update().filter(
-            loan_account=account,
-            due_date__range=(period_start, period_end),
-        ).order_by("due_date", "installment_number", "repayment_schedule_id")
-        for schedule in schedule_rows:
-            outstanding_schedule_interest = schedule.interest_due - schedule.paid_interest
-            applied = min(outstanding_schedule_interest, remaining_reclassification)
-            if applied <= 0:
-                continue
-            before_status = schedule.schedule_status
-            schedule.paid_interest += applied
-            remaining_reclassification -= applied
-            if (
-                schedule.paid_principal == schedule.principal_due
-                and schedule.paid_interest == schedule.interest_due
-                and schedule.paid_charges == schedule.charges_due
-            ):
-                schedule.schedule_status = "paid"
-            schedule.save(update_fields=["paid_interest", "schedule_status"])
-            schedule_transfers.append(
-                (schedule, applied, before_status, schedule.schedule_status)
-            )
+    for schedule in schedule_rows:
+        applied = (schedule.interest_due - schedule.paid_interest).quantize(_MONEY)
+        if applied <= 0:
+            continue
+        before_status = schedule.schedule_status
+        schedule.paid_interest += applied
+        if (
+            schedule.paid_principal == schedule.principal_due
+            and schedule.paid_interest == schedule.interest_due
+            and schedule.paid_charges == schedule.charges_due
+        ):
+            schedule.schedule_status = "paid"
+        schedule_transfers.append(
+            (schedule, applied, before_status, schedule.schedule_status)
+        )
+    if sum((row[1] for row in schedule_transfers), Decimal("0.00")) != unpaid:
+        raise InterestCapitalisationConflict(
+            "The exact schedule reclassification does not match eligible unpaid interest."
+        )
+    for schedule, _, _, _ in schedule_transfers:
+        schedule.save(update_fields=["paid_interest", "schedule_status"])
     capitalisation_id = uuid.uuid4()
     merge_data = {
         "financial_year": financial_year,
@@ -442,6 +482,26 @@ def _capitalise(
             {invoice.calculation_version for invoice, _, _ in invoice_amounts}
             | {accrual.calculation_version for accrual in accruals}
         ),
+        calculation_policy_json={
+            "versions": [
+                {
+                    "calculation_version": version,
+                    "monetary_rounding_mode": mode,
+                    "monetary_precision": precision,
+                    "rounding_application_boundary": boundary,
+                }
+                for version, mode, precision, boundary in sorted(calculation_policies)
+            ],
+            "reconciliation": {
+                "as_of_date": eligibility_cutoff.isoformat(),
+                "eligible_invoice_interest": f"{unpaid:.2f}",
+                "account_interest": f"{account_interest:.2f}",
+                "schedule_interest": f"{schedule_interest:.2f}",
+                "ledger_interest": f"{ledger_interest:.2f}",
+                "ledger_source": ledger_source,
+                "principal_increment": f"{unpaid:.2f}",
+            },
+        },
         source_accrual_ids_json=[str(accrual.pk) for accrual in accruals],
         borrower_intimation_email=communication,
         borrower_intimation_letter_document=letter,
@@ -595,6 +655,10 @@ def _create_accrual(
         period_end=period_end,
         configuration=config,
     )
+    _require_approved_rate_metadata(
+        decision=decision,
+        conflict=InterestAccrualConflict,
+    )
     days = decision.calculation_days
     amount = decision.gross_interest_amount
     generated_at = timezone.now()
@@ -635,6 +699,9 @@ def _create_accrual(
         calculation_version=config.version_number,
         calculation_method=config.calculation_method,
         day_count_basis=config.day_count_basis,
+        monetary_rounding_mode=config.monetary_rounding_mode,
+        monetary_precision=config.monetary_precision,
+        rounding_application_boundary=config.rounding_application_boundary,
         calculation_days=days,
         calculation_segments_json=decision.snapshot(),
         interest_accrued_amount=amount,
@@ -727,7 +794,7 @@ def bulk_generate_monthly_accruals(*, actor, payload, idempotency_key, request=N
         if cleaned["dry_run"]:
             try:
                 amount = _preview_accrual_amount(
-                    account, cleaned["period_start"], cleaned["period_end"], principal
+                    account, cleaned["period_start"], cleaned["period_end"]
                 )
             except (
                 AmbiguousEffectiveRate,
@@ -826,28 +893,19 @@ def _is_accrual_eligible(account, period_start, period_end, principal):
     )
 
 
-def _preview_accrual_amount(account, period_start, period_end, principal):
+def _preview_accrual_amount(account, period_start, period_end):
     config = _resolve_accrual_configuration(period_end)
-    rate = resolve_effective_rate(period_end)
-    rate_config = get_approved_rate_decision(rate.interest_rate_config_id)
-    if not rate_config.benchmark_name or rate_config.spread_rate is None or not rate_config.reset_frequency:
-        raise InterestAccrualConflict("Approved rate metadata is required.")
-    return _calculate_accrual_values(
-        principal=principal,
-        effective_rate=rate.effective_rate,
-        config=config,
+    decision = decide_interest_as_of(
+        account=account,
         period_start=period_start,
         period_end=period_end,
-    )[1]
-
-
-def _calculate_accrual_values(*, principal, effective_rate, config, period_start, period_end):
-    days = (period_end - period_start).days + 1
-    amount = (
-        principal * effective_rate * Decimal(days)
-        / (Decimal("100") * Decimal(config.day_count_basis))
-    ).quantize(_MONEY, rounding=ROUND_HALF_UP)
-    return days, amount
+        configuration=config,
+    )
+    _require_approved_rate_metadata(
+        decision=decision,
+        conflict=InterestAccrualConflict,
+    )
+    return decision.gross_interest_amount
 
 
 def _resolve_accrual_configuration(calculation_date):
@@ -1347,6 +1405,10 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
         period_end=period_end,
         configuration=config,
     )
+    _require_approved_rate_metadata(
+        decision=decision,
+        conflict=InterestInvoiceConflict,
+    )
     days = decision.calculation_days
     principal = decision.segments[0].principal_amount
     gross = decision.gross_interest_amount
@@ -1369,8 +1431,11 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
         Decimal("0.00"),
     ).quantize(_MONEY)
     unpaid = max(gross - paid, Decimal("0.00"))
-    tax = (unpaid * config.tax_rate / Decimal("100")).quantize(
-        _MONEY, rounding=ROUND_HALF_UP
+    tax = round_monetary(
+        unpaid * config.tax_rate / Decimal("100"),
+        mode=config.monetary_rounding_mode,
+        precision=config.monetary_precision,
+        boundary=config.rounding_application_boundary,
     )
     total = (unpaid + tax + config.fixed_fee_amount).quantize(_MONEY)
     generated_at = timezone.now()
@@ -1418,6 +1483,9 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
         calculation_version=config.version_number,
         calculation_method=config.calculation_method,
         day_count_basis=config.day_count_basis,
+        monetary_rounding_mode=config.monetary_rounding_mode,
+        monetary_precision=config.monetary_precision,
+        rounding_application_boundary=config.rounding_application_boundary,
         calculation_days=days,
         calculation_segments_json=decision.snapshot(),
         owner_role_codes_snapshot_json=list(config.owner_role_codes),
@@ -1606,6 +1674,50 @@ def _capitalisation_preview_result(*, account, financial_year, as_of_date):
     }
 
 
+def _latest_interest_ledger_balance(*, account, as_of_date, no_history_balance):
+    candidates = []
+    for model, id_field in (
+        (RepaymentLedgerEntry, "repayment_ledger_entry_id"),
+        (RepaymentReversalLedgerEntry, "repayment_reversal_ledger_entry_id"),
+    ):
+        row = (
+            model.objects.select_for_update()
+            .filter(loan_account=account, transaction_date__lte=as_of_date)
+            .order_by("-transaction_date", "-created_at", f"-{id_field}")
+            .values(
+                "transaction_date",
+                "created_at",
+                id_field,
+                "interest_balance",
+            )
+            .first()
+        )
+        if row is not None:
+            candidates.append(
+                (
+                    row["transaction_date"],
+                    row["created_at"],
+                    str(row[id_field]),
+                    row["interest_balance"].quantize(_MONEY),
+                )
+            )
+    if candidates:
+        retained = max(candidates, key=lambda item: item[:3])
+        return retained[3], f"servicing_ledger:{retained[2]}"
+    return no_history_balance, "no_repayment_ledger_history"
+
+
+def _require_approved_rate_metadata(*, decision, conflict):
+    for rate_config_id in {segment.rate_config_id for segment in decision.segments}:
+        rate_config = get_approved_rate_decision(rate_config_id)
+        if (
+            not rate_config.benchmark_name
+            or rate_config.spread_rate is None
+            or not rate_config.reset_frequency
+        ):
+            raise conflict("Approved rate metadata is required for every segment.")
+
+
 def serialize_capitalisation(capitalisation):
     from sfpcl_credit.communications.models import CommunicationDeliveryJob
 
@@ -1685,6 +1797,17 @@ def _resolve_configuration(calculation_date):
     config = configs[0]
     if not isinstance(config.owner_role_codes, list) or not config.owner_role_codes:
         raise InterestInvoiceConflict("An approved invoice owner configuration is required.")
+    try:
+        round_monetary(
+            Decimal("0.00"),
+            mode=config.monetary_rounding_mode,
+            precision=config.monetary_precision,
+            boundary=config.rounding_application_boundary,
+        )
+    except ValueError as exc:
+        raise InterestInvoiceConflict(
+            "An approved monetary rounding policy is required."
+        ) from exc
     return config
 
 

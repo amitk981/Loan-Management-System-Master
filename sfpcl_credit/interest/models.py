@@ -6,15 +6,18 @@ from django.utils import timezone
 
 
 class InterestInvoiceConfigurationQuerySet(models.QuerySet):
+    _ERROR = {
+        "interest_configuration": "Approved calculation configuration is immutable."
+    }
+
     def update(self, **kwargs):
-        if InterestInvoice.objects.filter(calculation_configuration__in=self).exists() or AccrualEntry.objects.filter(calculation_configuration__in=self).exists():
-            raise ValidationError({"interest_configuration": "Consumed calculation configuration is immutable."})
-        return super().update(**kwargs)
+        raise ValidationError(self._ERROR)
 
     def bulk_update(self, objs, fields, batch_size=None):
-        if InterestInvoice.objects.filter(calculation_configuration__in=objs).exists() or AccrualEntry.objects.filter(calculation_configuration__in=objs).exists():
-            raise ValidationError({"interest_configuration": "Consumed calculation configuration is immutable."})
-        return super().bulk_update(objs, fields, batch_size=batch_size)
+        raise ValidationError(self._ERROR)
+
+    def delete(self):
+        raise ValidationError(self._ERROR)
 
 
 class InterestInvoiceConfiguration(models.Model):
@@ -29,6 +32,13 @@ class InterestInvoiceConfiguration(models.Model):
     effective_to = models.DateField(db_index=True)
     calculation_method = models.CharField(max_length=40)
     day_count_basis = models.PositiveSmallIntegerField()
+    monetary_rounding_mode = models.CharField(max_length=40, null=True, blank=True)
+    monetary_precision = models.DecimalField(
+        max_digits=8, decimal_places=6, null=True, blank=True
+    )
+    rounding_application_boundary = models.CharField(
+        max_length=40, null=True, blank=True
+    )
     tax_rate = models.DecimalField(max_digits=8, decimal_places=4)
     fixed_fee_amount = models.DecimalField(max_digits=18, decimal_places=2)
     owner_role_codes = models.JSONField(default=list)
@@ -66,6 +76,35 @@ class InterestInvoiceConfiguration(models.Model):
                 name="interest_invoice_day_basis_positive",
             ),
             models.CheckConstraint(
+                check=(
+                    models.Q(monetary_rounding_mode__isnull=True)
+                    | models.Q(
+                        monetary_rounding_mode__in=(
+                            "half_up",
+                            "half_even",
+                            "half_down",
+                            "down",
+                            "up",
+                        )
+                    )
+                ),
+                name="interest_policy_rounding_mode_valid",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(monetary_precision__isnull=True)
+                    | models.Q(monetary_precision="0.010000")
+                ),
+                name="interest_policy_money_precision_valid",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(rounding_application_boundary__isnull=True)
+                    | models.Q(rounding_application_boundary="whole_decision")
+                ),
+                name="interest_policy_round_boundary_valid",
+            ),
+            models.CheckConstraint(
                 check=models.Q(tax_rate__gte=0) & models.Q(fixed_fee_amount__gte=0),
                 name="interest_invoice_config_amounts_nonnegative",
             ),
@@ -76,21 +115,26 @@ class InterestInvoiceConfiguration(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        if not self._state.adding and (
-            self.interest_invoices.exists() or self.accrual_entries.exists()
-        ):
+        if not self._state.adding:
             retained = type(self)._base_manager.get(pk=self.pk)
             for field in (
                 "version_number", "effective_from", "effective_to",
                 "calculation_method", "day_count_basis", "tax_rate",
+                "monetary_rounding_mode", "monetary_precision",
+                "rounding_application_boundary",
                 "fixed_fee_amount", "owner_role_codes", "communication_template_id",
                 "status", "approved_by_user_id", "approved_at",
             ):
                 if getattr(retained, field) != getattr(self, field):
                     raise ValidationError(
-                        {"interest_configuration": "Consumed calculation configuration is immutable."}
+                        {"interest_configuration": "Approved calculation configuration is immutable."}
                     )
         return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_configuration": "Approved calculation configuration is immutable."}
+        )
 
 
 class ImmutableInterestInvoiceQuerySet(models.QuerySet):
@@ -145,6 +189,13 @@ class InterestInvoice(models.Model):
     calculation_version = models.CharField(max_length=40)
     calculation_method = models.CharField(max_length=40)
     day_count_basis = models.PositiveSmallIntegerField()
+    monetary_rounding_mode = models.CharField(max_length=40, null=True, blank=True)
+    monetary_precision = models.DecimalField(
+        max_digits=8, decimal_places=6, null=True, blank=True
+    )
+    rounding_application_boundary = models.CharField(
+        max_length=40, null=True, blank=True
+    )
     calculation_days = models.PositiveSmallIntegerField()
     calculation_segments_json = models.JSONField(default=list)
     owner_role_codes_snapshot_json = models.JSONField(default=list)
@@ -274,7 +325,8 @@ class InterestInvoice(models.Model):
         "interest_period_start", "interest_period_end", "principal_base_amount",
         "interest_rate", "rate_config_id", "rate_version_number",
         "calculation_configuration_id", "calculation_version", "calculation_method",
-        "day_count_basis", "calculation_days", "gross_interest_amount",
+        "day_count_basis", "monetary_rounding_mode", "monetary_precision",
+        "rounding_application_boundary", "calculation_days", "gross_interest_amount",
         "calculation_segments_json",
         "owner_role_codes_snapshot_json", "communication_template_snapshot_id",
         "interest_paid_amount", "tax_rate", "tax_amount", "fixed_fee_amount",
@@ -384,6 +436,13 @@ class AccrualEntry(models.Model):
     calculation_version = models.CharField(max_length=40)
     calculation_method = models.CharField(max_length=40)
     day_count_basis = models.PositiveSmallIntegerField()
+    monetary_rounding_mode = models.CharField(max_length=40, null=True, blank=True)
+    monetary_precision = models.DecimalField(
+        max_digits=8, decimal_places=6, null=True, blank=True
+    )
+    rounding_application_boundary = models.CharField(
+        max_length=40, null=True, blank=True
+    )
     calculation_days = models.PositiveSmallIntegerField()
     calculation_segments_json = models.JSONField(default=list)
     interest_accrued_amount = models.DecimalField(max_digits=18, decimal_places=2)
@@ -488,7 +547,8 @@ class AccrualEntry(models.Model):
         "loan_account_id", "accrual_month", "interest_period_start", "interest_period_end",
         "principal_base_amount", "interest_rate", "rate_config_id", "rate_version_number",
         "calculation_configuration_id", "calculation_version", "calculation_method",
-        "day_count_basis", "calculation_days", "interest_accrued_amount",
+        "day_count_basis", "monetary_rounding_mode", "monetary_precision",
+        "rounding_application_boundary", "calculation_days", "interest_accrued_amount",
         "calculation_segments_json",
         "generated_by_user_id", "generated_at", "generation_idempotency_key_digest",
         "generation_payload_digest", "generation_audit_id",
@@ -579,6 +639,7 @@ class InterestCapitalisation(models.Model):
     new_principal_amount = models.DecimalField(max_digits=18, decimal_places=2)
     rate_versions_json = models.JSONField(default=list)
     calculation_versions_json = models.JSONField(default=list)
+    calculation_policy_json = models.JSONField(default=dict)
     source_accrual_ids_json = models.JSONField(default=list)
     borrower_intimation_email = models.OneToOneField(
         "communications.Communication",

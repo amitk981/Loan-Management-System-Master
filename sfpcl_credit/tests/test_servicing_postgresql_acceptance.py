@@ -1,10 +1,11 @@
 import json
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from unittest import skipUnless
 
 from django.db import close_old_connections, connection
-from django.test import Client, TransactionTestCase
+from django.test import Client, TransactionTestCase, override_settings
 
 from sfpcl_credit.tests.test_direct_repayment_posting_api import (
     DirectRepaymentPostingApiTests,
@@ -23,6 +24,219 @@ from sfpcl_credit.tests.test_interest_capitalisation_api import (
 )
 from sfpcl_credit.tests.test_dpd_monitoring_api import DpdMonitoringApiTests
 from sfpcl_credit.tests.test_reminder_queue_api import ReminderQueueApiTests
+
+
+@override_settings(
+    DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-interest-policy-pg-tests-")
+)
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class InterestPolicyIntegrityPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def test_approved_policy_rejects_orm_bulk_and_database_mutation_paths(self):
+        from datetime import date
+
+        from django.core.exceptions import ValidationError
+        from django.db import IntegrityError, transaction
+
+        from sfpcl_credit.interest.models import InterestInvoiceConfiguration
+        from sfpcl_credit.tests.servicing_builders import (
+            build_approved_interest_calculation_policy,
+            build_servicing_owner_fixture,
+        )
+
+        fixture = build_servicing_owner_fixture(suffix="policy-pg")
+        policy = build_approved_interest_calculation_policy(
+            fixture=fixture,
+            version="POLICY-PG-IMMUTABLE",
+        )
+        policy.day_count_basis = 360
+        with self.assertRaises(ValidationError):
+            policy.save(update_fields=["day_count_basis"])
+        with self.assertRaises(ValidationError):
+            InterestInvoiceConfiguration.objects.filter(pk=policy.pk).update(
+                day_count_basis=360
+            )
+        with self.assertRaises(ValidationError):
+            InterestInvoiceConfiguration.objects.bulk_update(
+                [policy], ["day_count_basis"]
+            )
+        with self.assertRaises(ValidationError):
+            policy.delete()
+        with self.assertRaises(ValidationError):
+            InterestInvoiceConfiguration.objects.filter(pk=policy.pk).delete()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE interest_invoice_configurations "
+                    "SET day_count_basis = %s "
+                    "WHERE interest_invoice_configuration_id = %s",
+                    [360, policy.pk],
+                )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM interest_invoice_configurations "
+                    "WHERE interest_invoice_configuration_id = %s",
+                    [policy.pk],
+                )
+        amendment = build_approved_interest_calculation_policy(
+            fixture=fixture,
+            version="POLICY-PG-AMENDMENT",
+            effective_from=date(2027, 4, 1),
+            effective_to=date(2028, 3, 31),
+        )
+        self.assertNotEqual(amendment.pk, policy.pk)
+
+    def test_whole_decision_rounding_and_missing_policy_are_fail_closed(self):
+        from datetime import date
+        from decimal import Decimal
+
+        from sfpcl_credit.interest.models import InterestInvoiceConfiguration
+        from sfpcl_credit.interest.modules.as_of_accounting import decide_interest_as_of
+        from sfpcl_credit.tests.servicing_builders import (
+            activate_interest_rate,
+            build_approved_interest_calculation_policy,
+            build_interest_rate_proposal,
+            build_servicing_owner_fixture,
+        )
+
+        fixture = build_servicing_owner_fixture(suffix="rounding-pg")
+        type(fixture.account).objects.filter(pk=fixture.account.pk).update(
+            disbursed_amount="1.00",
+            principal_outstanding="1.00",
+            total_outstanding="1.00",
+        )
+        fixture.account.refresh_from_db()
+        for suffix, effective_from in (("A", date(2026, 4, 1)), ("B", date(2026, 4, 2))):
+            proposal = build_interest_rate_proposal(
+                fixture=fixture,
+                version=f"POLICY-PG-RATE-{suffix}",
+                effective_from=effective_from,
+                rate="91.2500",
+            )
+            activate_interest_rate(
+                fixture=fixture,
+                proposal=proposal,
+                idempotency_key=f"policy-pg-rate-{suffix.lower()}",
+            )
+        policy = build_approved_interest_calculation_policy(
+            fixture=fixture,
+            version="POLICY-PG-ROUNDING",
+        )
+        decision = decide_interest_as_of(
+            account=fixture.account,
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 2),
+            configuration=policy,
+        )
+        self.assertEqual(decision.gross_interest_amount, Decimal("0.01"))
+        missing = InterestInvoiceConfiguration.objects.create(
+            version_number="POLICY-PG-MISSING",
+            effective_from=date(2027, 4, 1),
+            effective_to=date(2028, 3, 31),
+            calculation_method="simple_daily",
+            day_count_basis=365,
+            tax_rate="0.0000",
+            fixed_fee_amount="0.00",
+            owner_role_codes=["accounts_head"],
+            status="active",
+            approved_by_user=fixture.maker,
+        )
+        with self.assertRaises(ValueError):
+            decide_interest_as_of(
+                account=fixture.account,
+                period_start=date(2027, 4, 1),
+                period_end=date(2027, 4, 2),
+                configuration=missing,
+            )
+
+    def test_mismatched_reclassification_is_zero_write(self):
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationLedgerEntry,
+        )
+        from sfpcl_credit.tests.servicing_builders import (
+            build_interest_capitalisation_fixture,
+        )
+
+        fixture = build_interest_capitalisation_fixture()
+        fixture.account.interest_outstanding = "36999.99"
+        fixture.account.total_outstanding = "436999.99"
+        fixture.account.save(update_fields=["interest_outstanding", "total_outstanding"])
+        response = fixture.submit(idempotency_key="policy-pg-mismatch")
+        fixture.account.refresh_from_db()
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(str(fixture.account.principal_outstanding), "400000.00")
+        self.assertEqual(InterestCapitalisation.objects.count(), 0)
+        self.assertEqual(InterestCapitalisationLedgerEntry.objects.count(), 0)
+
+    def test_exact_capitalisation_race_replays_one_byte_stable_decision(self):
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationLedgerEntry,
+        )
+        from sfpcl_credit.tests.servicing_builders import (
+            build_interest_capitalisation_fixture,
+        )
+
+        fixture = build_interest_capitalisation_fixture()
+        responses = self._race(
+            lambda _: fixture.submit(idempotency_key="policy-pg-capitalisation-exact")
+        )
+        self.assertEqual(sorted(response.status_code for response in responses), [200, 200])
+        original = next(
+            response.json()["data"]
+            for response in responses
+            if not response.json()["data"].get("idempotency_replayed")
+        )
+        replay = next(
+            response.json()["data"]
+            for response in responses
+            if response.json()["data"].get("idempotency_replayed")
+        )
+        self.assertEqual(replay["original_response"], original)
+        fixture.account.refresh_from_db()
+        self.assertEqual(str(fixture.account.principal_outstanding), "437000.00")
+        self.assertEqual(InterestCapitalisation.objects.count(), 1)
+        self.assertEqual(InterestCapitalisationLedgerEntry.objects.count(), 1)
+
+    def test_changed_key_capitalisation_race_retains_one_reclassification(self):
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationLedgerEntry,
+        )
+        from sfpcl_credit.tests.servicing_builders import (
+            build_interest_capitalisation_fixture,
+        )
+
+        fixture = build_interest_capitalisation_fixture()
+        responses = self._race(
+            lambda index: fixture.submit(
+                idempotency_key=f"policy-pg-capitalisation-changed-{index}"
+            )
+        )
+        self.assertEqual(sorted(response.status_code for response in responses), [200, 409])
+        fixture.account.refresh_from_db()
+        self.assertEqual(str(fixture.account.principal_outstanding), "437000.00")
+        self.assertEqual(InterestCapitalisation.objects.count(), 1)
+        self.assertEqual(InterestCapitalisationLedgerEntry.objects.count(), 1)
+
+    @staticmethod
+    def _race(submit):
+        barrier = Barrier(2)
+
+        def worker(index):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return submit(index)
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            return list(pool.map(worker, range(2)))
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

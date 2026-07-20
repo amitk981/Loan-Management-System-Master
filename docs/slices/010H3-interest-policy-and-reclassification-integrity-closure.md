@@ -1,7 +1,7 @@
 # Slice 010H3: Interest Policy and Reclassification Integrity Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

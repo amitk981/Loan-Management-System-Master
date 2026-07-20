@@ -110,7 +110,10 @@ class MonthlyInterestAccrualApiTests(TestCase):
         )
         self.assertEqual(
             [segment["gross_interest_amount"] for segment in accrual.calculation_segments_json],
-            ["1520.55", "1797.26"],
+            [
+                "1520.547945205479452054794521",
+                "1797.260273972602739726027397",
+            ],
         )
 
     def test_bulk_dry_run_reports_calculated_outcome_without_any_write(self):
@@ -209,21 +212,8 @@ class MonthlyInterestAccrualApiTests(TestCase):
             InterestInvoiceConfiguration,
         )
 
-        InterestInvoiceConfiguration.objects.all().delete()
         missing_config = self._create(
-            "accrual-missing-config", {"accrual_month": "2026-08"}
-        )
-        InterestInvoiceConfiguration.objects.create(
-            version_number="INV-CALC-RESTORED",
-            effective_from=date(2026, 4, 1),
-            effective_to=date(2027, 3, 31),
-            calculation_method="simple_daily",
-            day_count_basis=365,
-            tax_rate="0.0000",
-            fixed_fee_amount="0.00",
-            owner_role_codes=["accounts_head"],
-            status="active",
-            approved_by_user=self.actor,
+            "accrual-missing-config", {"accrual_month": "2027-04"}
         )
         first = self._create("accrual-replay-001")
         replay = self._create("accrual-replay-001")
@@ -238,6 +228,9 @@ class MonthlyInterestAccrualApiTests(TestCase):
             effective_to=date(2029, 3, 31),
             calculation_method="simple_daily",
             day_count_basis=365,
+            monetary_rounding_mode="half_up",
+            monetary_precision="0.01",
+            rounding_application_boundary="whole_decision",
             tax_rate="0.0000",
             fixed_fee_amount="0.00",
             owner_role_codes=["accounts_head"],
@@ -350,6 +343,9 @@ class MonthlyInterestAccrualApiTests(TestCase):
             effective_to=date(2028, 3, 31),
             calculation_method="simple_daily",
             day_count_basis=365,
+            monetary_rounding_mode="half_up",
+            monetary_precision="0.01",
+            rounding_application_boundary="whole_decision",
             tax_rate="0.0000",
             fixed_fee_amount="0.00",
             owner_role_codes=["accounts_head"],
