@@ -1,7 +1,7 @@
 # Slice 010E2: Effective Rate Versioning and Borrower Notices
 
 ## Status
-Not Started
+Complete
 
 ## Runtime Capabilities
 - `postgresql-five-race-acceptance`

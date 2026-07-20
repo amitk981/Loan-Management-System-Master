@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_manager_creates_and_lists_an_immutable_rate_proposal (sfpcl_credit.tests.test_interest_rate_config_api.InterestRateConfigApiTests.test_manager_creates_and_lists_an_immutable_rate_proposal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_041841_normal_run/sfpcl_credit/tests/test_interest_rate_config_api.py", line 79, in test_manager_creates_and_lists_an_immutable_rate_proposal
+    self.assertEqual(created.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

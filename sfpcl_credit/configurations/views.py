@@ -3,6 +3,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.configurations import services
+from sfpcl_credit.configurations.modules import interest_rate_configuration
 from sfpcl_credit.identity.modules import http_auth
 
 
@@ -140,3 +141,77 @@ def version_history_list(request):
             services.validation_field_errors(exc),
         )
     return list_response(data, pagination, request)
+
+
+@require_http_methods(["GET", "POST"])
+def interest_rate_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET":
+        if not interest_rate_configuration.can_read(user):
+            return error_response(
+                request, 403, "FORBIDDEN", "You do not have permission to read interest rate configuration."
+            )
+        try:
+            data, pagination = interest_rate_configuration.list_proposals(request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Interest rate configuration query failed validation.",
+                interest_rate_configuration.validation_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    if not interest_rate_configuration.can_manage(user):
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have permission to manage interest rate configuration."
+        )
+    try:
+        data = interest_rate_configuration.create_proposal(
+            actor=user, request=request, payload=parse_json_body(request)
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Interest rate configuration failed validation.",
+            interest_rate_configuration.validation_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_http_methods(["POST"])
+def interest_rate_activate(request, interest_rate_config_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not interest_rate_configuration.can_activate(user):
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have permission to activate interest rate configuration."
+        )
+    try:
+        data = interest_rate_configuration.activate(
+            actor=user,
+            request=request,
+            interest_rate_config_id=interest_rate_config_id,
+            idempotency_key=request.headers.get("Idempotency-Key"),
+        )
+    except ObjectDoesNotExist:
+        return error_response(
+            request, 404, "NOT_FOUND", "Requested interest rate config was not found."
+        )
+    except interest_rate_configuration.InterestRateConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Interest rate activation failed validation.",
+            interest_rate_configuration.validation_errors(exc),
+        )
+    return success_response(data, request)

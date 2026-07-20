@@ -1,19 +1,19 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-20_031718_normal_run
+2026-07-20_050833_repair
 
 ## Current Status
-Run completed for 010E-subsidiary-deduction-reconciliation.
+Run completed for 010E2-effective-rate-versioning-and-borrower-notices.
 
 ## Current Slice
 None selected.
 
 ## What Completed
-See .ralph/runs/2026-07-20_031718_normal_run/ in the repository.
+See .ralph/runs/2026-07-20_050833_repair/ in the repository.
 
 ## Current Blocker
 None known.
 
 ## Next Recommended Action
-Review .ralph/runs/2026-07-20_031718_normal_run/review-packet.md.
+Review .ralph/runs/2026-07-20_050833_repair/review-packet.md.

@@ -4644,3 +4644,46 @@ request conflicts. The canonical 010C allocation owner additionally requires the
 evidence and canonical statement relationship before it may perform its existing posted-SAP,
 principal-first, schedule, account, ledger, audit, and idempotency checks. No subsidiary module code
 calculates or writes an allocation or balance directly.
+
+## Effective interest-rate configuration and borrower notices (010E2)
+
+`GET /api/v1/config/interest-rates/?page=1&page_size=20` returns the strict standard list envelope,
+ordered by effective date and immutable id. Each row exposes the rate-version id/version, fixed
+`floating` rate type, explicit four-decimal effective rate, optional approved benchmark/spread/reset
+metadata, inclusive effective dates, communication requirement, Board approval reference, status,
+creator/approver ids, activation time, and borrower-notice counts by `pending`, `sent`, and `failed`.
+Unknown query fields return `400 VALIDATION_ERROR`. The existing configuration-read permission or
+the exact manage permission permits this read; neither grants any unrelated configuration mutation.
+
+`POST /api/v1/config/interest-rates/` accepts exactly `version_number`, `rate_type: floating`,
+non-negative four-decimal `effective_rate`, ISO `effective_from`, nullable ISO `effective_to`,
+nullable `benchmark_name`, nullable non-negative `spread_rate`, nullable `reset_frequency`, boolean
+`communication_required`, and nonblank `board_approval_reference`. It requires
+`config.interest_rate.manage` and creates only a `proposed` immutable version plus sanitised audit
+evidence. The server never derives the effective rate from optional benchmark/spread values and does
+not invent reset or penal-interest policy.
+
+`POST /api/v1/config/interest-rates/{interest_rate_config_id}/activate/` requires the same critical
+permission, existing `communications.communication.send` authority, a distinct maker and checker,
+and a nonblank `Idempotency-Key` of at most 255 characters.
+It locks the complete rate-version set, rejects insertion into approved history, overlaps, and a
+successor that does not begin the day after an explicitly closed predecessor. An open predecessor is
+closed at the day before its approved successor, so the approved timeline stays contiguous. Exact
+replay returns retained activation truth; a changed version/key binding or reactivation returns
+zero-write `409 CONFLICT`. Missing authentication returns `401`, missing authority `403`, an unknown
+id `404`, and malformed input `400`.
+
+Activation atomically records version/audit evidence and one loan-rate history for each active
+floating-rate loan. When communication is required, it creates exactly one loan-level notice
+obligation linked to one email and one SMS communication through the existing approved-template
+communications dispatcher. The response reports both obligation-level and channel-level status
+counts. Queueing remains `pending`; only accepted provider evidence becomes `sent`; exhausted
+provider or missing-recipient outcomes remain `failed`. Contact addresses and message bodies never
+appear in the rate-activation audit or rate-config response. A failed local fan-out rolls back
+activation.
+
+Later annual-invoice and monthly-accrual owners call the configuration module's deterministic
+historical resolver with a calculation date. Zero matching active versions fails closed and multiple
+matches are treated as corrupt/ambiguous truth. The consumer seam stores an immutable rate id,
+version, value, date, loan, and consumer reference; exact replay returns that snapshot, so activating
+a later version cannot rewrite an already-consumed calculation.

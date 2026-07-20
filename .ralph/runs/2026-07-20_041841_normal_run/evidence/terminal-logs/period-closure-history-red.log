@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_checker_activates_contiguous_versions_and_resolution_is_historical (sfpcl_credit.tests.test_interest_rate_config_api.InterestRateConfigApiTests.test_checker_activates_contiguous_versions_and_resolution_is_historical)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_041841_normal_run/sfpcl_credit/tests/test_interest_rate_config_api.py", line 323, in test_checker_activates_contiguous_versions_and_resolution_is_historical
+    self.assertEqual(
+AssertionError: 2 != 3
+
+----------------------------------------------------------------------
+Ran 1 test in 0.038s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

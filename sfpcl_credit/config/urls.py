@@ -634,6 +634,16 @@ urlpatterns = [
         name="loan-policy-config-list-create",
     ),
     path(
+        "api/v1/config/interest-rates/",
+        configuration_views.interest_rate_collection,
+        name="interest-rate-config-list-create",
+    ),
+    path(
+        "api/v1/config/interest-rates/<uuid:interest_rate_config_id>/activate/",
+        configuration_views.interest_rate_activate,
+        name="interest-rate-config-activate",
+    ),
+    path(
         "api/v1/config/loan-policy/<uuid:loan_policy_config_id>/",
         configuration_views.loan_policy_detail,
         name="loan-policy-config-detail",

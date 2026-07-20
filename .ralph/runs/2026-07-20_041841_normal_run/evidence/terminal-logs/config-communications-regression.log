@@ -1,0 +1,15 @@
+Creating test database for alias 'default'...
+Found 34 test(s).
+System check identified no issues (0 silenced).
+E.................................
+======================================================================
+ERROR: GenericCommunicationDispatcherTests (unittest.loader._FailedTest.GenericCommunicationDispatcherTests)
+----------------------------------------------------------------------
+AttributeError: module 'sfpcl_credit.tests.test_communication_dispatcher_jobs' has no attribute 'GenericCommunicationDispatcherTests'
+
+----------------------------------------------------------------------
+Ran 34 tests in 0.373s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

@@ -1,0 +1,10 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+...
+----------------------------------------------------------------------
+Ran 3 tests in 6.357s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_STATUS=0

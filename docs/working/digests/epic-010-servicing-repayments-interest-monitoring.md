@@ -159,6 +159,20 @@ authoritative; this file avoids reopening the full source set during ordinary ex
 - Wire list/detail/schedule/history/invoice/direct-instructions states with no runtime fixtures.
 - Sources: portal MP15–MP18, §§8.6/14.5; auth §§19.3/20.2; product §11.21.
 
+### 010E2 — Effective rate versions and borrower notices
+
+- Store explicit floating effective-rate versions with inclusive dates; benchmark, spread, and reset
+  metadata stay optional and never derive an unstated rate or policy.
+- Critical mutation requires `config.interest_rate.manage` and distinct maker/checker actors.
+  Approved history is contiguous, overlap-free, immutable after use, and resolved for an explicit
+  calculation date; missing or ambiguous history fails closed.
+- Activation creates per-active-loan history and, when required, one loan-level obligation linked to
+  one email and one SMS communication through the communications owner. Queued work is pending,
+  provider acceptance is sent, and missing contact/exhausted retries remain failed without contact
+  details in rate audit or responses.
+- Sources: functional M10-FR-001/002; API §41.4; data §§18.5/25.3; domain §§13/19.2;
+  auth `config.interest_rate.manage`; flow communication matrix; screen S47/§9.8.
+
 ### 010M–010O — already concrete
 
 - `010M`: staff S43–S52 wiring, final servicing/monitoring mock removal.
