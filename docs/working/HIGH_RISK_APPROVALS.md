@@ -27,10 +27,12 @@ Runs check this list before starting and refuse vetoed slices.
 
 ## Architecture review finalizers
 
-These approvals are narrower than standing High-risk approval. A listed CR may close an
-architecture-review boundary without another immediate review only after the configured corrective
-generation is exhausted and every declared product, regression, PostgreSQL, browser, migration,
-and coverage gate passes. The protected exact line is validated by the orchestrator.
+These approvals are narrower than standing High-risk approval. A listed CR may close one named
+architecture-review Root ID without another immediate review only after that root's configured
+corrective generation is exhausted and every declared product, regression, PostgreSQL, browser,
+migration, and coverage gate passes. New approvals use the exact format
+`CR | Epic NNN | Root ROOT-NNN-* | generation N | reason`; the orchestrator validates every field.
+The completed CR-013 line below is retained in its historical pre-root format.
 
 - [approved-finalizer] CR-013 | Epic 009 | generation 2 | 2026-07-19 owner-authorized terminal root-boundary correction
 

@@ -41,6 +41,8 @@ source scripts/lib/ralph-merge-guard.sh
   || fail "browser-infrastructure status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_ITERATION_LIMIT")" == "iteration_limit" ]] \
   || fail "iteration-limit status misclassified"
+[[ "$(ralph_outcome_for_status "$RALPH_EXIT_REVIEW_CONVERGENCE")" == "review_convergence" ]] \
+  || fail "review-convergence status misclassified"
 [[ "$(ralph_outcome_for_status 1)" == "failed" ]] || fail "generic failure misclassified"
 
 [[ -f scripts/lib/ralph-postgresql-acceptance.sh ]] || fail "missing PostgreSQL acceptance predicate"
@@ -1027,6 +1029,8 @@ rg -q 'ralph-agent-logs' scripts/ralph-context-tripwire.py \
 architecture_scope_helper="scripts/lib/ralph-architecture-review.sh"
 [[ -f "$architecture_scope_helper" ]] \
   || fail "missing architecture-review change-scope helper"
+# shellcheck source=../lib/ralph-slice-selection.sh
+source scripts/lib/ralph-slice-selection.sh
 # shellcheck source=../lib/ralph-architecture-review.sh
 source "$architecture_scope_helper"
 declare -F ralph_validate_architecture_review_manifest >/dev/null \
@@ -1459,8 +1463,15 @@ cat > "$false_boundary_state" <<'EOF'
 {
   "architecture_review_due": true,
   "architecture_review_due_reason": "epic_boundary:009->010",
-  "architecture_review_cycle_epic": "009",
-  "architecture_review_corrective_generation": 1,
+  "architecture_review_root_generations": {
+    "ROOT-009-OWNER-BOUNDARY": {
+      "epic": "009",
+      "generation": 1,
+      "corrective_slice": "009L6",
+      "finding_id": "AR-009-OWNER-001",
+      "severity": "High"
+    }
+  },
   "last_architecture_review_metrics": {"corrective_slices_added": 1}
 }
 EOF
@@ -1480,13 +1491,12 @@ import sys
 state = json.load(open(sys.argv[1]))
 if state.get("architecture_review_due") is not True:
     raise SystemExit("read-only deferral rewrote the durable due flag")
-if state.get("architecture_review_cycle_epic") != "009":
-    raise SystemExit("deferred corrective cycle lost its epic")
-if state.get("architecture_review_corrective_generation") != 1:
-    raise SystemExit("deferred corrective cycle lost its first generation")
+root = state.get("architecture_review_root_generations", {}).get("ROOT-009-OWNER-BOUNDARY", {})
+if root.get("epic") != "009" or root.get("generation") != 1:
+    raise SystemExit("deferred corrective cycle lost its per-root Epic/generation")
 PY
 scope_instruction="$(ralph_architecture_review_scope_instruction "$false_boundary_state")"
-[[ "$scope_instruction" == *"targeted corrective-closure review generation 1 for Epic 009"* ]] \
+[[ "$scope_instruction" == *"ROOT-009-OWNER-BOUNDARY=generation 1 via 009L6"* ]] \
   || fail "corrective cycle did not select the targeted closure-review lane"
 
 convergence_config="$fixture_dir/convergence-config.yaml"
@@ -1494,16 +1504,55 @@ cat > "$convergence_config" <<'EOF'
 run:
   architecture_review_max_corrective_generations: 2
 EOF
-printf '{"architecture_review_corrective_generation": 1}\n' > "$adaptive_state"
-ralph_validate_architecture_review_convergence "$convergence_config" "$adaptive_state" 1 \
-  || fail "second corrective generation was not admitted"
-printf '{"architecture_review_corrective_generation": 2}\n' > "$adaptive_state"
+root_convergence_packet="$fixture_dir/root-convergence-packet.md"
+cat > "$root_convergence_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Carried | rate.log | 010H2 | - |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | New | interest.log | 010H2 | - |
+| AR-010-ALLOCATION-001 | ROOT-010-ALLOCATION-ADMISSION | High | Closed | allocation.log | - | allocation-green.log |
+EOF
+cat > "$adaptive_state" <<'EOF'
+{
+  "architecture_review_root_generations": {
+    "ROOT-010-RATE-VERSION-OWNER": {
+      "epic": "010",
+      "generation": 1,
+      "corrective_slice": "010E3",
+      "finding_id": "AR-010-RATE-001",
+      "severity": "High"
+    }
+  }
+}
+EOF
+ralph_validate_architecture_review_convergence \
+  "$convergence_config" "$adaptive_state" "$root_convergence_packet" \
+  || fail "independent new/carried roots were incorrectly charged to one global generation"
+declare -F ralph_apply_architecture_review_root_transitions >/dev/null \
+  || fail "missing trusted per-root architecture-review state transition"
+ralph_apply_architecture_review_root_transitions \
+  "$adaptive_state" "$root_convergence_packet"
+python3 - "$adaptive_state" <<'PY'
+import json, sys
+roots = json.load(open(sys.argv[1])).get("architecture_review_root_generations", {})
+if roots["ROOT-010-RATE-VERSION-OWNER"]["generation"] != 2:
+    raise SystemExit("carried rate root did not advance to generation 2")
+if roots["ROOT-010-INTEREST-OWNER-TRUTH"]["generation"] != 1:
+    raise SystemExit("new interest root did not start at generation 1")
+if "ROOT-010-ALLOCATION-ADMISSION" in roots:
+    raise SystemExit("closed allocation root remained in convergence state")
+PY
+ralph_validate_architecture_review_convergence \
+  "$convergence_config" "$adaptive_state" "$root_convergence_packet" \
+  || fail "mapping the same corrective twice incorrectly consumed another generation"
+sed 's/"corrective_slice": "010H2"/"corrective_slice": "010H3"/g' \
+  "$adaptive_state" > "$adaptive_state.exhausted"
 if ralph_validate_architecture_review_convergence \
-    "$convergence_config" "$adaptive_state" 1 >/dev/null 2>&1; then
-  fail "third corrective generation escaped the convergence cap"
+    "$convergence_config" "$adaptive_state.exhausted" "$root_convergence_packet" \
+    >/dev/null 2>&1; then
+  fail "third correction for the same root escaped the convergence cap"
 fi
-ralph_validate_architecture_review_convergence "$convergence_config" "$adaptive_state" 0 \
-  || fail "clean closure review was blocked by the convergence cap"
 
 # After the corrective-generation budget is exhausted, only a protected,
 # owner-approved CR may finalize the epic boundary. Its successful full gates
@@ -1520,6 +1569,7 @@ Epic 009: Fixture
 - CR-012
 ## Architecture Review Finalizer
 - Epic: 009
+- Root ID: ROOT-009-OWNER-BOUNDARY
 - Exhausted corrective generation: 2
 ## Risk Level
 High
@@ -1528,9 +1578,16 @@ finalizer_state="$fixture_dir/finalizer-state.json"
 cat > "$finalizer_state" <<'EOF'
 {
   "architecture_review_due": true,
-  "architecture_review_due_reason": "epic_boundary:009->010",
-  "architecture_review_cycle_epic": "009",
-  "architecture_review_corrective_generation": 2,
+  "architecture_review_due_reason": "cadence:4",
+  "architecture_review_root_generations": {
+    "ROOT-009-OWNER-BOUNDARY": {
+      "epic": "009",
+      "generation": 2,
+      "corrective_slice": "009L7",
+      "finding_id": "AR-009-OWNER-001",
+      "severity": "High"
+    }
+  },
   "slices_completed_since_architecture_review": 1
 }
 EOF
@@ -1544,32 +1601,62 @@ if ralph_architecture_review_finalizer_epic \
   fail "unapproved slice claimed the exhausted architecture-review finalizer"
 fi
 printf '%s\n' \
-  '- [approved-finalizer] CR-013 | Epic 009 | generation 2 | owner regression approval' \
+  '- [approved-finalizer] CR-013 | Epic 009 | Root ROOT-009-OWNER-BOUNDARY | generation 2 | owner regression approval' \
   >> "$finalizer_approvals"
-[[ "$(ralph_architecture_review_finalizer_epic \
+[[ "$(ralph_architecture_review_finalizer_contract \
       "$convergence_config" "$finalizer_state" "$finalizer_slice" \
-      "$finalizer_approvals")" == 009 ]] \
+      "$finalizer_approvals")" == $'009\tROOT-009-OWNER-BOUNDARY' ]] \
   || fail "protected owner-approved exhausted-cycle finalizer was rejected"
+finalizer_queue="$fixture_dir/finalizer-queue"
+mkdir -p "$finalizer_queue/.ralph" "$finalizer_queue/docs/slices" \
+  "$finalizer_queue/docs/working"
+cp "$convergence_config" "$finalizer_queue/.ralph/config.yaml"
+cp "$finalizer_state" "$finalizer_queue/.ralph/state.json"
+cp "$finalizer_slice" "$finalizer_queue/docs/slices/CR-013-finalizer.md"
+cp "$finalizer_approvals" "$finalizer_queue/docs/working/HIGH_RISK_APPROVALS.md"
+cat > "$finalizer_queue/docs/slices/CR-012-prerequisite.md" <<'EOF'
+## Status
+Complete
+## Depends On
+- None
+EOF
+[[ "$(ralph_architecture_review_effective_due \
+      "$finalizer_queue/.ralph/state.json" "$finalizer_queue/docs/slices")" == False ]] \
+  || fail "approved first-grabbable exhausted-root finalizer did not defer the review barrier"
+cat > "$finalizer_queue/docs/slices/CR-001-ordinary.md" <<'EOF'
+## Status
+Not Started
+## Depends On
+- None
+EOF
+[[ "$(ralph_architecture_review_effective_due \
+      "$finalizer_queue/.ralph/state.json" "$finalizer_queue/docs/slices")" == True ]] \
+  || fail "ordinary product work bypassed a due review ahead of the approved finalizer"
 python3 - "$finalizer_state" <<'PY'
 import json, sys
 from pathlib import Path
 path = Path(sys.argv[1])
 state = json.loads(path.read_text())
-state["architecture_review_corrective_generation"] = 1
+state["architecture_review_root_generations"]["ROOT-009-OWNER-BOUNDARY"]["generation"] = 1
 path.write_text(json.dumps(state) + "\n")
 PY
-if ralph_architecture_review_finalizer_epic \
+if ralph_architecture_review_finalizer_contract \
     "$convergence_config" "$finalizer_state" "$finalizer_slice" \
     "$finalizer_approvals" >/dev/null 2>&1; then
   fail "finalizer bypassed a corrective generation that was not exhausted"
 fi
-sed 's/"architecture_review_corrective_generation": 1/"architecture_review_corrective_generation": 2/' \
-  "$finalizer_state" > "$finalizer_state.restored"
-mv "$finalizer_state.restored" "$finalizer_state"
+python3 - "$finalizer_state" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_root_generations"]["ROOT-009-OWNER-BOUNDARY"]["generation"] = 2
+path.write_text(json.dumps(state) + "\n")
+PY
 declare -F ralph_finalize_architecture_review_cycle >/dev/null \
   || fail "missing trusted architecture-review cycle finalization interface"
 ralph_finalize_architecture_review_cycle \
-  "$finalizer_state" 009 CR-013-finalizer finalizer-run
+  "$finalizer_state" 009 ROOT-009-OWNER-BOUNDARY CR-013-finalizer finalizer-run
 python3 - "$finalizer_state" <<'PY'
 import json, sys
 state = json.load(open(sys.argv[1]))
@@ -1577,12 +1664,13 @@ if state.get("architecture_review_due") is not False:
     raise SystemExit("validated finalizer did not clear the exhausted boundary")
 if "architecture_review_due_reason" in state:
     raise SystemExit("validated finalizer retained a stale boundary reason")
-if "architecture_review_cycle_epic" in state or "architecture_review_corrective_generation" in state:
-    raise SystemExit("validated finalizer retained the exhausted corrective cycle")
+if "ROOT-009-OWNER-BOUNDARY" in state.get("architecture_review_root_generations", {}):
+    raise SystemExit("validated finalizer retained the exhausted corrective root")
 if state.get("slices_completed_since_architecture_review") != 0:
     raise SystemExit("validated finalizer did not reset the review cadence")
 if state.get("last_architecture_review_finalizer") != {
-    "epic": "009", "slice_id": "CR-013-finalizer", "run_id": "finalizer-run"
+    "epic": "009", "root_id": "ROOT-009-OWNER-BOUNDARY",
+    "slice_id": "CR-013-finalizer", "run_id": "finalizer-run"
 }:
     raise SystemExit("validated finalizer audit record is incomplete")
 PY
@@ -2930,7 +3018,7 @@ if rg -qF 'Update state, progress, handoff, and slice status.' AGENTS.md; then
 fi
 rg -qF 'state = json.loads(trusted_path.read_text())' scripts/ralph-run.sh \
   || fail "orchestrator rebuilds successful state from an agent-modifiable candidate"
-rg -qF 'ralph_architecture_review_finalizer_epic' scripts/ralph-run.sh \
+rg -qF 'ralph_architecture_review_finalizer_contract' scripts/ralph-run.sh \
   || fail "runner does not validate the protected exhausted-cycle finalizer"
 rg -qF 'ralph_finalize_architecture_review_cycle' scripts/ralph-run.sh \
   || fail "runner does not close a validated finalizer without another immediate review"

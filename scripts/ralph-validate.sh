@@ -11,6 +11,7 @@ source "$repo_root/scripts/lib/ralph-fast-candidate-checks.sh"
 source "$repo_root/scripts/lib/ralph-oversized-slice.sh"
 source "$repo_root/scripts/lib/ralph-architecture-review.sh"
 source "$repo_root/scripts/lib/ralph-backend-validation.sh"
+source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -338,11 +339,11 @@ elif [[ "$mode" == "architecture_review" ]]; then
       echo "PASS: Critical/High findings have corrective work admitted when required."
       if ! ralph_validate_architecture_review_convergence \
           "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
-          "$corrective_added"; then
-        echo "FAIL: architecture-review corrective cycle did not converge within its bounded budget."
-        exit 1
+          "$run_dir/review-packet.md"; then
+        echo "FAIL: an architecture-review root did not converge within its bounded budget."
+        exit "$RALPH_EXIT_REVIEW_CONVERGENCE"
       fi
-      echo "PASS: architecture-review corrective generation remains within its bounded budget."
+      echo "PASS: every architecture-review root remains within its bounded corrective budget."
     else
       echo "FAIL: review-packet.md is missing valid convergence metrics."
       exit 1

@@ -201,6 +201,14 @@ ralph_architecture_review_effective_due() {
     printf 'False\n'
     return 0
   fi
+  # A due review may yield only to the exact first grabbable owner-approved
+  # finalizer for a genuinely exhausted root. Ordinary same-Epic work remains
+  # blocked, so cadence reviews cannot fail open.
+  if ralph_queue_first_slice_is_approved_architecture_finalizer \
+      "$state_file" "$slice_dir"; then
+    printf 'False\n'
+    return 0
+  fi
   reason="$(python3 - "$state_file" <<'PY'
 import json, sys
 print(json.load(open(sys.argv[1])).get("architecture_review_due_reason", ""))
@@ -226,6 +234,18 @@ PY
   else
     printf 'False\n'
   fi
+}
+
+ralph_queue_first_slice_is_approved_architecture_finalizer() {
+  local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
+  local config approvals first
+  config="$(dirname "$state_file")/config.yaml"
+  approvals="$(dirname "$slice_dir")/working/HIGH_RISK_APPROVALS.md"
+  [[ -f "$config" && -f "$approvals" ]] || return 1
+  first="$(ralph_first_grabbable_slice "$slice_dir" || true)"
+  [[ -n "$first" ]] || return 1
+  ralph_architecture_review_finalizer_contract \
+    "$config" "$state_file" "$slice_dir/$first" "$approvals" >/dev/null
 }
 
 # Retained for the startup diagnostic interface. Reconciliation is deliberately
@@ -257,43 +277,121 @@ PY
   fi
 }
 
+ralph_architecture_review_root_transition() {
+  local mode="${1:?mode is required}" state_file="${2:?state file is required}"
+  local packet="${3:?review packet is required}" maximum="${4:-}"
+  [[ "$mode" == "validate" || "$mode" == "apply" ]] || return 1
+  [[ -f "$state_file" && -f "$packet" ]] || return 1
+  if [[ "$mode" == "validate" ]] \
+      && ! [[ "$maximum" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Invalid architecture-review convergence configuration." >&2
+    return 1
+  fi
+  python3 - "$mode" "$state_file" "$packet" "${maximum:-0}" <<'PY'
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+mode, state_name, packet_name, maximum_value = sys.argv[1:]
+state_path = Path(state_name)
+packet_path = Path(packet_name)
+
+try:
+    state = json.loads(state_path.read_text())
+except (OSError, json.JSONDecodeError) as exc:
+    raise SystemExit(f"Invalid architecture-review state: {exc}")
+
+roots = state.get("architecture_review_root_generations", {})
+if not isinstance(roots, dict):
+    raise SystemExit("architecture_review_root_generations must be an object")
+for root_id, value in roots.items():
+    if not isinstance(value, dict) or not isinstance(value.get("generation"), int):
+        raise SystemExit(f"Invalid per-root convergence state: {root_id}")
+    if value["generation"] < 1 or not isinstance(value.get("corrective_slice"), str):
+        raise SystemExit(f"Invalid per-root convergence state: {root_id}")
+
+lines = packet_path.read_text().splitlines()
+try:
+    start = lines.index("## Finding Closure Manifest") + 1
+except ValueError:
+    raise SystemExit("Review packet has no Finding Closure Manifest")
+
+rows = []
+for line in lines[start:]:
+    if line.startswith("## "):
+        break
+    if not line.startswith("|"):
+        continue
+    values = [item.strip() for item in line.strip().strip("|").split("|")]
+    if values and values[0] in {"Finding ID", "---"}:
+        continue
+    if len(values) != 7:
+        raise SystemExit("Finding Closure Manifest row has the wrong number of columns")
+    rows.append(values)
+
+updated = {key: dict(value) for key, value in roots.items()}
+maximum = int(maximum_value) if mode == "validate" else None
+for finding_id, root_id, severity, disposition, _reproducer, corrective, _closure in rows:
+    if disposition == "Closed":
+        updated.pop(root_id, None)
+        continue
+    if severity not in {"Critical", "High"} or corrective == "-":
+        continue
+    epic_match = re.fullmatch(r"ROOT-([0-9]{3})-[A-Z0-9-]+", root_id)
+    if not epic_match:
+        raise SystemExit(f"Convergence root has no canonical Epic identity: {root_id}")
+    current = updated.get(root_id)
+    generation = int(current.get("generation", 0)) if current else 0
+    if current is None or current.get("corrective_slice") != corrective:
+        generation += 1
+    if maximum is not None and generation > maximum:
+        raise SystemExit(
+            f"Architecture review root {root_id} exceeded the {maximum}-generation "
+            "corrective cap; refusing another successor."
+        )
+    updated[root_id] = {
+        "epic": epic_match.group(1),
+        "generation": generation,
+        "corrective_slice": corrective,
+        "finding_id": finding_id,
+        "severity": severity,
+    }
+
+if mode == "apply":
+    state["architecture_review_root_generations"] = updated
+    state.pop("architecture_review_cycle_epic", None)
+    state.pop("architecture_review_corrective_generation", None)
+    temporary = state_path.with_name(f"{state_path.name}.tmp.{os.getpid()}")
+    temporary.write_text(json.dumps(state, indent=2) + "\n")
+    temporary.replace(state_path)
+PY
+}
+
 ralph_validate_architecture_review_convergence() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
-  local added="${3:-}" maximum generation
-  [[ "$added" =~ ^[0-9]+$ ]] || {
-    echo "Corrective-slice addition count must be a non-negative integer." >&2
-    return 1
-  }
-  (( added > 0 )) || return 0
+  local packet="${3:?review packet is required}" maximum
   maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
   maximum="${maximum:-2}"
-  generation="$(python3 - "$state_file" <<'PY'
-import json, sys
-try:
-    print(max(0, int(json.load(open(sys.argv[1])).get("architecture_review_corrective_generation", 0))))
-except (OSError, ValueError, TypeError, json.JSONDecodeError):
-    print("invalid")
-PY
-)"
-  if ! [[ "$maximum" =~ ^[1-9][0-9]*$ && "$generation" =~ ^[0-9]+$ ]]; then
-    echo "Invalid architecture-review convergence configuration or state." >&2
-    return 1
-  fi
-  if (( generation + 1 > maximum )); then
-    echo "Architecture review exceeded the $maximum-generation corrective cap; refusing another successor." >&2
-    return 1
-  fi
+  ralph_architecture_review_root_transition \
+    validate "$state_file" "$packet" "$maximum"
+}
+
+ralph_apply_architecture_review_root_transitions() {
+  local state_file="${1:?state file is required}" packet="${2:?review packet is required}"
+  ralph_architecture_review_root_transition apply "$state_file" "$packet" 0
 }
 
 # Validate the narrow owner-controlled exit for an exhausted corrective cycle.
 # A slice declaration is insufficient: the protected approvals file must name
 # the exact CR, epic, and generation, and durable state must prove the configured
 # corrective-generation cap has actually been reached.
-ralph_architecture_review_finalizer_epic() {
+ralph_architecture_review_finalizer_contract() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
   local slice_file="${3:?slice file is required}" approvals_file="${4:?approvals file is required}"
-  local base slice_id approval_id fields epic generation maximum state_values
-  local due cycle state_generation reason risk parent reason_pattern
+  local base slice_id approval_id fields epic root generation maximum state_values
+  local due state_epic state_generation risk parent
   [[ -f "$slice_file" && -f "$approvals_file" ]] || return 1
   base="$(basename "$slice_file")"
   [[ "$base" =~ ^(CR-[0-9][0-9][0-9][0-9]*)-.+\.md$ ]] || return 1
@@ -316,6 +414,12 @@ ralph_architecture_review_finalizer_epic() {
       sub(/^- Epic: /, "", epic)
       next
     }
+    inside && /^- Root ID: / {
+      root_count += 1
+      root = $0
+      sub(/^- Root ID: /, "", root)
+      next
+    }
     inside && /^- Exhausted corrective generation: / {
       generation_count += 1
       generation = $0
@@ -324,45 +428,52 @@ ralph_architecture_review_finalizer_epic() {
     }
     inside && /[^[:space:]]/ { unknown += 1 }
     END {
-      if (sections == 1 && epic_count == 1 && generation_count == 1 && unknown == 0) {
-        print epic "\t" generation
+      if (sections == 1 && epic_count == 1 && root_count == 1 && generation_count == 1 && unknown == 0) {
+        print epic "\t" root "\t" generation
       }
     }
   ' "$slice_file")"
-  IFS=$'\t' read -r epic generation <<< "$fields"
-  [[ "$epic" =~ ^[0-9][0-9][0-9]$ && "$generation" =~ ^[1-9][0-9]*$ ]] || return 1
+  IFS=$'\t' read -r epic root generation <<< "$fields"
+  [[ "$epic" =~ ^[0-9][0-9][0-9]$ \
+      && "$root" =~ ^ROOT-${epic}-[A-Z0-9-]+$ \
+      && "$generation" =~ ^[1-9][0-9]*$ ]] || return 1
   maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
   maximum="${maximum:-2}"
   [[ "$maximum" =~ ^[1-9][0-9]*$ ]] || return 1
-  state_values="$(python3 - "$state_file" <<'PY'
+  state_values="$(python3 - "$state_file" "$root" <<'PY'
 import json
 import sys
 
 try:
     state = json.load(open(sys.argv[1]))
     due = state.get("architecture_review_due")
-    cycle = state.get("architecture_review_cycle_epic", "")
-    generation = int(state.get("architecture_review_corrective_generation", 0))
-    reason = state.get("architecture_review_due_reason", "")
+    root = sys.argv[2]
+    entry = state.get("architecture_review_root_generations", {}).get(root, {})
+    epic = entry.get("epic", "")
+    generation = int(entry.get("generation", 0))
 except (OSError, TypeError, ValueError, json.JSONDecodeError):
     raise SystemExit(1)
-if not isinstance(due, bool) or not isinstance(cycle, str) or not isinstance(reason, str):
+if not isinstance(due, bool) or not isinstance(epic, str):
     raise SystemExit(1)
-print(f"{'True' if due else 'False'}\t{cycle}\t{generation}\t{reason}")
+print(f"{'True' if due else 'False'}\t{epic}\t{generation}")
 PY
 )" || return 1
-  IFS=$'\t' read -r due cycle state_generation reason <<< "$state_values"
-  [[ "$due" == "True" && "$cycle" == "$epic" \
+  IFS=$'\t' read -r due state_epic state_generation <<< "$state_values"
+  [[ "$due" == "True" && "$state_epic" == "$epic" \
       && "$state_generation" == "$generation" ]] || return 1
   (( generation >= maximum )) || return 1
-  reason_pattern="(^|\\+)epic_(boundary:${epic}->[0-9][0-9][0-9]|completion:${epic})(\\+|$)"
-  [[ "$reason" =~ $reason_pattern ]] || return 1
   parent="$(ralph_slice_parent_epics "$(dirname "$slice_file")" "$slice_id")"
   printf '%s\n' "$parent" | grep -Fxq "$epic" || return 1
   grep -qF -- \
-    "- [approved-finalizer] $approval_id | Epic $epic | generation $generation |" \
+    "- [approved-finalizer] $approval_id | Epic $epic | Root $root | generation $generation |" \
     "$approvals_file" || return 1
-  printf '%s\n' "$epic"
+  printf '%s\t%s\n' "$epic" "$root"
+}
+
+# Compatibility name for callers that only need to test whether the contract
+# is valid. New callers should retain both the Epic and Root ID.
+ralph_architecture_review_finalizer_epic() {
+  ralph_architecture_review_finalizer_contract "$@" | cut -f1
 }
 
 # Apply the trusted post-validation transition. Only the orchestrator calls
@@ -370,24 +481,30 @@ PY
 # itself authority to clear an exhausted architecture-review cycle.
 ralph_finalize_architecture_review_cycle() {
   local state_file="${1:?state file is required}" epic="${2:?epic is required}"
-  local slice_id="${3:?slice id is required}" run_id="${4:?run id is required}"
+  local root="${3:?root id is required}" slice_id="${4:?slice id is required}"
+  local run_id="${5:?run id is required}"
   [[ "$epic" =~ ^[0-9][0-9][0-9]$ \
+      && "$root" =~ ^ROOT-${epic}-[A-Z0-9-]+$ \
       && "$slice_id" =~ ^CR-[0-9][A-Za-z0-9._-]*$ \
       && "$run_id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || return 1
-  python3 - "$state_file" "$epic" "$slice_id" "$run_id" <<'PY'
+  python3 - "$state_file" "$epic" "$root" "$slice_id" "$run_id" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
-epic, slice_id, run_id = sys.argv[2:]
+epic, root, slice_id, run_id = sys.argv[2:]
 state = json.loads(path.read_text())
 if state.get("architecture_review_due") is not True:
     raise SystemExit("architecture-review finalizer requires a due review")
-if state.get("architecture_review_cycle_epic") != epic:
-    raise SystemExit("architecture-review finalizer epic does not match the active cycle")
-if int(state.get("architecture_review_corrective_generation", 0)) < 1:
-    raise SystemExit("architecture-review finalizer requires a corrective generation")
+roots = state.get("architecture_review_root_generations", {})
+entry = roots.get(root)
+if not isinstance(entry, dict) or entry.get("epic") != epic:
+    raise SystemExit("architecture-review finalizer root does not match the active Epic")
+if int(entry.get("generation", 0)) < 1:
+    raise SystemExit("architecture-review finalizer requires an exhausted root generation")
+roots.pop(root)
+state["architecture_review_root_generations"] = roots
 state["architecture_review_due"] = False
 state.pop("architecture_review_due_reason", None)
 state.pop("architecture_review_cycle_epic", None)
@@ -395,6 +512,7 @@ state.pop("architecture_review_corrective_generation", None)
 state["slices_completed_since_architecture_review"] = 0
 state["last_architecture_review_finalizer"] = {
     "epic": epic,
+    "root_id": root,
     "slice_id": slice_id,
     "run_id": run_id,
 }
@@ -405,23 +523,23 @@ PY
 ralph_architecture_review_scope_instruction() {
   local state_file="${1:?state file is required}"
   python3 - "$state_file" <<'PY'
-import json, re, sys
+import json, sys
 try:
     state = json.load(open(sys.argv[1]))
 except (OSError, json.JSONDecodeError):
     raise SystemExit(0)
-reason = state.get("architecture_review_due_reason", "")
-cycle = state.get("architecture_review_cycle_epic")
-generation = int(state.get("architecture_review_corrective_generation", 0) or 0)
-match = re.search(r"epic_(?:boundary|completion):([0-9]{3})", reason)
-if match and cycle == match.group(1) and generation > 0:
+roots = state.get("architecture_review_root_generations", {})
+if isinstance(roots, dict) and roots:
+    budgets = ", ".join(
+        f"{root}=generation {entry.get('generation', '?')} via {entry.get('corrective_slice', '?')}"
+        for root, entry in sorted(roots.items())
+        if isinstance(entry, dict)
+    )
     print(
-        f"- This is targeted corrective-closure review generation {generation} for Epic {cycle}. "
-        "Review only the diffs since the last successful review, the active findings already mapped "
-        "to this review cycle, and their declared acceptance evidence. Do not rescan unaffected "
-        "historical modules or relabel the same root-owner symptom as a new finding. At most one "
-        "additional root repair may be admitted; a later recurrence must fail closed instead of "
-        "creating another leaf corrective."
+        f"- Trusted per-root corrective history: {budgets}. Review the new product diff and these "
+        "active roots only. Preserve every stable Finding ID/Root ID, never charge a new root for "
+        "another root's history, and never relabel a carried symptom as New. A root may receive at "
+        "most one grouped corrective plus one successor; unrelated roots retain independent budgets."
     )
 PY
 }

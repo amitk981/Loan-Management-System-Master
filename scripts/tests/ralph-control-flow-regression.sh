@@ -157,6 +157,26 @@ grep -qF 'Mandatory architecture review failed twice. Stopping before product wo
   "$review_repo/loop.stdout" \
   || fail "bounded mandatory-review stop did not report its exact outcome"
 
+# A deterministic per-root convergence exhaustion is not transient. Retrying
+# the same full review cannot change trusted state and only burns another long
+# model run, so the loop must stop after one classified attempt.
+: > "$review_repo/.ralph/invocations.log"
+printf '%s\n' "$RALPH_EXIT_REVIEW_CONVERGENCE" > "$review_repo/.ralph/review-exit"
+set +e
+(
+  cd "$review_repo"
+  ./scripts/ralph-loop.sh 1 > convergence-review.stdout 2>&1
+)
+convergence_review_rc=$?
+set -e
+[[ "$convergence_review_rc" == "$RALPH_EXIT_REVIEW_CONVERGENCE" ]] \
+  || fail "review convergence exhaustion returned $convergence_review_rc"
+[[ "$(grep -c -- '--mode architecture-review' "$review_repo/.ralph/invocations.log")" == "1" ]] \
+  || fail "deterministic convergence exhaustion launched a duplicate review"
+grep -qF 'Architecture-review convergence is exhausted for the same root.' \
+  "$review_repo/convergence-review.stdout" \
+  || fail "convergence exhaustion did not report its exact owner action"
+
 : > "$review_repo/.ralph/invocations.log"
 printf '%s\n' "$RALPH_EXIT_MERGE_FAILED" > "$review_repo/.ralph/review-exit"
 set +e

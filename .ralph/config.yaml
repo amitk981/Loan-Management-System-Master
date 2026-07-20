@@ -99,8 +99,9 @@ run:
   architecture_review_every_completed_slices: 4
   architecture_review_clean_every_completed_slices: 8
   architecture_review_clean_streak_required: 2
-  # One grouped corrective plus one repair successor; a third generation is a
-  # convergence failure, not permission to grow another review/slice loop.
+  # Per stable Root ID: one grouped corrective plus one repair successor. A
+  # third correction for that same root is a classified convergence failure;
+  # closed or unrelated roots retain independent budgets.
   architecture_review_max_corrective_generations: 2
 
 limits:

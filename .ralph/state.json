@@ -324,6 +324,14 @@
     "slice_id": "CR-013-epic-009-terminal-owner-boundary-correction",
     "run_id": "2026-07-19_201636_normal_run"
   },
-  "architecture_review_corrective_generation": 2,
+  "architecture_review_root_generations": {
+    "ROOT-010-RATE-VERSION-OWNER": {
+      "epic": "010",
+      "generation": 1,
+      "corrective_slice": "010E3",
+      "finding_id": "AR-010-RATE-001",
+      "severity": "High"
+    }
+  },
   "architecture_review_due_reason": "cadence:4"
 }

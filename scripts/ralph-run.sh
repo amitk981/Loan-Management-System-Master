@@ -36,6 +36,7 @@ split_total_lines="${RALPH_SPLIT_TOTAL_LINES:-}"
 split_max_lines="${RALPH_SPLIT_MAX_LINES:-}"
 split_corrective_run_id="${RALPH_SPLIT_CORRECTIVE_RUN_ID:-}"
 architecture_finalizer_epic=""
+architecture_finalizer_root=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -177,13 +178,15 @@ if [[ "$mode" != "architecture_review" ]]; then
     echo "High-risk slice $slice_id proceeding under the owner's standing approval (see $approvals_file)."
   fi
   if grep -q '^## Architecture Review Finalizer[[:space:]]*$' "$selected_slice_path"; then
-    if ! architecture_finalizer_epic="$(ralph_architecture_review_finalizer_epic \
+    if ! architecture_finalizer_contract="$(ralph_architecture_review_finalizer_contract \
         "$repo_root/.ralph/config.yaml" "$repo_root/.ralph/state.json" \
         "$repo_root/$selected_slice_path" "$repo_root/$approvals_file")"; then
       echo "Slice $slice_id declares an invalid, unapproved, or non-exhausted architecture-review finalizer; refusing to run it." >&2
       exit 2
     fi
-    echo "Owner-approved Epic $architecture_finalizer_epic boundary finalizer: successful full gates will close the exhausted review cycle without another immediate review."
+    IFS=$'\t' read -r architecture_finalizer_epic architecture_finalizer_root \
+      <<< "$architecture_finalizer_contract"
+    echo "Owner-approved Epic $architecture_finalizer_epic finalizer for $architecture_finalizer_root: successful full gates will close the exhausted root without another immediate review."
   fi
 fi
 
@@ -647,11 +650,12 @@ fi
 
 if [[ -n "$architecture_finalizer_epic" ]]; then
   finalizer_results="$run_dir/architecture-review-finalizer-results.md"
-  candidate_finalizer_epic="$(ralph_architecture_review_finalizer_epic \
+  candidate_finalizer_contract="$(ralph_architecture_review_finalizer_contract \
     "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
     "$worktree_dir/docs/slices/$slice_file" \
     "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" 2>/dev/null || true)"
-  if [[ "$candidate_finalizer_epic" != "$architecture_finalizer_epic" ]]; then
+  if [[ "$candidate_finalizer_contract" != \
+      "$architecture_finalizer_epic"$'\t'"$architecture_finalizer_root" ]]; then
     cat > "$finalizer_results" <<EOF
 # Architecture Review Finalizer Results
 
@@ -675,7 +679,7 @@ EOF
 # Architecture Review Finalizer Results
 
 PASS: protected owner approval, Epic $architecture_finalizer_epic ownership,
-exhausted corrective generation, and candidate declaration remain exact.
+exhausted root $architecture_finalizer_root, and candidate declaration remain exact.
 Successful full product gates authorize this run to close the exhausted boundary.
 EOF
 fi
@@ -768,23 +772,6 @@ elif not "$split_slice_id":
         else int("$arch_base_threshold")
     )
     state["last_architecture_review_metrics"] = metrics
-    if metrics["corrective_slices_added"] > 0:
-        import re
-        cycle_epic = state.get("architecture_review_cycle_epic")
-        if not cycle_epic:
-            match = re.search(
-                r"epic_(?:boundary|completion):([0-9]{3})",
-                state.get("architecture_review_due_reason", ""),
-            )
-            cycle_epic = match.group(1) if match else None
-        if cycle_epic:
-            state["architecture_review_cycle_epic"] = cycle_epic
-        state["architecture_review_corrective_generation"] = (
-            int(state.get("architecture_review_corrective_generation", 0)) + 1
-        )
-    elif metrics["new_critical"] == 0 and metrics["new_high"] == 0:
-        state.pop("architecture_review_cycle_epic", None)
-        state.pop("architecture_review_corrective_generation", None)
     state["slices_completed_since_architecture_review"] = 0
     state["architecture_review_due"] = False
     state.pop("architecture_review_due_reason", None)
@@ -813,10 +800,15 @@ state["blocked_slices"] = blocked
 path.write_text(json.dumps(state, indent=2) + "\n")
 PY
 
+if [[ "$mode" == "architecture_review" && -z "$split_slice_id" ]]; then
+  ralph_apply_architecture_review_root_transitions \
+    "$worktree_dir/.ralph/state.json" "$run_dir/review-packet.md" || exit 1
+fi
+
 if [[ "$mode" != "architecture_review" && -n "$architecture_finalizer_epic" ]]; then
   ralph_finalize_architecture_review_cycle \
     "$worktree_dir/.ralph/state.json" "$architecture_finalizer_epic" \
-    "$slice_id" "$run_id" || exit 1
+    "$architecture_finalizer_root" "$slice_id" "$run_id" || exit 1
 fi
 
 # An epic boundary is always a review checkpoint, even after the cadence has

@@ -328,6 +328,10 @@ for ((i = 1; i <= max_iterations; i++)); do
         echo "Stopping: the validated review branch is preserved after a merge failure; refusing to duplicate the review." | tee -a "$loop_log"
         exit "$RALPH_EXIT_MERGE_FAILED"
       fi
+      if (( review_status == RALPH_EXIT_REVIEW_CONVERGENCE )); then
+        echo "Architecture-review convergence is exhausted for the same root. Stopping after one classified attempt; do not duplicate the review. See the latest architecture-review-metrics-results.md." | tee -a "$loop_log"
+        exit "$RALPH_EXIT_REVIEW_CONVERGENCE"
+      fi
       review_failures_this_loop=$((review_failures_this_loop + 1))
       if (( review_failures_this_loop >= max_review_attempts )); then
         echo "Mandatory architecture review failed twice. Stopping before product work." | tee -a "$loop_log"
