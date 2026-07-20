@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_replay_after_later_status_change_returns_frozen_original_response (sfpcl_credit.tests.test_repayment_allocation_api.RepaymentAllocationApiTests.test_replay_after_later_status_change_returns_frozen_original_response)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_060345_normal_run/sfpcl_credit/tests/test_repayment_allocation_api.py", line 207, in test_replay_after_later_status_change_returns_frozen_original_response
+    self.assertEqual(
+AssertionError: {'repayment_allocation_id': '7082b69b-ba3e-[492 chars]00'}} != {'idempotency_replayed': True, 'original_re[546 chars]0'}}}
+Diff is 1869 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.667s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

@@ -114,7 +114,20 @@ def activate(*, actor, request, interest_rate_config_id, idempotency_key):
                 row.activation_idempotency_key == key
                 and row.activation_payload_digest == digest
             ):
-                return serialize(row)
+                retained_response = VersionHistory.objects.filter(
+                    versioned_entity_type=ENTITY_TYPE,
+                    versioned_entity_id=row.pk,
+                    approval_reference=key,
+                    change_summary=f"Activated interest rate version {row.version_number}.",
+                ).values_list("new_value_json", flat=True).first()
+                if retained_response is None:
+                    raise InterestRateConflict(
+                        "The retained activation has no frozen replay response."
+                    )
+                return {
+                    "idempotency_replayed": True,
+                    "original_response": retained_response,
+                }
             raise InterestRateConflict(
                 "An active rate version is immutable and cannot be activated again."
             )
@@ -145,9 +158,18 @@ def activate(*, actor, request, interest_rate_config_id, idempotency_key):
                     "The rate version must start the day after the approved predecessor."
                 )
             if predecessor.effective_to is None:
+                if InterestRateConsumptionSnapshot.objects.filter(
+                    rate_config=predecessor,
+                    calculation_date__gte=row.effective_from,
+                ).exists():
+                    raise InterestRateConflict(
+                        "The successor would exclude a retained rate-consumption date."
+                    )
                 predecessor_before = serialize(predecessor)
                 predecessor.effective_to = row.effective_from - timedelta(days=1)
-                predecessor.save(update_fields=["effective_to"])
+                InterestRateConfig._base_manager.filter(pk=predecessor.pk).update(
+                    effective_to=predecessor.effective_to
+                )
                 predecessor_after = serialize(predecessor)
                 VersionHistory.objects.create(
                     versioned_entity_type=ENTITY_TYPE,
@@ -187,14 +209,12 @@ def activate(*, actor, request, interest_rate_config_id, idempotency_key):
         row.activated_at = decision_time
         row.activation_idempotency_key = key
         row.activation_payload_digest = digest
-        row.save(
-            update_fields=[
-                "status",
-                "approved_by_user",
-                "activated_at",
-                "activation_idempotency_key",
-                "activation_payload_digest",
-            ]
+        InterestRateConfig._base_manager.filter(pk=row.pk).update(
+            status=row.status,
+            approved_by_user=row.approved_by_user,
+            activated_at=row.activated_at,
+            activation_idempotency_key=row.activation_idempotency_key,
+            activation_payload_digest=row.activation_payload_digest,
         )
         _create_rate_histories_and_notices(row=row, actor=actor, request=request)
         after = serialize(row)
@@ -260,30 +280,53 @@ def consume_effective_rate(
 ):
     if consumer_kind not in {"interest_invoice", "interest_accrual"}:
         raise ValidationError({"consumer_kind": "Unsupported interest consumer."})
-    with transaction.atomic():
-        retained = InterestRateConsumptionSnapshot.objects.select_for_update().filter(
+    try:
+        with transaction.atomic():
+            retained = InterestRateConsumptionSnapshot.objects.select_for_update().filter(
+                consumer_kind=consumer_kind,
+                consumer_reference_id=consumer_reference_id,
+            ).first()
+            if retained is not None:
+                return _require_matching_consumption(
+                    retained,
+                    loan_account_id=loan_account_id,
+                    calculation_date=calculation_date,
+                )
+            effective = resolve_effective_rate(calculation_date)
+            return InterestRateConsumptionSnapshot.objects.create(
+                consumer_kind=consumer_kind,
+                consumer_reference_id=consumer_reference_id,
+                loan_account_id=loan_account_id,
+                calculation_date=calculation_date,
+                rate_config_id=effective.interest_rate_config_id,
+                version_number=effective.version_number,
+                effective_rate=effective.effective_rate,
+            )
+    except IntegrityError:
+        retained = InterestRateConsumptionSnapshot.objects.filter(
             consumer_kind=consumer_kind,
             consumer_reference_id=consumer_reference_id,
         ).first()
-        if retained is not None:
-            if (
-                retained.loan_account_id == loan_account_id
-                and retained.calculation_date == calculation_date
-            ):
-                return retained
+        if retained is None:
             raise InterestRateConflict(
-                "The interest consumer reference is already bound to another calculation."
+                "The interest consumer could not retain one canonical snapshot."
             )
-        effective = resolve_effective_rate(calculation_date)
-        return InterestRateConsumptionSnapshot.objects.create(
-            consumer_kind=consumer_kind,
-            consumer_reference_id=consumer_reference_id,
+        return _require_matching_consumption(
+            retained,
             loan_account_id=loan_account_id,
             calculation_date=calculation_date,
-            rate_config_id=effective.interest_rate_config_id,
-            version_number=effective.version_number,
-            effective_rate=effective.effective_rate,
         )
+
+
+def _require_matching_consumption(retained, *, loan_account_id, calculation_date):
+    if (
+        retained.loan_account_id == loan_account_id
+        and retained.calculation_date == calculation_date
+    ):
+        return retained
+    raise InterestRateConflict(
+        "The interest consumer reference is already bound to another calculation."
+    )
 
 
 def can_read(user):
@@ -526,68 +569,68 @@ def _create_rate_histories_and_notices(*, row, actor, request):
         interest_rate_type="floating",
     ).order_by("loan_account_id")
     for account in accounts:
-        history = InterestRateHistory.objects.create(
+        old_interest_rate = account.current_interest_rate
+        account.current_interest_rate = row.effective_rate
+        account.save(update_fields=["current_interest_rate"])
+        email_communication = None
+        if row.communication_required:
+            obligation = BorrowerRateNoticeObligation.objects.create(
+                interest_rate_config=row,
+                loan_account=account,
+            )
+            for channel, address, template_code in (
+                (
+                    Communication.CHANNEL_EMAIL,
+                    account.member.email,
+                    "interest_rate_change_email",
+                ),
+                (
+                    Communication.CHANNEL_SMS,
+                    account.member.mobile_number,
+                    "interest_rate_change_sms",
+                ),
+            ):
+                if not address:
+                    failure_field = f"{channel}_failure_code"
+                    setattr(obligation, failure_field, "recipient_address_missing")
+                    obligation.save(update_fields=[failure_field])
+                    continue
+                idempotency_prefix = f"rate-notice:{row.pk}:{account.pk}:{channel}"
+                communication = CommunicationDispatcher.create_from_template(
+                    actor=actor,
+                    template_code=template_code,
+                    recipient={
+                        "party_type": "borrower",
+                        "party_id": account.member_id,
+                        "address": address,
+                        "channel": channel,
+                    },
+                    context={
+                        "request": request,
+                        "idempotency_key": f"{idempotency_prefix}:snapshot",
+                        "merge_data": {
+                            "effective_rate": f"{row.effective_rate:.4f}",
+                            "effective_from": row.effective_from.isoformat(),
+                        },
+                    },
+                    related_entity={"type": ENTITY_TYPE, "id": row.pk},
+                )
+                CommunicationDispatcher.send(
+                    communication_id=communication.pk,
+                    idempotency_key=f"{idempotency_prefix}:delivery",
+                )
+                communication_field = f"{channel}_communication"
+                setattr(obligation, communication_field, communication)
+                obligation.save(update_fields=[communication_field])
+                if channel == Communication.CHANNEL_EMAIL:
+                    email_communication = communication
+        InterestRateHistory.objects.create(
             loan_account=account,
-            old_interest_rate=account.current_interest_rate,
+            old_interest_rate=old_interest_rate,
             new_interest_rate=row.effective_rate,
             effective_from=row.effective_from,
             rate_config=row,
+            borrower_communication=email_communication,
             changed_by_user=actor,
             changed_at=row.activated_at,
         )
-        if not row.communication_required:
-            continue
-        obligation = BorrowerRateNoticeObligation.objects.create(
-            interest_rate_config=row,
-            loan_account=account,
-        )
-        email_communication = None
-        for channel, address, template_code in (
-            (
-                Communication.CHANNEL_EMAIL,
-                account.member.email,
-                "interest_rate_change_email",
-            ),
-            (
-                Communication.CHANNEL_SMS,
-                account.member.mobile_number,
-                "interest_rate_change_sms",
-            ),
-        ):
-            if not address:
-                failure_field = f"{channel}_failure_code"
-                setattr(obligation, failure_field, "recipient_address_missing")
-                obligation.save(update_fields=[failure_field])
-                continue
-            idempotency_prefix = f"rate-notice:{row.pk}:{account.pk}:{channel}"
-            communication = CommunicationDispatcher.create_from_template(
-                actor=actor,
-                template_code=template_code,
-                recipient={
-                    "party_type": "borrower",
-                    "party_id": account.member_id,
-                    "address": address,
-                    "channel": channel,
-                },
-                context={
-                    "request": request,
-                    "idempotency_key": f"{idempotency_prefix}:snapshot",
-                    "merge_data": {
-                        "effective_rate": f"{row.effective_rate:.4f}",
-                        "effective_from": row.effective_from.isoformat(),
-                    },
-                },
-                related_entity={"type": ENTITY_TYPE, "id": row.pk},
-            )
-            CommunicationDispatcher.send(
-                communication_id=communication.pk,
-                idempotency_key=f"{idempotency_prefix}:delivery",
-            )
-            communication_field = f"{channel}_communication"
-            setattr(obligation, communication_field, communication)
-            obligation.save(update_fields=[communication_field])
-            if channel == Communication.CHANNEL_EMAIL:
-                email_communication = communication
-        if email_communication is not None:
-            history.borrower_communication = email_communication
-            history.save(update_fields=["borrower_communication"])

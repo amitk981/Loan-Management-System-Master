@@ -112,6 +112,7 @@ class StatementEvidenceOwnerScopeClosureTests(TestCase):
             resolve_source_bank_account,
         )
         from sfpcl_credit.loans.models import Repayment
+        from sfpcl_credit.members.models import Member
 
         self.fixture.fixture.fixture.owner.fixture.fixture._grant(
             self.fixture.actor,
@@ -128,6 +129,17 @@ class StatementEvidenceOwnerScopeClosureTests(TestCase):
             borrower_type=self.fixture.account.member.member_type,
             received_by_user=self.fixture.actor,
         )
+        conflicting_borrower = Member.objects.create(
+            member_type="individual_farmer",
+            legal_name="Competing Borrower",
+            display_name="Competing Borrower",
+            folio_number="FOLIO-COMPETING-BORROWER",
+            membership_status="active",
+            pan_encrypted="synthetic-competing-pan",
+            pan_hash="synthetic-competing-pan-hash",
+            kyc_status="verified",
+            default_status="no_default",
+        )
         receipt_ids = []
         for suffix in (
             "BORROWER",
@@ -135,6 +147,7 @@ class StatementEvidenceOwnerScopeClosureTests(TestCase):
             "ACCOUNT",
             "BOTH",
             "AMBIGUOUS",
+            "CONFLICTING-BORROWER",
             "MISSING",
         ):
             response = self.fixture._capture(
@@ -165,6 +178,9 @@ class StatementEvidenceOwnerScopeClosureTests(TestCase):
             f"2026-12-12,2026-12-12,51000.00,{borrower_name} {application_number} "
             f"{conflicting_application.application_reference_number},"
             f"UTR-SUBSIDIARY-AMBIGUOUS,{self.fixture.account.loan_account_number}\n"
+            f"2026-12-12,2026-12-12,51000.00,{borrower_name} {application_number} "
+            f"{conflicting_borrower.legal_name},UTR-SUBSIDIARY-CONFLICTING-BORROWER,"
+            f"{self.fixture.account.loan_account_number}\n"
             f"2026-12-12,2026-12-12,51000.00,,UTR-SUBSIDIARY-MISSING,"
             f"{self.fixture.account.loan_account_number}\n"
         )
@@ -187,7 +203,15 @@ class StatementEvidenceOwnerScopeClosureTests(TestCase):
         lines = response.json()["data"]["lines"]
         self.assertEqual(
             [line["match_status"] for line in lines],
-            ["unmatched", "unmatched", "unmatched", "matched", "unmatched", "unmatched"],
+            [
+                "unmatched",
+                "unmatched",
+                "unmatched",
+                "matched",
+                "unmatched",
+                "unmatched",
+                "unmatched",
+            ],
         )
         self.assertEqual(
             [line["match_reason_code"] for line in lines],
@@ -196,6 +220,7 @@ class StatementEvidenceOwnerScopeClosureTests(TestCase):
                 "missing_borrower_and_application_narration",
                 "missing_borrower_and_application_narration",
                 "exact_reference_amount_date_account",
+                "ambiguous_borrower_or_application_narration",
                 "ambiguous_borrower_or_application_narration",
                 "missing_borrower_and_application_narration",
             ],

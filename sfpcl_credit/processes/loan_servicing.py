@@ -42,27 +42,41 @@ def get_schedule(*, actor, loan_account_id, query_params):
 def get_ledger(*, actor, loan_account_id, query_params):
     account, transfer = _scoped_account(actor=actor, loan_account_id=loan_account_id)
     page, page_size = _pagination(query_params)
-    rows = [_disbursement_ledger_row(transfer)] if transfer is not None else []
-    rows.extend(
-        _repayment_ledger_row(entry)
-        for entry in account.repayment_ledger_entries.select_related(
-            "allocation__repayment", "actor_user"
-        ).order_by("created_at", "repayment_ledger_entry_id")
+    repayment_rows = account.repayment_ledger_entries.select_related(
+        "allocation__repayment", "actor_user"
+    ).order_by("created_at", "repayment_ledger_entry_id")
+    reversal_rows = account.repayment_reversal_ledger_entries.select_related(
+        "reversal__repayment", "actor_user"
+    ).order_by("created_at", "repayment_reversal_ledger_entry_id")
+    total_count = (
+        (1 if transfer is not None else 0)
+        + repayment_rows.count()
+        + reversal_rows.count()
     )
-    rows.extend(
-        _reversal_ledger_row(entry)
-        for entry in account.repayment_reversal_ledger_entries.select_related(
-            "reversal__repayment", "actor_user"
-        ).order_by("created_at", "repayment_reversal_ledger_entry_id")
-    )
-    disbursement_rows = rows[:1] if transfer is not None else []
-    movement_rows = rows[1:] if transfer is not None else rows
-    movement_rows.sort(key=lambda row: row.pop("_sort_key"))
-    rows = disbursement_rows + movement_rows
     pagination = _pagination_result(
-        page=page, page_size=page_size, total_count=len(rows)
+        page=page, page_size=page_size, total_count=total_count
     )
-    return rows[(page - 1) * page_size : page * page_size], pagination
+    start = (page - 1) * page_size
+    end = page * page_size
+    opening_count = 1 if transfer is not None else 0
+    movement_start = max(0, start - opening_count)
+    movement_end = max(0, end - opening_count)
+    movement_rows = [
+        *(
+            _repayment_ledger_row(entry)
+            for entry in repayment_rows[:movement_end]
+        ),
+        *(
+            _reversal_ledger_row(entry)
+            for entry in reversal_rows[:movement_end]
+        ),
+    ]
+    movement_rows.sort(key=lambda row: row.pop("_sort_key"))
+    rows = []
+    if transfer is not None and start == 0:
+        rows.append(_disbursement_ledger_row(transfer))
+    rows.extend(movement_rows[movement_start:movement_end])
+    return rows, pagination
 
 
 def _scoped_account(*, actor, loan_account_id):
@@ -178,7 +192,7 @@ def _disbursement_ledger_row(transfer):
 def _repayment_ledger_row(entry):
     repayment = entry.allocation.repayment
     return {
-        "_sort_key": (entry.created_at, str(entry.pk)),
+        "_sort_key": (entry.created_at, "repayment", str(entry.pk)),
         "transaction_date": entry.transaction_date.isoformat(),
         "transaction_type": "repayment",
         "owner_reference": {
@@ -203,7 +217,7 @@ def _repayment_ledger_row(entry):
 def _reversal_ledger_row(entry):
     repayment = entry.reversal.repayment
     return {
-        "_sort_key": (entry.created_at, str(entry.pk)),
+        "_sort_key": (entry.created_at, "reversal", str(entry.pk)),
         "transaction_date": entry.transaction_date.isoformat(),
         "transaction_type": "reversal",
         "owner_reference": {

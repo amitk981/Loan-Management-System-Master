@@ -811,13 +811,25 @@ def _narration_supports_candidate(narration, repayment):
 
 
 def _subsidiary_narration_is_ambiguous(narration, repayment):
-    normalized_tokens = set(_normalize(narration).split())
+    normalized_narration = _normalize(narration)
+    normalized_tokens = set(normalized_narration.split())
     if not normalized_tokens:
         return False
     application_model = repayment.loan_account.loan_application.__class__
-    return application_model.objects.exclude(
+    if application_model.objects.exclude(
         pk=repayment.loan_account.loan_application_id
-    ).filter(application_reference_number__in=normalized_tokens).exists()
+    ).filter(application_reference_number__in=normalized_tokens).exists():
+        return True
+
+    member_model = repayment.loan_account.member.__class__
+    competing_names = member_model.objects.exclude(
+        pk=repayment.loan_account.member_id
+    ).values_list("legal_name", "display_name")
+    return any(
+        normalized_name and normalized_name in normalized_narration
+        for names in competing_names.iterator(chunk_size=1000)
+        for normalized_name in {_normalize(name) for name in names}
+    )
 
 
 def _bounded(value, limit):

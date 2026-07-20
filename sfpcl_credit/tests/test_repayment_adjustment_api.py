@@ -7,6 +7,7 @@ from unittest import skipUnless
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import close_old_connections, connection
 from django.test import Client, TestCase, TransactionTestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 
 
 @override_settings(DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-adjustment-tests-"))
@@ -157,7 +158,13 @@ class RepaymentAdjustmentApiTests(TestCase):
         replay = self._manual_allocate(repayment_id, approval_id=approval_id)
         self.assertEqual(allocated.status_code, 200, allocated.content)
         self.assertEqual(replay.status_code, 200, replay.content)
-        self.assertEqual(replay.json()["data"], allocated.json()["data"])
+        self.assertEqual(
+            replay.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": allocated.json()["data"],
+            },
+        )
         allocation = RepaymentAllocation.objects.get()
         self.assertEqual(str(allocation.manual_approval_id), approval_id)
         self.assertEqual(str(allocation.allocated_to_principal), "100000.00")
@@ -217,15 +224,24 @@ class RepaymentAdjustmentApiTests(TestCase):
         self.assertEqual(account.loan_account_status, "active")
         self.assertEqual(str(schedule.paid_principal), "0.00")
         self.assertEqual(schedule.schedule_status, "pending")
-        ledger_response = self.client.get(
-            f"/api/v1/loan-accounts/{self.account.pk}/ledger/", **self.auth
-        )
+        with CaptureQueriesContext(connection) as ledger_queries:
+            ledger_response = self.client.get(
+                f"/api/v1/loan-accounts/{self.account.pk}/ledger/", **self.auth
+            )
         self.assertEqual(ledger_response.status_code, 200, ledger_response.content)
         self.assertEqual(
             [row["transaction_type"] for row in ledger_response.json()["data"]],
             ["disbursement", "repayment", "reversal"],
         )
         self.assertEqual(ledger_response.json()["data"][2]["debit"], "100000.00")
+        movement_selects = [
+            query["sql"]
+            for query in ledger_queries.captured_queries
+            if "repayment_ledger_entries" in query["sql"]
+            or "repayment_reversal_ledger_entries" in query["sql"]
+        ]
+        self.assertEqual(len(movement_selects), 4)
+        self.assertTrue(all("LIMIT" in sql for sql in movement_selects[2:]))
 
     def _financial_truth(self):
         from sfpcl_credit.identity.models import AuditLog

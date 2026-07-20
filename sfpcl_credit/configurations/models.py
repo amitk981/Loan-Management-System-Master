@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -90,6 +91,22 @@ class VersionHistory(models.Model):
         ordering = ["-created_at", "-version_history_id"]
 
 
+class ImmutableApprovedInterestRateQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        if self.filter(status="active").exists() or kwargs.get("status") == "active":
+            raise ValidationError(
+                {"interest_rate_config": "Approved rate versions are immutable."}
+            )
+        return super().update(**kwargs)
+
+    def delete(self):
+        if self.filter(status="active").exists():
+            raise ValidationError(
+                {"interest_rate_config": "Approved rate versions are immutable."}
+            )
+        return super().delete()
+
+
 class InterestRateConfig(models.Model):
     STATUS_PROPOSED = "proposed"
     STATUS_ACTIVE = "active"
@@ -129,6 +146,8 @@ class InterestRateConfig(models.Model):
     activation_payload_digest = models.CharField(max_length=64, blank=True, default="")
     created_at = models.DateTimeField(default=timezone.now)
 
+    objects = ImmutableApprovedInterestRateQuerySet.as_manager()
+
     class Meta:
         db_table = "interest_rate_configs"
         ordering = ["-effective_from", "-interest_rate_config_id"]
@@ -161,6 +180,35 @@ class InterestRateConfig(models.Model):
                 name="interest_rate_status_valid",
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            if self.status == self.STATUS_ACTIVE:
+                raise ValidationError(
+                    {"interest_rate_config": "Activation must use the canonical rate owner."}
+                )
+        else:
+            retained = type(self)._base_manager.get(pk=self.pk)
+            if retained.status == self.STATUS_ACTIVE or self.status == self.STATUS_ACTIVE:
+                raise ValidationError(
+                    {"interest_rate_config": "Approved rate versions are immutable."}
+                )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.status == self.STATUS_ACTIVE:
+            raise ValidationError(
+                {"interest_rate_config": "Approved rate versions are immutable."}
+            )
+        return super().delete(*args, **kwargs)
+
+
+class AppendOnlyInterestRateHistoryQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError({"interest_rate_history": "Rate history is append-only."})
+
+    def delete(self):
+        raise ValidationError({"interest_rate_history": "Rate history is append-only."})
 
 
 class InterestRateHistory(models.Model):
@@ -196,6 +244,8 @@ class InterestRateHistory(models.Model):
     )
     changed_at = models.DateTimeField(default=timezone.now)
 
+    objects = AppendOnlyInterestRateHistoryQuerySet.as_manager()
+
     class Meta:
         db_table = "interest_rate_histories"
         ordering = ["effective_from", "interest_rate_history_id"]
@@ -205,6 +255,14 @@ class InterestRateHistory(models.Model):
                 name="uniq_loan_rate_config_history",
             )
         ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"interest_rate_history": "Rate history is append-only."})
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"interest_rate_history": "Rate history is append-only."})
 
 
 class BorrowerRateNoticeObligation(models.Model):
@@ -328,6 +386,11 @@ class InterestRateConsumptionSnapshot(models.Model):
                 {"interest_rate_consumption": "Consumed rate snapshots are immutable."}
             )
         return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_rate_consumption": "Consumed rate snapshots are immutable."}
+        )
 
 
 class SourceBankAccountGovernance(models.Model):

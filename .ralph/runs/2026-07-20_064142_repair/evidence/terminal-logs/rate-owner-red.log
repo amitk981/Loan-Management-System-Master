@@ -1,0 +1,29 @@
+Permanent test selector: sfpcl_credit/tests/test_interest_rate_config_api.py::InterestRateConfigApiTests::test_open_predecessor_cannot_be_closed_before_a_retained_consumption
+
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_checker_activates_contiguous_versions_and_resolution_is_historical (sfpcl_credit.tests.test_interest_rate_config_api.InterestRateConfigApiTests.test_checker_activates_contiguous_versions_and_resolution_is_historical)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_060345_normal_run/sfpcl_credit/tests/test_interest_rate_config_api.py", line 306, in test_checker_activates_contiguous_versions_and_resolution_is_historical
+    self.assertEqual(
+AssertionError: {'interest_rate_config_id': '4ea4590c-567f-4[627 chars]: 0}} != {'idempotency_replayed': True, 'original_res[680 chars] 0}}}
+Diff is 2122 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_open_predecessor_cannot_be_closed_before_a_retained_consumption (sfpcl_credit.tests.test_interest_rate_config_api.InterestRateConfigApiTests.test_open_predecessor_cannot_be_closed_before_a_retained_consumption)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_060345_normal_run/sfpcl_credit/tests/test_interest_rate_config_api.py", line 393, in test_open_predecessor_cannot_be_closed_before_a_retained_consumption
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"interest_rate_config_id": "444f2565-e806-4abb-80b0-459f18702db5", "version_number": "RATE-CONSUMED-SUCCESSOR", "rate_type": "floating", "effective_rate": "9.2500", "effective_from": "2026-09-01", "effective_to": null, "benchmark_name": null, "spread_rate": null, "reset_frequency": null, "communication_required": false, "board_approval_reference": "BOARD-RATE-2026-01", "status": "active", "created_by_user_id": "05c378e4-6fa0-4da8-999f-621fe5fa20e1", "approved_by_user_id": "4534dd96-d572-45cb-a2b0-c529a9c47ba0", "activated_at": "2026-07-20T00:45:10.831361Z", "notice_summary": {"pending": 0, "sent": 0, "failed": 0}, "notice_channel_summary": {"pending": 0, "sent": 0, "failed": 0}}, "meta": {"request_id": "req-rate-config", "timestamp": "2026-07-20T00:45:10.835717Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.638s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...
+Exit code: 1

@@ -5,6 +5,7 @@ from threading import Barrier
 from types import SimpleNamespace
 from unittest import skipUnless
 
+from django.core.exceptions import ValidationError
 from django.db import close_old_connections, connection, connections
 from django.test import Client, TestCase, TransactionTestCase
 from django.utils import timezone
@@ -21,7 +22,11 @@ from sfpcl_credit.communications.adapters import (
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
 )
-from sfpcl_credit.configurations.models import InterestRateConfig, VersionHistory
+from sfpcl_credit.configurations.models import (
+    InterestRateConfig,
+    InterestRateHistory,
+    VersionHistory,
+)
 from sfpcl_credit.configurations.models import BorrowerRateNoticeObligation
 from sfpcl_credit.configurations.modules.interest_rate_configuration import (
     MissingEffectiveRate,
@@ -303,7 +308,13 @@ class InterestRateConfigApiTests(TestCase):
 
         replayed = self._activate(first["interest_rate_config_id"], "rate-activate-1")
         self.assertEqual(replayed.status_code, 200)
-        self.assertEqual(replayed.json()["data"], activated.json()["data"])
+        self.assertEqual(
+            replayed.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": activated.json()["data"],
+            },
+        )
 
         second = self._create(
             version_number="RATE-2026-02",
@@ -344,6 +355,51 @@ class InterestRateConfigApiTests(TestCase):
                 versioned_entity_type="interest_rate_config"
             ).count(),
             3,
+        )
+
+    def test_open_predecessor_cannot_be_closed_before_a_retained_consumption(self):
+        from sfpcl_credit.configurations.models import InterestRateConsumptionSnapshot
+        from sfpcl_credit.tests.test_loan_account_reads_api import (
+            ActiveLoanAccountReadApiTests,
+        )
+
+        fixture = ActiveLoanAccountReadApiTests(
+            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
+        )
+        fixture.setUp()
+        first = self._create(
+            version_number="RATE-CONSUMED-OPEN",
+            effective_from="2026-08-01",
+            communication_required=False,
+        )
+        self.assertEqual(
+            self._activate(first["interest_rate_config_id"], "consumed-open-first").status_code,
+            200,
+        )
+        InterestRateConsumptionSnapshot.objects.create(
+            consumer_kind="interest_invoice",
+            consumer_reference_id=uuid.uuid4(),
+            loan_account=fixture.account,
+            calculation_date=date(2026, 10, 1),
+            rate_config_id=first["interest_rate_config_id"],
+            version_number="RATE-CONSUMED-OPEN",
+            effective_rate="9.2500",
+        )
+        successor = self._create(
+            version_number="RATE-CONSUMED-SUCCESSOR",
+            effective_from="2026-09-01",
+            communication_required=False,
+        )
+
+        response = self._activate(
+            successor["interest_rate_config_id"], "consumed-open-successor"
+        )
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertIsNone(
+            InterestRateConfig.objects.get(
+                pk=first["interest_rate_config_id"]
+            ).effective_to
         )
 
     def test_activation_queues_honest_email_and_sms_obligations_for_active_loans(self):
@@ -440,6 +496,19 @@ class InterestRateConfigApiTests(TestCase):
         self.assertEqual(obligation.email_delivery_status, "sent")
         self.assertEqual(obligation.sms_delivery_status, "failed")
         self.assertEqual(obligation.delivery_status, "failed")
+        account.refresh_from_db()
+        self.assertEqual(f"{account.current_interest_rate:.4f}", "9.2500")
+
+        replay = self._activate(
+            proposed["interest_rate_config_id"], "rate-notices-activate"
+        )
+        self.assertEqual(
+            replay.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": response.json()["data"],
+            },
+        )
 
         listed = self.client.get(INTEREST_RATE_URL, headers=self._headers())
         self.assertEqual(
@@ -508,6 +577,55 @@ class InterestRateConfigApiTests(TestCase):
         self.assertEqual(str(invoice_snapshot.rate_config_id), first["interest_rate_config_id"])
         self.assertEqual(f"{accrual_snapshot.effective_rate:.4f}", "9.7500")
         self.assertEqual(str(accrual_snapshot.rate_config_id), second["interest_rate_config_id"])
+        account.refresh_from_db()
+        self.assertEqual(f"{account.current_interest_rate:.4f}", "9.7500")
+        from sfpcl_credit.loans.modules.loan_account_read import resolve_creation_truth
+
+        self.assertIsNotNone(resolve_creation_truth(account=account))
+        histories = list(
+            InterestRateHistory.objects.filter(loan_account=account).order_by(
+                "effective_from"
+            )
+        )
+        self.assertEqual(
+            [
+                (
+                    f"{history.old_interest_rate:.4f}",
+                    f"{history.new_interest_rate:.4f}",
+                )
+                for history in histories
+            ],
+            [("9.0000", "9.2500"), ("9.2500", "9.7500")],
+        )
+        with self.assertRaises(ValidationError):
+            InterestRateHistory.objects.filter(pk=histories[0].pk).update(
+                new_interest_rate="10.0000"
+            )
+        type(account).objects.filter(pk=account.pk).update(current_interest_rate="9.0000")
+        account.refresh_from_db()
+        self.assertIsNone(resolve_creation_truth(account=account))
+
+    def test_active_rate_versions_reject_model_and_queryset_mutation(self):
+        proposed = self._create(
+            version_number="RATE-IMMUTABLE",
+            effective_from="2026-08-01",
+            communication_required=False,
+        )
+        self.assertEqual(
+            self._activate(proposed["interest_rate_config_id"], "immutable-rate").status_code,
+            200,
+        )
+        row = InterestRateConfig.objects.get(pk=proposed["interest_rate_config_id"])
+        row.effective_rate = "10.0000"
+
+        with self.assertRaises(ValidationError):
+            row.save(update_fields=["effective_rate"])
+        with self.assertRaises(ValidationError):
+            InterestRateConfig.objects.filter(pk=row.pk).update(
+                effective_rate="10.0000"
+            )
+        with self.assertRaises(ValidationError):
+            row.delete()
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

@@ -1,0 +1,35 @@
+Permanent test selector: sfpcl_credit/tests/test_statement_evidence_owner_scope_closure.py::StatementEvidenceOwnerScopeClosureTests::test_subsidiary_auto_match_requires_borrower_and_application_facts
+
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_subsidiary_auto_match_requires_borrower_and_application_facts (sfpcl_credit.tests.test_statement_evidence_owner_scope_closure.StatementEvidenceOwnerScopeClosureTests.test_subsidiary_auto_match_requires_borrower_and_application_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_060345_normal_run/sfpcl_credit/tests/test_statement_evidence_owner_scope_closure.py", line 204, in test_subsidiary_auto_match_requires_borrower_and_application_facts
+    self.assertEqual(
+AssertionError: Lists differ: ['unm[21 chars] 'unmatched', 'matched', 'unmatched', 'matched', 'unmatched'] != ['unm[21 chars] 'unmatched', 'matched', 'unmatched', 'unmatched', 'unmatched']
+
+First differing element 5:
+'matched'
+'unmatched'
+
+  ['unmatched',
+   'unmatched',
+   'unmatched',
+   'matched',
+   'unmatched',
+-  'matched',
++  'unmatched',
+?   ++
+
+   'unmatched']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.628s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

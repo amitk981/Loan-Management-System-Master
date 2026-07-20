@@ -85,7 +85,7 @@ class RepaymentAllocator:
                 and retained.repayment_id == repayment_id
                 and retained.payload_digest == payload_digest
             ):
-                return cls._serialize(retained)
+                return cls._serialize(retained, replayed=True)
             raise RepaymentAllocationConflict(
                 "The allocation idempotency key or repayment is already in use."
             ) from exc
@@ -118,7 +118,7 @@ class RepaymentAllocator:
                 retained_for_key.repayment_id == repayment.pk
                 and retained_for_key.payload_digest == payload_digest
             ):
-                return cls._serialize(retained_for_key)
+                return cls._serialize(retained_for_key, replayed=True)
             raise RepaymentAllocationConflict(
                 "The idempotency key was already used for a different allocation."
             )
@@ -225,6 +225,19 @@ class RepaymentAllocator:
             ),
             "request_id": request.headers.get("X-Request-ID", "") if request else "",
         }
+        evidence["original_response"] = cls._response_values(
+            allocation_id=allocation_id,
+            repayment_id=repayment.pk,
+            allocation_status=status,
+            principal=principal,
+            interest=interest,
+            unallocated=unallocated,
+            exception_reason=exception_reason,
+            principal_after=principal_after,
+            interest_after=interest_after,
+            charges_after=account.charges_outstanding,
+            total_after=total_after,
+        )
         schedule_plan = cls._schedule_plan(
             schedules, principal=principal, interest=interest
         )
@@ -504,23 +517,61 @@ class RepaymentAllocator:
         return hashlib.sha256(canonical.encode()).hexdigest()
 
     @staticmethod
-    def _serialize(allocation):
+    def _serialize(allocation, *, replayed=False):
+        if replayed:
+            original = (allocation.allocation_audit.new_value_json or {}).get(
+                "original_response"
+            )
+            if original is None:
+                raise RepaymentAllocationConflict(
+                    "The retained allocation has no frozen replay response."
+                )
+            return {"idempotency_replayed": True, "original_response": original}
+        return RepaymentAllocator._response_values(
+            allocation_id=allocation.pk,
+            repayment_id=allocation.repayment_id,
+            allocation_status=allocation.repayment.allocation_status,
+            principal=allocation.allocated_to_principal,
+            interest=allocation.allocated_to_interest,
+            unallocated=allocation.unallocated_amount,
+            exception_reason=allocation.exception_reason,
+            principal_after=allocation.principal_after,
+            interest_after=allocation.interest_after,
+            charges_after=allocation.charges_after,
+            total_after=allocation.total_after,
+        )
+
+    @staticmethod
+    def _response_values(
+        *,
+        allocation_id,
+        repayment_id,
+        allocation_status,
+        principal,
+        interest,
+        unallocated,
+        exception_reason,
+        principal_after,
+        interest_after,
+        charges_after,
+        total_after,
+    ):
         return {
-            "repayment_allocation_id": str(allocation.pk),
-            "repayment_id": str(allocation.repayment_id),
-            "allocation_rule": allocation.allocation_rule,
-            "allocation_rule_version": allocation.allocation_rule_version,
-            "allocation_status": allocation.repayment.allocation_status,
-            "allocated_to_principal": f"{allocation.allocated_to_principal:.2f}",
-            "allocated_to_interest": f"{allocation.allocated_to_interest:.2f}",
-            "allocated_to_charges": f"{allocation.allocated_to_charges:.2f}",
-            "unallocated_amount": f"{allocation.unallocated_amount:.2f}",
-            "exception_reason": allocation.exception_reason,
+            "repayment_allocation_id": str(allocation_id),
+            "repayment_id": str(repayment_id),
+            "allocation_rule": "principal_first",
+            "allocation_rule_version": "v1",
+            "allocation_status": allocation_status,
+            "allocated_to_principal": f"{principal:.2f}",
+            "allocated_to_interest": f"{interest:.2f}",
+            "allocated_to_charges": "0.00",
+            "unallocated_amount": f"{unallocated:.2f}",
+            "exception_reason": exception_reason,
             "loan_account": {
-                "principal_outstanding": f"{allocation.principal_after:.2f}",
-                "interest_outstanding": f"{allocation.interest_after:.2f}",
-                "charges_outstanding": f"{allocation.charges_after:.2f}",
-                "total_outstanding": f"{allocation.total_after:.2f}",
+                "principal_outstanding": f"{principal_after:.2f}",
+                "interest_outstanding": f"{interest_after:.2f}",
+                "charges_outstanding": f"{charges_after:.2f}",
+                "total_outstanding": f"{total_after:.2f}",
             },
         }
 

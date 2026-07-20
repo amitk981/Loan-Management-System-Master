@@ -165,7 +165,13 @@ class RepaymentAllocationApiTests(TestCase):
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(replay.status_code, 200, replay.content)
         self.assertEqual(changed.status_code, 409, changed.content)
-        self.assertEqual(replay.json()["data"], first.json()["data"])
+        self.assertEqual(
+            replay.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": first.json()["data"],
+            },
+        )
         account = LoanAccount.objects.get(pk=self.account.pk)
         self.assertEqual(str(account.principal_outstanding), "0.00")
         self.assertEqual(str(account.total_outstanding), "0.00")
@@ -180,6 +186,32 @@ class RepaymentAllocationApiTests(TestCase):
             {key: value for key, value in capture_truth[0].items() if key != "allocation_status"},
         )
         self.assertEqual(obligation, capture_truth[1])
+
+    def test_replay_after_later_status_change_returns_frozen_original_response(self):
+        from sfpcl_credit.loans.models import Repayment, RepaymentAllocation
+
+        captured = self.fixture._capture(
+            self.fixture._payload(), "allocation-frozen-replay"
+        )
+        repayment_id = captured.json()["data"]["repayment_id"]
+        self._schedule("400000.00")
+        first = self._allocate(repayment_id)
+        self.assertEqual(first.status_code, 200, first.content)
+        Repayment.objects.filter(pk=repayment_id).update(
+            allocation_status="reversed"
+        )
+
+        replay = self._allocate(repayment_id)
+
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(
+            replay.json()["data"],
+            {
+                "idempotency_replayed": True,
+                "original_response": first.json()["data"],
+            },
+        )
+        self.assertEqual(RepaymentAllocation.objects.count(), 1)
 
     def test_incoherent_capture_evidence_is_zero_write_conflict(self):
         from sfpcl_credit.identity.models import AuditLog

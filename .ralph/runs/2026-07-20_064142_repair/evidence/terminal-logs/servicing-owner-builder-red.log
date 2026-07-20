@@ -1,0 +1,5 @@
+Test specification: sfpcl_credit/tests/test_servicing_financial_owner_closure.py::ServicingOwnerBuilderTests::test_public_builder_produces_distinct_active_financial_owners
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+FAILING SIGNAL: the servicing acceptance boundary had no public builder and constructed other TestCase instances through private setup/helper chains.
+Exit code: 1

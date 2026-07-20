@@ -1,7 +1,7 @@
 # Slice 010E3: Servicing Financial Owner and Replay Convergence
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring
