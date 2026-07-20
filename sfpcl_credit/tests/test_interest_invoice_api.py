@@ -46,7 +46,7 @@ class InterestInvoiceApiTests(TestCase):
     def test_generation_uses_server_owned_fy_truth_and_leaves_balances_unchanged(self):
         from sfpcl_credit.configurations.models import InterestRateConsumptionSnapshot
         from sfpcl_credit.identity.models import AuditLog
-        from sfpcl_credit.interest.models import InterestInvoice
+        from sfpcl_credit.interest.models import InterestInvoice, InterestInvoiceConfiguration
         from sfpcl_credit.loans.models import LoanAccount, RepaymentLedgerEntry
 
         account_before = LoanAccount.objects.values().get(pk=self.account.pk)
@@ -79,6 +79,208 @@ class InterestInvoiceApiTests(TestCase):
         self.assertEqual(response.json()["data"]["interest_amount"], "37000.00")
         self.assertNotIn("invoice.borrower@sfpcl.example", str(response.json()))
 
+    def test_generation_segments_each_approved_rate_period_without_retroactive_scalar(self):
+        from types import SimpleNamespace
+
+        from sfpcl_credit.configurations.models import InterestRateConfig
+        from sfpcl_credit.configurations.modules.interest_rate_configuration import activate
+        from sfpcl_credit.identity.models import User
+        from sfpcl_credit.interest.models import InterestInvoice
+
+        first = InterestRateConfig.objects.get(version_number="RATE-INVOICE-1")
+        InterestRateConfig.objects.filter(pk=first.pk)._canonical_update(effective_to=None)
+        checker = User.objects.create(
+            full_name="Invoice Successor Rate Checker",
+            email="invoice.successor.checker@sfpcl.example",
+            status="active",
+            primary_role=self.actor.primary_role,
+        )
+        successor = InterestRateConfig.objects.create(
+            version_number="RATE-INVOICE-2",
+            rate_type="floating",
+            effective_rate="10.2500",
+            effective_from=date(2026, 7, 1),
+            benchmark_name="RBL_BASE",
+            spread_rate="2.2500",
+            reset_frequency="annual",
+            communication_required=False,
+            board_approval_reference="BOARD-RATE-INVOICE-2",
+            created_by_user=self.actor,
+        )
+        activate(
+            actor=checker,
+            request=SimpleNamespace(META={}, headers={}),
+            interest_rate_config_id=successor.pk,
+            idempotency_key="activate-rate-invoice-2",
+        )
+
+        response = self._generate("invoice-rate-segments")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        invoice = InterestInvoice.objects.get()
+        self.assertEqual(str(invoice.gross_interest_amount), "40002.74")
+        self.assertEqual(
+            invoice.calculation_segments_json,
+            [
+                {
+                    "period_start": "2026-04-01",
+                    "period_end": "2026-06-30",
+                    "days": 91,
+                    "principal_amount": "400000.00",
+                    "effective_rate": "9.2500",
+                    "rate_version_number": "RATE-INVOICE-1",
+                    "gross_interest_amount": "9224.66",
+                },
+                {
+                    "period_start": "2026-07-01",
+                    "period_end": "2027-03-31",
+                    "days": 274,
+                    "principal_amount": "400000.00",
+                    "effective_rate": "10.2500",
+                    "rate_version_number": "RATE-INVOICE-2",
+                    "gross_interest_amount": "30778.08",
+                },
+            ],
+        )
+
+    def test_generation_segments_a_principal_movement_on_the_leap_day(self):
+        from types import SimpleNamespace
+        from uuid import uuid4
+
+        from sfpcl_credit.configurations.models import InterestRateConfig
+        from sfpcl_credit.configurations.modules.interest_rate_configuration import activate
+        from sfpcl_credit.identity.models import AuditLog, User
+        from sfpcl_credit.interest.models import InterestInvoice, InterestInvoiceConfiguration
+        from sfpcl_credit.loans.models import (
+            Repayment,
+            RepaymentAllocation,
+            RepaymentLedgerEntry,
+        )
+
+        successor = InterestRateConfig.objects.create(
+            version_number="RATE-LEAP-1",
+            rate_type="floating",
+            effective_rate="9.2500",
+            effective_from=date(2027, 4, 1),
+            effective_to=date(2028, 3, 31),
+            benchmark_name="RBL_BASE",
+            spread_rate="1.2500",
+            reset_frequency="annual",
+            communication_required=False,
+            board_approval_reference="BOARD-RATE-LEAP-1",
+            created_by_user=self.actor,
+        )
+        checker = User.objects.create(
+            full_name="Leap Rate Checker",
+            email="leap.rate.checker@sfpcl.example",
+            status="active",
+            primary_role=self.actor.primary_role,
+        )
+        activate(
+            actor=checker,
+            request=SimpleNamespace(META={}, headers={}),
+            interest_rate_config_id=successor.pk,
+            idempotency_key="activate-rate-leap-1",
+        )
+        InterestInvoiceConfiguration.objects.create(
+            version_number="INV-CALC-LEAP",
+            effective_from=date(2027, 4, 1),
+            effective_to=date(2028, 3, 31),
+            calculation_method="simple_daily",
+            day_count_basis=365,
+            tax_rate="0.0000",
+            fixed_fee_amount="0.00",
+            owner_role_codes=["accounts_head"],
+            status="active",
+            approved_by_user=self.actor,
+        )
+        repayment_id = uuid4()
+        capture_audit = AuditLog.objects.create(
+            actor_user=self.actor,
+            action="repayment.receipt_created",
+            entity_type="repayment",
+            entity_id=repayment_id,
+        )
+        repayment = Repayment.objects.create(
+            repayment_id=repayment_id,
+            loan_account=self.account,
+            member=self.account.member,
+            amount_received="100000.00",
+            received_date=date(2028, 2, 29),
+            payment_method="neft",
+            bank_reference_number="LEAP-PRINCIPAL-100K",
+            bank_reference_number_normalized="LEAP-PRINCIPAL-100K",
+            remarks="Principal movement on leap day.",
+            allocation_status="allocated",
+            sap_posting_status="posted",
+            captured_by_user=self.actor,
+            idempotency_key_digest="leap-principal-capture",
+            payload_digest="leap-principal-payload",
+            capture_audit=capture_audit,
+        )
+        allocation_id = uuid4()
+        allocation_audit = AuditLog.objects.create(
+            actor_user=self.actor,
+            action="repayment.allocation.completed",
+            entity_type="repayment_allocation",
+            entity_id=allocation_id,
+        )
+        allocation = RepaymentAllocation.objects.create(
+            repayment_allocation_id=allocation_id,
+            repayment=repayment,
+            loan_account=self.account,
+            allocated_to_principal="100000.00",
+            allocated_to_interest="0.00",
+            principal_before="400000.00",
+            principal_after="300000.00",
+            interest_before="0.00",
+            interest_after="0.00",
+            charges_before="0.00",
+            charges_after="0.00",
+            total_before="400000.00",
+            total_after="300000.00",
+            allocated_by_user=self.actor,
+            allocation_audit=allocation_audit,
+        )
+        RepaymentLedgerEntry.objects.create(
+            allocation=allocation,
+            loan_account=self.account,
+            transaction_date=date(2028, 2, 29),
+            credit_amount="100000.00",
+            principal_balance="300000.00",
+            interest_balance="0.00",
+            charges_balance="0.00",
+            total_outstanding="300000.00",
+            actor_user=self.actor,
+            actor_display_name=self.actor.full_name,
+        )
+        self.account.principal_outstanding = "300000.00"
+        self.account.total_outstanding = "300000.00"
+        self.account.save(update_fields=["principal_outstanding", "total_outstanding"])
+
+        response = self._generate(
+            "invoice-leap-principal", {"financial_year": "FY2027-28"}
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        invoice = InterestInvoice.objects.get()
+        self.assertEqual(invoice.calculation_days, 366)
+        self.assertEqual(str(invoice.gross_interest_amount), "36290.41")
+        self.assertEqual(
+            [
+                (
+                    segment["period_start"], segment["period_end"],
+                    segment["principal_amount"], segment["effective_rate"],
+                    segment["gross_interest_amount"],
+                )
+                for segment in invoice.calculation_segments_json
+            ],
+            [
+                ("2027-04-01", "2028-02-28", "400000.00", "9.2500", "33857.53"),
+                ("2028-02-29", "2028-03-31", "300000.00", "9.2500", "2432.88"),
+            ],
+        )
+
     def test_exact_replay_and_scoped_list_return_one_retained_invoice(self):
         from sfpcl_credit.interest.models import InterestInvoice
 
@@ -104,6 +306,7 @@ class InterestInvoiceApiTests(TestCase):
         self.assertEqual(listing.json()["data"], [first.json()["data"]])
 
     def test_issue_binds_one_document_communication_job_and_audit_chain(self):
+        from django.core.exceptions import ValidationError
         from sfpcl_credit.communications.models import (
             Communication,
             CommunicationDeliveryJob,
@@ -111,7 +314,10 @@ class InterestInvoiceApiTests(TestCase):
         )
         from sfpcl_credit.documents.models import DocumentFile
         from sfpcl_credit.identity.models import AuditLog
-        from sfpcl_credit.interest.models import InterestInvoice
+        from sfpcl_credit.interest.models import (
+            InterestInvoice,
+            InterestInvoiceConfiguration,
+        )
 
         template = ContentTemplate.objects.create(
             template_code="annual_interest_invoice_email",
@@ -132,12 +338,28 @@ class InterestInvoiceApiTests(TestCase):
         self.configuration.save(update_fields=["communication_template"])
         generated = self._generate("invoice-issue-generate")
         invoice_id = generated.json()["data"]["interest_invoice_id"]
+        frozen = InterestInvoice.objects.get(pk=invoice_id)
+        self.assertEqual(frozen.communication_template_snapshot_id, template.pk)
+        self.assertEqual(frozen.owner_role_codes_snapshot_json, ["accounts_head"])
+        with self.assertRaises(ValidationError):
+            InterestInvoiceConfiguration.objects.filter(pk=self.configuration.pk).update(
+                owner_role_codes=["cfo"]
+            )
         document_count = DocumentFile.objects.count()
         communication_count = Communication.objects.count()
         job_count = CommunicationDeliveryJob.objects.count()
 
         issued = self._issue(invoice_id, "invoice-issue-001")
+        invoice = InterestInvoice.objects.get(pk=invoice_id)
+        job = CommunicationDeliveryJob.objects.get(
+            communication_id=invoice.communication_id
+        )
+        job.status = CommunicationDeliveryJob.STATUS_FAILED
+        job.attempts = job.max_attempts
+        job.last_failure_code = "provider_rejected"
+        job.save(update_fields=["status", "attempts", "last_failure_code"])
         replay = self._issue(invoice_id, "invoice-issue-001")
+        generation_replay = self._generate("invoice-issue-generate")
 
         self.assertEqual(issued.status_code, 200, issued.content)
         self.assertEqual(replay.status_code, 200, replay.content)
@@ -154,6 +376,15 @@ class InterestInvoiceApiTests(TestCase):
         )
         self.assertEqual(issued.json()["data"]["delivery_status"], "queued")
         self.assertTrue(replay.json()["data"]["idempotency_replayed"])
+        self.assertEqual(replay.json()["data"]["original_response"], issued.json()["data"])
+        self.assertEqual(
+            generation_replay.json()["data"]["original_response"],
+            generated.json()["data"],
+        )
+        invoice.refresh_from_db()
+        invoice.issuance_original_response_json = {}
+        with self.assertRaises(ValidationError):
+            invoice.save(update_fields=["issuance_original_response_json"])
         self.assertNotEqual(issued.json()["data"]["invoice_status"], "paid")
         self.assertNotIn("paid_at", issued.json()["data"])
 

@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_authorised_sap_reference_capture_is_audited_and_exactly_replayable (sfpcl_credit.tests.test_interest_accrual_api.MonthlyInterestAccrualApiTests.test_authorised_sap_reference_capture_is_audited_and_exactly_replayable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/tests/test_interest_accrual_api.py", line 198, in test_authorised_sap_reference_capture_is_audited_and_exactly_replayable
+    self.assertEqual(
+AssertionError: {'acc[467 chars]': 'posted', 'sap_entry_reference': 'SAP-ACCRU[227 chars]88Z'} != {'acc[467 chars]': 'pending', 'sap_entry_reference': None, 'ge[148 chars]None}
+Diff is 991 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.672s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_STATUS=1

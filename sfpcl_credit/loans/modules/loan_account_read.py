@@ -1,5 +1,8 @@
 """Loan-owned authority and immutable creation truth for ordinary account reads."""
 
+from dataclasses import dataclass
+from datetime import timedelta
+
 from django.db.models import F, Q
 
 from sfpcl_credit.applications.models import LoanApplication
@@ -26,6 +29,13 @@ READ_PERMISSION = "finance.loan_account.read"
 
 class LoanAccountReadPermissionDenied(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class PrincipalPeriod:
+    period_start: object
+    period_end: object
+    principal_amount: object
 
 
 def principal_balance_as_of(*, account, as_of_date):
@@ -90,6 +100,46 @@ def principal_balance_as_of(*, account, as_of_date):
     if not candidates:
         return account.disbursed_amount
     return max(candidates, key=lambda item: item[:3])[3]
+
+
+def principal_periods(*, account, period_start, period_end):
+    """Return gap-free principal periods from immutable loan ledger truth."""
+    from sfpcl_credit.interest.models import InterestCapitalisationLedgerEntry
+
+    movement_dates = set(
+        RepaymentLedgerEntry.objects.filter(
+            loan_account=account,
+            transaction_date__gt=period_start,
+            transaction_date__lte=period_end,
+        ).values_list("transaction_date", flat=True)
+    )
+    movement_dates.update(
+        RepaymentReversalLedgerEntry.objects.filter(
+            loan_account=account,
+            transaction_date__gt=period_start,
+            transaction_date__lte=period_end,
+        ).values_list("transaction_date", flat=True)
+    )
+    movement_dates.update(
+        InterestCapitalisationLedgerEntry.objects.filter(
+            loan_account=account,
+            transaction_date__gt=period_start,
+            transaction_date__lte=period_end,
+        ).values_list("transaction_date", flat=True)
+    )
+    boundaries = [period_start, *sorted(movement_dates), period_end + timedelta(days=1)]
+    return tuple(
+        PrincipalPeriod(
+            period_start=start,
+            period_end=end - timedelta(days=1),
+            principal_amount=principal_balance_as_of(
+                account=account,
+                as_of_date=start,
+            ),
+        )
+        for start, end in zip(boundaries, boundaries[1:])
+        if start < end
+    )
 
 
 def scoped_account_candidates(*, actor):

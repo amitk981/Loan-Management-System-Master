@@ -64,6 +64,55 @@ class MonthlyInterestAccrualApiTests(TestCase):
         self.assertEqual(response.json()["data"]["interest_accrued_amount"], "3142.47")
         self.assertEqual(response.json()["data"]["sap_posting_status"], "pending")
 
+    def test_single_month_segments_an_approved_mid_month_rate_change(self):
+        from types import SimpleNamespace
+
+        from sfpcl_credit.configurations.models import InterestRateConfig
+        from sfpcl_credit.configurations.modules.interest_rate_configuration import activate
+        from sfpcl_credit.identity.models import User
+        from sfpcl_credit.interest.models import AccrualEntry
+
+        first = InterestRateConfig.objects.get(version_number="RATE-INVOICE-1")
+        InterestRateConfig.objects.filter(pk=first.pk)._canonical_update(effective_to=None)
+        checker = User.objects.create(
+            full_name="Accrual Successor Rate Checker",
+            email="accrual.successor.checker@sfpcl.example",
+            status="active",
+            primary_role=self.actor.primary_role,
+        )
+        successor = InterestRateConfig.objects.create(
+            version_number="RATE-ACCRUAL-2",
+            rate_type="floating",
+            effective_rate="10.2500",
+            effective_from=date(2026, 7, 16),
+            benchmark_name="RBL_BASE",
+            spread_rate="2.2500",
+            reset_frequency="annual",
+            communication_required=False,
+            board_approval_reference="BOARD-RATE-ACCRUAL-2",
+            created_by_user=self.actor,
+        )
+        activate(
+            actor=checker,
+            request=SimpleNamespace(META={}, headers={}),
+            interest_rate_config_id=successor.pk,
+            idempotency_key="activate-rate-accrual-2",
+        )
+
+        response = self._create("accrual-rate-segments")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        accrual = AccrualEntry.objects.get()
+        self.assertEqual(str(accrual.interest_accrued_amount), "3317.81")
+        self.assertEqual(
+            [segment["rate_version_number"] for segment in accrual.calculation_segments_json],
+            ["RATE-INVOICE-1", "RATE-ACCRUAL-2"],
+        )
+        self.assertEqual(
+            [segment["gross_interest_amount"] for segment in accrual.calculation_segments_json],
+            ["1520.55", "1797.26"],
+        )
+
     def test_bulk_dry_run_reports_calculated_outcome_without_any_write(self):
         from sfpcl_credit.configurations.models import InterestRateConsumptionSnapshot
         from sfpcl_credit.identity.models import AuditLog
@@ -128,6 +177,7 @@ class MonthlyInterestAccrualApiTests(TestCase):
             HTTP_IDEMPOTENCY_KEY="accrual-sap-post-001",
             **self.auth,
         )
+        generation_replay = self._create("accrual-sap-create-001")
 
         self.assertEqual(posted.status_code, 200, posted.content)
         self.assertEqual(replay.status_code, 200, replay.content)
@@ -144,6 +194,11 @@ class MonthlyInterestAccrualApiTests(TestCase):
         self.assertNotIn("SAP-ACCRUAL-2026-07-001", str(posting_audit.new_value_json))
         self.assertNotIn("monthly finance process", str(posting_audit.new_value_json))
         self.assertTrue(replay.json()["data"]["idempotency_replayed"])
+        self.assertEqual(replay.json()["data"]["original_response"], posted.json()["data"])
+        self.assertEqual(
+            generation_replay.json()["data"]["original_response"],
+            created.json()["data"],
+        )
 
     def test_replay_duplicate_client_money_and_missing_configuration_fail_closed(self):
         from sfpcl_credit.configurations.models import InterestRateConsumptionSnapshot

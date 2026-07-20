@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_capitalisation_reclassifies_existing_interest_and_schedule_without_total_inflation (sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_capitalisation_reclassifies_existing_interest_and_schedule_without_total_inflation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/tests/test_interest_capitalisation_api.py", line 342, in test_capitalisation_reclassifies_existing_interest_and_schedule_without_total_inflation
+    from sfpcl_credit.interest.models import (
+ImportError: cannot import name 'InterestCapitalisationScheduleEvidence' from 'sfpcl_credit.interest.models' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/interest/models.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.771s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+
+EXIT_STATUS=1

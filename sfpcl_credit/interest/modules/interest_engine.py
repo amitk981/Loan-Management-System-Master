@@ -28,12 +28,22 @@ from sfpcl_credit.interest.models import (
     AccrualEntry,
     AccrualSapPostingObligation,
     InterestCapitalisation,
+    InterestCapitalisationHardCopyTask,
     InterestCapitalisationInvoiceEvidence,
     InterestCapitalisationLedgerEntry,
+    InterestCapitalisationPaymentEvidence,
+    InterestCapitalisationScheduleEvidence,
     InterestInvoice,
     InterestInvoiceConfiguration,
+    InterestInvoicePaymentEvidence,
 )
-from sfpcl_credit.loans.models import LoanAccount, RepaymentAllocation
+from sfpcl_credit.interest.modules.as_of_accounting import decide_interest_as_of
+from sfpcl_credit.loans.models import (
+    LoanAccount,
+    RepaymentAllocation,
+    RepaymentSchedule,
+    RepaymentScheduleAllocation,
+)
 from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
     principal_balance_as_of,
@@ -240,11 +250,44 @@ def _capitalise(
         )
         .order_by("interest_invoice_id")
     )
-    invoice_amounts = [
-        (invoice, (invoice.interest_amount - invoice.interest_paid_amount).quantize(_MONEY))
-        for invoice in invoices
-    ]
-    invoice_amounts = [item for item in invoice_amounts if item[1] > 0]
+    invoice_amounts = []
+    for invoice in invoices:
+        outstanding = (
+            invoice.gross_interest_amount - invoice.interest_paid_amount
+        ).quantize(_MONEY)
+        applications = []
+        exact_allocation_ids = RepaymentScheduleAllocation.objects.filter(
+            repayment_schedule__due_date__range=(
+                invoice.interest_period_start,
+                invoice.interest_period_end,
+            ),
+            interest_applied__gt=0,
+        ).values("allocation_id")
+        allocations = RepaymentAllocation.objects.select_for_update(of=("self",)).filter(
+            pk__in=exact_allocation_ids,
+            loan_account=account,
+            repayment__received_date__gt=invoice.invoice_date,
+            repayment__received_date__lte=eligibility_cutoff,
+            allocated_to_interest__gt=0,
+            reversal__isnull=True,
+            interest_capitalisation_evidence__isnull=True,
+        ).order_by(
+            "repayment__received_date", "allocated_at", "repayment_allocation_id"
+        )
+        for allocation in allocations:
+            exact_interest = allocation.schedule_applications.filter(
+                repayment_schedule__due_date__range=(
+                    invoice.interest_period_start,
+                    invoice.interest_period_end,
+                )
+            ).aggregate(total=Sum("interest_applied"))["total"] or Decimal("0.00")
+            applied = min(exact_interest, outstanding)
+            if applied <= 0:
+                break
+            applications.append((allocation, applied))
+            outstanding = (outstanding - applied).quantize(_MONEY)
+        if outstanding > 0:
+            invoice_amounts.append((invoice, outstanding, applications))
     if not invoice_amounts:
         raise InterestCapitalisationConflict(
             "No eligible issued unpaid interest invoice exists for this loan and financial year."
@@ -258,12 +301,41 @@ def _capitalise(
         )
         .order_by("accrual_entry_id")
     )
-    unpaid = sum((amount for _, amount in invoice_amounts), Decimal("0.00")).quantize(_MONEY)
+    unpaid = sum(
+        (amount for _, amount, _ in invoice_amounts), Decimal("0.00")
+    ).quantize(_MONEY)
     old_principal = account.principal_outstanding.quantize(_MONEY)
     new_principal = (old_principal + unpaid).quantize(_MONEY)
+    interest_reclassified = min(account.interest_outstanding, unpaid).quantize(_MONEY)
+    new_interest = (account.interest_outstanding - interest_reclassified).quantize(_MONEY)
     new_total = (
-        new_principal + account.interest_outstanding + account.charges_outstanding
+        new_principal + new_interest + account.charges_outstanding
     ).quantize(_MONEY)
+    schedule_transfers = []
+    remaining_reclassification = interest_reclassified
+    if remaining_reclassification > 0:
+        schedule_rows = RepaymentSchedule.objects.select_for_update().filter(
+            loan_account=account,
+            due_date__range=(period_start, period_end),
+        ).order_by("due_date", "installment_number", "repayment_schedule_id")
+        for schedule in schedule_rows:
+            outstanding_schedule_interest = schedule.interest_due - schedule.paid_interest
+            applied = min(outstanding_schedule_interest, remaining_reclassification)
+            if applied <= 0:
+                continue
+            before_status = schedule.schedule_status
+            schedule.paid_interest += applied
+            remaining_reclassification -= applied
+            if (
+                schedule.paid_principal == schedule.principal_due
+                and schedule.paid_interest == schedule.interest_due
+                and schedule.paid_charges == schedule.charges_due
+            ):
+                schedule.schedule_status = "paid"
+            schedule.save(update_fields=["paid_interest", "schedule_status"])
+            schedule_transfers.append(
+                (schedule, applied, before_status, schedule.schedule_status)
+            )
     capitalisation_id = uuid.uuid4()
     merge_data = {
         "financial_year": financial_year,
@@ -363,11 +435,11 @@ def _capitalise(
         unpaid_interest_amount=unpaid,
         new_principal_amount=new_principal,
         rate_versions_json=sorted(
-            {invoice.rate_version_number for invoice, _ in invoice_amounts}
+            {invoice.rate_version_number for invoice, _, _ in invoice_amounts}
             | {accrual.rate_version_number for accrual in accruals}
         ),
         calculation_versions_json=sorted(
-            {invoice.calculation_version for invoice, _ in invoice_amounts}
+            {invoice.calculation_version for invoice, _, _ in invoice_amounts}
             | {accrual.calculation_version for accrual in accruals}
         ),
         source_accrual_ids_json=[str(accrual.pk) for accrual in accruals],
@@ -379,29 +451,60 @@ def _capitalise(
         payload_digest=payload_digest,
         capitalisation_audit=audit,
     )
-    for invoice, amount in invoice_amounts:
+    for invoice, amount, applications in invoice_amounts:
         InterestCapitalisationInvoiceEvidence.objects.create(
             capitalisation=capitalisation,
             interest_invoice=invoice,
             unpaid_interest_amount=amount,
         )
+        for allocation, applied in applications:
+            InterestCapitalisationPaymentEvidence.objects.create(
+                capitalisation=capitalisation,
+                interest_invoice=invoice,
+                repayment_allocation=allocation,
+                interest_applied_amount=applied,
+            )
+    for schedule, applied, before_status, after_status in schedule_transfers:
+        InterestCapitalisationScheduleEvidence.objects.create(
+            capitalisation=capitalisation,
+            repayment_schedule=schedule,
+            interest_reclassified_amount=applied,
+            schedule_status_before=before_status,
+            schedule_status_after=after_status,
+        )
+    InterestCapitalisationHardCopyTask.objects.create(
+        capitalisation=capitalisation,
+        letter_document=letter,
+        created_at=capitalised_at,
+    )
     account.principal_outstanding = new_principal
+    account.interest_outstanding = new_interest
     account.total_outstanding = new_total
-    account.save(update_fields=["principal_outstanding", "total_outstanding"])
+    account.save(
+        update_fields=[
+            "principal_outstanding", "interest_outstanding", "total_outstanding"
+        ]
+    )
     InterestCapitalisationLedgerEntry.objects.create(
         capitalisation=capitalisation,
         loan_account=account,
         transaction_date=capitalisation_date,
         debit_amount=unpaid,
         principal_balance=new_principal,
-        interest_balance=account.interest_outstanding,
+        interest_balance=new_interest,
         charges_balance=account.charges_outstanding,
         total_outstanding=new_total,
         actor_user=actor,
         actor_display_name=actor.full_name,
         created_at=capitalised_at,
     )
-    return serialize_capitalisation(capitalisation)
+    original_response = serialize_capitalisation(capitalisation)
+    InterestCapitalisation.objects.filter(
+        pk=capitalisation.pk,
+        original_response_json={},
+    )._store_original_response(original_response_json=original_response)
+    capitalisation.original_response_json = original_response
+    return original_response
 
 
 def create_monthly_accrual(*, actor, loan_account_id, payload, idempotency_key, request=None):
@@ -433,7 +536,7 @@ def create_monthly_accrual(*, actor, loan_account_id, payload, idempotency_key, 
             generation_idempotency_key_digest=key_digest
         ).first()
         if retained is not None and retained.generation_payload_digest == payload_digest:
-            return _replay_accrual(retained)
+            return _replay_accrual_generation(retained)
         raise InterestAccrualConflict(
             "An accrual already exists for this request or loan month."
         ) from exc
@@ -450,7 +553,7 @@ def _create_accrual(
     ).first()
     if retained is not None:
         if retained.generation_payload_digest == payload_digest:
-            return _replay_accrual(retained)
+            return _replay_accrual_generation(retained)
         raise InterestAccrualConflict("The idempotency key was used for a different request.")
     account = (
         _accrual_scoped_accounts(actor)
@@ -460,6 +563,15 @@ def _create_accrual(
     )
     if account is None:
         raise InterestAccrualNotFound
+    retained = AccrualEntry.objects.filter(
+        generation_idempotency_key_digest=key_digest
+    ).first()
+    if retained is not None:
+        if retained.generation_payload_digest == payload_digest:
+            return _replay_accrual_generation(retained)
+        raise InterestAccrualConflict(
+            "The idempotency key was used for a different request."
+        )
     principal = principal_balance_as_of(account=account, as_of_date=period_end).quantize(_MONEY)
     if not _is_accrual_eligible(account, period_start, period_end, principal):
         raise InterestAccrualConflict("The loan is not eligible for this accrual period.")
@@ -477,13 +589,14 @@ def _create_accrual(
         raise InterestAccrualConflict(
             "Approved benchmark, spread, and reset configuration is required."
         )
-    days, amount = _calculate_accrual_values(
-        principal=principal,
-        effective_rate=rate_snapshot.effective_rate,
-        config=config,
+    decision = decide_interest_as_of(
+        account=account,
         period_start=period_start,
         period_end=period_end,
+        configuration=config,
     )
+    days = decision.calculation_days
+    amount = decision.gross_interest_amount
     generated_at = timezone.now()
     evidence = {
         "accrual_entry_id": str(accrual_id),
@@ -523,6 +636,7 @@ def _create_accrual(
         calculation_method=config.calculation_method,
         day_count_basis=config.day_count_basis,
         calculation_days=days,
+        calculation_segments_json=decision.snapshot(),
         interest_accrued_amount=amount,
         generated_by_user=actor,
         generated_at=generated_at,
@@ -531,7 +645,13 @@ def _create_accrual(
         generation_audit=audit,
     )
     AccrualSapPostingObligation.objects.create(accrual_entry=accrual)
-    return serialize_accrual(accrual)
+    original_response = serialize_accrual(accrual)
+    AccrualEntry.objects.filter(
+        pk=accrual.pk,
+        generation_original_response_json={},
+    )._store_response(generation_original_response_json=original_response)
+    accrual.generation_original_response_json = original_response
+    return original_response
 
 
 def serialize_accrual(accrual):
@@ -806,7 +926,7 @@ def _record_accrual_sap_status(
             accrual.posting_idempotency_key_digest == key_digest
             and accrual.posting_payload_digest == payload_digest
         ):
-            return _replay_accrual(accrual)
+            return _replay_accrual_posting(accrual)
         raise InterestAccrualConflict("SAP posting evidence has already been recorded.")
     posted_at = timezone.now()
     audit = AuditLog.objects.create(
@@ -845,7 +965,13 @@ def _record_accrual_sap_status(
     obligation.status = cleaned["posted_status"]
     obligation.resolved_at = posted_at
     obligation.save(update_fields=["status", "resolved_at"])
-    return serialize_accrual(accrual)
+    original_response = serialize_accrual(accrual)
+    AccrualEntry.objects.filter(
+        pk=accrual.pk,
+        posting_original_response_json={},
+    )._store_response(posting_original_response_json=original_response)
+    accrual.posting_original_response_json = original_response
+    return original_response
 
 
 def _validate_accrual_sap_status(payload, idempotency_key):
@@ -914,8 +1040,26 @@ def _accrual_scoped_accounts(actor):
         raise InterestAccrualPermissionDenied from exc
 
 
-def _replay_accrual(accrual):
-    return {"idempotency_replayed": True, "original_response": serialize_accrual(accrual)}
+def _replay_accrual_generation(accrual):
+    if not accrual.generation_original_response_json:
+        raise InterestAccrualConflict(
+            "The retained accrual has no verifiable original generation response."
+        )
+    return {
+        "idempotency_replayed": True,
+        "original_response": accrual.generation_original_response_json,
+    }
+
+
+def _replay_accrual_posting(accrual):
+    if not accrual.posting_original_response_json:
+        raise InterestAccrualConflict(
+            "The retained accrual has no verifiable original posting response."
+        )
+    return {
+        "idempotency_replayed": True,
+        "original_response": accrual.posting_original_response_json,
+    }
 
 
 def generate_invoice(*, actor, loan_account_id, payload, idempotency_key, request=None):
@@ -1024,13 +1168,19 @@ def _issue(*, actor, interest_invoice_id, cleaned, key_digest, payload_digest, r
         pk=invoice.loan_account_id
     ).exists():
         raise InterestInvoiceNotFound
-    _require_configured_owner(actor, invoice.calculation_configuration)
+    _require_frozen_owner(actor, invoice.owner_role_codes_snapshot_json)
     if invoice.invoice_status == InterestInvoice.STATUS_ISSUED:
         if (
             invoice.issuance_idempotency_key_digest == key_digest
             and invoice.issuance_payload_digest == payload_digest
         ):
-            return {"idempotency_replayed": True, "original_response": serialize_invoice(invoice)}
+            return {
+                "idempotency_replayed": True,
+                "original_response": _verified_invoice_response(
+                    invoice.issuance_original_response_json,
+                    "issuance",
+                ),
+            }
         raise InterestInvoiceConflict("The invoice has already been issued.")
     if invoice.invoice_status != InterestInvoice.STATUS_DRAFT:
         raise InterestInvoiceConflict("Only a valid draft invoice can be issued.")
@@ -1038,7 +1188,7 @@ def _issue(*, actor, interest_invoice_id, cleaned, key_digest, payload_digest, r
         raise InterestInvoiceValidation(
             {"recipient_email": "Must match the borrower's retained email address."}
         )
-    template = invoice.calculation_configuration.communication_template
+    template = invoice.communication_template_snapshot
     if template is None:
         raise InterestInvoiceConflict("An approved invoice communication template is required.")
 
@@ -1127,7 +1277,13 @@ def _issue(*, actor, interest_invoice_id, cleaned, key_digest, payload_digest, r
         "invoice_status", "document", "communication", "issued_by_user", "issued_at",
         "issuance_idempotency_key_digest", "issuance_payload_digest", "issuance_audit",
     ])
-    return serialize_invoice(invoice)
+    original_response = serialize_invoice(invoice)
+    InterestInvoice.objects.filter(
+        pk=invoice.pk,
+        issuance_original_response_json={},
+    )._store_response(issuance_original_response_json=original_response)
+    invoice.issuance_original_response_json = original_response
+    return original_response
 
 
 @transaction.atomic
@@ -1150,6 +1306,15 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
     )
     if account is None:
         raise InterestInvoiceNotFound
+    retained = InterestInvoice.objects.filter(
+        generation_idempotency_key_digest=key_digest
+    ).first()
+    if retained is not None:
+        if retained.generation_payload_digest == payload_digest:
+            return _replay(retained)
+        raise InterestInvoiceConflict(
+            "The idempotency key was used for a different request."
+        )
     if (
         account.loan_account_status not in SERVICEABLE_STATUSES
         or account.disbursed_amount <= 0
@@ -1176,19 +1341,32 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
     rate_config = get_approved_rate_decision(rate_snapshot.rate_config_id)
     if not rate_config.benchmark_name or rate_config.spread_rate is None or not rate_config.reset_frequency:
         raise InterestInvoiceConflict("Approved benchmark, spread, and reset configuration is required.")
-    days = (period_end - period_start).days + 1
-    principal = account.principal_outstanding.quantize(_MONEY)
-    gross = (
-        principal * rate_snapshot.effective_rate * Decimal(days)
-        / (Decimal("100") * Decimal(config.day_count_basis))
-    ).quantize(_MONEY, rounding=ROUND_HALF_UP)
-    paid = (
-        RepaymentAllocation.objects.filter(
-            loan_account=account,
-            repayment__received_date__range=(period_start, period_end),
-            reversal__isnull=True,
-        ).aggregate(total=Sum("allocated_to_interest"))["total"]
-        or Decimal("0.00")
+    decision = decide_interest_as_of(
+        account=account,
+        period_start=period_start,
+        period_end=period_end,
+        configuration=config,
+    )
+    days = decision.calculation_days
+    principal = decision.segments[0].principal_amount
+    gross = decision.gross_interest_amount
+    payment_applications = list(
+        RepaymentScheduleAllocation.objects.filter(
+            allocation__loan_account=account,
+            allocation__repayment__received_date__lte=period_end,
+            allocation__reversal__isnull=True,
+            repayment_schedule__due_date__range=(period_start, period_end),
+            interest_applied__gt=0,
+            interest_invoice_evidence__isnull=True,
+        ).order_by(
+            "allocation__repayment__received_date",
+            "repayment_schedule__due_date",
+            "repayment_schedule_allocation_id",
+        )
+    )
+    paid = sum(
+        (application.interest_applied for application in payment_applications),
+        Decimal("0.00"),
     ).quantize(_MONEY)
     unpaid = max(gross - paid, Decimal("0.00"))
     tax = (unpaid * config.tax_rate / Decimal("100")).quantize(
@@ -1241,6 +1419,9 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
         calculation_method=config.calculation_method,
         day_count_basis=config.day_count_basis,
         calculation_days=days,
+        calculation_segments_json=decision.snapshot(),
+        owner_role_codes_snapshot_json=list(config.owner_role_codes),
+        communication_template_snapshot=config.communication_template,
         gross_interest_amount=gross,
         interest_paid_amount=paid,
         tax_rate=config.tax_rate,
@@ -1253,7 +1434,19 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
         generation_payload_digest=payload_digest,
         generation_audit=audit,
     )
-    return serialize_invoice(invoice)
+    for application in payment_applications:
+        InterestInvoicePaymentEvidence.objects.create(
+            interest_invoice=invoice,
+            schedule_application=application,
+            interest_applied_amount=application.interest_applied,
+        )
+    original_response = serialize_invoice(invoice)
+    InterestInvoice.objects.filter(
+        pk=invoice.pk,
+        generation_original_response_json={},
+    )._store_response(generation_original_response_json=original_response)
+    invoice.generation_original_response_json = original_response
+    return original_response
 
 
 def serialize_invoice(invoice):
@@ -1360,19 +1553,36 @@ def _validate_capitalisation(payload, idempotency_key):
 def _capitalisation_preview_result(*, account, financial_year, as_of_date):
     end_year = int(_FY_PATTERN.fullmatch(financial_year).group(1)) + 1
     cutoff = date(end_year, 4, 30)
-    unpaid = (
-        InterestInvoice.objects.filter(
+    invoices = InterestInvoice.objects.filter(
             loan_account=account,
             financial_year=financial_year,
             invoice_status=InterestInvoice.STATUS_ISSUED,
             invoice_date__lte=as_of_date,
             capitalisation_evidence__isnull=True,
         )
-        .aggregate(
-            amount=Sum(F("interest_amount") - F("interest_paid_amount"))
-        )["amount"]
-        or Decimal("0.00")
-    ).quantize(_MONEY)
+    unpaid = Decimal("0.00")
+    for invoice in invoices:
+        post_invoice_paid = (
+            RepaymentScheduleAllocation.objects.filter(
+                allocation__loan_account=account,
+                allocation__repayment__received_date__gt=invoice.invoice_date,
+                allocation__repayment__received_date__lte=as_of_date,
+                allocation__reversal__isnull=True,
+                allocation__interest_capitalisation_evidence__isnull=True,
+                repayment_schedule__due_date__range=(
+                    invoice.interest_period_start,
+                    invoice.interest_period_end,
+                ),
+            ).aggregate(total=Sum("interest_applied"))["total"]
+            or Decimal("0.00")
+        )
+        unpaid += max(
+            invoice.gross_interest_amount
+            - invoice.interest_paid_amount
+            - post_invoice_paid,
+            Decimal("0.00"),
+        )
+    unpaid = unpaid.quantize(_MONEY)
     old_principal = account.principal_outstanding.quantize(_MONEY)
     already_capitalised = InterestCapitalisation.objects.filter(
         loan_account=account, financial_year=financial_year
@@ -1431,9 +1641,13 @@ def serialize_capitalisation(capitalisation):
 
 
 def _replay_capitalisation(capitalisation):
+    if not capitalisation.original_response_json:
+        raise InterestCapitalisationConflict(
+            "The retained capitalisation has no verifiable original response."
+        )
     return {
         "idempotency_replayed": True,
-        "original_response": serialize_capitalisation(capitalisation),
+        "original_response": capitalisation.original_response_json,
     }
 
 
@@ -1484,6 +1698,11 @@ def _require_configured_owner(actor, config):
         raise InterestInvoicePermissionDenied
 
 
+def _require_frozen_owner(actor, owner_role_codes):
+    if not set(auth_service.effective_role_codes(actor)).intersection(owner_role_codes):
+        raise InterestInvoicePermissionDenied
+
+
 def _scoped_accounts(actor):
     try:
         return scoped_account_candidates(actor=actor)
@@ -1492,7 +1711,21 @@ def _scoped_accounts(actor):
 
 
 def _replay(invoice):
-    return {"idempotency_replayed": True, "original_response": serialize_invoice(invoice)}
+    return {
+        "idempotency_replayed": True,
+        "original_response": _verified_invoice_response(
+            invoice.generation_original_response_json,
+            "generation",
+        ),
+    }
+
+
+def _verified_invoice_response(response, action):
+    if not response:
+        raise InterestInvoiceConflict(
+            f"The retained invoice has no verifiable original {action} response."
+        )
+    return response
 
 
 def _digest(value):

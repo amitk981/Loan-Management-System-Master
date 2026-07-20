@@ -79,6 +79,48 @@ class EffectiveRate:
     effective_to: object
 
 
+def resolve_effective_rate_periods(period_start, period_end):
+    """Return one gap-free approved rate decision for every day in a period."""
+    if period_end < period_start:
+        raise MissingEffectiveRate("The interest calculation period is invalid.")
+    rows = list(
+        InterestRateConfig.objects.filter(
+            status=InterestRateConfig.STATUS_ACTIVE,
+            effective_from__lte=period_end,
+        )
+        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=period_start))
+        .order_by("effective_from", "interest_rate_config_id")
+    )
+    decisions = []
+    cursor = period_start
+    for row in rows:
+        start = max(period_start, row.effective_from)
+        end = min(period_end, row.effective_to or period_end)
+        if start != cursor:
+            if start < cursor:
+                raise AmbiguousEffectiveRate(
+                    "Approved interest-rate periods overlap for the calculation period."
+                )
+            raise MissingEffectiveRate(
+                "Approved interest-rate history has a gap in the calculation period."
+            )
+        decisions.append(
+            EffectiveRate(
+                interest_rate_config_id=row.pk,
+                version_number=row.version_number,
+                effective_rate=row.effective_rate,
+                effective_from=start,
+                effective_to=end,
+            )
+        )
+        cursor = end + timedelta(days=1)
+    if cursor != period_end + timedelta(days=1):
+        raise MissingEffectiveRate(
+            "Approved interest-rate history does not cover the calculation period."
+        )
+    return tuple(decisions)
+
+
 @dataclass(frozen=True)
 class LoanRateProjection:
     loan_account_id: object

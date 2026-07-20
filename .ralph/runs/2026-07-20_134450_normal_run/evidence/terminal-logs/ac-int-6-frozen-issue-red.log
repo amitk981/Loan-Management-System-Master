@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_issue_binds_one_document_communication_job_and_audit_chain (sfpcl_credit.tests.test_interest_invoice_api.InterestInvoiceApiTests.test_issue_binds_one_document_communication_job_and_audit_chain)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/tests/test_interest_invoice_api.py", line 204, in test_issue_binds_one_document_communication_job_and_audit_chain
+    self.assertEqual(frozen.communication_template_snapshot_id, template.pk)
+AssertionError: None != UUID('0ed84d57-51fd-4322-8cb1-f0a294b81436')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.662s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_STATUS=1

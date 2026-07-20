@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_single_month_segments_an_approved_mid_month_rate_change (sfpcl_credit.tests.test_interest_accrual_api.MonthlyInterestAccrualApiTests.test_single_month_segments_an_approved_mid_month_rate_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/tests/test_interest_accrual_api.py", line 106, in test_single_month_segments_an_approved_mid_month_rate_change
+    self.assertEqual(str(accrual.interest_accrued_amount), "3317.81")
+AssertionError: '3482.19' != '3317.81'
+- 3482.19
++ 3317.81
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.770s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_STATUS=1

@@ -5,6 +5,18 @@ from django.db import models
 from django.utils import timezone
 
 
+class InterestInvoiceConfigurationQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        if InterestInvoice.objects.filter(calculation_configuration__in=self).exists() or AccrualEntry.objects.filter(calculation_configuration__in=self).exists():
+            raise ValidationError({"interest_configuration": "Consumed calculation configuration is immutable."})
+        return super().update(**kwargs)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        if InterestInvoice.objects.filter(calculation_configuration__in=objs).exists() or AccrualEntry.objects.filter(calculation_configuration__in=objs).exists():
+            raise ValidationError({"interest_configuration": "Consumed calculation configuration is immutable."})
+        return super().bulk_update(objs, fields, batch_size=batch_size)
+
+
 class InterestInvoiceConfiguration(models.Model):
     STATUS_ACTIVE = "active"
     METHOD_SIMPLE_DAILY = "simple_daily"
@@ -35,6 +47,8 @@ class InterestInvoiceConfiguration(models.Model):
     )
     approved_at = models.DateTimeField(default=timezone.now)
 
+    objects = InterestInvoiceConfigurationQuerySet.as_manager()
+
     class Meta:
         db_table = "interest_invoice_configurations"
         ordering = ["-effective_from", "-interest_invoice_configuration_id"]
@@ -61,6 +75,23 @@ class InterestInvoiceConfiguration(models.Model):
             ),
         ]
 
+    def save(self, *args, **kwargs):
+        if not self._state.adding and (
+            self.interest_invoices.exists() or self.accrual_entries.exists()
+        ):
+            retained = type(self)._base_manager.get(pk=self.pk)
+            for field in (
+                "version_number", "effective_from", "effective_to",
+                "calculation_method", "day_count_basis", "tax_rate",
+                "fixed_fee_amount", "owner_role_codes", "communication_template_id",
+                "status", "approved_by_user_id", "approved_at",
+            ):
+                if getattr(retained, field) != getattr(self, field):
+                    raise ValidationError(
+                        {"interest_configuration": "Consumed calculation configuration is immutable."}
+                    )
+        return super().save(*args, **kwargs)
+
 
 class ImmutableInterestInvoiceQuerySet(models.QuerySet):
     def update(self, **kwargs):
@@ -71,6 +102,9 @@ class ImmutableInterestInvoiceQuerySet(models.QuerySet):
 
     def delete(self):
         raise ValidationError({"interest_invoice": "Interest invoice history is immutable."})
+
+    def _store_response(self, **kwargs):
+        return super().update(**kwargs)
 
 
 class InterestInvoice(models.Model):
@@ -112,6 +146,15 @@ class InterestInvoice(models.Model):
     calculation_method = models.CharField(max_length=40)
     day_count_basis = models.PositiveSmallIntegerField()
     calculation_days = models.PositiveSmallIntegerField()
+    calculation_segments_json = models.JSONField(default=list)
+    owner_role_codes_snapshot_json = models.JSONField(default=list)
+    communication_template_snapshot = models.ForeignKey(
+        "communications.ContentTemplate",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="generated_interest_invoice_snapshots",
+    )
     gross_interest_amount = models.DecimalField(max_digits=18, decimal_places=2)
     interest_paid_amount = models.DecimalField(max_digits=18, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=8, decimal_places=4)
@@ -128,6 +171,7 @@ class InterestInvoice(models.Model):
     generation_audit = models.OneToOneField(
         "identity.AuditLog", on_delete=models.PROTECT, related_name="generated_interest_invoice"
     )
+    generation_original_response_json = models.JSONField(default=dict)
     document = models.OneToOneField(
         "documents.DocumentFile",
         null=True,
@@ -161,6 +205,7 @@ class InterestInvoice(models.Model):
         on_delete=models.PROTECT,
         related_name="issued_interest_invoice",
     )
+    issuance_original_response_json = models.JSONField(default=dict)
 
     objects = ImmutableInterestInvoiceQuerySet.as_manager()
 
@@ -230,10 +275,18 @@ class InterestInvoice(models.Model):
         "interest_rate", "rate_config_id", "rate_version_number",
         "calculation_configuration_id", "calculation_version", "calculation_method",
         "day_count_basis", "calculation_days", "gross_interest_amount",
+        "calculation_segments_json",
+        "owner_role_codes_snapshot_json", "communication_template_snapshot_id",
         "interest_paid_amount", "tax_rate", "tax_amount", "fixed_fee_amount",
         "interest_amount", "generated_by_user_id", "generated_at",
         "generation_idempotency_key_digest", "generation_payload_digest",
         "generation_audit_id",
+        "generation_original_response_json",
+    )
+    _TERMINAL_FIELDS = (
+        "invoice_status", "document_id", "communication_id", "issued_by_user_id",
+        "issued_at", "issuance_idempotency_key_digest", "issuance_payload_digest",
+        "issuance_audit_id", "issuance_original_response_json",
     )
 
     def save(self, *args, **kwargs):
@@ -241,10 +294,51 @@ class InterestInvoice(models.Model):
             retained = type(self)._base_manager.get(pk=self.pk)
             if any(getattr(retained, field) != getattr(self, field) for field in self._FROZEN_FIELDS):
                 raise ValidationError({"interest_invoice": "Calculation snapshots are immutable."})
+            if retained.invoice_status == self.STATUS_ISSUED and any(
+                getattr(retained, field) != getattr(self, field)
+                for field in self._TERMINAL_FIELDS
+            ):
+                raise ValidationError({"interest_invoice": "Issuance evidence is immutable."})
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         raise ValidationError({"interest_invoice": "Interest invoice history is immutable."})
+
+
+class InterestInvoicePaymentEvidence(models.Model):
+    interest_invoice_payment_evidence_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    interest_invoice = models.ForeignKey(
+        InterestInvoice,
+        on_delete=models.PROTECT,
+        related_name="payment_evidence",
+    )
+    schedule_application = models.OneToOneField(
+        "loans.RepaymentScheduleAllocation",
+        on_delete=models.PROTECT,
+        related_name="interest_invoice_evidence",
+    )
+    interest_applied_amount = models.DecimalField(max_digits=18, decimal_places=2)
+
+    objects = ImmutableInterestInvoiceQuerySet.as_manager()
+
+    class Meta:
+        db_table = "interest_invoice_payment_evidence"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(interest_applied_amount__gt=0),
+                name="interest_invoice_payment_positive",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"interest_invoice": "Payment evidence is immutable."})
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"interest_invoice": "Payment evidence is immutable."})
 
 
 class ImmutableAccrualQuerySet(models.QuerySet):
@@ -256,6 +350,9 @@ class ImmutableAccrualQuerySet(models.QuerySet):
 
     def delete(self):
         raise ValidationError({"accrual_entry": "Accrual history is immutable."})
+
+    def _store_response(self, **kwargs):
+        return super().update(**kwargs)
 
 
 class AccrualEntry(models.Model):
@@ -288,6 +385,7 @@ class AccrualEntry(models.Model):
     calculation_method = models.CharField(max_length=40)
     day_count_basis = models.PositiveSmallIntegerField()
     calculation_days = models.PositiveSmallIntegerField()
+    calculation_segments_json = models.JSONField(default=list)
     interest_accrued_amount = models.DecimalField(max_digits=18, decimal_places=2)
     posted_status = models.CharField(max_length=60, default=STATUS_PENDING, db_index=True)
     sap_entry_reference = models.CharField(max_length=120, blank=True, default="", db_index=True)
@@ -308,6 +406,7 @@ class AccrualEntry(models.Model):
     generation_audit = models.OneToOneField(
         "identity.AuditLog", on_delete=models.PROTECT, related_name="generated_interest_accrual"
     )
+    generation_original_response_json = models.JSONField(default=dict)
     posting_idempotency_key_digest = models.CharField(
         max_length=64, null=True, blank=True, unique=True
     )
@@ -319,6 +418,7 @@ class AccrualEntry(models.Model):
         on_delete=models.PROTECT,
         related_name="posted_interest_accrual",
     )
+    posting_original_response_json = models.JSONField(default=dict)
 
     objects = ImmutableAccrualQuerySet.as_manager()
 
@@ -389,8 +489,15 @@ class AccrualEntry(models.Model):
         "principal_base_amount", "interest_rate", "rate_config_id", "rate_version_number",
         "calculation_configuration_id", "calculation_version", "calculation_method",
         "day_count_basis", "calculation_days", "interest_accrued_amount",
+        "calculation_segments_json",
         "generated_by_user_id", "generated_at", "generation_idempotency_key_digest",
         "generation_payload_digest", "generation_audit_id",
+        "generation_original_response_json",
+    )
+    _TERMINAL_FIELDS = (
+        "posted_status", "sap_entry_reference", "posted_by_user_id", "posted_at",
+        "posting_idempotency_key_digest", "posting_payload_digest", "posting_audit_id",
+        "posting_original_response_json",
     )
 
     def save(self, *args, **kwargs):
@@ -398,6 +505,11 @@ class AccrualEntry(models.Model):
             retained = type(self)._base_manager.get(pk=self.pk)
             if any(getattr(retained, field) != getattr(self, field) for field in self._FROZEN_FIELDS):
                 raise ValidationError({"accrual_entry": "Calculation snapshots are immutable."})
+            if retained.posted_status in {self.STATUS_POSTED, self.STATUS_FAILED} and any(
+                getattr(retained, field) != getattr(self, field)
+                for field in self._TERMINAL_FIELDS
+            ):
+                raise ValidationError({"accrual_entry": "Posting evidence is immutable."})
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -444,6 +556,9 @@ class ImmutableCapitalisationQuerySet(models.QuerySet):
             {"interest_capitalisation": "Capitalisation evidence is immutable."}
         )
 
+    def _store_original_response(self, **kwargs):
+        return super().update(**kwargs)
+
 
 class InterestCapitalisation(models.Model):
     STATUS_CAPITALISED = "capitalised"
@@ -489,6 +604,7 @@ class InterestCapitalisation(models.Model):
         on_delete=models.PROTECT,
         related_name="interest_capitalisation",
     )
+    original_response_json = models.JSONField(default=dict)
 
     objects = ImmutableCapitalisationQuerySet.as_manager()
 
@@ -579,6 +695,134 @@ class InterestCapitalisationInvoiceEvidence(models.Model):
     def delete(self, *args, **kwargs):
         raise ValidationError(
             {"interest_capitalisation": "Invoice evidence is immutable."}
+        )
+
+
+class InterestCapitalisationPaymentEvidence(models.Model):
+    interest_capitalisation_payment_evidence_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    capitalisation = models.ForeignKey(
+        InterestCapitalisation,
+        on_delete=models.PROTECT,
+        related_name="payment_evidence",
+    )
+    interest_invoice = models.ForeignKey(
+        InterestInvoice,
+        on_delete=models.PROTECT,
+        related_name="capitalisation_payment_evidence",
+    )
+    repayment_allocation = models.OneToOneField(
+        "loans.RepaymentAllocation",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation_evidence",
+    )
+    interest_applied_amount = models.DecimalField(max_digits=18, decimal_places=2)
+
+    objects = ImmutableCapitalisationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "interest_capitalisation_payment_evidence"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(interest_applied_amount__gt=0),
+                name="interest_cap_payment_amount_positive",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"interest_capitalisation": "Payment evidence is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_capitalisation": "Payment evidence is immutable."}
+        )
+
+
+class InterestCapitalisationHardCopyTask(models.Model):
+    interest_capitalisation_hard_copy_task_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    capitalisation = models.OneToOneField(
+        InterestCapitalisation,
+        on_delete=models.PROTECT,
+        related_name="hard_copy_task",
+    )
+    letter_document = models.OneToOneField(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation_hard_copy_task",
+    )
+    status = models.CharField(max_length=40, default="pending")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = ImmutableCapitalisationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "interest_capitalisation_hard_copy_tasks"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status="pending"),
+                name="interest_cap_hard_copy_pending",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"interest_capitalisation": "Hard-copy task evidence is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_capitalisation": "Hard-copy task evidence is immutable."}
+        )
+
+
+class InterestCapitalisationScheduleEvidence(models.Model):
+    interest_capitalisation_schedule_evidence_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    capitalisation = models.ForeignKey(
+        InterestCapitalisation,
+        on_delete=models.PROTECT,
+        related_name="schedule_evidence",
+    )
+    repayment_schedule = models.OneToOneField(
+        "loans.RepaymentSchedule",
+        on_delete=models.PROTECT,
+        related_name="interest_capitalisation_evidence",
+    )
+    interest_reclassified_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    schedule_status_before = models.CharField(max_length=60)
+    schedule_status_after = models.CharField(max_length=60)
+
+    objects = ImmutableCapitalisationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "interest_capitalisation_schedule_evidence"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(interest_reclassified_amount__gt=0),
+                name="interest_cap_schedule_amount_positive",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"interest_capitalisation": "Schedule evidence is immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"interest_capitalisation": "Schedule evidence is immutable."}
         )
 
 

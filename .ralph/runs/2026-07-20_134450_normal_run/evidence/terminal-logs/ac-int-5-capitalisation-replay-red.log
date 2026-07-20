@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_failed_email_delivery_and_retry_replay_never_recapitalise (sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_failed_email_delivery_and_retry_replay_never_recapitalise)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/tests/test_interest_capitalisation_api.py", line 478, in test_failed_email_delivery_and_retry_replay_never_recapitalise
+    self.assertEqual(
+AssertionError: {'int[544 chars]s': 'failed', 'letter_document_id': '511e57fa-[207 chars]cd1'} != {'int[544 chars]s': 'queued', 'letter_document_id': '511e57fa-[207 chars]cd1'}
+Diff is 1086 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.720s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_STATUS=1

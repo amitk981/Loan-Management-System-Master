@@ -1,0 +1,3 @@
+Command: source scripts/lib/ralph-architecture-review.sh && ralph_validate_review_finding_closure "$PWD" "$PWD/docs/slices/010H2-interest-calculation-payment-and-replay-owner-closure.md" "$PWD/.ralph/runs/2026-07-20_134450_normal_run"
+Acceptance Evidence contains a malformed row: Additional AC-INT-1 leap/principal evidence is retained in
+Exit code: 1

@@ -156,6 +156,144 @@ class InterestInvoicePostgreSQLAcceptanceTests(TransactionTestCase):
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class InterestAccountingOwnerPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def test_exact_invoice_key_race_replays_one_frozen_generation(self):
+        fixture = self._invoice_fixture()
+        statuses = self._race(
+            lambda _: Client().post(
+                f"/api/v1/loan-accounts/{fixture.account.pk}/interest-invoices/",
+                data=json.dumps({"financial_year": "FY2026-27"}),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="owner-invoice-exact",
+                **fixture.auth,
+            )
+        )
+        from sfpcl_credit.interest.models import InterestInvoice
+
+        self.assertEqual(statuses, [200, 200])
+        row = InterestInvoice.objects.get()
+        self.assertTrue(row.generation_original_response_json)
+
+    def test_changed_invoice_key_race_is_one_effect_and_one_conflict(self):
+        fixture = self._invoice_fixture()
+        statuses = self._race(
+            lambda index: Client().post(
+                f"/api/v1/loan-accounts/{fixture.account.pk}/interest-invoices/",
+                data=json.dumps({"financial_year": "FY2026-27"}),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"owner-invoice-changed-{index}",
+                **fixture.auth,
+            )
+        )
+        from sfpcl_credit.interest.models import InterestInvoice
+
+        self.assertEqual(statuses, [200, 409])
+        self.assertEqual(InterestInvoice.objects.count(), 1)
+
+    def test_exact_accrual_key_race_replays_one_month_and_obligation(self):
+        fixture = MonthlyInterestAccrualApiTests(
+            "test_single_month_uses_server_owned_snapshots_and_creates_pending_sap_obligation"
+        )
+        fixture.setUp()
+        statuses = self._race(
+            lambda _: Client().post(
+                f"/api/v1/loan-accounts/{fixture.account.pk}/accrual-entries/",
+                data=json.dumps({"accrual_month": "2026-07"}),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="owner-accrual-exact",
+                **fixture.auth,
+            )
+        )
+        from sfpcl_credit.interest.models import AccrualEntry, AccrualSapPostingObligation
+
+        self.assertEqual(statuses, [200, 200])
+        self.assertEqual(AccrualEntry.objects.count(), 1)
+        self.assertEqual(AccrualSapPostingObligation.objects.count(), 1)
+
+    def test_changed_capitalisation_key_race_moves_money_once(self):
+        fixture = InterestCapitalisationApiTests(
+            "test_may_first_finalisation_moves_principal_once_and_retains_intimation_chain"
+        )
+        fixture.setUp()
+        statuses = self._race(
+            lambda index: Client().post(
+                f"/api/v1/loan-accounts/{fixture.account.pk}/interest-capitalisations/",
+                data=json.dumps(
+                    {
+                        "financial_year": "FY2026-27",
+                        "capitalisation_date": "2027-05-01",
+                    }
+                ),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"owner-capitalisation-changed-{index}",
+                **fixture.auth,
+            )
+        )
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationLedgerEntry,
+        )
+
+        self.assertEqual(statuses, [200, 409])
+        self.assertEqual(InterestCapitalisation.objects.count(), 1)
+        self.assertEqual(InterestCapitalisationLedgerEntry.objects.count(), 1)
+
+    def test_partial_delivery_replay_and_reverse_consumers_keep_original_truth(self):
+        fixture = InterestCapitalisationApiTests(
+            "test_may_first_finalisation_moves_principal_once_and_retains_intimation_chain"
+        )
+        fixture.setUp()
+        first = fixture._capitalise("owner-capitalisation-exact")
+        from sfpcl_credit.communications.models import CommunicationDeliveryJob
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationHardCopyTask,
+        )
+
+        row = InterestCapitalisation.objects.get()
+        job = CommunicationDeliveryJob.objects.get(
+            communication_id=row.borrower_intimation_email_id
+        )
+        job.status = CommunicationDeliveryJob.STATUS_FAILED
+        job.attempts = job.max_attempts
+        job.last_failure_code = "provider_rejected"
+        job.save(update_fields=["status", "attempts", "last_failure_code"])
+        replay = fixture._capitalise("owner-capitalisation-exact")
+        ledger = Client().get(
+            f"/api/v1/loan-accounts/{fixture.account.pk}/ledger/", **fixture.auth
+        )
+
+        self.assertEqual(replay.json()["data"]["original_response"], first.json()["data"])
+        self.assertEqual(ledger.status_code, 200, ledger.content)
+        self.assertEqual(ledger.json()["data"][-1]["transaction_type"], "interest_capitalisation")
+        self.assertEqual(InterestCapitalisationHardCopyTask.objects.count(), 1)
+
+    @staticmethod
+    def _invoice_fixture():
+        fixture = InterestInvoiceApiTests(
+            "test_generation_uses_server_owned_fy_truth_and_leaves_balances_unchanged"
+        )
+        fixture.setUp()
+        return fixture
+
+    @staticmethod
+    def _race(submit):
+        barrier = Barrier(2)
+
+        def worker(index):
+            close_old_connections()
+            barrier.wait()
+            response = submit(index)
+            close_old_connections()
+            return response.status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            return sorted(pool.map(worker, range(2)))
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
 class DirectRepaymentPostingPostgreSQLAcceptanceTests(TransactionTestCase):
     reset_sequences = True
 

@@ -1,0 +1,24 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_capitalisation_uses_gross_less_interest_paid_once_and_excludes_tax_and_fee (sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_capitalisation_uses_gross_less_interest_paid_once_and_excludes_tax_and_fee)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/tests/test_interest_capitalisation_api.py", line 151, in test_capitalisation_uses_gross_less_interest_paid_once_and_excludes_tax_and_fee
+    self.assertEqual(str(capitalisation.unpaid_interest_amount), "75.00")
+AssertionError: '65.00' != '75.00'
+- 65.00
+? ^
++ 75.00
+? ^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.758s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_STATUS=1

@@ -1,0 +1,4 @@
+Command: test -s .ralph/runs/2026-07-20_150251_repair/review-closure-evidence.md
+Observed before repair: required artifact did not exist.
+FAIL: review-closure-evidence.md is required for a corrective finding slice.
+Exit code: 1

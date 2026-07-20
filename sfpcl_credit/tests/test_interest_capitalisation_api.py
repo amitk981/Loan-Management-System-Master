@@ -120,6 +120,152 @@ class InterestCapitalisationApiTests(TestCase):
             counts_before,
         )
 
+    def test_capitalisation_uses_gross_less_interest_paid_once_and_excludes_tax_and_fee(self):
+        from django.db import connection
+
+        from sfpcl_credit.interest.models import InterestCapitalisation, InterestInvoice
+
+        invoice = InterestInvoice.objects.get(financial_year="FY2026-27")
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE interest_invoices
+                SET gross_interest_amount = %s,
+                    interest_paid_amount = %s,
+                    tax_rate = %s,
+                    tax_amount = %s,
+                    fixed_fee_amount = %s,
+                    interest_amount = %s
+                WHERE interest_invoice_id = %s
+                """,
+                [
+                    "100.00", "25.00", "10.0000", "10.00", "5.00", "90.00",
+                    invoice._meta.pk.get_db_prep_value(invoice.pk, connection, prepared=False),
+                ],
+            )
+
+        response = self._capitalise("capitalisation-interest-only")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        capitalisation = InterestCapitalisation.objects.get()
+        self.assertEqual(str(capitalisation.unpaid_interest_amount), "75.00")
+        self.assertEqual(str(capitalisation.new_principal_amount), "400075.00")
+
+    def test_interest_allocation_after_invoice_through_cutoff_reduces_capitalisation_once(self):
+        from decimal import Decimal
+
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.interest.models import InterestCapitalisation
+        from sfpcl_credit.loans.models import (
+            Repayment,
+            RepaymentAllocation,
+            RepaymentSchedule,
+            RepaymentScheduleAllocation,
+        )
+
+        schedule = RepaymentSchedule.objects.create(
+            loan_account=self.account,
+            installment_number=998,
+            due_date=date(2027, 3, 31),
+            principal_due="0.00",
+            interest_due="65.00",
+            charges_due="0.00",
+            total_due="65.00",
+            schedule_status="pending",
+        )
+
+        def allocation(received_date, reference, amount):
+            repayment_id = __import__("uuid").uuid4()
+            capture_audit = AuditLog.objects.create(
+                actor_user=self.actor,
+                action="repayment.receipt_created",
+                entity_type="repayment",
+                entity_id=repayment_id,
+            )
+            repayment = Repayment.objects.create(
+                repayment_id=repayment_id,
+                loan_account=self.account,
+                member=self.account.member,
+                amount_received=amount,
+                received_date=received_date,
+                payment_method="neft",
+                bank_reference_number=reference,
+                bank_reference_number_normalized=reference,
+                remarks="Retained interest payment evidence.",
+                allocation_status="allocated",
+                sap_posting_status="posted",
+                captured_by_user=self.actor,
+                idempotency_key_digest=f"capture-{reference}",
+                payload_digest=f"payload-{reference}",
+                capture_audit=capture_audit,
+            )
+            allocation_id = __import__("uuid").uuid4()
+            allocation_audit = AuditLog.objects.create(
+                actor_user=self.actor,
+                action="repayment.allocation.completed",
+                entity_type="repayment_allocation",
+                entity_id=allocation_id,
+            )
+            retained = RepaymentAllocation.objects.create(
+                repayment_allocation_id=allocation_id,
+                repayment=repayment,
+                loan_account=self.account,
+                allocated_to_principal="0.00",
+                allocated_to_interest=amount,
+                allocated_to_charges="0.00",
+                unallocated_amount="0.00",
+                principal_before="400000.00",
+                principal_after="400000.00",
+                interest_before=amount,
+                interest_after="0.00",
+                charges_before="0.00",
+                charges_after="0.00",
+                total_before=Decimal("400000.00") + Decimal(amount),
+                total_after="400000.00",
+                allocated_by_user=self.actor,
+                allocation_audit=allocation_audit,
+            )
+            RepaymentScheduleAllocation.objects.create(
+                allocation=retained,
+                repayment_schedule=schedule,
+                principal_applied="0.00",
+                interest_applied=amount,
+                schedule_status_before="pending",
+                schedule_status_after="pending",
+            )
+            return retained
+
+        eligible = allocation(date(2027, 4, 30), "CUT-OFF-PAYMENT", "25.00")
+        allocation(date(2027, 5, 1), "AFTER-CUT-OFF", "40.00")
+
+        preview = self.client.post(
+            "/api/v1/interest-capitalisations/check/",
+            data=json.dumps(
+                {
+                    "financial_year": "FY2026-27",
+                    "as_of_date": "2027-04-30",
+                    "dry_run": True,
+                }
+            ),
+            content_type="application/json",
+            **self.auth,
+        )
+
+        response = self._capitalise("capitalisation-cutoff-payment")
+
+        self.assertEqual(preview.status_code, 200, preview.content)
+        self.assertEqual(
+            preview.json()["data"]["results"][0]["unpaid_interest_amount"],
+            "36975.00",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        capitalisation = InterestCapitalisation.objects.get()
+        self.assertEqual(str(capitalisation.unpaid_interest_amount), "36975.00")
+        self.assertEqual(
+            list(capitalisation.payment_evidence.values_list("repayment_allocation_id", flat=True)),
+            [eligible.pk],
+        )
+
     def test_may_first_finalisation_moves_principal_once_and_retains_intimation_chain(self):
         response = self._capitalise("capitalisation-final-001")
         replay = self._capitalise("capitalisation-final-001")
@@ -216,6 +362,48 @@ class InterestCapitalisationApiTests(TestCase):
             ledger_response.json()["data"][-1]["principal_balance"],
             "437000.00",
         )
+
+    def test_capitalisation_reclassifies_existing_interest_and_schedule_without_total_inflation(self):
+        from sfpcl_credit.interest.models import (
+            InterestCapitalisation,
+            InterestCapitalisationHardCopyTask,
+            InterestCapitalisationScheduleEvidence,
+        )
+        from sfpcl_credit.loans.models import RepaymentSchedule
+
+        self.account.interest_outstanding = "37000.00"
+        self.account.total_outstanding = "437000.00"
+        self.account.save(update_fields=["interest_outstanding", "total_outstanding"])
+        schedule = RepaymentSchedule.objects.create(
+            loan_account=self.account,
+            installment_number=999,
+            due_date=date(2027, 3, 31),
+            principal_due="0.00",
+            interest_due="37000.00",
+            charges_due="0.00",
+            total_due="37000.00",
+            schedule_status="pending",
+        )
+
+        response = self._capitalise("capitalisation-reclassification")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.account.refresh_from_db()
+        schedule.refresh_from_db()
+        capitalisation = InterestCapitalisation.objects.get()
+        self.assertEqual(str(self.account.principal_outstanding), "437000.00")
+        self.assertEqual(str(self.account.interest_outstanding), "0.00")
+        self.assertEqual(str(self.account.total_outstanding), "437000.00")
+        self.assertEqual(str(schedule.paid_interest), "37000.00")
+        self.assertEqual(schedule.schedule_status, "paid")
+        self.assertEqual(
+            InterestCapitalisationScheduleEvidence.objects.get().repayment_schedule_id,
+            schedule.pk,
+        )
+        task = InterestCapitalisationHardCopyTask.objects.get()
+        self.assertEqual(task.capitalisation_id, capitalisation.pk)
+        self.assertEqual(task.letter_document_id, capitalisation.borrower_intimation_letter_document_id)
+        self.assertEqual(task.status, "pending")
 
     def test_cutoff_client_money_and_duplicate_or_changed_replay_fail_closed(self):
         from sfpcl_credit.interest.models import (
@@ -476,10 +664,8 @@ class InterestCapitalisationApiTests(TestCase):
         self.assertEqual(replay.status_code, 200, replay.content)
         self.assertTrue(replay.json()["data"]["idempotency_replayed"])
         self.assertEqual(
-            replay.json()["data"]["original_response"]["borrower_intimation"][
-                "email_delivery_status"
-            ],
-            "failed",
+            replay.json()["data"]["original_response"],
+            first.json()["data"],
         )
         self.assertEqual(InterestCapitalisation.objects.count(), 1)
         self.assertEqual(InterestCapitalisationLedgerEntry.objects.count(), 1)

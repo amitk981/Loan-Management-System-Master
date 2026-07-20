@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_issue_binds_one_document_communication_job_and_audit_chain (sfpcl_credit.tests.test_interest_invoice_api.InterestInvoiceApiTests.test_issue_binds_one_document_communication_job_and_audit_chain)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_134450_normal_run/sfpcl_credit/tests/test_interest_invoice_api.py", line 248, in test_issue_binds_one_document_communication_job_and_audit_chain
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.875s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+EXIT_STATUS=1

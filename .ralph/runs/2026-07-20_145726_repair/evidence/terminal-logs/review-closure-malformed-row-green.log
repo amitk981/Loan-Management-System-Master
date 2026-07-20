@@ -1,0 +1,5 @@
+Command: run ralph_validate_review_finding_closure and fail only if the original malformed-row signal remains
+Permanent test for AR-010-INTEREST-001 must bind a permanent test file to an exact selector: sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_interest_allocation_after_invoice_through_cutoff_reduces_capitalisation_once
+Underlying validator exit code: 1
+PASS: original malformed-row symptom no longer reproduces.
+Exit code: 0
