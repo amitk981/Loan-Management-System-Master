@@ -1,7 +1,7 @@
 # Slice 010E4: Rate Effective-Date and Write-Boundary Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

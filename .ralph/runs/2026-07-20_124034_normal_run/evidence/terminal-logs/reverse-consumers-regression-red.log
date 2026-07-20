@@ -1,0 +1,34 @@
+Creating test database for alias 'default'...
+Found 43 test(s).
+System check identified no issues (0 silenced).
+F..F..................................Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.sss
+======================================================================
+FAIL: test_activation_queues_honest_email_and_sms_obligations_for_active_loans (sfpcl_credit.tests.test_interest_rate_config_api.InterestRateConfigApiTests.test_activation_queues_honest_email_and_sms_obligations_for_active_loans)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_124034_normal_run/sfpcl_credit/tests/test_interest_rate_config_api.py", line 500, in test_activation_queues_honest_email_and_sms_obligations_for_active_loans
+    self.assertEqual(f"{account.current_interest_rate:.4f}", "9.2500")
+AssertionError: '9.0000' != '9.2500'
+- 9.0000
++ 9.2500
+
+
+======================================================================
+FAIL: test_invoice_and_accrual_consumers_retain_the_historical_rate_snapshot (sfpcl_credit.tests.test_interest_rate_config_api.InterestRateConfigApiTests.test_invoice_and_accrual_consumers_retain_the_historical_rate_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_124034_normal_run/sfpcl_credit/tests/test_interest_rate_config_api.py", line 581, in test_invoice_and_accrual_consumers_retain_the_historical_rate_snapshot
+    self.assertEqual(f"{account.current_interest_rate:.4f}", "9.7500")
+AssertionError: '9.0000' != '9.7500'
+- 9.0000
++ 9.7500
+
+
+----------------------------------------------------------------------
+Ran 43 tests in 24.585s
+
+FAILED (failures=2, skipped=3)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

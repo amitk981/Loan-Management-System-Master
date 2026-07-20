@@ -4,7 +4,9 @@ from django.db.models import F, Q
 
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
-from sfpcl_credit.configurations.models import InterestRateHistory
+from sfpcl_credit.configurations.modules.interest_rate_configuration import (
+    current_rate_projection_is_coherent,
+)
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.models import (
     LoanAccount,
@@ -231,30 +233,11 @@ def resolve_creation_truth(*, account):
         or account.sanctioned_amount != account.terms.loan_amount
         or account.loan_type != account.terms.facility_type
         or account.interest_rate_type != account.terms.interest_rate_type
-        or not _current_rate_is_owner_coherent(account)
+        or not current_rate_projection_is_coherent(account=account)
         or account.repayment_date != account.terms.repayment_date
     ):
         return None
     return decision
-
-
-def _current_rate_is_owner_coherent(account):
-    latest = (
-        InterestRateHistory.objects.select_related("rate_config")
-        .filter(loan_account=account)
-        .order_by("-effective_from", "-interest_rate_history_id")
-        .first()
-    )
-    if latest is None:
-        return account.current_interest_rate == account.terms.rate_of_interest
-    return bool(
-        latest.new_interest_rate == account.current_interest_rate
-        and latest.rate_config.status == "active"
-        and latest.rate_config.effective_rate == latest.new_interest_rate
-        and latest.rate_config.effective_from == latest.effective_from
-    )
-
-
 __all__ = [
     "LoanAccountReadPermissionDenied",
     "account_is_scoped",

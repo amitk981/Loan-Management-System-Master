@@ -1,0 +1,3 @@
+TEST_SPEC=ralph_validate_review_finding_closure against repair run 2026-07-20_132000_repair
+PASS: validated semantic closure for 1 finding(s) and 4 acceptance id(s).
+Exit code: 0

@@ -1,0 +1,12 @@
+Creating test database for alias 'default'...
+Found 43 test(s).
+System check identified no issues (0 silenced).
+......................................Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.sss
+----------------------------------------------------------------------
+Ran 43 tests in 25.103s
+
+OK (skipped=3)
+Destroying test database for alias 'default'...
+EXIT_STATUS=0

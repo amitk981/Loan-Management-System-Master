@@ -40,6 +40,7 @@ from sfpcl_credit.tests.api_contracts import (
     assert_pagination_shape,
     assert_success_envelope,
 )
+from sfpcl_credit.tests.servicing_builders import build_servicing_owner_fixture
 
 
 INTEREST_RATE_URL = "/api/v1/config/interest-rates/"
@@ -359,14 +360,7 @@ class InterestRateConfigApiTests(TestCase):
 
     def test_open_predecessor_cannot_be_closed_before_a_retained_consumption(self):
         from sfpcl_credit.configurations.models import InterestRateConsumptionSnapshot
-        from sfpcl_credit.tests.test_loan_account_reads_api import (
-            ActiveLoanAccountReadApiTests,
-        )
-
-        fixture = ActiveLoanAccountReadApiTests(
-            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
-        )
-        fixture.setUp()
+        fixture = build_servicing_owner_fixture(suffix=uuid.uuid4().hex[:8])
         first = self._create(
             version_number="RATE-CONSUMED-OPEN",
             effective_from="2026-08-01",
@@ -403,14 +397,7 @@ class InterestRateConfigApiTests(TestCase):
         )
 
     def test_activation_queues_honest_email_and_sms_obligations_for_active_loans(self):
-        from sfpcl_credit.tests.test_loan_account_reads_api import (
-            ActiveLoanAccountReadApiTests,
-        )
-
-        fixture = ActiveLoanAccountReadApiTests(
-            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
-        )
-        fixture.setUp()
+        fixture = build_servicing_owner_fixture(suffix=uuid.uuid4().hex[:8])
         account = fixture.account
         account.member.email = "borrower.rate@sfpcl.example"
         account.member.mobile_number = "+919876543210"
@@ -497,7 +484,7 @@ class InterestRateConfigApiTests(TestCase):
         self.assertEqual(obligation.sms_delivery_status, "failed")
         self.assertEqual(obligation.delivery_status, "failed")
         account.refresh_from_db()
-        self.assertEqual(f"{account.current_interest_rate:.4f}", "9.2500")
+        self.assertEqual(f"{account.current_interest_rate:.4f}", "9.0000")
 
         replay = self._activate(
             proposed["interest_rate_config_id"], "rate-notices-activate"
@@ -521,14 +508,7 @@ class InterestRateConfigApiTests(TestCase):
         )
 
     def test_invoice_and_accrual_consumers_retain_the_historical_rate_snapshot(self):
-        from sfpcl_credit.tests.test_loan_account_reads_api import (
-            ActiveLoanAccountReadApiTests,
-        )
-
-        fixture = ActiveLoanAccountReadApiTests(
-            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
-        )
-        fixture.setUp()
+        fixture = build_servicing_owner_fixture(suffix=uuid.uuid4().hex[:8])
         account = fixture.account
         first = self._create(
             version_number="RATE-2026-01",
@@ -578,7 +558,7 @@ class InterestRateConfigApiTests(TestCase):
         self.assertEqual(f"{accrual_snapshot.effective_rate:.4f}", "9.7500")
         self.assertEqual(str(accrual_snapshot.rate_config_id), second["interest_rate_config_id"])
         account.refresh_from_db()
-        self.assertEqual(f"{account.current_interest_rate:.4f}", "9.7500")
+        self.assertEqual(f"{account.current_interest_rate:.4f}", "9.0000")
         from sfpcl_credit.loans.modules.loan_account_read import resolve_creation_truth
 
         self.assertIsNotNone(resolve_creation_truth(account=account))
@@ -601,7 +581,7 @@ class InterestRateConfigApiTests(TestCase):
             InterestRateHistory.objects.filter(pk=histories[0].pk).update(
                 new_interest_rate="10.0000"
             )
-        type(account).objects.filter(pk=account.pk).update(current_interest_rate="9.0000")
+        type(account).objects.filter(pk=account.pk).update(current_interest_rate="8.5000")
         account.refresh_from_db()
         self.assertIsNone(resolve_creation_truth(account=account))
 
@@ -715,14 +695,7 @@ class InterestRateActivationPostgreSQLAcceptanceTests(TransactionTestCase):
         )
 
     def test_concurrent_activation_retains_one_notice_per_loan_and_channel(self):
-        from sfpcl_credit.tests.test_loan_account_reads_api import (
-            ActiveLoanAccountReadApiTests,
-        )
-
-        fixture = ActiveLoanAccountReadApiTests(
-            "test_exact_transfer_projects_active_funded_amounts_and_activation_time"
-        )
-        fixture.setUp()
+        fixture = build_servicing_owner_fixture(suffix=uuid.uuid4().hex[:8])
         account = fixture.account
         account.member.email = "pg.borrower@sfpcl.example"
         account.member.mobile_number = "+919876543210"

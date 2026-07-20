@@ -92,19 +92,36 @@ class VersionHistory(models.Model):
 
 
 class ImmutableApprovedInterestRateQuerySet(models.QuerySet):
+    _ERROR = {"interest_rate_config": "Approved rate versions require the canonical rate owner."}
+
     def update(self, **kwargs):
-        if self.filter(status="active").exists() or kwargs.get("status") == "active":
-            raise ValidationError(
-                {"interest_rate_config": "Approved rate versions are immutable."}
-            )
+        if self.filter(status="active").exists() or "status" in kwargs:
+            raise ValidationError(self._ERROR)
         return super().update(**kwargs)
+
+    def bulk_create(self, objs, *args, **kwargs):
+        if any(row.status == "active" for row in objs):
+            raise ValidationError(self._ERROR)
+        return super().bulk_create(objs, *args, **kwargs)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        object_ids = [row.pk for row in objs if row.pk]
+        if (
+            "status" in fields
+            or any(row.status == "active" for row in objs)
+            or self.filter(pk__in=object_ids, status="active").exists()
+        ):
+            raise ValidationError(self._ERROR)
+        return super().bulk_update(objs, fields, batch_size=batch_size)
 
     def delete(self):
         if self.filter(status="active").exists():
-            raise ValidationError(
-                {"interest_rate_config": "Approved rate versions are immutable."}
-            )
+            raise ValidationError(self._ERROR)
         return super().delete()
+
+    def _canonical_update(self, **kwargs):
+        """Internal transition primitive; public callers use the rate-owner module."""
+        return super().update(**kwargs)
 
 
 class InterestRateConfig(models.Model):
@@ -150,6 +167,7 @@ class InterestRateConfig(models.Model):
 
     class Meta:
         db_table = "interest_rate_configs"
+        base_manager_name = "objects"
         ordering = ["-effective_from", "-interest_rate_config_id"]
         indexes = [
             models.Index(
@@ -178,6 +196,29 @@ class InterestRateConfig(models.Model):
             models.CheckConstraint(
                 check=models.Q(status__in=("proposed", "active")),
                 name="interest_rate_status_valid",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        status="proposed",
+                        approved_by_user__isnull=True,
+                        activated_at__isnull=True,
+                        activation_idempotency_key__isnull=True,
+                        activation_payload_digest="",
+                    )
+                    | (
+                        models.Q(
+                            status="active",
+                            approved_by_user__isnull=False,
+                            activated_at__isnull=False,
+                            activation_idempotency_key__isnull=False,
+                            activation_payload_digest__regex=r"^[0-9a-f]{64}$",
+                        )
+                        & ~models.Q(activation_idempotency_key="")
+                        & ~models.Q(approved_by_user=models.F("created_by_user"))
+                    )
+                ),
+                name="rate_status_approval_coherent",
             ),
         ]
 

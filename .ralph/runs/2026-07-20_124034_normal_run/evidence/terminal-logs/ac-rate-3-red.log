@@ -1,0 +1,20 @@
+TEST_SPEC=sfpcl_credit.tests.test_servicing_financial_owner_closure.RateEffectiveDatePostgreSQLAcceptanceTests.test_consumed_boundary_and_competing_successors_retain_one_decision
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+E
+======================================================================
+ERROR: test_consumed_boundary_and_competing_successors_retain_one_decision (sfpcl_credit.tests.test_servicing_financial_owner_closure.RateEffectiveDatePostgreSQLAcceptanceTests.test_consumed_boundary_and_competing_successors_retain_one_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_124034_normal_run/sfpcl_credit/tests/test_servicing_financial_owner_closure.py", line 364, in test_consumed_boundary_and_competing_successors_retain_one_decision
+    from sfpcl_credit.tests.servicing_builders import (
+ImportError: cannot import name 'race_interest_rate_activations' from 'sfpcl_credit.tests.servicing_builders' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_124034_normal_run/sfpcl_credit/tests/servicing_builders.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.180s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

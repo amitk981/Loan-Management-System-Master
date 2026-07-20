@@ -7,7 +7,7 @@ from math import ceil
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Q
+from django.db.models import Exists, F, OuterRef, Q, Subquery
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
@@ -77,6 +77,25 @@ class EffectiveRate:
     effective_rate: Decimal
     effective_from: object
     effective_to: object
+
+
+@dataclass(frozen=True)
+class LoanRateProjection:
+    loan_account_id: object
+    as_of_date: object
+    interest_rate_config_id: object
+    version_number: str
+    effective_rate: Decimal
+    current_interest_rate: Decimal
+    projection_changed: bool
+
+
+@dataclass(frozen=True)
+class ApprovedRateDecision:
+    interest_rate_config_id: object
+    benchmark_name: str | None
+    spread_rate: Decimal | None
+    reset_frequency: str | None
 
 
 def activate(*, actor, request, interest_rate_config_id, idempotency_key):
@@ -167,7 +186,7 @@ def activate(*, actor, request, interest_rate_config_id, idempotency_key):
                     )
                 predecessor_before = serialize(predecessor)
                 predecessor.effective_to = row.effective_from - timedelta(days=1)
-                InterestRateConfig._base_manager.filter(pk=predecessor.pk).update(
+                InterestRateConfig.objects.filter(pk=predecessor.pk)._canonical_update(
                     effective_to=predecessor.effective_to
                 )
                 predecessor_after = serialize(predecessor)
@@ -209,7 +228,7 @@ def activate(*, actor, request, interest_rate_config_id, idempotency_key):
         row.activated_at = decision_time
         row.activation_idempotency_key = key
         row.activation_payload_digest = digest
-        InterestRateConfig._base_manager.filter(pk=row.pk).update(
+        InterestRateConfig.objects.filter(pk=row.pk)._canonical_update(
             status=row.status,
             approved_by_user=row.approved_by_user,
             activated_at=row.activated_at,
@@ -272,6 +291,119 @@ def resolve_effective_rate(calculation_date):
         effective_rate=row.effective_rate,
         effective_from=row.effective_from,
         effective_to=row.effective_to,
+    )
+
+
+def get_approved_rate_decision(interest_rate_config_id):
+    """Return calculation metadata without exposing the configuration model."""
+    row = InterestRateConfig.objects.filter(
+        pk=interest_rate_config_id,
+        status=InterestRateConfig.STATUS_ACTIVE,
+    ).first()
+    if row is None:
+        raise MissingEffectiveRate("The approved interest-rate decision does not exist.")
+    return ApprovedRateDecision(
+        interest_rate_config_id=row.pk,
+        benchmark_name=row.benchmark_name,
+        spread_rate=row.spread_rate,
+        reset_frequency=row.reset_frequency,
+    )
+
+
+def converge_current_rate_projection(
+    *, actor, request, loan_account_id, as_of_date
+):
+    """Publish the approved explicit-date rate to one loan's mutable current projection."""
+    if not can_manage(actor):
+        raise InterestRateConflict(
+            "Current-rate convergence requires interest-rate management authority."
+        )
+    from sfpcl_credit.loans.models import LoanAccount
+
+    with transaction.atomic():
+        account = LoanAccount.objects.select_for_update().get(pk=loan_account_id)
+        effective = resolve_effective_rate(as_of_date)
+        if not InterestRateHistory.objects.filter(
+            loan_account=account,
+            rate_config_id=effective.interest_rate_config_id,
+            effective_from=effective.effective_from,
+            new_interest_rate=effective.effective_rate,
+        ).exists():
+            raise InterestRateConflict(
+                "The loan has no retained history for the effective rate decision."
+            )
+        changed = account.current_interest_rate != effective.effective_rate
+        if changed:
+            old_rate = account.current_interest_rate
+            account.current_interest_rate = effective.effective_rate
+            account.save(update_fields=["current_interest_rate"])
+            AuditLog.objects.create(
+                actor_user=actor,
+                actor_type="user",
+                action="config.interest_rate.loan_projection_converged",
+                entity_type="loan_account",
+                entity_id=account.pk,
+                old_value_json={"current_interest_rate": f"{old_rate:.4f}"},
+                new_value_json={
+                    "current_interest_rate": f"{effective.effective_rate:.4f}",
+                    "interest_rate_config_id": str(effective.interest_rate_config_id),
+                    "as_of_date": as_of_date.isoformat(),
+                },
+                ip_address=request_ip(request),
+                user_agent=request_user_agent(request),
+            )
+        return LoanRateProjection(
+            loan_account_id=account.pk,
+            as_of_date=as_of_date,
+            interest_rate_config_id=effective.interest_rate_config_id,
+            version_number=effective.version_number,
+            effective_rate=effective.effective_rate,
+            current_interest_rate=account.current_interest_rate,
+            projection_changed=changed,
+        )
+
+
+def current_rate_projection_is_coherent(*, account, as_of_date=None):
+    """Resolve loan current-rate coherence without exposing configuration models."""
+    boundary_date = as_of_date or timezone.localdate()
+    latest = (
+        InterestRateHistory.objects.select_related("rate_config")
+        .filter(loan_account=account, effective_from__lte=boundary_date)
+        .order_by("-effective_from", "-interest_rate_history_id")
+        .first()
+    )
+    if latest is None:
+        return account.current_interest_rate == account.terms.rate_of_interest
+    return bool(
+        latest.new_interest_rate == account.current_interest_rate
+        and latest.rate_config.status == InterestRateConfig.STATUS_ACTIVE
+        and latest.rate_config.effective_rate == latest.new_interest_rate
+        and latest.rate_config.effective_from == latest.effective_from
+    )
+
+
+def filter_current_rate_projection_coherent(queryset, *, as_of_date=None):
+    """Apply the same explicit-date rate decision to a loan queryset."""
+    boundary_date = as_of_date or timezone.localdate()
+    histories = InterestRateHistory.objects.filter(
+        loan_account_id=OuterRef("pk"),
+        effective_from__lte=boundary_date,
+        rate_config__status=InterestRateConfig.STATUS_ACTIVE,
+        rate_config__effective_rate=F("new_interest_rate"),
+        rate_config__effective_from=F("effective_from"),
+    ).order_by("-effective_from", "-interest_rate_history_id")
+    return queryset.annotate(
+        _current_rate_owner_value=Subquery(histories.values("new_interest_rate")[:1]),
+        _has_current_rate_owner=Exists(histories),
+    ).filter(
+        Q(
+            _has_current_rate_owner=False,
+            terms__rate_of_interest=F("current_interest_rate"),
+        )
+        | Q(
+            _has_current_rate_owner=True,
+            _current_rate_owner_value=F("current_interest_rate"),
+        )
     )
 
 
@@ -569,9 +701,22 @@ def _create_rate_histories_and_notices(*, row, actor, request):
         interest_rate_type="floating",
     ).order_by("loan_account_id")
     for account in accounts:
-        old_interest_rate = account.current_interest_rate
-        account.current_interest_rate = row.effective_rate
-        account.save(update_fields=["current_interest_rate"])
+        predecessor_history = (
+            InterestRateHistory.objects.filter(
+                loan_account=account,
+                effective_from__lt=row.effective_from,
+            )
+            .order_by("-effective_from", "-interest_rate_history_id")
+            .first()
+        )
+        old_interest_rate = (
+            predecessor_history.new_interest_rate
+            if predecessor_history is not None
+            else account.current_interest_rate
+        )
+        if row.effective_from <= timezone.localdate():
+            account.current_interest_rate = row.effective_rate
+            account.save(update_fields=["current_interest_rate"])
         email_communication = None
         if row.communication_required:
             obligation = BorrowerRateNoticeObligation.objects.create(

@@ -34,7 +34,9 @@ from sfpcl_credit.approvals.models import (
     ApprovalCaseReadScopeGrant,
     SanctionDecision,
 )
-from sfpcl_credit.configurations.models import InterestRateHistory
+from sfpcl_credit.configurations.modules.interest_rate_configuration import (
+    filter_current_rate_projection_coherent,
+)
 from sfpcl_credit.domain_errors import (
     DomainInvalidStateError,
     DomainObjectAccessDenied,
@@ -272,13 +274,6 @@ def filter_created_accounts(queryset):
         to_state=LoanAccount.STATUS_SANCTIONED,
         trigger_reason="Created from exact current terminal sanction.",
     )
-    latest_rate_histories = InterestRateHistory.objects.filter(
-        loan_account_id=OuterRef("pk"),
-        rate_config__status="active",
-        rate_config__effective_rate=F("new_interest_rate"),
-        rate_config__effective_from=F("effective_from"),
-    ).order_by("-effective_from", "-interest_rate_history_id")
-
     def singular(rows, group):
         return (
             rows.order_by()
@@ -287,7 +282,7 @@ def filter_created_accounts(queryset):
             .values("total")
         )
 
-    return queryset.annotate(
+    owned_queryset = queryset.annotate(
         _has_creation_history=Exists(histories),
         _has_creation_audit=Exists(audits),
         _has_creation_workflow=Exists(workflows),
@@ -301,10 +296,6 @@ def filter_created_accounts(queryset):
         _creation_workflow_actor_id=Subquery(
             workflows.values("triggered_by_user_id")[:1]
         ),
-        _latest_owned_interest_rate=Subquery(
-            latest_rate_histories.values("new_interest_rate")[:1]
-        ),
-        _has_owned_interest_history=Exists(latest_rate_histories),
     ).filter(
         _has_creation_history=True,
         _has_creation_audit=True,
@@ -320,16 +311,8 @@ def filter_created_accounts(queryset):
         terms__facility_type=F("loan_type"),
         terms__interest_rate_type=F("interest_rate_type"),
         terms__repayment_date=F("repayment_date"),
-    ).filter(
-        Q(
-            _has_owned_interest_history=False,
-            terms__rate_of_interest=F("current_interest_rate"),
-        )
-        | Q(
-            _has_owned_interest_history=True,
-            _latest_owned_interest_rate=F("current_interest_rate"),
-        )
     )
+    return filter_current_rate_projection_coherent(owned_queryset)
 
 
 @dataclass(frozen=True)

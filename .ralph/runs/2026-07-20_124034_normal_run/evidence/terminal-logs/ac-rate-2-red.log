@@ -1,0 +1,20 @@
+TEST_SPEC=sfpcl_credit.tests.test_servicing_financial_owner_closure.RateEffectiveDatePostgreSQLAcceptanceTests.test_future_activation_waits_for_its_effective_date_in_the_loan_projection
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+F
+======================================================================
+FAIL: test_future_activation_waits_for_its_effective_date_in_the_loan_projection (sfpcl_credit.tests.test_servicing_financial_owner_closure.RateEffectiveDatePostgreSQLAcceptanceTests.test_future_activation_waits_for_its_effective_date_in_the_loan_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_124034_normal_run/sfpcl_credit/tests/test_servicing_financial_owner_closure.py", line 294, in test_future_activation_waits_for_its_effective_date_in_the_loan_projection
+    self.assertEqual(self.fixture.account.current_interest_rate, current.effective_rate)
+AssertionError: Decimal('9.7500') != '9.2500'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.192s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

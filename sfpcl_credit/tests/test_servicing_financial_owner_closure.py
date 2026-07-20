@@ -6,7 +6,15 @@ from unittest import skipUnless
 from unittest.mock import patch
 from uuid import uuid4
 
-from django.db import close_old_connections, connection, connections
+from django.core.exceptions import ValidationError
+from django.db import (
+    IntegrityError,
+    close_old_connections,
+    connection,
+    connections,
+    transaction,
+)
+from django.utils import timezone
 from django.test import TestCase, TransactionTestCase, override_settings
 
 from sfpcl_credit.configurations.models import (
@@ -18,11 +26,14 @@ from sfpcl_credit.configurations.modules.interest_rate_configuration import (
     InterestRateConflict,
     activate,
     consume_effective_rate,
+    resolve_effective_rate,
 )
-from sfpcl_credit.identity.models import User
+from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.processes.loan_servicing import get_ledger
 from sfpcl_credit.tests.servicing_builders import (
+    activate_interest_rate,
     append_servicing_ledger_movements,
+    build_interest_rate_proposal,
     build_servicing_owner_fixture,
 )
 
@@ -227,3 +238,248 @@ class ServicingFinancialOwnerPostgreSQLAcceptanceTests(TransactionTestCase):
 
         with ThreadPoolExecutor(max_workers=len(items)) as pool:
             return list(pool.map(contender, items))
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+@override_settings(
+    DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-rate-effective-date-pg-tests-")
+)
+class RateEffectiveDatePostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        self.fixture = build_servicing_owner_fixture(suffix=uuid4().hex[:8])
+
+    def test_active_rate_write_paths_require_the_canonical_approval_decision(self):
+        fabricated = InterestRateConfig(
+            version_number="FABRICATED-ACTIVE",
+            rate_type="floating",
+            effective_rate="9.7500",
+            effective_from=date(2026, 9, 1),
+            communication_required=False,
+            board_approval_reference="BOARD-FABRICATED",
+            status=InterestRateConfig.STATUS_ACTIVE,
+            created_by_user=self.fixture.maker,
+            approved_by_user=self.fixture.checker,
+            activated_at=timezone.now(),
+            activation_idempotency_key="fabricated-active",
+            activation_payload_digest="a" * 64,
+        )
+
+        with self.assertRaises(ValidationError):
+            InterestRateConfig.objects.bulk_create([fabricated])
+
+        self.assertFalse(
+            InterestRateConfig.objects.filter(version_number="FABRICATED-ACTIVE").exists()
+        )
+        approved = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="CANONICAL-ACTIVE",
+            effective_from=date(2026, 7, 1),
+        )
+        activate_interest_rate(
+            fixture=self.fixture,
+            proposal=approved,
+            idempotency_key="canonical-active",
+        )
+        approved.refresh_from_db()
+        approved.effective_rate = "10.0000"
+        with self.assertRaises(ValidationError):
+            approved.save(update_fields=["effective_rate"])
+        with self.assertRaises(ValidationError):
+            InterestRateConfig.objects.filter(pk=approved.pk).update(
+                effective_rate="10.0000"
+            )
+        with self.assertRaises(ValidationError):
+            InterestRateConfig.objects.bulk_update([approved], ["effective_rate"])
+        with self.assertRaises(ValidationError):
+            approved.delete()
+        with self.assertRaises(ValidationError):
+            InterestRateConfig.objects.filter(pk=approved.pk).delete()
+
+        incoherent = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="DATABASE-INCOHERENT",
+            effective_from=date(2026, 9, 1),
+        )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE interest_rate_configs SET status = %s WHERE interest_rate_config_id = %s",
+                    [InterestRateConfig.STATUS_ACTIVE, incoherent.pk.hex],
+                )
+
+    def test_future_activation_waits_for_its_effective_date_in_the_loan_projection(self):
+        current = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="CURRENT-RATE",
+            effective_from=date(2026, 7, 1),
+            rate="9.2500",
+        )
+        activate_interest_rate(
+            fixture=self.fixture,
+            proposal=current,
+            idempotency_key="activate-current-rate",
+        )
+        successor = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="FUTURE-RATE",
+            effective_from=date(2026, 9, 1),
+            rate="9.7500",
+        )
+        activate_interest_rate(
+            fixture=self.fixture,
+            proposal=successor,
+            idempotency_key="activate-future-rate",
+        )
+
+        self.fixture.account.refresh_from_db()
+        self.assertEqual(
+            f"{self.fixture.account.current_interest_rate:.4f}",
+            f"{current.effective_rate}",
+        )
+        self.assertEqual(
+            resolve_effective_rate(date(2026, 8, 31)).interest_rate_config_id,
+            current.pk,
+        )
+        self.assertEqual(
+            resolve_effective_rate(date(2026, 9, 1)).interest_rate_config_id,
+            successor.pk,
+        )
+
+    def test_due_date_projection_convergence_is_public_idempotent_and_audited(self):
+        from sfpcl_credit.configurations.modules.interest_rate_configuration import (
+            converge_current_rate_projection,
+        )
+
+        current = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="CONVERGE-CURRENT",
+            effective_from=date(2026, 7, 1),
+            rate="9.2500",
+        )
+        activate_interest_rate(
+            fixture=self.fixture,
+            proposal=current,
+            idempotency_key="converge-current",
+        )
+        successor = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="CONVERGE-FUTURE",
+            effective_from=date(2026, 9, 1),
+            rate="9.7500",
+        )
+        activated = activate_interest_rate(
+            fixture=self.fixture,
+            proposal=successor,
+            idempotency_key="converge-future",
+        )
+
+        projection = converge_current_rate_projection(
+            actor=self.fixture.checker,
+            request=self.fixture.request,
+            loan_account_id=self.fixture.account.pk,
+            as_of_date=date(2026, 9, 1),
+        )
+        replayed_projection = converge_current_rate_projection(
+            actor=self.fixture.checker,
+            request=self.fixture.request,
+            loan_account_id=self.fixture.account.pk,
+            as_of_date=date(2026, 9, 1),
+        )
+        activation_replay = activate_interest_rate(
+            fixture=self.fixture,
+            proposal=successor,
+            idempotency_key="converge-future",
+        )
+
+        self.assertTrue(projection.projection_changed)
+        self.assertFalse(replayed_projection.projection_changed)
+        self.fixture.account.refresh_from_db()
+        self.assertEqual(
+            f"{self.fixture.account.current_interest_rate:.4f}",
+            f"{successor.effective_rate}",
+        )
+        self.assertEqual(activation_replay["original_response"], activated)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="config.interest_rate.loan_projection_converged",
+                entity_id=self.fixture.account.pk,
+            ).count(),
+            1,
+        )
+
+    def test_consumed_boundary_and_competing_successors_retain_one_decision(self):
+        from sfpcl_credit.tests.servicing_builders import (
+            race_interest_rate_activations,
+        )
+
+        predecessor = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="BOUNDARY-PREDECESSOR",
+            effective_from=date(2026, 7, 1),
+        )
+        activate_interest_rate(
+            fixture=self.fixture,
+            proposal=predecessor,
+            idempotency_key="boundary-predecessor",
+        )
+        consume_effective_rate(
+            consumer_kind="interest_invoice",
+            consumer_reference_id=uuid4(),
+            loan_account_id=self.fixture.account.pk,
+            calculation_date=date(2026, 8, 31),
+        )
+        invalid = build_interest_rate_proposal(
+            fixture=self.fixture,
+            version="CONSUMED-BACKDATE",
+            effective_from=date(2026, 8, 15),
+        )
+        with self.assertRaises(InterestRateConflict):
+            activate_interest_rate(
+                fixture=self.fixture,
+                proposal=invalid,
+                idempotency_key="consumed-backdate",
+            )
+
+        proposals = [
+            build_interest_rate_proposal(
+                fixture=self.fixture,
+                version=f"BOUNDARY-SUCCESSOR-{suffix}",
+                effective_from=date(2026, 9, 1),
+                rate="9.7500",
+            )
+            for suffix in ("A", "B")
+        ]
+        keys = ["boundary-successor-a", "boundary-successor-b"]
+        outcomes = race_interest_rate_activations(
+            fixture=self.fixture,
+            proposals=proposals,
+            idempotency_keys=keys,
+        )
+        winner_index = outcomes.index("success")
+        winner = proposals[winner_index]
+        winner_key = keys[winner_index]
+
+        self.assertEqual(sorted(outcomes), ["conflict", "success"])
+        predecessor.refresh_from_db()
+        self.assertEqual(predecessor.effective_to, date(2026, 8, 31))
+        replay = activate_interest_rate(
+            fixture=self.fixture,
+            proposal=winner,
+            idempotency_key=winner_key,
+        )
+        self.assertTrue(replay["idempotency_replayed"])
+        with self.assertRaises(InterestRateConflict):
+            activate_interest_rate(
+                fixture=self.fixture,
+                proposal=winner,
+                idempotency_key="changed-winner-key",
+            )
+        self.assertEqual(
+            VersionHistory.objects.filter(
+                versioned_entity_type="interest_rate_config",
+                versioned_entity_id=winner.pk,
+            ).count(),
+            1,
+        )

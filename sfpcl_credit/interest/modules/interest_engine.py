@@ -14,12 +14,12 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.configurations.models import InterestRateConfig
 from sfpcl_credit.configurations.modules.interest_rate_configuration import (
     AmbiguousEffectiveRate,
     InterestRateConflict,
     MissingEffectiveRate,
     consume_effective_rate,
+    get_approved_rate_decision,
     resolve_effective_rate,
 )
 from sfpcl_credit.identity.models import AuditLog
@@ -472,7 +472,7 @@ def _create_accrual(
     rate_snapshot = _consume_accrual_rate(
         accrual_id=accrual_id, account_id=account.pk, calculation_date=period_end
     )
-    rate_config = InterestRateConfig.objects.get(pk=rate_snapshot.rate_config_id)
+    rate_config = get_approved_rate_decision(rate_snapshot.rate_config_id)
     if not rate_config.benchmark_name or rate_config.spread_rate is None or not rate_config.reset_frequency:
         raise InterestAccrualConflict(
             "Approved benchmark, spread, and reset configuration is required."
@@ -516,7 +516,7 @@ def _create_accrual(
         interest_period_end=period_end,
         principal_base_amount=principal,
         interest_rate=rate_snapshot.effective_rate,
-        rate_config=rate_config,
+        rate_config_id=rate_config.interest_rate_config_id,
         rate_version_number=rate_snapshot.version_number,
         calculation_configuration=config,
         calculation_version=config.version_number,
@@ -612,7 +612,6 @@ def bulk_generate_monthly_accruals(*, actor, payload, idempotency_key, request=N
             except (
                 AmbiguousEffectiveRate,
                 InterestAccrualConflict,
-                InterestRateConfig.DoesNotExist,
                 MissingEffectiveRate,
             ):
                 results.append(
@@ -710,7 +709,7 @@ def _is_accrual_eligible(account, period_start, period_end, principal):
 def _preview_accrual_amount(account, period_start, period_end, principal):
     config = _resolve_accrual_configuration(period_end)
     rate = resolve_effective_rate(period_end)
-    rate_config = InterestRateConfig.objects.get(pk=rate.interest_rate_config_id)
+    rate_config = get_approved_rate_decision(rate.interest_rate_config_id)
     if not rate_config.benchmark_name or rate_config.spread_rate is None or not rate_config.reset_frequency:
         raise InterestAccrualConflict("Approved rate metadata is required.")
     return _calculate_accrual_values(
@@ -1174,7 +1173,7 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
         loan_account_id=account.pk,
         calculation_date=period_end,
     )
-    rate_config = InterestRateConfig.objects.get(pk=rate_snapshot.rate_config_id)
+    rate_config = get_approved_rate_decision(rate_snapshot.rate_config_id)
     if not rate_config.benchmark_name or rate_config.spread_rate is None or not rate_config.reset_frequency:
         raise InterestInvoiceConflict("Approved benchmark, spread, and reset configuration is required.")
     days = (period_end - period_start).days + 1
@@ -1235,7 +1234,7 @@ def _generate(*, actor, loan_account_id, financial_year, period_start, period_en
         interest_period_end=period_end,
         principal_base_amount=principal,
         interest_rate=rate_snapshot.effective_rate,
-        rate_config=rate_config,
+        rate_config_id=rate_config.interest_rate_config_id,
         rate_version_number=rate_snapshot.version_number,
         calculation_configuration=config,
         calculation_version=config.version_number,

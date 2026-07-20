@@ -1,0 +1,16 @@
+TEST_SPEC=sfpcl_credit/tests/test_servicing_financial_owner_closure.py::RateEffectiveDatePostgreSQLAcceptanceTests::test_consumed_boundary_and_competing_successors_retain_one_decision
+CLASS_SPEC=sfpcl_credit.tests.test_servicing_financial_owner_closure.RateEffectiveDatePostgreSQLAcceptanceTests
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.
+----------------------------------------------------------------------
+Ran 4 tests in 4.589s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

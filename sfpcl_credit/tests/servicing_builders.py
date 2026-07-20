@@ -1,12 +1,20 @@
 """Public synthetic builders for servicing owner and PostgreSQL acceptance tests."""
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
+from threading import Barrier
 from types import SimpleNamespace
 from uuid import uuid4
 
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
+from sfpcl_credit.configurations.models import InterestRateConfig
+from sfpcl_credit.configurations.modules.interest_rate_configuration import (
+    InterestRateConflict,
+    activate,
+)
 from sfpcl_credit.identity.epic009_e2e_fixture import build_ready_epic009_fixture
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission, User
 from sfpcl_credit.loans.models import (
@@ -80,6 +88,73 @@ def build_servicing_owner_fixture(*, suffix):
             headers={"User-Agent": "servicing-owner-postgresql-acceptance"},
         ),
     )
+
+
+def build_interest_rate_proposal(
+    *, fixture, version, effective_from, rate="9.2500", effective_to=None
+):
+    """Create a proposed rate through the supported public test-fixture seam."""
+    return InterestRateConfig.objects.create(
+        version_number=version,
+        rate_type="floating",
+        effective_rate=rate,
+        effective_from=effective_from,
+        effective_to=effective_to,
+        communication_required=False,
+        board_approval_reference=f"BOARD-{version}",
+        created_by_user=fixture.maker,
+    )
+
+
+def activate_interest_rate(*, fixture, proposal, idempotency_key):
+    """Activate a public proposal without exposing test-case-private helper chains."""
+    return activate(
+        actor=fixture.checker,
+        request=fixture.request,
+        interest_rate_config_id=proposal.pk,
+        idempotency_key=idempotency_key,
+    )
+
+
+def race_interest_rate_activations(*, fixture, proposals, idempotency_keys):
+    """Run the public activation facade concurrently for PostgreSQL acceptance."""
+    items = list(zip(proposals, idempotency_keys, strict=True))
+    if connection.vendor != "postgresql":
+        outcomes = []
+        for proposal, key in items:
+            try:
+                activate_interest_rate(
+                    fixture=fixture,
+                    proposal=proposal,
+                    idempotency_key=key,
+                )
+                outcomes.append("success")
+            except InterestRateConflict:
+                outcomes.append("conflict")
+        return outcomes
+    barrier = Barrier(len(items))
+    checker_id = fixture.checker.pk
+
+    def contender(item):
+        close_old_connections()
+        try:
+            checker = User.objects.get(pk=checker_id)
+            barrier.wait(timeout=15)
+            try:
+                activate(
+                    actor=checker,
+                    request=fixture.request,
+                    interest_rate_config_id=item[0].pk,
+                    idempotency_key=item[1],
+                )
+                return "success"
+            except InterestRateConflict:
+                return "conflict"
+        finally:
+            connections["default"].close()
+
+    with ThreadPoolExecutor(max_workers=len(items)) as pool:
+        return list(pool.map(contender, items))
 
 
 def append_servicing_ledger_movements(*, fixture, count, start_index=0):
@@ -197,6 +272,9 @@ def append_servicing_ledger_movements(*, fixture, count, start_index=0):
         )
 __all__ = [
     "ServicingOwnerFixture",
+    "activate_interest_rate",
     "append_servicing_ledger_movements",
+    "build_interest_rate_proposal",
     "build_servicing_owner_fixture",
+    "race_interest_rate_activations",
 ]

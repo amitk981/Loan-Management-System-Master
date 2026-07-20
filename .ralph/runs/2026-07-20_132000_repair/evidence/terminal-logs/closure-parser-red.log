@@ -1,0 +1,3 @@
+TEST_SPEC=ralph_validate_review_finding_closure against prior run 2026-07-20_124034_normal_run
+Acceptance Evidence contains a malformed row: The callable, audited due-date projection operation is additionally proven by
+Exit code: 1

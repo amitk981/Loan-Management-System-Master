@@ -1,0 +1,15 @@
+CLASS_SPEC=sfpcl_credit.tests.test_servicing_financial_owner_closure.RateEffectiveDatePostgreSQLAcceptanceTests
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 219 role-permission links.
+.
+----------------------------------------------------------------------
+Ran 4 tests in 4.733s
+
+OK
+Destroying test database for alias 'default'...
+EXIT_STATUS=0
