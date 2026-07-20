@@ -18,6 +18,7 @@ from sfpcl_credit.communications.modules.communication_dispatcher import (
 )
 from sfpcl_credit.configurations.models import (
     BorrowerRateNoticeObligation,
+    CurrentRateProjectionDecision,
     InterestRateConfig,
     InterestRateConsumptionSnapshot,
     InterestRateHistory,
@@ -25,6 +26,12 @@ from sfpcl_credit.configurations.models import (
 )
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.loans.current_rate_projection import (
+    CurrentRateProjectionScopeDenied,
+    due_rate_history_account_ids,
+    publish_current_rate,
+    require_current_rate_scope,
+)
 
 
 READ_PERMISSION = "config.loan_policy.read"
@@ -130,6 +137,7 @@ class LoanRateProjection:
     effective_rate: Decimal
     current_interest_rate: Decimal
     projection_changed: bool
+    idempotency_replayed: bool = False
 
 
 @dataclass(frozen=True)
@@ -352,21 +360,166 @@ def get_approved_rate_decision(interest_rate_config_id):
     )
 
 
-def converge_current_rate_projection(
-    *, actor, request, loan_account_id, as_of_date
+def publish_current_rate_projection(
+    *, actor, request, loan_account_id, idempotency_key
 ):
-    """Publish the approved explicit-date rate to one loan's mutable current projection."""
+    """Publish only the rate effective on the server's current date."""
     if not can_manage(actor):
         raise InterestRateConflict(
-            "Current-rate convergence requires interest-rate management authority."
+            "Current-rate publication requires interest-rate management authority."
         )
-    from sfpcl_credit.loans.models import LoanAccount
+    try:
+        require_current_rate_scope(actor=actor, loan_account_id=loan_account_id)
+    except CurrentRateProjectionScopeDenied as exc:
+        raise InterestRateConflict(
+            "The loan account is outside the current-rate manager's scope."
+        ) from exc
+    try:
+        return _publish_current_rate_projection(
+            actor=actor,
+            actor_type="user",
+            invocation="manual",
+            request=request,
+            loan_account_id=loan_account_id,
+            idempotency_key=idempotency_key,
+        )
+    except IntegrityError:
+        key = _idempotency_key(idempotency_key)
+        retained = CurrentRateProjectionDecision.objects.filter(
+            idempotency_key=key
+        ).first()
+        if (
+            retained is not None
+            and retained.loan_account_id == loan_account_id
+            and retained.actor_user_id == actor.pk
+            and retained.as_of_date == timezone.localdate()
+        ):
+            return _projection_from_decision(retained, replayed=True)
+        raise InterestRateConflict(
+            "The idempotency key is already bound to another current-rate decision."
+        )
 
-    with transaction.atomic():
-        account = LoanAccount.objects.select_for_update().get(pk=loan_account_id)
+
+def run_due_current_rate_projections(
+    *, loan_account_ids=None, limit=100, invocation="worker_task"
+):
+    """Publish a bounded current-date portfolio through retained approval authority."""
+    bounded_limit = max(1, min(int(limit), 100))
+    if invocation not in {"worker_task", "loan_account_read"}:
+        raise InterestRateConflict("Unsupported current-rate production invocation.")
+    as_of_date = timezone.localdate()
+    try:
         effective = resolve_effective_rate(as_of_date)
+    except MissingEffectiveRate:
+        return []
+    rate_config = InterestRateConfig.objects.get(pk=effective.interest_rate_config_id)
+    candidates = InterestRateHistory.objects.filter(
+        rate_config=rate_config,
+        effective_from=effective.effective_from,
+        new_interest_rate=effective.effective_rate,
+        loan_account__interest_rate_type="floating",
+        loan_account__loan_account_status__in={
+            "sanctioned",
+            "active",
+            "partially_repaid",
+            "overdue",
+            "grace_period",
+            "extended",
+        },
+    )
+    if loan_account_ids is not None:
+        candidates = candidates.filter(loan_account_id__in=loan_account_ids)
+    account_ids = due_rate_history_account_ids(
+        candidates,
+        effective_rate=effective.effective_rate,
+        rate_config_id=rate_config.pk,
+        limit=bounded_limit,
+    )
+    projections = []
+    for account_id in account_ids:
+        retained = CurrentRateProjectionDecision.objects.filter(
+            loan_account_id=account_id,
+            rate_config_id=effective.interest_rate_config_id,
+        ).first()
+        if retained is not None:
+            with transaction.atomic():
+                _repair_current_rate_projection(
+                    retained,
+                    actor=None,
+                    actor_type="system",
+                    invocation=invocation,
+                )
+            projections.append(_projection_from_decision(retained, replayed=True))
+            continue
+        idempotency_key = (
+            f"current-rate:{as_of_date.isoformat()}:{account_id}:"
+            f"{effective.interest_rate_config_id}"
+        )
+        try:
+            projection = _publish_current_rate_projection(
+                actor=None,
+                actor_type="system",
+                invocation=invocation,
+                request=None,
+                loan_account_id=account_id,
+                idempotency_key=idempotency_key,
+            )
+        except IntegrityError:
+            retained = CurrentRateProjectionDecision.objects.filter(
+                idempotency_key=idempotency_key,
+                loan_account_id=account_id,
+                as_of_date=as_of_date,
+            ).first()
+            if retained is None:
+                raise InterestRateConflict(
+                    "A competing current-rate publication retained conflicting evidence."
+                )
+            projection = _projection_from_decision(retained, replayed=True)
+        projections.append(projection)
+    return projections
+
+
+def _publish_current_rate_projection(
+    *, actor, actor_type, invocation, request, loan_account_id, idempotency_key
+):
+    key = _idempotency_key(idempotency_key)
+    as_of_date = timezone.localdate()
+    with transaction.atomic():
+        effective = resolve_effective_rate(as_of_date)
+        actor_role_codes = (
+            sorted(auth_service.effective_role_codes(actor)) if actor else []
+        )
+        payload_digest = hashlib.sha256(
+            json.dumps(
+                {
+                    "actor_user_id": str(actor.pk) if actor else None,
+                    "actor_type": actor_type,
+                    "actor_role_codes": actor_role_codes,
+                    "as_of_date": as_of_date.isoformat(),
+                    "interest_rate_config_id": str(effective.interest_rate_config_id),
+                    "loan_account_id": str(loan_account_id),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+        retained = CurrentRateProjectionDecision.objects.filter(
+            idempotency_key=key
+        ).first()
+        if retained is not None:
+            if retained.payload_digest != payload_digest:
+                raise InterestRateConflict(
+                    "The idempotency key is already bound to another current-rate decision."
+                )
+            _repair_current_rate_projection(
+                retained,
+                actor=actor,
+                actor_type=actor_type,
+                invocation=invocation,
+            )
+            return _projection_from_decision(retained, replayed=True)
         if not InterestRateHistory.objects.filter(
-            loan_account=account,
+            loan_account_id=loan_account_id,
             rate_config_id=effective.interest_rate_config_id,
             effective_from=effective.effective_from,
             new_interest_rate=effective.effective_rate,
@@ -374,35 +527,93 @@ def converge_current_rate_projection(
             raise InterestRateConflict(
                 "The loan has no retained history for the effective rate decision."
             )
-        changed = account.current_interest_rate != effective.effective_rate
-        if changed:
-            old_rate = account.current_interest_rate
-            account.current_interest_rate = effective.effective_rate
-            account.save(update_fields=["current_interest_rate"])
-            AuditLog.objects.create(
-                actor_user=actor,
-                actor_type="user",
-                action="config.interest_rate.loan_projection_converged",
-                entity_type="loan_account",
-                entity_id=account.pk,
-                old_value_json={"current_interest_rate": f"{old_rate:.4f}"},
-                new_value_json={
-                    "current_interest_rate": f"{effective.effective_rate:.4f}",
-                    "interest_rate_config_id": str(effective.interest_rate_config_id),
-                    "as_of_date": as_of_date.isoformat(),
-                },
-                ip_address=request_ip(request),
-                user_agent=request_user_agent(request),
+        if CurrentRateProjectionDecision.objects.filter(
+            loan_account_id=loan_account_id,
+            rate_config_id=effective.interest_rate_config_id,
+        ).exists():
+            raise InterestRateConflict(
+                "The current rate was already published under another idempotency key."
             )
-        return LoanRateProjection(
-            loan_account_id=account.pk,
-            as_of_date=as_of_date,
-            interest_rate_config_id=effective.interest_rate_config_id,
-            version_number=effective.version_number,
+        mutation = publish_current_rate(
+            loan_account_id=loan_account_id,
             effective_rate=effective.effective_rate,
-            current_interest_rate=account.current_interest_rate,
-            projection_changed=changed,
+            actor=actor,
         )
+        audit = AuditLog.objects.create(
+            actor_user=actor,
+            actor_type=actor_type,
+            action="config.interest_rate.loan_projection_converged",
+            entity_type="loan_account",
+            entity_id=loan_account_id,
+            old_value_json={
+                "current_interest_rate": f"{mutation.old_interest_rate:.4f}"
+            },
+            new_value_json={
+                "current_interest_rate": f"{effective.effective_rate:.4f}",
+                "interest_rate_config_id": str(effective.interest_rate_config_id),
+                "as_of_date": as_of_date.isoformat(),
+                "idempotency_key": key,
+                "actor_role_codes": actor_role_codes,
+                "invocation": invocation,
+            },
+            ip_address=request_ip(request) if request else "",
+            user_agent=request_user_agent(request) if request else "",
+        )
+        decision = CurrentRateProjectionDecision.objects.all()._canonical_create(
+            loan_account_id=loan_account_id,
+            rate_config_id=effective.interest_rate_config_id,
+            as_of_date=as_of_date,
+            idempotency_key=key,
+            payload_digest=payload_digest,
+            old_interest_rate=mutation.old_interest_rate,
+            current_interest_rate=mutation.current_interest_rate,
+            projection_changed=mutation.projection_changed,
+            actor_user=actor,
+            actor_type=actor_type,
+            invocation=invocation,
+            actor_role_codes_json=actor_role_codes,
+            audit_log=audit,
+        )
+        return _projection_from_decision(decision, replayed=False)
+
+
+def _repair_current_rate_projection(
+    decision, *, actor, actor_type, invocation
+):
+    mutation = publish_current_rate(
+        loan_account_id=decision.loan_account_id,
+        effective_rate=decision.current_interest_rate,
+        actor=actor,
+    )
+    if mutation.projection_changed:
+        AuditLog.objects.create(
+            actor_user=actor,
+            actor_type=actor_type,
+            action="config.interest_rate.loan_projection_repaired",
+            entity_type="loan_account",
+            entity_id=decision.loan_account_id,
+            old_value_json={
+                "current_interest_rate": f"{mutation.old_interest_rate:.4f}"
+            },
+            new_value_json={
+                "current_interest_rate": f"{mutation.current_interest_rate:.4f}",
+                "current_rate_projection_decision_id": str(decision.pk),
+                "invocation": invocation,
+            },
+        )
+
+
+def _projection_from_decision(decision, *, replayed):
+    return LoanRateProjection(
+        loan_account_id=decision.loan_account_id,
+        as_of_date=decision.as_of_date,
+        interest_rate_config_id=decision.rate_config_id,
+        version_number=decision.rate_config.version_number,
+        effective_rate=decision.current_interest_rate,
+        current_interest_rate=decision.current_interest_rate,
+        projection_changed=decision.projection_changed,
+        idempotency_replayed=replayed,
+    )
 
 
 def current_rate_projection_is_coherent(*, account, as_of_date=None):
@@ -425,7 +636,7 @@ def current_rate_projection_is_coherent(*, account, as_of_date=None):
 
 
 def filter_current_rate_projection_coherent(queryset, *, as_of_date=None):
-    """Apply the same explicit-date rate decision to a loan queryset."""
+    """Retain accounts backed by one valid explicit-date rate owner."""
     boundary_date = as_of_date or timezone.localdate()
     histories = InterestRateHistory.objects.filter(
         loan_account_id=OuterRef("pk"),
@@ -442,10 +653,7 @@ def filter_current_rate_projection_coherent(queryset, *, as_of_date=None):
             _has_current_rate_owner=False,
             terms__rate_of_interest=F("current_interest_rate"),
         )
-        | Q(
-            _has_current_rate_owner=True,
-            _current_rate_owner_value=F("current_interest_rate"),
-        )
+        | Q(_has_current_rate_owner=True)
     )
 
 

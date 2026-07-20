@@ -1,0 +1,15 @@
+Creating test database for alias 'default'...
+Test specifications:
+- sfpcl_credit.tests.test_interest_invoice_api.InterestInvoiceApiTests.test_generation_segments_each_approved_rate_period_without_retroactive_scalar
+- sfpcl_credit.tests.test_interest_accrual_api.MonthlyInterestAccrualApiTests.test_single_month_segments_an_approved_mid_month_rate_change
+- sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_may_first_finalisation_moves_principal_once_and_retains_intimation_chain
+- sfpcl_credit.tests.test_loan_account_reads_api.LoanAccountReadApiTests.test_mixed_full_first_page_query_count_is_independent_of_page_rows
+Found 4 test(s).
+System check identified no issues (0 silenced).
+....
+----------------------------------------------------------------------
+Ran 4 tests in 2.469s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

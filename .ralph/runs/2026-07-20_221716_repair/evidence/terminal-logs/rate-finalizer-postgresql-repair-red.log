@@ -1,0 +1,20 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_repair_probe_20260720 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerPostgreSQLAcceptanceTests.test_competing_portfolio_runs_keep_stale_account_visible_and_singular --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+test_competing_portfolio_runs_keep_stale_account_visible_and_singular ... FAIL
+
+Traceback (most recent call last):
+  File "sfpcl_credit/tests/test_servicing_financial_owner_closure.py", line 1023, in test_competing_portfolio_runs_keep_stale_account_visible_and_singular
+    self.assertEqual(pagination["total_count"], 2)
+AssertionError: 1 != 2
+
+Ran 1 test in 2.314s
+FAILED (failures=1)
+Exit code: 1
+
+Diagnosis: the test used `clone_servicing_account`, a financial-owner fixture that does not clone
+the application-owned current SAP/disbursement evidence required by Loan Account 360. It also
+discarded the clone and later referenced undefined `other`. The production race retained two
+decisions; the second fixture was not a valid public collection identity.

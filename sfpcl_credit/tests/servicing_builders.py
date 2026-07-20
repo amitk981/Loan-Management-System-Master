@@ -1,6 +1,7 @@
 """Public synthetic builders for servicing owner and PostgreSQL acceptance tests."""
 
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, timedelta
 from threading import Barrier
@@ -114,6 +115,122 @@ def activate_interest_rate(*, fixture, proposal, idempotency_key):
         interest_rate_config_id=proposal.pk,
         idempotency_key=idempotency_key,
     )
+
+
+def restore_servicing_account_to_created_read_state(*, fixture):
+    """Restore the exact unfunded creation projection for public read-boundary tests."""
+    type(fixture.account).objects.filter(pk=fixture.account.pk).update(
+        loan_account_status="sanctioned",
+        disbursed_amount="0.00",
+        principal_outstanding="0.00",
+        interest_outstanding="0.00",
+        charges_outstanding="0.00",
+        total_outstanding="0.00",
+        tenure_start_date=None,
+        tenure_end_date=None,
+    )
+    from sfpcl_credit.sap_workflow.models import SapCustomerProfileRequest
+
+    sap_request = SapCustomerProfileRequest.objects.select_related(
+        "assigned_to_user", "sent_communication"
+    ).get(loan_application_id=fixture.account.loan_application_id)
+    sap_request.assigned_to_user.email = (
+        sap_request.sent_communication.recipient_address
+    )
+    sap_request.assigned_to_user.save(update_fields=["email"])
+    fixture.account.refresh_from_db()
+    return fixture.account
+
+
+def clone_servicing_account(*, fixture, suffix):
+    """Create a distinct owner-valid account for bounded portfolio acceptance."""
+    from sfpcl_credit.identity.models import AuditLog
+    from sfpcl_credit.workflows.models import WorkflowEvent
+
+    def copy_for_insert(instance):
+        values = {
+            field.attname: deepcopy(getattr(instance, field.attname))
+            for field in instance._meta.concrete_fields
+            if not field.primary_key
+        }
+        return type(instance)(**values)
+
+    original = fixture.account
+    application = copy_for_insert(original.loan_application)
+    application.pk = uuid4()
+    application.application_reference_number = f"LO-RATE-{suffix}"
+    application.save(force_insert=True)
+
+    approval_case = copy_for_insert(original.sanction_decision.approval_case)
+    approval_case.pk = uuid4()
+    approval_case.loan_application = application
+    approval_case.workflow_event = None
+    approval_case.save(force_insert=True)
+
+    sanction = copy_for_insert(original.sanction_decision)
+    sanction.pk = uuid4()
+    sanction.loan_application = application
+    sanction.approval_case = approval_case
+    sanction.save(force_insert=True)
+
+    account = copy_for_insert(original)
+    account.pk = uuid4()
+    account.loan_application = application
+    account.sanction_decision = sanction
+    account.loan_account_number = f"LN-RATE-{suffix}"
+    account.loan_account_number_normalized = account.loan_account_number.lower()
+    account.created_at = original.created_at + timedelta(seconds=1)
+    account.save(force_insert=True)
+
+    terms = copy_for_insert(original.terms)
+    terms.pk = uuid4()
+    terms.loan_account = account
+    terms.created_at = account.created_at
+    terms.save(force_insert=True)
+
+    original_history = original.status_history.get(outcome="created")
+    history = copy_for_insert(original_history)
+    history.pk = uuid4()
+    history.loan_account = account
+    history.loan_application_id_snapshot = application.pk
+    history.sanction_decision_id_snapshot = sanction.pk
+    history.loan_terms_id_snapshot = terms.pk
+    history.changed_at = account.created_at
+    history.save(force_insert=True)
+
+    original_audit = AuditLog.objects.get(
+        action="finance.loan_account.created", entity_id=original.pk
+    )
+    audit = copy_for_insert(original_audit)
+    audit.pk = uuid4()
+    audit.entity_id = account.pk
+    audit.created_at = account.created_at
+    audit.new_value_json = {
+        **original_audit.new_value_json,
+        "loan_account_id": str(account.pk),
+        "loan_application_id": str(application.pk),
+        "sanction_decision_id": str(sanction.pk),
+        "loan_terms_id": str(terms.pk),
+    }
+    from sfpcl_credit.loans.modules.loan_account_lifecycle import (
+        _canonical_manifest_json,
+        _selector_manifest,
+    )
+
+    audit.old_value_json = _selector_manifest(audit.new_value_json)
+    audit.selector_manifest_json = _canonical_manifest_json(audit.new_value_json)
+    audit.selector_manifest_sha256 = audit.old_value_json["selector_manifest_sha256"]
+    audit.save(force_insert=True)
+
+    original_workflow = WorkflowEvent.objects.get(
+        workflow_name="LoanAccountCreated", entity_id=original.pk
+    )
+    workflow = copy_for_insert(original_workflow)
+    workflow.pk = uuid4()
+    workflow.entity_id = account.pk
+    workflow.created_at = account.created_at
+    workflow.save(force_insert=True)
+    return account
 
 
 def race_interest_rate_activations(*, fixture, proposals, idempotency_keys):

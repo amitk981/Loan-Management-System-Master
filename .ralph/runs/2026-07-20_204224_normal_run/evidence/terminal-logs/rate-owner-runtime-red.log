@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+E
+======================================================================
+ERROR: test_runtime_task_delegates_to_bounded_current_date_owner (sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerTests.test_runtime_task_delegates_to_bounded_current_date_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_204224_normal_run/sfpcl_credit/tests/test_servicing_financial_owner_closure.py", line 275, in test_runtime_task_delegates_to_bounded_current_date_owner
+    from sfpcl_credit.processes.tasks import dispatch_due_current_rate_projections
+ImportError: cannot import name 'dispatch_due_current_rate_projections' from 'sfpcl_credit.processes.tasks' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_204224_normal_run/sfpcl_credit/processes/tasks.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.165s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+Exit code: 1

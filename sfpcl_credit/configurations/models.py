@@ -434,6 +434,102 @@ class InterestRateConsumptionSnapshot(models.Model):
         )
 
 
+class ImmutableCurrentRateProjectionDecisionQuerySet(models.QuerySet):
+    _ERROR = {"current_rate_projection": "Current-rate decisions require the canonical owner."}
+
+    def create(self, **kwargs):
+        raise ValidationError(self._ERROR)
+
+    def bulk_create(self, objs, *args, **kwargs):
+        raise ValidationError(self._ERROR)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError(self._ERROR)
+
+    def update(self, **kwargs):
+        raise ValidationError(
+            {"current_rate_projection": "Current-rate decisions are immutable."}
+        )
+
+    def delete(self):
+        raise ValidationError(
+            {"current_rate_projection": "Current-rate decisions are immutable."}
+        )
+
+    def _canonical_create(self, **kwargs):
+        row = self.model(**kwargs)
+        row._canonical_write = True
+        row.save(force_insert=True)
+        return row
+
+
+class CurrentRateProjectionDecision(models.Model):
+    current_rate_projection_decision_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount",
+        on_delete=models.PROTECT,
+        related_name="current_rate_projection_decisions",
+    )
+    rate_config = models.ForeignKey(
+        InterestRateConfig,
+        on_delete=models.PROTECT,
+        related_name="current_projection_decisions",
+    )
+    as_of_date = models.DateField(db_index=True)
+    idempotency_key = models.CharField(max_length=255, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    old_interest_rate = models.DecimalField(max_digits=8, decimal_places=4)
+    current_interest_rate = models.DecimalField(max_digits=8, decimal_places=4)
+    projection_changed = models.BooleanField()
+    actor_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="current_rate_projection_decisions",
+    )
+    actor_type = models.CharField(max_length=20)
+    invocation = models.CharField(max_length=40)
+    actor_role_codes_json = models.JSONField(default=list)
+    audit_log = models.OneToOneField(
+        "identity.AuditLog",
+        on_delete=models.PROTECT,
+        related_name="current_rate_projection_decision",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = ImmutableCurrentRateProjectionDecisionQuerySet.as_manager()
+
+    class Meta:
+        db_table = "current_rate_projection_decisions"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["loan_account", "rate_config"],
+                name="uniq_current_rate_account_version",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["as_of_date", "loan_account"],
+                name="idx_current_rate_date_account",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding or not getattr(self, "_canonical_write", False):
+            raise ValidationError(
+                {"current_rate_projection": "Current-rate decisions are immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"current_rate_projection": "Current-rate decisions are immutable."}
+        )
+
+
 class SourceBankAccountGovernance(models.Model):
     STATUS_ACTIVE = "active"
     STATUS_INACTIVE = "inactive"

@@ -2,6 +2,9 @@
 
 from celery import shared_task
 
+from sfpcl_credit.configurations.modules.interest_rate_configuration import (
+    run_due_current_rate_projections,
+)
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatcher,
 )
@@ -24,7 +27,19 @@ def dispatch_due_communication_jobs():
     )
 
 
+@shared_task(name="configurations.publish_due_current_rates")
+def dispatch_due_current_rate_projections():
+    projections = run_due_current_rate_projections(limit=100)
+    return {
+        "processed_count": len(projections),
+        "loan_account_ids": [
+            str(projection.loan_account_id) for projection in projections
+        ],
+    }
+
+
 __all__ = [
     "dispatch_due_communication_jobs",
+    "dispatch_due_current_rate_projections",
     "execute_communication_delivery_job",
 ]

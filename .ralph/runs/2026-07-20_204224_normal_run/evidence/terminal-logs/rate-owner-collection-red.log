@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+E
+======================================================================
+ERROR: test_due_owner_keeps_stale_account_in_collection_and_detail (sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerTests.test_due_owner_keeps_stale_account_in_collection_and_detail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_204224_normal_run/sfpcl_credit/tests/test_servicing_financial_owner_closure.py", line 258, in test_due_owner_keeps_stale_account_in_collection_and_detail
+    detail = get_account(
+             ^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_204224_normal_run/sfpcl_credit/processes/loan_account_360.py", line 196, in get_account
+    raise LoanAccountProjectionNotFound
+sfpcl_credit.processes.loan_account_360.LoanAccountProjectionNotFound
+
+----------------------------------------------------------------------
+Ran 1 test in 0.619s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+Exit code: 1

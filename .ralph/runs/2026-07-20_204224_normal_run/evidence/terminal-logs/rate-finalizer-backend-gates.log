@@ -1,0 +1,15 @@
+System check identified no issues (0 silenced).
+No changes detected
+Creating test database for alias 'default'...
+Found 17 test(s).
+System check identified no issues (0 silenced).
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 12.618s
+
+OK
+Destroying test database for alias 'default'...
+Check exit code: 0
+Migration exit code: 0
+Test exit code: 0
+Exit code: 0

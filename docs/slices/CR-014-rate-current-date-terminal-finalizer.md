@@ -1,7 +1,7 @@
 # Slice CR-014: Rate Current-Date Terminal Finalizer
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

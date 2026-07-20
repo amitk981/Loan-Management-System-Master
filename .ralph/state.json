@@ -301,15 +301,16 @@
     "010E4-rate-effective-date-and-write-boundary-closure",
     "010H2-interest-calculation-payment-and-replay-owner-closure",
     "010I-dpd-calculation-and-monitoring-buckets",
-    "010J-reminder-queue"
+    "010J-reminder-queue",
+    "CR-014-rate-current-date-terminal-finalizer"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-20_194456_architecture_review",
+  "last_run_id": "2026-07-20_221716_repair",
   "last_run_status": "success",
   "slices_completed_since_architecture_review": 0,
-  "architecture_review_due": true,
+  "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -324,18 +325,15 @@
     "corrective_slices_added": 4
   },
   "last_architecture_review_finalizer": {
-    "epic": "009",
-    "slice_id": "CR-013-epic-009-terminal-owner-boundary-correction",
-    "run_id": "2026-07-19_201636_normal_run"
+    "epic": "010",
+    "root_id": "ROOT-010-RATE-VERSION-OWNER",
+    "root_ids": [
+      "ROOT-010-RATE-VERSION-OWNER"
+    ],
+    "slice_id": "CR-014-rate-current-date-terminal-finalizer",
+    "run_id": "2026-07-20_221716_repair"
   },
   "architecture_review_root_generations": {
-    "ROOT-010-RATE-VERSION-OWNER": {
-      "epic": "010",
-      "generation": 2,
-      "corrective_slice": "CR-014",
-      "finding_id": "AR-010-RATE-001",
-      "severity": "High"
-    },
     "ROOT-010-INTEREST-CALCULATION-OWNER": {
       "epic": "010",
       "generation": 2,
@@ -358,5 +356,7 @@
       "severity": "High"
     }
   },
-  "architecture_review_due_reason": "terminal_finalizer:ROOT-010-RATE-VERSION-OWNER"
+  "architecture_review_terminal_roots": [
+    "ROOT-010-RATE-VERSION-OWNER"
+  ]
 }

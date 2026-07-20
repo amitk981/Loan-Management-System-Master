@@ -6,6 +6,9 @@ from uuid import UUID
 from django.db import transaction
 from django.db.models import F, Q
 
+from sfpcl_credit.configurations.modules.interest_rate_configuration import (
+    run_due_current_rate_projections,
+)
 from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
     filter_accounts_with_current_transfer,
 )
@@ -21,6 +24,9 @@ from sfpcl_credit.loans.modules.loan_account_read import (
 )
 from sfpcl_credit.loans.modules.loan_account_lifecycle import (
     filter_created_accounts,
+)
+from sfpcl_credit.loans.current_rate_projection import (
+    current_rates_for_accounts,
 )
 from sfpcl_credit.sap_workflow.modules.sap_customer_profile import (
     SapCustomerProfileModule,
@@ -172,6 +178,18 @@ def _list_account_window(*, actor, filters, offset, limit, candidate_owner):
         "sap_customer_code",
     )
     accounts = list(candidates[offset : offset + limit])
+    run_due_current_rate_projections(
+        loan_account_ids=[account.pk for account in accounts],
+        limit=limit,
+        invocation="loan_account_read",
+    )
+    current_rates = {}
+    if accounts:
+        current_rates = current_rates_for_accounts(
+            [account.pk for account in accounts]
+        )
+    for account in accounts:
+        account.current_interest_rate = current_rates[account.pk]
     projections = [_project(account, owner_selected=True) for account in accounts]
     return projections
 
@@ -192,6 +210,14 @@ def get_account(*, actor, loan_account_id):
         .first()
     )
     projection = _project(account, owner_selected=True) if account is not None else None
+    if account is not None:
+        run_due_current_rate_projections(
+            loan_account_ids=[account.pk],
+            limit=1,
+            invocation="loan_account_read",
+        )
+        account.refresh_from_db(fields=["current_interest_rate"])
+        projection = _project(account, owner_selected=True)
     if projection is None:
         raise LoanAccountProjectionNotFound
     return projection

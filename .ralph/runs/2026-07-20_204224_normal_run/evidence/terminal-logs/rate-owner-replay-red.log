@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+E
+======================================================================
+ERROR: test_public_owner_retains_one_immutable_idempotency_decision (sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerTests.test_public_owner_retains_one_immutable_idempotency_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_204224_normal_run/sfpcl_credit/tests/test_servicing_financial_owner_closure.py", line 156, in test_public_owner_retains_one_immutable_idempotency_decision
+    from sfpcl_credit.configurations.models import CurrentRateProjectionDecision
+ImportError: cannot import name 'CurrentRateProjectionDecision' from 'sfpcl_credit.configurations.models' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_204224_normal_run/sfpcl_credit/configurations/models.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.169s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+Exit code: 1

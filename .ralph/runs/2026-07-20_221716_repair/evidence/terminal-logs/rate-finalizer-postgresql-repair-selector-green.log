@@ -1,0 +1,11 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_repair_green2_20260720 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerPostgreSQLAcceptanceTests.test_competing_portfolio_runs_keep_stale_account_visible_and_singular --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 1
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 2.114s
+
+OK
+Exit code: 0

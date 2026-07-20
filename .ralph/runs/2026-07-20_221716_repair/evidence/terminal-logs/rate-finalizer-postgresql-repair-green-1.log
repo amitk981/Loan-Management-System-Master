@@ -1,0 +1,14 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_repair_contract1_20260720 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerPostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 1
+
+Exact acceptance selector included in the five-test class run:
+- sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerPostgreSQLAcceptanceTests.test_one_account_exact_due_run_race_retains_one_replayable_decision
+
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 6.614s
+
+OK
+Exit code: 0

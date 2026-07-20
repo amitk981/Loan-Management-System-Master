@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Test specifications:
+- sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerTests.test_before_date_after_matrix_aligns_reads_and_interest_consumers
+- sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerTests.test_public_owner_retains_one_immutable_idempotency_decision
+- sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerPostgreSQLAcceptanceTests.test_one_account_exact_due_run_race_retains_one_replayable_decision
+- sfpcl_credit.tests.test_servicing_financial_owner_closure.RateCurrentDateFinalizerTests.test_public_owner_cannot_publish_future_rate_before_server_date
+Found 17 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 222 role-permission links.
+.sssssssss
+----------------------------------------------------------------------
+Ran 17 tests in 3.246s
+
+OK (skipped=9)
+Destroying test database for alias 'default'...
+Exit code: 0
