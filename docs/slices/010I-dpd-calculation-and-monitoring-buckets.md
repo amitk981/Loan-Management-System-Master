@@ -15,7 +15,7 @@ SOP and separately configured operational buckets for one loan or the active por
 Credit and CFO see the same reproducible overdue classification instead of manually maintained ageing.
 
 ## Depends On
-- 010H
+- 010H2
 
 ## Runtime Capabilities
 

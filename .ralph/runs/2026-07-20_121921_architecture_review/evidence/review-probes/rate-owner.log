@@ -1,0 +1,10 @@
+Finding ID: AR-010-RATE-001
+Root ID: ROOT-010-RATE-VERSION-OWNER
+Boundary: 2944b3ea..34ac6b75
+Probe 1: InterestRateConfig.objects.bulk_create.__func__.__qualname__
+Observed: QuerySet.bulk_create
+FAIL: an active InterestRateConfig can bypass model save and the canonical activation owner through the inherited bulk_create path, with no approval-evidence database constraint.
+Probe 2: interest_rate_configuration._create_rate_histories_and_notices
+Observed: activation assigns row.effective_rate to every active floating LoanAccount.current_interest_rate immediately; it does not compare row.effective_from with the current date.
+FAIL: a future-effective successor becomes the mutable loan current rate before the canonical effective-date resolver selects it.
+Probe command exit: 1

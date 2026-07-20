@@ -1,0 +1,7 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Boundary: 2944b3ea..34ac6b75
+Probe: search changed acceptance suites for cross-TestCase construction, direct setUp calls, and nested private fixture helpers.
+Observed: InterestInvoiceApiTests constructs ActiveLoanAccountReadApiTests; accrual and capitalisation construct InterestInvoiceApiTests; all call setUp directly. Changed rate tests repeat ActiveLoanAccountReadApiTests construction, and interest/statement tests traverse fixture.fixture... chains to private _grant, _user, and _auth helpers.
+FAIL: the changed acceptance suites still bypass the public servicing builder/facade promised by AC-FIN-7.
+Probe command exit: 1

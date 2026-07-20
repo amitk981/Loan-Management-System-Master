@@ -1,0 +1,7 @@
+Finding ID: AR-010-LEDGER-001
+Root ID: ROOT-010-LEDGER-PAGINATION
+Boundary: 2944b3ea..34ac6b75
+Probe: require each combined movement queryset to apply a database page window before materialisation.
+Observed: database_page_bounded=False
+FAIL: get_ledger slices repayment_rows[:movement_end], reversal_rows[:movement_end], and capitalisation_rows[:movement_end], merges those prefixes in Python, then applies movement_start. Deep pages therefore materialise an offset-sized prefix from every family.
+Probe command exit: 1

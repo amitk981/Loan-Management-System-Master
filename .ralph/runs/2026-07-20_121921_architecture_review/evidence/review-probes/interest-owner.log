@@ -1,0 +1,15 @@
+Finding ID: AR-010-INTEREST-001
+Root ID: ROOT-010-INTEREST-CALCULATION-OWNER
+Boundary: 2944b3ea..34ac6b75
+Probe 1 arithmetic: gross=100.00, interest_paid_amount=25.00, configured tax=10.00, configured fee=5.00.
+Observed invoice interest_amount: 90.00 (gross - paid + tax + fee).
+Observed capitalised amount: 65.00 (interest_amount - paid a second time).
+Eligible unpaid interest: 75.00 (gross - paid; tax and fee are not interest).
+FAIL: capitalisation subtracts retained paid interest twice and folds tax/fee into principal.
+Probe 2 as-of owner: finalisation and preview read the invoice-generation interest_paid_amount snapshot; neither resolves allocations through the 30-April eligibility cutoff.
+FAIL: a payment after invoice generation but by 30 April cannot reduce the amount capitalised.
+Probe 3 replay: _replay_accrual, _replay, and _replay_capitalisation call live serializers; the retained capitalisation test changes the delivery job from queued to failed and expects replay to return failed.
+FAIL: original_response changes after SAP, issuance, or communication state changes, contrary to API contract §45.2.
+Probe 4 period calculation: annual invoices and monthly accruals consume only the rate effective on period_end and apply it to every inclusive day; invoice generation also reads current principal instead of an as-of owner.
+FAIL: intra-period effective-rate/principal changes are applied retroactively instead of segmented or rejected under the configured method.
+Probe command exit: 1

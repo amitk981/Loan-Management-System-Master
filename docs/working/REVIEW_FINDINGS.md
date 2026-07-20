@@ -19,67 +19,79 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
+## AR-010-INTEREST-001 — interest calculation and replay do not retain one as-of financial decision
+
+Root: ROOT-010-INTEREST-CALCULATION-OWNER
+
+Severity: High
+Disposition: New
+Reviewed boundary: `2944b3ea...34ac6b75` (010F–010H)
+
+The annual/monthly owners apply one period-end rate to every day and invoice generation reads current
+principal rather than a historical principal boundary. More immediately, invoice `interest_amount`
+already equals gross less paid interest plus tax and fee, but preview/final capitalisation subtracts
+`interest_paid_amount` again and therefore both double-counts payments and transfers tax/fee into
+principal. Payments after invoice issue but by 30 April are never resolved, so M10-FR-007/008 can
+capitalise already-paid interest. The original-response contract is also live: invoice/accrual/
+capitalisation replay serializes later issue, SAP, and delivery state; the capitalisation test
+explicitly expects a later `failed` delivery status instead of the original `queued` response.
+
+The same owner leaves approved invoice configuration mutable, reads its live issue role/template,
+updates neither durable hard-copy task nor complete schedule/interest truth, and combines the three
+owners in the general 1,570-line `interest_engine.py` despite the digest's explicit separation. The
+new grouped High corrective `010H2` owns financial correctness, immutability, and frozen replay; the
+module split remains bounded Epic 010 closure debt rather than inflating this correction.
+Reproducer: `.ralph/runs/2026-07-20_121921_architecture_review/evidence/review-probes/interest-owner.log`.
+
 ## AR-010-ALLOCATION-001 — allocation admits unposted and unapproved financial effects
 
 Root: ROOT-010-ALLOCATION-ADMISSION
 
 Severity: High
-Disposition: Carried
-Reviewed boundary: `b66aa3b6...31f4e0f1` (010C2–010E2)
+Disposition: Closed
+Reviewed boundary: `2944b3ea...34ac6b75` (010E3)
 
-010C2 closes the original pending-SAP, unapproved-exception, changed-key, schedule-capacity, reason,
-and default-role branches; the retained public admission test passes. The same acceptance root is
-not semantically closed because §45.2 exact replay is recomputed from mutable receipt state:
-`RepaymentAllocator._serialize` reads `allocation.repayment.allocation_status`, so replaying the
-original allocation key after its governed reversal returns `reversed` rather than the original
-`allocated` response. AC-ALLOC-2 promised one retained result, not a live projection.
-
-Corrective owner: grouped Not Started slice `010E3` freezes the original response at the canonical
-allocation decision and proves replay after reversal without changing financial effects.
-Reproducer: `.ralph/runs/2026-07-20_054053_architecture_review/evidence/review-probes/financial-owner.log`.
+010E3 stores the exact allocation response in immutable decision evidence and replay reads that
+snapshot after the receipt later becomes reversed. The focused public regression passed with the
+statement and rate closure set; changed and cross-receipt keys remain zero-write conflicts. The
+broader private-fixture concern is retained under `AR-010-SERVICING-SEAM-001`, not charged back to
+this financial-admission root.
+Closure evidence: `.ralph/runs/2026-07-20_121921_architecture_review/evidence/review-probes/allocation-closure.log`.
 
 ## AR-010-STATEMENT-001 — statement evidence is orphanable and bypasses match scope
 
 Root: ROOT-010-STATEMENT-EVIDENCE
 
 Severity: High
-Disposition: Carried
-Reviewed boundary: `b66aa3b6...31f4e0f1` (010D2/010E)
+Disposition: Closed
+Reviewed boundary: `2944b3ea...34ac6b75` (010E3)
 
-010D2 closes the orphan UUID, duplicate owner, import-only scope, governed collection-account, and
-borrower-plus-application positive branches; the two retained public owner/scope cases pass. The
-root remains open because `_subsidiary_narration_is_ambiguous` checks only competing application
-references. Narration containing the correct borrower/application and a second borrower still
-passes automatic matching, and the AC-STATEMENT-3 matrix names “AMBIGUOUS” but constructs only a
-conflicting application. This can admit ambiguous subsidiary evidence to Treasury/SAP/allocation.
-
-Corrective owner: grouped Not Started slice `010E3` makes borrower and application ambiguity
-symmetric and retains exact direct-receipt behavior.
-Reproducer: `.ralph/runs/2026-07-20_054053_architecture_review/evidence/review-probes/statement-ambiguity.log`.
+`_subsidiary_narration_is_ambiguous` now checks both competing application references and competing
+borrower identities. The focused public matrix passes exact, missing, conflicting-application, and
+conflicting-borrower branches without weakening direct-receipt matching. Test-fixture architecture
+remains independently carried under `AR-010-SERVICING-SEAM-001`.
+Closure evidence: `.ralph/runs/2026-07-20_121921_architecture_review/evidence/review-probes/statement-closure.log`.
 
 ## AR-010-RATE-001 — effective-rate owner permits retroactive and mutable financial truth
 
 Root: ROOT-010-RATE-VERSION-OWNER
 
 Severity: High
-Disposition: New
-Reviewed boundary: `b66aa3b6...31f4e0f1` (010E2)
+Disposition: Carried
+Reviewed boundary: `2944b3ea...34ac6b75` (010E3–010H)
 
-010E2 creates useful effective versions, notice obligations, and immutable consumer snapshots, but
-the owner does not check retained consumption dates before closing an open predecessor. A successor
-can therefore backdate that predecessor before an already-consumed invoice/accrual date, making the
-approved period contradict its frozen consumer. `InterestRateConfig` also uses the default mutable
-manager with no active-row save guard or approval-evidence constraint, while activation writes
-per-loan histories without advancing `LoanAccount.current_interest_rate`; sequential histories can
-repeat the sanctioned value as `old_interest_rate`. Exact activation replay additionally recomputes
-live notice summaries after delivery instead of returning the original §45.2 response. The test
-named immutable never attempts mutation, and no consumed-open-period or sequential-history case is
-present.
+010E3 closes consumed-date predecessor truncation, exact activation replay, instance/queryset
+mutation, consumer races, and sequential history evidence. The stable root remains open because the
+custom queryset inherits `bulk_create`, so callers can insert `status=active` without model save or
+canonical approval evidence; database constraints do not reject that row. Activation also writes a
+future-effective successor into every active loan's `current_interest_rate` immediately, before the
+explicit-date resolver considers it effective. Changed configuration/loan/interest consumers still
+cross private model seams.
 
-Corrective owner: grouped Not Started slice `010E3` establishes one immutable configuration
-resolver/period decision, coherent loan-rate history, consumed-date closure guard, frozen replay,
-and exact/concurrent consumer behavior before 010F calculates invoices.
-Reproducer: `.ralph/runs/2026-07-20_054053_architecture_review/evidence/review-probes/financial-owner.log`.
+The permitted generation-two successor `010E4` groups write-path closure, effective-date/current
+projection equivalence, frozen replay, public facades, and permanent public-fixture tests. A further
+recurrence exhausts the ordinary corrective budget for this root.
+Reproducer: `.ralph/runs/2026-07-20_121921_architecture_review/evidence/review-probes/rate-owner.log`.
 
 ## AR-010-LEDGER-001 — ledger pagination materializes the full servicing history
 
@@ -87,15 +99,17 @@ Root: ROOT-010-LEDGER-PAGINATION
 
 Severity: Medium
 Disposition: Carried
-Reviewed boundary: `b66aa3b6...31f4e0f1` (010C2 ledger extension)
+Reviewed boundary: `2944b3ea...34ac6b75` (010E3/010H)
 
-The reversal projection preserves deterministic mixed ordering, but `get_ledger` now materializes
-both complete allocation and reversal querysets, merges/sorts them in Python, counts `len(rows)`, and
-only then slices the requested page. The prior unbounded-memory finding therefore remains and now
-covers the second movement family; there is still no 1/21/101 mixed-ledger cardinality proof.
+010E3 replaces unconditional full-history reads with prefix limits and proves correct 1/21/101 row
+results, but it does not implement the promised database page window. `get_ledger` fetches each
+movement family from row zero through `movement_end`, adds capitalisation as a third prefix, sorts in
+Python, and only then applies `movement_start`. Deep pages therefore still scale with the offset and
+the 101-row test does not assert page-bounded fetch counts.
 
-Corrective owner: grouped Not Started slice `010E3` owns database-windowed combined pagination.
-Reproducer: `.ralph/runs/2026-07-20_054053_architecture_review/evidence/review-probes/architecture-drift.log`.
+This Medium performance debt stays with the Epic 010 servicing-read closure; it does not create an
+immediate financial corrective slice.
+Reproducer: `.ralph/runs/2026-07-20_121921_architecture_review/evidence/review-probes/ledger-pagination.log`.
 
 ## AR-010-SERVICING-SEAM-001 — servicing evidence and tests bypass public owner seams
 
@@ -103,18 +117,17 @@ Root: ROOT-010-SERVICING-OWNER-SEAM
 
 Severity: Medium
 Disposition: Carried
-Reviewed boundary: `b66aa3b6...31f4e0f1` (010C2–010E2)
+Reviewed boundary: `2944b3ea...34ac6b75` (010E3–010H)
 
-Mandatory allocation reasons are now retained, but every reviewed slice continues to instantiate
-other `TestCase` classes, invoke `setUp`, and traverse private helper chains; 010E2's PostgreSQL
-acceptance does the same. Direct/subsidiary capture also repeats authority, serviceability,
-idempotency, audit, notification, and receipt construction around the statement owner. Assertions
-are substantive, yet the fixture and policy duplication violate the public owner seam and already
-left the conflicting-borrower and consumed-period branches untested.
+010E3 adds a useful public servicing builder for its focused and PostgreSQL classes, but changed rate
+tests still instantiate `ActiveLoanAccountReadApiTests` and call `setUp`, while invoice, accrual, and
+capitalisation tests construct one another recursively and traverse deep private `_grant`, `_user`,
+and `_auth` chains. Assertions are substantive, yet the accepted test graph remains coupled to
+private setup implementations and already misses the rate bulk-create and interest-payment edges.
 
-Corrective owner: grouped Not Started slice `010E3` replaces the private fixture chains with public
-builders and consolidates the shared servicing decision seams needed by its permanent matrix.
-Reproducer: `.ralph/runs/2026-07-20_054053_architecture_review/evidence/review-probes/architecture-drift.log`.
+The High corrective slices must use public fixtures in their changed boundaries; complete removal
+of the carried Medium seam remains grouped into Epic 010 closure rather than creating a leaf patch.
+Reproducer: `.ralph/runs/2026-07-20_121921_architecture_review/evidence/review-probes/servicing-seam.log`.
 
 ## Targeted closure review 2026-07-19_193824_architecture_review — Epic 009 generation 2
 

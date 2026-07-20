@@ -1,0 +1,9 @@
+Finding ID: AR-010-STATEMENT-001
+Root ID: ROOT-010-STATEMENT-EVIDENCE
+Original boundary: b66aa3b6...31f4e0f1
+Retained RED symptom: subsidiary narration contained the correct borrower/application and a second borrower identity.
+Expected match state: unmatched ambiguity
+Observed match state: automatic match admitted
+FAIL: borrower ambiguity was not symmetric with application ambiguity.
+Original retained evidence: .ralph/runs/2026-07-20_054053_architecture_review/evidence/review-probes/statement-ambiguity.log
+Exit code: 1

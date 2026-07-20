@@ -1,19 +1,19 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-20_101050_repair
+2026-07-20_121921_architecture_review
 
 ## Current Status
-Run completed for 010H-interest-capitalisation-after-30-april.
+Run completed for architecture-review.
 
 ## Current Slice
 None selected.
 
 ## What Completed
-See .ralph/runs/2026-07-20_101050_repair/ in the repository.
+See .ralph/runs/2026-07-20_121921_architecture_review/ in the repository.
 
 ## Current Blocker
 None known.
 
 ## Next Recommended Action
-Review .ralph/runs/2026-07-20_101050_repair/review-packet.md.
+Review .ralph/runs/2026-07-20_121921_architecture_review/review-packet.md.

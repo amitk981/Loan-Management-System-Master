@@ -1,0 +1,8 @@
+Finding ID: AR-010-ALLOCATION-001
+Root ID: ROOT-010-ALLOCATION-ADMISSION
+Boundary: 2944b3ea..34ac6b75
+Permanent test: sfpcl_credit.tests.test_repayment_allocation_api.RepaymentAllocationApiTests.test_replay_after_later_status_change_returns_frozen_original_response
+Observed: the focused public replay-after-status-change test passed in the six-test closure run.
+PASS: allocation replay reads the retained audit original_response rather than mutable receipt status.
+Run summary: Ran 6 tests in 2.713s; OK.
+Exit code: 0

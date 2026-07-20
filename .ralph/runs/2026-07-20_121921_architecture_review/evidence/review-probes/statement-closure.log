@@ -1,0 +1,8 @@
+Finding ID: AR-010-STATEMENT-001
+Root ID: ROOT-010-STATEMENT-EVIDENCE
+Boundary: 2944b3ea..34ac6b75
+Permanent test: sfpcl_credit.tests.test_statement_evidence_owner_scope_closure.StatementEvidenceOwnerScopeClosureTests.test_subsidiary_auto_match_requires_borrower_and_application_facts
+Observed: the focused public ambiguity matrix passed in the six-test closure run.
+PASS: competing borrower and competing application identities both prevent subsidiary auto-match while exact borrower/application evidence remains accepted.
+Run summary: Ran 6 tests in 2.713s; OK.
+Exit code: 0

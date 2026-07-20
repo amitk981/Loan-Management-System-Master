@@ -1,0 +1,9 @@
+Finding ID: AR-010-ALLOCATION-001
+Root ID: ROOT-010-ALLOCATION-ADMISSION
+Original boundary: b66aa3b6...31f4e0f1
+Retained RED symptom: replay the allocation idempotency key after governed reversal.
+Expected original allocation_status: allocated
+Observed live allocation_status: reversed
+FAIL: exact replay changed with mutable receipt status instead of returning the original response.
+Original retained evidence: .ralph/runs/2026-07-20_054053_architecture_review/evidence/review-probes/financial-owner.log
+Exit code: 1
