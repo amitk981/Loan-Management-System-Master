@@ -1,0 +1,51 @@
+Creating test database for alias 'default'...
+Found 48 test(s).
+System check identified no issues (0 silenced).
+.E....................................Catalogue seeded: 189 permissions, 20 roles, 8 teams, 216 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 216 role-permission links.
+.ssssssss
+======================================================================
+ERROR: test_bulk_dry_run_reports_calculated_outcome_without_any_write (sfpcl_credit.tests.test_interest_accrual_api.MonthlyInterestAccrualApiTests.test_bulk_dry_run_reports_calculated_outcome_without_any_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/tests/test_interest_accrual_api.py", line 72, in test_bulk_dry_run_reports_calculated_outcome_without_any_write
+    response = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/interest/views.py", line 58, in accrual_bulk_generate
+    bulk_generate_monthly_accruals(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/interest/modules/interest_engine.py", line 284, in bulk_generate_monthly_accruals
+    amount = _preview_accrual_amount(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/interest/modules/interest_engine.py", line 391, in _preview_accrual_amount
+    return _calculate_accrual_values(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+----------------------------------------------------------------------
+Ran 48 tests in 20.840s
+
+FAILED (errors=1, skipped=8)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

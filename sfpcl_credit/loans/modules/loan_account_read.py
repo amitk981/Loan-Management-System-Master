@@ -6,7 +6,11 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.configurations.models import InterestRateHistory
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.loans.models import LoanAccount
+from sfpcl_credit.loans.models import (
+    LoanAccount,
+    RepaymentLedgerEntry,
+    RepaymentReversalLedgerEntry,
+)
 from sfpcl_credit.loans.modules.loan_account_lifecycle import (
     resolve_loan_account_creation,
 )
@@ -20,6 +24,41 @@ READ_PERMISSION = "finance.loan_account.read"
 
 class LoanAccountReadPermissionDenied(Exception):
     pass
+
+
+def principal_balance_as_of(*, account, as_of_date):
+    """Resolve immutable loan-owned principal truth at the end of a financial period."""
+    candidates = []
+    for model, id_field in (
+        (RepaymentLedgerEntry, "repayment_ledger_entry_id"),
+        (RepaymentReversalLedgerEntry, "repayment_reversal_ledger_entry_id"),
+    ):
+        row = (
+            model.objects.filter(
+                loan_account=account,
+                transaction_date__lte=as_of_date,
+            )
+            .order_by("-transaction_date", "-created_at", f"-{id_field}")
+            .values(
+                "transaction_date",
+                "created_at",
+                id_field,
+                "principal_balance",
+            )
+            .first()
+        )
+        if row is not None:
+            candidates.append(
+                (
+                    row["transaction_date"],
+                    row["created_at"],
+                    str(row[id_field]),
+                    row["principal_balance"],
+                )
+            )
+    if not candidates:
+        return account.disbursed_amount
+    return max(candidates, key=lambda item: item[:3])[3]
 
 
 def scoped_account_candidates(*, actor):

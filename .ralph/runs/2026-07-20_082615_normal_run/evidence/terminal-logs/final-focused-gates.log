@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 7 test(s).
+System check identified no issues (0 silenced).
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 4.094s
+
+OK
+Destroying test database for alias 'default'...
+ACCRUAL_API_EXIT_STATUS=0
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+s
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK (skipped=1)
+Destroying test database for alias 'default'...
+POSTGRESQL_COLLECTION_EXIT_STATUS=0
+System check identified no issues (0 silenced).
+CHECK_EXIT_STATUS=0
+No changes detected
+MIGRATION_EXIT_STATUS=0
+EXIT_STATUS=0

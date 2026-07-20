@@ -17,6 +17,50 @@ from sfpcl_credit.tests.test_subsidiary_deduction_reconciliation_api import (
     SubsidiaryDeductionReconciliationApiTests,
 )
 from sfpcl_credit.tests.test_interest_invoice_api import InterestInvoiceApiTests
+from sfpcl_credit.tests.test_interest_accrual_api import MonthlyInterestAccrualApiTests
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class MonthlyInterestAccrualPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = MonthlyInterestAccrualApiTests(
+            "test_single_month_uses_server_owned_snapshots_and_creates_pending_sap_obligation"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+
+    def test_concurrent_same_month_retains_one_accrual_and_sap_obligation(self):
+        barrier = Barrier(2)
+
+        def submit(index):
+            close_old_connections()
+            barrier.wait()
+            response = Client().post(
+                f"/api/v1/loan-accounts/{self.fixture.account.pk}/accrual-entries/",
+                data=json.dumps({"accrual_month": "2026-07"}),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"postgres-interest-accrual-{index}",
+                **self.fixture.auth,
+            )
+            close_old_connections()
+            return response.status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, range(2)))
+
+        from sfpcl_credit.configurations.models import InterestRateConsumptionSnapshot
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.interest.models import AccrualEntry, AccrualSapPostingObligation
+
+        self.assertEqual(statuses, [200, 409])
+        self.assertEqual(AccrualEntry.objects.count(), 1)
+        self.assertEqual(AccrualSapPostingObligation.objects.count(), 1)
+        self.assertEqual(InterestRateConsumptionSnapshot.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="interest.accrual.generated").count(), 1
+        )
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

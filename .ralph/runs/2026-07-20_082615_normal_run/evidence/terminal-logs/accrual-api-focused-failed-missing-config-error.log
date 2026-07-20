@@ -1,0 +1,57 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+....E.
+======================================================================
+ERROR: test_replay_duplicate_client_money_and_missing_configuration_fail_closed (sfpcl_credit.tests.test_interest_accrual_api.MonthlyInterestAccrualApiTests.test_replay_duplicate_client_money_and_missing_configuration_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/tests/test_interest_accrual_api.py", line 156, in test_replay_duplicate_client_money_and_missing_configuration_fail_closed
+    missing_config = self._create(
+                     ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/tests/test_interest_accrual_api.py", line 267, in _create
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/interest/views.py", line 31, in accrual_collection
+    create_monthly_accrual(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/interest/modules/interest_engine.py", line 91, in create_monthly_accrual
+    return _create_accrual(
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/interest/modules/interest_engine.py", line 147, in _create_accrual
+    config = _resolve_configuration(period_end)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/interest/modules/interest_engine.py", line 972, in _resolve_configuration
+    raise InterestInvoiceConflict("One approved interest invoice configuration is required.")
+sfpcl_credit.interest.modules.interest_engine.InterestInvoiceConflict: One approved interest invoice configuration is required.
+
+----------------------------------------------------------------------
+Ran 6 tests in 3.967s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

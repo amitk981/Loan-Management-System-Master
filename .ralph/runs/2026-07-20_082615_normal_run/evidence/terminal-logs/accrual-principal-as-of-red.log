@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_principal_snapshot_is_resolved_as_of_month_end_not_from_later_repayment (sfpcl_credit.tests.test_interest_accrual_api.MonthlyInterestAccrualApiTests.test_principal_snapshot_is_resolved_as_of_month_end_not_from_later_repayment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_082615_normal_run/sfpcl_credit/tests/test_interest_accrual_api.py", line 463, in test_principal_snapshot_is_resolved_as_of_month_end_not_from_later_repayment
+    self.assertEqual(july.json()["data"]["principal_base_amount"], "400000.00")
+AssertionError: '300000.00' != '400000.00'
+- 300000.00
+? ^
++ 400000.00
+? ^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.653s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_STATUS=1

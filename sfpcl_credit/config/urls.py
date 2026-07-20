@@ -33,6 +33,21 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/accrual-entries/<uuid:accrual_entry_id>/mark-sap-posted/",
+        interest_views.accrual_mark_sap_posted,
+        name="accrual-entry-mark-sap-posted",
+    ),
+    path(
+        "api/v1/accrual-entries/bulk-generate/",
+        interest_views.accrual_bulk_generate,
+        name="accrual-entry-bulk-generate",
+    ),
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/accrual-entries/",
+        interest_views.accrual_collection,
+        name="loan-account-accrual-entries",
+    ),
+    path(
         "api/v1/interest-invoices/",
         interest_views.invoice_list,
         name="interest-invoice-list",

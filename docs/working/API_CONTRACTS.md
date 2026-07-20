@@ -4711,3 +4711,40 @@ Only the configured owner holding `finance.interest_invoice.issue` and object sc
 draft. Issuance stores one PDF, creates one approved-template communication and queued delivery job,
 records audit evidence, and transitions only `draft` to `issued`; it never marks an invoice paid.
 Exact replay is zero-write and changed terminal replay is `409 CONFLICT`.
+
+## Monthly interest accruals (010G)
+
+`POST /api/v1/loan-accounts/{loan_account_id}/accrual-entries/` accepts exactly
+`accrual_month` in `YYYY-MM` form and requires a nonblank `Idempotency-Key`. It rejects caller-
+supplied principal, rate, period, method, day count, or accrued amount. The interest module locks the
+scoped loan and derives the complete calendar month, canonical month-end principal from immutable
+disbursement/repayment-ledger truth, approved effective-rate snapshot as of month end, and the one
+effective approved calculation configuration. A repayment posted after the month cannot reduce an
+earlier accrual's principal snapshot.
+The loan must be funded, serviceable, positive-principal, disbursed by the first day of the month,
+and not closed during or before the requested month. Missing/ambiguous calculation or rate truth
+returns `409 CONFLICT` with no zero/fabricated accrual.
+
+Success returns immutable loan/month, period, principal/rate/calculation provenance, calculation
+days/day-count basis, decimal accrued amount, actor/timestamp, and honest pending SAP status. It
+atomically creates one immutable rate-consumption snapshot, accrual audit, accrual row, and pending
+SAP posting obligation without changing account balances, repayment allocations, ledgers, or annual
+invoice snapshots. The database uniquely constrains `(loan_account, accrual_month)`. Exact key/body
+replay returns the retained response with zero writes; changed key reuse or another request for the
+same loan/month returns `409 CONFLICT`.
+
+`POST /api/v1/accrual-entries/bulk-generate/` accepts exactly `accrual_month`, required boolean
+`dry_run`, and optional `loan_account_ids` containing 1–100 unique UUIDs, plus a nonblank
+`Idempotency-Key`. Omitting ids means the caller's bounded all-scoped serviceable-loans set; more
+than 100 must be split into selected batches. It requires `finance.accrual.bulk_generate` and applies
+the canonical loan scope before calculation. Results remain in requested/canonical order and report each input as
+`created`, `existing`, `skipped`, or `failed`, with explicit `persisted`; one inaccessible or invalid
+loan does not hide successful loans. Dry run resolves and calculates through the same approved
+configuration seams but creates no rate-consumption, audit, accrual, or SAP-obligation rows.
+
+`POST /api/v1/accrual-entries/{accrual_entry_id}/mark-sap-posted/` accepts exactly terminal
+`posted_status` (`posted` or `failed`), a nonblank SAP reference only for `posted`, and nonblank
+bounded `remarks`, plus a nonblank `Idempotency-Key`. It requires either accrual permission and the
+same loan-object scope. The action records actor/time and hashed reference/remarks audit evidence,
+updates the retained accrual and its local obligation atomically, and never claims external provider
+delivery. Exact replay is zero-write; changed or second terminal evidence returns `409 CONFLICT`.
