@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_approved_quarter_decision_retains_calendar_policy_evidence (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_approved_quarter_decision_retains_calendar_policy_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 177, in test_approved_quarter_decision_retains_calendar_policy_evidence
+    decision = Reminder.objects.get().eligibility_decision_json
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Reminder' object has no attribute 'eligibility_decision_json'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.653s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+Exit code: 1

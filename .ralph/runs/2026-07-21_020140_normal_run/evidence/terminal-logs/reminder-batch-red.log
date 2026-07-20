@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_mixed_batch_retains_success_and_discloses_late_contact_failure (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_mixed_batch_retains_success_and_discloses_late_contact_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 561, in test_mixed_batch_retains_success_and_discloses_late_contact_failure
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Reminder run failed validation.", "details": {}, "field_errors": {"recipient": "The borrower has no sms contact."}}, "meta": {"request_id": null, "timestamp": "2026-07-20T20:50:07.819631Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.651s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

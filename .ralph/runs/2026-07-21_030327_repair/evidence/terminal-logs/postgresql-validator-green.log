@@ -1,0 +1,5 @@
+Command: source scripts/lib/ralph-postgresql-acceptance.sh; ralph_validate_trusted_postgresql_acceptance docs/slices/010J2-reminder-eligibility-and-delivery-integrity-closure.md; postgresql_acceptance_log_passes .ralph/runs/2026-07-21_030327_repair/evidence/terminal-logs/reminder-postgresql-run-1.log 5; postgresql_acceptance_log_passes .ralph/runs/2026-07-21_030327_repair/evidence/terminal-logs/reminder-postgresql-run-2.log 5
+Contract exit code: 0
+PostgreSQL run 1 validator exit code: 0
+PostgreSQL run 2 validator exit code: 0
+Exit code: 0

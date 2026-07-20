@@ -1,0 +1,55 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_changed_send_key_returns_conflict_and_retains_one_delivery_job (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_changed_send_key_returns_conflict_and_retains_one_delivery_job)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 399, in test_changed_send_key_returns_conflict_and_retains_one_delivery_job
+    changed = self.client.post(
+              ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/monitoring/views.py", line 177, in reminder_send
+    ReminderEngine.send_reminder(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/monitoring/modules/reminder_engine.py", line 172, in send_reminder
+    CommunicationDispatcher.send(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 307, in send
+    return cls._send(
+           ^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 477, in _send
+    cls._require_generic_job_match(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 636, in _require_generic_job_match
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The idempotency key is already bound to another communication request.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.655s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+Exit code: 1

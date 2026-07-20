@@ -1,0 +1,12 @@
+Test: sfpcl_credit.tests.test_servicing_postgresql_acceptance.ReminderDeliveryIntegrityPostgreSQLAcceptanceTests
+Acceptance test: sfpcl_credit.tests.test_servicing_postgresql_acceptance.ReminderDeliveryIntegrityPostgreSQLAcceptanceTests.test_provider_execution_rechecks_serviceability_and_reverse_consumers
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 26.122s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

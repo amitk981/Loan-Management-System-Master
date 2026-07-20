@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 13 test(s).
+System check identified no issues (0 silenced).
+.....F..F....
+======================================================================
+FAIL: test_mixed_batch_retains_success_and_discloses_late_contact_failure (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_mixed_batch_retains_success_and_discloses_late_contact_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 571, in test_mixed_batch_retains_success_and_discloses_late_contact_failure
+    self.assertEqual(Communication.objects.count(), 1)
+AssertionError: 2 != 1
+
+======================================================================
+FAIL: test_permission_contact_and_template_fail_closed_without_reminder (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_permission_contact_and_template_fail_closed_without_reminder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 492, in test_permission_contact_and_template_fail_closed_without_reminder
+    self.assertEqual(missing_contact.status_code, 400, missing_contact.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"quarter_end_date": "2026-06-30", "channel": "sms", "created_count": 0, "retained_count": 0, "skipped_count": 0, "failed_count": 1, "results": [{"loan_account_id": "021a586e-8ee8-418f-b49f-74f54c01edff", "outcome": "failed", "reason": "recipient_missing", "eligibility_decision": {"eligible": true, "reason": "outstanding_beyond_one_year", "first_unpaid_due_date": "2025-06-29", "quarter_cutoff": "2026-06-30", "first_anniversary": "2026-06-29", "boundary_position": "after", "calculation_version": "DPD-CALC-1", "sop_policy_version": "SFPCL-SOP-DPD-1", "sop_boundary_convention": {"anniversary_basis": "calendar_anniversary", "leap_day_anniversary": "february_28", "first_anniversary_inclusive": true, "second_anniversary_inclusive": true, "third_anniversary_inclusive": true, "after_third_anniversary_bucket": "more_than_three_years"}}, "reminder": null}]}, "meta": {"request_id": null, "timestamp": "2026-07-20T20:52:26.894073Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 13 tests in 7.798s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...
+Exit code: 1

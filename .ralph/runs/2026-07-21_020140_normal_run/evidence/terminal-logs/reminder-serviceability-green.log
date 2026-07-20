@@ -1,0 +1,11 @@
+Test: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_newer_still_overdue_snapshot_preserves_retained_quarter_send
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.629s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

@@ -4840,14 +4840,20 @@ without recalculating DPD and fails closed on dangling or cross-loan legacy poin
 `POST /api/v1/reminders/quarter-end-runs/` accepts exactly an ISO calendar quarter-end
 `quarter_end_date`, `channel` (`sms` or `email`), and `content_template_id`. It requires
 `monitoring.reminder.create` plus canonical loan-account scope and processes at most 100 scoped
-accounts whose immutable 010I snapshot is for that exact quarter end, is at least in the approved
-one-to-two-year SOP band, has positive overdue truth, and whose current account remains serviceable
-with positive outstanding. It never recalculates DPD or accepts caller eligibility, recipient,
-message, status, money, or provider evidence.
+accounts with an immutable 010I snapshot for that exact quarter end. The DPD owner decides the
+one-year boundary by calendar anniversary (including leap-year spans), not by a fixed day count.
+The bounded response contains one result per scoped quarter snapshot with `outcome` (`created`,
+`retained`, `skipped`, or `failed`), a safe reason, the retained eligibility decision, and an
+optional reminder. Aggregate `created_count`, `retained_count`, `skipped_count`, and `failed_count`
+must match those rows. Contact/template/late-state failures are isolated per loan, so a later row
+cannot conceal an earlier retained reminder or job. It never recalculates DPD or accepts caller
+eligibility, recipient, message, status, money, or provider evidence.
 
 Each eligible account retains one reminder for `(loan account, quarter end,
 outstanding_beyond_one_year, channel)`, including loan/application/member, exact DPD snapshot,
 template/rendered-message snapshot, actor, timestamps, audit, and canonical communication link.
+`eligibility_decision` retains the first-unpaid date, quarter cutoff, first anniversary,
+day-before/on/after position, DPD calculation version, SOP policy version, and boundary convention.
 The communications owner validates the approved/effective template and borrower contact, creates
 the snapshot, and queues its generic delivery job. The reminder reports `queued`; canonical job
 truth supplies later `sent` or `failed` status. Queueing never claims provider acceptance. Exact run
@@ -4864,9 +4870,14 @@ ISO next-follow-up date on/after quarter end, and `send_now: false`. Phone logs 
 audit evidence but create no communication or provider row.
 
 `POST /api/v1/reminders/{reminder_id}/send/` accepts an empty body and required nonblank
-`Idempotency-Key`. It rechecks permission, account scope, exact current quarter DPD, positive
-outstanding, and serviceable status under lock before delegating to the communications job seam. A
-resolved/stale loan retains `cancelled` with a safe reason and no job; exact send replay retains one
-job. Missing authentication is `401`, permission is `403`, inaccessible objects are `404`, malformed
-input/contact/template is `400`, and invalid state or changed delivery replay is `409`. Ordinary
-responses never expose recipient, rendered body, or provider-sensitive evidence.
+`Idempotency-Key`. It rechecks permission, account scope, the DPD owner's current serviceability,
+positive outstanding, serviceable account status, current borrower contact, and current effective
+template under lock before delegating to the communications job seam. A newer still-overdue DPD
+snapshot does not invalidate the retained quarter decision. The same checks run again at worker
+execution immediately before the provider adapter; repayment, resolution, revoked scope/contact,
+or an ineffective template retains `cancelled`, exhausts the queued job without retry, and invokes
+no provider. Exact send replay retains one job. A changed or cross-reminder key returns the binding
+`409 CONFLICT` envelope with no second job. Missing authentication is `401`, permission is `403`,
+inaccessible objects are `404`, malformed direct-request input is `400`, and invalid state or
+changed delivery replay is `409`. Ordinary responses never expose recipient, rendered body, or
+provider-sensitive evidence.

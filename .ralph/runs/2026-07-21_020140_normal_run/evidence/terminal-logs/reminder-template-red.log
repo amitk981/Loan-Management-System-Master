@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_send_cancels_when_retained_template_is_no_longer_effective (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_send_cancels_when_retained_template_is_no_longer_effective)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 371, in test_send_cancels_when_retained_template_is_no_longer_effective
+    self.assertEqual(reminder.delivery_status, "cancelled")
+AssertionError: 'queued' != 'cancelled'
+- queued
++ cancelled
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.654s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

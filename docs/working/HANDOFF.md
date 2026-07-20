@@ -1,19 +1,19 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-21_010045_normal_run
+2026-07-21_030327_repair
 
 ## Current Status
-Run completed for 010I2-dpd-pointer-and-policy-integrity-closure.
+Run completed for 010J2-reminder-eligibility-and-delivery-integrity-closure.
 
 ## Current Slice
 None selected.
 
 ## What Completed
-See .ralph/runs/2026-07-21_010045_normal_run/ in the repository.
+See .ralph/runs/2026-07-21_030327_repair/ in the repository.
 
 ## Current Blocker
 None known.
 
 ## Next Recommended Action
-Review .ralph/runs/2026-07-21_010045_normal_run/review-packet.md.
+Review .ralph/runs/2026-07-21_030327_repair/review-packet.md.

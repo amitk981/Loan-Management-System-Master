@@ -1,0 +1,6 @@
+Feedback-loop command: source scripts/lib/ralph-postgresql-acceptance.sh; postgresql_acceptance_log_passes .ralph/runs/2026-07-21_020140_normal_run/evidence/terminal-logs/postgresql-acceptance-validation-1.txt 5
+Observed reserved failure signal: test_mixed_portfolio_discloses_created_skipped_and_failed_rows ... ok
+Validator result: FAIL
+Exit code: 1
+
+The test itself passed, but the validator deliberately rejects any acceptance log containing the word `skipped`.

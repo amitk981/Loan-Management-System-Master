@@ -154,6 +154,7 @@ class Reminder(models.Model):
         DpdStatus, on_delete=models.PROTECT, related_name="reminders"
     )
     quarter_end_date = models.DateField(db_index=True)
+    eligibility_decision_json = models.JSONField(default=dict)
     reminder_type = models.CharField(max_length=80, db_index=True)
     origin = models.CharField(max_length=20, db_index=True)
     channel = models.CharField(max_length=60, db_index=True)

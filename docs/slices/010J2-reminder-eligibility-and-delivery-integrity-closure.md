@@ -1,7 +1,7 @@
 # Slice 010J2: Reminder Eligibility and Delivery Integrity Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

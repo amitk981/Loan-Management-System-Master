@@ -82,6 +82,24 @@ def get_current_for_loan(*, actor, loan_account_id):
     return serialize_dpd_status(row)
 
 
+def current_reminder_eligibility_decision(*, actor, loan_account_id):
+    """Return current serviceability evidence without exposing a private DPD row."""
+    _require_permission(actor, READ_PERMISSION)
+    account = _scoped_accounts(actor).filter(pk=loan_account_id).first()
+    if account is None or account.current_dpd_status_id is None:
+        raise DpdNotFound
+    row = DpdStatus.objects.filter(
+        pk=account.current_dpd_status_id,
+        loan_account=account,
+    ).first()
+    if row is None:
+        raise DpdNotFound
+    return reminder_eligibility_decision(
+        dpd_status=row,
+        quarter_end_date=row.as_of_date,
+    )
+
+
 def calculate_portfolio(*, actor, payload, request=None):
     cleaned = _validate_portfolio_payload(payload)
     _require_permission(actor, CALCULATE_PERMISSION)
@@ -298,6 +316,46 @@ def _anniversary(value, years):
         return value.replace(year=value.year + years, day=28)
 
 
+def reminder_eligibility_decision(*, dpd_status, quarter_end_date):
+    """Return the retained DPD owner's calendar decision for a quarter reminder."""
+    first_unpaid = dpd_status.earliest_unpaid_due_date
+    first_anniversary = _anniversary(first_unpaid, 1) if first_unpaid else None
+    policy = (dpd_status.calculation_inputs_json or {}).get("policy_decision", {})
+    eligible = bool(
+        dpd_status.as_of_date == quarter_end_date
+        and first_anniversary is not None
+        and quarter_end_date >= first_anniversary
+        and dpd_status.total_overdue_amount > 0
+    )
+    if dpd_status.as_of_date != quarter_end_date:
+        reason = "quarter_snapshot_mismatch"
+    elif first_anniversary is None or dpd_status.total_overdue_amount <= 0:
+        reason = "no_outstanding_due"
+    elif quarter_end_date < first_anniversary:
+        reason = "calendar_anniversary_not_reached"
+    else:
+        reason = "outstanding_beyond_one_year"
+    return {
+        "eligible": eligible,
+        "reason": reason,
+        "first_unpaid_due_date": first_unpaid.isoformat() if first_unpaid else None,
+        "quarter_cutoff": quarter_end_date.isoformat(),
+        "first_anniversary": first_anniversary.isoformat() if first_anniversary else None,
+        "boundary_position": (
+            "unavailable"
+            if first_anniversary is None
+            else "day_before"
+            if quarter_end_date < first_anniversary
+            else "on"
+            if quarter_end_date == first_anniversary
+            else "after"
+        ),
+        "calculation_version": dpd_status.calculation_version,
+        "sop_policy_version": policy.get("sop_policy_version"),
+        "sop_boundary_convention": policy.get("sop_boundary_convention"),
+    }
+
+
 def _effective_scheme(as_of_date):
     rows = list(
         DpdOperationalBucketScheme.objects.filter(
@@ -448,6 +506,8 @@ __all__ = [
     "DpdValidation",
     "calculate_for_loan",
     "calculate_portfolio",
+    "current_reminder_eligibility_decision",
     "get_current_for_loan",
+    "reminder_eligibility_decision",
     "serialize_dpd_status",
 ]

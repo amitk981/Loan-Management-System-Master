@@ -527,6 +527,170 @@ class ReminderQueuePostgreSQLAcceptanceTests(TransactionTestCase):
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class ReminderDeliveryIntegrityPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = ReminderQueueApiTests(
+            "test_quarter_end_run_creates_only_beyond_one_year_and_replay_is_zero_write"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+
+    def test_calendar_matrix_retains_approved_quarter_decisions(self):
+        from datetime import date
+
+        from sfpcl_credit.loans.models import RepaymentSchedule
+        from sfpcl_credit.monitoring.models import Reminder
+        from sfpcl_credit.tests.servicing_builders import clone_servicing_account
+
+        accounts = [self.fixture.account]
+        for suffix in ("reminder-calendar-on", "reminder-calendar-after"):
+            accounts.append(clone_servicing_account(fixture=self.fixture, suffix=suffix))
+        due_dates = [date(2023, 7, 1), date(2023, 6, 30), date(2023, 6, 29)]
+        for account, due_date in zip(accounts, due_dates, strict=True):
+            RepaymentSchedule.objects.create(
+                loan_account=account,
+                installment_number=1,
+                due_date=due_date,
+                principal_due="1000.00",
+                interest_due="100.00",
+                charges_due="0.00",
+                total_due="1100.00",
+                schedule_status="pending",
+            )
+            self.assertEqual(self._post_dpd(account, "2024-06-30"), 200)
+
+        response = self.fixture._run_quarter("2024-06-30")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["data"]["created_count"], 2)
+        self.assertEqual(response.json()["data"]["skipped_count"], 1)
+        self.assertEqual(Reminder.objects.count(), 2)
+        self.assertEqual(
+            {row.eligibility_decision_json["boundary_position"] for row in Reminder.objects.all()},
+            {"on", "after"},
+        )
+        for row in Reminder.objects.all():
+            self.assertEqual(
+                row.eligibility_decision_json["sop_policy_version"],
+                "SFPCL-SOP-DPD-1",
+            )
+
+    def test_advanced_snapshot_preserves_send_and_repayment_cancels(self):
+        self.fixture.test_newer_still_overdue_snapshot_preserves_retained_quarter_send()
+
+    def test_exact_changed_cross_reminder_and_competing_send_integrity(self):
+        from datetime import date
+
+        from sfpcl_credit.communications.adapters import FakeSmsDeliveryAdapter
+        from sfpcl_credit.communications.models import CommunicationDeliveryJob
+        from sfpcl_credit.loans.models import RepaymentSchedule
+        from sfpcl_credit.processes.communication_delivery import execute_communication_job
+        from sfpcl_credit.tests.servicing_builders import clone_servicing_account
+
+        other = clone_servicing_account(fixture=self.fixture, suffix="reminder-cross-key")
+        for account in (self.fixture.account, other):
+            RepaymentSchedule.objects.create(
+                loan_account=account,
+                installment_number=1,
+                due_date=date(2025, 6, 29),
+                principal_due="1000.00",
+                interest_due="100.00",
+                charges_due="0.00",
+                total_due="1100.00",
+                schedule_status="pending",
+            )
+            self.assertEqual(self._post_dpd(account, "2026-06-30"), 200)
+        first_id = self._create_unsent(self.fixture.account)
+        second_id = self._create_unsent(other)
+        barrier = Barrier(2)
+
+        def submit(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/reminders/{first_id}/send/",
+                    data=json.dumps({}),
+                    content_type="application/json",
+                    HTTP_IDEMPOTENCY_KEY="pg-reminder-competing-send",
+                    **self.fixture.auth,
+                ).status_code
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            self.assertEqual(sorted(pool.map(submit, range(2))), [200, 200])
+        changed = Client().post(
+            f"/api/v1/reminders/{first_id}/send/",
+            data=json.dumps({}),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="pg-reminder-changed-send",
+            **self.fixture.auth,
+        )
+        cross = Client().post(
+            f"/api/v1/reminders/{second_id}/send/",
+            data=json.dumps({}),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="pg-reminder-competing-send",
+            **self.fixture.auth,
+        )
+        self.assertEqual(changed.status_code, 409, changed.content)
+        self.assertEqual(cross.status_code, 409, cross.content)
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
+        job = CommunicationDeliveryJob.objects.get()
+        self.assertEqual(
+            execute_communication_job(job.pk, adapter=FakeSmsDeliveryAdapter())[
+                "delivery_status"
+            ],
+            "sent",
+        )
+        replay = Client().post(
+            f"/api/v1/reminders/{first_id}/send/",
+            data=json.dumps({}),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="pg-reminder-competing-send",
+            **self.fixture.auth,
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
+
+    def test_mixed_portfolio_discloses_created_omitted_and_failed_rows(self):
+        self.fixture.test_mixed_batch_retains_success_and_discloses_late_contact_failure()
+
+    def test_provider_execution_rechecks_serviceability_and_reverse_consumers(self):
+        self.fixture.test_worker_cancels_repaid_reminder_before_provider_execution()
+
+    def _post_dpd(self, account, as_of_date):
+        return Client().post(
+            f"/api/v1/loan-accounts/{account.pk}/dpd-status/calculate/",
+            data=json.dumps({"as_of_date": as_of_date}),
+            content_type="application/json",
+            **self.fixture.auth,
+        ).status_code
+
+    def _create_unsent(self, account):
+        response = Client().post(
+            f"/api/v1/loan-accounts/{account.pk}/reminders/",
+            data=json.dumps(
+                {
+                    "quarter_end_date": "2026-06-30",
+                    "reminder_type": "outstanding_beyond_one_year",
+                    "channel": "sms",
+                    "content_template_id": str(self.fixture.sms_template.pk),
+                    "message_body": "Loan remains outstanding at quarter end.",
+                    "send_now": False,
+                }
+            ),
+            content_type="application/json",
+            **self.fixture.auth,
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        return response.json()["data"]["reminder_id"]
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
 class InterestCapitalisationPostgreSQLAcceptanceTests(TransactionTestCase):
     reset_sequences = True
 

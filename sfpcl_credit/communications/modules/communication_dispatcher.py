@@ -310,6 +310,35 @@ class CommunicationDispatcher:
         )
 
     @classmethod
+    def current_delivery_serviceability(
+        cls, *, communication_id, recipient_address, as_of_date=None
+    ):
+        """Recheck recipient and effective template before provider work is queued."""
+        row = Communication.objects.select_related("content_template").filter(
+            pk=communication_id
+        ).first()
+        if row is None:
+            return {"serviceable": False, "reason": "communication_missing"}
+        if not recipient_address or row.recipient_address != recipient_address:
+            return {
+                "serviceable": False,
+                "reason": "recipient_no_longer_serviceable",
+            }
+        template = row.content_template
+        today = as_of_date or timezone.localdate()
+        if (
+            template is None
+            or template.approval_status != ContentTemplate.STATUS_APPROVED
+            or template.effective_from > today
+            or (template.effective_to is not None and template.effective_to < today)
+        ):
+            return {
+                "serviceable": False,
+                "reason": "template_no_longer_effective",
+            }
+        return {"serviceable": True, "reason": None}
+
+    @classmethod
     def execute_job(cls, job_id, *, adapter=None, advice_executor):
         job = CommunicationDeliveryJob.objects.only(
             "job_kind", "communication_id"

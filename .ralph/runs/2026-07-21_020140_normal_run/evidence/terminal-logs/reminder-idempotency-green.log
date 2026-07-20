@@ -1,0 +1,11 @@
+Test: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_changed_send_key_returns_conflict_and_retains_one_delivery_job
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.617s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

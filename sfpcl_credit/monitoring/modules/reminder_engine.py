@@ -8,6 +8,7 @@ from django.utils.dateparse import parse_date
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.communications.models import CommunicationDeliveryJob, ContentTemplate
 from sfpcl_credit.communications.modules.communication_dispatcher import (
+    CommunicationDispatchConflict,
     CommunicationDispatcher,
 )
 from sfpcl_credit.identity.models import AuditLog
@@ -17,6 +18,12 @@ from sfpcl_credit.loans.modules.loan_account_read import (
     scoped_account_candidates,
 )
 from sfpcl_credit.monitoring.models import DpdStatus, Reminder
+from sfpcl_credit.monitoring.modules.dpd_monitoring import (
+    DpdNotFound,
+    DpdPermissionDenied,
+    current_reminder_eligibility_decision,
+    reminder_eligibility_decision,
+)
 
 
 CREATE_PERMISSION = "monitoring.reminder.create"
@@ -93,6 +100,10 @@ class ReminderEngine:
             member=account.member,
             dpd_status=dpd_status,
             quarter_end_date=cleaned["quarter_end_date"],
+            eligibility_decision_json=reminder_eligibility_decision(
+                dpd_status=dpd_status,
+                quarter_end_date=cleaned["quarter_end_date"],
+            ),
             reminder_type=cleaned["reminder_type"],
             origin=Reminder.ORIGIN_MANUAL,
             channel=Reminder.CHANNEL_PHONE,
@@ -129,7 +140,7 @@ class ReminderEngine:
             raise ReminderValidation({"idempotency_key": "Idempotency-Key is required."})
         row = (
             Reminder.objects.select_for_update()
-            .select_related("loan_account")
+            .select_related("loan_account__member")
             .filter(pk=reminder_id)
             .first()
         )
@@ -137,35 +148,118 @@ class ReminderEngine:
             raise ReminderNotFound
         if row.channel not in {Reminder.CHANNEL_SMS, Reminder.CHANNEL_EMAIL} or row.communication_id is None:
             raise ReminderConflict("Only electronic reminder snapshots can be sent.")
+        cancellation_reason = cls._serviceability_reason(actor=actor, row=row)
+        if cancellation_reason is not None:
+            return cls._cancel(
+                row=row,
+                actor=actor,
+                reason=cancellation_reason,
+                request=request,
+            )
+        try:
+            CommunicationDispatcher.send(
+                communication_id=row.communication_id,
+                idempotency_key=idempotency_key.strip(),
+            )
+        except CommunicationDispatchConflict as exc:
+            raise ReminderConflict(str(exc)) from exc
+        return serialize_reminder(row)
+
+    @classmethod
+    @transaction.atomic
+    def cancel_unserviceable_delivery(cls, *, communication_job_id):
+        job = (
+            CommunicationDeliveryJob.objects.select_for_update()
+            .filter(pk=communication_job_id)
+            .first()
+        )
+        if job is None or job.status not in {
+            CommunicationDeliveryJob.STATUS_QUEUED,
+            CommunicationDeliveryJob.STATUS_RETRYING,
+        }:
+            return None
+        row = (
+            Reminder.objects.select_for_update()
+            .select_related("loan_account__member", "created_by_user")
+            .filter(communication_id=job.communication_id)
+            .first()
+        )
+        if row is None:
+            return None
+        reason = cls._serviceability_reason(actor=row.created_by_user, row=row)
+        if reason is None:
+            return None
+        cls._cancel(row=row, actor=row.created_by_user, reason=reason)
+        job.status = CommunicationDeliveryJob.STATUS_FAILED
+        job.attempts = job.max_attempts
+        job.last_failure_code = "reminder_cancelled"
+        job.claim_token = None
+        job.lease_expires_at = None
+        job.completed_at = timezone.now()
+        job.save(
+            update_fields=[
+                "status",
+                "attempts",
+                "last_failure_code",
+                "claim_token",
+                "lease_expires_at",
+                "completed_at",
+            ]
+        )
+        return {
+            "communication_job_id": str(job.pk),
+            "communication_id": str(job.communication_id),
+            "delivery_status": "cancelled",
+            "attempts": job.attempts,
+        }
+
+    @classmethod
+    def _serviceability_reason(cls, *, actor, row):
         account = row.loan_account
-        current_dpd = DpdStatus.objects.filter(
-            pk=account.current_dpd_status_id,
-            loan_account=account,
-            as_of_date=row.quarter_end_date,
-            days_past_due__gte=365,
-            total_overdue_amount__gt=0,
-        ).exists()
+        try:
+            _require_permission(actor)
+            if not _scoped_accounts(actor).filter(pk=account.pk).exists():
+                return "permission_or_scope_revoked"
+            current_decision = current_reminder_eligibility_decision(
+                actor=actor, loan_account_id=account.pk
+            )
+        except (ReminderPermissionDenied, DpdPermissionDenied):
+            return "permission_or_scope_revoked"
+        except DpdNotFound:
+            current_decision = None
         if (
-            not current_dpd
+            current_decision is None
+            or not current_decision["eligible"]
             or account.total_outstanding <= 0
             or account.loan_account_status not in SERVICEABLE_STATUSES
         ):
-            row.delivery_status = Reminder.STATUS_CANCELLED
-            row.status_reason = "loan_no_longer_eligible"
-            row.save(update_fields=["delivery_status", "status_reason"])
-            AuditLog.objects.create(
-                actor_user=actor,
-                action="monitoring.reminder.cancelled",
-                entity_type="reminder",
-                entity_id=row.pk,
-                new_value_json={"reason": "loan_no_longer_eligible"},
-                ip_address=request_ip(request) if request is not None else "",
-                user_agent=request_user_agent(request) if request is not None else "",
-            )
-            return serialize_reminder(row)
-        CommunicationDispatcher.send(
+            return "loan_no_longer_eligible"
+        current_recipient = (
+            account.member.mobile_number
+            if row.channel == Reminder.CHANNEL_SMS
+            else account.member.email
+        )
+        delivery_decision = CommunicationDispatcher.current_delivery_serviceability(
             communication_id=row.communication_id,
-            idempotency_key=idempotency_key.strip(),
+            recipient_address=current_recipient,
+        )
+        return delivery_decision["reason"] if not delivery_decision["serviceable"] else None
+
+    @classmethod
+    def _cancel(cls, *, row, actor, reason, request=None):
+        if row.delivery_status == Reminder.STATUS_CANCELLED:
+            return serialize_reminder(row)
+        row.delivery_status = Reminder.STATUS_CANCELLED
+        row.status_reason = reason
+        row.save(update_fields=["delivery_status", "status_reason"])
+        AuditLog.objects.create(
+            actor_user=actor,
+            action="monitoring.reminder.cancelled",
+            entity_type="reminder",
+            entity_id=row.pk,
+            new_value_json={"reason": reason},
+            ip_address=request_ip(request) if request is not None else "",
+            user_agent=request_user_agent(request) if request is not None else "",
         )
         return serialize_reminder(row)
 
@@ -179,30 +273,97 @@ class ReminderEngine:
             .filter(
                 loan_account__in=scoped,
                 as_of_date=cleaned["quarter_end_date"],
-                days_past_due__gte=365,
-                total_overdue_amount__gt=0,
-                loan_account__total_outstanding__gt=0,
-                loan_account__loan_account_status__in=SERVICEABLE_STATUSES,
             )
             .order_by("loan_account_id")[:RUN_LIMIT]
         )
         results = []
         for dpd_status in candidates:
-            row, created = cls._create_automatic(
-                actor=actor,
+            decision = reminder_eligibility_decision(
                 dpd_status=dpd_status,
                 quarter_end_date=cleaned["quarter_end_date"],
-                channel=cleaned["channel"],
-                content_template_id=cleaned["content_template_id"],
-                request=request,
             )
-            results.append({"created": created, "reminder": serialize_reminder(row)})
+            if not decision["eligible"]:
+                results.append(
+                    {
+                        "loan_account_id": str(dpd_status.loan_account_id),
+                        "outcome": "skipped",
+                        "reason": decision["reason"],
+                        "eligibility_decision": decision,
+                        "reminder": None,
+                    }
+                )
+                continue
+            try:
+                row, created = cls._create_automatic(
+                    actor=actor,
+                    dpd_status=dpd_status,
+                    quarter_end_date=cleaned["quarter_end_date"],
+                    channel=cleaned["channel"],
+                    content_template_id=cleaned["content_template_id"],
+                    request=request,
+                )
+            except ReminderConflict:
+                results.append(
+                    {
+                        "loan_account_id": str(dpd_status.loan_account_id),
+                        "outcome": "skipped",
+                        "reason": "loan_no_longer_eligible",
+                        "eligibility_decision": decision,
+                        "reminder": None,
+                    }
+                )
+                continue
+            except (ReminderValidation, ValidationError) as exc:
+                field_errors = (
+                    exc.field_errors
+                    if isinstance(exc, ReminderValidation)
+                    else getattr(exc, "message_dict", {})
+                )
+                reason = (
+                    "recipient_missing"
+                    if "recipient" in field_errors
+                    else "template_unavailable"
+                    if "content_template_id" in field_errors
+                    else "validation_failed"
+                )
+                results.append(
+                    {
+                        "loan_account_id": str(dpd_status.loan_account_id),
+                        "outcome": "failed",
+                        "reason": reason,
+                        "eligibility_decision": decision,
+                        "reminder": None,
+                    }
+                )
+                continue
+            except CommunicationDispatchConflict:
+                results.append(
+                    {
+                        "loan_account_id": str(dpd_status.loan_account_id),
+                        "outcome": "failed",
+                        "reason": "communication_conflict",
+                        "eligibility_decision": decision,
+                        "reminder": None,
+                    }
+                )
+                continue
+            results.append(
+                {
+                    "loan_account_id": str(dpd_status.loan_account_id),
+                    "outcome": "created" if created else "retained",
+                    "reason": None,
+                    "eligibility_decision": decision,
+                    "reminder": serialize_reminder(row),
+                }
+            )
         return {
             "quarter_end_date": cleaned["quarter_end_date"].isoformat(),
             "channel": cleaned["channel"],
-            "created_count": sum(item["created"] for item in results),
-            "retained_count": sum(not item["created"] for item in results),
-            "results": [item["reminder"] for item in results],
+            "created_count": sum(item["outcome"] == "created" for item in results),
+            "retained_count": sum(item["outcome"] == "retained" for item in results),
+            "skipped_count": sum(item["outcome"] == "skipped" for item in results),
+            "failed_count": sum(item["outcome"] == "failed" for item in results),
+            "results": results,
         }
 
     @classmethod
@@ -221,14 +382,19 @@ class ReminderEngine:
     @classmethod
     def _eligible_dpd_status(cls, *, account, quarter_end_date):
         dpd_status = DpdStatus.objects.filter(
-            pk=account.current_dpd_status_id,
             loan_account=account,
             as_of_date=quarter_end_date,
-            days_past_due__gte=365,
-            total_overdue_amount__gt=0,
         ).first()
+        decision = (
+            reminder_eligibility_decision(
+                dpd_status=dpd_status, quarter_end_date=quarter_end_date
+            )
+            if dpd_status is not None
+            else None
+        )
         if (
             dpd_status is None
+            or not decision["eligible"]
             or account.total_outstanding <= 0
             or account.loan_account_status not in SERVICEABLE_STATUSES
         ):
@@ -289,6 +455,10 @@ class ReminderEngine:
             member=account.member,
             dpd_status=dpd_status,
             quarter_end_date=quarter_end_date,
+            eligibility_decision_json=reminder_eligibility_decision(
+                dpd_status=dpd_status,
+                quarter_end_date=quarter_end_date,
+            ),
             reminder_type=Reminder.TYPE_OUTSTANDING_BEYOND_ONE_YEAR,
             origin=origin,
             channel=channel,
@@ -482,6 +652,7 @@ def serialize_reminder(row):
         "loan_account_id": str(row.loan_account_id),
         "member_id": str(row.member_id),
         "quarter_end_date": row.quarter_end_date.isoformat(),
+        "eligibility_decision": row.eligibility_decision_json,
         "reminder_type": row.reminder_type,
         "origin": row.origin,
         "channel": row.channel,

@@ -1,0 +1,30 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_worker_cancels_repaid_reminder_before_provider_execution (sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_worker_cancels_repaid_reminder_before_provider_execution)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 425, in test_worker_cancels_repaid_reminder_before_provider_execution
+    result = execute_communication_job(job.pk, adapter=ProviderMustNotRun())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/processes/communication_delivery.py", line 12, in execute_communication_job
+    return CommunicationDispatcher.execute_job(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 358, in execute_job
+    result = cls.execute_generic_job(job_id, adapter=adapter)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 1505, in execute_generic_job
+    result = getattr(delivery_adapter, method_name)(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_020140_normal_run/sfpcl_credit/tests/test_reminder_queue_api.py", line 386, in send_sms
+    raise AssertionError("provider adapter must not run")
+AssertionError: provider adapter must not run
+
+----------------------------------------------------------------------
+Ran 1 test in 0.603s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

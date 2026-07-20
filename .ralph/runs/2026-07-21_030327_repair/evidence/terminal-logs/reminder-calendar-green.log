@@ -1,0 +1,11 @@
+Test: sfpcl_credit.tests.test_reminder_queue_api.ReminderQueueApiTests.test_calendar_anniversary_not_day_count_controls_leap_year_eligibility
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.733s
+
+OK
+Destroying test database for alias 'default'...
+Exit code: 0

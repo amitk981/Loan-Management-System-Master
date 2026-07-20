@@ -1,0 +1,12 @@
+Command: SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_1_2026_07_21_030327_repair /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_servicing_postgresql_acceptance.ReminderDeliveryIntegrityPostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+Permanent test: sfpcl_credit.tests.test_servicing_postgresql_acceptance.ReminderDeliveryIntegrityPostgreSQLAcceptanceTests.test_provider_execution_rechecks_serviceability_and_reverse_consumers
+Found 5 test(s).
+test_advanced_snapshot_preserves_send_and_repayment_cancels ... ok
+test_calendar_matrix_retains_approved_quarter_decisions ... ok
+test_exact_changed_cross_reminder_and_competing_send_integrity ... ok
+test_mixed_portfolio_discloses_created_omitted_and_failed_rows ... ok
+test_provider_execution_rechecks_serviceability_and_reverse_consumers ... ok
+Ran 5 tests in 14.740s
+OK
+Exit code: 0
+Cleanup exit code: 0
