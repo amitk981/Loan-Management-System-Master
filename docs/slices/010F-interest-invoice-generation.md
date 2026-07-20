@@ -1,7 +1,7 @@
 # Slice 010F: Interest Invoice Generation
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

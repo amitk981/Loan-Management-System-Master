@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.documents",
     "sfpcl_credit.disbursements",
     "sfpcl_credit.finance",
+    "sfpcl_credit.interest",
     "sfpcl_credit.sap_workflow",
     "sfpcl_credit.legal_documents",
     "sfpcl_credit.loans",

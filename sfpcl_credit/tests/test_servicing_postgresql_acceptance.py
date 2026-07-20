@@ -16,6 +16,49 @@ from sfpcl_credit.tests.test_bank_statement_matching_api import (
 from sfpcl_credit.tests.test_subsidiary_deduction_reconciliation_api import (
     SubsidiaryDeductionReconciliationApiTests,
 )
+from sfpcl_credit.tests.test_interest_invoice_api import InterestInvoiceApiTests
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class InterestInvoicePostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = InterestInvoiceApiTests(
+            "test_generation_uses_server_owned_fy_truth_and_leaves_balances_unchanged"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+
+    def test_concurrent_same_period_retains_one_immutable_invoice(self):
+        barrier = Barrier(2)
+
+        def submit(index):
+            close_old_connections()
+            barrier.wait()
+            response = Client().post(
+                f"/api/v1/loan-accounts/{self.fixture.account.pk}/interest-invoices/",
+                data=json.dumps({"financial_year": "FY2026-27"}),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"postgres-interest-invoice-{index}",
+                **self.fixture.auth,
+            )
+            close_old_connections()
+            return response.status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(submit, range(2)))
+
+        from sfpcl_credit.configurations.models import InterestRateConsumptionSnapshot
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.interest.models import InterestInvoice
+
+        self.assertEqual(statuses, [200, 409])
+        self.assertEqual(InterestInvoice.objects.count(), 1)
+        self.assertEqual(InterestRateConsumptionSnapshot.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="interest.invoice.generated").count(), 1
+        )
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

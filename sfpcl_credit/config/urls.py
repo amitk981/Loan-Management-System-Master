@@ -9,6 +9,7 @@ from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.disbursements import views as disbursement_views
 from sfpcl_credit.finance import views as finance_views
 from sfpcl_credit.identity import admin_views, audit_views
+from sfpcl_credit.interest import views as interest_views
 from sfpcl_credit.identity.views import (
     login,
     logout,
@@ -31,6 +32,21 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/interest-invoices/",
+        interest_views.invoice_list,
+        name="interest-invoice-list",
+    ),
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/interest-invoices/",
+        interest_views.invoice_collection,
+        name="loan-account-interest-invoices",
+    ),
+    path(
+        "api/v1/interest-invoices/<uuid:interest_invoice_id>/issue/",
+        interest_views.invoice_issue,
+        name="interest-invoice-issue",
+    ),
     path(
         "api/v1/bank-statement-imports/",
         loan_views.bank_statement_import,

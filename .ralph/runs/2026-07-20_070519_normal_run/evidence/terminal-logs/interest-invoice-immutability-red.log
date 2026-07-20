@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_retained_calculation_rejects_bulk_rewrite (sfpcl_credit.tests.test_interest_invoice_api.InterestInvoiceApiTests.test_retained_calculation_rejects_bulk_rewrite)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_070519_normal_run/sfpcl_credit/tests/test_interest_invoice_api.py", line 196, in test_retained_calculation_rejects_bulk_rewrite
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.582s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

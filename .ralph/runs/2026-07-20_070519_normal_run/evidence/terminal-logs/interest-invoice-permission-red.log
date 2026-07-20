@@ -1,0 +1,53 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_create_permission_without_loan_scope_is_safe_zero_write_denial (sfpcl_credit.tests.test_interest_invoice_api.InterestInvoiceApiTests.test_create_permission_without_loan_scope_is_safe_zero_write_denial)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_070519_normal_run/sfpcl_credit/tests/test_interest_invoice_api.py", line 170, in test_create_permission_without_loan_scope_is_safe_zero_write_denial
+    response = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_070519_normal_run/sfpcl_credit/interest/views.py", line 31, in invoice_collection
+    generate_invoice(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_070519_normal_run/sfpcl_credit/interest/modules/interest_engine.py", line 57, in generate_invoice
+    return _generate(
+           ^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_070519_normal_run/sfpcl_credit/interest/modules/interest_engine.py", line 268, in _generate
+    scoped_account_candidates(actor=actor)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_070519_normal_run/sfpcl_credit/loans/modules/loan_account_read.py", line 44, in scoped_account_candidates
+    raise LoanAccountReadPermissionDenied
+sfpcl_credit.loans.modules.loan_account_read.LoanAccountReadPermissionDenied
+
+----------------------------------------------------------------------
+Ran 1 test in 0.620s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1

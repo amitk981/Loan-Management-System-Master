@@ -4687,3 +4687,27 @@ historical resolver with a calculation date. Zero matching active versions fails
 matches are treated as corrupt/ambiguous truth. The consumer seam stores an immutable rate id,
 version, value, date, loan, and consumer reference; exact replay returns that snapshot, so activating
 a later version cannot rewrite an already-consumed calculation.
+
+## Annual interest invoices (010F)
+
+`POST /api/v1/loan-accounts/{loan_account_id}/interest-invoices/` accepts exactly
+`financial_year` in `FY2026-27` form and requires a nonblank `Idempotency-Key`. The request does
+not accept principal, rate, period, invoice date, tax, fee, paid-interest, or invoice-amount fields.
+The canonical interest module locks the scoped serviceable loan, derives the 1 April–31 March period,
+principal snapshot, period interest payments, effective approved rate snapshot, and one effective
+approved invoice-calculation/owner configuration. Missing or ambiguous benchmark, spread, reset,
+day-count, tax, fee, or owner configuration fails closed. Exact replay returns retained truth;
+changed replay or another invoice for the same loan/period returns `409 CONFLICT`.
+
+`GET /api/v1/loan-accounts/{loan_account_id}/interest-invoices/` and scoped portfolio
+`GET /api/v1/interest-invoices/` return the strict paginated list envelope and accept only optional
+`financial_year`, `invoice_status`, `page`, and `page_size`.
+Rows expose immutable calculation provenance and recipient-safe delivery status, never borrower
+contact details.
+
+`POST /api/v1/interest-invoices/{interest_invoice_id}/issue/` accepts exactly `channel: email`, the
+retained borrower `recipient_email`, and nonblank `remarks`, with a nonblank `Idempotency-Key`.
+Only the configured owner holding `finance.interest_invoice.issue` and object scope may issue a valid
+draft. Issuance stores one PDF, creates one approved-template communication and queued delivery job,
+records audit evidence, and transitions only `draft` to `issued`; it never marks an invoice paid.
+Exact replay is zero-write and changed terminal replay is `409 CONFLICT`.

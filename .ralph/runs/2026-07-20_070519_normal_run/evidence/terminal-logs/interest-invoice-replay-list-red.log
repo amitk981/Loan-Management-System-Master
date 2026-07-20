@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exact_replay_and_scoped_list_return_one_retained_invoice (sfpcl_credit.tests.test_interest_invoice_api.InterestInvoiceApiTests.test_exact_replay_and_scoped_list_return_one_retained_invoice)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-20_070519_normal_run/sfpcl_credit/tests/test_interest_invoice_api.py", line 102, in test_exact_replay_and_scoped_list_return_one_retained_invoice
+    self.assertEqual(listing.status_code, 200, listing.content)
+AssertionError: 405 != 200 : b''
+
+----------------------------------------------------------------------
+Ran 1 test in 0.647s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+EXIT_CODE=1
