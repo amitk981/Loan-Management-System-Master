@@ -1,0 +1,657 @@
+Test selector: sfpcl-lms/src/services/servicingApi.test.ts::rejects an accrual batch whose backend results omit selected membership
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/servicingApi.test.ts -t rejects an accrual batch whose backend results omit selected membership
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ❯ src/services/servicingApi.test.ts (10 tests | 1 failed | 9 skipped) 14ms
+   ↓ servicing API module > uses exact canonical permissions for interest mutations
+   ↓ servicing API module > reads canonical interest and monitoring projections without client calculations
+   ↓ servicing API module > sends one caller-stable key for each canonical interest mutation
+   ↓ servicing API module > accrues all 101 explicitly selected loans in backend-authorised batches
+   ↓ servicing API module > reports completed membership when a later portfolio accrual batch is denied
+   × servicing API module > rejects an accrual batch whose backend results omit selected membership 13ms
+     → expected PortfolioAccrualError: Portfolio accrual … { completedRun: { …(4) } } to match object { …(2) }
+(5 matching properties omitted from actual)
+   ↓ servicing API module > requires an active source role as well as every combined-action permission
+   ↓ servicing API module > reads schedule and ledger pages through authenticated standard pagination
+   ↓ servicing API module > delegates capture, SAP posting, and allocation to one backend-owned command
+   ↓ servicing API module > stops an exact capture replay before a second SAP or allocation mutation
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > rejects an accrual batch whose backend results omit selected membership
+AssertionError: expected PortfolioAccrualError: Portfolio accrual … { completedRun: { …(4) } } to match object { …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
++ PortfolioAccrualError {
++   "completedRun": {
++     "results": [
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-1",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-2",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-3",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-4",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-5",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-6",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-7",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-8",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-9",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-10",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-11",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-12",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-13",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-14",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-15",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-16",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-17",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-18",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-19",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-20",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-21",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-22",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-23",
++         "outcome": "created",
++         "persisted": true,
++       },
+        {
+-   "completedRun": {
+-     "results": [],
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-24",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-25",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-26",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-27",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-28",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-29",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-30",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-31",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-32",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-33",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-34",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-35",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-36",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-37",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-38",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-39",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-40",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-41",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-42",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-43",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-44",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-45",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-46",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-47",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-48",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-49",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-50",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-51",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-52",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-53",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-54",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-55",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-56",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-57",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-58",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-59",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-60",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-61",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-62",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-63",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-64",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-65",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-66",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-67",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-68",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-69",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-70",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-71",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-72",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-73",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-74",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-75",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-76",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-77",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-78",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-79",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-80",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-81",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-82",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-83",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-84",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-85",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-86",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-87",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-88",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-89",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-90",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-91",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-92",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-93",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-94",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-95",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-96",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-97",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-98",
++         "outcome": "created",
++         "persisted": true,
++       },
++       {
++         "interest_accrued_amount": "10.00",
++         "loan_account_id": "account-99",
++         "outcome": "created",
++         "persisted": true,
++       },
++     ],
+      "selection": {
+-       "completed_batches": 0,
++       "completed_batches": 1,
+      },
+    },
+-   "message": "Portfolio accrual stopped after 0 of 101 selected loans (0 of 2 batches). The backend returned incomplete accrual batch membership.",
+  }
+
+ ❯ src/services/servicingApi.test.ts:155:5
+    153|     })));
+    154| 
+    155|     await expect(runPortfolioInterestAccrual(
+       |     ^
+    156|       '2026-06', loanAccountIds, 'portfolio-accrual-key',
+    157|     )).rejects.toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  21:43:56
+   Duration  441ms (transform 99ms, setup 0ms, collect 101ms, tests 14ms, environment 0ms, prepare 33ms)
+
+Exit code: 1

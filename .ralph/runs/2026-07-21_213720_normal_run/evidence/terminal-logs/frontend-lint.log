@@ -1,0 +1,6 @@
+Command: npm run lint
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+Exit code: 0

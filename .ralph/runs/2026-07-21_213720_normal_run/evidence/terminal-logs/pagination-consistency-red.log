@@ -1,0 +1,82 @@
+Test selector: sfpcl-lms/src/services/authSession.test.ts::rejects pagination that changes while a canonical collection is loading
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts -t rejects pagination that changes while a canonical collection is loading
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ❯ src/services/authSession.test.ts (38 tests | 1 failed | 37 skipped) 9ms
+   ↓ auth session API flow > returns typed list data and pagination through the shared authenticated envelope boundary
+   ↓ auth session API flow > loads all 101 canonical records through truthful continuation metadata
+   × auth session API flow > rejects pagination that changes while a canonical collection is loading 9ms
+     → expected TypeError: Cannot read properties of unde… to match object { code: 'MALFORMED_RESPONSE', …(1) }
+   ↓ auth session API flow > accepts a collection envelope with an exact empty collection page
+   ↓ auth session API flow > accepts a collection envelope with an exact full first page page
+   ↓ auth session API flow > accepts a collection envelope with an exact full middle page page
+   ↓ auth session API flow > accepts a collection envelope with an exact exact final remainder page
+   ↓ auth session API flow > rejects a successful collection envelope with non-array data
+   ↓ auth session API flow > rejects a successful collection envelope with missing pagination
+   ↓ auth session API flow > rejects a successful collection envelope with missing pagination field
+   ↓ auth session API flow > rejects a successful collection envelope with negative pagination field
+   ↓ auth session API flow > rejects a successful collection envelope with non-integer pagination field
+   ↓ auth session API flow > rejects a successful collection envelope with inconsistent total pages
+   ↓ auth session API flow > rejects a successful collection envelope with inconsistent navigation flags
+   ↓ auth session API flow > rejects a successful collection envelope with page data beyond the total
+   ↓ auth session API flow > rejects a successful collection envelope with under-filled first page
+   ↓ auth session API flow > rejects a successful collection envelope with under-filled middle page
+   ↓ auth session API flow > rejects a successful collection envelope with under-filled final remainder
+   ↓ auth session API flow > rejects a successful collection envelope with over-filled final remainder
+   ↓ auth session API flow > rejects a successful collection envelope with nonempty zero-total page
+   ↓ auth session API flow > preserves authentication and server-error behavior for paginated requests
+   ↓ auth session API flow > sends multipart bodies through the shared authenticated envelope boundary
+   ↓ auth session API flow > posts credentials, stores tokens, calls /auth/me/, and returns backend current user state
+   ↓ auth session API flow > does not store a session when login returns invalid credentials
+   ↓ auth session API flow > clears stored auth when /auth/me/ rejects an expired or invalid token
+   ↓ auth session API flow > posts the refresh token on logout and clears local auth state
+   ↓ member portal auth API flow > posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/
+   ↓ member portal auth API flow > calls portal activation and password reset endpoints using standard envelopes
+   ↓ member portal auth API flow > posts portal password changes with the stored bearer token
+   ↓ backend current-user mapping > uses roles and teams objects for display and derives compatibility codes from those arrays
+   ↓ backend current-user mapping > maps canonical backend permissions to existing prototype permission checks without granting unknown codes
+   ↓ backend current-user mapping > maps approval register and matrix permissions to resource-scoped navigation gates
+   ↓ backend current-user mapping > maps only the explicit tracer permission to the tracer workspace action
+   ↓ backend current-user mapping > keeps tracer lifecycle mapping isolated from every non-tracer prototype permission
+   ↓ backend current-user mapping > keeps zero-permission roles restricted to unrestricted routes
+   ↓ backend current-user mapping > maps zero-permission IT Head to a neutral backend staff role without auditor/admin/borrower behavior
+   ↓ backend current-user mapping > maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions
+   ↓ backend current-user mapping > maps unknown and empty-role current-user responses to neutral backend staff without prototype permissions
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/authSession.test.ts > auth session API flow > rejects pagination that changes while a canonical collection is loading
+AssertionError: expected TypeError: Cannot read properties of unde… to match object { code: 'MALFORMED_RESPONSE', …(1) }
+
+- Expected
++ Received
+
+- {
+-   "code": "MALFORMED_RESPONSE",
+-   "message": "The server changed pagination while the collection was loading.",
++ TypeError {
++   "message": "Cannot read properties of undefined (reading 'status')",
+  }
+
+ ❯ src/services/authSession.test.ts:168:5
+    166|       })));
+    167| 
+    168|     await expect(authenticatedAllPagesRequest<{ id: number }>(
+       |     ^
+    169|       page => `/api/v1/loan-accounts/?page=${page}&page_size=100`,
+    170|     )).rejects.toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 skipped (38)
+   Start at  21:41:34
+   Duration  441ms (transform 99ms, setup 0ms, collect 102ms, tests 9ms, environment 0ms, prepare 35ms)
+
+Exit code: 1

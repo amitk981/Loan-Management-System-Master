@@ -1,0 +1,17 @@
+Test selector: sfpcl-lms/src/services/servicingApi.test.ts::rejects an accrual batch whose backend results omit selected membership
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/servicingApi.test.ts -t rejects an accrual batch whose backend results omit selected membership
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ✓ src/services/servicingApi.test.ts (10 tests | 9 skipped) 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 9 skipped (10)
+   Start at  21:44:19
+   Duration  427ms (transform 99ms, setup 0ms, collect 102ms, tests 3ms, environment 0ms, prepare 34ms)
+
+Exit code: 0

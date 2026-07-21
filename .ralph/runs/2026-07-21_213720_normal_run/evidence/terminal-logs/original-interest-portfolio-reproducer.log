@@ -1,0 +1,8 @@
+Command: node .ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/interest_portfolio_completeness_probe.mjs
+Finding ID: AR-010-INTEREST-UI-001
+Root ID: ROOT-010-INTEREST-PORTFOLIO-COMPLETENESS
+Command contract: a portfolio-wide accrual must not submit only page 1 account ids.
+Loads only page 1/100: false
+Submits only loaded account ids: true
+PASS: original interest portfolio completeness reproducer is green.
+Exit code: 0

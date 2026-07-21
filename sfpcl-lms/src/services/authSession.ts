@@ -38,6 +38,13 @@ export interface PaginatedResult<T> {
   pagination: Pagination;
 }
 
+export interface CompletePaginatedResult<T> {
+  items: T[];
+  totalCount: number;
+  totalPages: number;
+  pageSize: number;
+}
+
 interface LoginData {
   access_token: string;
   refresh_token: string;
@@ -366,6 +373,46 @@ export const authenticatedPaginatedRequest = async <T>(path: string): Promise<Pa
     );
   }
   return { items: envelope.data, pagination: envelope.pagination };
+};
+
+export const authenticatedAllPagesRequest = async <T>(
+  pathForPage: (page: number) => string,
+): Promise<CompletePaginatedResult<T>> => {
+  const items: T[] = [];
+  let page = 1;
+  let firstPagination: Pagination | undefined;
+
+  while (true) {
+    const result = await authenticatedPaginatedRequest<T>(pathForPage(page));
+    firstPagination ??= result.pagination;
+    if (
+      result.pagination.page !== page
+      || result.pagination.page_size !== firstPagination.page_size
+      || result.pagination.total_count !== firstPagination.total_count
+      || result.pagination.total_pages !== firstPagination.total_pages
+    ) {
+      throw new AuthSessionError(
+        'MALFORMED_RESPONSE',
+        'The server changed pagination while the collection was loading.',
+      );
+    }
+    items.push(...result.items);
+    if (!result.pagination.has_next) {
+      if (items.length !== firstPagination.total_count) {
+        throw new AuthSessionError(
+          'MALFORMED_RESPONSE',
+          'The server returned only part of the paginated collection.',
+        );
+      }
+      return {
+        items,
+        totalCount: firstPagination.total_count,
+        totalPages: firstPagination.total_pages,
+        pageSize: firstPagination.page_size,
+      };
+    }
+    page += 1;
+  }
 };
 
 export const authenticatedMultipartRequest = async <T>(path: string, fields: Record<string, string | Blob>): Promise<T> => {

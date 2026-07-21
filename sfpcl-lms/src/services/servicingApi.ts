@@ -1,4 +1,5 @@
 import {
+  authenticatedAllPagesRequest,
   authenticatedPaginatedRequest,
   authenticatedRequest,
   type PaginatedResult,
@@ -279,6 +280,24 @@ export interface AccrualRunProjection {
   }>;
 }
 
+export interface PortfolioAccrualRunProjection extends AccrualRunProjection {
+  selection: {
+    loan_account_count: number;
+    batch_count: number;
+    completed_batches: number;
+  };
+}
+
+export class PortfolioAccrualError extends Error {
+  completedRun: PortfolioAccrualRunProjection;
+
+  constructor(message: string, completedRun: PortfolioAccrualRunProjection) {
+    super(message);
+    this.name = 'PortfolioAccrualError';
+    this.completedRun = completedRun;
+  }
+}
+
 export interface CapitalisationPreviewRow {
   loan_account_id: string;
   eligible: boolean;
@@ -359,6 +378,11 @@ export const fetchInterestInvoices = (page = 1, pageSize = 100) =>
     `/api/v1/interest-invoices/?page=${page}&page_size=${pageSize}`,
   );
 
+export const fetchAllInterestInvoices = () =>
+  authenticatedAllPagesRequest<InterestInvoiceProjection>(
+    page => `/api/v1/interest-invoices/?page=${page}&page_size=100`,
+  );
+
 export const generateInterestInvoice = (
   loanAccountId: string, financialYear: string, idempotencyKey: string,
 ) => authenticatedRequest<InterestInvoiceProjection>(
@@ -373,6 +397,62 @@ export const runInterestAccrual = (
   body: { accrual_month: accrualMonth, dry_run: false, loan_account_ids: loanAccountIds },
   headers: { 'Idempotency-Key': idempotencyKey },
 });
+
+export const runPortfolioInterestAccrual = async (
+  accrualMonth: string,
+  loanAccountIds: string[],
+  idempotencyKey: string,
+): Promise<PortfolioAccrualRunProjection> => {
+  const batches = Array.from(
+    { length: Math.ceil(loanAccountIds.length / 100) },
+    (_, index) => loanAccountIds.slice(index * 100, (index + 1) * 100),
+  );
+  const results: AccrualRunProjection['results'] = [];
+  for (const [index, batch] of batches.entries()) {
+    try {
+      const run = await runInterestAccrual(
+        accrualMonth,
+        batch,
+        `${idempotencyKey}:batch-${index + 1}-of-${batches.length}`,
+      );
+      if (
+        run.accrual_month !== accrualMonth
+        || run.dry_run !== false
+        || run.results.length !== batch.length
+        || run.results.some((result, resultIndex) => result.loan_account_id !== batch[resultIndex])
+      ) {
+        throw new Error('The backend returned incomplete accrual batch membership.');
+      }
+      results.push(...run.results);
+    } catch (error) {
+      const completedRun: PortfolioAccrualRunProjection = {
+        accrual_month: accrualMonth,
+        dry_run: false,
+        results,
+        selection: {
+          loan_account_count: loanAccountIds.length,
+          batch_count: batches.length,
+          completed_batches: index,
+        },
+      };
+      const reason = error instanceof Error ? error.message : 'The backend rejected the batch.';
+      throw new PortfolioAccrualError(
+        `Portfolio accrual stopped after ${results.length} of ${loanAccountIds.length} selected loans (${index} of ${batches.length} batches). ${reason}`,
+        completedRun,
+      );
+    }
+  }
+  return {
+    accrual_month: accrualMonth,
+    dry_run: false,
+    results,
+    selection: {
+      loan_account_count: loanAccountIds.length,
+      batch_count: batches.length,
+      completed_batches: batches.length,
+    },
+  };
+};
 
 export const previewInterestCapitalisations = (financialYear: string, asOfDate: string) =>
   authenticatedRequest<CapitalisationPreview>('/api/v1/interest-capitalisations/check/', {

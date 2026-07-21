@@ -5,11 +5,13 @@ import {
   canCapitaliseInterest,
   canGenerateAccrual,
   fetchDpdPortfolio,
+  fetchAllInterestInvoices,
   fetchInterestInvoices,
   fetchReminders,
   generateInterestInvoice,
   previewInterestCapitalisations,
   runInterestAccrual,
+  runPortfolioInterestAccrual,
   canPostAndAllocateRepayment,
   fetchLoanLedger,
   fetchRepaymentSchedule,
@@ -62,6 +64,35 @@ describe('servicing API module', () => {
     ]);
   });
 
+  it('loads complete invoice collections at 1, 100, and 101 records', async () => {
+    for (const count of [1, 100, 101]) {
+      const rows = Array.from({ length: count }, (_, index) => ({
+        ...invoice,
+        interest_invoice_id: `invoice-${index + 1}`,
+        invoice_number: `INV-${index + 1}`,
+      }));
+      const firstRows = rows.slice(0, 100);
+      const totalPages = count === 101 ? 2 : 1;
+      const fetchMock = vi.fn().mockResolvedValueOnce(ok(firstRows, {
+        page: 1, page_size: 100, total_count: count, total_pages: totalPages,
+        has_next: totalPages > 1, has_previous: false,
+      }));
+      if (count === 101) {
+        fetchMock.mockResolvedValueOnce(ok(rows.slice(100), {
+          page: 2, page_size: 100, total_count: 101, total_pages: 2,
+          has_next: false, has_previous: true,
+        }));
+      }
+      vi.stubGlobal('fetch', fetchMock);
+
+      await expect(fetchAllInterestInvoices()).resolves.toMatchObject({
+        items: rows,
+        totalCount: count,
+        totalPages,
+      });
+    }
+  });
+
   it('sends one caller-stable key for each canonical interest mutation', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(ok(invoice))
@@ -83,6 +114,79 @@ describe('servicing API module', () => {
     ]);
     expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
       accrual_month: '2026-06', dry_run: false, loan_account_ids: ['account-1'],
+    });
+  });
+
+  it('accrues all 101 explicitly selected loans in backend-authorised batches', async () => {
+    const loanAccountIds = Array.from({ length: 101 }, (_, index) => `account-${index + 1}`);
+    const firstResults = loanAccountIds.slice(0, 100).map(loan_account_id => ({
+      loan_account_id, outcome: 'created', persisted: true, interest_accrued_amount: '10.00',
+    }));
+    const finalResult = {
+      loan_account_id: 'account-101', outcome: 'existing', persisted: true,
+      interest_accrued_amount: '10.00',
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok({ accrual_month: '2026-06', dry_run: false, results: firstResults }))
+      .mockResolvedValueOnce(ok({ accrual_month: '2026-06', dry_run: false, results: [finalResult] }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(runPortfolioInterestAccrual(
+      '2026-06', loanAccountIds, 'portfolio-accrual-key',
+    )).resolves.toEqual({
+      accrual_month: '2026-06',
+      dry_run: false,
+      results: [...firstResults, finalResult],
+      selection: { loan_account_count: 101, batch_count: 2, completed_batches: 2 },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).loan_account_ids).toEqual(loanAccountIds.slice(0, 100));
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).loan_account_ids).toEqual(['account-101']);
+    expect(fetchMock.mock.calls.map(call => call[1].headers['Idempotency-Key'])).toEqual([
+      'portfolio-accrual-key:batch-1-of-2',
+      'portfolio-accrual-key:batch-2-of-2',
+    ]);
+  });
+
+  it('reports completed membership when a later portfolio accrual batch is denied', async () => {
+    const loanAccountIds = Array.from({ length: 101 }, (_, index) => `account-${index + 1}`);
+    const firstResults = loanAccountIds.slice(0, 100).map(loan_account_id => ({
+      loan_account_id, outcome: 'created', persisted: true, interest_accrued_amount: '10.00',
+    }));
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(ok({ accrual_month: '2026-06', dry_run: false, results: firstResults }))
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ success: false, error: { code: 'FORBIDDEN', message: 'Backend scope changed.' } }),
+      } as Response));
+
+    await expect(runPortfolioInterestAccrual(
+      '2026-06', loanAccountIds, 'portfolio-accrual-key',
+    )).rejects.toMatchObject({
+      message: 'Portfolio accrual stopped after 100 of 101 selected loans (1 of 2 batches). Backend scope changed.',
+      completedRun: {
+        results: firstResults,
+        selection: { loan_account_count: 101, batch_count: 2, completed_batches: 1 },
+      },
+    });
+  });
+
+  it('rejects an accrual batch whose backend results omit selected membership', async () => {
+    const loanAccountIds = Array.from({ length: 101 }, (_, index) => `account-${index + 1}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(ok({
+      accrual_month: '2026-06',
+      dry_run: false,
+      results: loanAccountIds.slice(0, 99).map(loan_account_id => ({
+        loan_account_id, outcome: 'created', persisted: true, interest_accrued_amount: '10.00',
+      })),
+    })));
+
+    await expect(runPortfolioInterestAccrual(
+      '2026-06', loanAccountIds, 'portfolio-accrual-key',
+    )).rejects.toMatchObject({
+      message: 'Portfolio accrual stopped after 0 of 101 selected loans (0 of 2 batches). The backend returned incomplete accrual batch membership.',
+      completedRun: { results: [], selection: { completed_batches: 0 } },
     });
   });
 

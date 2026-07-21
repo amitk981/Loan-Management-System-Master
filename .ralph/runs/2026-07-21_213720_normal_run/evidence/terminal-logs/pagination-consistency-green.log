@@ -1,0 +1,17 @@
+Test selector: sfpcl-lms/src/services/authSession.test.ts::rejects pagination that changes while a canonical collection is loading
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts -t rejects pagination that changes while a canonical collection is loading
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ✓ src/services/authSession.test.ts (38 tests | 37 skipped) 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 37 skipped (38)
+   Start at  21:41:55
+   Duration  418ms (transform 90ms, setup 0ms, collect 93ms, tests 3ms, environment 0ms, prepare 36ms)
+
+Exit code: 0

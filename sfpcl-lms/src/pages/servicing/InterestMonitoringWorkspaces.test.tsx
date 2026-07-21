@@ -3,30 +3,62 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import InterestManagement from '../interest/InterestManagement';
 import MonitoringDashboard from '../monitoring/MonitoringDashboard';
-import { fetchLoanAccounts } from '../../services/loanAccountsApi';
+import { fetchAllLoanAccounts, fetchLoanAccounts } from '../../services/loanAccountsApi';
 import * as servicing from '../../services/servicingApi';
 import { AuthSessionError } from '../../services/authSession';
 
 let permissions: string[] = [];
-vi.mock('../../contexts/RoleContext', () => ({ useRole: () => ({ currentUser: { permissions } }) }));
-vi.mock('../../services/loanAccountsApi', () => ({ fetchLoanAccounts: vi.fn() }));
-vi.mock('../../services/servicingApi', async importOriginal => ({ ...(await importOriginal<typeof servicing>()), fetchInterestInvoices: vi.fn(), generateInterestInvoice: vi.fn(), runInterestAccrual: vi.fn(), previewInterestCapitalisations: vi.fn(), capitaliseInterest: vi.fn(), fetchDpdPortfolio: vi.fn(), fetchReminders: vi.fn() }));
+let availableActions: string[] = [];
+vi.mock('../../contexts/RoleContext', () => ({ useRole: () => ({ currentUser: { permissions, availableActions } }) }));
+vi.mock('../../services/loanAccountsApi', () => ({ fetchLoanAccounts: vi.fn(), fetchAllLoanAccounts: vi.fn() }));
+vi.mock('../../services/servicingApi', async importOriginal => ({ ...(await importOriginal<typeof servicing>()), fetchInterestInvoices: vi.fn(), fetchAllInterestInvoices: vi.fn(), generateInterestInvoice: vi.fn(), runInterestAccrual: vi.fn(), runPortfolioInterestAccrual: vi.fn(), previewInterestCapitalisations: vi.fn(), capitaliseInterest: vi.fn(), fetchDpdPortfolio: vi.fn(), fetchReminders: vi.fn() }));
 
 const pagination = { page: 1, page_size: 100, total_count: 1, total_pages: 1, has_next: false, has_previous: false };
 const account = { loan_account_id: 'account-1', loan_account_number: 'LN-API-001', member: { member_id: 'member-1', display_name: 'Canonical Member' }, principal_outstanding: '300000.00', interest_outstanding: '27750.00', repayment_date: '2027-03-31' };
 
 beforeEach(() => {
-  vi.clearAllMocks(); permissions = ['finance.loan_account.read', 'monitoring.dpd.read'];
+  vi.clearAllMocks(); permissions = ['finance.loan_account.read', 'monitoring.dpd.read']; availableActions = [];
   vi.mocked(fetchLoanAccounts).mockResolvedValue({ items: [account], pagination } as never);
+  vi.mocked(fetchAllLoanAccounts).mockResolvedValue({ items: [account], totalCount: 1, totalPages: 1, pageSize: 100 } as never);
   vi.mocked(servicing.fetchInterestInvoices).mockResolvedValue({ items: [{ interest_invoice_id: 'invoice-1', loan_account_id: 'account-1', invoice_number: 'INV-API-001', financial_year: 'FY2026-27', interest_amount: '27750.00', invoice_status: 'issued', delivery_status: 'sent', invoice_date: '2027-03-31' }], pagination } as never);
+  vi.mocked(servicing.fetchAllInterestInvoices).mockResolvedValue({ items: [{ interest_invoice_id: 'invoice-1', loan_account_id: 'account-1', invoice_number: 'INV-API-001', financial_year: 'FY2026-27', interest_amount: '27750.00', invoice_status: 'issued', delivery_status: 'sent', invoice_date: '2027-03-31' }], totalCount: 1, totalPages: 1, pageSize: 100 } as never);
   vi.mocked(servicing.previewInterestCapitalisations).mockResolvedValue({ financial_year: 'FY2026-27', as_of_date: '2027-05-01', dry_run: true, results: [{ loan_account_id: 'account-1', eligible: true, reason_code: 'eligible_unpaid_interest', old_principal_amount: '300000.00', unpaid_interest_amount: '27750.00', new_principal_amount: '327750.00' }] });
 });
 afterEach(cleanup);
 
 describe('interest and monitoring workspaces', () => {
+  it('makes loan and invoice 101 reachable and accrues the disclosed complete selection', async () => {
+    const accounts = Array.from({ length: 101 }, (_, index) => ({
+      ...account,
+      loan_account_id: `account-${index + 1}`,
+      loan_account_number: `LN-API-${String(index + 1).padStart(3, '0')}`,
+    }));
+    const invoice101 = { interest_invoice_id: 'invoice-101', loan_account_id: 'account-101', invoice_number: 'INV-API-101', financial_year: 'FY2026-27', interest_amount: '101.00', invoice_status: 'issued', delivery_status: 'sent', invoice_date: '2027-03-31' };
+    availableActions = ['finance.accrual.bulk_generate'];
+    vi.mocked(fetchAllLoanAccounts).mockResolvedValue({ items: accounts, totalCount: 101, totalPages: 2, pageSize: 100 } as never);
+    vi.mocked(servicing.fetchAllInterestInvoices).mockResolvedValue({ items: [invoice101], totalCount: 1, totalPages: 1, pageSize: 100 } as never);
+    vi.mocked(servicing.runPortfolioInterestAccrual).mockResolvedValue({
+      accrual_month: '2026-06', dry_run: false,
+      results: [{ loan_account_id: 'account-101', outcome: 'created', persisted: true, interest_accrued_amount: '101.00' }],
+      selection: { loan_account_count: 101, batch_count: 2, completed_batches: 2 },
+    });
+
+    render(<InterestManagement />);
+    expect(await screen.findByText('101 canonical loan accounts across 2 pages; monthly accrual uses 2 backend-authorised batches.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yearly Invoices' }));
+    expect(screen.getByRole('option', { name: 'LN-API-101' })).toBeTruthy();
+    expect(screen.getByText('INV-API-101')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Monthly Interest Accrual' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run Monthly Accrual' }));
+    expect(await screen.findByText('₹101.00')).toBeTruthy();
+    expect(servicing.runPortfolioInterestAccrual).toHaveBeenCalledWith(
+      '2026-06', accounts.map(row => row.loan_account_id), expect.any(String),
+    );
+  });
+
   it('renders canonical interest values and uses the exact accrual permission', async () => {
-    permissions.push('finance.accrual.bulk_generate');
-    vi.mocked(servicing.runInterestAccrual).mockResolvedValue({ accrual_month: '2026-06', dry_run: false, results: [{ loan_account_id: 'account-1', outcome: 'created', persisted: true, interest_accrued_amount: '2312.50' }] });
+    permissions.push('finance.accrual.bulk_generate'); availableActions.push('finance.accrual.bulk_generate');
+    vi.mocked(servicing.runPortfolioInterestAccrual).mockResolvedValue({ accrual_month: '2026-06', dry_run: false, results: [{ loan_account_id: 'account-1', outcome: 'created', persisted: true, interest_accrued_amount: '2312.50' }], selection: { loan_account_count: 1, batch_count: 1, completed_batches: 1 } });
     render(<InterestManagement />);
     await screen.findByText('No canonical accrual run has been loaded.');
     fireEvent.click(screen.getByRole('button', { name: 'Yearly Invoices' }));
@@ -35,7 +67,30 @@ describe('interest and monitoring workspaces', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Monthly Interest Accrual' }));
     fireEvent.click(screen.getByRole('button', { name: 'Run Monthly Accrual' }));
     expect(await screen.findByText('₹2,312.50')).toBeTruthy();
-    expect(servicing.runInterestAccrual).toHaveBeenCalledWith('2026-06', ['account-1'], expect.any(String));
+    expect(servicing.runPortfolioInterestAccrual).toHaveBeenCalledWith('2026-06', ['account-1'], expect.any(String));
+  });
+
+  it('does not create mutation availability from a client permission array', async () => {
+    permissions.push('finance.accrual.bulk_generate', 'finance.interest_invoice.create', 'finance.interest_capitalise');
+    render(<InterestManagement />);
+    await screen.findByText('No canonical accrual run has been loaded.');
+    expect(screen.queryByRole('button', { name: 'Run Monthly Accrual' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Yearly Invoices' }));
+    expect(screen.queryByRole('button', { name: /Generate Invoice/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Interest Capitalisation' }));
+    expect(screen.queryByRole('button', { name: 'Preview Capitalisation' })).toBeNull();
+  });
+
+  it('shows completed rows and a visible error when a later accrual batch is denied', async () => {
+    availableActions.push('finance.accrual.bulk_generate');
+    const partial = { accrual_month: '2026-06', dry_run: false, results: [{ loan_account_id: 'account-1', outcome: 'created', persisted: true, interest_accrued_amount: '2312.50' }], selection: { loan_account_count: 101, batch_count: 2, completed_batches: 1 } };
+    vi.mocked(servicing.runPortfolioInterestAccrual).mockRejectedValue(new servicing.PortfolioAccrualError('Portfolio accrual stopped after 100 of 101 selected loans (1 of 2 batches). Backend scope changed.', partial));
+    render(<InterestManagement />);
+    await screen.findByText('No canonical accrual run has been loaded.');
+    fireEvent.click(screen.getByRole('button', { name: 'Run Monthly Accrual' }));
+    expect(await screen.findByText('Interest Operation Failed')).toBeTruthy();
+    expect(screen.getByText(/Portfolio accrual stopped after 100 of 101 selected loans/)).toBeTruthy();
+    expect(screen.getByText('₹2,312.50')).toBeTruthy();
   });
 
   it('renders backend DPD buckets and retained reminders and fails the whole view on one reminder read error', async () => {
@@ -51,7 +106,7 @@ describe('interest and monitoring workspaces', () => {
   });
 
   it('retains backend 403 and validation truth without optimistic interest state', async () => {
-    permissions.push('finance.interest_invoice.create', 'finance.interest_capitalise');
+    permissions.push('finance.interest_invoice.create', 'finance.interest_capitalise'); availableActions.push('finance.interest_invoice.create', 'finance.interest_capitalise');
     vi.mocked(servicing.generateInterestInvoice).mockRejectedValue(new AuthSessionError('FORBIDDEN', 'Configured invoice ownership is required.', 403));
     render(<InterestManagement />); await screen.findByText('No canonical accrual run has been loaded.');
     fireEvent.click(screen.getByRole('button', { name: 'Yearly Invoices' })); fireEvent.click(screen.getByRole('button', { name: /Generate Invoice/ }));

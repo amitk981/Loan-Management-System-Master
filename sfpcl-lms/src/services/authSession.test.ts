@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CANONICAL_TO_PROTOTYPE_PERMISSIONS,
+  authenticatedAllPagesRequest,
   authenticatedMultipartRequest,
   authenticatedPaginatedRequest,
   clearStoredAuthSession,
@@ -118,6 +119,58 @@ describe('auth session API flow', () => {
         }),
       }),
     );
+  });
+
+  it('loads all 101 canonical records through truthful continuation metadata', async () => {
+    storedAuthSession({ accessToken: 'list-access', refreshToken: 'list-refresh' });
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({ id: index + 1 }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response(200, {
+        success: true,
+        data: firstPage,
+        pagination: { page: 1, page_size: 100, total_count: 101, total_pages: 2, has_next: true, has_previous: false },
+      }))
+      .mockResolvedValueOnce(response(200, {
+        success: true,
+        data: [{ id: 101 }],
+        pagination: { page: 2, page_size: 100, total_count: 101, total_pages: 2, has_next: false, has_previous: true },
+      }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(authenticatedAllPagesRequest<{ id: number }>(
+      page => `/api/v1/loan-accounts/?page=${page}&page_size=100`,
+    )).resolves.toEqual({
+      items: [...firstPage, { id: 101 }],
+      totalCount: 101,
+      totalPages: 2,
+      pageSize: 100,
+    });
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://127.0.0.1:8000/api/v1/loan-accounts/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/loan-accounts/?page=2&page_size=100',
+    ]);
+  });
+
+  it('rejects pagination that changes while a canonical collection is loading', async () => {
+    storedAuthSession({ accessToken: 'list-access', refreshToken: 'list-refresh' });
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(response(200, {
+        success: true,
+        data: Array.from({ length: 100 }, (_, index) => ({ id: index + 1 })),
+        pagination: { page: 1, page_size: 100, total_count: 101, total_pages: 2, has_next: true, has_previous: false },
+      }))
+      .mockResolvedValueOnce(response(200, {
+        success: true,
+        data: Array.from({ length: 100 }, (_, index) => ({ id: index + 101 })),
+        pagination: { page: 2, page_size: 100, total_count: 201, total_pages: 3, has_next: true, has_previous: true },
+      })));
+
+    await expect(authenticatedAllPagesRequest<{ id: number }>(
+      page => `/api/v1/loan-accounts/?page=${page}&page_size=100`,
+    )).rejects.toMatchObject({
+      code: 'MALFORMED_RESPONSE',
+      message: 'The server changed pagination while the collection was loading.',
+    });
   });
 
   it.each([

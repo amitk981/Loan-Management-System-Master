@@ -1,0 +1,17 @@
+Test selector: sfpcl-lms/src/services/servicingApi.test.ts::accrues all 101 explicitly selected loans in backend-authorised batches
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/servicingApi.test.ts -t accrues all 101 explicitly selected loans in backend-authorised batches
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ✓ src/services/servicingApi.test.ts (8 tests | 7 skipped) 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 7 skipped (8)
+   Start at  21:42:53
+   Duration  424ms (transform 99ms, setup 0ms, collect 100ms, tests 3ms, environment 0ms, prepare 34ms)
+
+Exit code: 0

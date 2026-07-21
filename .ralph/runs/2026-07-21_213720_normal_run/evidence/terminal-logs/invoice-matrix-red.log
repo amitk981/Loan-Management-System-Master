@@ -1,0 +1,44 @@
+Test selector: sfpcl-lms/src/services/servicingApi.test.ts::loads complete invoice collections at 1, 100, and 101 records
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/servicingApi.test.ts -t loads complete invoice collections at 1, 100, and 101 records
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ❯ src/services/servicingApi.test.ts (11 tests | 1 failed | 10 skipped) 5ms
+   ↓ servicing API module > uses exact canonical permissions for interest mutations
+   ↓ servicing API module > reads canonical interest and monitoring projections without client calculations
+   × servicing API module > loads complete invoice collections at 1, 100, and 101 records 4ms
+     → fetchAllInterestInvoices is not a function
+   ↓ servicing API module > sends one caller-stable key for each canonical interest mutation
+   ↓ servicing API module > accrues all 101 explicitly selected loans in backend-authorised batches
+   ↓ servicing API module > reports completed membership when a later portfolio accrual batch is denied
+   ↓ servicing API module > rejects an accrual batch whose backend results omit selected membership
+   ↓ servicing API module > requires an active source role as well as every combined-action permission
+   ↓ servicing API module > reads schedule and ledger pages through authenticated standard pagination
+   ↓ servicing API module > delegates capture, SAP posting, and allocation to one backend-owned command
+   ↓ servicing API module > stops an exact capture replay before a second SAP or allocation mutation
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > loads complete invoice collections at 1, 100, and 101 records
+TypeError: fetchAllInterestInvoices is not a function
+ ❯ src/services/servicingApi.test.ts:88:20
+     86|       vi.stubGlobal('fetch', fetchMock);
+     87| 
+     88|       await expect(fetchAllInterestInvoices()).resolves.toMatchObject({
+       |                    ^
+     89|         items: rows,
+     90|         totalCount: count,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 skipped (11)
+   Start at  21:44:45
+   Duration  370ms (transform 97ms, setup 0ms, collect 99ms, tests 5ms, environment 0ms, prepare 32ms)
+
+Exit code: 1

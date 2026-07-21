@@ -1,0 +1,611 @@
+Test selector: sfpcl-lms/src/pages/servicing/InterestMonitoringWorkspaces.test.tsx::makes loan and invoice 101 reachable and accrues the disclosed complete selection
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/servicing/InterestMonitoringWorkspaces.test.tsx -t makes loan and invoice 101 reachable and accrues the disclosed complete selection
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ❯ src/pages/servicing/InterestMonitoringWorkspaces.test.tsx (4 tests | 1 failed | 3 skipped) 1032ms
+   × interest and monitoring workspaces > makes loan and invoice 101 reachable and accrues the disclosed complete selection 1031ms
+     → Unable to find an element with the text: 101 canonical loan accounts across 2 pages; monthly accrual uses 2 backend-authorised batches.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mInterest Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mCanonical monthly accrual, annual invoice, and post–30 April capitalisation records.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mMonthly Interest Accrual[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mYearly Invoices[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mInterest Capitalisation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"space-y-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-sm text-blue-800"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-trending-up"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M16 7h6v6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m22 7-8.5 8.5-5-5L2 17"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span>[39m
+            [0mAmounts, rates, days, outcomes, and SAP status below are returned by the backend interest owner.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 flex flex-wrap items-end gap-3"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"field-label"[39m
+                [33mfor[39m=[32m"accrual-month"[39m
+              [36m>[39m
+                [0mAccrual month[0m
+              [36m</label>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"field-input"[39m
+                [33mid[39m=[32m"accrual-month"[39m
+                [33mtype[39m=[32m"month"[39m
+                [33mvalue[39m=[32m"2026-06"[39m
+              [36m/>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mLoan[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mOutcome[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mInterest Accrued[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mPersisted[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mReason[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"table-cell py-10 text-center text-slate-400"[39m
+                  [33mcolspan[39m=[32m"5"[39m
+                [36m>[39m
+                  [0mNo canonical accrual run has been loaded.[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+      [36m</section>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mInterest Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mCanonical monthly accrual, annual invoice, and post–30 April capitalisation records.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mMonthly Interest Accrual[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mYearly Invoices[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mInterest Capitalisation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"space-y-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-sm text-blue-800"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-trending-up"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M16 7h6v6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m22 7-8.5 8.5-5-5L2 17"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span>[39m
+            [0mAmounts, rates, days, outcomes, and SAP status below are returned by the backend interest owner.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 flex flex-wrap items-end gap-3"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"field-label"[39m
+                [33mfor[39m=[32m"accrual-month"[39m
+              [36m>[39m
+                [0mAccrual month[0m
+              [36m</label>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"field-input"[39m
+                [33mid[39m=[32m"accrual-month"[39m
+                [33mtype[39m=[32m"month"[39m
+                [33mvalue[39m=[32m"2026-06"[39m
+              [36m/>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mLoan[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mOutcome[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mInterest Accrued[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mPersisted[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mReason[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"table-cell py-10 text-center text-slate-400"[39m
+                  [33mcolspan[39m=[32m"5"[39m
+                [36m>[39m
+                  [0mNo canonical accrual run has been loaded.[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+      [36m</section>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ↓ interest and monitoring workspaces > renders canonical interest values and uses the exact accrual permission
+   ↓ interest and monitoring workspaces > renders backend DPD buckets and retained reminders and fails the whole view on one reminder read error
+   ↓ interest and monitoring workspaces > retains backend 403 and validation truth without optimistic interest state
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/servicing/InterestMonitoringWorkspaces.test.tsx > interest and monitoring workspaces > makes loan and invoice 101 reachable and accrues the disclosed complete selection
+TestingLibraryElementError: Unable to find an element with the text: 101 canonical loan accounts across 2 pages; monthly accrual uses 2 backend-authorised batches.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mInterest Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mCanonical monthly accrual, annual invoice, and post–30 April capitalisation records.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mMonthly Interest Accrual[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mYearly Invoices[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mInterest Capitalisation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"space-y-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-sm text-blue-800"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-trending-up"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M16 7h6v6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m22 7-8.5 8.5-5-5L2 17"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span>[39m
+            [0mAmounts, rates, days, outcomes, and SAP status below are returned by the backend interest owner.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 flex flex-wrap items-end gap-3"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"field-label"[39m
+                [33mfor[39m=[32m"accrual-month"[39m
+              [36m>[39m
+                [0mAccrual month[0m
+              [36m</label>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"field-input"[39m
+                [33mid[39m=[32m"accrual-month"[39m
+                [33mtype[39m=[32m"month"[39m
+                [33mvalue[39m=[32m"2026-06"[39m
+              [36m/>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mLoan[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mOutcome[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mInterest Accrued[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mPersisted[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mReason[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"table-cell py-10 text-center text-slate-400"[39m
+                  [33mcolspan[39m=[32m"5"[39m
+                [36m>[39m
+                  [0mNo canonical accrual run has been loaded.[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+      [36m</section>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mInterest Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mCanonical monthly accrual, annual invoice, and post–30 April capitalisation records.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mMonthly Interest Accrual[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mYearly Invoices[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500"[39m
+          [36m>[39m
+            [0mInterest Capitalisation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"space-y-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-sm text-blue-800"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-trending-up"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M16 7h6v6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m22 7-8.5 8.5-5-5L2 17"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span>[39m
+            [0mAmounts, rates, days, outcomes, and SAP status below are returned by the backend interest owner.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100 flex flex-wrap items-end gap-3"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"field-label"[39m
+                [33mfor[39m=[32m"accrual-month"[39m
+              [36m>[39m
+                [0mAccrual month[0m
+              [36m</label>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"field-input"[39m
+                [33mid[39m=[32m"accrual-month"[39m
+                [33mtype[39m=[32m"month"[39m
+                [33mvalue[39m=[32m"2026-06"[39m
+              [36m/>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+              [36m>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mLoan[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mOutcome[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mInterest Accrued[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mPersisted[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"table-header text-left"[39m
+                [36m>[39m
+                  [0mReason[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"table-cell py-10 text-center text-slate-400"[39m
+                  [33mcolspan[39m=[32m"5"[39m
+                [36m>[39m
+                  [0mNo canonical accrual run has been loaded.[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+      [36m</section>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/servicing/InterestMonitoringWorkspaces.test.tsx:47:25
+     45| 
+     46|     render(<InterestManagement />);
+     47|     expect(await screen.findByText('101 canonical loan accounts across…
+       |                         ^
+     48|     fireEvent.click(screen.getByRole('button', { name: 'Yearly Invoice…
+     49|     expect(screen.getByRole('option', { name: 'LN-API-101' })).toBeTru…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 skipped (4)
+   Start at  21:45:43
+   Duration  1.96s (transform 144ms, setup 0ms, collect 289ms, tests 1.03s, environment 306ms, prepare 36ms)
+
+Exit code: 1

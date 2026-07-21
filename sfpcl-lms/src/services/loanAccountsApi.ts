@@ -1,4 +1,5 @@
 import {
+  authenticatedAllPagesRequest,
   authenticatedPaginatedRequest,
   authenticatedRequest,
 } from './authSession';
@@ -32,6 +33,12 @@ export interface LoanAccountProjection {
 export function fetchLoanAccounts(page = 1, pageSize = 20) {
   return authenticatedPaginatedRequest<LoanAccountProjection>(
     `/api/v1/loan-accounts/?page=${page}&page_size=${pageSize}`,
+  );
+}
+
+export function fetchAllLoanAccounts() {
+  return authenticatedAllPagesRequest<LoanAccountProjection>(
+    page => `/api/v1/loan-accounts/?page=${page}&page_size=100`,
   );
 }
 

@@ -1,0 +1,17 @@
+Test selector: sfpcl-lms/src/pages/servicing/InterestMonitoringWorkspaces.test.tsx::makes loan and invoice 101 reachable and accrues the disclosed complete selection
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/servicing/InterestMonitoringWorkspaces.test.tsx -t makes loan and invoice 101 reachable and accrues the disclosed complete selection
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_213720_normal_run/sfpcl-lms
+
+ ✓ src/pages/servicing/InterestMonitoringWorkspaces.test.tsx (4 tests | 3 skipped) 120ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 3 skipped (4)
+   Start at  21:47:18
+   Duration  888ms (transform 141ms, setup 0ms, collect 248ms, tests 120ms, environment 197ms, prepare 33ms)
+
+Exit code: 0
