@@ -19,47 +19,89 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
+## AR-010-INTEREST-UI-001 — portfolio accrual silently excludes scoped loans after the first 100
+
+Root: ROOT-010-INTEREST-PORTFOLIO-COMPLETENESS
+
+Severity: High
+Disposition: New
+Reviewed boundary: `33f5e5df...c7c81e92` (010MB)
+
+010MB renders one complete-looking “Run Monthly Accrual” action, but
+`InterestManagement.tsx` loads only `fetchLoanAccounts(1, 100)` and submits only those loaded ids to
+the bulk financial owner. The API contract says omitted ids mean the complete bounded scoped set,
+while explicit ids are selected batches of at most 100. A 101-loan portfolio therefore receives an
+ordinary success for only the first 100 without a page, continuation, exclusion warning, or second
+batch. The same page-one assumption truncates the selectable invoice/capitalisation population and
+invoice history. Existing component tests use one account, so they assert the incomplete call shape
+instead of the 1/100/101 boundary.
+
+The corrective must make the backend—not a browser page—the portfolio-membership owner, retain one
+truthful result for every scoped input, and add boundary tests that cannot mistake a selected batch
+for the complete portfolio. Client permission hints and mocked browser reads remain supporting UI
+debt under this same root; they must not authorize or overclaim the corrected financial action.
+Reproducer: `.ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/interest-portfolio-completeness.log`.
+
+## AR-010-SEARCH-001 — sensitive global-search inputs bypass their domain authority
+
+Root: ROOT-010-GLOBAL-SEARCH-SENSITIVE-AUTHORITY
+
+Severity: High
+Disposition: New
+Reviewed boundary: `33f5e5df...c7c81e92` (010N)
+
+The aggregate coordinator imports blank-cheque, SH-4, CDSL, bank, and SAP models directly and resolves
+their member ids before applying only ordinary member-read scope. The public probe uses the slice's
+own CFO fixture, which has global member read but no `security.package.read` or blank-cheque authority,
+and still resolves one member from an exact cheque number. Cheque numbers are High/hidden source data,
+and the source permission matrix gives CFO no blank-cheque read, so this leaks sensitive match
+existence across a domain authority boundary even though the response does not echo the number.
+
+The same root owns the aggregate's supporting scope drift: application candidates are capped before
+object access, independently authorised application/account groups cannot resolve borrower inputs
+without member-read, and raw sensitive queries remain duplicated in React state after submission.
+The corrective must use explicit domain-owned search facades, apply input authority and object scope
+before cap/count/page, and prove the denied-input/group/action matrix without retaining raw sensitive
+queries beyond the active request.
+Reproducer: `.ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/global-search-sensitive-authority.log`.
+
 ## AR-010-MIS-001 — quarterly MIS does not retain one authorised cutoff-owner decision
 
 Root: ROOT-010-MIS-AS-OF-OWNER
 
 Severity: High
 Disposition: Carried
-Reviewed boundary: `5c0aba87...283d9767` (010K3)
+Reviewed boundary: `33f5e5df...57423d00` (CR-015)
 
-010K3 closes current scope replay and uses a repeatable-read transaction, but that only makes one
-generation internally coherent. Its cutoff selector admits an invoice by `invoice_date` and then
-freezes the invoice's current mutable status without constraining the status decision by `issued_at`.
-A focused probe issues an older-dated invoice after the cutoff and a subsequently generated historic
-report records `issued` instead of the cutoff-time `draft` state. The permanent race matrix changes
-balances during generation but does not exercise this dated business transition.
+CR-015 changes current invoice-status serialization into `_invoice_status_at_cutoff`, but the helper
+checks `invoice.created_at`; the real `InterestInvoice` owner stores `generated_at`. The missing
+attribute therefore bypasses creation-time exclusion. A backdated invoice generated after 30 June is
+still present as `draft` in a later-generated 30 June report instead of `not_generated`. The permanent
+test uses a `SimpleNamespace` that also omits `generated_at`, so it proves only post-cutoff issuance of
+an already-existing invoice and masks the production field mismatch. The required before/cutoff/after
+source-transition matrix is absent.
 
-This root advances from ordinary generation 1 to generation 2. Because the reminder root grouped
-with it is already at its configured ordinary-generation cap, `CR-015` is the one terminal Epic 010
-owner finalizer and groups the immutable MIS source decision with the reminder and servicing workflow
-owners rather than adding another numeric leaf.
-Reproducer: `.ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/mis-owner.log`.
+This is executable recurrence after the single terminal finalizer, under the same stable root. It is
+grouped with the servicing-contract recurrence into the one owner-authorized bounded repair of
+`CR-015`; it is not generation 3 or a second finalizer.
+Reproducer: `.ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/mis-owner-recurrence.log`.
 
 ## AR-010-REMINDER-001 — reminder eligibility and delivery do not retain one serviceable decision
 
 Root: ROOT-010-REMINDER-DELIVERY-OWNER
 
 Severity: High
-Disposition: Carried
-Reviewed boundary: `5c0aba87...283d9767` (010K3)
+Disposition: Closed
+Reviewed boundary: `33f5e5df...57423d00` (CR-015)
 
-010K3 moves serviceability checking into dispatcher execution and closes scope/replay evidence, but
-the check still commits before the provider adapter is called. A deterministic probe lets that check
-return serviceable, commits a full repayment before it returns to the dispatcher, and observes one
-provider call. Row locks held by `cancel_unserviceable_delivery` therefore cannot protect the final
-check-to-side-effect gap. The permanent repayment test pays before the worker begins and misses this
-interleaving; its batch test also uses one row rather than the required 1/100/101 boundary.
-
-This root has used ordinary generations 1 (`010J2`) and 2 (`010K3`). The standing policy admits
-`CR-015` as its only Architecture Review Finalizer, grouping a claim/version/final-proof provider
-owner with the related MIS and servicing transaction owners. A recurrence after `CR-015` must fail
-closed rather than create another terminal or numeric leaf.
-Reproducer: `.ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/reminder-owner.log`.
+CR-015 holds the reminder job, reminder, loan account, member, and repayment-schedule sources while
+performing the final serviceability decision and provider effect. The current focused public
+regression replays the original repayment-after-check interleaving and observes zero provider calls
+plus a cancelled retained delivery. Its five-case PostgreSQL acceptance also passed twice in the
+product run. The distinct MIS timestamp recurrence and finalizer test-fixture breach remain under
+their own stable roots and do not reopen this provider-effect owner.
+Reproducer: `.ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/reminder-owner-reproducer.log`.
+Closure evidence: `.ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/reminder-owner-closure.log`.
 
 ## AR-010-DPD-001 — current DPD and historical policy evidence are not relationally bound
 
@@ -172,21 +214,21 @@ Root: ROOT-010-SERVICING-OWNER-SEAM
 
 Severity: High
 Disposition: Carried
-Reviewed boundary: `5c0aba87...283d9767` (010K2/010L/010MA)
+Reviewed boundary: `33f5e5df...57423d00` (CR-015)
 
-The carried public-owner seam now has a direct financial correctness symptom. 010MA implements one
-repayment attempt as three browser-owned calls. If capture commits and SAP posting fails, an exact-key
-retry receives the capture replay and returns immediately with `allocation: null`; SAP posting and
-allocation never resume even though the UI treats the attempt as a successful replay. A focused
-client probe reproduces that partial financial workflow.
+CR-015 adds the composite backend repayment command, statement replay owner, safe borrower CSV, and
+portal pagination, but its binding finalizer proof remains incomplete. Requirement 5 explicitly
+orders public builders instead of cross-`TestCase.setUp` fixtures. The permanent
+`Epic010DirectRepaymentOwnerRegressionTests` still imports `RepaymentAllocationApiTests`, constructs
+it manually, and calls `fixture.setUp()`. The closure evidence then maps AC-E10-F-5 to an unrelated
+reminder test. The same permanent file supplies only one exact replay, one empty CSV, and one
+synthetic invoice assertion rather than the promised repayment crash/concurrency/conflict, concurrent
+statement, full MIS transition, and public 1/100/101 matrices.
 
-Related Medium seam debt remains: statement creation has no concurrent equal-key ownership proof and
-exposes staff/internal fields in borrower CSV; the portal silently consumes only the first 100 rows;
-and 010K3 tests still call other `TestCase.setUp` methods and omit 1/100/101 batch evidence. `CR-015`
-groups these at the same Epic 010 transaction/read boundary with a server-owned resumable repayment
-decision and public, paginated, borrower-safe projections. This is a severity escalation of the
-stable carried root, not a new finding or a charge against another root's history.
-Reproducer: `.ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/servicing-seam.log`.
+This is a binding-contract recurrence after `CR-015`, not a new root. It is grouped with the MIS
+recurrence into the one bounded same-finalizer repair, which must replay the original financial probe
+and prove every original acceptance ID rather than substituting another narrow proxy.
+Reproducer: `.ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/servicing-seam-recurrence.log`.
 
 ## Targeted closure review 2026-07-19_193824_architecture_review — Epic 009 generation 2
 

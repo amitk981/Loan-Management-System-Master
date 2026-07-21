@@ -318,22 +318,22 @@
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-21_183043_repair",
+  "last_run_id": "2026-07-21_202321_architecture_review",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 0,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
   "architecture_review_interval": 4,
-  "architecture_review_clean_streak": 1,
+  "architecture_review_clean_streak": 0,
   "last_architecture_review_metrics": {
     "findings_closed": 1,
     "new_critical": 0,
-    "new_high": 0,
+    "new_high": 2,
     "new_medium": 0,
     "new_low": 0,
-    "corrective_slices_added": 1
+    "corrective_slices_added": 3
   },
   "last_architecture_review_finalizer": {
     "epic": "010",
@@ -346,10 +346,74 @@
     "slice_id": "CR-015-epic-010-terminal-servicing-owner-finalizer",
     "run_id": "2026-07-21_154238_repair"
   },
-  "architecture_review_root_generations": {},
+  "architecture_review_root_generations": {
+    "ROOT-010-INTEREST-PORTFOLIO-COMPLETENESS": {
+      "epic": "010",
+      "generation": 1,
+      "corrective_slice": "010N3",
+      "finding_id": "AR-010-INTEREST-UI-001",
+      "severity": "High"
+    },
+    "ROOT-010-GLOBAL-SEARCH-SENSITIVE-AUTHORITY": {
+      "epic": "010",
+      "generation": 1,
+      "corrective_slice": "010N4",
+      "finding_id": "AR-010-SEARCH-001",
+      "severity": "High"
+    }
+  },
   "architecture_review_terminal_roots": [
+    "ROOT-010-MIS-AS-OF-OWNER",
     "ROOT-010-RATE-VERSION-OWNER",
-    "ROOT-010-REMINDER-DELIVERY-OWNER"
+    "ROOT-010-REMINDER-DELIVERY-OWNER",
+    "ROOT-010-SERVICING-OWNER-SEAM"
   ],
-  "architecture_review_due_reason": "epic_boundary:010->003"
+  "architecture_review_terminal_root_records": {
+    "ROOT-010-MIS-AS-OF-OWNER": {
+      "epic": "010",
+      "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
+      "root_ids": [
+        "ROOT-010-MIS-AS-OF-OWNER",
+        "ROOT-010-REMINDER-DELIVERY-OWNER",
+        "ROOT-010-SERVICING-OWNER-SEAM"
+      ],
+      "slice_id": "CR-015-epic-010-terminal-servicing-owner-finalizer",
+      "run_id": "2026-07-21_154238_repair"
+    },
+    "ROOT-010-REMINDER-DELIVERY-OWNER": {
+      "epic": "010",
+      "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
+      "root_ids": [
+        "ROOT-010-MIS-AS-OF-OWNER",
+        "ROOT-010-REMINDER-DELIVERY-OWNER",
+        "ROOT-010-SERVICING-OWNER-SEAM"
+      ],
+      "slice_id": "CR-015-epic-010-terminal-servicing-owner-finalizer",
+      "run_id": "2026-07-21_154238_repair"
+    },
+    "ROOT-010-SERVICING-OWNER-SEAM": {
+      "epic": "010",
+      "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
+      "root_ids": [
+        "ROOT-010-MIS-AS-OF-OWNER",
+        "ROOT-010-REMINDER-DELIVERY-OWNER",
+        "ROOT-010-SERVICING-OWNER-SEAM"
+      ],
+      "slice_id": "CR-015-epic-010-terminal-servicing-owner-finalizer",
+      "run_id": "2026-07-21_154238_repair"
+    }
+  },
+  "architecture_review_terminal_repair_pending": {
+    "epic": "010",
+    "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
+    "root_ids": [
+      "ROOT-010-MIS-AS-OF-OWNER",
+      "ROOT-010-SERVICING-OWNER-SEAM"
+    ],
+    "finalizer_slice": "CR-015-epic-010-terminal-servicing-owner-finalizer",
+    "corrective_slice": "010N2",
+    "attempt": 1,
+    "status": "pending"
+  },
+  "architecture_review_due_reason": "terminal_repair:ROOT-010-REMINDER-DELIVERY-OWNER"
 }

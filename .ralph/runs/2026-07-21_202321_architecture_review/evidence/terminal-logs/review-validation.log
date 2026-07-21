@@ -1,0 +1,34 @@
+Architecture review candidate validation
+Run ID: 2026-07-21_202321_architecture_review
+
+Runtime contract command:
+source scripts/lib/ralph-runtime-capabilities.sh
+source scripts/lib/ralph-postgresql-acceptance.sh
+ralph_validate_slice_runtime_requirements <each untracked corrective slice>
+ralph_validate_trusted_postgresql_acceptance docs/slices/010N2-epic-010-terminal-servicing-recurrence-repair.md
+
+PASS runtime contract: docs/slices/010N2-epic-010-terminal-servicing-recurrence-repair.md
+PASS trusted PostgreSQL contract: docs/slices/010N2-epic-010-terminal-servicing-recurrence-repair.md
+PASS runtime contract: docs/slices/010N3-interest-portfolio-completeness-closure.md
+PASS runtime contract: docs/slices/010N4-global-search-sensitive-authority-closure.md
+
+Architecture semantic command:
+source scripts/lib/ralph-architecture-review.sh
+ralph_validate_architecture_review_change_scope "$PWD" 2026-07-21_202321_architecture_review
+ralph_validate_architecture_review_manifest <packet> "$PWD" 1 0 2 0 0
+ralph_architecture_review_new_corrective_count "$PWD"
+ralph_validate_architecture_review_admission 0 2 3 0
+ralph_validate_architecture_review_convergence .ralph/config.yaml .ralph/state.json <packet> docs/slices docs/working/HIGH_RISK_APPROVALS.md
+
+Metrics: 1 0 2 0 0 3
+PASS documentation-only change scope
+PASS validated 5 stable finding manifest rows
+PASS 3 executable Not Started corrective slice contracts observed
+PASS Critical/High admission
+PASS bounded root convergence, including one same-finalizer recurrence repair
+
+Diff command:
+git diff --check
+
+PASS no whitespace errors
+Exit code: 0

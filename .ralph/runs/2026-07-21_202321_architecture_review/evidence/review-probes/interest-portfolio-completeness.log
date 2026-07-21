@@ -1,0 +1,11 @@
+Finding ID: AR-010-INTEREST-UI-001
+Root ID: ROOT-010-INTEREST-PORTFOLIO-COMPLETENESS
+
+Command:
+node .ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/interest_portfolio_completeness_probe.mjs
+
+Command contract: a portfolio-wide accrual must not submit only page 1 account ids.
+Loads only page 1/100: true
+Submits only loaded account ids: true
+Error: FAIL: the one-click monthly accrual silently omits scoped loan 101 and later.
+Exit code: 1

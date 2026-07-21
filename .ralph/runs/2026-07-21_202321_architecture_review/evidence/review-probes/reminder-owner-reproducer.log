@@ -1,0 +1,11 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+Reviewed product: 010K3 (`00e537d3`), historical reproducer retained from run `2026-07-21_134356_architecture_review`.
+
+Command: PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/probes.py ReminderDeliveryGapProbe
+
+FAIL: the original probe expected zero provider calls after repayment won the pre-provider gap and observed one (`AssertionError: 1 != 0`).
+Exit code: 1
+
+This file binds the prior executable RED signal to the current closure review. The current product
+closure is independently rerun in `reminder-owner-closure.log`.

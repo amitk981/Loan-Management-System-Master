@@ -1,0 +1,17 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010ReminderOwnerRegressionTests.test_repayment_after_check_but_before_adapter_prevents_provider_call --verbosity 1
+
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.259s
+
+OK
+Destroying test database for alias 'default'...
+1 passed
+Exit code: 0

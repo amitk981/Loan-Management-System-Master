@@ -1,0 +1,10 @@
+Finding ID: AR-010-MIS-001
+Root ID: ROOT-010-MIS-AS-OF-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/mis_generated_at_cutoff_probe.py
+
+Observed cutoff status: draft
+Expected cutoff status: not_generated
+AssertionError: FAIL: CR-015 reads nonexistent InterestInvoice.created_at and admits an invoice generated after the historical cutoff.
+Exit code: 1

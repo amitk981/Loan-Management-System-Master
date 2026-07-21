@@ -1,0 +1,13 @@
+Finding ID: AR-010-SEARCH-001
+Root ID: ROOT-010-GLOBAL-SEARCH-SENSITIVE-AUTHORITY
+
+Command:
+PYTHONPATH="$PWD/.ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes:$PWD" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test global_search_sensitive_authority_probe.SensitiveSearchAuthorityProbe.test_cfo_without_blank_cheque_authority_cannot_resolve_owner_by_cheque --verbosity 1
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FAIL: test_cfo_without_blank_cheque_authority_cannot_resolve_owner_by_cheque
+AssertionError: 1 != 0 : FAIL: an actor without blank-cheque authority resolved the cheque's member owner.
+Ran 1 test in 0.028s
+FAILED (failures=1)
+Exit code: 1
