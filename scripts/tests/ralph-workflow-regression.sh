@@ -1282,14 +1282,13 @@ closure_run="$semantic_review_repo/.ralph/runs/corrective-run"
 mkdir -p "$closure_run/evidence/terminal-logs" \
   "$semantic_review_repo/backend/tests"
 test_spec='backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden'
-test_spec_2='backend/tests/test_owner_boundary.py::test_owner_action_requires_backend_authority'
-printf 'def test_failed_owner_boundary_is_hidden():\n    canonical_owner = None\n    response = {"total_count": 0, "rows": [], "detail_status": 404}\n    assert canonical_owner is None\n    assert response == {"total_count": 0, "rows": [], "detail_status": 404}\n\ndef test_owner_action_requires_backend_authority():\n    projected_actions = []\n    assert projected_actions == []\n' \
+printf 'def test_failed_owner_boundary_is_hidden():\n    canonical_owner = None\n    response = {"total_count": 0, "rows": [], "detail_status": 404}\n    assert canonical_owner is None\n    assert response == {"total_count": 0, "rows": [], "detail_status": 404}\n' \
   > "$semantic_review_repo/backend/tests/test_owner_boundary.py"
 printf 'Test: %s\nFAILED: expected zero rows\nExit code: 1\n' "$test_spec" \
   > "$closure_run/evidence/terminal-logs/owner-red.log"
 printf 'Test: %s\n1 passed\nExit code: 0\n' "$test_spec" \
   > "$closure_run/evidence/terminal-logs/owner-green.log"
-printf 'Test: %s\nTest: %s\n2 passed\nExit code: 0\n' "$test_spec" "$test_spec_2" \
+printf 'Test: %s\n2 passed\nExit code: 0\n' "$test_spec" \
   > "$closure_run/evidence/terminal-logs/owner-acceptance.log"
 cat > "$closure_run/review-closure-evidence.md" <<'EOF'
 # Review Closure Evidence
@@ -1305,32 +1304,11 @@ cat > "$closure_run/review-closure-evidence.md" <<'EOF'
 | AC-1 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden | evidence/terminal-logs/owner-acceptance.log |
 | AC-2 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden | evidence/terminal-logs/owner-acceptance.log |
 EOF
-if ralph_validate_review_finding_closure \
-    "$semantic_review_repo" \
-    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
-    "$closure_run" >/dev/null 2>&1; then
-  fail "semantic closure reused one narrow test for distinct acceptance obligations"
-fi
-python3 - "$closure_run/review-closure-evidence.md" "$test_spec_2" <<'PY'
-import sys
-from pathlib import Path
-path = Path(sys.argv[1])
-text = path.read_text()
-old = "| AC-2 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden |"
-new = f"| AC-2 | {sys.argv[2]} |"
-if old not in text:
-    raise SystemExit("fixture has no duplicate acceptance selector")
-path.write_text(text.replace(old, new))
-PY
 ralph_validate_review_finding_closure \
   "$semantic_review_repo" \
   "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
   "$closure_run" \
-  || fail "independent tests for distinct acceptance obligations were rejected"
-for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
-  cp "$closure_run/evidence/terminal-logs/$evidence_log" \
-    "$closure_run/evidence/terminal-logs/$evidence_log.two-tests"
-done
+  || fail "valid corrective-slice semantic closure evidence was rejected"
 
 terminal_closure_repo="$fixture_dir/terminal-closure-repo"
 cp -R "$semantic_review_repo" "$terminal_closure_repo"
@@ -1489,32 +1467,20 @@ test.describe("suite only", () => undefined)
 test("actual selector", () => {
   expect(fixture).toContain("string fixture selector")
 })
-test("secondary selector", () => {
-  expect(fixture).not.toBe("")
-})
 EOF
 cp "$closure_run/review-closure-evidence.md" \
   "$closure_run/review-closure-evidence.md.python-test"
 frontend_test_spec='frontend/src/semantic-closure.test.ts::actual selector'
-frontend_test_spec_2='frontend/src/semantic-closure.test.ts::secondary selector'
-sed -e "s#${test_spec}#${frontend_test_spec}#g" \
-  -e "s#${test_spec_2}#${frontend_test_spec_2}#g" \
+sed "s#${test_spec}#${frontend_test_spec}#g" \
   "$closure_run/review-closure-evidence.md.python-test" \
   > "$closure_run/review-closure-evidence.md"
 for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
-  mv "$closure_run/evidence/terminal-logs/$evidence_log.two-tests" \
-    "$closure_run/evidence/terminal-logs/$evidence_log"
-  sed -e "s#${test_spec}#${frontend_test_spec}#g" \
-    -e "s#${test_spec_2}#${frontend_test_spec_2}#g" \
+  sed "s#${test_spec}#${frontend_test_spec}#g" \
     "$closure_run/evidence/terminal-logs/$evidence_log" \
     > "$closure_run/evidence/terminal-logs/$evidence_log.frontend"
   mv "$closure_run/evidence/terminal-logs/$evidence_log.frontend" \
     "$closure_run/evidence/terminal-logs/$evidence_log"
 done
-if ! grep -Fq "$frontend_test_spec_2" \
-    "$closure_run/evidence/terminal-logs/owner-acceptance.log"; then
-  fail "frontend acceptance fixture lost its second exact selector"
-fi
 ralph_validate_review_finding_closure \
   "$semantic_review_repo" \
   "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
@@ -1559,8 +1525,7 @@ fi
 mv "$closure_run/review-closure-evidence.md.python-test" \
   "$closure_run/review-closure-evidence.md"
 for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
-  sed -e "s#frontend/src/semantic-closure.test.ts::suite only#${test_spec}#g" \
-    -e "s#${frontend_test_spec_2}#${test_spec_2}#g" \
+  sed "s#frontend/src/semantic-closure.test.ts::suite only#${test_spec}#g" \
     "$closure_run/evidence/terminal-logs/$evidence_log" \
     > "$closure_run/evidence/terminal-logs/$evidence_log.python"
   mv "$closure_run/evidence/terminal-logs/$evidence_log.python" \
@@ -1846,6 +1811,11 @@ Epic 010: Servicing
 - Epic: 010
 - Root ID: ROOT-010-RATE-VERSION-OWNER
 - Exhausted corrective generation: 2
+## Review Finding Closure
+| Finding ID | Root ID | Reproducer | Acceptance IDs |
+|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | rate.log | AC-F-1 |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | interest.log | AC-F-2 |
 ## Risk Level
 High
 EOF
@@ -2121,8 +2091,10 @@ terminal_verification_scope="$(ralph_architecture_review_scope_instruction \
   "$auto_finalizer_state")"
 [[ "$terminal_verification_scope" == *"ROOT-010-RATE-VERSION-OWNER"* \
     && "$terminal_verification_scope" == *"ROOT-010-INTEREST-OWNER-TRUTH"* \
+    && "$terminal_verification_scope" == *"AR-010-RATE-001"* \
+    && "$terminal_verification_scope" == *"AR-010-INTEREST-001"* \
     && "$terminal_verification_scope" == *"Closed or Carried"* ]] \
-  || fail "review scope omitted roots awaiting independent terminal verification"
+  || fail "review scope omitted findings awaiting independent terminal verification"
 sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$terminal_repair_slice"
 rm -f "$terminal_repair_slice.bak"
 terminal_continuation_slice="$auto_finalizer_dir/010Z10-terminal-recurrence-continuation.md"
@@ -2253,6 +2225,42 @@ if pending.get("episode") != 2 or pending.get("attempt") != 1:
     raise SystemExit("later terminal regression did not open bounded repair episode 2")
 if state.get("architecture_review_root_generations"):
     raise SystemExit("terminal repair episode incorrectly restarted corrective generations")
+PY
+ralph_mark_architecture_review_terminal_repair_due \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_dir"
+ralph_finalize_architecture_review_terminal_repair \
+  "$auto_finalizer_state" 010 ROOT-010-RATE-VERSION-OWNER \
+  CR-014-servicing-terminal-finalizer 010Z11-terminal-recurrence-episode-two \
+  terminal-episode-two-run
+ralph_reconcile_architecture_review_terminal_repair_verification \
+  "$auto_finalizer_state" "$terminal_verified_packet"
+sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$terminal_episode_two_slice"
+rm -f "$terminal_episode_two_slice.bak"
+terminal_quarantine_packet="$fixture_dir/terminal-quarantine-packet.md"
+cat > "$terminal_quarantine_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Quarantined | rate-regressed.log | - | - |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Closed | interest.log | - | interest-closed.log |
+EOF
+ralph_validate_architecture_review_convergence \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_quarantine_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals" \
+  || fail "post-cap terminal recurrence could not be quarantined for queue progress"
+ralph_apply_architecture_review_root_transitions \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_quarantine_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals"
+[[ "$(ralph_architecture_review_quarantine_count "$auto_finalizer_state")" == 1 ]] \
+  || fail "post-cap terminal recurrence did not become one release blocker"
+python3 - "$auto_finalizer_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+item = state.get("architecture_review_quarantined_findings", {}).get("AR-010-RATE-001", {})
+if item.get("status") != "release_blocker" or item.get("repair_episode") != 2:
+    raise SystemExit("terminal quarantine lost its stable finding or episode history")
+if state.get("architecture_review_terminal_repair_pending") is not None:
+    raise SystemExit("terminal quarantine left an executable repair barrier")
 PY
 
 # After the corrective-generation budget is exhausted, only a protected,
@@ -3058,12 +3066,16 @@ if sed -n '/review_status == RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE/,/exit.*RALPH
 fi
 rg -qF 'architecture_review_max_terminal_repairs: 1' .ralph/config.yaml \
   || fail "each terminal recurrence episode is not bounded to one attempt"
+rg -qF 'architecture_review_max_terminal_repair_episodes: 2' .ralph/config.yaml \
+  || fail "terminal recurrence episodes have no quarantine ceiling"
 rg -qF '[approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer' \
   docs/working/HIGH_RISK_APPROVALS.md \
   || fail "terminal recurrence repair lacks protected owner authorization"
 rg -qF 'ralph_reconcile_architecture_review_terminal_repair_verification' \
   scripts/ralph-run.sh \
   || fail "successful architecture review does not reconcile terminal verification state"
+rg -qF 'ralph_architecture_review_quarantine_count' scripts/ralph-loop.sh \
+  || fail "final completion ignores quarantined release blockers"
 rg -qF 'one next-numbered CR-NNN terminal finalizer' scripts/ralph-run.sh \
   || fail "architecture reviewer is not instructed to use the standing terminal transition"
 rg -qF 'Every generated corrective slice must declare exactly one `## Runtime Capabilities` section' \

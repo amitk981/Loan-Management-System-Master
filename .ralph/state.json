@@ -380,6 +380,20 @@
         "ROOT-010-REMINDER-DELIVERY-OWNER",
         "ROOT-010-SERVICING-OWNER-SEAM"
       ],
+      "finding_roots": [
+        {
+          "finding_id": "AR-010-MIS-001",
+          "root_id": "ROOT-010-MIS-AS-OF-OWNER"
+        },
+        {
+          "finding_id": "AR-010-REMINDER-001",
+          "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER"
+        },
+        {
+          "finding_id": "AR-010-SERVICING-SEAM-001",
+          "root_id": "ROOT-010-SERVICING-OWNER-SEAM"
+        }
+      ],
       "slice_id": "CR-015-epic-010-terminal-servicing-owner-finalizer",
       "run_id": "2026-07-21_154238_repair"
     },
@@ -431,6 +445,20 @@
       "ROOT-010-MIS-AS-OF-OWNER",
       "ROOT-010-REMINDER-DELIVERY-OWNER",
       "ROOT-010-SERVICING-OWNER-SEAM"
+    ],
+    "finding_roots": [
+      {
+        "finding_id": "AR-010-MIS-001",
+        "root_id": "ROOT-010-MIS-AS-OF-OWNER"
+      },
+      {
+        "finding_id": "AR-010-REMINDER-001",
+        "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER"
+      },
+      {
+        "finding_id": "AR-010-SERVICING-SEAM-001",
+        "root_id": "ROOT-010-SERVICING-OWNER-SEAM"
+      }
     ],
     "finalizer_slice": "CR-015-epic-010-terminal-servicing-owner-finalizer",
     "corrective_slice": "010N2",

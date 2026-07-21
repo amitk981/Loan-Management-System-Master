@@ -108,6 +108,9 @@ run:
   # the episode; a later real regression opens a new audited episode on the
   # same stable roots instead of restarting corrective generations.
   architecture_review_max_terminal_repairs: 1
+  # After this many independently verified episodes, a later recurrence is
+  # quarantined as a release blocker so unrelated product slices can finish.
+  architecture_review_max_terminal_repair_episodes: 2
 
 limits:
   # Enforced by ralph-validate.sh (excluding .ralph/ bookkeeping). Sized so a

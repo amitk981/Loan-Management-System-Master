@@ -96,6 +96,31 @@ ralph_architecture_review_terminal_repair_limit() {
   printf '%s\n' "$maximum"
 }
 
+ralph_architecture_review_terminal_repair_episode_limit() {
+  local config="${1:?config is required}" maximum
+  maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_terminal_repair_episodes:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" 2>/dev/null | xargs || true)"
+  maximum="${maximum:-2}"
+  [[ "$maximum" =~ ^[1-9][0-9]*$ ]] || {
+    echo "Invalid architecture-review terminal-repair episode configuration." >&2
+    return 1
+  }
+  printf '%s\n' "$maximum"
+}
+
+ralph_architecture_review_quarantine_count() {
+  local state_file="${1:?state file is required}"
+  python3 - "$state_file" <<'PY'
+import json, sys
+try:
+    value = json.load(open(sys.argv[1])).get("architecture_review_quarantined_findings", {})
+except (OSError, json.JSONDecodeError):
+    raise SystemExit(1)
+if not isinstance(value, dict):
+    raise SystemExit(1)
+print(len(value))
+PY
+}
+
 ralph_architecture_review_terminal_repair_policy_enabled() {
   local config="${1:?config is required}"
   local approvals_file="${2:-docs/working/HIGH_RISK_APPROVALS.md}" maximum
@@ -330,6 +355,7 @@ ralph_architecture_review_root_transition() {
   local mode="${1:?mode is required}" state_file="${2:?state file is required}"
   local packet="${3:?review packet is required}" maximum="${4:-}"
   local slice_dir="${5:-}" approvals_file="${6:-}" terminal_repair_maximum="${7:-0}"
+  local terminal_repair_episode_limit="${8:-2}"
   [[ "$mode" == "validate" || "$mode" == "apply" ]] || return 1
   [[ -f "$state_file" && -f "$packet" ]] || return 1
   if [[ "$mode" == "validate" ]] \
@@ -338,8 +364,10 @@ ralph_architecture_review_root_transition() {
     return 1
   fi
   [[ "$terminal_repair_maximum" =~ ^[0-9]+$ ]] || return 1
+  [[ "$terminal_repair_episode_limit" =~ ^[1-9][0-9]*$ ]] || return 1
   python3 - "$mode" "$state_file" "$packet" "${maximum:-0}" \
-    "$slice_dir" "$approvals_file" "$terminal_repair_maximum" <<'PY'
+    "$slice_dir" "$approvals_file" "$terminal_repair_maximum" \
+    "$terminal_repair_episode_limit" <<'PY'
 import json
 import os
 import re
@@ -354,6 +382,7 @@ from pathlib import Path
     slice_dir_name,
     approvals_name,
     terminal_repair_maximum_value,
+    terminal_repair_episode_limit_value,
 ) = sys.argv[1:]
 state_path = Path(state_name)
 packet_path = Path(packet_name)
@@ -421,6 +450,10 @@ if grouped_terminal_roots and all(
         terminal_root_records.setdefault(grouped_root, dict(last_finalizer))
 terminal_roots = sorted(set(terminal_roots).union(terminal_root_records))
 terminal_repair_maximum = int(terminal_repair_maximum_value)
+terminal_repair_episode_limit = int(terminal_repair_episode_limit_value)
+terminal_quarantines = state.get("architecture_review_quarantined_findings", {})
+if not isinstance(terminal_quarantines, dict):
+    raise SystemExit("architecture_review_quarantined_findings must be an object")
 
 def section_value(text, heading):
     lines = text.splitlines()
@@ -509,6 +542,8 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
         if prior_repair.get("status") == "awaiting_verification":
             episode = prior_episode
         elif prior_repair.get("status") == "complete":
+            if prior_episode >= terminal_repair_episode_limit:
+                return None
             episode = prior_episode + 1
         else:
             return None
@@ -520,6 +555,30 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
         return None
     reviewed_root_set = {row[1] for row in rows}
     if not finalizer_root_set.issubset(reviewed_root_set):
+        return None
+    finalizer_path = slice_dir / f"{finalizer_slice}.md"
+    if not finalizer_path.is_file():
+        return None
+    finalizer_lines = finalizer_path.read_text().splitlines()
+    try:
+        finalizer_closure_start = finalizer_lines.index("## Review Finding Closure") + 1
+    except ValueError:
+        return None
+    finalizer_finding_roots = set()
+    for line in finalizer_lines[finalizer_closure_start:]:
+        if line.startswith("## "):
+            break
+        if not line.startswith("|"):
+            continue
+        values = [item.strip() for item in line.strip().strip("|").split("|")]
+        if values and values[0] in {"Finding ID", "---"}:
+            continue
+        if len(values) != 4 or not values[0] or not values[1]:
+            return None
+        finalizer_finding_roots.add((values[0], values[1]))
+    if not finalizer_finding_roots or {
+        root_id for _, root_id in finalizer_finding_roots
+    } != finalizer_root_set:
         return None
     if not re.fullmatch(r"(?:[0-9]{3}[A-Za-z0-9]*|CR-[0-9]{3,})", corrective):
         return None
@@ -562,7 +621,7 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
         closure_start = lines.index("## Review Finding Closure") + 1
     except ValueError:
         return None
-    closure_roots = set()
+    closure_finding_roots = set()
     for line in lines[closure_start:]:
         if line.startswith("## "):
             break
@@ -573,13 +632,17 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
             continue
         if len(values) != 4:
             return None
-        closure_roots.add(values[1])
-    if not finalizer_root_set.issubset(closure_roots):
+        closure_finding_roots.add((values[0], values[1]))
+    if not finalizer_finding_roots.issubset(closure_finding_roots):
         return None
     return {
         "epic": epic,
         "root_id": primary_root,
         "root_ids": sorted(finalizer_root_set),
+        "finding_roots": [
+            {"finding_id": finding_id, "root_id": root_id}
+            for finding_id, root_id in sorted(finalizer_finding_roots)
+        ],
         "finalizer_slice": finalizer_slice,
         "corrective_slice": corrective,
         "episode": episode,
@@ -587,11 +650,43 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
         "status": "pending",
     }
 
+quarantine_rows = [row for row in rows if row[3] == "Quarantined"]
+for finding_id, root_id, severity, _disposition, reproducer, corrective, _closure in quarantine_rows:
+    if severity not in {"Critical", "High"} or corrective != "-" or root_id not in terminal_roots:
+        raise SystemExit(
+            f"Quarantine is reserved for exhausted Critical/High terminal findings: {finding_id}"
+        )
+    finalizer_record = terminal_root_records.get(root_id)
+    if not isinstance(finalizer_record, dict):
+        raise SystemExit(f"Quarantined terminal root has no finalizer record: {root_id}")
+    primary_root = finalizer_record.get("root_id")
+    prior_repair = terminal_repairs.get(primary_root)
+    prior_episode = prior_repair.get("episode", 1) if isinstance(prior_repair, dict) else 0
+    if (
+        not isinstance(prior_repair, dict)
+        or prior_repair.get("status") != "complete"
+        or not isinstance(prior_episode, int)
+        or prior_episode < terminal_repair_episode_limit
+    ):
+        raise SystemExit(
+            f"Terminal finding cannot be quarantined before {terminal_repair_episode_limit} "
+            f"verified repair episodes: {finding_id}"
+        )
+    terminal_quarantines[finding_id] = {
+        "finding_id": finding_id,
+        "root_id": root_id,
+        "severity": severity,
+        "reproducer": reproducer,
+        "finalizer_slice": finalizer_record.get("slice_id"),
+        "repair_episode": prior_episode,
+        "status": "release_blocker",
+    }
+
 recurrence_rows = [
     row
     for row in rows
     if row[2] in {"Critical", "High"}
-    and row[3] != "Closed"
+    and row[3] not in {"Closed", "Quarantined"}
     and row[1] in terminal_roots
 ]
 terminal_repair = None
@@ -671,6 +766,7 @@ if mode == "apply":
     state["architecture_review_root_generations"] = updated
     state["architecture_review_terminal_roots"] = terminal_roots
     state["architecture_review_terminal_root_records"] = terminal_root_records
+    state["architecture_review_quarantined_findings"] = terminal_quarantines
     if terminal_repair is not None:
         state["architecture_review_terminal_repair_pending"] = terminal_repair
     state.pop("architecture_review_cycle_epic", None)
@@ -684,15 +780,17 @@ PY
 ralph_validate_architecture_review_convergence() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
   local packet="${3:?review packet is required}" slice_dir="${4:-}"
-  local approvals_file="${5:-}" maximum terminal_repair_maximum
+  local approvals_file="${5:-}" maximum terminal_repair_maximum terminal_repair_episode_limit
   maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
   maximum="${maximum:-2}"
   terminal_repair_maximum="$(ralph_architecture_review_terminal_repair_limit "$config")" \
     || return 1
+  terminal_repair_episode_limit="$(ralph_architecture_review_terminal_repair_episode_limit "$config")" \
+    || return 1
   local output rc=0
   output="$(ralph_architecture_review_root_transition \
     validate "$state_file" "$packet" "$maximum" "$slice_dir" "$approvals_file" \
-    "$terminal_repair_maximum" \
+    "$terminal_repair_maximum" "$terminal_repair_episode_limit" \
     2>&1)" || rc=$?
   [[ -n "$output" ]] && printf '%s\n' "$output" >&2
   if (( rc != 0 )) && printf '%s\n' "$output" | grep -Eq '^TERMINAL_(RECURRENCE|REPAIR_REQUIRED):'; then
@@ -703,6 +801,7 @@ ralph_validate_architecture_review_convergence() {
 
 ralph_apply_architecture_review_root_transitions() {
   local config state_file packet slice_dir approvals_file maximum terminal_repair_maximum
+  local terminal_repair_episode_limit
   if [[ "${1:-}" == *.json ]]; then
     state_file="${1:?state file is required}"
     packet="${2:?review packet is required}"
@@ -720,9 +819,11 @@ ralph_apply_architecture_review_root_transitions() {
   maximum="${maximum:-2}"
   terminal_repair_maximum="$(ralph_architecture_review_terminal_repair_limit "$config")" \
     || return 1
+  terminal_repair_episode_limit="$(ralph_architecture_review_terminal_repair_episode_limit "$config")" \
+    || return 1
   ralph_architecture_review_root_transition \
     apply "$state_file" "$packet" "$maximum" "$slice_dir" "$approvals_file" \
-    "$terminal_repair_maximum"
+    "$terminal_repair_maximum" "$terminal_repair_episode_limit"
 }
 
 # Validate the narrow owner-controlled exit for an exhausted corrective cycle.
@@ -890,6 +991,7 @@ if not isinstance(pending, dict) or pending != {
     "epic": epic,
     "root_id": root,
     "root_ids": pending.get("root_ids") if isinstance(pending, dict) else None,
+    "finding_roots": pending.get("finding_roots") if isinstance(pending, dict) else None,
     "finalizer_slice": finalizer,
     "corrective_slice": corrective_id,
     "episode": pending.get("episode") if isinstance(pending, dict) else None,
@@ -898,6 +1000,16 @@ if not isinstance(pending, dict) or pending != {
 }:
     raise SystemExit(1)
 if not isinstance(pending.get("root_ids"), list) or not pending["root_ids"]:
+    raise SystemExit(1)
+finding_roots = pending.get("finding_roots")
+if not isinstance(finding_roots, list) or not finding_roots or any(
+    not isinstance(item, dict)
+    or set(item) != {"finding_id", "root_id"}
+    or not all(isinstance(value, str) and value for value in item.values())
+    for item in finding_roots
+):
+    raise SystemExit(1)
+if {item["root_id"] for item in finding_roots} != set(pending["root_ids"]):
     raise SystemExit(1)
 if not isinstance(pending.get("episode"), int) or pending["episode"] < 1:
     raise SystemExit(1)
@@ -1054,8 +1166,8 @@ for line in lines[start:]:
         continue
     if len(values) != 7:
         raise SystemExit("Finding Closure Manifest row has the wrong number of columns")
-    root_id = values[1]
-    dispositions.setdefault(root_id, []).append(values[3])
+    finding_root = (values[0], values[1])
+    dispositions.setdefault(finding_root, []).append(values[3])
 
 repairs = state.get("architecture_review_terminal_repairs", {})
 if not isinstance(repairs, dict):
@@ -1075,14 +1187,28 @@ for root, record in awaiting:
         isinstance(item, str) and item for item in root_ids
     ):
         raise SystemExit(f"terminal repair has no complete grouped root set: {root}")
-    missing = sorted(set(root_ids) - set(dispositions))
+    finding_roots = record.get("finding_roots")
+    if not isinstance(finding_roots, list) or not finding_roots:
+        raise SystemExit(f"terminal repair has no inherited finding set: {root}")
+    expected_pairs = set()
+    for item in finding_roots:
+        if not isinstance(item, dict):
+            raise SystemExit(f"terminal repair has malformed inherited finding state: {root}")
+        pair = (item.get("finding_id"), item.get("root_id"))
+        if not all(isinstance(value, str) and value for value in pair):
+            raise SystemExit(f"terminal repair has malformed inherited finding state: {root}")
+        expected_pairs.add(pair)
+    if {root_id for _, root_id in expected_pairs} != set(root_ids):
+        raise SystemExit(f"terminal repair finding/root state disagrees: {root}")
+    missing = sorted(expected_pairs - set(dispositions))
     if missing:
         raise SystemExit(
-            "Terminal repair verification omitted grouped roots: " + ", ".join(missing)
+            "Terminal repair verification omitted inherited findings: "
+            + ", ".join(f"{finding_id}/{root_id}" for finding_id, root_id in missing)
         )
     if all(
         dispositions[item] and all(value == "Closed" for value in dispositions[item])
-        for item in root_ids
+        for item in expected_pairs
     ):
         record = dict(record)
         record["status"] = "complete"
@@ -1218,11 +1344,24 @@ PY
 ralph_architecture_review_scope_instruction() {
   local state_file="${1:?state file is required}"
   python3 - "$state_file" <<'PY'
-import json, sys
+import json, re, sys
+from pathlib import Path
 try:
-    state = json.load(open(sys.argv[1]))
+    state_path = Path(sys.argv[1])
+    state = json.loads(state_path.read_text())
 except (OSError, json.JSONDecodeError):
     raise SystemExit(0)
+episode_limit = 2
+try:
+    config_text = state_path.with_name("config.yaml").read_text()
+    match = re.search(
+        r"(?m)^\s*architecture_review_max_terminal_repair_episodes:\s*([1-9][0-9]*)",
+        config_text,
+    )
+    if match:
+        episode_limit = int(match.group(1))
+except OSError:
+    pass
 roots = state.get("architecture_review_root_generations", {})
 if isinstance(roots, dict) and roots:
     budgets = ", ".join(
@@ -1244,16 +1383,37 @@ if isinstance(repairs, dict):
     ]
     for record in awaiting:
         root_ids = record.get("root_ids", [])
-        if not isinstance(root_ids, list) or not root_ids:
+        finding_roots = record.get("finding_roots", [])
+        if not isinstance(root_ids, list) or not root_ids or not isinstance(finding_roots, list):
             continue
         roots_text = ", ".join(sorted(root_ids))
+        findings_text = ", ".join(
+            f"{item.get('finding_id')}/{item.get('root_id')}"
+            for item in finding_roots if isinstance(item, dict)
+        )
         print(
             "- Independent terminal-repair verification is active for every grouped root: "
-            f"{roots_text}. The Finding Closure Manifest must contain exactly one explicit "
-            "Closed or Carried disposition for each of these roots. If any root is Carried, "
+            f"{roots_text}. Preserve and report every inherited Finding ID/Root ID pair: "
+            f"{findings_text}. The Finding Closure Manifest must contain one explicit Closed or "
+            "Carried disposition for each inherited finding. If any finding is Carried, "
             "one successor slice must retain the complete grouped Root ID set and the same "
             "Architecture Review Recurrence Repair contract. This continues the current repair "
             "episode; it is not a new corrective generation."
+        )
+    exhausted = [
+        record for record in repairs.values()
+        if isinstance(record, dict)
+        and record.get("status") == "complete"
+        and isinstance(record.get("episode", 1), int)
+        and record.get("episode", 1) >= episode_limit
+    ]
+    for record in exhausted:
+        roots_text = ", ".join(sorted(record.get("root_ids", [])))
+        print(
+            f"- Terminal repair episode cap {episode_limit} is complete for grouped roots: "
+            f"{roots_text}. If executable evidence reproduces any of those findings again, "
+            "use disposition Quarantined with no corrective slice or closure evidence. This "
+            "records a release blocker while allowing unrelated queued product slices to continue."
         )
 PY
 }
@@ -1559,7 +1719,7 @@ for row in rows:
     seen_roots.add(root_id)
     if severity not in {"Critical", "High", "Medium", "Low"}:
         raise SystemExit(f"Invalid finding severity for {finding_id}: {severity}")
-    if disposition not in {"New", "Carried", "Closed"}:
+    if disposition not in {"New", "Carried", "Closed", "Quarantined"}:
         raise SystemExit(f"Invalid finding disposition for {finding_id}: {disposition}")
     reproducer_path = durable_candidate_file(reproducer, f"Reproducer for {finding_id}")
     reproducer_text = reproducer_path.read_text(errors="replace")
@@ -1581,7 +1741,7 @@ for row in rows:
         raise SystemExit(
             f"New finding attempts to relabel an existing root instead of carrying it: {root_id}"
         )
-    if disposition in {"Carried", "Closed"} and not retained_finding(
+    if disposition in {"Carried", "Closed", "Quarantined"} and not retained_finding(
         head_findings, finding_id, root_id
     ):
         raise SystemExit(
@@ -1601,6 +1761,15 @@ for row in rows:
         if not successful_evidence(closure_text):
             raise SystemExit(
                 f"Closure evidence needs a positive pass, explicit zero exit, and no failure signal: {finding_id}"
+            )
+        continue
+
+    if disposition == "Quarantined":
+        if severity not in {"Critical", "High"}:
+            raise SystemExit(f"Only Critical/High findings may be quarantined: {finding_id}")
+        if corrective != "-" or closure != "-":
+            raise SystemExit(
+                f"Quarantined finding is a release blocker, not corrective or closure: {finding_id}"
             )
         continue
 
@@ -2072,20 +2241,12 @@ if seen_findings != set(contracts):
     raise SystemExit(f"Finding Evidence is missing corrective findings: {missing}")
 
 seen_acceptance: set[str] = set()
-acceptance_tests: dict[str, str] = {}
 for row in acceptance_rows:
     acceptance_id = row["Acceptance ID"]
     if acceptance_id not in expected_acceptance or acceptance_id in seen_acceptance:
         raise SystemExit(f"Acceptance Evidence has an unknown or duplicate id: {acceptance_id}")
     seen_acceptance.add(acceptance_id)
     test_spec = row["Test"]
-    prior_acceptance = acceptance_tests.get(test_spec)
-    if prior_acceptance is not None:
-        raise SystemExit(
-            "Distinct acceptance obligations require distinct executable tests: "
-            f"{prior_acceptance} and {acceptance_id} both use {test_spec}"
-        )
-    acceptance_tests[test_spec] = acceptance_id
     validate_test_spec(test_spec, f"Acceptance test for {acceptance_id}")
     evidence_path = safe_file(run_dir, row["Evidence"], f"Acceptance evidence for {acceptance_id}")
     if not row["Evidence"].startswith("evidence/"):

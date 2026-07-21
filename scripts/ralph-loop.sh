@@ -417,6 +417,14 @@ for ((i = 1; i <= max_iterations; i++)); do
         echo "Stopping: the product queue is empty, but a mandatory architecture review remains due. Refusing to declare final completion." | tee -a "$loop_log"
         exit 2
       fi
+      quarantine_count="$(ralph_architecture_review_quarantine_count .ralph/state.json)" || {
+        echo "Stopping: cannot read terminal quarantine state; refusing to declare release completion." | tee -a "$loop_log"
+        exit 2
+      }
+      if (( quarantine_count > 0 )); then
+        echo "Product queue complete, but $quarantine_count quarantined architecture finding(s) remain release blockers. Unrelated slices finished; owner review is required before release." | tee -a "$loop_log"
+        exit "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE"
+      fi
       echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
       exit 0
       ;;

@@ -40,10 +40,13 @@ exact exhausted root and generation, require a High-risk CR, retain permanent fi
 contracts, run every full quality gate, and record the consumed root so this policy can never admit
 a second terminal finalizer for the same root.
 
-If executable review evidence later disproves that finalizer, the owner authorizes one bounded
-High-risk repair of the same terminal contract. The repair must retain the original finalizer and
-grouped Root IDs, run every applicable quality gate, and cannot create another corrective
-generation or finalizer. A recurrence after that repair remains a hard owner-review stop.
+If executable review evidence disproves that finalizer, the owner authorizes one active bounded
+High-risk repair episode for the same terminal contract. The episode must retain the original
+finalizer and every inherited Finding ID/Root ID pair, run every applicable quality gate, and remain
+open until independent review closes every inherited finding. A later independently reproduced
+regression may open the next audited episode on the same stable identities; it cannot create another
+corrective generation or finalizer. Malformed, unauthenticated, or multi-finalizer recurrence remains
+a hard owner-review stop.
 
 - [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | 2026-07-20 owner-authorized unattended convergence recovery
 - [approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer | 2026-07-22 owner-authorized independently verified recurrence recovery
