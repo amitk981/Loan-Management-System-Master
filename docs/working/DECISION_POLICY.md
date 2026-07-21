@@ -10,7 +10,7 @@ The project owner is not a developer and has granted standing approval for auton
 
 ## 2. Quality bar (what "done" means)
 - TDD is mandatory for backend and business logic: failing test first, then code, red/green evidence saved.
-- All quality gates green: frontend typecheck/tests/build; backend check/tests/migrations-sync/coverage floor (see `.ralph/config.yaml`).
+- All risk-selected quality gates green (see `.ralph/config.yaml`): frontend typecheck/tests/build; backend check/migrations-sync plus independently mapped impacted tests for localized Low/Medium candidates, or complete-suite coverage and its floor for every fail-closed class and periodic checkpoint.
 - API contract changes are reflected in `docs/working/API_CONTRACTS.md` in the same run.
 - The review packet includes a traceability note: "the source doc says X (file §n), the code does X, verified by test Y" — written for a non-developer.
 - Frontend fidelity: `docs/working/FRONTEND_DESIGN_RULES.md` is binding — reuse the prototype's components and visual system; never introduce new styling or components. If the documents require functionality with no prototype screen, the slice must build that screen from existing patterns and stitch it to the backend; a backend with no reachable UI does not count as done.
@@ -21,7 +21,7 @@ Backend: Django + Django REST Framework, PostgreSQL in production (SQLite accept
 
 ## 4. Never do autonomously (hard-enforced; validation fails the run)
 - Modify protected files: `scripts/`, `.github/`, `.ralph/config.yaml`, `.ralph/permissions.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `docs/working/HIGH_RISK_APPROVALS.md`, `docs/working/DECISION_POLICY.md`, `docs/working/FRONTEND_DESIGN_RULES.md`, or anything in `docs/source/`.
-- Weaken, skip, or reinterpret quality gates, risk rules, or this policy.
+- Weaken, skip, or reinterpret the risk-selected quality gates, checkpoint rules, coverage floor, risk rules, or this policy.
 - Delete or rewrite committed history; force-push.
 - Deploy anywhere, call paid external services, or send communications to real people.
 - Store real personal or financial data in fixtures/tests.

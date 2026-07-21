@@ -1,6 +1,6 @@
 # Ralph Efficiency Changes — 2026-07-17
 
-These changes reduce safe sources of recurring work without weakening Ralph's binding full-gate acceptance policy. Candidate-scope selection remains in shadow measurement until its evidence and the quality policy support activation.
+These changes reduce recurring work without weakening the bounded complete-suite checkpoints that protect global quality.
 
 ## Fixture pilot
 
@@ -42,11 +42,13 @@ Because every proof predicate matched and six had the best measured wall time, a
 
 Architecture reviews now have a fail-closed documentation lane. Agent-authored scope must remain under `docs/` or the current review's own run-evidence directory; state, progress, and status remain orchestrator-owned. Protected-path checks, queue validation, artifact checks, and the frozen-candidate hash still run. Product gates are skipped with an explicit reason only after that scope proof; any product path, configuration/state edit, or historical run-evidence edit rejects the lane.
 
-## Backend validation shadow
+## Selective backend validation
 
-Normal and repair runs classify the frozen candidate and record a future lane recommendation, reason, backend paths, and test labels in `backend-validation-lane-results.md`. The recommendation is deliberately non-authoritative: full configured backend gates still execute for every candidate, including frontend/docs-only changes.
+Normal and repair runs classify the frozen candidate and record the authoritative lane, reason, backend paths, and test labels in `backend-validation-lane-results.md`. Localized Low/Medium changes run an independently derived impact pack: changed test modules, unchanged modules whose parsed imports reference the changed production root, and the root's maintained route/contract ownership patterns in `scripts/config/ralph-backend-test-impact.json`. Missing or invalid ownership forces complete coverage. Frontend/docs-only candidates retain cheap Django/migration checks but skip backend test and coverage execution unless the periodic checkpoint is due.
 
-The shadow selector recommends full coverage for High risk, every fourth slice, schema/infrastructure/shared/package-root work, multiple or broad backend modules, deletions/renames, missing changed tests, or tests that do not import the one changed backend module. Unknown policy values and malformed inputs also resolve to full. This preserves the current quality contract while collecting the data needed to decide whether a later policy change is justified.
+The selector requires full coverage for High risk, every fourth completed product slice, schema/infrastructure/shared/package-root work, multiple or broad backend modules, deletions/renames, missing tests, or tests that do not map to the changed backend module. Unknown policy values and malformed inputs also resolve to full. Complete checkpoints keep the full test label and 85% floor; selective runs never claim global coverage.
+
+Cheap Django and migration checks run before tests. The impacted pack runs before a required full checkpoint. Any failure defers the expensive full suite to the repair attempt, and both test runners stop at the first actionable failure. Passing lanes still execute their complete selected scope.
 
 ## Pending-age CI flake
 
@@ -54,7 +56,7 @@ The failed 1,116-test GitHub run compared two otherwise identical approval queue
 
 ## GitHub CI controls
 
-The regular backend CI job continues to run the complete `sfpcl_credit.tests` label and enforce the 85% floor, but now uses the already-proved multiprocessing coverage helper with four workers, matching GitHub's public Linux runner allocation. Setup-python caches pinned pip dependencies, superseded runs on the same ref are cancelled, and the job has a 30-minute hard timeout. A separate 75-minute serial canary runs nightly against `staging` and can be dispatched for epic or release checkpoints. This preserves serial/order-sensitive detection without charging every slice for a second slow lane.
+The regular backend CI job continues to run the complete `sfpcl_credit.tests` label and enforce the 85% floor, but now uses the already-proved multiprocessing coverage helper with four workers, matching GitHub's public Linux runner allocation. Setup-python caches pinned pip dependencies, superseded runs on the same ref are cancelled, and the job has a 45-minute infrastructure timeout. A separate 75-minute serial canary runs nightly against `staging` and can be dispatched for epic or release checkpoints. This preserves serial/order-sensitive detection without charging every slice for a second slow lane.
 
 ## Agent transcript retention
 
@@ -85,6 +87,6 @@ targets agent/context rework and recursive queue growth:
 - The default loop budget is 250 iterations so the prepared backlog can drain in one AFK command;
   exhausting an explicit bound while work remains returns a distinct non-success outcome.
 
-Selective backend execution remains in shadow. No coverage floor, full-suite High-risk rule,
-PostgreSQL race contract, protected path, frozen-candidate check, repair bound, or single-loop mutex
-was weakened.
+Selective backend execution is binding for localized Low/Medium changes. No coverage floor,
+full-suite High-risk rule, periodic checkpoint, PostgreSQL race contract, protected path,
+frozen-candidate check, repair bound, or single-loop mutex was weakened.

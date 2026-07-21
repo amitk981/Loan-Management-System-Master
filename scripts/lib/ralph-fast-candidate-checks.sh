@@ -48,20 +48,24 @@ ralph_run_fast_candidate_checks() {
   local changed_paths changed protected protected_violations=0
   local queue_lint_problems lint_line
   local st_path st_old st_new st_base st_violations=0 st_checked=0
-  local max_files max_lines files_changed tracked_lines untracked_lines total_lines f
+  local max_files max_lines max_dependencies max_migrations
+  local files_changed tracked_lines untracked_lines total_lines f
   local oversized_request_file
   local review_packet declared_result
   local impact_file ia_results noop_file agent_changes aq_file dl_file artifact_file declared_file required
   local ownership_file ownership_path ownership_violations=0
 
-  changed_paths="$( (cd "$worktree_dir" && git status --porcelain) \
-    | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"
+  changed_paths="$(ralph_changed_paths "$worktree_dir")"
 
   local guard_file="$run_dir/protected-paths-check.md"
   {
     echo "# Protected Paths Check"
     echo
   } > "$guard_file"
+  if printf '%s\n' "$changed_paths" | grep -Fxq "$RALPH_UNSAFE_CHANGED_PATH_MARKER"; then
+    echo "- FAIL: a changed path contains control characters and cannot be validated safely." >> "$guard_file"
+    protected_violations=$((protected_violations + 1))
+  fi
   local protected_paths=(
     "scripts/"
     ".github/"
@@ -237,8 +241,13 @@ ralph_run_fast_candidate_checks() {
   if [[ "$mode" =~ ^(normal_run|repair)$ ]]; then
     max_files="$(awk -F': *' '/^[[:space:]]*max_changed_files:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
     max_lines="$(awk -F': *' '/^[[:space:]]*max_lines_changed:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+    max_dependencies="$(awk -F': *' '/^[[:space:]]*max_new_dependencies:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+    max_migrations="$(awk -F': *' '/^[[:space:]]*max_database_migrations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
     max_files="${max_files:-30}"
     max_lines="${max_lines:-2000}"
+    max_dependencies="${max_dependencies:-4}"
+    max_migrations="${max_migrations:-1}"
+    ralph_measure_candidate_limits "$worktree_dir"
     files_changed="$(printf '%s\n' "$changed_paths" | grep -v '^\.ralph/' | grep -cv '^$' || true)"
     tracked_lines="$( (cd "$worktree_dir" && git diff --numstat HEAD -- . ':(exclude).ralph') \
       | awk '{added=$1; deleted=$2; if (added != "-") total += added; if (deleted != "-") total += deleted} END {print total + 0}')"
@@ -256,6 +265,8 @@ ralph_run_fast_candidate_checks() {
       echo
       echo "- Files changed (excluding .ralph/): $files_changed (limit $max_files)"
       echo "- Lines changed (tracked + new files, excluding .ralph/): $total_lines (limit $max_lines)"
+      echo "- New dependencies: $RALPH_NEW_DEPENDENCY_COUNT (limit $max_dependencies)"
+      echo "- New database migrations: $RALPH_NEW_MIGRATION_COUNT (limit $max_migrations)"
     } > "$dl_file"
     if (( files_changed > max_files )); then
       echo "- FAIL: changed-file count exceeds limits.max_changed_files." >> "$dl_file"
@@ -282,7 +293,17 @@ path.write_text(json.dumps(request, indent=2) + "\n")
 PY
       failures=$((failures + 1))
     fi
-    if (( files_changed <= max_files && total_lines <= max_lines )); then
+    if (( RALPH_NEW_DEPENDENCY_COUNT > max_dependencies )); then
+      echo "- FAIL: new dependency count exceeds limits.max_new_dependencies." >> "$dl_file"
+      failures=$((failures + 1))
+    fi
+    if (( RALPH_NEW_MIGRATION_COUNT > max_migrations )); then
+      echo "- FAIL: new migration count exceeds limits.max_database_migrations." >> "$dl_file"
+      failures=$((failures + 1))
+    fi
+    if (( files_changed <= max_files && total_lines <= max_lines \
+          && RALPH_NEW_DEPENDENCY_COUNT <= max_dependencies \
+          && RALPH_NEW_MIGRATION_COUNT <= max_migrations )); then
       echo "- PASS: within diff limits." >> "$dl_file"
     fi
   fi

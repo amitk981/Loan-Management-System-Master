@@ -1,0 +1,101 @@
+{
+  "applications": [
+    "sfpcl_credit/tests/test_*appraisal*.py",
+    "sfpcl_credit/tests/test_*application*.py",
+    "sfpcl_credit/tests/test_*sanction*.py"
+  ],
+  "approvals": [
+    "sfpcl_credit/tests/test_*approval*.py",
+    "sfpcl_credit/tests/test_*sanction*.py"
+  ],
+  "communications": [
+    "sfpcl_credit/tests/test_communication*.py",
+    "sfpcl_credit/tests/test_*notification*.py",
+    "sfpcl_credit/tests/test_*reminder*.py"
+  ],
+  "configurations": [
+    "sfpcl_credit/tests/test_configurations_api.py",
+    "sfpcl_credit/tests/test_interest_rate_config_api.py"
+  ],
+  "credit": [
+    "sfpcl_credit/tests/test_credit*.py",
+    "sfpcl_credit/tests/test_*appraisal*.py",
+    "sfpcl_credit/tests/test_interest*.py"
+  ],
+  "dashboard": [
+    "sfpcl_credit/tests/test_dashboard_api.py",
+    "sfpcl_credit/tests/test_quarterly_mis_api.py"
+  ],
+  "disbursements": [
+    "sfpcl_credit/tests/test_disbursement*.py",
+    "sfpcl_credit/tests/test_epic009*.py",
+    "sfpcl_credit/tests/test_portal_disbursement_status_api.py"
+  ],
+  "documents": [
+    "sfpcl_credit/tests/test_*document*.py",
+    "sfpcl_credit/tests/test_content_templates_api.py",
+    "sfpcl_credit/tests/test_portal_documentation_actions_api.py"
+  ],
+  "finance": [
+    "sfpcl_credit/tests/test_bank_statement_matching_api.py",
+    "sfpcl_credit/tests/test_blank_dated_cheque_api.py",
+    "sfpcl_credit/tests/test_cdsl_share_pledge_api.py",
+    "sfpcl_credit/tests/test_subsidiary_deduction_reconciliation_api.py"
+  ],
+  "identity": [
+    "sfpcl_credit/tests/test_*auth*.py",
+    "sfpcl_credit/tests/test_admin_users_api.py",
+    "sfpcl_credit/tests/test_audit_logs_api.py",
+    "sfpcl_credit/tests/test_member_authority_action_matrix.py",
+    "sfpcl_credit/tests/test_member_scope_assignment_api.py",
+    "sfpcl_credit/tests/test_object_permissions.py"
+  ],
+  "interest": [
+    "sfpcl_credit/tests/test_interest*.py"
+  ],
+  "legal_documents": [
+    "sfpcl_credit/tests/test_legal*.py",
+    "sfpcl_credit/tests/test_final_documentation_approval_api.py",
+    "sfpcl_credit/tests/test_stamp_notary_api.py",
+    "sfpcl_credit/tests/test_witness*.py"
+  ],
+  "loans": [
+    "sfpcl_credit/tests/test_loan*.py",
+    "sfpcl_credit/tests/test_*repayment*.py",
+    "sfpcl_credit/tests/test_*servicing*.py",
+    "sfpcl_credit/tests/test_*statement*.py",
+    "sfpcl_credit/tests/test_dpd*.py"
+  ],
+  "members": [
+    "sfpcl_credit/tests/test_member*.py",
+    "sfpcl_credit/tests/test_*nominee*.py",
+    "sfpcl_credit/tests/test_portal_member_api.py",
+    "sfpcl_credit/tests/test_produce_supply_api.py"
+  ],
+  "monitoring": [
+    "sfpcl_credit/tests/test_dpd*.py",
+    "sfpcl_credit/tests/test_dashboard_api.py",
+    "sfpcl_credit/tests/test_quarterly_mis_api.py"
+  ],
+  "sap_workflow": [
+    "sfpcl_credit/tests/test_sap*.py"
+  ],
+  "scheduler": [
+    "sfpcl_credit/tests/test_scheduler*.py",
+    "sfpcl_credit/tests/test_*reminder*.py",
+    "sfpcl_credit/tests/test_communication_*jobs.py"
+  ],
+  "security_instruments": [
+    "sfpcl_credit/tests/test_security*.py",
+    "sfpcl_credit/tests/test_blank_dated_cheque_api.py",
+    "sfpcl_credit/tests/test_cdsl_share_pledge_api.py",
+    "sfpcl_credit/tests/test_tri_party_agreement_api.py"
+  ],
+  "tracer": [
+    "sfpcl_credit/tests/test_tracer_api.py"
+  ],
+  "workflows": [
+    "sfpcl_credit/tests/test_workflow*.py",
+    "sfpcl_credit/tests/test_approval_case_routing_api.py"
+  ]
+}

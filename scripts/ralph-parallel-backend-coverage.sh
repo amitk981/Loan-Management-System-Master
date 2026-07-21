@@ -46,7 +46,7 @@ cd "$worktree_dir"
 COVERAGE_RCFILE="$coverage_rcfile" COVERAGE_FILE="$coverage_data" \
   "$python_bin" -m coverage run --rcfile "$coverage_rcfile" \
   "$backend_dir/manage.py" test "$backend_dir.tests" \
-  --parallel "$workers" --timing
+  --parallel "$workers" --timing --failfast
 
 COVERAGE_FILE="$coverage_data" "$python_bin" -m coverage combine \
   --rcfile "$coverage_rcfile" --data-file "$coverage_data" \

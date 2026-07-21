@@ -53,6 +53,62 @@ source scripts/lib/ralph-merge-guard.sh
 source scripts/lib/ralph-postgresql-acceptance.sh
 fixture_dir="$(mktemp -d)"
 trap 'rm -rf "$fixture_dir"' EXIT
+
+changed_paths_helper="scripts/lib/ralph-changed-paths.sh"
+[[ -f "$changed_paths_helper" ]] || fail "missing rename-safe changed-path helper"
+# shellcheck source=../lib/ralph-changed-paths.sh
+source "$changed_paths_helper"
+changed_paths_repo="$fixture_dir/changed-paths-repo"
+git init -q "$changed_paths_repo"
+git -C "$changed_paths_repo" config user.name "Ralph Regression"
+git -C "$changed_paths_repo" config user.email "ralph-regression@example.invalid"
+mkdir -p "$changed_paths_repo/scripts" "$changed_paths_repo/ordinary"
+printf 'protected\n' > "$changed_paths_repo/scripts/protected.sh"
+git -C "$changed_paths_repo" add .
+git -C "$changed_paths_repo" commit -qm baseline
+git -C "$changed_paths_repo" mv scripts/protected.sh ordinary/protected.sh
+rename_paths="$(ralph_changed_paths "$changed_paths_repo")"
+printf '%s\n' "$rename_paths" | grep -Fxq 'scripts/protected.sh' \
+  || fail "changed-path helper omitted a rename source"
+printf '%s\n' "$rename_paths" | grep -Fxq 'ordinary/protected.sh' \
+  || fail "changed-path helper omitted a rename destination"
+unsafe_changed_path=$'scripts/control\ncharacter.sh'
+mkdir -p "$changed_paths_repo/scripts"
+printf 'unsafe\n' > "$changed_paths_repo/$unsafe_changed_path"
+unsafe_paths="$(ralph_changed_paths "$changed_paths_repo")"
+printf '%s\n' "$unsafe_paths" | grep -Fxq "$RALPH_UNSAFE_CHANGED_PATH_MARKER" \
+  || fail "changed-path helper did not fail closed on a control-character path"
+
+candidate_limits_helper="scripts/lib/ralph-candidate-limits.sh"
+[[ -f "$candidate_limits_helper" ]] || fail "missing candidate-limit measurement helper"
+# shellcheck source=../lib/ralph-candidate-limits.sh
+source "$candidate_limits_helper"
+limits_repo="$fixture_dir/candidate-limits-repo"
+git init -q "$limits_repo"
+git -C "$limits_repo" config user.name "Ralph Regression"
+git -C "$limits_repo" config user.email "ralph-regression@example.invalid"
+mkdir -p "$limits_repo/backend/requirements" "$limits_repo/backend/loans/migrations" \
+  "$limits_repo/frontend"
+printf 'Django==5.0.6\n' > "$limits_repo/backend/requirements/base.txt"
+cat > "$limits_repo/frontend/package.json" <<'EOF'
+{"dependencies":{"react":"1.0.0"},"devDependencies":{}}
+EOF
+git -C "$limits_repo" add .
+git -C "$limits_repo" commit -qm baseline
+printf 'coverage==7.6.0\n' >> "$limits_repo/backend/requirements/base.txt"
+printf 'https://packages.example.invalid/a.whl\n' >> "$limits_repo/backend/requirements/base.txt"
+printf '%s\n' '-e git+https://example.invalid/repo.git#egg=editable-example' \
+  >> "$limits_repo/backend/requirements/base.txt"
+cat > "$limits_repo/frontend/package.json" <<'EOF'
+{"dependencies":{"react":"1.0.0","zod":"1.0.0"},"devDependencies":{}}
+EOF
+printf '# migration\n' > "$limits_repo/backend/loans/migrations/0002_added.py"
+ralph_measure_candidate_limits "$limits_repo"
+[[ "$RALPH_NEW_DEPENDENCY_COUNT" == "4" ]] \
+  || fail "candidate-limit helper did not count package, direct URL, and editable dependencies"
+[[ "$RALPH_NEW_MIGRATION_COUNT" == "1" ]] \
+  || fail "candidate-limit helper did not count a new database migration"
+
 cat > "$fixture_dir/retries.yaml" <<'EOF'
 run:
   max_retries: 2
@@ -882,6 +938,10 @@ if rg -q "find docs/slices .*grep -q" scripts/ralph-preflight.sh; then
 fi
 rg -q 'ralph_run_fast_candidate_checks' scripts/ralph-validate.sh \
   || fail "validator does not run cheap candidate blockers before expensive gates"
+rg -q 'ralph_measure_candidate_limits' scripts/lib/ralph-fast-candidate-checks.sh \
+  || fail "cheap candidate validation does not enforce dependency and migration limits"
+rg -q 'ralph_changed_paths' scripts/lib/ralph-fast-candidate-checks.sh \
+  || fail "protected-path validation does not use rename-safe changed paths"
 python3 - <<'PY'
 from pathlib import Path
 
@@ -2260,21 +2320,24 @@ if scripts/ralph-validate.sh \
   fail "architecture-review lane accepted a non-ready Result and advanced product work"
 fi
 
-# A shadow selector records potential future backend lanes without changing the
-# authoritative full gate. Its recommendations fail closed for high-risk,
-# shared-schema, ambiguous, and periodic-checkpoint candidates.
+# The backend selector derives independent impacted packs and fails closed to
+# full coverage for high-risk, shared-schema, ambiguous, and checkpoint work.
 backend_policy_helper="scripts/lib/ralph-backend-validation.sh"
 [[ -f "$backend_policy_helper" ]] || fail "missing backend validation policy helper"
 # shellcheck source=../lib/ralph-backend-validation.sh
 source "$backend_policy_helper"
 backend_policy_repo="$fixture_dir/backend-policy-repo"
 mkdir -p "$backend_policy_repo/.ralph" \
+  "$backend_policy_repo/scripts/config" \
   "$backend_policy_repo/docs/slices" \
   "$backend_policy_repo/frontend" \
   "$backend_policy_repo/backend/payments" \
   "$backend_policy_repo/backend/shared" \
   "$backend_policy_repo/backend/tests" \
   "$backend_policy_repo/backend/loans/migrations"
+cat > "$backend_policy_repo/scripts/config/ralph-backend-test-impact.json" <<'EOF'
+{"loans":["backend/tests/test_loan*.py"]}
+EOF
 cat > "$backend_policy_repo/.ralph/config.yaml" <<'EOF'
 backend_validation_policy: shadow
 backend_full_suite_every_completed_slices: 4
@@ -2292,6 +2355,8 @@ EOF
 printf 'baseline\n' > "$backend_policy_repo/frontend/app.ts"
 printf 'baseline\n' > "$backend_policy_repo/backend/loans/service.py"
 printf 'from backend.loans import service\n' > "$backend_policy_repo/backend/tests/test_loans.py"
+printf 'from backend.loans import service\n' \
+  > "$backend_policy_repo/backend/tests/test_loan_contract.py"
 printf 'baseline\n' > "$backend_policy_repo/backend/payments/service.py"
 printf 'baseline\n' > "$backend_policy_repo/backend/shared/encryption.py"
 printf 'from backend.payments import service\n' \
@@ -2314,7 +2379,7 @@ git -C "$backend_policy_repo" add .
 git -C "$backend_policy_repo" commit -qm frontend-candidate
 
 printf 'localized backend candidate\n' >> "$backend_policy_repo/backend/loans/service.py"
-printf 'localized test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
+printf '# localized test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
 ralph_select_backend_validation_lane \
   "$backend_policy_repo" backend \
   "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
@@ -2323,8 +2388,21 @@ ralph_select_backend_validation_lane \
   || fail "localized medium-risk backend candidate did not receive the impacted recommendation"
 [[ " ${RALPH_BACKEND_TEST_LABELS[*]} " == *" backend.tests.test_loans "* ]] \
   || fail "impacted backend lane omitted its changed test module"
+[[ " ${RALPH_BACKEND_TEST_LABELS[*]} " == *" backend.tests.test_loan_contract "* ]] \
+  || fail "impacted backend lane omitted an unchanged owner contract test"
 [[ "$RALPH_BACKEND_IMPACTED_WORKERS" == "3" ]] \
   || fail "impacted backend lane ignored its bounded worker count"
+
+printf '# from backend.loans import service\n' \
+  > "$backend_policy_repo/backend/tests/test_loans.py"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "comment text falsely proved a changed-test import mapping"
+printf 'from backend.loans import service\n# localized test candidate\n' \
+  > "$backend_policy_repo/backend/tests/test_loans.py"
 
 ralph_select_backend_validation_lane \
   "$backend_policy_repo" backend \
@@ -2346,7 +2424,7 @@ git -C "$backend_policy_repo" add .
 git -C "$backend_policy_repo" commit -qm schema-candidate
 
 printf 'shared candidate\n' >> "$backend_policy_repo/backend/shared/encryption.py"
-printf 'unrelated test candidate\n' >> "$backend_policy_repo/backend/tests/test_unrelated.py"
+printf '# unrelated test candidate\n' >> "$backend_policy_repo/backend/tests/test_unrelated.py"
 ralph_select_backend_validation_lane \
   "$backend_policy_repo" backend \
   "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
@@ -2358,7 +2436,7 @@ git -C "$backend_policy_repo" commit -qm shared-candidate
 
 printf 'second module candidate\n' >> "$backend_policy_repo/backend/payments/service.py"
 printf 'first module candidate\n' >> "$backend_policy_repo/backend/loans/service.py"
-printf 'multi-module test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
+printf '# multi-module test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
 ralph_select_backend_validation_lane \
   "$backend_policy_repo" backend \
   "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
@@ -2381,7 +2459,7 @@ printf 'baseline\nsecond module candidate\n' \
 printf '%s\n' '{"completed_slices": ["097A", "098A", "099A"]}' \
   > "$backend_policy_repo/.ralph/state.json"
 printf 'checkpoint backend candidate\n' >> "$backend_policy_repo/backend/loans/service.py"
-printf 'checkpoint test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
+printf '# checkpoint test candidate\n' >> "$backend_policy_repo/backend/tests/test_loans.py"
 ralph_select_backend_validation_lane \
   "$backend_policy_repo" backend \
   "$backend_policy_repo/docs/slices/100A-medium.md" 100A-medium \
@@ -2389,7 +2467,30 @@ ralph_select_backend_validation_lane \
 [[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
   || fail "fourth completed-slice checkpoint did not retain full coverage"
 
-# The shadow audit compares serial coverage against the shared bounded parallel
+cat > "$backend_policy_repo/.ralph/selective.yaml" <<'EOF'
+backend_validation_policy: selective
+EOF
+[[ "$(ralph_backend_authoritative_lane \
+    "$backend_policy_repo/.ralph/config.yaml" impacted)" == "full" ]] \
+  || fail "shadow policy made an impacted recommendation authoritative"
+[[ "$(ralph_backend_authoritative_lane \
+    "$backend_policy_repo/.ralph/selective.yaml" impacted)" == "impacted" ]] \
+  || fail "selective policy did not enforce an impacted recommendation"
+[[ "$(ralph_backend_authoritative_lane \
+    "$backend_policy_repo/.ralph/selective.yaml" full)" == "full" ]] \
+  || fail "selective policy weakened a fail-closed full recommendation"
+[[ "$(ralph_backend_coverage_action skip 0 0)" == "skip" ]] \
+  || fail "frontend/docs-only lane did not skip backend coverage"
+[[ "$(ralph_backend_coverage_action impacted 0 0)" == "impacted" ]] \
+  || fail "green impacted lane did not retain selective acceptance"
+[[ "$(ralph_backend_coverage_action full 0 0)" == "full" ]] \
+  || fail "checkpoint lane did not dispatch full coverage"
+[[ "$(ralph_backend_coverage_action full 1 0)" == "defer" ]] \
+  || fail "cheap backend failure did not short-circuit full coverage"
+[[ "$(ralph_backend_coverage_action full 0 1)" == "defer" ]] \
+  || fail "impacted regression failure did not short-circuit full coverage"
+
+# The original shadow audit compares serial coverage against the shared bounded parallel
 # module and proves exact outcome and line-coverage equivalence.
 shadow_coverage="scripts/ralph-shadow-parallel-coverage.sh"
 [[ -x "$shadow_coverage" ]] || fail "missing executable parallel-coverage shadow pilot"
@@ -2407,8 +2508,8 @@ if rg -q 'ralph-shadow-parallel-coverage' scripts/ralph-validate.sh; then
   fail "unproven parallel coverage was added to the authoritative validation gate"
 fi
 
-# Once the shadow proof passes, the authoritative lane uses the same bounded
-# multiprocessing implementation; it never drops the full-suite label or floor.
+# Complete checkpoints use the proved bounded multiprocessing implementation;
+# they never drop the full-suite label or floor.
 parallel_coverage_gate="scripts/ralph-parallel-backend-coverage.sh"
 [[ -x "$parallel_coverage_gate" ]] \
   || fail "missing executable authoritative parallel-coverage module"
@@ -2424,17 +2525,36 @@ rg -q 'ralph-parallel-backend-coverage.sh' scripts/ralph-validate.sh \
   || fail "validator does not invoke the proven parallel-coverage module"
 rg -q 'backend_coverage_parallel_workers: 6' .ralph/config.yaml \
   || fail "authoritative coverage worker count is not explicitly bounded at the proven six"
-rg -q 'backend_validation_policy: shadow' .ralph/config.yaml \
-  || fail "shadow backend validation classification is not enabled explicitly"
+rg -q 'backend_validation_policy: selective' .ralph/config.yaml \
+  || fail "selective backend validation is not enabled explicitly"
 rg -q 'backend_full_suite_every_completed_slices: 4' .ralph/config.yaml \
   || fail "periodic full backend checkpoint is not explicitly bounded at four slices"
 rg -q 'ralph_select_backend_validation_lane' scripts/ralph-validate.sh \
   || fail "validator does not classify backend work before selecting its suite"
 rg -q 'backend-validation-lane-results.md' scripts/ralph-validate.sh \
   || fail "backend validation selection does not leave reviewable evidence"
-if rg -q 'backend_validation_lane.*==.*(skip|impacted)' scripts/ralph-validate.sh; then
-  fail "shadow backend recommendation can bypass an authoritative full gate"
-fi
+rg -q 'ralph_backend_authoritative_lane' scripts/ralph-validate.sh \
+  || fail "validator does not resolve the configured authoritative backend lane"
+rg -q 'backend-impacted-results.md' scripts/ralph-validate.sh \
+  || fail "validator does not retain independent impacted regression evidence"
+python3 - <<'PY'
+from pathlib import Path
+
+source = Path("scripts/ralph-validate.sh").read_text()
+impacted = source.index("run_backend_gate backend-impacted")
+coverage = source.index("run_backend_gate backend-coverage")
+if impacted >= coverage:
+    raise SystemExit("FAIL: full coverage can start before the impacted regression pack")
+if "an earlier backend gate failed; deferred until repair" not in source:
+    raise SystemExit("FAIL: a known-red backend candidate can still start full coverage")
+PY
+impacted_backend_gate="scripts/ralph-impacted-backend-tests.sh"
+[[ -x "$impacted_backend_gate" ]] \
+  || fail "missing executable impacted backend regression gate"
+rg -q -- '--failfast' "$impacted_backend_gate" \
+  || fail "impacted backend gate does not stop on its first actionable failure"
+rg -q -- '--failfast' "$parallel_coverage_gate" \
+  || fail "full backend coverage does not fail fast on red candidates"
 
 # GitHub keeps a complete-suite backstop even when a local slice selects its
 # impacted modules. Public Linux runners receive four workers; serial execution
@@ -2446,7 +2566,7 @@ rg -q 'cache: pip' .github/workflows/ci.yml \
 rg -q 'ralph-parallel-backend-coverage.sh.*sfpcl_credit 4 85' \
   .github/workflows/ci.yml \
   || fail "backend CI does not run complete coverage with four workers and the floor"
-rg -q 'timeout-minutes: 30' .github/workflows/ci.yml \
+rg -q 'timeout-minutes: 45' .github/workflows/ci.yml \
   || fail "backend CI does not enforce its runtime cap"
 serial_canary='.github/workflows/backend-serial-canary.yml'
 [[ -f "$serial_canary" ]] || fail "missing serial backend canary workflow"

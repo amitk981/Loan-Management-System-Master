@@ -50,8 +50,9 @@ member self-service portal.
 - Django REST Framework APIs use the standard response/error/pagination contracts recorded in
   `docs/working/API_CONTRACTS.md`.
 - PostgreSQL is the production database. Concurrency-, locking-, migration-, and financial-
-  integrity promises require declared PostgreSQL acceptance evidence; routine validation also
-  keeps the full configured backend suite and coverage floor.
+  integrity promises require declared PostgreSQL acceptance evidence. Routine validation uses
+  independently mapped impacted tests for localized Low/Medium changes and retains the complete
+  configured backend suite and coverage floor for fail-closed classes and periodic checkpoints.
 - Business rules live behind the module that owns their source capability. Cross-module
   coordinators exchange immutable evidence/facades rather than importing another owner's private
   models or policy.
@@ -94,8 +95,9 @@ The end-to-end workflow is:
   fast-forwards `staging`, and pushes it. Only the owner promotes `staging` to `main`.
 - Backend/business logic uses TDD with retained red/green evidence. Frontend changes run focused
   tests, typecheck, lint, build, and declared browser acceptance.
-- The authoritative backend gate runs the complete suite under coverage with the configured floor.
-  Selective validation remains non-authoritative until shadow evidence proves zero missed failures.
+- Localized low/medium-risk backend candidates run an independently derived impacted regression pack.
+  High-risk, shared/schema/infrastructure, ambiguous, broad, rename/delete, every-fourth-slice,
+  and release checkpoints retain the complete suite and configured coverage floor.
 - Six backend coverage workers are the measured optimum on the current eight-core host; increasing
   workers or running concurrent Ralph loops adds contention and is not supported.
 - Protected paths, source documents, frozen-candidate hashes, diff/dependency limits, repair
