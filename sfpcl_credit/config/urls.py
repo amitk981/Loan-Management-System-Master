@@ -184,6 +184,21 @@ urlpatterns = [
         name="loan-account-ledger",
     ),
     path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/ledger-statements/",
+        loan_views.ledger_statement_request,
+        name="loan-ledger-statement-request",
+    ),
+    path(
+        "api/v1/loan-ledger-statements/<uuid:statement_job_id>/",
+        loan_views.ledger_statement_status,
+        name="loan-ledger-statement-status",
+    ),
+    path(
+        "api/v1/loan-ledger-statements/<uuid:statement_job_id>/download/",
+        loan_views.ledger_statement_download,
+        name="loan-ledger-statement-download",
+    ),
+    path(
         "api/v1/loan-accounts/<uuid:loan_account_id>/repayments/",
         loan_views.direct_repayment,
         name="loan-account-direct-repayment",

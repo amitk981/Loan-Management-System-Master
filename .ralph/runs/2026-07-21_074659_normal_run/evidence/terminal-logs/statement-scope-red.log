@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_statement_job_is_private_to_requester_even_for_another_portfolio_reader (sfpcl_credit.tests.test_loan_ledger_statement_api.LoanLedgerStatementApiTests.test_statement_job_is_private_to_requester_even_for_another_portfolio_reader)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/tests/test_loan_ledger_statement_api.py", line 142, in test_statement_job_is_private_to_requester_even_for_another_portfolio_reader
+    self.assertEqual(guessed.status_code, 404, guessed.content)
+AssertionError: 200 != 404 : b'{"success": true, "data": {"statement_job_id": "658fe13f-c8f6-4255-afe2-2edf10689478", "loan_account_id": "b9ebcc0c-444b-4115-b87b-3ac6bef47ac0", "status": "succeeded", "format": "csv", "row_count": 1, "opening_balance": "0.00", "closing_balance": "400000.00", "checksum_sha256": "2bfcb1994931ea41ba272161321d30ccc92bde2d17d9ceca81641b95d75b9298", "generated_at": "2026-07-21T02:31:14.608012Z", "download_url": "/api/v1/loan-ledger-statements/658fe13f-c8f6-4255-afe2-2edf10689478/download/?capability=.eJwlz0FSwzAMBdC7ZI0YSbFlu-dgxSZjyfK0QJuZJmHDcHfcsv_vS_9nqrav9-XY_L5c2nSaSlZruRokFIKg4lC9OXDHjKWEXLBNL9O2192vftuXj1X_pcTcneYOlrtA4Bihdmdgb51QcgkpD_m11ttSzdZj4CfU4mqGBiEEhUAUQXNSmKuJeg-pGg7YVjueF58oYxY0EiBEH3_qAxUDVRb2jmKaBrKz2-d2XJftXDnKgKzdlMaSMpPXQFo5MQnNTG1GMyuszblRasXcaiYZoRJbilq4PCZ8-327rLdHGbIAJmB6Qz7NdKLwKiFiTu_T7x9gvWNZ:1wm0GI:8MEM6h9pSIAWnHwMWd-zylOHcmhd5_0p5mVE8bNpP9k", "expires_at": "2026-07-21T02:46:14.645473Z"}, "meta": {"request_id": null, "timestamp": "2026-07-21T02:31:14.645501Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.725s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

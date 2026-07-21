@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
@@ -55,6 +56,15 @@ from sfpcl_credit.processes.loan_servicing import (
     LoanServicingReadValidation,
     get_ledger,
     get_schedule,
+)
+from sfpcl_credit.processes.loan_ledger_statements import (
+    LoanLedgerStatementDenied,
+    LoanLedgerStatementNotFound,
+    LoanLedgerStatementValidation,
+    download_statement,
+    record_download_denial,
+    request_statement,
+    statement_status,
 )
 from sfpcl_credit.processes.loan_account_360 import (
     LoanAccountProjectionNotFound,
@@ -156,6 +166,69 @@ def ledger(request, loan_account_id):
         return error_response(
             request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
         )
+
+
+@require_http_methods(["POST"])
+def ledger_statement_request(request, loan_account_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            request_statement(
+                actor=actor,
+                loan_account_id=loan_account_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                request=request,
+            ),
+            request,
+        )
+    except LoanLedgerStatementValidation as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Statement request failed validation.", exc.field_errors)
+    except LoanLedgerStatementDenied:
+        return error_response(request, 403, "FORBIDDEN", "Loan statement export permission is required.")
+    except (LoanLedgerStatementNotFound, LoanServicingReadNotFound):
+        return error_response(request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible.")
+
+
+@require_http_methods(["GET"])
+def ledger_statement_status(request, statement_job_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            statement_status(actor=actor, statement_job_id=statement_job_id), request
+        )
+    except LoanLedgerStatementDenied:
+        return error_response(request, 403, "FORBIDDEN", "Loan statement export permission is required.")
+    except (LoanLedgerStatementNotFound, LoanServicingReadNotFound):
+        return error_response(request, 404, "NOT_FOUND", "The statement job was not found or is inaccessible.")
+
+
+@require_http_methods(["GET"])
+def ledger_statement_download(request, statement_job_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        content = download_statement(
+            actor=actor,
+            statement_job_id=statement_job_id,
+            capability=request.GET.get("capability", ""),
+            request=request,
+        )
+        response = HttpResponse(content.body, content_type=content.mime_type)
+        response["Content-Disposition"] = f'attachment; filename="{content.file_name}"'
+        return response
+    except LoanLedgerStatementDenied:
+        return error_response(request, 403, "FORBIDDEN", "Loan statement export permission is required.")
+    except (LoanLedgerStatementNotFound, LoanServicingReadNotFound):
+        record_download_denial(
+            actor=actor, statement_job_id=statement_job_id, request=request
+        )
+        return error_response(request, 404, "NOT_FOUND", "The statement download was not found or is inaccessible.")
 
 
 @require_http_methods(["POST"])

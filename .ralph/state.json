@@ -307,14 +307,15 @@
     "010I2-dpd-pointer-and-policy-integrity-closure",
     "010J2-reminder-eligibility-and-delivery-integrity-closure",
     "010K-cfo-quarterly-mis",
-    "010K3-servicing-as-of-owner-boundary-closure"
+    "010K3-servicing-as-of-owner-boundary-closure",
+    "010K2-loan-ledger-statements-and-export"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-21_070957_repair",
+  "last_run_id": "2026-07-21_074659_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

@@ -1,0 +1,55 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_exact_request_replay_returns_one_job_artifact_and_checksum (sfpcl_credit.tests.test_loan_ledger_statement_api.LoanLedgerStatementApiTests.test_exact_request_replay_returns_one_job_artifact_and_checksum)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/tests/test_loan_ledger_statement_api.py", line 102, in test_exact_request_replay_returns_one_job_artifact_and_checksum
+    responses = [
+                ^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/tests/test_loan_ledger_statement_api.py", line 103, in <listcomp>
+    self.client.post(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/loans/views.py", line 177, in ledger_statement_request
+    request_statement(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/processes/loan_ledger_statements.py", line 67, in request_statement
+    job, _ = enqueue_scheduled_job(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/scheduler/services.py", line 39, in enqueue_scheduled_job
+    return _enqueue_idempotently(cleaned)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/scheduler/services.py", line 112, in _enqueue_idempotently
+    raise ValidationError(
+django.core.exceptions.ValidationError: {'idempotency_key': ['Idempotency key already belongs to a completed job.']}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.690s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

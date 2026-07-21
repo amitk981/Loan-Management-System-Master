@@ -4936,3 +4936,41 @@ Generation also stores deterministic internal PDF and XLSX documents from the fr
 scope and returns retained document metadata, SHA-256 checksum, download descriptor, and the same
 frozen totals. Export never reads live account state. Authentication, validation, permission,
 nondisclosing not-found, and state failures use the standard `401/400/403/404/409` envelopes.
+# Loan Ledger Statement Export (010K2)
+
+The statement interface exports the canonical immutable loan ledger; it does not calculate or store a
+second financial truth. The only supported format in this contract is `csv`.
+
+## Request statement
+
+`POST /api/v1/loan-accounts/{loan_account_id}/ledger-statements/`
+
+Requires `finance.loan_account.read`, `reports.export`, object scope, and `Idempotency-Key`. Borrower
+portal callers additionally require `portal.loan_account.read_own` and can request only a loan owned by
+their active portal member.
+
+```json
+{"format":"csv","from_date":"2026-04-01","to_date":"2026-06-30"}
+```
+
+The standard success envelope returns `statement_job_id`, `loan_account_id`, `status`, `format`,
+`row_count`, `opening_balance`, `closing_balance`, `checksum_sha256`, and `generated_at`. Exact replay
+of the same key and payload returns the same job, artifact, and checksum; reuse with another payload is
+`400 VALIDATION_ERROR`.
+
+## Statement status and download
+
+- `GET /api/v1/loan-ledger-statements/{statement_job_id}/`
+- `GET /api/v1/loan-ledger-statements/{statement_job_id}/download/?capability={signed-token}`
+
+Status is private to the original requester and returns a short-lived relative `download_url` plus
+`expires_at`; storage keys and permanent object URLs are never returned. The capability is bound to the
+actor, job, loan, document, checksum, and current issue version. A later status request supersedes the
+previous capability. Expired, superseded, tampered, cross-user, cross-loan, and guessed-job downloads
+return the same nondisclosing `404 NOT_FOUND` shape. Missing export authority returns `403 FORBIDDEN`.
+
+CSV rows retain canonical ordering and include date range, as-of/generated timestamps, opening/closing
+balances, owner references, debit/credit and running balances. Transaction references are masked by
+default; `reports.export_sensitive` is not implied. Request, generation, accepted download, and denied
+download audit events contain job/loan/document/checksum metadata only—never rows, storage keys, raw
+bank data, or signed URLs.

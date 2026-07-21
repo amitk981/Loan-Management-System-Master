@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.E...
+======================================================================
+ERROR: test_portal_borrower_can_download_only_own_masked_statement (sfpcl_credit.tests.test_loan_ledger_statement_api.LoanLedgerStatementApiTests.test_portal_borrower_can_download_only_own_masked_statement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/tests/test_loan_ledger_statement_api.py", line 194, in test_portal_borrower_can_download_only_own_masked_statement
+    borrower.set_password(self.fixture.fixture.owner.fixture.password)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute 'password'
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.310s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

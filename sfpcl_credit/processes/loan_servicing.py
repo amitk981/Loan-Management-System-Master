@@ -42,6 +42,13 @@ def get_schedule(*, actor, loan_account_id, query_params):
 
 def get_ledger(*, actor, loan_account_id, query_params):
     account, transfer = _scoped_account(actor=actor, loan_account_id=loan_account_id)
+    return get_ledger_for_scoped_account(
+        account=account, transfer=transfer, query_params=query_params
+    )
+
+
+def get_ledger_for_scoped_account(*, account, transfer, query_params):
+    """Project canonical rows after a caller has proved its own account scope."""
     page, page_size = _pagination(query_params)
     repayment_rows = account.repayment_ledger_entries.select_related(
         "allocation__repayment", "actor_user"
@@ -281,5 +288,6 @@ __all__ = [
     "LoanServicingReadNotFound",
     "LoanServicingReadValidation",
     "get_ledger",
+    "get_ledger_for_scoped_account",
     "get_schedule",
 ]

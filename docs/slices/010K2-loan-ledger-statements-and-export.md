@@ -1,7 +1,7 @@
 # Slice 010K2: Loan Ledger Statements and Export
 
 ## Status
-Not Started
+Complete
 
 ## Runtime Capabilities
 - `none`

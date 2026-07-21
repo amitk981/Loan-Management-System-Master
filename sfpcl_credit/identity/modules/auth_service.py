@@ -259,6 +259,7 @@ def current_user_payload(user):
             "portal.loan_application.read_own",
             "portal.document.read_own",
             "portal.loan_account.read_own",
+            "reports.export",
             "portal.notice.read_own",
             "portal.grievance.manage_own",
         ]

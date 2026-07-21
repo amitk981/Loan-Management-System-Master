@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_tampered_download_denial_is_audited_without_rows_urls_or_bank_data (sfpcl_credit.tests.test_loan_ledger_statement_api.LoanLedgerStatementApiTests.test_tampered_download_denial_is_audited_without_rows_urls_or_bank_data)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/tests/test_loan_ledger_statement_api.py", line 164, in test_tampered_download_denial_is_audited_without_rows_urls_or_bank_data
+    audit = AuditLog.objects.filter(action="loans.ledger_statement.downloaded").latest(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1085, in latest
+    return self.reverse()._earliest(*fields)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1068, in _earliest
+    return obj.get()
+           ^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.identity.models.AuditLog.DoesNotExist: AuditLog matching query does not exist.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.680s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

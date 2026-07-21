@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exact_request_replay_returns_one_job_artifact_and_checksum (sfpcl_credit.tests.test_loan_ledger_statement_api.LoanLedgerStatementApiTests.test_exact_request_replay_returns_one_job_artifact_and_checksum)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_074659_normal_run/sfpcl_credit/tests/test_loan_ledger_statement_api.py", line 116, in test_exact_request_replay_returns_one_job_artifact_and_checksum
+    self.assertEqual(DocumentFile.objects.count(), 1)
+AssertionError: 23 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.680s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
