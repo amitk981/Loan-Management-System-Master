@@ -1,0 +1,12 @@
+Finding ID: AR-010-SEARCH-001
+Root ID: ROOT-010-GLOBAL-SEARCH-SENSITIVE-AUTHORITY
+
+Commands:
+PYTHONPATH="$PWD/.ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes:$PWD" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test global_search_owner_scope_probe.GlobalSearchOwnerScopeProbe.test_security_input_rejects_record_outside_canonical_stage4_scope --verbosity 1 --keepdb
+PYTHONPATH="$PWD/.ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes:$PWD" /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test global_search_owner_scope_probe.GlobalSearchOwnerScopeProbe.test_unprefixed_sap_code_uses_the_sap_owner --verbosity 1 --keepdb
+
+FAIL: security input disclosed an owner outside canonical Stage-4 scope (observed total_count=1;
+expected 0). The security search facade discards actor and queries instrument tables directly.
+FAIL: a valid unprefixed SAP code never reaches the canonical SAP search owner (observed
+total_count=0; expected 1).
+Exit code: 1

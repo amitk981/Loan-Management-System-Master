@@ -1,0 +1,12 @@
+Command: Ralph architecture-review change-scope, admission, manifest, and convergence validators
+Interpreter path: /Users/amitkallapa/LMS/.ralph/venv/bin prepended to PATH
+Exit code: 0
+
+PASS: architecture-review change scope
+PASS: architecture-review admission
+PASS: validated 5 stable finding manifest row(s).
+PASS: architecture-review finding manifest
+PASS: architecture-review convergence
+
+Final combined rerun: runtime declarations, trusted PostgreSQL declaration, complete slice queue
+lint, change scope, admission, five-row manifest, and convergence all passed (exit code 0).

@@ -1,0 +1,5 @@
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-22_031437_architecture_review/
+?? docs/slices/010N5-terminal-servicing-recurrence-owner-closure.md
+?? docs/slices/010N6-interest-portfolio-identity-closure.md
+?? docs/slices/010N7-global-search-canonical-input-owner-closure.md

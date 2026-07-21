@@ -1,0 +1,12 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+
+Command:
+cd sfpcl-lms && npm exec vitest -- --config ../.ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/vitest.review.config.ts run -t 'AR-010-SERVICING-SEAM-001'
+
+FAIL: capture-only transport truth must be rejected as malformed.
+Expected rejected=true; received false. The client accepted the partial response, called the
+separate SAP-posting and allocation endpoints, and resolved a complete-looking result instead of
+retaining the composite backend command as the sole financial mutation.
+Tests: 1 failed, 2 skipped.
+Exit code: 1

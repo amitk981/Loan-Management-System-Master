@@ -1,0 +1,15 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+
+Current focused command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010ReminderOwnerRegressionTests.test_repayment_after_check_but_before_adapter_prevents_provider_call --verbosity 1 --keepdb
+
+Found 1 test(s).
+Ran 1 test in 0.264s
+OK
+Individual reminder provider probe: PASS; repayment prevents the provider call.
+
+Grouped terminal verification: FAIL. AR-010-SERVICING-SEAM-001 still reproduces inside the same
+CR-015 terminal contract, so the owner-authorized repair episode cannot close or discard this
+inherited Finding ID/Root ID pair. The successor must retain the complete grouped contract.
+Exit code: 1
