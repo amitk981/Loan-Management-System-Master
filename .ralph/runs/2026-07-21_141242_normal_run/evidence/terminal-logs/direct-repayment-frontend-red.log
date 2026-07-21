@@ -1,0 +1,59 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl-lms
+
+ ❯ src/services/servicingApi.test.ts (4 tests | 2 failed) 10ms
+   ✓ servicing API module > requires an active source role as well as every combined-action permission 1ms
+   ✓ servicing API module > reads schedule and ledger pages through authenticated standard pagination 2ms
+   × servicing API module > delegates capture, SAP posting, and allocation to one backend-owned command 5ms
+     → promise rejected "TypeError: Cannot read properties of unde…" instead of resolving
+   × servicing API module > stops an exact capture replay before a second SAP or allocation mutation 1ms
+     → promise rejected "TypeError: Cannot read properties of unde…" instead of resolving
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > delegates capture, SAP posting, and allocation to one backend-owned command
+AssertionError: promise rejected "TypeError: Cannot read properties of unde…" instead of resolving
+ ❯ src/services/servicingApi.test.ts:82:7
+     80|       ],
+     81|       roleCodes: ['accounts_head'],
+     82|     })).resolves.toEqual({ replayed: false, capture, allocation });
+       |       ^
+     83| 
+     84|     expect(fetchMock).toHaveBeenCalledTimes(1);
+
+Caused by: TypeError: Cannot read properties of undefined (reading 'status')
+ ❯ parseAuthenticatedEnvelope src/services/authSession.ts:290:113
+ ❯ authenticatedEnvelopeRequest src/services/authSession.ts:351:10
+ ❯ Module.authenticatedRequest src/services/authSession.ts:355:20
+ ❯ Module.postAndAllocateDirectRepayment src/services/servicingApi.ts:200:3
+ ❯ src/services/servicingApi.test.ts:65:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > stops an exact capture replay before a second SAP or allocation mutation
+AssertionError: promise rejected "TypeError: Cannot read properties of unde…" instead of resolving
+ ❯ src/services/servicingApi.test.ts:113:7
+    111|       permissions: ['finance.repayment.create', 'finance.repayment.mar…
+    112|       roleCodes: ['credit_manager'],
+    113|     })).resolves.toEqual({ replayed: true, capture, allocation });
+       |       ^
+    114|     expect(fetchMock).toHaveBeenCalledTimes(1);
+    115|   });
+
+Caused by: TypeError: Cannot read properties of undefined (reading 'status')
+ ❯ parseAuthenticatedEnvelope src/services/authSession.ts:290:113
+ ❯ authenticatedEnvelopeRequest src/services/authSession.ts:351:10
+ ❯ Module.authenticatedRequest src/services/authSession.ts:355:20
+ ❯ Module.postAndAllocateDirectRepayment src/services/servicingApi.ts:200:3
+ ❯ src/services/servicingApi.test.ts:103:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 2 passed (4)
+   Start at  14:21:35
+   Duration  336ms (transform 77ms, setup 0ms, collect 78ms, tests 10ms, environment 0ms, prepare 40ms)
+
+Exit code: 1

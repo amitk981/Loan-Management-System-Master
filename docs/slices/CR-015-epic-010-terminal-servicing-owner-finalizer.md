@@ -1,7 +1,7 @@
 # Slice CR-015: Epic 010 Terminal Servicing Owner Finalizer
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

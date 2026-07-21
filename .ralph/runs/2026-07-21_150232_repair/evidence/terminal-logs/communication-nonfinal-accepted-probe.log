@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_recovery_reuses_retained_provider_acceptance_without_redispatch (sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_recovery_reuses_retained_provider_acceptance_without_redispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/tests/test_communication_worker_runtime.py", line 896, in test_recovery_reuses_retained_provider_acceptance_without_redispatch
+    self.assertEqual(job.status, CommunicationDeliveryJob.STATUS_RUNNING)
+AssertionError: 'queued' != 'running'
+- queued
++ running
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.030s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_recovery_reuses_retained_provider_acceptance_without_redispatch --verbosity 1
+Exit code: 1

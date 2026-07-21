@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from django.core import signing
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.utils import timezone
@@ -93,13 +94,25 @@ def request_statement(*, actor, loan_account_id, payload, idempotency_key, reque
                 {"Idempotency-Key": "This key was already used with a different request."}
             )
         return _serialize(job=existing, generated=_generated_audit(existing.pk))
-    job, _ = enqueue_scheduled_job(
-        job_type="report_export",
-        due_at=timezone.now(),
-        idempotency_key=scheduler_key,
-        related_entity_type="loan_account",
-        related_entity_id=loan_account_id,
-    )
+    try:
+        job, created = enqueue_scheduled_job(
+            job_type="report_export",
+            due_at=timezone.now(),
+            idempotency_key=scheduler_key,
+            related_entity_type="loan_account",
+            related_entity_id=loan_account_id,
+        )
+    except ValidationError:
+        job = ScheduledJob.objects.filter(idempotency_key=scheduler_key).first()
+        if job is None:
+            raise
+        return _validated_replay(
+            actor=actor, job=job, request_digest=request_digest
+        )
+    if not created:
+        return _validated_replay(
+            actor=actor, job=job, request_digest=request_digest
+        )
     mark_job_running(job.pk)
     generated_at = timezone.now()
     statement = _statement_projection(
@@ -110,7 +123,7 @@ def request_statement(*, actor, loan_account_id, payload, idempotency_key, reque
         job_id=job.pk,
         loan_account_id=loan_account_id,
     )
-    body = _render_csv(statement)
+    body = _render_csv(statement, borrower_safe=_is_portal_actor(actor))
     stored = LocalDocumentStorage().store(
         SimpleUploadedFile(
             f"loan-ledger-{loan_account_id}.csv",
@@ -338,36 +351,54 @@ def _statement_projection(*, rows, from_date, to_date, generated_at, job_id, loa
     }
 
 
-def _render_csv(statement):
-    fieldnames = [
-        "statement_job_id", "loan_account_id", "from_date", "to_date",
-        "as_of_date", "generated_at", "opening_balance", "closing_balance",
-        "transaction_date", "transaction_type", "owner_reference", "reference",
+def _render_csv(statement, *, borrower_safe=False):
+    staff_only = [
+        "statement_job_id", "loan_account_id",
+    ]
+    metadata = [
+        "from_date", "to_date", "as_of_date", "generated_at",
+        "opening_balance", "closing_balance",
+    ]
+    transaction_fields = [
+        "transaction_date", "transaction_type", "reference",
         "debit", "credit", "principal_balance", "interest_balance",
-        "total_outstanding", "posted_by", "sap_status", "remarks",
+        "total_outstanding",
+    ]
+    internal_transaction_fields = [
+        "owner_reference", "posted_by", "sap_status", "remarks",
+    ]
+    fieldnames = [
+        *([] if borrower_safe else staff_only),
+        *metadata,
+        *transaction_fields,
+        *([] if borrower_safe else internal_transaction_fields),
     ]
     output = io.StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
-    common = {key: statement[key] for key in fieldnames[:8]}
+    common = {key: statement[key] for key in [*staff_only, *metadata] if key in fieldnames}
+    if not statement["rows"]:
+        writer.writerow(common)
     for row in statement["rows"]:
-        writer.writerow(
-            {
+        projected = {
                 **common,
                 "transaction_date": row["transaction_date"],
                 "transaction_type": row["transaction_type"],
-                "owner_reference": json.dumps(row["owner_reference"], sort_keys=True),
                 "reference": _mask_reference(row["reference"]),
                 "debit": row["debit"],
                 "credit": row["credit"],
                 "principal_balance": row["principal_balance"],
                 "interest_balance": row["interest_balance"],
                 "total_outstanding": row["total_outstanding"],
-                "posted_by": row["actor"]["display_name"],
-                "sap_status": row["sap_status"],
-                "remarks": row["remarks"],
-            }
-        )
+        }
+        if not borrower_safe:
+            projected.update(
+                owner_reference=json.dumps(row["owner_reference"], sort_keys=True),
+                posted_by=row["actor"]["display_name"],
+                sap_status=row["sap_status"],
+                remarks=row["remarks"],
+            )
+        writer.writerow(projected)
     return output.getvalue().encode("utf-8")
 
 
@@ -376,6 +407,26 @@ def _mask_reference(value):
     if len(cleaned) <= 4:
         return "*" * len(cleaned)
     return f"{'*' * (len(cleaned) - 4)}{cleaned[-4:]}"
+
+
+def _is_portal_actor(actor):
+    return PortalAccount.objects.filter(
+        user=actor, status=PortalAccount.STATUS_ACTIVE, member__is_deleted=False
+    ).exists()
+
+
+def _validated_replay(*, actor, job, request_digest):
+    requested = AuditLog.objects.filter(
+        action=REQUESTED_ACTION,
+        entity_type="scheduled_job",
+        entity_id=job.pk,
+        actor_user=actor,
+    ).first()
+    if requested is None or (requested.new_value_json or {}).get("request_digest") != request_digest:
+        raise LoanLedgerStatementValidation(
+            {"Idempotency-Key": "This key was already used with a different request."}
+        )
+    return _serialize(job=job, generated=_generated_audit(job.pk))
 
 
 def _scoped_job(*, actor, statement_job_id):

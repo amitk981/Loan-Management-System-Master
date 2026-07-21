@@ -1,0 +1,9 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+Exit code: 0
+Test specification: sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py::Epic010StatementOwnerRegressionTests::test_empty_borrower_csv_retains_safe_metadata_without_internal_fields

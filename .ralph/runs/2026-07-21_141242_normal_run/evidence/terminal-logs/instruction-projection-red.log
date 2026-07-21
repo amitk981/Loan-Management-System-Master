@@ -1,0 +1,34 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_direct_instructions_are_masked_read_only_and_server_owned (sfpcl_credit.tests.test_portal_loan_accounts_api.PortalLoanAccountsApiTests.test_direct_instructions_are_masked_read_only_and_server_owned)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/utils.py", line 443, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/tests/test_portal_loan_accounts_api.py", line 98, in test_direct_instructions_are_masked_read_only_and_server_owned
+    self.assertEqual(response.json()["data"], {
+AssertionError: {'available': True, 'beneficiary_name': 'SFPCL Collections', '[327 chars]ds.'} != {'available': True, 'projection_version': 'PORTAL-REPAYMENT-20[441 chars]ds.'}
+  {'account_number_masked': '********4321',
+   'amount_due': '400000.00',
++  'approved_at': '2026-04-01T00:00:00Z',
+   'available': True,
++  'available_actions': [],
+   'bank_name': 'Approved Bank',
+   'beneficiary_name': 'SFPCL Collections',
+   'disclaimer': 'Repayment will be updated in the portal after SFPCL verifies '
+                 'the bank receipt and posts the repayment in its records.',
+   'ifsc': 'APPR0001234',
++  'projection_version': 'PORTAL-REPAYMENT-2026-01',
+   'proof_submission_enabled': False,
+   'required_narration': 'LN-REAL-OWNER-001'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.677s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

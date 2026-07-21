@@ -1,0 +1,35 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+ECatalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+.Catalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+.
+======================================================================
+ERROR: test_provider_timeout_then_repayment_prevents_retry_effect (sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010TerminalOwnerFinalizerPostgreSQLAcceptanceTests.test_provider_timeout_then_repayment_prevents_retry_effect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py", line 145, in test_provider_timeout_then_repayment_prevents_retry_effect
+    result = execute_communication_job(job.pk, adapter=retry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/processes/communication_delivery.py", line 13, in execute_communication_job
+    return CommunicationDispatcher.execute_job(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 366, in execute_job
+    result = cls.execute_generic_job(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 1474, in execute_generic_job
+    execution = cls.start_job(job_id)
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 937, in start_job
+    raise CommunicationDispatchConflict(
+sfpcl_credit.communications.modules.communication_dispatcher.CommunicationDispatchConflict: The communication job is not ready for execution.
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.039s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+Exit code: 1

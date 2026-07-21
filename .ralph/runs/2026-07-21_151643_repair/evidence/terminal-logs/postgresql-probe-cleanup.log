@@ -1,0 +1,9 @@
+Dropped if present: test_sfpcl_credit_1_2026_07_21_151643_repair
+Dropped if present: test_sfpcl_credit_local1_2026_07_21_151643_repair
+Dropped if present: test_sfpcl_credit_worker_green_151643
+Dropped if present: test_sfpcl_credit_pass1_151643
+Dropped if present: test_sfpcl_credit_pass2_151643
+Dropped if present: test_sfpcl_credit_worker_owner_green_151643
+Dropped if present: test_sfpcl_credit_final1_151643
+Dropped if present: test_sfpcl_credit_final2_151643
+Exit code: 0

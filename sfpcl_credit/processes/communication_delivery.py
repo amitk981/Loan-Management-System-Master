@@ -19,6 +19,18 @@ def execute_communication_job(job_id, *, adapter=None):
                 communication_job_id=claimed_job_id
             )
         ),
+        final_provider_executor=lambda claimed_job_id, provider_effect: (
+            ReminderEngine.execute_serviceable_delivery(
+                communication_job_id=claimed_job_id,
+                provider_effect=provider_effect,
+            )
+        ),
+        generic_execution_owner=lambda claimed_job_id, worker_effect: (
+            ReminderEngine.execute_owned_delivery(
+                communication_job_id=claimed_job_id,
+                worker_effect=worker_effect,
+            )
+        ),
     )
 
 

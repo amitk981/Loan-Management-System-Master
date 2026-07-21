@@ -47,12 +47,13 @@ class DpdSourceDecision:
 def resolve_locked_dpd_source_decision(*, actor, loan_account_id, as_of_date):
     """Lock and re-authorise one loan before freezing schedule/ledger truth."""
     try:
-        account = (
-            scoped_account_candidates(actor=actor)
-            .select_for_update()
-            .filter(pk=loan_account_id)
-            .first()
-        )
+        account = LoanAccount.objects.select_for_update().filter(
+            pk=loan_account_id
+        ).first()
+        if account is not None and not scoped_account_candidates(actor=actor).filter(
+            pk=account.pk
+        ).exists():
+            account = None
     except LoanAccountReadPermissionDenied as exc:
         raise DpdSourcePermissionDenied from exc
     if account is None:

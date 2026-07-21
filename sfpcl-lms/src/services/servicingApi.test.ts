@@ -58,11 +58,8 @@ describe('servicing API module', () => {
     ]);
   });
 
-  it('captures, SAP-posts, and allocates once with caller-stable action keys', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(ok(capture))
-      .mockResolvedValueOnce(ok({ ...capture, sap_posting: { ...capture.sap_posting, status: 'posted' } }))
-      .mockResolvedValueOnce(ok(allocation));
+  it('delegates capture, SAP posting, and allocation to one backend-owned command', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok({ replayed: false, capture, allocation }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(postAndAllocateDirectRepayment({
@@ -84,18 +81,22 @@ describe('servicing API module', () => {
       roleCodes: ['accounts_head'],
     })).resolves.toEqual({ replayed: false, capture, allocation });
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'http://127.0.0.1:8000/api/v1/loan-accounts/account-1/direct-repayment-command/',
+    );
     expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({
       method: 'POST', headers: expect.objectContaining({ 'Idempotency-Key': 'repayment-attempt-1' }),
     }));
-    expect(fetchMock.mock.calls[2][1]).toEqual(expect.objectContaining({
-      method: 'POST', headers: expect.objectContaining({ 'Idempotency-Key': 'repayment-attempt-1:allocation' }),
-    }));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      capture: expect.objectContaining({ bank_reference_number: 'UTR-001' }),
+      sap_posting: expect.objectContaining({ sap_entry_reference: 'SAP-001' }),
+    });
   });
 
   it('stops an exact capture replay before a second SAP or allocation mutation', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(ok({
-      idempotency_replayed: true, original_response: capture,
+      replayed: true, capture, allocation,
     }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -109,7 +110,7 @@ describe('servicing API module', () => {
       idempotencyKey: 'repayment-attempt-1',
       permissions: ['finance.repayment.create', 'finance.repayment.mark_sap_posted', 'finance.repayment.allocate'],
       roleCodes: ['credit_manager'],
-    })).resolves.toEqual({ replayed: true, capture, allocation: null });
+    })).resolves.toEqual({ replayed: true, capture, allocation });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

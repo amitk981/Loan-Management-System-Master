@@ -1,0 +1,46 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl-lms
+
+(node:90278) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/services/portalApi.test.ts (9 tests | 1 failed) 111ms
+   ✓ portal member API client > uses only the bounded borrower loan-account projection URLs 3ms
+   × portal member API client > traverses canonical pagination so a 101st borrower collection is not truncated 26ms
+     → expected [ { schedule_id: 'row-1' }, …(99) ] to have a length of 101 but got 100
+   ✓ portal member API client > loads dashboard, profile, and produce supply using the stored portal bearer token 19ms
+   ✓ portal member API client > surfaces portal permission errors without substituting mock member data 18ms
+   ✓ portal member API client > surfaces backend nominee field errors for portal forms 1ms
+   ✓ portal member API client > creates, updates, submits, lists, and reads portal applications with the stored bearer token 10ms
+   ✓ portal member API client > loads deficiencies, uploads the exact server-owned multipart contract, and resubmits 26ms
+   ✓ portal member API client > loads documentation actions, uploads exact multipart data, and follows the safe download action 2ms
+   ✓ portal member API client > loads the disbursement projection and follows the server-issued one-use advice capability 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/portalApi.test.ts > portal member API client > traverses canonical pagination so a 101st borrower collection is not truncated
+AssertionError: expected [ { schedule_id: 'row-1' }, …(99) ] to have a length of 101 but got 100
+
+- Expected
++ Received
+
+- 101
++ 100
+
+ ❯ src/services/portalApi.test.ts:82:5
+     80|     vi.stubGlobal('fetch', fetchMock);
+     81| 
+     82|     await expect(fetchPortalLoanSchedule('loan-selected')).resolves.to…
+       |     ^
+     83|     expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+     84|       'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  14:26:15
+   Duration  676ms (transform 144ms, setup 0ms, collect 154ms, tests 111ms, environment 0ms, prepare 48ms)
+
+Exit code: 1

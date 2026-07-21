@@ -5010,6 +5010,31 @@ and `page_size`, with `page_size` bounded to 1–100, and use the standard list 
 
 Direct instructions are read-only. They expose beneficiary, bank, masked last four, IFSC, required
 loan-account narration, backend total due, disabled proof submission, and the source disclaimer only
-when runtime configuration explicitly marks all instruction facts approved. Missing/incomplete
-approval returns `available: false` and null bank fields. The projection never reuses the unverified
+when one retained, effective `RepaymentInstructionVersion` is active. Missing approval returns
+`available: false` and null bank fields. The projection never reuses the unverified
 statement-import bank label or the outgoing disbursement source bank as repayment authority.
+
+## Epic 010 terminal servicing owner contracts (CR-015)
+
+`POST /api/v1/loan-accounts/{loan_account_id}/direct-repayment-command/` is the staff UI's sole
+composite direct-repayment mutation. It requires the same active `credit_manager`/`accounts_head`,
+loan scope, and all three `finance.repayment.create`, `finance.repayment.mark_sap_posted`, and
+`finance.repayment.allocate` permissions as the owned substeps. The nonblank `Idempotency-Key`
+binds the loan, actor, `capture` object, and `sap_posting` object. The backend transaction owns
+capture, retained SAP decision, principal-first allocation, and the complete response; exact replay
+returns `{replayed:true,capture,allocation}` from retained truth, while changed payload or account
+binding returns `409 CONFLICT` with no additional effect. Validation, permission, and nondisclosing
+identity failures use the standard `400/403/404` envelopes.
+
+Concurrent equal-key statement requests converge on one scheduled job, one document, and one
+checksum. Borrower CSV uses a reduced schema: date/as-of/generated metadata, opening/closing
+balances, masked reference, debit/credit, and running balances. It omits job/account owner ids,
+owner-reference JSON, staff identity, SAP status, and internal remarks. An empty borrower statement
+contains one metadata row so its period and balances remain explicit.
+
+Portal loan-account, schedule, repayment, and invoice collections retain the standard list envelope.
+The frontend follows `pagination.total_pages` and never treats the first page of 100 as the complete
+collection. Direct instructions resolve one retained active `RepaymentInstructionVersion`; the
+projection includes `projection_version`, `approved_at`, and server-owned `available_actions`, with
+bank fields null and actions empty when no effective approved version exists. Runtime/browser
+configuration is not repayment authority.

@@ -1,8 +1,10 @@
 """Borrower-safe, authenticated-member loan-servicing projections."""
 
-from django.conf import settings
 from django.core.paginator import EmptyPage, Paginator
+from django.db.models import Q
+from django.utils import timezone
 
+from sfpcl_credit.configurations.models import RepaymentInstructionVersion
 from sfpcl_credit.interest.models import InterestInvoice
 from sfpcl_credit.loans.models import LoanAccount, RepaymentAllocation, RepaymentSchedule
 
@@ -76,11 +78,25 @@ def invoices(*, member, loan_account_id, query_params):
 
 def direct_instructions(*, member, loan_account_id):
     account = _account(member=member, loan_account_id=loan_account_id)
-    configured = getattr(settings, "PORTAL_REPAYMENT_INSTRUCTIONS", {})
-    required = ("beneficiary_name", "bank_name", "account_number_last4", "ifsc")
-    available = bool(configured.get("approved") is True and all(configured.get(key) for key in required))
+    today = timezone.localdate()
+    configured = (
+        RepaymentInstructionVersion.objects.filter(
+            status=RepaymentInstructionVersion.STATUS_ACTIVE,
+            effective_from__lte=today,
+        )
+        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=today))
+        .order_by("-effective_from", "-approved_at")
+        .first()
+    )
+    available = configured is not None
     base = {
         "available": available,
+        "projection_version": configured.version if available else None,
+        "approved_at": (
+            configured.approved_at.isoformat().replace("+00:00", "Z")
+            if available
+            else None
+        ),
         "beneficiary_name": None,
         "bank_name": None,
         "account_number_masked": None,
@@ -88,18 +104,19 @@ def direct_instructions(*, member, loan_account_id):
         "required_narration": account.loan_account_number,
         "amount_due": _money(account.total_outstanding),
         "proof_submission_enabled": False,
+        "available_actions": [],
         "disclaimer": (
             "Repayment will be updated in the portal after SFPCL verifies the bank receipt "
             "and posts the repayment in its records."
         ),
     }
     if available:
-        last4 = str(configured["account_number_last4"])[-4:]
+        last4 = configured.account_number_last4[-4:]
         base.update(
-            beneficiary_name=str(configured["beneficiary_name"]),
-            bank_name=str(configured["bank_name"]),
+            beneficiary_name=configured.beneficiary_name,
+            bank_name=configured.bank_name,
             account_number_masked=f"********{last4}",
-            ifsc=str(configured["ifsc"]),
+            ifsc=configured.ifsc,
         )
     return base
 

@@ -67,6 +67,25 @@ describe('portal member API client', () => {
     expect(fetchMock.mock.calls.every(call => call[1].headers.Authorization === 'Bearer portal-access-token')).toBe(true);
   });
 
+  it('traverses canonical pagination so a 101st borrower collection is not truncated', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(
+        Array.from({ length: 100 }, (_, index) => ({ schedule_id: `row-${index + 1}` })),
+        { page: 1, page_size: 100, total_count: 101, total_pages: 2 },
+      ))
+      .mockResolvedValueOnce(ok(
+        [{ schedule_id: 'row-101' }],
+        { page: 2, page_size: 100, total_count: 101, total_pages: 2 },
+      ));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchPortalLoanSchedule('loan-selected')).resolves.toHaveLength(101);
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected/schedule/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected/schedule/?page=2&page_size=100',
+    ]);
+  });
+
   it('loads dashboard, profile, and produce supply using the stored portal bearer token', async () => {
     const fetchMock = vi
       .fn()
@@ -277,8 +296,8 @@ const request = (method = 'GET', body?: unknown) => expect.objectContaining({
   ...(body ? { body: JSON.stringify(body) } : {}),
 });
 
-function ok(data: unknown): Response {
-  return { ok: true, status: 200, json: async () => ({ success: true, data, meta: {} }) } as Response;
+function ok(data: unknown, pagination?: { page: number; page_size: number; total_count: number; total_pages: number }): Response {
+  return { ok: true, status: 200, json: async () => ({ success: true, data, pagination, meta: {} }) } as Response;
 }
 
 function error(status: number, code: string, fieldErrors?: Record<string, string>): Response {

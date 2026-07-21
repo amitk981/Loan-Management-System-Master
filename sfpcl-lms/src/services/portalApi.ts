@@ -3,6 +3,7 @@ import { API_BASE_URL, AuthSessionError, loadStoredAuthSession } from './authSes
 interface ApiEnvelope<T> {
   success: boolean;
   data?: T;
+  pagination?: { page: number; page_size: number; total_count: number; total_pages: number };
   error?: { code: string; message: string; field_errors?: Record<string, unknown> };
 }
 
@@ -319,6 +320,8 @@ export interface PortalInterestInvoiceSummary {
 
 export interface PortalDirectRepaymentInstructions {
   available: boolean;
+  projection_version: string | null;
+  approved_at: string | null;
   beneficiary_name: string | null;
   bank_name: string | null;
   account_number_masked: string | null;
@@ -326,6 +329,7 @@ export interface PortalDirectRepaymentInstructions {
   required_narration: string;
   amount_due: string;
   proof_submission_enabled: false;
+  available_actions: string[];
   disclaimer: string;
 }
 
@@ -388,11 +392,11 @@ export const fetchPortalDocumentationActions = (applicationId: string) => reques
 export const fetchPortalDisbursementStatus = (applicationId: string) => request<PortalDisbursementStatus>(
   `/api/v1/portal/applications/${applicationId}/disbursement-status/`,
 );
-export const fetchPortalLoanAccounts = () => request<PortalLoanAccountSummary[]>('/api/v1/portal/loan-accounts/?page=1&page_size=100');
+export const fetchPortalLoanAccounts = () => requestAllPages<PortalLoanAccountSummary>('/api/v1/portal/loan-accounts/?page=1&page_size=100');
 export const fetchPortalLoanAccount = (loanAccountId: string) => request<PortalLoanAccountDetail>(`/api/v1/portal/loan-accounts/${loanAccountId}/`);
-export const fetchPortalLoanSchedule = (loanAccountId: string) => request<PortalLoanScheduleItem[]>(`/api/v1/portal/loan-accounts/${loanAccountId}/schedule/?page=1&page_size=100`);
-export const fetchPortalRepaymentHistory = (loanAccountId: string) => request<PortalRepaymentHistoryItem[]>(`/api/v1/portal/loan-accounts/${loanAccountId}/repayments/?page=1&page_size=100`);
-export const fetchPortalInterestInvoices = (loanAccountId: string) => request<PortalInterestInvoiceSummary[]>(`/api/v1/portal/loan-accounts/${loanAccountId}/invoices/?page=1&page_size=100`);
+export const fetchPortalLoanSchedule = (loanAccountId: string) => requestAllPages<PortalLoanScheduleItem>(`/api/v1/portal/loan-accounts/${loanAccountId}/schedule/?page=1&page_size=100`);
+export const fetchPortalRepaymentHistory = (loanAccountId: string) => requestAllPages<PortalRepaymentHistoryItem>(`/api/v1/portal/loan-accounts/${loanAccountId}/repayments/?page=1&page_size=100`);
+export const fetchPortalInterestInvoices = (loanAccountId: string) => requestAllPages<PortalInterestInvoiceSummary>(`/api/v1/portal/loan-accounts/${loanAccountId}/invoices/?page=1&page_size=100`);
 export const fetchPortalDirectRepaymentInstructions = (loanAccountId: string) => request<PortalDirectRepaymentInstructions>(`/api/v1/portal/loan-accounts/${loanAccountId}/direct-instructions/`);
 export const downloadPortalDisbursementAdvice = async (applicationId: string) => {
   const descriptor = await request<PortalDownloadDescriptor>(
@@ -438,6 +442,24 @@ export const openPortalDocumentBlob = (content: Blob) => {
 };
 
 async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; formData?: FormData } = {}): Promise<T> {
+  const envelope = await requestEnvelope<T>(path, options);
+  return envelope.data as T;
+}
+
+async function requestAllPages<T>(path: string): Promise<T[]> {
+  const first = await requestEnvelope<T[]>(path);
+  const rows = [...(first.data ?? [])];
+  const totalPages = first.pagination?.total_pages ?? 1;
+  for (let page = 2; page <= totalPages; page += 1) {
+    const url = new URL(path, 'http://portal.local');
+    url.searchParams.set('page', String(page));
+    const next = await requestEnvelope<T[]>(`${url.pathname}?${url.searchParams.toString()}`);
+    rows.push(...(next.data ?? []));
+  }
+  return rows;
+}
+
+async function requestEnvelope<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; formData?: FormData } = {}): Promise<ApiEnvelope<T>> {
   const session = loadStoredAuthSession();
   if (!session) {
     throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
@@ -463,7 +485,7 @@ async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PA
       normalizeFieldErrors(envelope.error?.field_errors),
     );
   }
-  return envelope.data;
+  return envelope;
 }
 
 const normalizeFieldErrors = (fieldErrors?: Record<string, unknown>) => {

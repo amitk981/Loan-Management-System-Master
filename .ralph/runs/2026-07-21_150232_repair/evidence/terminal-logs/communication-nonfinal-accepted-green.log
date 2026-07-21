@@ -1,0 +1,12 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+OK
+Destroying test database for alias 'default'...
+
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_recovery_reuses_retained_provider_acceptance_without_redispatch --verbosity 1
+Exit code: 0

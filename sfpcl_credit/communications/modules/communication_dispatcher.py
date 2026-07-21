@@ -340,7 +340,14 @@ class CommunicationDispatcher:
 
     @classmethod
     def execute_job(
-        cls, job_id, *, adapter=None, advice_executor, pre_provider_check=None
+        cls,
+        job_id,
+        *,
+        adapter=None,
+        advice_executor,
+        pre_provider_check=None,
+        final_provider_executor=None,
+        generic_execution_owner=None,
     ):
         job = CommunicationDeliveryJob.objects.only(
             "job_kind", "communication_id"
@@ -357,8 +364,16 @@ class CommunicationDispatcher:
                 if channel == Communication.CHANNEL_SMS
                 else configured_email_delivery_adapter()
             )
-        result = cls.execute_generic_job(
-            job_id, adapter=adapter, pre_provider_check=pre_provider_check
+        worker_effect = lambda: cls.execute_generic_job(
+            job_id,
+            adapter=adapter,
+            pre_provider_check=pre_provider_check,
+            final_provider_executor=final_provider_executor,
+        )
+        result = (
+            generic_execution_owner(job_id, worker_effect)
+            if generic_execution_owner is not None
+            else worker_effect()
         )
         if isinstance(result, dict):
             return result
@@ -1454,7 +1469,14 @@ class CommunicationDispatcher:
         )
 
     @classmethod
-    def execute_generic_job(cls, job_id, *, adapter=None, pre_provider_check=None):
+    def execute_generic_job(
+        cls,
+        job_id,
+        *,
+        adapter=None,
+        pre_provider_check=None,
+        final_provider_executor=None,
+    ):
         execution = cls.start_job(job_id)
         if execution.job_kind != CommunicationDeliveryJob.KIND_GENERIC:
             raise CommunicationDispatchConflict(
@@ -1512,9 +1534,16 @@ class CommunicationDispatcher:
         else:
             delivery_adapter = adapter or default_adapter
             try:
-                result = getattr(delivery_adapter, method_name)(
+                provider_effect = lambda: getattr(delivery_adapter, method_name)(
                     payload, job.idempotency_key
                 )
+                result = (
+                    final_provider_executor(job_id, provider_effect)
+                    if final_provider_executor is not None
+                    else provider_effect()
+                )
+                if isinstance(result, dict):
+                    return result
             except TimeoutError:
                 return cls.defer_job(
                     job_id, "provider_timeout", claim_token=execution.claim_token

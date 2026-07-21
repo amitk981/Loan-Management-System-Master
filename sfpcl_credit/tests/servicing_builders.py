@@ -59,6 +59,145 @@ class InterestCapitalisationFixture:
         )
 
 
+@dataclass(frozen=True)
+class TerminalReminderFixture:
+    account: object
+    actor: User
+    template: object
+    request: object
+
+    def queue(self, *, idempotency_key):
+        from sfpcl_credit.communications.models import CommunicationDeliveryJob
+        from sfpcl_credit.monitoring.models import Reminder
+        from sfpcl_credit.monitoring.modules.reminder_engine import ReminderEngine
+
+        created = ReminderEngine.create_reminder(
+            actor=self.actor,
+            loan_account_id=self.account.pk,
+            payload={
+                "quarter_end_date": "2026-06-30",
+                "reminder_type": "outstanding_beyond_one_year",
+                "channel": "sms",
+                "content_template_id": str(self.template.pk),
+                "message_body": "Loan remains outstanding at quarter end.",
+                "send_now": False,
+            },
+            request=self.request,
+        )
+        ReminderEngine.send_reminder(
+            actor=self.actor,
+            reminder_id=created["reminder_id"],
+            idempotency_key=idempotency_key,
+            request=self.request,
+        )
+        reminder = Reminder.objects.get(pk=created["reminder_id"])
+        return CommunicationDeliveryJob.objects.get(
+            communication_id=reminder.communication_id
+        )
+
+
+def build_terminal_reminder_fixture(*, suffix):
+    """Build reminder-owner truth without borrowing another TestCase setup."""
+    from sfpcl_credit.communications.models import ContentTemplate
+    from sfpcl_credit.loans.models import RepaymentSchedule
+    from sfpcl_credit.monitoring.models import DpdStatus
+
+    facts = build_ready_epic009_fixture(
+        password="SyntheticReminder123!",
+        finance_email=f"terminal.finance.{suffix}@sfpcl.example",
+        credit_email=f"terminal.credit.{suffix}@sfpcl.example",
+        cfc_email=f"terminal.cfc.{suffix}@sfpcl.example",
+        borrower_email=f"terminal.borrower.{suffix}@sfpcl.example",
+    )
+    account = facts["ready"]["account"]
+    type(account).objects.filter(pk=account.pk).update(
+        loan_account_status="active",
+        disbursed_amount=account.sanctioned_amount,
+        principal_outstanding=account.sanctioned_amount,
+        interest_outstanding="0.00",
+        charges_outstanding="0.00",
+        total_outstanding=account.sanctioned_amount,
+    )
+    account.refresh_from_db()
+    actor = facts["credit"]
+    for code in (
+        "finance.loan_account.read",
+        "monitoring.dpd.read",
+        "monitoring.dpd.calculate",
+        "monitoring.reminder.create",
+        "communications.communication.send",
+    ):
+        permission, _ = Permission.objects.get_or_create(
+            permission_code=code,
+            defaults={
+                "permission_name": code,
+                "module_name": "monitoring",
+                "risk_level": "high",
+            },
+        )
+        RolePermission.objects.get_or_create(role=actor.primary_role, permission=permission)
+    account.member.mobile_number = "+919876543210"
+    account.member.email = f"terminal.member.{suffix}@example.test"
+    account.member.save(update_fields=["mobile_number", "email"])
+    RepaymentSchedule.objects.create(
+        loan_account=account,
+        installment_number=1,
+        due_date=date(2025, 6, 29),
+        principal_due="1000.00",
+        interest_due="100.00",
+        charges_due="0.00",
+        total_due="1100.00",
+        schedule_status="pending",
+    )
+    request = SimpleNamespace(
+        META={"REMOTE_ADDR": "127.0.0.1"},
+        headers={"User-Agent": "terminal-reminder-owner", "X-Request-ID": suffix},
+    )
+    dpd_id = uuid4()
+    audit = AuditLog.objects.create(
+        actor_user=actor,
+        action="monitoring.dpd.calculated",
+        entity_type="dpd_status",
+        entity_id=dpd_id,
+        new_value_json={"loan_account_id": str(account.pk), "as_of_date": "2026-06-30"},
+    )
+    dpd = DpdStatus.objects.create(
+        dpd_status_id=dpd_id,
+        loan_account=account,
+        as_of_date=date(2026, 6, 30),
+        days_past_due=367,
+        sop_bucket="one_to_two_years",
+        principal_overdue_amount="1000.00",
+        interest_overdue_amount="100.00",
+        total_overdue_amount="1100.00",
+        earliest_unpaid_due_date=date(2025, 6, 29),
+        calculation_inputs_json={
+            "policy_decision": {
+                "sop_policy_version": "SFPCL-SOP-DPD-1",
+                "sop_boundary_convention": "calendar_anniversary",
+            }
+        },
+        calculated_by_user=actor,
+        calculation_audit=audit,
+    )
+    type(account).objects.filter(pk=account.pk).update(current_dpd_status=dpd)
+    account.current_dpd_status_id = dpd.pk
+    template = ContentTemplate.objects.create(
+        template_code=f"terminal_reminder_{suffix}",
+        template_name="Terminal reminder",
+        template_type="sms",
+        audience="borrower",
+        body_template="Loan {{loan_account_number}} remains outstanding.",
+        variables_json=["loan_account_number", "quarter_end_date"],
+        approval_status="approved",
+        template_version="1",
+        effective_from=date(2020, 1, 1),
+    )
+    return TerminalReminderFixture(
+        account=account, actor=actor, template=template, request=request
+    )
+
+
 def build_servicing_owner_fixture(*, suffix):
     """Return owner-backed loan and actors without importing another test case."""
     facts = build_ready_epic009_fixture(

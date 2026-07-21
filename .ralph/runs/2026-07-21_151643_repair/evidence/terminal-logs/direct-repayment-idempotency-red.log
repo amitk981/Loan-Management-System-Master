@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_sap_posting_requires_permission_reference_and_records_safe_audit_truth (sfpcl_credit.tests.test_direct_repayment_posting_api.DirectRepaymentPostingApiTests.test_sap_posting_requires_permission_reference_and_records_safe_audit_truth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/tests/test_direct_repayment_posting_api.py", line 167, in test_sap_posting_requires_permission_reference_and_records_safe_audit_truth
+    self.assertEqual(repeated.status_code, 409, repeated.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"repayment_id": "5025e8cc-469d-4d48-9295-2a56b479e4ef", "loan_account_id": "27567af7-03a3-4298-aae9-004cd3cf2ded", "repayment_source": "direct_farmer", "amount_received": "100000.00", "received_date": "2026-12-04", "payment_method": "rtgs", "bank_reference_number": "UTR-DIRECT-VALIDATION-001", "bank_statement_line_id": null, "statement_match_status": "not_linked", "allocation_status": "pending", "sap_posting": {"status": "posted", "due_date": "2026-12-07", "sap_entry_reference": "SAP-RCPT-123", "posted_at": "2026-12-02T10:00:00Z"}}, "meta": {"request_id": "req-repayment-posting-001", "timestamp": "2026-07-21T09:50:27.177627Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.688s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Exit code: 1

@@ -1,0 +1,3 @@
+Command: ./scripts/ralph-validate-review-closure.sh --slice docs/slices/CR-015-epic-010-terminal-servicing-owner-finalizer.md --run-dir .ralph/runs/2026-07-21_154238_repair
+PASS: validated semantic closure for 3 finding(s) and 5 acceptance id(s).
+Exit code: 0

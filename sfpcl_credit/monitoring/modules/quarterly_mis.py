@@ -546,7 +546,9 @@ def _snapshot_row(*, account, period):
         "overdue_amount": _money(dpd.total_overdue_amount),
         "last_repayment_date": last_repayment.isoformat() if last_repayment else None,
         "reminder_count": reminder_count,
-        "interest_invoice_status": invoice.invoice_status if invoice else "not_generated",
+        "interest_invoice_status": _invoice_status_at_cutoff(
+            invoice=invoice, cutoff=period["as_of_date"]
+        ),
         "default_status": "unavailable",
         "recommended_action": "unavailable",
         "source_ids": {
@@ -575,6 +577,19 @@ def _snapshot_row(*, account, period):
             "reminder_ids": [str(row.pk) for row in account.mis_reminders],
         },
     }
+
+
+def _invoice_status_at_cutoff(*, invoice, cutoff):
+    """Project the retained invoice lifecycle decision that was true at cutoff."""
+    if invoice is None:
+        return "not_generated"
+    created_at = getattr(invoice, "created_at", None)
+    if created_at is not None and created_at.date() > cutoff:
+        return "not_generated"
+    issued_at = getattr(invoice, "issued_at", None)
+    if issued_at is None or issued_at.date() > cutoff:
+        return "draft"
+    return "issued"
 
 def _latest_prefetched_balance(account):
     candidates = []

@@ -140,14 +140,19 @@ def calculate_portfolio(*, actor, payload, request=None):
                 {"loan_account_id": str(account_id), "outcome": "failed", "reason": "inaccessible"}
             )
             continue
-        account_status = LoanAccount.objects.filter(pk=account_id).values_list(
-            "loan_account_status", flat=True
-        ).first()
-        if account_status not in SERVICEABLE_STATUSES:
-            results.append(
-                {"loan_account_id": str(account_id), "outcome": "skipped", "reason": "not_active"}
-            )
-            continue
+        if not cleaned["include_all_active_loans"]:
+            account_status = LoanAccount.objects.filter(pk=account_id).values_list(
+                "loan_account_status", flat=True
+            ).first()
+            if account_status not in SERVICEABLE_STATUSES:
+                results.append(
+                    {
+                        "loan_account_id": str(account_id),
+                        "outcome": "skipped",
+                        "reason": "not_active",
+                    }
+                )
+                continue
         try:
             snapshot = _calculate_locked(
                 actor=actor,

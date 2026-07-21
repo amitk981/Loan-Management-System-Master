@@ -1,4 +1,5 @@
 import json
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 from django.test import Client, TestCase, override_settings
@@ -12,6 +13,14 @@ class PortalLoanAccountsApiTests(TestCase):
     password = "PortalServicing123!"
 
     def setUp(self):
+        self.document_storage = TemporaryDirectory()
+        self.storage_override = override_settings(
+            DOCUMENT_STORAGE_ROOT=self.document_storage.name
+        )
+        self.storage_override.enable()
+        self.addCleanup(self.storage_override.disable)
+        self.addCleanup(self.document_storage.cleanup)
+
         from sfpcl_credit.tests.test_repayment_allocation_api import RepaymentAllocationApiTests
 
         owner = RepaymentAllocationApiTests(
@@ -79,14 +88,20 @@ class PortalLoanAccountsApiTests(TestCase):
         for field in forbidden:
             self.assertNotIn(field, serialized)
 
-    @override_settings(PORTAL_REPAYMENT_INSTRUCTIONS={
-        "approved": True,
-        "beneficiary_name": "SFPCL Collections",
-        "bank_name": "Approved Bank",
-        "account_number_last4": "4321",
-        "ifsc": "APPR0001234",
-    })
     def test_direct_instructions_are_masked_read_only_and_server_owned(self):
+        from datetime import date, datetime, timezone as datetime_timezone
+        from sfpcl_credit.configurations.models import RepaymentInstructionVersion
+
+        RepaymentInstructionVersion.objects.create(
+            version="PORTAL-REPAYMENT-2026-01",
+            beneficiary_name="SFPCL Collections",
+            bank_name="Approved Bank",
+            account_number_last4="4321",
+            ifsc="APPR0001234",
+            effective_from=date(2026, 4, 1),
+            approved_by_user=self.owner.actor,
+            approved_at=datetime(2026, 4, 1, tzinfo=datetime_timezone.utc),
+        )
         response = self.client.get(
             f"/api/v1/portal/loan-accounts/{self.account.pk}/direct-instructions/",
             headers=self._portal_auth(),
@@ -95,6 +110,8 @@ class PortalLoanAccountsApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(response.json()["data"], {
             "available": True,
+            "projection_version": "PORTAL-REPAYMENT-2026-01",
+            "approved_at": "2026-04-01T00:00:00Z",
             "beneficiary_name": "SFPCL Collections",
             "bank_name": "Approved Bank",
             "account_number_masked": "********4321",
@@ -102,6 +119,7 @@ class PortalLoanAccountsApiTests(TestCase):
             "required_narration": self.account.loan_account_number,
             "amount_due": f"{self.account.total_outstanding:.2f}",
             "proof_submission_enabled": False,
+            "available_actions": [],
             "disclaimer": "Repayment will be updated in the portal after SFPCL verifies the bank receipt and posts the repayment in its records.",
         })
 

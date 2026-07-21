@@ -310,15 +310,16 @@
     "010K3-servicing-as-of-owner-boundary-closure",
     "010K2-loan-ledger-statements-and-export",
     "010L-member-portal-repayment-view",
-    "010MA-servicing-account-and-repayment-frontend-wiring"
+    "010MA-servicing-account-and-repayment-frontend-wiring",
+    "CR-015-epic-010-terminal-servicing-owner-finalizer"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-21_134356_architecture_review",
+  "last_run_id": "2026-07-21_154238_repair",
   "last_run_status": "success",
   "slices_completed_since_architecture_review": 0,
-  "architecture_review_due": true,
+  "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -334,38 +335,18 @@
   },
   "last_architecture_review_finalizer": {
     "epic": "010",
-    "root_id": "ROOT-010-RATE-VERSION-OWNER",
+    "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
     "root_ids": [
-      "ROOT-010-RATE-VERSION-OWNER"
+      "ROOT-010-MIS-AS-OF-OWNER",
+      "ROOT-010-REMINDER-DELIVERY-OWNER",
+      "ROOT-010-SERVICING-OWNER-SEAM"
     ],
-    "slice_id": "CR-014-rate-current-date-terminal-finalizer",
-    "run_id": "2026-07-20_221716_repair"
+    "slice_id": "CR-015-epic-010-terminal-servicing-owner-finalizer",
+    "run_id": "2026-07-21_154238_repair"
   },
-  "architecture_review_root_generations": {
-    "ROOT-010-REMINDER-DELIVERY-OWNER": {
-      "epic": "010",
-      "generation": 2,
-      "corrective_slice": "CR-015",
-      "finding_id": "AR-010-REMINDER-001",
-      "severity": "High"
-    },
-    "ROOT-010-MIS-AS-OF-OWNER": {
-      "epic": "010",
-      "generation": 2,
-      "corrective_slice": "CR-015",
-      "finding_id": "AR-010-MIS-001",
-      "severity": "High"
-    },
-    "ROOT-010-SERVICING-OWNER-SEAM": {
-      "epic": "010",
-      "generation": 1,
-      "corrective_slice": "CR-015",
-      "finding_id": "AR-010-SERVICING-SEAM-001",
-      "severity": "High"
-    }
-  },
+  "architecture_review_root_generations": {},
   "architecture_review_terminal_roots": [
-    "ROOT-010-RATE-VERSION-OWNER"
-  ],
-  "architecture_review_due_reason": "terminal_finalizer:ROOT-010-REMINDER-DELIVERY-OWNER"
+    "ROOT-010-RATE-VERSION-OWNER",
+    "ROOT-010-REMINDER-DELIVERY-OWNER"
+  ]
 }

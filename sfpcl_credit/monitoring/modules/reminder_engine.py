@@ -17,6 +17,7 @@ from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
     scoped_account_candidates,
 )
+from sfpcl_credit.loans.models import LoanAccount, RepaymentSchedule
 from sfpcl_credit.loans.modules.dpd_source_decision import has_current_unpaid_schedule
 from sfpcl_credit.monitoring.models import DpdStatus, Reminder
 from sfpcl_credit.monitoring.modules.dpd_monitoring import (
@@ -57,6 +58,21 @@ class ReminderConflict(Exception):
 
 
 class ReminderEngine:
+    @classmethod
+    def execute_owned_delivery(
+        cls, *, communication_job_id, worker_effect
+    ):
+        job = CommunicationDeliveryJob.objects.only("communication_id").get(
+            pk=communication_job_id
+        )
+        if not Reminder.objects.filter(communication_id=job.communication_id).exists():
+            return worker_effect()
+        with transaction.atomic():
+            CommunicationDeliveryJob.objects.select_for_update().get(
+                pk=communication_job_id
+            )
+            return worker_effect()
+
     @classmethod
     @transaction.atomic
     def create_reminder(cls, *, actor, loan_account_id, payload, request=None):
@@ -167,8 +183,13 @@ class ReminderEngine:
         return serialize_reminder(row)
 
     @classmethod
-    @transaction.atomic
     def cancel_unserviceable_delivery(cls, *, communication_job_id):
+        return cls.finalize_delivery_claim(communication_job_id=communication_job_id)
+
+    @classmethod
+    @transaction.atomic
+    def finalize_delivery_claim(cls, *, communication_job_id):
+        """Own the last current-source decision immediately at the provider seam."""
         job = (
             CommunicationDeliveryJob.objects.select_for_update()
             .filter(pk=communication_job_id)
@@ -214,6 +235,36 @@ class ReminderEngine:
             "delivery_status": "cancelled",
             "attempts": job.attempts,
         }
+
+    @classmethod
+    @transaction.atomic
+    def execute_serviceable_delivery(cls, *, communication_job_id, provider_effect):
+        """Hold every mutable reminder source while crossing the provider seam."""
+        job = CommunicationDeliveryJob.objects.select_for_update().get(
+            pk=communication_job_id
+        )
+        row = (
+            Reminder.objects.select_for_update()
+            .select_related("created_by_user")
+            .filter(communication_id=job.communication_id)
+            .first()
+        )
+        if row is None:
+            return provider_effect()
+        account = LoanAccount.objects.select_for_update().get(pk=row.loan_account_id)
+        type(account.member).objects.select_for_update().get(pk=account.member_id)
+        list(
+            RepaymentSchedule.objects.select_for_update()
+            .filter(loan_account=account)
+            .values_list("pk", flat=True)
+        )
+        row.loan_account = account
+        reason = cls._serviceability_reason(actor=row.created_by_user, row=row)
+        if reason is not None:
+            return cls._cancel(
+                row=row, actor=row.created_by_user, reason=reason
+            )
+        return provider_effect()
 
     @classmethod
     def _serviceability_reason(cls, *, actor, row):
@@ -383,13 +434,12 @@ class ReminderEngine:
     @classmethod
     def _locked_scoped_account(cls, *, actor, loan_account_id):
         account = (
-            _scoped_accounts(actor)
-            .select_for_update()
+            LoanAccount.objects.select_for_update()
             .select_related("member", "loan_application")
             .filter(pk=loan_account_id)
             .first()
         )
-        if account is None:
+        if account is None or not _scoped_accounts(actor).filter(pk=account.pk).exists():
             raise ReminderNotFound
         return account
 

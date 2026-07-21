@@ -133,8 +133,6 @@ export interface AllocationResult extends RepaymentAllocationProjection {
   };
 }
 
-interface Replay<T> { idempotency_replayed: true; original_response: T }
-
 export const fetchRepaymentSchedule = (loanAccountId: string, page = 1, pageSize = 20) =>
   authenticatedPaginatedRequest<RepaymentScheduleRow>(
     `/api/v1/loan-accounts/${loanAccountId}/repayment-schedule/?page=${page}&page_size=${pageSize}`,
@@ -187,33 +185,14 @@ export const postAndAllocateDirectRepayment = async (
   if (!canPostAndAllocateRepayment(attempt.permissions, attempt.roleCodes)) {
     throw new Error('Receipt capture, SAP posting, and repayment allocation permissions are required.');
   }
-  const captured = await authenticatedRequest<CapturedRepayment | Replay<CapturedRepayment>>(
-    `/api/v1/loan-accounts/${attempt.loanAccountId}/repayments/`,
+  return authenticatedRequest<DirectRepaymentAttemptResult>(
+    `/api/v1/loan-accounts/${attempt.loanAccountId}/direct-repayment-command/`,
     {
-      method: 'POST', body: attempt.capture,
+      method: 'POST',
+      body: { capture: attempt.capture, sap_posting: attempt.sapPosting },
       headers: { 'Idempotency-Key': attempt.idempotencyKey },
     },
   );
-  if ('idempotency_replayed' in captured) {
-    return { replayed: true, capture: captured.original_response, allocation: null };
-  }
-  await authenticatedRequest<CapturedRepayment>(
-    `/api/v1/repayments/${captured.repayment_id}/mark-sap-posted/`,
-    { method: 'POST', body: attempt.sapPosting },
-  );
-  const allocation = await authenticatedRequest<AllocationResult | Replay<AllocationResult>>(
-    `/api/v1/repayments/${captured.repayment_id}/allocate/`,
-    {
-      method: 'POST',
-      body: { allocation_rule: 'principal_first', remarks: 'Allocate confirmed receipt under the approved SOP.' },
-      headers: { 'Idempotency-Key': `${attempt.idempotencyKey}:allocation` },
-    },
-  );
-  return {
-    replayed: 'idempotency_replayed' in allocation,
-    capture: captured,
-    allocation: 'idempotency_replayed' in allocation ? allocation.original_response : allocation,
-  };
 };
 
 export type ServicingPage<T> = PaginatedResult<T>;

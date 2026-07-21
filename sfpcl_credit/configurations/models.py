@@ -5,6 +5,60 @@ from django.db import models
 from django.utils import timezone
 
 
+class RepaymentInstructionVersion(models.Model):
+    STATUS_ACTIVE = "active"
+    STATUS_RETIRED = "retired"
+
+    repayment_instruction_version_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    version = models.CharField(max_length=40, unique=True)
+    beneficiary_name = models.CharField(max_length=255)
+    bank_name = models.CharField(max_length=255)
+    account_number_last4 = models.CharField(max_length=4)
+    ifsc = models.CharField(max_length=20)
+    effective_from = models.DateField(db_index=True)
+    effective_to = models.DateField(null=True, blank=True, db_index=True)
+    status = models.CharField(max_length=20, default=STATUS_ACTIVE, db_index=True)
+    approved_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="approved_repayment_instruction_versions",
+    )
+    approved_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "repayment_instruction_versions"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=("active", "retired")),
+                name="repayment_instruction_status_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(effective_to__isnull=True)
+                | models.Q(effective_to__gte=models.F("effective_from")),
+                name="repayment_instruction_period_order",
+            ),
+            models.UniqueConstraint(
+                fields=["status"],
+                condition=models.Q(status="active"),
+                name="uniq_active_repayment_instruction",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"repayment_instruction_version": "Approved versions are immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"repayment_instruction_version": "Approved versions are retained."}
+        )
+
+
 class LoanPolicyConfig(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_ACTIVE = "active"

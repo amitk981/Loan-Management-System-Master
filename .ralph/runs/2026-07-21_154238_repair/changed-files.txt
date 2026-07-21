@@ -1,0 +1,27 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl-lms/src/pages/borrower/portal/loans/PortalLoanViews.test.tsx
+ M sfpcl-lms/src/services/portalApi.test.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl-lms/src/services/servicingApi.test.ts
+ M sfpcl-lms/src/services/servicingApi.ts
+ M sfpcl_credit/communications/modules/communication_dispatcher.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/configurations/models.py
+ M sfpcl_credit/loans/modules/direct_repayment_posting.py
+ M sfpcl_credit/loans/modules/dpd_source_decision.py
+ M sfpcl_credit/loans/views.py
+ M sfpcl_credit/monitoring/modules/dpd_monitoring.py
+ M sfpcl_credit/monitoring/modules/quarterly_mis.py
+ M sfpcl_credit/monitoring/modules/reminder_engine.py
+ M sfpcl_credit/processes/communication_delivery.py
+ M sfpcl_credit/processes/loan_ledger_statements.py
+ M sfpcl_credit/processes/portal_loan_servicing.py
+ M sfpcl_credit/tests/servicing_builders.py
+ M sfpcl_credit/tests/test_portal_loan_accounts_api.py
+?? .ralph/runs/2026-07-21_141242_normal_run/
+?? .ralph/runs/2026-07-21_150232_repair/
+?? .ralph/runs/2026-07-21_151643_repair/
+?? .ralph/runs/2026-07-21_154238_repair/
+?? sfpcl_credit/configurations/migrations/0009_repaymentinstructionversion_and_more.py
+?? sfpcl_credit/processes/direct_repayment_command.py
+?? sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py

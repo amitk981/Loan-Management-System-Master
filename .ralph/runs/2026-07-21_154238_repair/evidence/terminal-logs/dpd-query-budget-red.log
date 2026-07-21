@@ -1,0 +1,7 @@
+Authoritative complete-suite RED signal from run 2026-07-21_151643_repair:
+FAIL: test_bounded_active_portfolio_reports_each_outcome (sfpcl_credit.tests.test_dpd_monitoring_api.DpdMonitoringApiTests.test_bounded_active_portfolio_reports_each_outcome)
+AssertionError: 21 not less than or equal to 20
+Ran 548 tests
+FAILED (failures=1)
+Exit code: 1
+Test specification: sfpcl_credit/tests/test_dpd_monitoring_api.py::DpdMonitoringApiTests::test_bounded_active_portfolio_reports_each_outcome

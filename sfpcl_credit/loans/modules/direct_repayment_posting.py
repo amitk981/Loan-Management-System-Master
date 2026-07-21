@@ -188,7 +188,9 @@ def _capture(*, actor, loan_account_id, cleaned, payload_digest, request):
 
 
 @transaction.atomic
-def mark_sap_posted(*, actor, repayment_id, payload, request=None):
+def mark_sap_posted(
+    *, actor, repayment_id, payload, request=None, allow_exact_replay=False
+):
     _require_authority(actor, POST_PERMISSION, CREATE_ROLES)
     cleaned = _validate_posting(payload)
     obligation = (
@@ -215,7 +217,10 @@ def mark_sap_posted(*, actor, repayment_id, payload, request=None):
             )
     if obligation.status != "pending":
         if (
-            obligation.repayment.repayment_source == "subsidiary_deduction"
+            (
+                obligation.repayment.repayment_source == "subsidiary_deduction"
+                or allow_exact_replay
+            )
             and obligation.sap_entry_reference == cleaned["sap_entry_reference"]
             and obligation.posted_at == cleaned["sap_posted_at"]
             and obligation.posting_audit.actor_user_id == actor.pk
@@ -397,6 +402,13 @@ def _serialize(repayment, obligation):
             "posted_at": obligation.posted_at.isoformat().replace("+00:00", "Z") if obligation.posted_at else None,
         },
     }
+
+
+def retained_repayment_outcome(*, repayment_id):
+    repayment = Repayment.objects.select_related("sap_posting_obligation").get(
+        pk=repayment_id
+    )
+    return _serialize(repayment, repayment.sap_posting_obligation)
 
 
 def _replay(repayment):

@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_final_accepted_crash_closes_exception_without_redispatch (sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_final_accepted_crash_closes_exception_without_redispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/tests/test_communication_worker_runtime.py", line 936, in test_final_accepted_crash_closes_exception_without_redispatch
+    self.assertIsNotNone(job.provider_external_message_id)
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.100s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_communication_worker_runtime.CommunicationWorkerQueueTests.test_final_accepted_crash_closes_exception_without_redispatch --verbosity 1
+Exit code: 1

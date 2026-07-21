@@ -204,6 +204,11 @@ urlpatterns = [
         name="loan-account-direct-repayment",
     ),
     path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/direct-repayment-command/",
+        loan_views.direct_repayment_command,
+        name="loan-account-direct-repayment-command",
+    ),
+    path(
         "api/v1/repayments/<uuid:repayment_id>/mark-sap-posted/",
         loan_views.repayment_mark_sap_posted,
         name="repayment-mark-sap-posted",

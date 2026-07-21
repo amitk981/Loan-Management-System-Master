@@ -67,6 +67,7 @@ from sfpcl_credit.processes.loan_ledger_statements import (
     request_statement,
     statement_status,
 )
+from sfpcl_credit.processes.direct_repayment_command import execute_direct_repayment
 from sfpcl_credit.processes.loan_account_360 import (
     LoanAccountProjectionNotFound,
     LoanAccountProjectionValidation,
@@ -309,6 +310,42 @@ def repayment_mark_sap_posted(request, repayment_id):
     except RepaymentNotFound:
         return error_response(request, 404, "NOT_FOUND", "The repayment was not found or is inaccessible.")
     except RepaymentConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def direct_repayment_command(request, loan_account_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            execute_direct_repayment(
+                actor=actor,
+                loan_account_id=loan_account_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                request=request,
+            ),
+            request,
+        )
+    except (RepaymentValidation, RepaymentAllocationValidation) as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Direct repayment command failed validation.",
+            exc.field_errors,
+        )
+    except (RepaymentPermissionDenied, RepaymentAllocationPermissionDenied):
+        return error_response(
+            request, 403, "FORBIDDEN", "Direct repayment command permission is required."
+        )
+    except (RepaymentNotFound, RepaymentAllocationNotFound):
+        return error_response(
+            request, 404, "NOT_FOUND", "The repayment or loan account was not found."
+        )
+    except (RepaymentConflict, RepaymentAllocationConflict) as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
 
 

@@ -1,0 +1,17 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_empty_borrower_csv_retains_safe_metadata_without_internal_fields (sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010StatementOwnerRegressionTests.test_empty_borrower_csv_retains_safe_metadata_without_internal_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_141242_normal_run/sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py", line 168, in test_empty_borrower_csv_retains_safe_metadata_without_internal_fields
+    body = _render_csv(statement, borrower_safe=True).decode("utf-8")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: _render_csv() got an unexpected keyword argument 'borrower_safe'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Exit code: 1

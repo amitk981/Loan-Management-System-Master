@@ -1,0 +1,12 @@
+Creating test database for alias 'default'...
+Found 36 test(s).
+System check identified no issues (0 silenced).
+............................ssssss..
+----------------------------------------------------------------------
+Ran 36 tests in 3.669s
+
+OK (skipped=6)
+Destroying test database for alias 'default'...
+
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_communication_worker_runtime --verbosity 1
+Exit code: 0
