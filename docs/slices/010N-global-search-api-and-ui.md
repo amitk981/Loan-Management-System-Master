@@ -1,7 +1,7 @@
 # Slice 010N: Global Search API and UI
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring (cross-module search; placed here because members, applications, and loan accounts all exist by this point)

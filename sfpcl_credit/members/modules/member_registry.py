@@ -114,6 +114,8 @@ class MemberRegistry:
             if token:
                 changed.append(field); old_values[field] = mask_protected_identity(getattr(member, f"{field}_encrypted"), length)
                 setattr(member, f"{field}_encrypted", token); setattr(member, f"{field}_hash", getattr(change, f"proposed_{field}_hash"))
+                if field == "aadhaar":
+                    member.aadhaar_last4 = token.rsplit(":", 1)[-1]
                 new_values[field] = mask_protected_identity(token, length)
         member.kyc_status = "pending"; member.rekyc_due_date = None; member.version += 1
         member.updated_by_user = actor_user; member.updated_at = timezone.now()

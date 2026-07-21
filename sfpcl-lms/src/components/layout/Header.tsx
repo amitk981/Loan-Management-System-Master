@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Bell, HelpCircle, ChevronDown, User, ChevronRight, LogOut, RefreshCw, FileText, UserRound, Banknote } from 'lucide-react';
+import { Search, Bell, HelpCircle, ChevronDown, User, ChevronRight, LogOut, RefreshCw } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { Role } from '../../types';
-import { loanAccounts, loanApplications, members } from '../../data/mockData';
 import { DEMO_AUTH_ENABLED } from '../../services/authSession';
-
-const normalize = (value: string | number | undefined) => String(value || '').toLowerCase();
 
 // Internal roles only — Borrower logs in separately via Login screen
 const ALL_ROLES: { role: Role; label: string; group?: string }[] = [
@@ -46,59 +43,6 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
   const [showProfile, setShowProfile] = useState(false);
   const [showRolePicker, setShowRolePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-
-  const searchResults = React.useMemo(() => {
-    const q = normalize(searchQuery).trim();
-    if (q.length < 2) return null;
-
-    const memberResults = can('view_members') ? members
-      .filter(m => [
-        m.name, m.folioNumber, m.id, m.pan, m.aadhaar, m.mobile, m.sapCustomerCode,
-        m.memberType, m.activeStatus, m.kycStatus,
-      ].some(value => normalize(value).includes(q)))
-      .slice(0, 3)
-      .map(m => ({
-        id: `member-${m.id}`,
-        type: 'member' as const,
-        title: m.name,
-        subtitle: `${m.folioNumber} · ${m.memberType.replace(/_/g, ' ')}`,
-        route: 'members/profile',
-        entityId: m.id
-      })) : [];
-
-    const applicationResults = can('view_applications') ? loanApplications
-      .filter(a => [
-        a.applicationNumber, a.memberName, a.memberId, a.status, a.currentOwner,
-        a.sapCustomerCode, a.bankAccount, a.bankIfsc, a.exceptionReason,
-      ].some(value => normalize(value).includes(q)))
-      .slice(0, 3)
-      .map(a => ({
-        id: `application-${a.id}`,
-        type: 'application' as const,
-        title: a.applicationNumber,
-        subtitle: `${a.memberName} · Rs.${a.requestedAmount.toLocaleString('en-IN')}`,
-        route: 'applications/detail',
-        entityId: a.id
-      })) : [];
-
-    const loanResults = can('view_loan_accounts') ? loanAccounts
-      .filter(l => [
-        l.accountNumber, l.applicationNumber, l.memberName, l.memberId, l.status,
-        l.sapCustomerCode, l.dpdBucket,
-      ].some(value => normalize(value).includes(q)))
-      .slice(0, 3)
-      .map(l => ({
-        id: `loan-${l.id}`,
-        type: 'loan' as const,
-        title: l.accountNumber,
-        subtitle: `${l.memberName} · ${l.applicationNumber}`,
-        route: 'loan-accounts/detail',
-        entityId: l.id
-      })) : [];
-      
-    return [...memberResults, ...applicationResults, ...loanResults];
-  }, [searchQuery, can]);
 
   const closeAll = () => {
     setShowNotifications(false);
@@ -115,8 +59,6 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
           <input
             type="text"
             value={searchQuery}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
             onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter' && searchQuery.trim()) {
@@ -125,56 +67,9 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
               }
             }}
             placeholder="Search: borrower name, app no., loan no., folio, PAN, Aadhaar last 4, SAP code, mobile, cheque no…"
+            autoComplete="off"
             className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm bg-slate-50/80 shadow-inner shadow-slate-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
           />
-          
-          {isSearchFocused && searchResults && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/80 z-50 overflow-hidden max-h-[70vh] flex flex-col">
-              <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100 flex-shrink-0">
-                Quick Results
-              </div>
-              <div className="py-1 overflow-y-auto">
-                {searchResults.map(result => (
-                  <button
-                    key={result.id}
-                    onClick={() => {
-                      onNavigate?.(result.route, result.entityId);
-                      setSearchQuery('');
-                      closeAll();
-                    }}
-                    className="w-full flex items-start gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left"
-                  >
-                    <div className="mt-0.5 flex-shrink-0">
-                      {result.type === 'member' && <UserRound size={16} className="text-green-600" />}
-                      {result.type === 'application' && <FileText size={16} className="text-blue-600" />}
-                      {result.type === 'loan' && <Banknote size={16} className="text-amber-600" />}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">{result.title}</div>
-                      <div className="text-xs text-slate-500">{result.subtitle}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => {
-                  if (searchQuery.trim()) {
-                    onSearch?.(searchQuery.trim());
-                    closeAll();
-                  }
-                }}
-                className="w-full px-4 py-2 flex-shrink-0 text-center text-sm text-green-600 font-medium hover:bg-green-50 border-t border-slate-100 transition-colors"
-              >
-                View all results for "{searchQuery}"
-              </button>
-            </div>
-          )}
-          {isSearchFocused && searchResults && searchResults.length === 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/80 z-50 p-4 text-center">
-              <div className="text-sm text-slate-900 font-medium">No results found</div>
-              <div className="text-xs text-slate-500 mt-1">Try checking for typos or using different keywords</div>
-            </div>
-          )}
         </div>
       </div>
 

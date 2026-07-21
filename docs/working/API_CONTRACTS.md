@@ -5051,3 +5051,24 @@ collection. Direct instructions resolve one retained active `RepaymentInstructio
 projection includes `projection_version`, `approved_at`, and server-owned `available_actions`, with
 bank fields null and actions empty when no effective approved version exists. Runtime/browser
 configuration is not repayment authority.
+
+## Global search aggregate (010N)
+
+`POST /api/v1/global-search/`
+
+The authenticated request body is `{ "search": "value", "page_size": 10, "pages": {} }`.
+`page_size` is capped at 20 and `pages` may independently name `members`, `loan_applications`,
+`loan_accounts`, `documents`, `repayments`, `compliance_records`, and `audit_logs`. The query is in
+the JSON body so sensitive exact values do not enter query-string/access-log or browser-history
+surfaces. Unknown fields, wildcard/control characters, non-string values, and values outside 2–120
+characters return the standard `400 VALIDATION_ERROR`; an actor may make 30 requests per minute
+before the standard `429 RATE_LIMITED` response.
+
+`data.groups` contains only groups for which the actor retains the group's canonical read
+permission and object scope. A denied group is absent, including its count. Each included group is
+`{items,pagination}` with deterministic ordering, the standard pagination fields, and a hard
+100-result cap. Cards share `id`, `result_type`, `title`, visible `identifier`, `status`, optional
+`risk_status`/`amount`, `owner`, `last_updated_at`, `last_updated_by`, and server-authorised
+`quick_actions`. PAN/Aadhaar/cheque matching uses stored keyed hashes; Aadhaar and bank suffix
+matching uses indexed stored last-four fields. Raw sensitive input and identifiers are never
+returned or audited. The registered compliance provider is intentionally empty until 011M3.

@@ -1,0 +1,37 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/.ralph/runs/2026-07-21_174720_normal_run/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/global-search.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/global-search.e2e.spec.ts
+
+[2m[WebServer] [22m[21/Jul/2026 12:54:53] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[21/Jul/2026 12:54:57] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "OPTIONS /api/v1/global-search/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "OPTIONS /api/v1/global-search/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "POST /api/v1/global-search/ HTTP/1.1" 200 1420
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "POST /api/v1/global-search/ HTTP/1.1" 200 1420
+[2m[WebServer] [22m[21/Jul/2026 12:54:58] "POST /api/v1/global-search/ HTTP/1.1" 200 474
+  ✓  1 [chromium] › global-search.e2e.spec.ts:18:5 › 010N searches real permission-scoped groups and renders the empty state (2.8s)
+
+  1 passed (41.9s)
+
+Duration milliseconds: 42535
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/.ralph/runs/2026-07-21_174720_normal_run/evidence/trusted-browser-screenshots-2.sha256

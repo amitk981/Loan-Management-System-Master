@@ -1,0 +1,18 @@
+Using existing test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+...F.....
+======================================================================
+FAIL: test_member_scope_removes_cross_object_name_matches (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_member_scope_removes_cross_object_name_matches)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 329, in test_member_scope_removes_cross_object_name_matches
+    self.assertEqual(groups["members"]["pagination"]["total_count"], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.843s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...
+GLOBAL_SEARCH_INDEX_PLANS {'pan': '3 0 0 SEARCH members USING INDEX idx_members_pan_hash (pan_hash=?)', 'aadhaar': '3 0 0 SEARCH members USING INDEX idx_members_aadhaar_hash (aadhaar_hash=?)', 'aadhaar_last4': '3 0 0 SEARCH members USING INDEX members_aadhaar_last4_6253ff18 (aadhaar_last4=?)', 'share_count': '3 0 0 SEARCH members USING INDEX members_number_of_shares_4d7470ba (number_of_shares=?)', 'bank_last4': '3 0 0 SEARCH bank_accounts USING INDEX bank_accounts_account_number_last4_3bd9ef02 (account_number_last4=?)'}

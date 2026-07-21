@@ -1,0 +1,23 @@
+Protected tracked diff scan:
+PASS: no protected tracked path changed
+Tracked diff summary:
+ docs/working/API_CONTRACTS.md                      |  21 ++
+ docs/working/ASSUMPTIONS.md                        |   1 +
+ docs/working/PROTOTYPE_GAP_REPORT.md               |   2 +-
+ docs/working/PROTOTYPE_INVENTORY.md                |   2 +-
+ sfpcl-lms/src/components/layout/Header.tsx         | 109 +------
+ sfpcl-lms/src/pages/search/GlobalSearchResults.tsx | 354 ++++++++++++---------
+ sfpcl_credit/config/urls.py                        |   2 +
+ sfpcl_credit/members/models.py                     |   7 +-
+ sfpcl_credit/members/modules/member_registry.py    |   2 +
+ sfpcl_credit/members/services.py                   |   3 +
+ 10 files changed, 233 insertions(+), 270 deletions(-)
+Untracked implementation files:
+?? sfpcl-lms/e2e/global-search.e2e.spec.ts
+?? sfpcl-lms/src/components/layout/Header.search.test.tsx
+?? sfpcl-lms/src/pages/search/GlobalSearchResults.test.tsx
+?? sfpcl-lms/src/services/globalSearchApi.ts
+?? sfpcl_credit/members/migrations/0015_member_aadhaar_last4.py
+?? sfpcl_credit/processes/global_search.py
+?? sfpcl_credit/search_views.py
+?? sfpcl_credit/tests/test_global_search_api.py

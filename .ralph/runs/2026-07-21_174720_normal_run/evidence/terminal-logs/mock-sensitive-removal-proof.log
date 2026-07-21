@@ -1,0 +1,4 @@
+Search production mock/cache scan:
+PASS: no local mock index or persisted query cache
+Sensitive response-field scan:
+PASS: no raw-sensitive response field

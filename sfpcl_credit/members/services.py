@@ -176,6 +176,7 @@ def _create_member(payload, actor_user, request_ip_value="", request_user_agent_
         pan_encrypted=protected_identity_token(pan, 10), pan_hash=identity_hash(pan),
         aadhaar_encrypted=protected_identity_token(aadhaar, 12) if aadhaar else "",
         aadhaar_hash=identity_hash(aadhaar) if aadhaar else "",
+        aadhaar_last4=aadhaar[-4:] if aadhaar else "",
         registered_address_line1=address.get("line1", ""),
         registered_address_line2=address.get("line2", ""),
         registered_village_city=address.get("village_city", ""),
@@ -296,6 +297,8 @@ def _update_member(member_id, payload, actor_user, *, reverification=False, requ
         if field in _IDENTITY_FIELDS:
             setattr(member, f"{field}_encrypted", protected_identity_token(payload[field], 10 if field == "pan" else 12))
             setattr(member, f"{field}_hash", identity_hash(payload[field]))
+            if field == "aadhaar":
+                member.aadhaar_last4 = payload[field][-4:]
         elif field == "membership_start_date":
             member.membership_start_date = parse_date(payload[field]) if payload[field] else None
         else:

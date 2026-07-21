@@ -1,0 +1,387 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/search/GlobalSearchResults.test.tsx src/components/layout/Header.search.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl-lms
+
+ ❯ src/components/layout/Header.search.test.tsx (1 test | 1 failed) 168ms
+   × 010N Header search path > navigates the transient query to S02 without building a local result index 168ms
+     → expected 'import React, { useState } from \'rea…' not to contain 'loanAccounts'
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/search/GlobalSearchResults.test.tsx [ src/pages/search/GlobalSearchResults.test.tsx ]
+Error: Failed to resolve import "../../services/globalSearchApi" from "src/pages/search/GlobalSearchResults.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl-lms/src/pages/search/GlobalSearchResults.test.tsx:6:0
+  7  |  const __vi_import_2__ = await import("@testing-library/user-event");
+  8  |  const __vi_import_3__ = await import("../../services/authSession");
+  9  |  const __vi_import_4__ = await import("../../services/globalSearchApi");
+     |                                       ^
+  10 |  const __vi_import_5__ = await import("./GlobalSearchResults");
+  11 |  const __vi_import_6__ = await import("./GlobalSearchResults.tsx?raw");
+ ❯ TransformPluginContext._formatError node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41
+ ❯ TransformPluginContext.error node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16
+ ❯ normalizeUrl node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23
+ ❯ node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+ ❯ TransformPluginContext.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7
+ ❯ PluginContainer.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/layout/Header.search.test.tsx > 010N Header search path > navigates the transient query to S02 without building a local result index
+AssertionError: expected 'import React, { useState } from \'rea…' not to contain 'loanAccounts'
+
+- Expected
++ Received
+
+- loanAccounts
++ import React, { useState } from 'react';
++ import { Search, Bell, HelpCircle, ChevronDown, User, ChevronRight, LogOut, RefreshCw, FileText, UserRound, Banknote } from 'lucide-react';
++ import { useRole } from '../../contexts/RoleContext';
++ import { Role } from '../../types';
++ import { loanAccounts, loanApplications, members } from '../../data/mockData';
++ import { DEMO_AUTH_ENABLED } from '../../services/authSession';
++
++ const normalize = (value: string | number | undefined) => String(value || '').toLowerCase();
++
++ // Internal roles only — Borrower logs in separately via Login screen
++ const ALL_ROLES: { role: Role; label: string; group?: string }[] = [
++   { role: 'field_officer',          label: 'Field Officer',               group: 'Intake' },
++   { role: 'credit_manager',         label: 'Credit Manager',              group: 'Credit Assessment' },
++   { role: 'deputy_manager_finance', label: 'Deputy Manager – Finance',    group: 'Credit Assessment' },
++   { role: 'compliance_team',        label: 'Compliance Team',             group: 'Compliance' },
++   { role: 'company_secretary',      label: 'Company Secretary',           group: 'Compliance' },
++   { role: 'sanction_committee',     label: 'Sanction Committee',          group: 'Sanction' },
++   { role: 'cfo',                    label: 'CFO',                         group: 'Sanction' },
++   { role: 'director',               label: 'Director',                    group: 'Sanction' },
++   { role: 'senior_manager_finance', label: 'Senior Manager – Finance',    group: 'Finance' },
++   { role: 'cfc',                    label: 'Chief Financial Controller',  group: 'Finance' },
++   { role: 'accounts',               label: 'Accounts',                    group: 'Finance' },
++   { role: 'sales_team_user',        label: 'Sales Team User',             group: 'Sales' },
++   { role: 'auditor',                label: 'Auditor',                     group: 'Audit' },
++   { role: 'admin',                  label: 'Administrator',               group: 'IT' },
++   // Note: 'borrower' role is NOT listed here — borrowers use the login screen
++ ];
++
++ const notifications = [
++   { id: 1, type: 'approval', message: 'LO00000042 — Sanction approval required', time: '10 min ago', urgent: true },
++   { id: 2, type: 'tat',      message: 'LO00000043 — Appraisal TAT will breach in 4 hours', time: '1 hr ago', urgent: true },
++   { id: 3, type: 'doc',      message: 'LO00000039 — PoA pending notarisation', time: '2 hr ago', urgent: false },
++   { id: 4, type: 'kyc',      message: 'Re-KYC due for 2 borrowers', time: '3 hr ago', urgent: false },
++ ];
++
++ interface HeaderProps {
++   activePage?: string;
++   onNavigate?: (page: string, entityId?: string) => void;
++   onSearch?: (query: string) => void;
++   onLogout?: () => void;
++ }
++
++ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLogout }) => {
++   const { currentUser, setRole, can } = useRole();
++   const [showNotifications, setShowNotifications] = useState(false);
++   const [showProfile, setShowProfile] = useState(false);
++   const [showRolePicker, setShowRolePicker] = useState(false);
++   const [searchQuery, setSearchQuery] = useState('');
++   const [isSearchFocused, setIsSearchFocused] = useState(false);
++
++   const searchResults = React.useMemo(() => {
++     const q = normalize(searchQuery).trim();
++     if (q.length < 2) return null;
++
++     const memberResults = can('view_members') ? members
++       .filter(m => [
++         m.name, m.folioNumber, m.id, m.pan, m.aadhaar, m.mobile, m.sapCustomerCode,
++         m.memberType, m.activeStatus, m.kycStatus,
++       ].some(value => normalize(value).includes(q)))
++       .slice(0, 3)
++       .map(m => ({
++         id: `member-${m.id}`,
++         type: 'member' as const,
++         title: m.name,
++         subtitle: `${m.folioNumber} · ${m.memberType.replace(/_/g, ' ')}`,
++         route: 'members/profile',
++         entityId: m.id
++       })) : [];
++
++     const applicationResults = can('view_applications') ? loanApplications
++       .filter(a => [
++         a.applicationNumber, a.memberName, a.memberId, a.status, a.currentOwner,
++         a.sapCustomerCode, a.bankAccount, a.bankIfsc, a.exceptionReason,
++       ].some(value => normalize(value).includes(q)))
++       .slice(0, 3)
++       .map(a => ({
++         id: `application-${a.id}`,
++         type: 'application' as const,
++         title: a.applicationNumber,
++         subtitle: `${a.memberName} · Rs.${a.requestedAmount.toLocaleString('en-IN')}`,
++         route: 'applications/detail',
++         entityId: a.id
++       })) : [];
++
++     const loanResults = can('view_loan_accounts') ? loanAccounts
++       .filter(l => [
++         l.accountNumber, l.applicationNumber, l.memberName, l.memberId, l.status,
++         l.sapCustomerCode, l.dpdBucket,
++       ].some(value => normalize(value).includes(q)))
++       .slice(0, 3)
++       .map(l => ({
++         id: `loan-${l.id}`,
++         type: 'loan' as const,
++         title: l.accountNumber,
++         subtitle: `${l.memberName} · ${l.applicationNumber}`,
++         route: 'loan-accounts/detail',
++         entityId: l.id
++       })) : [];
++       
++     return [...memberResults, ...applicationResults, ...loanResults];
++   }, [searchQuery, can]);
++
++   const closeAll = () => {
++     setShowNotifications(false);
++     setShowProfile(false);
++     setShowRolePicker(false);
++   };
++
++   return (
++     <header className="h-[72px] bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm shadow-slate-200/60 flex items-center px-5 lg:px-6 gap-4 flex-shrink-0 z-20">
++       {/* Search */}
++       <div className="flex-1 max-w-2xl min-w-0">
++         <div className="relative">
++           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
++           <input
++             type="text"
++             value={searchQuery}
++             onFocus={() => setIsSearchFocused(true)}
++             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
++             onChange={e => setSearchQuery(e.target.value)}
++             onKeyDown={e => {
++               if (e.key === 'Enter' && searchQuery.trim()) {
++                 onSearch?.(searchQuery.trim());
++                 closeAll();
++               }
++             }}
++             placeholder="Search: borrower name, app no., loan no., folio, PAN, Aadhaar last 4, SAP code, mobile, cheque no…"
++             className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm bg-slate-50/80 shadow-inner shadow-slate-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
++           />
++           
++           {isSearchFocused && searchResults && searchResults.length > 0 && (
++             <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/80 z-50 overflow-hidden max-h-[70vh] flex flex-col">
++               <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100 flex-shrink-0">
++                 Quick Results
++               </div>
++               <div className="py-1 overflow-y-auto">
++                 {searchResults.map(result => (
++                   <button
++                     key={result.id}
++                     onClick={() => {
++                       onNavigate?.(result.route, result.entityId);
++                       setSearchQuery('');
++                       closeAll();
++                     }}
++                     className="w-full flex items-start gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left"
++                   >
++                     <div className="mt-0.5 flex-shrink-0">
++                       {result.type === 'member' && <UserRound size={16} className="text-green-600" />}
++                       {result.type === 'application' && <FileText size={16} className="text-blue-600" />}
++                       {result.type === 'loan' && <Banknote size={16} className="text-amber-600" />}
++                     </div>
++                     <div>
++                       <div className="text-sm font-medium text-slate-900">{result.title}</div>
++                       <div className="text-xs text-slate-500">{result.subtitle}</div>
++                     </div>
++                   </button>
++                 ))}
++               </div>
++               <button
++                 onClick={() => {
++                   if (searchQuery.trim()) {
++                     onSearch?.(searchQuery.trim());
++                     closeAll();
++                   }
++                 }}
++                 className="w-full px-4 py-2 flex-shrink-0 text-center text-sm text-green-600 font-medium hover:bg-green-50 border-t border-slate-100 transition-colors"
++               >
++                 View all results for "{searchQuery}"
++               </button>
++             </div>
++           )}
++           {isSearchFocused && searchResults && searchResults.length === 0 && (
++             <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/80 z-50 p-4 text-center">
++               <div className="text-sm text-slate-900 font-medium">No results found</div>
++               <div className="text-xs text-slate-500 mt-1">Try checking for typos or using different keywords</div>
++             </div>
++           )}
++         </div>
++       </div>
++
++       <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
++         {/* Help */}
++         <button className="h-10 w-10 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Help & SOP Reference">
++           <HelpCircle size={18} />
++         </button>
++
++         {/* Divider */}
++         <div className="w-px h-6 bg-slate-200 mx-1" />
++
++         {DEMO_AUTH_ENABLED && (
++           <div className="relative">
++             <button
++               onClick={() => { setShowRolePicker(!showRolePicker); setShowNotifications(false); setShowProfile(false); }}
++               className="h-10 flex items-center gap-1.5 text-xs font-semibold px-3 border border-slate-200 rounded-lg text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors"
++               title="Switch demo role"
++             >
++               <RefreshCw size={12} />
++               <span className="hidden sm:inline">Switch Role</span>
++             </button>
++             {showRolePicker && (
++               <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
++                 <div className="px-4 py-3 border-b border-slate-100">
++                   <span className="text-sm font-semibold text-slate-900">Switch Demo Role</span>
++                   <p className="text-xs text-slate-400 mt-0.5">Currently: <span className="text-green-700 font-medium">{currentUser.roleName}</span></p>
++                   <p className="text-xs text-amber-600 mt-1">Internal roles only. Borrower uses separate login.</p>
++                 </div>
++                 <div className="max-h-80 overflow-y-auto py-1">
++                   {(() => {
++                     let lastGroup = '';
++                     return ALL_ROLES.map(({ role, label, group }) => {
++                       const showGroup = group !== lastGroup;
++                       lastGroup = group || '';
++                       return (
++                         <React.Fragment key={role}>
++                           {showGroup && group && (
++                             <div className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide bg-slate-50 border-t border-slate-100 first:border-0">
++                               {group}
++                             </div>
++                           )}
++                           <button
++                             onClick={() => { setRole(role); closeAll(); }}
++                             className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 ${
++                               currentUser.role === role ? 'text-green-700 bg-green-50 font-medium' : 'text-slate-700'
++                             }`}
++                           >
++                             <span>{label}</span>
++                             {currentUser.role === role && <ChevronRight size={14} className="text-green-500" />}
++                           </button>
++                         </React.Fragment>
++                       );
++                     });
++                   })()}
++                 </div>
++               </div>
++             )}
++           </div>
++         )}
++
++         {/* Notifications */}
++         <div className="relative">
++           <button
++             onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowRolePicker(false); }}
++             className="h-10 w-10 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors relative"
++           >
++             <Bell size={18} />
++             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
++           </button>
++           {showNotifications && (
++             <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
++               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
++                 <span className="text-sm font-semibold text-slate-900">Notifications</span>
++                 <span className="text-xs text-green-600 font-medium cursor-pointer">Mark all read</span>
++               </div>
++               {notifications.map(n => (
++                 <div key={n.id} className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer flex gap-3 ${n.urgent ? 'bg-amber-50/50' : ''}`}>
++                   <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.urgent ? 'bg-amber-500' : 'bg-slate-300'}`} />
++                   <div>
++                     <p className="text-sm text-slate-700">{n.message}</p>
++                     <p className="text-xs text-slate-400 mt-0.5">{n.time}</p>
++                   </div>
++                 </div>
++               ))}
++               <button
++                 type="button"
++                 onClick={() => {
++                   onNavigate?.('notifications');
++                   closeAll();
++                 }}
++                 className="w-full px-4 py-3 text-center text-sm text-green-600 font-medium hover:bg-green-50 transition-colors"
++               >
++                 View all notifications
++               </button>
++             </div>
++           )}
++         </div>
++
++         {/* Divider */}
++         <div className="w-px h-6 bg-slate-200 mx-1" />
++
++         {/* Profile */}
++         <div className="relative">
++           <button
++             onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); setShowRolePicker(false); }}
++             className="h-10 flex items-center gap-2 pl-2.5 pr-2 rounded-lg border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors"
++           >
++             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
++               <User size={16} className="text-green-700" />
++             </div>
++               <div className="text-left hidden sm:block">
++                 <div className="text-sm font-medium text-slate-900 leading-tight">{currentUser.name}</div>
++                 <div className="text-xs text-slate-500 leading-tight">{currentUser.roleName}</div>
++               </div>
++             <ChevronDown size={14} className="text-slate-400" />
++           </button>
++           {showProfile && (
++             <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
++               <div className="px-4 py-3 border-b border-slate-100">
++                 <div className="text-sm font-semibold text-slate-900">{currentUser.name}</div>
++                 <div className="text-xs text-slate-500 mt-0.5">{currentUser.roleName}</div>
++                 {currentUser.teamName && <div className="text-xs text-slate-400">{currentUser.teamName}</div>}
++                 <div className="text-xs text-slate-400">{currentUser.email}</div>
++               </div>
++               <div className="p-2 space-y-0.5">
++                 <button onClick={() => { onNavigate?.('profile'); closeAll(); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">My Profile</button>
++                 {can('view_settings') && (
++                   <button onClick={() => { onNavigate?.('settings'); closeAll(); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Settings</button>
++                 )}
++                 <div className="h-px bg-slate-100 my-1" />
++                 <button
++                   onClick={onLogout}
++                   className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2"
++                 >
++                   <LogOut size={14} />
++                   Sign out
++                 </button>
++               </div>
++             </div>
++           )}
++         </div>
++       </div>
++     </header>
++   );
++ };
++
++ export default Header;
++
+
+ ❯ src/components/layout/Header.search.test.tsx:29:30
+     27|     await userEvent.type(input, 'Sensitive exact value{Enter}');
+     28|     expect(onSearch).toHaveBeenCalledWith('Sensitive exact value');
+     29|     expect(headerSource).not.toContain('loanAccounts');
+       |                              ^
+     30|     expect(headerSource).not.toContain('loanApplications');
+     31|     expect(headerSource).not.toContain('members.filter');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  1 failed (1)
+   Start at  17:58:19
+   Duration  1.03s (transform 125ms, setup 0ms, collect 284ms, tests 168ms, environment 680ms, prepare 93ms)
+

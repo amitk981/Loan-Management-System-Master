@@ -1,0 +1,3 @@
+Listing tests:
+  [chromium] › global-search.e2e.spec.ts:18:5 › 010N searches real permission-scoped groups and renders the empty state
+Total: 1 test in 1 file

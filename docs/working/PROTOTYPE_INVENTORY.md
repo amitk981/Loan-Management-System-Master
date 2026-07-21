@@ -29,7 +29,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
   pagination, backend-only Money/allocation/match truth, real permission/idempotency handling, and
   loading/empty/error/unauthorised/success states. Interest and monitoring remain owned by 010MB.
 - Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`
-- Reports/tasks/search/profile/settings/admin: `ReportsMIS`, `TaskInbox`, `GlobalSearchResults`, `NotificationsCenter`, `MyProfile`, `SettingsHub`, `AdminUsers`
+- Reports/tasks/search/profile/settings/admin: `ReportsMIS`, `TaskInbox`, `GlobalSearchResults` (010N grouped API-backed foundation; compliance group deferred to 011M3), `NotificationsCenter`, `MyProfile`, `SettingsHub`, `AdminUsers`
 - Dev/integration proof: `TracerBullet`
 - Borrower portal: `BorrowerPortal` and `src/pages/borrower/portal/**`
 

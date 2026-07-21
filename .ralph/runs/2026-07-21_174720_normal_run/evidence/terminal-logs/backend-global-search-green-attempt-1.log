@@ -1,0 +1,29 @@
+Using existing test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+..FF.
+======================================================================
+FAIL: test_rate_limit_uses_actor_identity_and_returns_safe_error (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_rate_limit_uses_actor_identity_and_returns_safe_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 211, in test_rate_limit_uses_actor_identity_and_returns_safe_error
+    assert_error_envelope(self, limited, "RATE_LIMITED")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl_credit/tests/api_contracts.py", line 59, in assert_error_envelope
+    test_case.assertIsInstance(payload, dict, "API payload must be a JSON object.")
+AssertionError: <JsonResponse status_code=429, "application/json"> is not an instance of <class 'dict'> : API payload must be a JSON object.
+
+======================================================================
+FAIL: test_rejects_unauthenticated_unknown_short_wildcard_and_malformed_requests (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_rejects_unauthenticated_unknown_short_wildcard_and_malformed_requests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 188, in test_rejects_unauthenticated_unknown_short_wildcard_and_malformed_requests
+    assert_error_envelope(self, unauthenticated, "AUTH_REQUIRED")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl_credit/tests/api_contracts.py", line 59, in assert_error_envelope
+    test_case.assertIsInstance(payload, dict, "API payload must be a JSON object.")
+AssertionError: <JsonResponse status_code=401, "application/json"> is not an instance of <class 'dict'> : API payload must be a JSON object.
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.440s
+
+FAILED (failures=2)
+Preserving test database for alias 'default'...

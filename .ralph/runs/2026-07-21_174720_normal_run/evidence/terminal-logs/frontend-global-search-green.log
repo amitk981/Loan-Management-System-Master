@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/search/GlobalSearchResults.test.tsx src/components/layout/Header.search.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_174720_normal_run/sfpcl-lms
+
+ ✓ src/components/layout/Header.search.test.tsx (1 test) 201ms
+ ✓ src/pages/search/GlobalSearchResults.test.tsx (4 tests) 345ms
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+   Start at  18:17:28
+   Duration  1.71s (transform 296ms, setup 0ms, collect 744ms, tests 546ms, environment 777ms, prepare 117ms)
+
