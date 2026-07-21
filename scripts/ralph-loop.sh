@@ -33,6 +33,7 @@ last_out=".ralph/logs/last-run-output.log"
 review_failures_this_loop=0
 max_review_attempts=2
 terminal_finalizer_rewrite=0
+terminal_recurrence_rewrite=0
 max_repair_attempts="$(ralph_max_repair_attempts .ralph/config.yaml)"
 max_progressive_repair_attempts="$(ralph_max_progressive_repair_attempts .ralph/config.yaml)"
 
@@ -107,6 +108,15 @@ context_tripwire_check() {
     echo "Context trip-wire: run entered the watch/breach band (advisory; run NOT failed). History: $context_watch_log" | tee -a "$loop_log"
   fi
   return 0
+}
+
+terminal_repair_required_from_context() {
+  local context="$repo_root/.ralph/repair-context.json" failure_summary metrics
+  ralph_repair_context_is_resumable "$repo_root" "$context" || return 1
+  failure_summary="$(ralph_repair_context_value "$context" failure_summary)" || return 1
+  metrics="$(dirname "$failure_summary")/architecture-review-metrics-results.md"
+  [[ -f "$metrics" && ! -L "$metrics" ]] || return 1
+  grep -q '^TERMINAL_REPAIR_REQUIRED:' "$metrics"
 }
 
 # Switches active_tool to the other agent, or exits 3 when no usable agent
@@ -329,6 +339,7 @@ for ((i = 1; i <= max_iterations; i++)); do
     fi
     run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high \
       RALPH_TERMINAL_FINALIZER_REWRITE="$terminal_finalizer_rewrite" \
+      RALPH_TERMINAL_RECURRENCE_REWRITE="$terminal_recurrence_rewrite" \
       ./scripts/afk-dev.sh "${review_args[@]}"
     review_status=$?
     context_tripwire_check
@@ -342,7 +353,17 @@ for ((i = 1; i <= max_iterations; i++)); do
         exit "$RALPH_EXIT_MERGE_FAILED"
       fi
       if (( review_status == RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE )); then
-        echo "Architecture review rediscovered a root that already consumed its terminal finalizer. Stopping immediately; no further automatic correction is authorized for that root." | tee -a "$loop_log"
+        if (( terminal_recurrence_rewrite == 0 )) \
+            && ralph_architecture_review_terminal_repair_policy_enabled \
+              .ralph/config.yaml docs/working/HIGH_RISK_APPROVALS.md \
+            && terminal_repair_required_from_context \
+            && ralph_repair_context_is_resumable \
+              "$repo_root" "$repo_root/.ralph/repair-context.json"; then
+          terminal_recurrence_rewrite=1
+          echo "Architecture review disproved a consumed terminal finalizer. Converting its grouped recurrence into the one bounded same-finalizer repair in the existing quarantined review; unrelated validated findings are retained." | tee -a "$loop_log"
+          continue
+        fi
+        echo "Architecture review rediscovered a terminal root after its bounded repair budget was unavailable or consumed. Stopping safely instead of starting an infinite correction cycle." | tee -a "$loop_log"
         exit "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE"
       fi
       if (( review_status == RALPH_EXIT_REVIEW_CONVERGENCE )); then
@@ -368,6 +389,7 @@ for ((i = 1; i <= max_iterations; i++)); do
     fi
     review_failures_this_loop=0
     terminal_finalizer_rewrite=0
+    terminal_recurrence_rewrite=0
     if ! review_due="$(ralph_architecture_review_effective_due \
         .ralph/state.json docs/slices)"; then
       echo "Stopping: validated review left unreadable architecture-review state; product work was not started." | tee -a "$loop_log"

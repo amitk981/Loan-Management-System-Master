@@ -40,7 +40,13 @@ exact exhausted root and generation, require a High-risk CR, retain permanent fi
 contracts, run every full quality gate, and record the consumed root so this policy can never admit
 a second terminal finalizer for the same root.
 
+If executable review evidence later disproves that finalizer, the owner authorizes one bounded
+High-risk repair of the same terminal contract. The repair must retain the original finalizer and
+grouped Root IDs, run every applicable quality gate, and cannot create another corrective
+generation or finalizer. A recurrence after that repair remains a hard owner-review stop.
+
 - [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | 2026-07-20 owner-authorized unattended convergence recovery
+- [approved-terminal-repair-policy] one bounded repair per terminal finalizer | 2026-07-21 owner-authorized recurrence recovery
 
 - [approved-finalizer] CR-013 | Epic 009 | generation 2 | 2026-07-19 owner-authorized terminal root-boundary correction
 

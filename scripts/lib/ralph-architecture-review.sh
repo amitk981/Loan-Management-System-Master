@@ -85,6 +85,28 @@ ralph_architecture_review_auto_finalizer_policy_enabled() {
     "$approvals_file"
 }
 
+ralph_architecture_review_terminal_repair_limit() {
+  local config="${1:?config is required}" maximum
+  maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_terminal_repairs:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" 2>/dev/null | xargs || true)"
+  maximum="${maximum:-0}"
+  [[ "$maximum" =~ ^[0-9]+$ ]] || {
+    echo "Invalid architecture-review terminal-repair configuration." >&2
+    return 1
+  }
+  printf '%s\n' "$maximum"
+}
+
+ralph_architecture_review_terminal_repair_policy_enabled() {
+  local config="${1:?config is required}"
+  local approvals_file="${2:-docs/working/HIGH_RISK_APPROVALS.md}" maximum
+  maximum="$(ralph_architecture_review_terminal_repair_limit "$config")" \
+    || return 1
+  (( maximum > 0 )) || return 1
+  grep -qF -- \
+    "- [approved-terminal-repair-policy] one bounded repair per terminal finalizer |" \
+    "$approvals_file"
+}
+
 # Print exactly True or False. Missing, malformed, or non-boolean state is an
 # error so callers cannot silently skip a due review or declare completion.
 ralph_architecture_review_due() {
@@ -220,6 +242,11 @@ ralph_architecture_review_effective_due() {
     printf 'False\n'
     return 0
   fi
+  if ralph_queue_first_slice_is_architecture_terminal_repair \
+      "$state_file" "$slice_dir"; then
+    printf 'False\n'
+    return 0
+  fi
   reason="$(python3 - "$state_file" <<'PY'
 import json, sys
 print(json.load(open(sys.argv[1])).get("architecture_review_due_reason", ""))
@@ -259,6 +286,17 @@ ralph_queue_first_slice_is_approved_architecture_finalizer() {
     "$config" "$state_file" "$slice_dir/$first" "$approvals" >/dev/null
 }
 
+ralph_queue_first_slice_is_architecture_terminal_repair() {
+  local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
+  local config first
+  config="$(dirname "$state_file")/config.yaml"
+  [[ -f "$config" ]] || return 1
+  first="$(ralph_first_grabbable_slice "$slice_dir" || true)"
+  [[ -n "$first" ]] || return 1
+  ralph_architecture_review_terminal_repair_contract \
+    "$config" "$state_file" "$slice_dir/$first" >/dev/null
+}
+
 # Retained for the startup diagnostic interface. Reconciliation is deliberately
 # read-only: mutating tracked state here makes clean-tree preflight reject the
 # orchestrator's own change before a candidate worktree exists.
@@ -291,7 +329,7 @@ PY
 ralph_architecture_review_root_transition() {
   local mode="${1:?mode is required}" state_file="${2:?state file is required}"
   local packet="${3:?review packet is required}" maximum="${4:-}"
-  local slice_dir="${5:-}" approvals_file="${6:-}"
+  local slice_dir="${5:-}" approvals_file="${6:-}" terminal_repair_maximum="${7:-0}"
   [[ "$mode" == "validate" || "$mode" == "apply" ]] || return 1
   [[ -f "$state_file" && -f "$packet" ]] || return 1
   if [[ "$mode" == "validate" ]] \
@@ -299,15 +337,24 @@ ralph_architecture_review_root_transition() {
     echo "Invalid architecture-review convergence configuration." >&2
     return 1
   fi
+  [[ "$terminal_repair_maximum" =~ ^[0-9]+$ ]] || return 1
   python3 - "$mode" "$state_file" "$packet" "${maximum:-0}" \
-    "$slice_dir" "$approvals_file" <<'PY'
+    "$slice_dir" "$approvals_file" "$terminal_repair_maximum" <<'PY'
 import json
 import os
 import re
 import sys
 from pathlib import Path
 
-mode, state_name, packet_name, maximum_value, slice_dir_name, approvals_name = sys.argv[1:]
+(
+    mode,
+    state_name,
+    packet_name,
+    maximum_value,
+    slice_dir_name,
+    approvals_name,
+    terminal_repair_maximum_value,
+) = sys.argv[1:]
 state_path = Path(state_name)
 packet_path = Path(packet_name)
 slice_dir = Path(slice_dir_name) if slice_dir_name else None
@@ -351,6 +398,29 @@ maximum = int(maximum_value)
 terminal_roots = state.get("architecture_review_terminal_roots", [])
 if not isinstance(terminal_roots, list) or not all(isinstance(item, str) for item in terminal_roots):
     raise SystemExit("architecture_review_terminal_roots must be a string list")
+last_finalizer = state.get("last_architecture_review_finalizer", {})
+if not isinstance(last_finalizer, dict):
+    raise SystemExit("last_architecture_review_finalizer must be an object")
+grouped_terminal_roots = last_finalizer.get("root_ids", [])
+if not isinstance(grouped_terminal_roots, list) or not all(
+    isinstance(item, str) for item in grouped_terminal_roots
+):
+    raise SystemExit("last architecture-review finalizer root_ids must be a string list")
+terminal_roots = sorted(set(terminal_roots).union(grouped_terminal_roots))
+terminal_repairs = state.get("architecture_review_terminal_repairs", {})
+if not isinstance(terminal_repairs, dict):
+    raise SystemExit("architecture_review_terminal_repairs must be an object")
+terminal_root_records = state.get("architecture_review_terminal_root_records", {})
+if not isinstance(terminal_root_records, dict):
+    raise SystemExit("architecture_review_terminal_root_records must be an object")
+if grouped_terminal_roots and all(
+    isinstance(last_finalizer.get(key), str) and last_finalizer.get(key)
+    for key in ("epic", "root_id", "slice_id", "run_id")
+):
+    for grouped_root in grouped_terminal_roots:
+        terminal_root_records.setdefault(grouped_root, dict(last_finalizer))
+terminal_roots = sorted(set(terminal_roots).union(terminal_root_records))
+terminal_repair_maximum = int(terminal_repair_maximum_value)
 
 def section_value(text, heading):
     lines = text.splitlines()
@@ -408,6 +478,125 @@ def standing_terminal_finalizer(root_id, corrective, current_generation, epic):
         "Exhausted corrective generation": str(current_generation),
     }
 
+def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
+    if terminal_repair_maximum < 1 or slice_dir is None or approvals_path is None:
+        return None
+    repair_policy = (
+        "- [approved-terminal-repair-policy] one bounded repair per terminal finalizer |"
+    )
+    if not approvals_path.is_file() or not any(
+        line.startswith(repair_policy) for line in approvals_path.read_text().splitlines()
+    ):
+        return None
+    primary_root = finalizer_record.get("root_id")
+    epic = finalizer_record.get("epic")
+    finalizer_slice = finalizer_record.get("slice_id")
+    if not all(
+        isinstance(value, str) and value
+        for value in (primary_root, epic, finalizer_slice)
+    ):
+        return None
+    if primary_root in terminal_repairs:
+        return None
+    finalizer_roots = finalizer_record.get("root_ids", [])
+    if not isinstance(finalizer_roots, list) or not set(recurrence_roots).issubset(
+        set(finalizer_roots)
+    ):
+        return None
+    if not re.fullmatch(r"(?:[0-9]{3}[A-Za-z0-9]*|CR-[0-9]{3,})", corrective):
+        return None
+    matches = list(slice_dir.glob(f"{corrective}-*.md"))
+    if len(matches) != 1:
+        return None
+    text = matches[0].read_text()
+    if section_value(text, "## Status") != "Not Started":
+        return None
+    if section_value(text, "## Risk Level") != "High":
+        return None
+    if re.search(
+        rf"\bEpic {re.escape(epic)}\b", section_value(text, "## Parent Epic")
+    ) is None:
+        return None
+    lines = text.splitlines()
+    try:
+        start = lines.index("## Architecture Review Recurrence Repair") + 1
+    except ValueError:
+        return None
+    fields = {}
+    while start < len(lines) and not lines[start].startswith("## "):
+        line = lines[start].strip()
+        if line:
+            match = re.fullmatch(
+                r"- (Epic|Root ID|Terminal finalizer|Repair attempt): (.+)", line
+            )
+            if not match or match.group(1) in fields:
+                return None
+            fields[match.group(1)] = match.group(2)
+        start += 1
+    if fields != {
+        "Epic": epic,
+        "Root ID": primary_root,
+        "Terminal finalizer": finalizer_slice,
+        "Repair attempt": "1",
+    }:
+        return None
+    return {
+        "epic": epic,
+        "root_id": primary_root,
+        "root_ids": sorted(recurrence_roots),
+        "finalizer_slice": finalizer_slice,
+        "corrective_slice": corrective,
+        "attempt": 1,
+        "status": "pending",
+    }
+
+recurrence_rows = [
+    row
+    for row in rows
+    if row[2] in {"Critical", "High"}
+    and row[3] != "Closed"
+    and row[1] in terminal_roots
+]
+terminal_repair = None
+if recurrence_rows:
+    recurrence_roots = sorted({row[1] for row in recurrence_rows})
+    corrective_slices = {row[5] for row in recurrence_rows if row[5] != "-"}
+    finalizer_records = [terminal_root_records.get(root) for root in recurrence_roots]
+    if any(not isinstance(record, dict) for record in finalizer_records):
+        raise SystemExit(
+            "TERMINAL_RECURRENCE: terminal root history predates bounded repair "
+            "mapping and requires owner review."
+        )
+    finalizer_identities = {
+        (record.get("epic"), record.get("root_id"), record.get("slice_id"))
+        for record in finalizer_records
+    }
+    if len(finalizer_identities) != 1:
+        raise SystemExit(
+            "TERMINAL_RECURRENCE: one review rediscovered roots from multiple terminal "
+            "finalizers; refusing to merge their repair budgets."
+        )
+    recurrence_finalizer = finalizer_records[0]
+    primary_root = recurrence_finalizer.get("root_id", recurrence_roots[0])
+    if primary_root in terminal_repairs:
+        raise SystemExit(
+            f"TERMINAL_RECURRENCE: architecture review root {primary_root} already "
+            "consumed its bounded terminal repair."
+        )
+    if len(corrective_slices) != 1:
+        raise SystemExit(
+            "TERMINAL_REPAIR_REQUIRED: terminal recurrence roots must be grouped into "
+            "one corrective slice."
+        )
+    terminal_repair = terminal_repair_contract(
+        next(iter(corrective_slices)), recurrence_roots, recurrence_finalizer
+    )
+    if terminal_repair is None:
+        raise SystemExit(
+            f"TERMINAL_REPAIR_REQUIRED: architecture review root {primary_root} needs "
+            "one explicit Architecture Review Recurrence Repair contract."
+        )
+
 for finding_id, root_id, severity, disposition, _reproducer, corrective, _closure in rows:
     if disposition == "Closed":
         updated.pop(root_id, None)
@@ -415,6 +604,8 @@ for finding_id, root_id, severity, disposition, _reproducer, corrective, _closur
     if severity not in {"Critical", "High"} or corrective == "-":
         continue
     if root_id in terminal_roots:
+        if terminal_repair is not None and root_id in terminal_repair["root_ids"]:
+            continue
         raise SystemExit(
             f"TERMINAL_RECURRENCE: architecture review root {root_id} already "
             "consumed its one owner-preauthorized terminal finalizer."
@@ -446,6 +637,10 @@ for finding_id, root_id, severity, disposition, _reproducer, corrective, _closur
 
 if mode == "apply":
     state["architecture_review_root_generations"] = updated
+    state["architecture_review_terminal_roots"] = terminal_roots
+    state["architecture_review_terminal_root_records"] = terminal_root_records
+    if terminal_repair is not None:
+        state["architecture_review_terminal_repair_pending"] = terminal_repair
     state.pop("architecture_review_cycle_epic", None)
     state.pop("architecture_review_corrective_generation", None)
     temporary = state_path.with_name(f"{state_path.name}.tmp.{os.getpid()}")
@@ -457,22 +652,25 @@ PY
 ralph_validate_architecture_review_convergence() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
   local packet="${3:?review packet is required}" slice_dir="${4:-}"
-  local approvals_file="${5:-}" maximum
+  local approvals_file="${5:-}" maximum terminal_repair_maximum
   maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
   maximum="${maximum:-2}"
+  terminal_repair_maximum="$(ralph_architecture_review_terminal_repair_limit "$config")" \
+    || return 1
   local output rc=0
   output="$(ralph_architecture_review_root_transition \
     validate "$state_file" "$packet" "$maximum" "$slice_dir" "$approvals_file" \
+    "$terminal_repair_maximum" \
     2>&1)" || rc=$?
   [[ -n "$output" ]] && printf '%s\n' "$output" >&2
-  if (( rc != 0 )) && printf '%s\n' "$output" | grep -q '^TERMINAL_RECURRENCE:'; then
+  if (( rc != 0 )) && printf '%s\n' "$output" | grep -Eq '^TERMINAL_(RECURRENCE|REPAIR_REQUIRED):'; then
     return "${RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE:-28}"
   fi
   return "$rc"
 }
 
 ralph_apply_architecture_review_root_transitions() {
-  local config state_file packet slice_dir approvals_file maximum
+  local config state_file packet slice_dir approvals_file maximum terminal_repair_maximum
   if [[ "${1:-}" == *.json ]]; then
     state_file="${1:?state file is required}"
     packet="${2:?review packet is required}"
@@ -488,8 +686,11 @@ ralph_apply_architecture_review_root_transitions() {
   fi
   maximum="$(awk -F': *' '/^[[:space:]]*architecture_review_max_corrective_generations:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" 2>/dev/null | xargs || true)"
   maximum="${maximum:-2}"
+  terminal_repair_maximum="$(ralph_architecture_review_terminal_repair_limit "$config")" \
+    || return 1
   ralph_architecture_review_root_transition \
-    apply "$state_file" "$packet" "$maximum" "$slice_dir" "$approvals_file"
+    apply "$state_file" "$packet" "$maximum" "$slice_dir" "$approvals_file" \
+    "$terminal_repair_maximum"
 }
 
 # Validate the narrow owner-controlled exit for an exhausted corrective cycle.
@@ -586,6 +787,173 @@ PY
   printf '%s\t%s\n' "$epic" "$root"
 }
 
+# Validate the one bounded repair of a terminal finalizer that a later review
+# disproved with executable evidence. The contract is meaningful only while
+# the review transition has retained the exact pending repair in trusted state.
+ralph_architecture_review_terminal_repair_contract() {
+  local config="${1:?config is required}" state_file="${2:?state file is required}"
+  local slice_file="${3:?slice file is required}" allow_review_transition="${4:-false}" maximum
+  local approvals_file
+  [[ -f "$slice_file" ]] || return 1
+  maximum="$(ralph_architecture_review_terminal_repair_limit "$config")" || return 1
+  (( maximum > 0 )) || return 1
+  approvals_file="$(dirname "$(dirname "$slice_file")")/working/HIGH_RISK_APPROVALS.md"
+  [[ -f "$approvals_file" ]] || return 1
+  grep -qF -- \
+    "- [approved-terminal-repair-policy] one bounded repair per terminal finalizer |" \
+    "$approvals_file" || return 1
+  python3 - "$state_file" "$slice_file" "$maximum" "$allow_review_transition" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+state = json.loads(Path(sys.argv[1]).read_text())
+slice_path = Path(sys.argv[2])
+maximum = int(sys.argv[3])
+allow_review_transition = sys.argv[4] == "true"
+text = slice_path.read_text()
+match = re.fullmatch(r"((?:[0-9]{3}[A-Za-z0-9]*|CR-[0-9]{3,}))-.+\.md", slice_path.name)
+if match is None:
+    raise SystemExit(1)
+corrective_id = match.group(1)
+
+def section_value(heading):
+    lines = text.splitlines()
+    try:
+        index = lines.index(heading) + 1
+    except ValueError:
+        return ""
+    while index < len(lines) and not lines[index].strip():
+        index += 1
+    return lines[index].strip() if index < len(lines) and not lines[index].startswith("## ") else ""
+
+if section_value("## Status") != "Not Started" or section_value("## Risk Level") != "High":
+    raise SystemExit(1)
+lines = text.splitlines()
+try:
+    index = lines.index("## Architecture Review Recurrence Repair") + 1
+except ValueError:
+    raise SystemExit(1)
+fields = {}
+while index < len(lines) and not lines[index].startswith("## "):
+    line = lines[index].strip()
+    if line:
+        field = re.fullmatch(
+            r"- (Epic|Root ID|Terminal finalizer|Repair attempt): (.+)", line
+        )
+        if field is None or field.group(1) in fields:
+            raise SystemExit(1)
+        fields[field.group(1)] = field.group(2)
+    index += 1
+epic = fields.get("Epic", "")
+root = fields.get("Root ID", "")
+finalizer = fields.get("Terminal finalizer", "")
+if fields.get("Repair attempt") != "1" or maximum < 1:
+    raise SystemExit(1)
+if re.search(rf"\bEpic {re.escape(epic)}\b", section_value("## Parent Epic")) is None:
+    raise SystemExit(1)
+pending = state.get("architecture_review_terminal_repair_pending")
+if not isinstance(pending, dict) or pending != {
+    "epic": epic,
+    "root_id": root,
+    "root_ids": pending.get("root_ids") if isinstance(pending, dict) else None,
+    "finalizer_slice": finalizer,
+    "corrective_slice": corrective_id,
+    "attempt": 1,
+    "status": "pending",
+}:
+    raise SystemExit(1)
+if not isinstance(pending.get("root_ids"), list) or not pending["root_ids"]:
+    raise SystemExit(1)
+if state.get("architecture_review_due") is not True and not allow_review_transition:
+    raise SystemExit(1)
+if root in state.get("architecture_review_terminal_repairs", {}):
+    raise SystemExit(1)
+print(f"{epic}\t{root}\t{finalizer}")
+PY
+}
+
+ralph_mark_architecture_review_terminal_repair_due() {
+  local config="${1:?config is required}" state_file="${2:?state file is required}"
+  local slice_dir="${3:?slice directory is required}" first contract root pending
+  pending="$(python3 - "$state_file" <<'PY'
+import json, sys
+value = json.load(open(sys.argv[1])).get("architecture_review_terminal_repair_pending")
+print("True" if isinstance(value, dict) else "False")
+PY
+)" || return 1
+  [[ "$pending" == "True" ]] || return 0
+  first="$(ralph_first_grabbable_slice "$slice_dir" || true)"
+  [[ -n "$first" ]] || {
+    echo "Pending terminal repair has no grabbable corrective slice." >&2
+    return 1
+  }
+  contract="$(ralph_architecture_review_terminal_repair_contract \
+    "$config" "$state_file" "$slice_dir/$first" true 2>/dev/null || true)"
+  [[ -n "$contract" ]] || {
+    echo "Pending terminal repair is not the exact first grabbable slice." >&2
+    return 1
+  }
+  IFS=$'\t' read -r _ root _ <<< "$contract"
+  python3 - "$state_file" "$root" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_due"] = True
+state["architecture_review_due_reason"] = f"terminal_repair:{sys.argv[2]}"
+temporary = path.with_name(f"{path.name}.tmp.{os.getpid()}")
+temporary.write_text(json.dumps(state, indent=2) + "\n")
+temporary.replace(path)
+PY
+}
+
+ralph_finalize_architecture_review_terminal_repair() {
+  local state_file="${1:?state file is required}" epic="${2:?epic is required}"
+  local root="${3:?root id is required}" finalizer="${4:?finalizer is required}"
+  local slice_id="${5:?slice id is required}" run_id="${6:?run id is required}"
+  python3 - "$state_file" "$epic" "$root" "$finalizer" "$slice_id" "$run_id" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+epic, root, finalizer, slice_id, run_id = sys.argv[2:]
+state = json.loads(path.read_text())
+pending = state.get("architecture_review_terminal_repair_pending")
+if not isinstance(pending, dict):
+    raise SystemExit("terminal repair has no trusted pending transition")
+expected = {
+    "epic": epic,
+    "root_id": root,
+    "finalizer_slice": finalizer,
+    "attempt": 1,
+    "status": "pending",
+}
+if any(pending.get(key) != value for key, value in expected.items()):
+    raise SystemExit("terminal repair does not match its trusted pending transition")
+if state.get("architecture_review_due") is not True:
+    raise SystemExit("terminal repair requires a retained review barrier")
+repairs = state.get("architecture_review_terminal_repairs", {})
+if not isinstance(repairs, dict) or root in repairs:
+    raise SystemExit("terminal repair budget was already consumed")
+record = dict(pending)
+record.update({"status": "complete", "slice_id": slice_id, "run_id": run_id})
+repairs[root] = record
+state["architecture_review_terminal_repairs"] = repairs
+state.pop("architecture_review_terminal_repair_pending", None)
+state["architecture_review_due"] = False
+state.pop("architecture_review_due_reason", None)
+state["slices_completed_since_architecture_review"] = 0
+state["last_architecture_review_terminal_repair"] = record
+path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+}
+
 # A successful review normally clears its due flag. When that same validated
 # review admitted a standing-policy terminal finalizer, immediately restore a
 # narrow barrier that yields only to the exact first grabbable finalizer.
@@ -664,19 +1032,26 @@ closed_roots = sorted(
 for root_id in closed_roots:
     roots.pop(root_id, None)
 state["architecture_review_root_generations"] = roots
-state["architecture_review_terminal_roots"] = sorted(terminal_roots + [root])
+state["architecture_review_terminal_roots"] = sorted(set(terminal_roots + closed_roots))
 state["architecture_review_due"] = False
 state.pop("architecture_review_due_reason", None)
 state.pop("architecture_review_cycle_epic", None)
 state.pop("architecture_review_corrective_generation", None)
 state["slices_completed_since_architecture_review"] = 0
-state["last_architecture_review_finalizer"] = {
+finalizer_record = {
     "epic": epic,
     "root_id": root,
     "root_ids": closed_roots,
     "slice_id": slice_id,
     "run_id": run_id,
 }
+state["last_architecture_review_finalizer"] = finalizer_record
+terminal_records = state.get("architecture_review_terminal_root_records", {})
+if not isinstance(terminal_records, dict):
+    raise SystemExit("architecture_review_terminal_root_records must be an object")
+for root_id in closed_roots:
+    terminal_records[root_id] = dict(finalizer_record)
+state["architecture_review_terminal_root_records"] = terminal_records
 path.write_text(json.dumps(state, indent=2) + "\n")
 PY
 }
@@ -1147,6 +1522,7 @@ closure_path = run_dir / "review-closure-evidence.md"
 SLICE_HEADERS = ["Finding ID", "Root ID", "Reproducer", "Acceptance IDs"]
 FINDING_HEADERS = ["Finding ID", "Root ID", "Permanent Test", "RED Evidence", "GREEN Evidence"]
 AC_HEADERS = ["Acceptance ID", "Test", "Evidence"]
+REPLAY_HEADERS = ["Finding ID", "Command", "Evidence"]
 ID_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+){2,}$")
 AC_RE = re.compile(r"^AC-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 RED_RE = re.compile(
@@ -1448,6 +1824,19 @@ if not closure_path.is_file() or closure_path.stat().st_size == 0:
 closure_text = closure_path.read_text()
 finding_rows = table(section(closure_text, "Finding Evidence"), FINDING_HEADERS, "Finding Evidence")
 acceptance_rows = table(section(closure_text, "Acceptance Evidence"), AC_HEADERS, "Acceptance Evidence")
+terminal_contract = (
+    section(head_slice_text, "Architecture Review Finalizer") is not None
+    or section(head_slice_text, "Architecture Review Recurrence Repair") is not None
+)
+replay_rows = (
+    table(
+        section(closure_text, "Reproducer Replay Evidence"),
+        REPLAY_HEADERS,
+        "Reproducer Replay Evidence",
+    )
+    if terminal_contract
+    else []
+)
 
 contracts: dict[str, dict[str, object]] = {}
 expected_acceptance: set[str] = set()
@@ -1526,6 +1915,51 @@ for row in acceptance_rows:
 if seen_acceptance != expected_acceptance:
     missing = sorted(expected_acceptance - seen_acceptance)
     raise SystemExit(f"Acceptance Evidence is missing declared ids: {missing}")
+
+if terminal_contract:
+    expected_replays = {}
+    for row in slice_rows:
+        finding_id = row["Finding ID"]
+        reproducer_path = safe_file(
+            worktree, row["Reproducer"], f"Original reproducer for {finding_id}"
+        )
+        candidate_visible(reproducer_path, f"Original reproducer for {finding_id}")
+        reproducer_text = reproducer_path.read_text(errors="replace")
+        command_match = re.search(r"(?m)^Command:\s*\n(?:\s*\n)*([^\n]+?)\s*$", reproducer_text)
+        if command_match is None:
+            raise SystemExit(
+                f"Terminal corrective reproducer has no exact one-line Command: {finding_id}"
+            )
+        expected_replays[finding_id] = command_match.group(1).strip()
+    seen_replays = set()
+    for row in replay_rows:
+        finding_id = row["Finding ID"]
+        if finding_id not in expected_replays or finding_id in seen_replays:
+            raise SystemExit(
+                f"Reproducer Replay Evidence has an unknown or duplicate id: {finding_id}"
+            )
+        seen_replays.add(finding_id)
+        command = row["Command"].strip().strip("`")
+        if command != expected_replays[finding_id]:
+            raise SystemExit(
+                f"Reproducer replay changed the original command for {finding_id}."
+            )
+        evidence_path = safe_file(
+            run_dir, row["Evidence"], f"Reproducer replay evidence for {finding_id}"
+        )
+        if not row["Evidence"].startswith("evidence/"):
+            raise SystemExit(
+                f"Reproducer replay evidence must live under current run evidence/: {finding_id}"
+            )
+        candidate_visible(evidence_path, f"Reproducer replay evidence for {finding_id}")
+        evidence_text = evidence_path.read_text(errors="replace")
+        if command not in evidence_text or not successful_evidence(evidence_text):
+            raise SystemExit(
+                f"Original reproducer command is not independently evidenced green: {finding_id}"
+            )
+    if seen_replays != set(expected_replays):
+        missing = sorted(set(expected_replays) - seen_replays)
+        raise SystemExit(f"Reproducer Replay Evidence is missing terminal findings: {missing}")
 
 print(
     f"PASS: validated semantic closure for {len(contracts)} finding(s) "

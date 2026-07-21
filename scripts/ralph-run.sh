@@ -37,9 +37,17 @@ split_max_lines="${RALPH_SPLIT_MAX_LINES:-}"
 split_corrective_run_id="${RALPH_SPLIT_CORRECTIVE_RUN_ID:-}"
 architecture_finalizer_epic=""
 architecture_finalizer_root=""
+architecture_terminal_repair_epic=""
+architecture_terminal_repair_root=""
+architecture_terminal_repair_finalizer=""
 terminal_finalizer_rewrite="${RALPH_TERMINAL_FINALIZER_REWRITE:-0}"
+terminal_recurrence_rewrite="${RALPH_TERMINAL_RECURRENCE_REWRITE:-0}"
 [[ "$terminal_finalizer_rewrite" == "0" || "$terminal_finalizer_rewrite" == "1" ]] || {
   echo "RALPH_TERMINAL_FINALIZER_REWRITE must be 0 or 1." >&2
+  exit 2
+}
+[[ "$terminal_recurrence_rewrite" == "0" || "$terminal_recurrence_rewrite" == "1" ]] || {
+  echo "RALPH_TERMINAL_RECURRENCE_REWRITE must be 0 or 1." >&2
   exit 2
 }
 
@@ -193,6 +201,18 @@ if [[ "$mode" != "architecture_review" ]]; then
     IFS=$'\t' read -r architecture_finalizer_epic architecture_finalizer_root \
       <<< "$architecture_finalizer_contract"
     echo "Owner-approved Epic $architecture_finalizer_epic finalizer for $architecture_finalizer_root: successful full gates will close the exhausted root without another immediate review."
+  fi
+  if grep -q '^## Architecture Review Recurrence Repair[[:space:]]*$' "$selected_slice_path"; then
+    if ! architecture_terminal_repair_contract="$(ralph_architecture_review_terminal_repair_contract \
+        "$repo_root/.ralph/config.yaml" "$repo_root/.ralph/state.json" \
+        "$repo_root/$selected_slice_path")"; then
+      echo "Slice $slice_id declares an invalid, exhausted, or untrusted terminal recurrence repair; refusing to run it." >&2
+      exit 2
+    fi
+    IFS=$'\t' read -r architecture_terminal_repair_epic \
+      architecture_terminal_repair_root architecture_terminal_repair_finalizer \
+      <<< "$architecture_terminal_repair_contract"
+    echo "Bounded Epic $architecture_terminal_repair_epic repair of $architecture_terminal_repair_finalizer for $architecture_terminal_repair_root: successful full gates will consume the one recurrence-repair attempt."
   fi
 fi
 
@@ -435,13 +455,13 @@ if [[ "$mode" != "architecture_review" \
     && -f "$worktree_dir/docs/slices/$slice_file" ]] \
     && grep -q '^## Review Finding Closure[[:space:]]*$' \
       "$worktree_dir/docs/slices/$slice_file"; then
-  closure_preflight_instruction="- This corrective slice has a machine-readable closure contract. Before returning, run exactly: ./scripts/ralph-validate-review-closure.sh --slice docs/slices/$slice_file --run-dir .ralph/runs/$run_id . Keep rerunning that fast check until it prints PASS. Markdown prose may follow a table only after a blank line; Python tests may use an exact path::selector or exact Django dotted test label. Do not defer a failure from this command to the orchestrator."
+  closure_preflight_instruction="- This corrective slice has a machine-readable closure contract. Before returning, run exactly: ./scripts/ralph-validate-review-closure.sh --slice docs/slices/$slice_file --run-dir .ralph/runs/$run_id . Keep rerunning that fast check until it prints PASS. Markdown prose may follow a table only after a blank line; Python tests may use an exact path::selector or exact Django dotted test label. If this slice declares Architecture Review Finalizer or Architecture Review Recurrence Repair, rerun every original review log's exact one-line Command and add '## Reproducer Replay Evidence' with the exact columns 'Finding ID | Command | Evidence'; each current-run evidence log must contain that exact command, a positive pass signal, and Exit code: 0. Do not replace the original probe with a narrower proxy test. Do not defer a failure from this command to the orchestrator."
 fi
 
 split_instruction=""
 split_corrective_instruction=""
 split_read_target="docs/slices/$slice_file"
-architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md. Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work. Bundle Medium findings into the owning slice or epic closure and record Low findings unless they naturally combine with higher-severity work. Group related symptoms by root owner instead of creating one slice per symptom. Report findings closed, new findings by severity, and corrective slices added in review-packet.md under '## Convergence Metrics' using the exact lines '- Findings closed: N', '- New Critical: N', '- New High: N', '- New Medium: N', '- New Low: N', and '- Corrective slices added: N'. A normal new corrective must be a numeric Not Started slice with a valid Depends On contract. Exception: when the scope instruction says a carried root is already at the configured generation cap and it genuinely needs a different successor, create exactly one next-numbered CR-NNN terminal finalizer instead of another numeric leaf. Its filename may add a descriptive slug, but every Finding Closure Manifest row must use the CR-NNN identity. It must be Not Started, High risk, owned by the same Parent Epic, group every related Critical/High root into its Review Finding Closure contract, and contain exactly '## Architecture Review Finalizer' followed by '- Epic: NNN', '- Root ID: ROOT-NNN-*', and '- Exhausted corrective generation: N'. The standing owner policy admits only one such terminal CR per root; a second terminal recurrence still fails closed. When an actionable existing root-owner slice already covers a new Critical/High finding, do not duplicate it; add one exact '- Existing corrective slice: ID' line per mapped slice under the convergence metrics. Validation requires every mapped ID to resolve to one tracked Not Started or Blocked slice. If corrective additions exceed closures across two reviews, recommend one root-cause boundary correction instead of further leaf patches."
+architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md. Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work. Bundle Medium findings into the owning slice or epic closure and record Low findings unless they naturally combine with higher-severity work. Group related symptoms by root owner instead of creating one slice per symptom. Report findings closed, new findings by severity, and corrective slices added in review-packet.md under '## Convergence Metrics' using the exact lines '- Findings closed: N', '- New Critical: N', '- New High: N', '- New Medium: N', '- New Low: N', and '- Corrective slices added: N'. A normal new corrective must be a numeric Not Started slice with a valid Depends On contract. Exception: when the scope instruction says a carried root is already at the configured generation cap and it genuinely needs a different successor, create exactly one next-numbered CR-NNN terminal finalizer instead of another numeric leaf. Its filename may add a descriptive slug, but every Finding Closure Manifest row must use the CR-NNN identity. It must be Not Started, High risk, owned by the same Parent Epic, group every related Critical/High root into its Review Finding Closure contract, and contain exactly '## Architecture Review Finalizer' followed by '- Epic: NNN', '- Root ID: ROOT-NNN-*', and '- Exhausted corrective generation: N'. The standing owner policy admits only one such terminal CR per root. If executable evidence later disproves that finalizer, preserve the same stable roots and group them into one correction; the orchestrator may rewrite it once as the bounded same-finalizer recurrence repair, never generation 3 or a second finalizer. A recurrence after that repair fails closed. When an actionable existing root-owner slice already covers a new Critical/High finding, do not duplicate it; add one exact '- Existing corrective slice: ID' line per mapped slice under the convergence metrics. Validation requires every mapped ID to resolve to one tracked Not Started or Blocked slice. If corrective additions exceed closures across two reviews, recommend one root-cause boundary correction instead of further leaf patches."
 architecture_runtime_instruction='- Every generated corrective slice must declare exactly one `## Runtime Capabilities` section. Declare `postgresql-five-race-acceptance` when its text or Trusted PostgreSQL Acceptance requires PostgreSQL, concurrency, locking, or race evidence; declare `localhost-e2e-server` when it requires browser, screenshot, Playwright, or trusted-browser evidence; otherwise declare `none`. Before returning, source `scripts/lib/ralph-runtime-capabilities.sh` and `scripts/lib/ralph-postgresql-acceptance.sh`, run `ralph_validate_slice_runtime_requirements` against every untracked `docs/slices/*.md` candidate, and run `ralph_validate_trusted_postgresql_acceptance` for every candidate declaring the PostgreSQL capability. A failure is part of this review candidate and must be corrected here, not deferred to the next product run.'
 architecture_instruction="$architecture_instruction $architecture_runtime_instruction"
 architecture_scope_instruction="$(ralph_architecture_review_scope_instruction \
@@ -451,6 +471,9 @@ if [[ -n "$architecture_scope_instruction" ]]; then
 fi
 if [[ "$terminal_finalizer_rewrite" == "1" ]]; then
   architecture_instruction="$architecture_instruction This is the single bounded terminal-finalizer rewrite after independent convergence validation rejected an ordinary successor. Do not repeat the architecture critique or change its findings. Read the previous failure-summary.md, rename the one proposed numeric corrective to the next unused CR-NNN terminal finalizer, replace its old ID consistently in the manifest/findings/dependencies, add the exact finalizer section for the exhausted root, retain every acceptance/reproducer contract, and run the fast queue/semantic validators before returning."
+fi
+if [[ "$terminal_recurrence_rewrite" == "1" ]]; then
+  architecture_instruction="$architecture_instruction This is the single bounded terminal-recurrence rewrite after independent validation proved that a consumed terminal finalizer remains incomplete. Do not repeat the architecture critique or change any finding, reproducer, acceptance criterion, or unrelated corrective slice. Preserve the one grouped recurrence corrective, add exactly '## Architecture Review Recurrence Repair' followed by '- Epic: NNN', '- Root ID: ROOT-NNN-*', '- Terminal finalizer: <exact completed slice id>', and '- Repair attempt: 1', and revise prose that previously described the candidate as permanently rejected. This repairs the same terminal contract; it is not generation 3 or a second finalizer. Run the fast queue/semantic validators before returning."
 fi
 if [[ -n "$split_slice_id" ]]; then
   split_read_target="$split_slice_file"
@@ -704,6 +727,40 @@ Successful full product gates authorize this run to close the exhausted boundary
 EOF
 fi
 
+if [[ -n "$architecture_terminal_repair_epic" ]]; then
+  terminal_repair_results="$run_dir/architecture-review-terminal-repair-results.md"
+  candidate_terminal_repair_contract="$(ralph_architecture_review_terminal_repair_contract \
+    "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
+    "$worktree_dir/docs/slices/$slice_file" 2>/dev/null || true)"
+  expected_terminal_repair_contract="$architecture_terminal_repair_epic"$'\t'"$architecture_terminal_repair_root"$'\t'"$architecture_terminal_repair_finalizer"
+  if [[ "$candidate_terminal_repair_contract" != "$expected_terminal_repair_contract" ]]; then
+    cat > "$terminal_repair_results" <<EOF
+# Architecture Review Terminal Repair Results
+
+FAIL: the independently validated candidate did not preserve the exact bounded
+repair of $architecture_terminal_repair_finalizer for $architecture_terminal_repair_root.
+EOF
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Validation Failure Summary
+
+architecture-review-terminal-repair-results.md:- FAIL: the candidate changed or invalidated the trusted recurrence-repair contract.
+EOF
+    if (( no_worktree == 0 )); then
+      ralph_write_repair_context \
+        "$repo_root/.ralph/repair-context.json" \
+        "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+        "$run_dir/failure-summary.md"
+    fi
+    exit 1
+  fi
+  cat > "$terminal_repair_results" <<EOF
+# Architecture Review Terminal Repair Results
+
+PASS: retained the one bounded repair of $architecture_terminal_repair_finalizer
+for $architecture_terminal_repair_root. Successful full gates may consume it.
+EOF
+fi
+
 cat > "$run_dir/final-summary.md" <<EOF
 # Final Summary
 
@@ -829,6 +886,9 @@ if [[ "$mode" == "architecture_review" && -z "$split_slice_id" ]]; then
     "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
     "$worktree_dir/docs/slices" \
     "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" || exit 1
+  ralph_mark_architecture_review_terminal_repair_due \
+    "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
+    "$worktree_dir/docs/slices" || exit 1
 fi
 
 if [[ "$mode" != "architecture_review" && -n "$architecture_finalizer_epic" ]]; then
@@ -837,10 +897,18 @@ if [[ "$mode" != "architecture_review" && -n "$architecture_finalizer_epic" ]]; 
     "$architecture_finalizer_root" "$slice_id" "$run_id" || exit 1
 fi
 
+if [[ "$mode" != "architecture_review" && -n "$architecture_terminal_repair_epic" ]]; then
+  ralph_finalize_architecture_review_terminal_repair \
+    "$worktree_dir/.ralph/state.json" "$architecture_terminal_repair_epic" \
+    "$architecture_terminal_repair_root" "$architecture_terminal_repair_finalizer" \
+    "$slice_id" "$run_id" || exit 1
+fi
+
 # An epic boundary is always a review checkpoint, even after the cadence has
 # safely expanded. Determine the next grabbable product slice only after the
 # orchestrator has completed the selected slice's status transition.
-if [[ "$mode" != "architecture_review" && -z "$architecture_finalizer_epic" ]]; then
+if [[ "$mode" != "architecture_review" && -z "$architecture_finalizer_epic" \
+    && -z "$architecture_terminal_repair_epic" ]]; then
   next_slice_file="$(ralph_first_grabbable_slice "$worktree_dir/docs/slices" 2>/dev/null || true)"
   next_slice_id="${next_slice_file%.md}"
   remaining_after="$(ralph_remaining_slices "$worktree_dir/docs/slices")"

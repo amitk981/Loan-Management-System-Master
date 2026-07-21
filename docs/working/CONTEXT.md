@@ -105,6 +105,9 @@ The end-to-end workflow is:
 - Architecture reviews are independent critics. Significant means Critical/High correctness,
   security, financial/data integrity, or binding source-contract risk; lesser findings should be
   bundled or recorded rather than recursively expanding the active queue.
+- Terminal finalizers retain every grouped Root ID. A later executable recurrence receives at most
+  one bounded repair of that same finalizer contract; it cannot silently restart generation one,
+  create generation three, or discard unrelated validated review findings.
 
 ## Context Discipline
 
