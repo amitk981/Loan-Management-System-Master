@@ -44,9 +44,14 @@ If executable review evidence disproves that finalizer, the owner authorizes one
 High-risk repair episode for the same terminal contract. The episode must retain the original
 finalizer and every inherited Finding ID/Root ID pair, run every applicable quality gate, and remain
 open until independent review closes every inherited finding. A later independently reproduced
-regression may open the next audited episode on the same stable identities; it cannot create another
-corrective generation or finalizer. Malformed, unauthenticated, or multi-finalizer recurrence remains
-a hard owner-review stop.
+regression may open the next audited episode on the same stable identities, up to
+`architecture_review_max_terminal_repair_episodes` (currently two); it cannot create another
+corrective generation or finalizer. After that ceiling, the owner authorizes `Quarantined` with no
+corrective or closure claim: the finding remains a durable release blocker, unrelated queued slices
+continue, and Ralph must refuse final release completion while any quarantine remains. Each later
+review must retain and re-evaluate the same quarantined Finding ID/Root ID; only fresh bound passing
+closure evidence may archive and remove it. Malformed,
+unauthenticated, premature, or multi-finalizer quarantine/recurrence remains a hard owner-review stop.
 
 - [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | 2026-07-20 owner-authorized unattended convergence recovery
 - [approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer | 2026-07-22 owner-authorized independently verified recurrence recovery

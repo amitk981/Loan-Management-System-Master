@@ -454,6 +454,9 @@ terminal_repair_episode_limit = int(terminal_repair_episode_limit_value)
 terminal_quarantines = state.get("architecture_review_quarantined_findings", {})
 if not isinstance(terminal_quarantines, dict):
     raise SystemExit("architecture_review_quarantined_findings must be an object")
+quarantine_history = state.get("architecture_review_quarantine_history", [])
+if not isinstance(quarantine_history, list):
+    raise SystemExit("architecture_review_quarantine_history must be a list")
 
 def section_value(text, heading):
     lines = text.splitlines()
@@ -650,6 +653,28 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
         "status": "pending",
     }
 
+rows_by_finding = {row[0]: row for row in rows}
+missing_quarantines = sorted(set(terminal_quarantines) - set(rows_by_finding))
+if missing_quarantines:
+    raise SystemExit(
+        "Architecture review omitted quarantined findings: " + ", ".join(missing_quarantines)
+    )
+for finding_id, record in list(terminal_quarantines.items()):
+    if not isinstance(record, dict):
+        raise SystemExit(f"Malformed architecture quarantine: {finding_id}")
+    row = rows_by_finding[finding_id]
+    if row[1] != record.get("root_id"):
+        raise SystemExit(f"Quarantined finding changed stable root: {finding_id}")
+    if row[3] == "Closed":
+        archived = dict(record)
+        archived.update({"status": "closed", "closure_evidence": row[6]})
+        quarantine_history.append(archived)
+        terminal_quarantines.pop(finding_id)
+    elif row[3] != "Quarantined":
+        raise SystemExit(
+            f"Quarantined finding must remain Quarantined or become Closed: {finding_id}"
+        )
+
 quarantine_rows = [row for row in rows if row[3] == "Quarantined"]
 for finding_id, root_id, severity, _disposition, reproducer, corrective, _closure in quarantine_rows:
     if severity not in {"Critical", "High"} or corrective != "-" or root_id not in terminal_roots:
@@ -767,6 +792,7 @@ if mode == "apply":
     state["architecture_review_terminal_roots"] = terminal_roots
     state["architecture_review_terminal_root_records"] = terminal_root_records
     state["architecture_review_quarantined_findings"] = terminal_quarantines
+    state["architecture_review_quarantine_history"] = quarantine_history
     if terminal_repair is not None:
         state["architecture_review_terminal_repair_pending"] = terminal_repair
     state.pop("architecture_review_cycle_epic", None)
@@ -1415,6 +1441,19 @@ if isinstance(repairs, dict):
             "use disposition Quarantined with no corrective slice or closure evidence. This "
             "records a release blocker while allowing unrelated queued product slices to continue."
         )
+quarantines = state.get("architecture_review_quarantined_findings", {})
+if isinstance(quarantines, dict) and quarantines:
+    identities = ", ".join(
+        f"{finding_id}/{record.get('root_id', '?')}"
+        for finding_id, record in sorted(quarantines.items())
+        if isinstance(record, dict)
+    )
+    print(
+        "- Existing release-blocking architecture quarantines must be re-evaluated in this review: "
+        f"{identities}. Retain each exact Finding ID/Root ID with disposition Quarantined and fresh "
+        "bound failing evidence, or use Closed with fresh bound passing closure evidence. Never omit, "
+        "rename, or remap a quarantine."
+    )
 PY
 }
 

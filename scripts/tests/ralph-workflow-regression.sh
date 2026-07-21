@@ -2262,6 +2262,38 @@ if item.get("status") != "release_blocker" or item.get("repair_episode") != 2:
 if state.get("architecture_review_terminal_repair_pending") is not None:
     raise SystemExit("terminal quarantine left an executable repair barrier")
 PY
+terminal_quarantine_scope="$(ralph_architecture_review_scope_instruction \
+  "$auto_finalizer_state")"
+[[ "$terminal_quarantine_scope" == *"AR-010-RATE-001/ROOT-010-RATE-VERSION-OWNER"* \
+    && "$terminal_quarantine_scope" == *"Quarantined"* \
+    && "$terminal_quarantine_scope" == *"Closed"* ]] \
+  || fail "later review scope omitted the quarantined release blocker"
+terminal_quarantine_closed_packet="$fixture_dir/terminal-quarantine-closed-packet.md"
+cat > "$terminal_quarantine_closed_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Closed | rate-regressed.log | - | rate-later-closed.log |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Closed | interest.log | - | interest-closed.log |
+EOF
+ralph_validate_architecture_review_convergence \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_quarantine_closed_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals" \
+  || fail "validated closure could not clear a terminal quarantine"
+ralph_apply_architecture_review_root_transitions \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_quarantine_closed_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals"
+[[ "$(ralph_architecture_review_quarantine_count "$auto_finalizer_state")" == 0 ]] \
+  || fail "validated terminal closure left a permanent quarantine"
+python3 - "$auto_finalizer_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+history = state.get("architecture_review_quarantine_history", [])
+if len(history) != 1 or history[0].get("finding_id") != "AR-010-RATE-001":
+    raise SystemExit("closed quarantine was not retained in audit history")
+if history[0].get("status") != "closed":
+    raise SystemExit("closed quarantine audit has the wrong status")
+PY
 
 # After the corrective-generation budget is exhausted, only a protected,
 # owner-approved CR may finalize the epic boundary. Its successful full gates
