@@ -122,10 +122,9 @@ quality_gates:
   integration_tests: false
   e2e_tests: optional
   backend_check: true
-  # backend_tests disabled 2026-07-10 (owner action): the selected impacted or
-  # full-coverage lane already owns backend test acceptance. Enabling this legacy
-  # switch deliberately adds a separate complete plain-test run to every slice;
-  # leave it false unless diagnosing coverage-runner behavior.
+  # Retained for old configuration readers only. The validator always records
+  # this legacy plain-test gate as superseded so it cannot duplicate the one
+  # authoritative impacted/full backend test lane.
   backend_tests: false
   backend_migrations: true
   backend_coverage: true

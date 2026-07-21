@@ -127,19 +127,80 @@ raise SystemExit(1)
 PY
 }
 
-ralph_backend_coverage_action() {
+ralph_backend_test_action() {
   local lane="${1:?backend validation lane is required}"
   local prerequisite_failed="${2:-0}"
-  local impacted_failed="${3:-0}"
   if [[ "$lane" == "skip" ]]; then
     printf '%s\n' skip
-  elif [[ "$prerequisite_failed" == "1" || "$impacted_failed" == "1" ]]; then
+  elif [[ "$prerequisite_failed" == "1" ]]; then
     printf '%s\n' defer
   elif [[ "$lane" == "impacted" ]]; then
     printf '%s\n' impacted
   else
     printf '%s\n' full
   fi
+}
+
+ralph_backend_slice_parent_epics() {
+  local slice_dir="${1:?slice directory is required}" slice_id="${2:-}"
+  local slice_file="$slice_dir/$slice_id.md" values=""
+  if [[ -f "$slice_file" ]]; then
+    values="$(awk '
+      /^## Parent Epic(s)?[[:space:]]*$/ { inside = 1; next }
+      inside && /^## / { exit }
+      inside {
+        line = $0
+        while (match(line, /Epic[[:space:]]+[0-9][0-9][0-9]/)) {
+          token = substr(line, RSTART, RLENGTH)
+          sub(/^Epic[[:space:]]+/, "", token)
+          print token
+          line = substr(line, RSTART + RLENGTH)
+        }
+      }
+    ' "$slice_file" | sort -u)"
+  fi
+  if [[ -n "$values" ]]; then
+    printf '%s\n' "$values"
+  elif [[ "$slice_id" =~ ^([0-9][0-9][0-9]) ]]; then
+    printf '%s\n' "${BASH_REMATCH[1]}"
+  fi
+}
+
+ralph_backend_epic_has_unfinished_peer() {
+  local slice_dir="${1:?slice directory is required}"
+  local epic="${2:?epic is required}" excluded_slice="${3:?slice is required}"
+  local candidate candidate_id status parent
+  for candidate in "$slice_dir"/*.md; do
+    [[ -f "$candidate" ]] || continue
+    candidate_id="$(basename "$candidate" .md)"
+    [[ "$candidate_id" != "$excluded_slice" \
+        && "$candidate_id" != "architecture-review" ]] || continue
+    status="$(awk '/^## Status[[:space:]]*$/ { getline; print; exit }' \
+      "$candidate" | xargs || true)"
+    case "$status" in
+      "Not Started"|Blocked) ;;
+      *) continue ;;
+    esac
+    while IFS= read -r parent; do
+      [[ "$parent" == "$epic" ]] && return 0
+    done < <(ralph_backend_slice_parent_epics "$slice_dir" "$candidate_id")
+  done
+  return 1
+}
+
+ralph_backend_is_epic_checkpoint() {
+  local worktree_dir="${1:?worktree directory is required}"
+  local slice_id="${2:?slice id is required}"
+  local slice_dir="$worktree_dir/docs/slices" current_epic=""
+
+  while IFS= read -r current_epic; do
+    [[ "$current_epic" =~ ^[0-9][0-9][0-9]$ ]] || continue
+    if ! ralph_backend_epic_has_unfinished_peer \
+        "$slice_dir" "$current_epic" "$slice_id"; then
+      return 0
+    fi
+  done < <(ralph_backend_slice_parent_epics "$slice_dir" "$slice_id")
+  return 1
 }
 
 ralph_select_backend_validation_lane() {
@@ -287,13 +348,17 @@ ralph_select_backend_validation_lane() {
     RALPH_BACKEND_VALIDATION_REASON="periodic full-suite checkpoint at completed slice $RALPH_BACKEND_COMPLETION_ORDINAL"
     return 0
   fi
+  if [[ "$RALPH_BACKEND_SLICE_RISK" == "high" ]]; then
+    RALPH_BACKEND_VALIDATION_REASON="high-risk slice"
+    return 0
+  fi
+  if ralph_backend_is_epic_checkpoint "$worktree_dir" "$slice_id"; then
+    RALPH_BACKEND_VALIDATION_REASON="epic completion checkpoint for $slice_id"
+    return 0
+  fi
   if (( RALPH_BACKEND_CHANGED_COUNT == 0 )); then
     RALPH_BACKEND_VALIDATION_LANE="skip"
     RALPH_BACKEND_VALIDATION_REASON="candidate changes no backend path"
-    return 0
-  fi
-  if [[ "$RALPH_BACKEND_SLICE_RISK" == "high" ]]; then
-    RALPH_BACKEND_VALIDATION_REASON="high-risk backend slice"
     return 0
   fi
   if [[ "$RALPH_BACKEND_SLICE_RISK" != "low" \

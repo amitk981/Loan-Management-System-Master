@@ -747,7 +747,6 @@ elif (( backend_configuration_failed == 1 )); then
   write_skipped backend-coverage "$backend_validation_reason"
 elif [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
   backend_prerequisite_failed=0
-  backend_impacted_failed=0
   if [[ "$(enabled backend_check)" == "true" ]]; then
     if ! run_backend_gate backend-check "\"$venv_python\" $backend_dir/manage.py check"; then
       failures=$((failures + 1))
@@ -756,11 +755,7 @@ elif [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
   else
     write_skipped backend-check "disabled in .ralph/config.yaml"
   fi
-  if [[ "$(enabled backend_tests)" == "true" ]]; then
-    run_backend_gate backend-test "\"$venv_python\" $backend_dir/manage.py test $backend_dir.tests -v 2" || failures=$((failures + 1))
-  else
-    write_skipped backend-test "disabled in .ralph/config.yaml"
-  fi
+  write_skipped backend-test "legacy plain backend-test gate is superseded by the authoritative selective lane"
   if [[ "$(enabled backend_migrations)" == "true" ]]; then
     if ! run_backend_gate backend-migrations "\"$venv_python\" $backend_dir/manage.py makemigrations --check --dry-run"; then
       failures=$((failures + 1))
@@ -770,71 +765,68 @@ elif [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
     write_skipped backend-migrations "disabled in .ralph/config.yaml"
   fi
 
-  if [[ "$backend_validation_lane" == "skip" ]]; then
-    write_skipped backend-impacted "$backend_validation_reason"
-  elif (( backend_prerequisite_failed == 1 )); then
-    write_skipped backend-impacted "backend check or migration consistency failed; deferred until repair"
-  elif (( RALPH_BACKEND_TEST_LABEL_COUNT > 0 )); then
-    impacted_command="$(printf '%q ' \
-      "$repo_root/scripts/ralph-impacted-backend-tests.sh" \
-      "$venv_python" "$worktree_dir" "$backend_dir" \
-      "$RALPH_BACKEND_IMPACTED_WORKERS" \
-      ${RALPH_BACKEND_TEST_LABELS[@]+"${RALPH_BACKEND_TEST_LABELS[@]}"})"
-    if ! run_backend_gate backend-impacted "$impacted_command"; then
-      failures=$((failures + 1))
-      backend_impacted_failed=1
-    fi
-  elif [[ "$backend_validation_lane" == "full" ]]; then
-    write_skipped backend-impacted "classifier found no bounded impact pack; full coverage remains authoritative"
-  else
-    {
-      echo "# backend-impacted Results"
-      echo
-      echo "FAIL: selective backend lane did not produce an independent impacted test pack."
-    } > "$run_dir/backend-impacted-results.md"
-    failures=$((failures + 1))
-    backend_impacted_failed=1
-    failed_gate_logs+=("backend-impacted-results.md")
-  fi
-
-  if [[ "$(enabled backend_coverage)" == "true" ]]; then
-    coverage_floor="$(awk -F': *' '/^[[:space:]]*coverage_fail_under:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
-    coverage_floor="${coverage_floor:-85}"
-    coverage_workers="$(awk -F': *' '/^[[:space:]]*backend_coverage_parallel_workers:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
-    coverage_workers="${coverage_workers:-1}"
-    backend_coverage_action="$(ralph_backend_coverage_action \
-      "$backend_validation_lane" "$backend_prerequisite_failed" \
-      "$backend_impacted_failed")"
-    if [[ "$backend_coverage_action" == "skip" ]]; then
+  backend_test_action="$(ralph_backend_test_action \
+    "$backend_validation_lane" "$backend_prerequisite_failed")"
+  case "$backend_test_action" in
+    skip)
+      write_skipped backend-impacted "$backend_validation_reason"
       write_skipped backend-coverage "$backend_validation_reason"
-    elif [[ "$backend_coverage_action" == "defer" ]]; then
+      ;;
+    defer)
+      write_skipped backend-impacted "an earlier backend gate failed; deferred until repair"
       write_skipped backend-coverage "an earlier backend gate failed; deferred until repair"
-    elif [[ "$backend_coverage_action" == "impacted" ]]; then
-      write_skipped backend-coverage "independent impacted regression pack is authoritative for this localized candidate; full coverage is due at the next checkpoint"
-    elif "$venv_python" -c "import coverage" >/dev/null 2>&1; then
-      if ! [[ "$coverage_workers" =~ ^[1-9][0-9]*$ ]]; then
+      ;;
+    impacted)
+      if (( RALPH_BACKEND_TEST_LABEL_COUNT > 0 )); then
+        impacted_command="$(printf '%q ' \
+          "$repo_root/scripts/ralph-impacted-backend-tests.sh" \
+          "$venv_python" "$worktree_dir" "$backend_dir" \
+          "$RALPH_BACKEND_IMPACTED_WORKERS" \
+          ${RALPH_BACKEND_TEST_LABELS[@]+"${RALPH_BACKEND_TEST_LABELS[@]}"})"
+        run_backend_gate backend-impacted "$impacted_command" \
+          || failures=$((failures + 1))
+      else
+        {
+          echo "# backend-impacted Results"
+          echo
+          echo "FAIL: selective backend lane did not produce an independent impacted test pack."
+        } > "$run_dir/backend-impacted-results.md"
+        failures=$((failures + 1))
+        failed_gate_logs+=("backend-impacted-results.md")
+      fi
+      write_skipped backend-coverage "the impacted regression pack is the only authoritative backend test lane for this localized candidate"
+      ;;
+    full)
+      write_skipped backend-impacted "full coverage is the only authoritative backend test lane for this checkpoint candidate"
+      if [[ "$(enabled backend_coverage)" != "true" ]]; then
+        write_skipped backend-coverage "disabled in .ralph/config.yaml"
+      elif "$venv_python" -c "import coverage" >/dev/null 2>&1; then
+        coverage_floor="$(awk -F': *' '/^[[:space:]]*coverage_fail_under:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+        coverage_floor="${coverage_floor:-85}"
+        coverage_workers="$(awk -F': *' '/^[[:space:]]*backend_coverage_parallel_workers:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+        coverage_workers="${coverage_workers:-1}"
+        if ! [[ "$coverage_workers" =~ ^[1-9][0-9]*$ ]]; then
+          {
+            echo "# backend-coverage Results"
+            echo
+            echo "FAIL: backend_coverage_parallel_workers must be a positive integer."
+          } > "$run_dir/backend-coverage-results.md"
+          failures=$((failures + 1))
+        elif (( coverage_workers > 1 )); then
+          run_backend_gate backend-coverage "\"$repo_root/scripts/ralph-parallel-backend-coverage.sh\" \"$venv_python\" \"$worktree_dir\" \"$backend_dir\" \"$coverage_workers\" \"$coverage_floor\"" || failures=$((failures + 1))
+        else
+          run_backend_gate backend-coverage "\"$venv_python\" -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests --failfast && \"$venv_python\" -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
+        fi
+      else
         {
           echo "# backend-coverage Results"
           echo
-          echo "FAIL: backend_coverage_parallel_workers must be a positive integer."
+          echo "FAIL: coverage gate is enabled but the coverage module is not installed (pip3 install -r $backend_dir/requirements-dev.txt)."
         } > "$run_dir/backend-coverage-results.md"
         failures=$((failures + 1))
-      elif (( coverage_workers > 1 )); then
-        run_backend_gate backend-coverage "\"$repo_root/scripts/ralph-parallel-backend-coverage.sh\" \"$venv_python\" \"$worktree_dir\" \"$backend_dir\" \"$coverage_workers\" \"$coverage_floor\"" || failures=$((failures + 1))
-      else
-        run_backend_gate backend-coverage "\"$venv_python\" -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests --failfast && \"$venv_python\" -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
       fi
-    else
-      {
-        echo "# backend-coverage Results"
-        echo
-        echo "FAIL: coverage gate is enabled but the coverage module is not installed (pip3 install -r $backend_dir/requirements-dev.txt)."
-      } > "$run_dir/backend-coverage-results.md"
-      failures=$((failures + 1))
-    fi
-  else
-    write_skipped backend-coverage "disabled in .ralph/config.yaml"
-  fi
+      ;;
+  esac
 else
   write_skipped backend-check "no backend detected at ${backend_dir:-<unset>}/manage.py"
   write_skipped backend-test "no backend detected at ${backend_dir:-<unset>}/manage.py"

@@ -2345,12 +2345,48 @@ backend_impacted_parallel_workers: 3
 EOF
 printf '%s\n' '{"completed_slices": []}' > "$backend_policy_repo/.ralph/state.json"
 cat > "$backend_policy_repo/docs/slices/100A-medium.md" <<'EOF'
+## Status
+Not Started
+
 ## Risk Level
 Medium
 EOF
 cat > "$backend_policy_repo/docs/slices/100B-high.md" <<'EOF'
+## Status
+Not Started
+
 ## Risk Level
 High
+EOF
+cat > "$backend_policy_repo/docs/slices/101A-terminal.md" <<'EOF'
+## Status
+Not Started
+
+## Parent Epic
+Epic 101: Regression Fixture
+
+## Risk Level
+Medium
+EOF
+cat > "$backend_policy_repo/docs/slices/102A-multi-owner-terminal.md" <<'EOF'
+## Status
+Not Started
+
+## Parent Epics
+Epic 103: Terminal Fixture; Epic 102: Active Fixture
+
+## Risk Level
+Medium
+EOF
+cat > "$backend_policy_repo/docs/slices/102B-active-peer.md" <<'EOF'
+## Status
+Not Started
+
+## Parent Epic
+Epic 102: Active Fixture
+
+## Risk Level
+Medium
 EOF
 printf 'baseline\n' > "$backend_policy_repo/frontend/app.ts"
 printf 'baseline\n' > "$backend_policy_repo/backend/loans/service.py"
@@ -2375,6 +2411,12 @@ ralph_select_backend_validation_lane \
   "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
 [[ "$RALPH_BACKEND_VALIDATION_LANE" == "skip" ]] \
   || fail "frontend-only candidate did not receive the shadow skip recommendation"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/100B-high.md" 100B-high \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "high-risk frontend-only candidate did not retain full coverage"
 git -C "$backend_policy_repo" add .
 git -C "$backend_policy_repo" commit -qm frontend-candidate
 
@@ -2467,6 +2509,26 @@ ralph_select_backend_validation_lane \
 [[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
   || fail "fourth completed-slice checkpoint did not retain full coverage"
 
+printf '%s\n' '{"completed_slices": ["097A"]}' \
+  > "$backend_policy_repo/.ralph/state.json"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/101A-terminal.md" 101A-terminal \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "non-cadence epic terminal candidate did not retain full coverage"
+[[ "$RALPH_BACKEND_VALIDATION_REASON" == epic\ completion\ checkpoint* ]] \
+  || fail "non-cadence epic terminal candidate was full for the wrong reason"
+ralph_select_backend_validation_lane \
+  "$backend_policy_repo" backend \
+  "$backend_policy_repo/docs/slices/102A-multi-owner-terminal.md" \
+  102A-multi-owner-terminal \
+  "$backend_policy_repo/.ralph/config.yaml" "$backend_policy_repo/.ralph/state.json"
+[[ "$RALPH_BACKEND_VALIDATION_LANE" == "full" ]] \
+  || fail "terminal parent of a multi-owner slice did not retain full coverage"
+[[ "$RALPH_BACKEND_VALIDATION_REASON" == epic\ completion\ checkpoint* ]] \
+  || fail "multi-owner terminal candidate was full for the wrong reason"
+
 cat > "$backend_policy_repo/.ralph/selective.yaml" <<'EOF'
 backend_validation_policy: selective
 EOF
@@ -2479,16 +2541,16 @@ EOF
 [[ "$(ralph_backend_authoritative_lane \
     "$backend_policy_repo/.ralph/selective.yaml" full)" == "full" ]] \
   || fail "selective policy weakened a fail-closed full recommendation"
-[[ "$(ralph_backend_coverage_action skip 0 0)" == "skip" ]] \
-  || fail "frontend/docs-only lane did not skip backend coverage"
-[[ "$(ralph_backend_coverage_action impacted 0 0)" == "impacted" ]] \
-  || fail "green impacted lane did not retain selective acceptance"
-[[ "$(ralph_backend_coverage_action full 0 0)" == "full" ]] \
-  || fail "checkpoint lane did not dispatch full coverage"
-[[ "$(ralph_backend_coverage_action full 1 0)" == "defer" ]] \
-  || fail "cheap backend failure did not short-circuit full coverage"
-[[ "$(ralph_backend_coverage_action full 0 1)" == "defer" ]] \
-  || fail "impacted regression failure did not short-circuit full coverage"
+[[ "$(ralph_backend_test_action skip 0)" == "skip" ]] \
+  || fail "frontend/docs-only lane did not skip backend tests"
+[[ "$(ralph_backend_test_action impacted 0)" == "impacted" ]] \
+  || fail "localized lane did not dispatch only the impacted pack"
+[[ "$(ralph_backend_test_action full 0)" == "full" ]] \
+  || fail "checkpoint lane did not dispatch only full coverage"
+[[ "$(ralph_backend_test_action full 1)" == "defer" ]] \
+  || fail "cheap backend failure did not short-circuit backend tests"
+[[ "$(ralph_backend_test_action unexpected 0)" == "full" ]] \
+  || fail "unknown backend lane did not fail closed to full coverage"
 
 # The original shadow audit compares serial coverage against the shared bounded parallel
 # module and proves exact outcome and line-coverage equivalence.
@@ -2535,6 +2597,11 @@ rg -q 'backend-validation-lane-results.md' scripts/ralph-validate.sh \
   || fail "backend validation selection does not leave reviewable evidence"
 rg -q 'ralph_backend_authoritative_lane' scripts/ralph-validate.sh \
   || fail "validator does not resolve the configured authoritative backend lane"
+rg -q 'ralph_backend_test_action' scripts/ralph-validate.sh \
+  || fail "validator does not choose one authoritative backend test action"
+rg -q 'legacy plain backend-test gate is superseded by the authoritative selective lane' \
+  scripts/ralph-validate.sh \
+  || fail "selective validation can re-enable a duplicate legacy backend suite"
 rg -q 'backend-impacted-results.md' scripts/ralph-validate.sh \
   || fail "validator does not retain independent impacted regression evidence"
 python3 - <<'PY'
@@ -2543,8 +2610,12 @@ from pathlib import Path
 source = Path("scripts/ralph-validate.sh").read_text()
 impacted = source.index("run_backend_gate backend-impacted")
 coverage = source.index("run_backend_gate backend-coverage")
-if impacted >= coverage:
-    raise SystemExit("FAIL: full coverage can start before the impacted regression pack")
+dispatch = source.index('case "$backend_test_action" in')
+if not dispatch < impacted < coverage:
+    raise SystemExit("FAIL: backend gates are not controlled by one authoritative dispatch")
+full_branch = source.index("full)", dispatch)
+if impacted > full_branch:
+    raise SystemExit("FAIL: impacted backend execution leaked into the full-coverage branch")
 if "an earlier backend gate failed; deferred until repair" not in source:
     raise SystemExit("FAIL: a known-red backend candidate can still start full coverage")
 PY

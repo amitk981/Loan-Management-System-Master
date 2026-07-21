@@ -48,7 +48,7 @@ Normal and repair runs classify the frozen candidate and record the authoritativ
 
 The selector requires full coverage for High risk, every fourth completed product slice, schema/infrastructure/shared/package-root work, multiple or broad backend modules, deletions/renames, missing tests, or tests that do not map to the changed backend module. Unknown policy values and malformed inputs also resolve to full. Complete checkpoints keep the full test label and 85% floor; selective runs never claim global coverage.
 
-Cheap Django and migration checks run before tests. The impacted pack runs before a required full checkpoint. Any failure defers the expensive full suite to the repair attempt, and both test runners stop at the first actionable failure. Passing lanes still execute their complete selected scope.
+Cheap Django and migration checks run before tests. One central dispatch selects exactly one backend test lane: impacted for a localized Low/Medium candidate, or complete coverage for High-risk, shared/schema/cross-module, periodic, epic, and release checkpoints. A full lane records the impacted pack as deliberately skipped, and an impacted lane records complete coverage as deliberately skipped. Prerequisite failures defer the selected lane to the repair attempt, and both test runners stop at the first actionable failure. Passing lanes still execute their complete selected scope.
 
 ## Pending-age CI flake
 
