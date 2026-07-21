@@ -1,0 +1,8 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Command: node .ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/servicing_finalizer_contract_probe.mjs
+
+Imports another TestCase fixture: false
+Calls the imported TestCase.setUp(): false
+PASS: touched terminal acceptance tests use public builders.
+Exit code: 0

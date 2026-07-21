@@ -167,10 +167,8 @@ interface DirectRepaymentAttempt {
 export interface DirectRepaymentAttemptResult {
   replayed: boolean;
   capture: CapturedRepayment;
-  allocation: AllocationResult | null;
+  allocation: AllocationResult;
 }
-
-interface Replay<T> { idempotency_replayed: true; original_response: T }
 
 const REQUIRED_COMBINED_PERMISSIONS = [
   'finance.repayment.create',
@@ -188,9 +186,7 @@ export const postAndAllocateDirectRepayment = async (
   if (!canPostAndAllocateRepayment(attempt.permissions, attempt.roleCodes)) {
     throw new Error('Receipt capture, SAP posting, and repayment allocation permissions are required.');
   }
-  const result = await authenticatedRequest<
-    DirectRepaymentAttemptResult | CapturedRepayment | Replay<CapturedRepayment>
-  >(
+  const result = await authenticatedRequest<unknown>(
     `/api/v1/loan-accounts/${attempt.loanAccountId}/direct-repayment-command/`,
     {
       method: 'POST',
@@ -198,33 +194,25 @@ export const postAndAllocateDirectRepayment = async (
       headers: { 'Idempotency-Key': attempt.idempotencyKey },
     },
   );
-  if ('capture' in result) return result;
-
-  // Resume a partially deployed CR-015 transport response through the same
-  // server-owned SAP/allocation seams; the canonical command never enters this path.
-  const capture = 'idempotency_replayed' in result ? result.original_response : result;
-  await authenticatedRequest<CapturedRepayment>(
-    `/api/v1/repayments/${capture.repayment_id}/mark-sap-posted/`,
-    { method: 'POST', body: attempt.sapPosting },
-  );
-  const allocated = await authenticatedRequest<AllocationResult | Replay<AllocationResult>>(
-    `/api/v1/repayments/${capture.repayment_id}/allocate/`,
-    {
-      method: 'POST',
-      body: {
-        allocation_rule: 'principal_first',
-        remarks: 'Allocate confirmed receipt under the approved SOP.',
-      },
-      headers: { 'Idempotency-Key': `${attempt.idempotencyKey}:allocation` },
-    },
-  );
-  return {
-    replayed: 'idempotency_replayed' in result || 'idempotency_replayed' in allocated,
-    capture,
-    allocation: 'idempotency_replayed' in allocated
-      ? allocated.original_response
-      : allocated,
-  };
+  const record = result && typeof result === 'object'
+    ? result as Record<string, unknown>
+    : null;
+  const keys = record ? Object.keys(record).sort() : [];
+  const capture = record?.capture && typeof record.capture === 'object'
+    ? record.capture as Record<string, unknown>
+    : null;
+  const allocation = record?.allocation && typeof record.allocation === 'object'
+    ? record.allocation as Record<string, unknown>
+    : null;
+  if (
+    keys.join(',') !== 'allocation,capture,replayed'
+    || typeof record?.replayed !== 'boolean'
+    || typeof capture?.repayment_id !== 'string'
+    || typeof allocation?.repayment_allocation_id !== 'string'
+  ) {
+    throw new Error('The direct repayment command returned a malformed composite response.');
+  }
+  return record as unknown as DirectRepaymentAttemptResult;
 };
 
 export interface InterestInvoiceProjection {

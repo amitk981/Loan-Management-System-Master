@@ -1,0 +1,9 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+Command: SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_2_20260722_034151 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010TerminalOwnerFinalizerPostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 1
+
+Found 5 test(s).
+Ran 5 tests in 5.968s
+OK
+PASS: the independent second PostgreSQL run retained the exact five-case contract.
+Exit code: 0

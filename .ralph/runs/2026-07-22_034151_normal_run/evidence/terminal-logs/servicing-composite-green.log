@@ -1,0 +1,10 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Command: cd sfpcl-lms && npm exec vitest -- run src/services/servicingApi.test.ts -t 'rejects capture-only composite truth after one server-owned request'
+Permanent test: sfpcl-lms/src/services/servicingApi.test.ts::rejects capture-only composite truth after one server-owned request
+
+RUN v3.2.6
+PASS src/services/servicingApi.test.ts
+Tests: 1 passed, 11 skipped.
+GREEN: capture-only truth is rejected as malformed after exactly one composite request; no client-owned SAP/allocation request occurs.
+Exit code: 0

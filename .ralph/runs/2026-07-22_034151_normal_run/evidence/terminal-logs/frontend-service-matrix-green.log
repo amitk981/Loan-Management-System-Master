@@ -1,0 +1,8 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Command: cd sfpcl-lms && npm exec vitest -- run src/services/servicingApi.test.ts
+
+PASS src/services/servicingApi.test.ts
+Tests: 13 passed.
+PASS: complete, replayed, capture-only, malformed, and failed responses use exactly one composite request with no client-owned allocation policy.
+Exit code: 0

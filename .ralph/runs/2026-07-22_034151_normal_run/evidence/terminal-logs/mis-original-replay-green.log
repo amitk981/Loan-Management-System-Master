@@ -1,0 +1,9 @@
+Finding ID: AR-010-MIS-001
+Root ID: ROOT-010-MIS-AS-OF-OWNER
+Command: PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/probes.py MisHistoricalInvoiceStatusProbe
+
+test_post_cutoff_invoice_issuance_does_not_rewrite_historical_status ... ok
+Ran 1 test
+OK
+PASS: the original MIS owner reproducer is green.
+Exit code: 0

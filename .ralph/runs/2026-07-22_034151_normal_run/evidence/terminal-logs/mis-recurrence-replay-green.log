@@ -1,0 +1,8 @@
+Finding ID: AR-010-MIS-001
+Root ID: ROOT-010-MIS-AS-OF-OWNER
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/mis_generated_at_cutoff_probe.py
+
+Observed cutoff status: not_generated
+Expected cutoff status: not_generated
+PASS: the exact recurrence reproducer is green.
+Exit code: 0

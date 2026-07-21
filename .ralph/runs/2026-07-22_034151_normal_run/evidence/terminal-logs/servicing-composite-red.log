@@ -1,0 +1,11 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Command: cd sfpcl-lms && npm exec vitest -- run src/services/servicingApi.test.ts -t 'rejects capture-only composite truth after one server-owned request'
+Permanent test: sfpcl-lms/src/services/servicingApi.test.ts::rejects capture-only composite truth after one server-owned request
+
+RUN v3.2.6
+FAIL src/services/servicingApi.test.ts > servicing API module > rejects capture-only composite truth after one server-owned request
+AssertionError: expected rejection containing 'malformed' but received a downstream undefined-response error.
+Tests: 1 failed, 11 skipped.
+RED: capture-only truth entered the compatibility SAP/allocation sequence instead of failing at the composite boundary.
+Exit code: 1

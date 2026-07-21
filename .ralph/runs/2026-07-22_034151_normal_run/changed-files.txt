@@ -1,0 +1,6 @@
+ M .ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/terminal-mis-carried.log
+ M .ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/terminal-reminder-carried.log
+ M sfpcl-lms/src/services/servicingApi.test.ts
+ M sfpcl-lms/src/services/servicingApi.ts
+ M sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py
+?? .ralph/runs/2026-07-22_034151_normal_run/

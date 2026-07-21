@@ -277,6 +277,59 @@ describe('servicing API module', () => {
     })).resolves.toEqual({ replayed: true, capture, allocation });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('rejects capture-only composite truth after one server-owned request', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok(capture));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(postAndAllocateDirectRepayment({
+      loanAccountId: 'account-1', capture: {
+        repayment_source: 'direct_farmer', amount_received: '100000.00',
+        received_date: '2026-12-04', payment_method: 'rtgs',
+        bank_reference_number: 'UTR-001', remarks: 'Confirmed direct receipt.',
+      },
+      sapPosting: { sap_entry_reference: 'SAP-001', sap_posted_at: '2026-12-04T10:00:00.000Z', remarks: 'SAP receipt confirmed.' },
+      idempotencyKey: 'repayment-attempt-1',
+      permissions: ['finance.repayment.create', 'finance.repayment.mark_sap_posted', 'finance.repayment.allocate'],
+      roleCodes: ['accounts_head'],
+    })).rejects.toThrow('malformed');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toContain('/direct-repayment-command/');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).not.toHaveProperty('allocation_rule');
+  });
+
+  it('keeps malformed and failed composite responses at the sole command boundary', async () => {
+    const attempt = {
+      loanAccountId: 'account-1', capture: {
+        repayment_source: 'direct_farmer' as const, amount_received: '100000.00',
+        received_date: '2026-12-04', payment_method: 'rtgs' as const,
+        bank_reference_number: 'UTR-001', remarks: 'Confirmed direct receipt.',
+      },
+      sapPosting: { sap_entry_reference: 'SAP-001', sap_posted_at: '2026-12-04T10:00:00.000Z', remarks: 'SAP receipt confirmed.' },
+      idempotencyKey: 'repayment-attempt-1',
+      permissions: ['finance.repayment.create', 'finance.repayment.mark_sap_posted', 'finance.repayment.allocate'],
+      roleCodes: ['accounts_head'],
+    };
+    const malformedFetch = vi.fn().mockResolvedValueOnce(ok({ replayed: false, capture, allocation: null }));
+    vi.stubGlobal('fetch', malformedFetch);
+    await expect(postAndAllocateDirectRepayment(attempt)).rejects.toThrow('malformed');
+    expect(malformedFetch).toHaveBeenCalledTimes(1);
+
+    const failedFetch = vi.fn().mockResolvedValueOnce(errorResponse(503, 'COMMAND_FAILED', 'Composite command failed.'));
+    vi.stubGlobal('fetch', failedFetch);
+    await expect(postAndAllocateDirectRepayment(attempt)).rejects.toMatchObject({
+      code: 'COMMAND_FAILED', status: 503,
+    });
+    expect(failedFetch).toHaveBeenCalledTimes(1);
+
+    for (const call of [...malformedFetch.mock.calls, ...failedFetch.mock.calls]) {
+      expect(call[0]).toContain('/direct-repayment-command/');
+      expect(call[0]).not.toContain('/mark-sap-posted/');
+      expect(call[0]).not.toContain('/allocate/');
+      expect(JSON.parse(call[1].body)).not.toHaveProperty('allocation_rule');
+    }
+  });
 });
 
 const pagination = { page: 2, page_size: 20, total_count: 21, total_pages: 2, has_next: false, has_previous: true };
@@ -293,4 +346,12 @@ const reminder = { reminder_id: 'reminder-1', loan_account_id: 'account-1', memb
 
 function ok(data: unknown, page?: typeof pagination): Response {
   return { ok: true, status: 200, json: async () => ({ success: true, data, pagination: page }) } as Response;
+}
+
+function errorResponse(status: number, code: string, message: string): Response {
+  return {
+    ok: false,
+    status,
+    json: async () => ({ success: false, error: { code, message } }),
+  } as Response;
 }

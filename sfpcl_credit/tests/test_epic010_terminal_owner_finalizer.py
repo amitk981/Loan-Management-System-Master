@@ -14,7 +14,7 @@ from uuid import uuid4
 
 from django.db.models import F
 from django.db import close_old_connections, connection
-from django.test import SimpleTestCase, TestCase, TransactionTestCase, override_settings
+from django.test import SimpleTestCase, TransactionTestCase, override_settings
 
 
 class Epic010ReminderOwnerRegressionTests(TransactionTestCase):
@@ -314,7 +314,7 @@ class Epic010StatementOwnerRegressionTests(SimpleTestCase):
             self.assertNotIn(internal, rows[0])
 
 
-class Epic010DirectRepaymentOwnerRegressionTests(TestCase):
+class Epic010DirectRepaymentOwnerRegressionTests(TransactionTestCase):
     def setUp(self):
         from sfpcl_credit.tests.servicing_builders import (
             build_terminal_direct_repayment_fixture,
@@ -333,8 +333,8 @@ class Epic010DirectRepaymentOwnerRegressionTests(TestCase):
         self.storage.cleanup()
         super().tearDown()
 
-    def test_exact_command_replay_returns_one_complete_financial_outcome(self):
-        payload = {
+    def _command_payload(self):
+        return {
             "capture": self.fixture.payload(),
             "sap_posting": {
                 "sap_entry_reference": "SAP-TERMINAL-001",
@@ -342,7 +342,13 @@ class Epic010DirectRepaymentOwnerRegressionTests(TestCase):
                 "remarks": "Synthetic SAP receipt confirmation.",
             },
         }
-        url = f"/api/v1/loan-accounts/{self.fixture.account.pk}/direct-repayment-command/"
+
+    def _command_url(self):
+        return f"/api/v1/loan-accounts/{self.fixture.account.pk}/direct-repayment-command/"
+
+    def test_exact_command_replay_returns_one_complete_financial_outcome(self):
+        payload = self._command_payload()
+        url = self._command_url()
 
         first = self.fixture.client.post(
             url,
@@ -366,3 +372,96 @@ class Epic010DirectRepaymentOwnerRegressionTests(TestCase):
         self.assertEqual(first.json()["data"]["capture"], replay.json()["data"]["capture"])
         self.assertEqual(first.json()["data"]["allocation"], replay.json()["data"]["allocation"])
         self.assertIsNotNone(replay.json()["data"]["allocation"])
+
+    def test_changed_payload_conflicts_without_an_extra_financial_effect(self):
+        from sfpcl_credit.loans.models import Repayment, RepaymentAllocation
+
+        payload = self._command_payload()
+        first = self.fixture.client.post(
+            self._command_url(),
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="terminal-command-changed",
+            **self.fixture.auth,
+        )
+        changed = self.fixture.client.post(
+            self._command_url(),
+            data=json.dumps(
+                {
+                    **payload,
+                    "capture": {**payload["capture"], "remarks": "Changed receipt truth."},
+                }
+            ),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="terminal-command-changed",
+            **self.fixture.auth,
+        )
+
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(changed.status_code, 409, changed.content)
+        self.assertEqual(Repayment.objects.count(), 1)
+        self.assertEqual(RepaymentAllocation.objects.count(), 1)
+
+    def test_allocation_failure_rolls_back_capture_and_sap_posting(self):
+        from sfpcl_credit.loans.models import Repayment, RepaymentAllocation
+        from sfpcl_credit.loans.modules.repayment_allocator import RepaymentAllocator
+        from sfpcl_credit.processes.direct_repayment_command import execute_direct_repayment
+
+        with patch.object(
+            RepaymentAllocator,
+            "allocate",
+            side_effect=RuntimeError("synthetic crash after SAP posting"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "synthetic crash"):
+                execute_direct_repayment(
+                    actor=self.fixture.actor,
+                    loan_account_id=self.fixture.account.pk,
+                    payload=self._command_payload(),
+                    idempotency_key="terminal-command-crash",
+                )
+
+        self.assertEqual(Repayment.objects.count(), 0)
+        self.assertEqual(RepaymentAllocation.objects.count(), 0)
+
+    def test_equal_key_commands_converge_on_one_complete_outcome(self):
+        from django.test import Client
+        from sfpcl_credit.loans.models import Repayment, RepaymentAllocation
+
+        payload = self._command_payload()
+
+        def command():
+            client = Client()
+            return client.post(
+                self._command_url(),
+                data=json.dumps(payload),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="terminal-command-concurrent",
+                **self.fixture.auth,
+            )
+
+        if connection.vendor == "postgresql":
+            barrier = Barrier(2)
+
+            def contender():
+                close_old_connections()
+                barrier.wait()
+                try:
+                    return command()
+                finally:
+                    close_old_connections()
+
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                responses = list(executor.map(lambda _index: contender(), range(2)))
+        else:
+            responses = [command(), command()]
+
+        self.assertEqual([response.status_code for response in responses], [200, 200])
+        self.assertEqual(
+            sorted(response.json()["data"]["replayed"] for response in responses),
+            [False, True],
+        )
+        for response in responses:
+            self.assertIsNotNone(response.json()["data"]["capture"])
+            self.assertIsNotNone(response.json()["data"]["allocation"])
+        self.assertEqual(Repayment.objects.count(), 1)
+        self.assertEqual(RepaymentAllocation.objects.count(), 1)

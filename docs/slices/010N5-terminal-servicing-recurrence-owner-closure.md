@@ -1,7 +1,7 @@
 # Slice 010N5: Terminal Servicing Recurrence Owner Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

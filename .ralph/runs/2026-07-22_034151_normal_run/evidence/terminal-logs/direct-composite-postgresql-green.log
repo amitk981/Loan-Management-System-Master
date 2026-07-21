@@ -1,0 +1,10 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Command: SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_composite_20260722 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010DirectRepaymentOwnerRegressionTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 1
+Permanent test: sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010DirectRepaymentOwnerRegressionTests.test_equal_key_commands_converge_on_one_complete_outcome
+
+Found 4 test(s).
+Ran 4 tests in 3.917s
+OK
+PASS: complete/replay, changed payload, crash rollback, and equal-key concurrency retained one complete backend outcome on PostgreSQL.
+Exit code: 0

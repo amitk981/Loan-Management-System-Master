@@ -1,0 +1,10 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+Command: SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_1_20260722_034151 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010TerminalOwnerFinalizerPostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 1
+Permanent test: sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010TerminalOwnerFinalizerPostgreSQLAcceptanceTests.test_provider_timeout_then_repayment_prevents_retry_effect
+
+Found 5 test(s).
+Ran 5 tests in 5.299s
+OK
+PASS: all five reminder repayment/source/worker/retry/timeout cases passed on PostgreSQL.
+Exit code: 0

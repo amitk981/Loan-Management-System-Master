@@ -1,0 +1,9 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010ReminderOwnerRegressionTests.test_repayment_after_check_but_before_adapter_prevents_provider_call --verbosity 1 --keepdb
+
+Found 1 test(s).
+Ran 1 test in 0.255s
+OK
+PASS: repayment after the eligibility check prevents a provider call.
+Exit code: 0

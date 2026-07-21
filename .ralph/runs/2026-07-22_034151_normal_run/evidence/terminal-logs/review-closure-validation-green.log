@@ -1,0 +1,4 @@
+Command: ./scripts/ralph-validate-review-closure.sh --slice docs/slices/010N5-terminal-servicing-recurrence-owner-closure.md --run-dir .ralph/runs/2026-07-22_034151_normal_run
+
+PASS: validated semantic closure for 3 finding(s) and 4 acceptance id(s).
+Exit code: 0

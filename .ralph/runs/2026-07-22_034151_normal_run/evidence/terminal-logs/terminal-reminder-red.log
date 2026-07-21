@@ -1,0 +1,8 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+Permanent test: sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010ReminderOwnerRegressionTests.test_repayment_after_check_but_before_adapter_prevents_provider_call
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010ReminderOwnerRegressionTests.test_repayment_after_check_but_before_adapter_prevents_provider_call --verbosity 1 --keepdb
+
+Baseline RED retained from .ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/terminal-reminder-carried.log.
+FAIL: grouped terminal verification remained open because the servicing owner seam still reproduced; inherited reminder closure could not be discarded.
+Exit code: 1
