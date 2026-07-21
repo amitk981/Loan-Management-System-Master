@@ -1,0 +1,18 @@
+Finding ID: AR-010-DPD-001
+Root ID: ROOT-010-DPD-SNAPSHOT-OWNER
+Prior reproducer: .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/dpd-owner.log
+
+Prior command 1:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py DpdSnapshotOwnerProbe
+
+FAILED (failures=2), exit code 1.
+- Approved active policy mutation did not raise ValidationError.
+- Direct SQL snapshot reparenting did not raise IntegrityError.
+
+Prior command 2:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py DpdCapitalisationReverseConsumerProbe
+
+FAILED (failures=1), exit code 1.
+- Capitalised schedule interest expected `0.00` overdue and observed `37000.00`.
+
+The carried reproducer proved two defects: the current snapshot pointer could be made cross-account by reparenting the referenced snapshot, and interest capitalisation was counted as overdue again by the DPD source. Those exact owner failures define the closure checks below; no new reproducer signal was observed in the reviewed 010K3 product diff.

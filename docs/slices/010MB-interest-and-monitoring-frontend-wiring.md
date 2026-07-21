@@ -19,7 +19,7 @@ Permitted finance staff can inspect and trigger canonical interest operations, w
 roles can monitor overdue loans and retained reminder work without mock or browser-derived policy.
 
 ## Depends On
-- 010MA
+- CR-015
 
 ## Runtime Capabilities
 

@@ -1,0 +1,11 @@
+Finding ID: AR-010-MIS-001
+Root ID: ROOT-010-MIS-AS-OF-OWNER
+Reviewed product: 010K3 (`00e537d3`)
+
+Command:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/probes.py MisHistoricalInvoiceStatusProbe
+
+Exit code: 1
+Signal: test_post_cutoff_invoice_issuance_does_not_rewrite_historical_status expected `draft` and observed `issued` (`AssertionError: 'issued' != 'draft'`).
+
+The snapshot selector admits an invoice by `invoice_date <= cutoff`, then serializes its current mutable `invoice_status` without constraining the status decision by `issued_at`. Repeatable-read generation is internally consistent but does not reconstruct the binding historical state, so issuing an older-dated invoice after the cutoff rewrites a later-generated historical report.

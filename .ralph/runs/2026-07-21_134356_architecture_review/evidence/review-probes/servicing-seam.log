@@ -1,0 +1,17 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Reviewed product: 010K2 (`9d4fa144`), 010L (`7574cd6b`), and 010MA (`283d9767`)
+
+Command:
+cd sfpcl-lms && npm exec vitest -- --config ../.ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/vitest.review.config.ts run
+
+Exit code: 1
+Signal: servicing-replay-review.test.ts expected the retry to return the allocated repayment and observed `allocation: null`.
+
+The first attempt commits capture and then receives a 503 from SAP posting. On the exact-key retry, `postAndAllocateDirectRepayment` treats the capture replay as completion and returns before SAP posting or allocation. This browser-owned three-call coordinator can therefore leave a captured receipt unposted and unallocated while the UI reports a successful replay.
+
+Grouped Medium owner-seam debt observed in the same boundary:
+- 010K2 checks for an existing statement job without a row lock and ignores the `created` result returned by the idempotent scheduler, so an equal-key concurrent request can continue generating the same artifact twice; its test is sequential only.
+- 010K2 borrower CSV rows expose internal owner identifiers/types, staff display name, SAP status, and remarks rather than a member-safe projection; an empty result contains only the column header and no statement metadata.
+- 010L fetches a hard-coded first page of 100 portal collections with no continuation or truncation state.
+- 010K3 acceptance still constructs cross-owner fixtures through other `TestCase.setUp` methods and its batch test does not exercise 1/100/101 identities.

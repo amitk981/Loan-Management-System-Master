@@ -1,0 +1,10 @@
+Finding ID: AR-010-DPD-001
+Root ID: ROOT-010-DPD-SNAPSHOT-OWNER
+
+Command:
+cd sfpcl_credit && /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_servicing_as_of_owner_boundary.ServicingAsOfOwnerBoundaryTests.test_dpd_database_and_policy_owner sfpcl_credit.tests.test_servicing_as_of_owner_boundary.ServicingAsOfOwnerBoundaryTests.test_capitalisation_is_classified_once --verbosity 1
+
+Exit code: 0
+2 passed.
+
+The focused closure set exercises both sides of the bidirectional same-account guard, rejects mutable approved policy edits, and proves capitalised interest is classified once rather than reintroduced as overdue. The reviewed 010K3 evidence also contains two independent five-test PostgreSQL acceptance passes for the same owner-boundary class.

@@ -1,0 +1,5 @@
+ M docs/slices/010MB-interest-and-monitoring-frontend-wiring.md
+ M docs/slices/011A-default-case-opening.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-21_134356_architecture_review/
+?? docs/slices/CR-015-epic-010-terminal-servicing-owner-finalizer.md

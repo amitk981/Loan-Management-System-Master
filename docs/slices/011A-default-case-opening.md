@@ -14,7 +14,7 @@ shows a missed scheduled principal repayment.
 Credit staff see an auditable default case immediately instead of tracking missed principal offline.
 
 ## Depends On
-- 010L
+- CR-015
 
 ## Runtime Capabilities
 

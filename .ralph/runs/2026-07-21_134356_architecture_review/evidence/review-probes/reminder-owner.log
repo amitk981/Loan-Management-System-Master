@@ -1,0 +1,11 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+Reviewed product: 010K3 (`00e537d3`)
+
+Command:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/probes.py ReminderDeliveryGapProbe
+
+Exit code: 1
+Signal: test_repayment_after_check_but_before_adapter_prevents_provider_call asserted zero provider calls and observed one (`AssertionError: 1 != 0`).
+
+The probe lets the 010K3 pre-provider serviceability check return serviceable, commits a full repayment before control returns to the dispatcher, and observes the provider adapter still execute. `ReminderEngine.cancel_unserviceable_delivery` releases its transaction/row locks before `CommunicationDispatcher.execute_generic_job` calls the adapter, so the final current decision and the financial side effect are still separate owners.

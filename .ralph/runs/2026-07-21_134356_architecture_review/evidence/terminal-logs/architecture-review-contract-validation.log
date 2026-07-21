@@ -1,0 +1,7 @@
+Command: source Ralph runtime, PostgreSQL, slice-selection, and architecture-review libraries; parse metrics; validate manifest; count corrective files; validate convergence and documentation-only scope.
+Exit code: 0
+PASS: metrics=1/0/0/0/0/1; 4 stable finding manifest rows validated; corrective_count=1; convergence and scope validate.
+
+Command: resolve first grabbable slice and validate its standing-policy finalizer contract.
+Exit code: 0
+PASS: first=CR-015-epic-010-terminal-servicing-owner-finalizer.md; contract=010/ROOT-010-REMINDER-DELIVERY-OWNER.
