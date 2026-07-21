@@ -13,6 +13,12 @@ import {
   fetchPortalDashboard,
   fetchPortalProduceSupply,
   fetchPortalProfile,
+  fetchPortalLoanAccounts,
+  fetchPortalLoanAccount,
+  fetchPortalLoanSchedule,
+  fetchPortalRepaymentHistory,
+  fetchPortalInterestInvoices,
+  fetchPortalDirectRepaymentInstructions,
   submitPortalApplication,
   resubmitPortalApplicationDeficiencies,
   uploadPortalDeficiencyResponse,
@@ -39,6 +45,28 @@ afterEach(() => {
 });
 
 describe('portal member API client', () => {
+  it('uses only the bounded borrower loan-account projection URLs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(ok([]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchPortalLoanAccounts();
+    await fetchPortalLoanAccount('loan-selected');
+    await fetchPortalLoanSchedule('loan-selected');
+    await fetchPortalRepaymentHistory('loan-selected');
+    await fetchPortalInterestInvoices('loan-selected');
+    await fetchPortalDirectRepaymentInstructions('loan-selected');
+
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected/',
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected/schedule/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected/repayments/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected/invoices/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/portal/loan-accounts/loan-selected/direct-instructions/',
+    ]);
+    expect(fetchMock.mock.calls.every(call => call[1].headers.Authorization === 'Bearer portal-access-token')).toBe(true);
+  });
+
   it('loads dashboard, profile, and produce supply using the stored portal bearer token', async () => {
     const fetchMock = vi
       .fn()

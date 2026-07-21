@@ -1,0 +1,9 @@
+Listing tests:
+  [chromium] › member-portal-repayment-view.e2e.spec.ts:11:5 › MP15 shows the selected borrower account without internal evidence
+  [chromium] › member-portal-repayment-view.e2e.spec.ts:21:5 › MP15 preserves the real empty state
+  [chromium] › member-portal-repayment-view.e2e.spec.ts:29:5 › MP15 renders a safe backend error
+  [chromium] › member-portal-repayment-view.e2e.spec.ts:38:5 › MP17 and MP18 remain readable and read-only at a narrow viewport
+Total: 4 tests in 1 file
+
+LINT_EXIT_CODE=0
+BROWSER_COLLECTION_EXIT_CODE=0

@@ -2,13 +2,14 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.views.decorators.http import require_GET, require_http_methods
 
-from sfpcl_credit.api import error_response, parse_json_body, request_ip, request_user_agent, success_response
+from sfpcl_credit.api import error_response, list_response, parse_json_body, request_ip, request_user_agent, success_response
 from sfpcl_credit.applications import services as application_services
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import portal_services
 from sfpcl_credit.processes import portal_documentation_actions as portal_documentation_process
 from sfpcl_credit.processes import portal_deficiency_response as portal_deficiency_process
 from sfpcl_credit.processes import portal_disbursement_status
+from sfpcl_credit.processes import portal_loan_servicing
 from sfpcl_credit.workflows.guard import InvalidStateTransition
 
 
@@ -57,6 +58,117 @@ def portal_produce_supply(request):
     if response is not None:
         return response
     return success_response(portal_services.produce_supply(member), request)
+
+
+@require_GET
+def portal_loan_accounts(request):
+    member, _user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        data, pagination = portal_loan_servicing.list_accounts(
+            member=member, query_params=request.GET
+        )
+    except portal_loan_servicing.PortalLoanQueryInvalid as exc:
+        return _portal_loan_query_error(request, exc)
+    return list_response(data, pagination, request)
+
+
+@require_GET
+def portal_loan_account_detail(request, loan_account_id):
+    member, _user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    if request.GET:
+        return _portal_loan_query_error(
+            request,
+            portal_loan_servicing.PortalLoanQueryInvalid(
+                {field: "Unknown query parameter." for field in sorted(request.GET)}
+            ),
+        )
+    return _portal_loan_result(
+        request,
+        lambda: portal_loan_servicing.account_detail(
+            member=member, loan_account_id=loan_account_id
+        ),
+    )
+
+
+@require_GET
+def portal_loan_account_schedule(request, loan_account_id):
+    return _portal_loan_collection(request, loan_account_id, portal_loan_servicing.schedule)
+
+
+@require_GET
+def portal_loan_account_repayments(request, loan_account_id):
+    return _portal_loan_collection(
+        request, loan_account_id, portal_loan_servicing.repayment_history
+    )
+
+
+@require_GET
+def portal_loan_account_invoices(request, loan_account_id):
+    return _portal_loan_collection(request, loan_account_id, portal_loan_servicing.invoices)
+
+
+@require_GET
+def portal_loan_account_direct_instructions(request, loan_account_id):
+    member, _user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    if request.GET:
+        return _portal_loan_query_error(
+            request,
+            portal_loan_servicing.PortalLoanQueryInvalid(
+                {field: "Unknown query parameter." for field in sorted(request.GET)}
+            ),
+        )
+    return _portal_loan_result(
+        request,
+        lambda: portal_loan_servicing.direct_instructions(
+            member=member, loan_account_id=loan_account_id
+        ),
+    )
+
+
+def _portal_loan_collection(request, loan_account_id, resolver):
+    member, _user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        data, pagination = resolver(
+            member=member,
+            loan_account_id=loan_account_id,
+            query_params=request.GET,
+        )
+    except portal_loan_servicing.PortalLoanQueryInvalid as exc:
+        return _portal_loan_query_error(request, exc)
+    except portal_loan_servicing.PortalLoanNotFound:
+        return _portal_loan_not_found(request)
+    return list_response(data, pagination, request)
+
+
+def _portal_loan_result(request, resolver):
+    try:
+        return success_response(resolver(), request)
+    except portal_loan_servicing.PortalLoanNotFound:
+        return _portal_loan_not_found(request)
+
+
+def _portal_loan_not_found(request):
+    return error_response(
+        request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
+    )
+
+
+def _portal_loan_query_error(request, exc):
+    return error_response(
+        request,
+        400,
+        "VALIDATION_ERROR",
+        "Portal loan query failed validation.",
+        exc.field_errors,
+    )
 
 
 @require_GET

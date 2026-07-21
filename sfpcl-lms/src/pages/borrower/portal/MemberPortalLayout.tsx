@@ -8,7 +8,7 @@ export type BorrowerTab =
   | 'newApplication' | 'myApplications' | 'application' | 'sanctionOutcome'
   | 'documentationActions' | 'disbursementStatus'
   | 'repayments' | 'directRepayment' | 'documents' | 'notices'
-  | 'loanHistory' | 'closureNoc' | 'notifications' | 'supply'
+  | 'loanHistory' | 'loanDetail' | 'closureNoc' | 'notifications' | 'supply'
   | 'grievance' | 'securitySettings';
 
 interface MemberPortalLayoutProps {

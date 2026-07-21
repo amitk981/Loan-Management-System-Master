@@ -12,6 +12,7 @@ import MP07_DocumentChecklist from './portal/documents/MP07_DocumentChecklist';
 import MP13_DocumentationActions from './portal/documents/MP13_DocumentationActions';
 import MP14_DisbursementStatus from './portal/disbursement/MP14_DisbursementStatus';
 import MP15_MyLoans from './portal/loans/MP15_MyLoans';
+import MP16_LoanAccountDetail from './portal/loans/MP16_LoanAccountDetail';
 import MP17_Repayments from './portal/loans/MP17_Repayments';
 import MP18_DirectRepaymentInfo from './portal/loans/MP18_DirectRepaymentInfo';
 import MP20_ClosureNOC from './portal/loans/MP20_ClosureNOC';
@@ -28,21 +29,12 @@ export type BorrowerTab =
   | 'newApplication' | 'myApplications' | 'application' | 'sanctionOutcome'
   | 'documentationActions' | 'disbursementStatus'
   | 'repayments' | 'directRepayment' | 'documents' | 'notices'
-  | 'loanHistory' | 'closureNoc' | 'notifications' | 'supply'
+  | 'loanHistory' | 'loanDetail' | 'closureNoc' | 'notifications' | 'supply'
   | 'grievance' | 'securitySettings';
 type ApplicationStep = 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'documents' | 'declarations' | 'review';
 
 // Mock: check if this borrower is an FPC
 const isFPCMember = false; // Set true to demo FPC view
-
-const repaymentSchedule = [
-  { due: '2024-12-31', principal: 100000, interest: 6000, total: 106000, status: 'paid', paid: '2024-12-28', utr: 'SFPCL2024120010' },
-  { due: '2025-03-31', principal: 100000, interest: 5500, total: 105500, status: 'paid', paid: '2025-03-29', utr: 'SFPCL2025030022' },
-  { due: '2025-06-30', principal: 100000, interest: 5000, total: 105000, status: 'overdue', paid: null, utr: null },
-  { due: '2025-09-30', principal: 100000, interest: 4500, total: 104500, status: 'upcoming', paid: null, utr: null },
-  { due: '2025-12-31', principal: 100000, interest: 4000, total: 104000, status: 'upcoming', paid: null, utr: null },
-  { due: '2026-03-31', principal: 0,      interest: 3500, total: 3500,   status: 'upcoming', paid: null, utr: null },
-];
 
 const myDocuments = [
   { name: 'PAN Card Copy',              status: 'verified',   date: '2024-08-10', section: 'KYC', note: 'Self-attested borrower copy' },
@@ -64,6 +56,7 @@ const BorrowerPortal: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
   const { currentUser } = useRole();
   const [activeTab, setActiveTab] = useState<BorrowerTab>('overview');
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const [selectedLoanAccountId, setSelectedLoanAccountId] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
   const tabs: { id: BorrowerTab; label: string; }[] = [
@@ -140,15 +133,16 @@ const BorrowerPortal: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
             onNavigateToApplications={() => setActiveTab('myApplications')}
           />
         )}
-        {activeTab === 'repayments' && <MP17_Repayments />}
-        {activeTab === 'directRepayment' && <MP18_DirectRepaymentInfo />}
+        {activeTab === 'loanDetail' && <MP16_LoanAccountDetail loanAccountId={selectedLoanAccountId} onBack={() => setActiveTab('loanHistory')} onViewRepayments={() => setActiveTab('repayments')} />}
+        {activeTab === 'repayments' && <MP17_Repayments loanAccountId={selectedLoanAccountId} onBack={() => setActiveTab('loanHistory')} />}
+        {activeTab === 'directRepayment' && <MP18_DirectRepaymentInfo loanAccountId={selectedLoanAccountId} onBack={() => setActiveTab('loanHistory')} />}
         {activeTab === 'documents' && <MP07_DocumentChecklist />}
         {activeTab === 'notices' && <MP19_NoticesLetters />}
         {activeTab === 'closureNoc' && <MP20_ClosureNOC />}
         {activeTab === 'notifications' && <MP23_Notifications />}
         {activeTab === 'grievance' && <MP24_SupportGrievance />}
         {activeTab === 'supply' && <MP22_ProduceSupply />}
-        {activeTab === 'loanHistory' && <MP15_MyLoans />}
+        {activeTab === 'loanHistory' && <MP15_MyLoans onSelectLoan={(id, destination) => { setSelectedLoanAccountId(id); setActiveTab(destination === 'detail' ? 'loanDetail' : destination === 'repayments' ? 'repayments' : 'directRepayment'); }} />}
         {activeTab === 'securitySettings' && <MP25_SecuritySettings />}
       </MemberPortalLayout>
 

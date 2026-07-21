@@ -4974,3 +4974,31 @@ balances, owner references, debit/credit and running balances. Transaction refer
 default; `reports.export_sensitive` is not implied. Request, generation, accepted download, and denied
 download audit events contain job/loan/document/checksum metadata only—never rows, storage keys, raw
 bank data, or signed URLs.
+
+## Member portal loan servicing projections (010L)
+
+The following read-only endpoints require an authenticated user with one active `PortalAccount` and
+derive member ownership only from that account. A caller-supplied `member_id` is never authority.
+Another member's or a guessed loan identity returns nondisclosing `404 NOT_FOUND`; staff, missing,
+suspended, or otherwise invalid portal principals cannot read these projections.
+
+- `GET /api/v1/portal/loan-accounts/?page=1&page_size=20`
+- `GET /api/v1/portal/loan-accounts/{loan_account_id}/`
+- `GET /api/v1/portal/loan-accounts/{loan_account_id}/schedule/?page=1&page_size=20`
+- `GET /api/v1/portal/loan-accounts/{loan_account_id}/repayments/?page=1&page_size=20`
+- `GET /api/v1/portal/loan-accounts/{loan_account_id}/invoices/?page=1&page_size=20`
+- `GET /api/v1/portal/loan-accounts/{loan_account_id}/direct-instructions/`
+
+List/detail exposes only account/application display references, borrower-safe status and closure
+state, backend-owned disbursed/outstanding amounts, and the next persisted due line. Schedule exposes
+persisted due/paid parts and a server-derived partial display status. Repayment history includes only
+SAP-posted, allocated, non-reversed repayment truth with borrower-safe reference, mode, source, and
+principal/interest split; pending, unmatched, failed, or reversed receipts are absent rather than
+shown as confirmed. Invoice history includes issued invoices only. Collections accept only `page`
+and `page_size`, with `page_size` bounded to 1–100, and use the standard list envelope.
+
+Direct instructions are read-only. They expose beneficiary, bank, masked last four, IFSC, required
+loan-account narration, backend total due, disabled proof submission, and the source disclaimer only
+when runtime configuration explicitly marks all instruction facts approved. Missing/incomplete
+approval returns `available: false` and null bank fields. The projection never reuses the unverified
+statement-import bank label or the outgoing disbursement source bank as repayment authority.

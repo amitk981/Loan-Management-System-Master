@@ -1,0 +1,53 @@
+## git diff --check
+DIFF_CHECK_EXIT_CODE=0
+## tracked diff stat
+ docs/working/API_CONTRACTS.md                      |  28 ++
+ docs/working/ASSUMPTIONS.md                        |   1 +
+ docs/working/PROTOTYPE_GAP_REPORT.md               |   1 +
+ docs/working/PROTOTYPE_INVENTORY.md                |   1 +
+ sfpcl-lms/src/pages/borrower/BorrowerPortal.tsx    |  20 +-
+ .../pages/borrower/portal/MemberPortalLayout.tsx   |   2 +-
+ .../pages/borrower/portal/loans/MP15_MyLoans.tsx   | 361 +++------------------
+ .../borrower/portal/loans/MP17_Repayments.tsx      | 129 ++------
+ .../portal/loans/MP18_DirectRepaymentInfo.tsx      |  90 +----
+ sfpcl-lms/src/services/portalApi.test.ts           |  28 ++
+ sfpcl-lms/src/services/portalApi.ts                |  75 +++++
+ sfpcl_credit/config/urls.py                        |  30 ++
+ sfpcl_credit/members/portal_views.py               | 114 ++++++-
+ 13 files changed, 366 insertions(+), 514 deletions(-)
+## status
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M sfpcl-lms/src/pages/borrower/BorrowerPortal.tsx
+ M sfpcl-lms/src/pages/borrower/portal/MemberPortalLayout.tsx
+ M sfpcl-lms/src/pages/borrower/portal/loans/MP15_MyLoans.tsx
+ M sfpcl-lms/src/pages/borrower/portal/loans/MP17_Repayments.tsx
+ M sfpcl-lms/src/pages/borrower/portal/loans/MP18_DirectRepaymentInfo.tsx
+ M sfpcl-lms/src/services/portalApi.test.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/members/portal_views.py
+?? .ralph/runs/2026-07-21_091246_normal_run/
+?? sfpcl-lms/e2e/member-portal-repayment-view.e2e.spec.ts
+?? sfpcl-lms/src/pages/borrower/portal/loans/MP16_LoanAccountDetail.tsx
+?? sfpcl-lms/src/pages/borrower/portal/loans/PortalLoanViews.test.tsx
+?? sfpcl_credit/processes/portal_loan_servicing.py
+?? sfpcl_credit/tests/test_portal_loan_accounts_api.py
+## changed protected/source paths
+NONE
+PROTECTED_CHECK_EXIT_CODE=0
+## review result
+Ready for independent validation
+RESULT_CHECK_EXIT_CODE=0
+TRACKED_ADDED_LINES=366
+UNTRACKED_PRODUCT_LINES=645
+TOTAL_PRODUCT_ADDED_LINES=1011
+      93 sfpcl-lms/e2e/member-portal-repayment-view.e2e.spec.ts
+      44 sfpcl-lms/src/pages/borrower/portal/loans/MP16_LoanAccountDetail.tsx
+     122 sfpcl-lms/src/pages/borrower/portal/loans/PortalLoanViews.test.tsx
+     225 sfpcl_credit/processes/portal_loan_servicing.py
+     161 sfpcl_credit/tests/test_portal_loan_accounts_api.py
+     645 total
+DIFF_LIMIT_EXIT_CODE=0

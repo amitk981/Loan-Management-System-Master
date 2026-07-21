@@ -260,6 +260,75 @@ export interface PortalDisbursementStatus {
   timeline: PortalDisbursementTimelineItem[];
 }
 
+export interface PortalLoanAccountSummary {
+  loan_account_id: string;
+  loan_account_number: string;
+  application_id: string;
+  application_reference: string | null;
+  status: string;
+  closure_status: 'active' | 'closed';
+  disbursed_amount: string;
+  principal_outstanding: string;
+  next_due_date: string | null;
+  next_due_amount: string | null;
+}
+
+export interface PortalLoanAccountDetail extends PortalLoanAccountSummary {
+  interest_outstanding: string;
+  charges_outstanding: string;
+  total_outstanding: string;
+  repayment_route: 'direct' | 'subsidiary_deduction' | 'both';
+  closed_at: string | null;
+}
+
+export interface PortalLoanScheduleItem {
+  schedule_id: string;
+  installment_number: number;
+  due_date: string;
+  principal_due: string;
+  interest_due: string;
+  charges_due: string;
+  total_due: string;
+  paid_principal: string;
+  paid_interest: string;
+  paid_amount: string;
+  status: string;
+}
+
+export interface PortalRepaymentHistoryItem {
+  repayment_id: string;
+  receipt_date: string;
+  amount_received: string;
+  allocated_to_principal: string;
+  allocated_to_interest: string;
+  payment_mode: string;
+  repayment_source: string;
+  reference: string;
+  acknowledgement: null;
+  status: 'confirmed';
+}
+
+export interface PortalInterestInvoiceSummary {
+  invoice_id: string;
+  invoice_number: string;
+  invoice_date: string;
+  financial_year: string;
+  interest_amount: string;
+  status: 'issued';
+}
+
+export interface PortalDirectRepaymentInstructions {
+  available: boolean;
+  beneficiary_name: string | null;
+  bank_name: string | null;
+  account_number_masked: string | null;
+  ifsc: string | null;
+  required_narration: string;
+  amount_due: string;
+  proof_submission_enabled: false;
+  disclaimer: string;
+}
+
 export interface PortalApplicationDraftPayload {
   nominee_id?: string | null;
   required_loan_amount?: string;
@@ -319,6 +388,12 @@ export const fetchPortalDocumentationActions = (applicationId: string) => reques
 export const fetchPortalDisbursementStatus = (applicationId: string) => request<PortalDisbursementStatus>(
   `/api/v1/portal/applications/${applicationId}/disbursement-status/`,
 );
+export const fetchPortalLoanAccounts = () => request<PortalLoanAccountSummary[]>('/api/v1/portal/loan-accounts/?page=1&page_size=100');
+export const fetchPortalLoanAccount = (loanAccountId: string) => request<PortalLoanAccountDetail>(`/api/v1/portal/loan-accounts/${loanAccountId}/`);
+export const fetchPortalLoanSchedule = (loanAccountId: string) => request<PortalLoanScheduleItem[]>(`/api/v1/portal/loan-accounts/${loanAccountId}/schedule/?page=1&page_size=100`);
+export const fetchPortalRepaymentHistory = (loanAccountId: string) => request<PortalRepaymentHistoryItem[]>(`/api/v1/portal/loan-accounts/${loanAccountId}/repayments/?page=1&page_size=100`);
+export const fetchPortalInterestInvoices = (loanAccountId: string) => request<PortalInterestInvoiceSummary[]>(`/api/v1/portal/loan-accounts/${loanAccountId}/invoices/?page=1&page_size=100`);
+export const fetchPortalDirectRepaymentInstructions = (loanAccountId: string) => request<PortalDirectRepaymentInstructions>(`/api/v1/portal/loan-accounts/${loanAccountId}/direct-instructions/`);
 export const downloadPortalDisbursementAdvice = async (applicationId: string) => {
   const descriptor = await request<PortalDownloadDescriptor>(
     `/api/v1/portal/applications/${applicationId}/disbursement-advice/download-capability/`,

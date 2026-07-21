@@ -468,6 +468,36 @@ urlpatterns = [
     path("api/v1/portal/dashboard/", portal_views.portal_dashboard, name="portal-dashboard"),
     path("api/v1/portal/profile/", portal_views.portal_profile, name="portal-profile"),
     path(
+        "api/v1/portal/loan-accounts/",
+        portal_views.portal_loan_accounts,
+        name="portal-loan-account-list",
+    ),
+    path(
+        "api/v1/portal/loan-accounts/<uuid:loan_account_id>/",
+        portal_views.portal_loan_account_detail,
+        name="portal-loan-account-detail",
+    ),
+    path(
+        "api/v1/portal/loan-accounts/<uuid:loan_account_id>/schedule/",
+        portal_views.portal_loan_account_schedule,
+        name="portal-loan-account-schedule",
+    ),
+    path(
+        "api/v1/portal/loan-accounts/<uuid:loan_account_id>/repayments/",
+        portal_views.portal_loan_account_repayments,
+        name="portal-loan-account-repayments",
+    ),
+    path(
+        "api/v1/portal/loan-accounts/<uuid:loan_account_id>/invoices/",
+        portal_views.portal_loan_account_invoices,
+        name="portal-loan-account-invoices",
+    ),
+    path(
+        "api/v1/portal/loan-accounts/<uuid:loan_account_id>/direct-instructions/",
+        portal_views.portal_loan_account_direct_instructions,
+        name="portal-loan-account-direct-instructions",
+    ),
+    path(
         "api/v1/portal/produce-supply/",
         portal_views.portal_produce_supply,
         name="portal-produce-supply",
