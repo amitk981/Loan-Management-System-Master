@@ -412,12 +412,14 @@
       "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
       "root_ids": [
         "ROOT-010-MIS-AS-OF-OWNER",
+        "ROOT-010-REMINDER-DELIVERY-OWNER",
         "ROOT-010-SERVICING-OWNER-SEAM"
       ],
       "finalizer_slice": "CR-015-epic-010-terminal-servicing-owner-finalizer",
       "corrective_slice": "010N2",
+      "episode": 1,
       "attempt": 1,
-      "status": "complete",
+      "status": "awaiting_verification",
       "slice_id": "010N2-epic-010-terminal-servicing-recurrence-repair",
       "run_id": "2026-07-21_205008_normal_run"
     }
@@ -427,14 +429,16 @@
     "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
     "root_ids": [
       "ROOT-010-MIS-AS-OF-OWNER",
+      "ROOT-010-REMINDER-DELIVERY-OWNER",
       "ROOT-010-SERVICING-OWNER-SEAM"
     ],
     "finalizer_slice": "CR-015-epic-010-terminal-servicing-owner-finalizer",
     "corrective_slice": "010N2",
+    "episode": 1,
     "attempt": 1,
-    "status": "complete",
+    "status": "awaiting_verification",
     "slice_id": "010N2-epic-010-terminal-servicing-recurrence-repair",
     "run_id": "2026-07-21_205008_normal_run"
   },
-  "architecture_review_due_reason": "epic_boundary:010->003"
+  "architecture_review_due_reason": "terminal_repair_verification:ROOT-010-REMINDER-DELIVERY-OWNER"
 }

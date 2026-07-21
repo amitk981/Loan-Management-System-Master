@@ -103,9 +103,10 @@ run:
   # third correction for that same root is a classified convergence failure;
   # closed or unrelated roots retain independent budgets.
   architecture_review_max_corrective_generations: 2
-  # If a terminal finalizer is later disproved by an executable review probe,
-  # repair that same finalizer contract once. This is not a new corrective
-  # generation; a second recurrence remains a hard safety stop.
+  # If a terminal finalizer is disproved by an executable review probe, allow
+  # one active repair attempt in that episode. Independent review must close
+  # the episode; a later real regression opens a new audited episode on the
+  # same stable roots instead of restarting corrective generations.
   architecture_review_max_terminal_repairs: 1
 
 limits:

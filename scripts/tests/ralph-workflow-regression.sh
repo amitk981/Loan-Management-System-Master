@@ -1282,13 +1282,14 @@ closure_run="$semantic_review_repo/.ralph/runs/corrective-run"
 mkdir -p "$closure_run/evidence/terminal-logs" \
   "$semantic_review_repo/backend/tests"
 test_spec='backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden'
-printf 'def test_failed_owner_boundary_is_hidden():\n    canonical_owner = None\n    response = {"total_count": 0, "rows": [], "detail_status": 404}\n    assert canonical_owner is None\n    assert response == {"total_count": 0, "rows": [], "detail_status": 404}\n' \
+test_spec_2='backend/tests/test_owner_boundary.py::test_owner_action_requires_backend_authority'
+printf 'def test_failed_owner_boundary_is_hidden():\n    canonical_owner = None\n    response = {"total_count": 0, "rows": [], "detail_status": 404}\n    assert canonical_owner is None\n    assert response == {"total_count": 0, "rows": [], "detail_status": 404}\n\ndef test_owner_action_requires_backend_authority():\n    projected_actions = []\n    assert projected_actions == []\n' \
   > "$semantic_review_repo/backend/tests/test_owner_boundary.py"
 printf 'Test: %s\nFAILED: expected zero rows\nExit code: 1\n' "$test_spec" \
   > "$closure_run/evidence/terminal-logs/owner-red.log"
 printf 'Test: %s\n1 passed\nExit code: 0\n' "$test_spec" \
   > "$closure_run/evidence/terminal-logs/owner-green.log"
-printf 'Test: %s\n2 passed\nExit code: 0\n' "$test_spec" \
+printf 'Test: %s\nTest: %s\n2 passed\nExit code: 0\n' "$test_spec" "$test_spec_2" \
   > "$closure_run/evidence/terminal-logs/owner-acceptance.log"
 cat > "$closure_run/review-closure-evidence.md" <<'EOF'
 # Review Closure Evidence
@@ -1304,11 +1305,32 @@ cat > "$closure_run/review-closure-evidence.md" <<'EOF'
 | AC-1 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden | evidence/terminal-logs/owner-acceptance.log |
 | AC-2 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden | evidence/terminal-logs/owner-acceptance.log |
 EOF
+if ralph_validate_review_finding_closure \
+    "$semantic_review_repo" \
+    "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
+    "$closure_run" >/dev/null 2>&1; then
+  fail "semantic closure reused one narrow test for distinct acceptance obligations"
+fi
+python3 - "$closure_run/review-closure-evidence.md" "$test_spec_2" <<'PY'
+import sys
+from pathlib import Path
+path = Path(sys.argv[1])
+text = path.read_text()
+old = "| AC-2 | backend/tests/test_owner_boundary.py::test_failed_owner_boundary_is_hidden |"
+new = f"| AC-2 | {sys.argv[2]} |"
+if old not in text:
+    raise SystemExit("fixture has no duplicate acceptance selector")
+path.write_text(text.replace(old, new))
+PY
 ralph_validate_review_finding_closure \
   "$semantic_review_repo" \
   "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
   "$closure_run" \
-  || fail "valid corrective-slice semantic closure evidence was rejected"
+  || fail "independent tests for distinct acceptance obligations were rejected"
+for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
+  cp "$closure_run/evidence/terminal-logs/$evidence_log" \
+    "$closure_run/evidence/terminal-logs/$evidence_log.two-tests"
+done
 
 terminal_closure_repo="$fixture_dir/terminal-closure-repo"
 cp -R "$semantic_review_repo" "$terminal_closure_repo"
@@ -1467,20 +1489,32 @@ test.describe("suite only", () => undefined)
 test("actual selector", () => {
   expect(fixture).toContain("string fixture selector")
 })
+test("secondary selector", () => {
+  expect(fixture).not.toBe("")
+})
 EOF
 cp "$closure_run/review-closure-evidence.md" \
   "$closure_run/review-closure-evidence.md.python-test"
 frontend_test_spec='frontend/src/semantic-closure.test.ts::actual selector'
-sed "s#${test_spec}#${frontend_test_spec}#g" \
+frontend_test_spec_2='frontend/src/semantic-closure.test.ts::secondary selector'
+sed -e "s#${test_spec}#${frontend_test_spec}#g" \
+  -e "s#${test_spec_2}#${frontend_test_spec_2}#g" \
   "$closure_run/review-closure-evidence.md.python-test" \
   > "$closure_run/review-closure-evidence.md"
 for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
-  sed "s#${test_spec}#${frontend_test_spec}#g" \
+  mv "$closure_run/evidence/terminal-logs/$evidence_log.two-tests" \
+    "$closure_run/evidence/terminal-logs/$evidence_log"
+  sed -e "s#${test_spec}#${frontend_test_spec}#g" \
+    -e "s#${test_spec_2}#${frontend_test_spec_2}#g" \
     "$closure_run/evidence/terminal-logs/$evidence_log" \
     > "$closure_run/evidence/terminal-logs/$evidence_log.frontend"
   mv "$closure_run/evidence/terminal-logs/$evidence_log.frontend" \
     "$closure_run/evidence/terminal-logs/$evidence_log"
 done
+if ! grep -Fq "$frontend_test_spec_2" \
+    "$closure_run/evidence/terminal-logs/owner-acceptance.log"; then
+  fail "frontend acceptance fixture lost its second exact selector"
+fi
 ralph_validate_review_finding_closure \
   "$semantic_review_repo" \
   "$semantic_review_repo/docs/slices/010A1-owner-correction.md" \
@@ -1525,7 +1559,8 @@ fi
 mv "$closure_run/review-closure-evidence.md.python-test" \
   "$closure_run/review-closure-evidence.md"
 for evidence_log in owner-red.log owner-green.log owner-acceptance.log; do
-  sed "s#frontend/src/semantic-closure.test.ts::suite only#${test_spec}#g" \
+  sed -e "s#frontend/src/semantic-closure.test.ts::suite only#${test_spec}#g" \
+    -e "s#${frontend_test_spec_2}#${test_spec_2}#g" \
     "$closure_run/evidence/terminal-logs/$evidence_log" \
     > "$closure_run/evidence/terminal-logs/$evidence_log.python"
   mv "$closure_run/evidence/terminal-logs/$evidence_log.python" \
@@ -1824,7 +1859,7 @@ auto_finalizer_approvals="$auto_finalizer_repo/docs/working/HIGH_RISK_APPROVALS.
 cat > "$auto_finalizer_approvals" <<'EOF'
 # Finalizer approvals
 - [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | owner regression approval
-- [approved-terminal-repair-policy] one bounded repair per terminal finalizer | owner regression approval
+- [approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer | owner regression approval
 EOF
 auto_finalizer_packet="$fixture_dir/auto-finalizer-packet.md"
 cat > "$auto_finalizer_packet" <<'EOF'
@@ -1983,7 +2018,8 @@ ralph_validate_architecture_review_convergence \
 # A disproved terminal finalizer may receive one owner-configured repair of
 # that same finalizer contract. It is not a third ordinary generation: the
 # repair is explicit, keeps every grouped terminal root terminal, blocks all
-# other product work until it succeeds, and cannot recur a second time.
+# other product work until it succeeds, and records later regressions as new
+# independently verified episodes rather than corrective generations.
 sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$auto_finalizer_slice"
 rm -f "$auto_finalizer_slice.bak" "$auto_finalizer_dir/CR-015-overcap-finalizer.md"
 terminal_repair_slice="$auto_finalizer_dir/010Z9-terminal-recurrence-repair.md"
@@ -2011,10 +2047,48 @@ Epic 010: Servicing
 ## Risk Level
 High
 EOF
+if ralph_validate_architecture_review_convergence \
+    "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_recurrence_packet" \
+    "$auto_finalizer_dir" "$auto_finalizer_approvals" >/dev/null 2>&1; then
+  fail "terminal recurrence repair omitted a grouped finalizer root"
+fi
+cat > "$terminal_recurrence_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Carried | rate.log | 010Z9 | - |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Closed | interest.log | - | interest-closed.log |
+EOF
+cat > "$terminal_repair_slice" <<'EOF'
+# Slice 010Z9: Terminal recurrence repair
+## Status
+Not Started
+## Parent Epic
+Epic 010: Servicing
+## Depends On
+- CR-014
+## Runtime Capabilities
+- none
+## Architecture Review Recurrence Repair
+- Epic: 010
+- Root ID: ROOT-010-RATE-VERSION-OWNER
+- Terminal finalizer: CR-014-servicing-terminal-finalizer
+- Repair attempt: 1
+## Review Finding Closure
+| Finding ID | Root ID | Reproducer | Acceptance IDs |
+|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | rate.log | AC-RR-1 |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | interest.log | AC-RR-2 |
+## Acceptance Criteria
+- [AC-RR-1] The terminal recurrence is repaired at its original owner boundary.
+- [AC-RR-2] The grouped terminal interest root retains its verified closure.
+## Risk Level
+High
+EOF
 ralph_validate_architecture_review_convergence \
   "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_recurrence_packet" \
   "$auto_finalizer_dir" "$auto_finalizer_approvals" \
-  || fail "one explicit bounded terminal recurrence repair was rejected"
+  || fail "complete grouped terminal recurrence repair was rejected"
 ralph_apply_architecture_review_root_transitions \
   "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_recurrence_packet" \
   "$auto_finalizer_dir" "$auto_finalizer_approvals"
@@ -2033,23 +2107,153 @@ ralph_finalize_architecture_review_terminal_repair \
 python3 - "$auto_finalizer_state" <<'PY'
 import json, sys
 state = json.load(open(sys.argv[1]))
-if state.get("architecture_review_due") is not False:
-    raise SystemExit("successful terminal repair retained a review barrier")
+if state.get("architecture_review_due") is not True:
+    raise SystemExit("implemented terminal repair cleared its independent verification barrier")
 if state.get("architecture_review_terminal_repair_pending") is not None:
-    raise SystemExit("successful terminal repair retained pending state")
+    raise SystemExit("implemented terminal repair retained executable pending state")
+record = state.get("architecture_review_terminal_repairs", {}).get(
+    "ROOT-010-RATE-VERSION-OWNER", {}
+)
+if record.get("status") != "awaiting_verification" or record.get("attempt") != 1:
+    raise SystemExit("implemented terminal repair was consumed before independent closure")
+PY
+terminal_verification_scope="$(ralph_architecture_review_scope_instruction \
+  "$auto_finalizer_state")"
+[[ "$terminal_verification_scope" == *"ROOT-010-RATE-VERSION-OWNER"* \
+    && "$terminal_verification_scope" == *"ROOT-010-INTEREST-OWNER-TRUTH"* \
+    && "$terminal_verification_scope" == *"Closed or Carried"* ]] \
+  || fail "review scope omitted roots awaiting independent terminal verification"
+sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$terminal_repair_slice"
+rm -f "$terminal_repair_slice.bak"
+terminal_continuation_slice="$auto_finalizer_dir/010Z10-terminal-recurrence-continuation.md"
+cat > "$terminal_continuation_slice" <<'EOF'
+# Slice 010Z10: Terminal recurrence continuation
+## Status
+Not Started
+## Parent Epic
+Epic 010: Servicing
+## Depends On
+- 010Z9
+## Runtime Capabilities
+- none
+## Architecture Review Recurrence Repair
+- Epic: 010
+- Root ID: ROOT-010-RATE-VERSION-OWNER
+- Terminal finalizer: CR-014-servicing-terminal-finalizer
+- Repair attempt: 1
+## Review Finding Closure
+| Finding ID | Root ID | Reproducer | Acceptance IDs |
+|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | rate.log | AC-RC-1 |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | interest.log | AC-RC-2 |
+## Acceptance Criteria
+- [AC-RC-1] The same terminal root continues until independently closed.
+- [AC-RC-2] The grouped terminal interest root retains its verified closure.
+## Risk Level
+High
+EOF
+terminal_continuation_packet="$fixture_dir/terminal-continuation-packet.md"
+cat > "$terminal_continuation_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Carried | rate.log | 010Z10 | - |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Closed | interest.log | - | interest-closed.log |
+EOF
+ralph_validate_architecture_review_convergence \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_continuation_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals" \
+  || fail "verification failure stopped instead of continuing the same terminal repair"
+ralph_apply_architecture_review_root_transitions \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_continuation_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals"
+ralph_mark_architecture_review_terminal_repair_due \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_dir"
+[[ "$(ralph_architecture_review_terminal_repair_contract \
+      "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_continuation_slice")" == \
+      $'010\tROOT-010-RATE-VERSION-OWNER\tCR-014-servicing-terminal-finalizer' ]] \
+  || fail "same-episode terminal continuation lost its retained contract"
+ralph_finalize_architecture_review_terminal_repair \
+  "$auto_finalizer_state" 010 ROOT-010-RATE-VERSION-OWNER \
+  CR-014-servicing-terminal-finalizer 010Z10-terminal-recurrence-continuation terminal-continuation-run
+terminal_verified_packet="$fixture_dir/terminal-verified-packet.md"
+cat > "$terminal_verified_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Closed | rate.log | - | rate-closed.log |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Closed | interest.log | - | interest-closed.log |
+EOF
+ralph_reconcile_architecture_review_terminal_repair_verification \
+  "$auto_finalizer_state" "$terminal_verified_packet"
+python3 - "$auto_finalizer_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+if state.get("architecture_review_due") is not False:
+    raise SystemExit("independently verified terminal repair retained a review barrier")
 record = state.get("architecture_review_terminal_repairs", {}).get(
     "ROOT-010-RATE-VERSION-OWNER", {}
 )
 if record.get("status") != "complete" or record.get("attempt") != 1:
-    raise SystemExit("successful terminal repair did not consume its one bounded attempt")
+    raise SystemExit("independent closure did not consume the bounded repair")
 PY
-terminal_recurrence_rc=0
+
+# A later independently reproduced regression starts a new bounded episode on
+# the same stable terminal root. It must not manufacture generation 3 and must
+# not turn a historical completed repair into a lifetime queue stop.
+sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$terminal_continuation_slice"
+rm -f "$terminal_continuation_slice.bak"
+terminal_episode_two_slice="$auto_finalizer_dir/010Z11-terminal-recurrence-episode-two.md"
+cat > "$terminal_episode_two_slice" <<'EOF'
+# Slice 010Z11: Terminal recurrence repair episode two
+## Status
+Not Started
+## Parent Epic
+Epic 010: Servicing
+## Depends On
+- 010Z10
+## Runtime Capabilities
+- none
+## Architecture Review Recurrence Repair
+- Epic: 010
+- Root ID: ROOT-010-RATE-VERSION-OWNER
+- Terminal finalizer: CR-014-servicing-terminal-finalizer
+- Repair attempt: 1
+## Review Finding Closure
+| Finding ID | Root ID | Reproducer | Acceptance IDs |
+|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | rate.log | AC-RE2-1 |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | interest.log | AC-RE2-2 |
+## Acceptance Criteria
+- [AC-RE2-1] The later terminal regression is repaired at the same stable owner boundary.
+- [AC-RE2-2] The grouped interest root remains explicitly verified.
+## Risk Level
+High
+EOF
+terminal_episode_two_packet="$fixture_dir/terminal-episode-two-packet.md"
+cat > "$terminal_episode_two_packet" <<'EOF'
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Carried | rate.log | 010Z11 | - |
+| AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Closed | interest.log | - | interest-closed.log |
+EOF
 ralph_validate_architecture_review_convergence \
-  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_recurrence_packet" \
-  "$auto_finalizer_dir" "$auto_finalizer_approvals" >/dev/null 2>&1 \
-  || terminal_recurrence_rc=$?
-[[ "$terminal_recurrence_rc" == "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE" ]] \
-  || fail "a second terminal recurrence bypassed the one-repair safety ceiling"
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_episode_two_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals" \
+  || fail "verified historical terminal repair became a lifetime queue stop"
+ralph_apply_architecture_review_root_transitions \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_episode_two_packet" \
+  "$auto_finalizer_dir" "$auto_finalizer_approvals"
+python3 - "$auto_finalizer_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+pending = state.get("architecture_review_terminal_repair_pending", {})
+if pending.get("episode") != 2 or pending.get("attempt") != 1:
+    raise SystemExit("later terminal regression did not open bounded repair episode 2")
+if state.get("architecture_review_root_generations"):
+    raise SystemExit("terminal repair episode incorrectly restarted corrective generations")
+PY
 
 # After the corrective-generation budget is exhausted, only a protected,
 # owner-approved CR may finalize the epic boundary. Its successful full gates
@@ -2843,9 +3047,9 @@ rg -qF 'RALPH_TERMINAL_FINALIZER_REWRITE' scripts/ralph-run.sh \
   || fail "terminal rewrite does not receive a narrow corrective prompt"
 rg -qF 'RALPH_TERMINAL_RECURRENCE_REWRITE' scripts/ralph-run.sh \
   || fail "terminal recurrence does not receive a narrow same-finalizer repair prompt"
-rg -qF 'Converting its grouped recurrence into the one bounded same-finalizer repair' \
+rg -qF 'Converting its grouped recurrence into one bounded same-finalizer repair episode' \
   scripts/ralph-loop.sh \
-  || fail "terminal recurrence still stops before its one owner-approved repair"
+  || fail "terminal recurrence still stops before its owner-approved repair episode"
 rg -qF 'terminal_repair_required_from_context' scripts/ralph-loop.sh \
   || fail "terminal repair transition does not read its authenticated review artifact"
 if sed -n '/review_status == RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE/,/exit.*RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE/p' \
@@ -2853,10 +3057,13 @@ if sed -n '/review_status == RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE/,/exit.*RALPH
   fail "terminal repair transition trusts streamed agent output instead of validated artifacts"
 fi
 rg -qF 'architecture_review_max_terminal_repairs: 1' .ralph/config.yaml \
-  || fail "terminal recurrence repair is not bounded to one attempt"
-rg -qF '[approved-terminal-repair-policy] one bounded repair per terminal finalizer' \
+  || fail "each terminal recurrence episode is not bounded to one attempt"
+rg -qF '[approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer' \
   docs/working/HIGH_RISK_APPROVALS.md \
   || fail "terminal recurrence repair lacks protected owner authorization"
+rg -qF 'ralph_reconcile_architecture_review_terminal_repair_verification' \
+  scripts/ralph-run.sh \
+  || fail "successful architecture review does not reconcile terminal verification state"
 rg -qF 'one next-numbered CR-NNN terminal finalizer' scripts/ralph-run.sh \
   || fail "architecture reviewer is not instructed to use the standing terminal transition"
 rg -qF 'Every generated corrective slice must declare exactly one `## Runtime Capabilities` section' \

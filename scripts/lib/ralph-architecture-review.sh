@@ -103,7 +103,7 @@ ralph_architecture_review_terminal_repair_policy_enabled() {
     || return 1
   (( maximum > 0 )) || return 1
   grep -qF -- \
-    "- [approved-terminal-repair-policy] one bounded repair per terminal finalizer |" \
+    "- [approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer |" \
     "$approvals_file"
 }
 
@@ -482,7 +482,7 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
     if terminal_repair_maximum < 1 or slice_dir is None or approvals_path is None:
         return None
     repair_policy = (
-        "- [approved-terminal-repair-policy] one bounded repair per terminal finalizer |"
+        "- [approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer |"
     )
     if not approvals_path.is_file() or not any(
         line.startswith(repair_policy) for line in approvals_path.read_text().splitlines()
@@ -496,12 +496,30 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
         for value in (primary_root, epic, finalizer_slice)
     ):
         return None
-    if primary_root in terminal_repairs:
-        return None
+    prior_repair = terminal_repairs.get(primary_root)
+    episode = 1
+    if prior_repair is not None:
+        if not isinstance(prior_repair, dict):
+            return None
+        if prior_repair.get("finalizer_slice") != finalizer_slice:
+            return None
+        prior_episode = prior_repair.get("episode", 1)
+        if not isinstance(prior_episode, int) or prior_episode < 1:
+            return None
+        if prior_repair.get("status") == "awaiting_verification":
+            episode = prior_episode
+        elif prior_repair.get("status") == "complete":
+            episode = prior_episode + 1
+        else:
+            return None
     finalizer_roots = finalizer_record.get("root_ids", [])
-    if not isinstance(finalizer_roots, list) or not set(recurrence_roots).issubset(
-        set(finalizer_roots)
-    ):
+    if not isinstance(finalizer_roots, list) or not finalizer_roots:
+        return None
+    finalizer_root_set = set(finalizer_roots)
+    if not set(recurrence_roots).issubset(finalizer_root_set):
+        return None
+    reviewed_root_set = {row[1] for row in rows}
+    if not finalizer_root_set.issubset(reviewed_root_set):
         return None
     if not re.fullmatch(r"(?:[0-9]{3}[A-Za-z0-9]*|CR-[0-9]{3,})", corrective):
         return None
@@ -540,12 +558,31 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
         "Repair attempt": "1",
     }:
         return None
+    try:
+        closure_start = lines.index("## Review Finding Closure") + 1
+    except ValueError:
+        return None
+    closure_roots = set()
+    for line in lines[closure_start:]:
+        if line.startswith("## "):
+            break
+        if not line.startswith("|"):
+            continue
+        values = [item.strip() for item in line.strip().strip("|").split("|")]
+        if values and values[0] in {"Finding ID", "---"}:
+            continue
+        if len(values) != 4:
+            return None
+        closure_roots.add(values[1])
+    if not finalizer_root_set.issubset(closure_roots):
+        return None
     return {
         "epic": epic,
         "root_id": primary_root,
-        "root_ids": sorted(recurrence_roots),
+        "root_ids": sorted(finalizer_root_set),
         "finalizer_slice": finalizer_slice,
         "corrective_slice": corrective,
+        "episode": episode,
         "attempt": 1,
         "status": "pending",
     }
@@ -578,11 +615,6 @@ if recurrence_rows:
         )
     recurrence_finalizer = finalizer_records[0]
     primary_root = recurrence_finalizer.get("root_id", recurrence_roots[0])
-    if primary_root in terminal_repairs:
-        raise SystemExit(
-            f"TERMINAL_RECURRENCE: architecture review root {primary_root} already "
-            "consumed its bounded terminal repair."
-        )
     if len(corrective_slices) != 1:
         raise SystemExit(
             "TERMINAL_REPAIR_REQUIRED: terminal recurrence roots must be grouped into "
@@ -787,9 +819,9 @@ PY
   printf '%s\t%s\n' "$epic" "$root"
 }
 
-# Validate the one bounded repair of a terminal finalizer that a later review
-# disproved with executable evidence. The contract is meaningful only while
-# the review transition has retained the exact pending repair in trusted state.
+# Validate one bounded repair episode for a terminal finalizer that an
+# independent review disproved with executable evidence. A completed episode
+# is history, not a lifetime suppression of a later real regression.
 ralph_architecture_review_terminal_repair_contract() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
   local slice_file="${3:?slice file is required}" allow_review_transition="${4:-false}" maximum
@@ -800,7 +832,7 @@ ralph_architecture_review_terminal_repair_contract() {
   approvals_file="$(dirname "$(dirname "$slice_file")")/working/HIGH_RISK_APPROVALS.md"
   [[ -f "$approvals_file" ]] || return 1
   grep -qF -- \
-    "- [approved-terminal-repair-policy] one bounded repair per terminal finalizer |" \
+    "- [approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer |" \
     "$approvals_file" || return 1
   python3 - "$state_file" "$slice_file" "$maximum" "$allow_review_transition" <<'PY'
 import json
@@ -860,16 +892,32 @@ if not isinstance(pending, dict) or pending != {
     "root_ids": pending.get("root_ids") if isinstance(pending, dict) else None,
     "finalizer_slice": finalizer,
     "corrective_slice": corrective_id,
+    "episode": pending.get("episode") if isinstance(pending, dict) else None,
     "attempt": 1,
     "status": "pending",
 }:
     raise SystemExit(1)
 if not isinstance(pending.get("root_ids"), list) or not pending["root_ids"]:
     raise SystemExit(1)
+if not isinstance(pending.get("episode"), int) or pending["episode"] < 1:
+    raise SystemExit(1)
 if state.get("architecture_review_due") is not True and not allow_review_transition:
     raise SystemExit(1)
-if root in state.get("architecture_review_terminal_repairs", {}):
-    raise SystemExit(1)
+prior = state.get("architecture_review_terminal_repairs", {}).get(root)
+if prior is not None:
+    if not isinstance(prior, dict) or prior.get("finalizer_slice") != finalizer:
+        raise SystemExit(1)
+    prior_episode = prior.get("episode", 1)
+    if not isinstance(prior_episode, int) or prior_episode < 1:
+        raise SystemExit(1)
+    if prior.get("status") == "awaiting_verification":
+        if pending["episode"] != prior_episode:
+            raise SystemExit(1)
+    elif prior.get("status") == "complete":
+        if pending["episode"] != prior_episode + 1:
+            raise SystemExit(1)
+    else:
+        raise SystemExit(1)
 print(f"{epic}\t{root}\t{finalizer}")
 PY
 }
@@ -939,18 +987,129 @@ if any(pending.get(key) != value for key, value in expected.items()):
 if state.get("architecture_review_due") is not True:
     raise SystemExit("terminal repair requires a retained review barrier")
 repairs = state.get("architecture_review_terminal_repairs", {})
-if not isinstance(repairs, dict) or root in repairs:
-    raise SystemExit("terminal repair budget was already consumed")
+if not isinstance(repairs, dict):
+    raise SystemExit("terminal repair history must be an object")
+existing = repairs.get(root)
+episode = pending.get("episode")
+if not isinstance(episode, int) or episode < 1:
+    raise SystemExit("terminal repair has no valid episode")
+if existing is not None:
+    if not isinstance(existing, dict) or existing.get("finalizer_slice") != finalizer:
+        raise SystemExit("terminal repair history does not match its finalizer")
+    existing_episode = existing.get("episode", 1)
+    if existing.get("status") == "awaiting_verification":
+        if episode != existing_episode:
+            raise SystemExit("terminal repair continuation changed episode")
+    elif existing.get("status") == "complete":
+        if episode != existing_episode + 1:
+            raise SystemExit("later terminal regression did not open the next episode")
+    else:
+        raise SystemExit("terminal repair history has an invalid status")
 record = dict(pending)
-record.update({"status": "complete", "slice_id": slice_id, "run_id": run_id})
+record.update({
+    "status": "awaiting_verification",
+    "slice_id": slice_id,
+    "run_id": run_id,
+})
 repairs[root] = record
 state["architecture_review_terminal_repairs"] = repairs
 state.pop("architecture_review_terminal_repair_pending", None)
-state["architecture_review_due"] = False
-state.pop("architecture_review_due_reason", None)
-state["slices_completed_since_architecture_review"] = 0
+state["architecture_review_due"] = True
+state["architecture_review_due_reason"] = f"terminal_repair_verification:{root}"
 state["last_architecture_review_terminal_repair"] = record
 path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+}
+
+# Product gates prove that a repair implementation is internally green; they do
+# not prove that the independent architecture root is closed. Consume the
+# repair only when a later validated Finding Closure Manifest reports every
+# grouped root Closed. A carried root leaves the same repair awaiting another
+# correction instead of manufacturing a second terminal generation.
+ralph_reconcile_architecture_review_terminal_repair_verification() {
+  local state_file="${1:?state file is required}" packet="${2:?review packet is required}"
+  python3 - "$state_file" "$packet" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+state_path = Path(sys.argv[1])
+packet_path = Path(sys.argv[2])
+state = json.loads(state_path.read_text())
+lines = packet_path.read_text().splitlines()
+try:
+    start = lines.index("## Finding Closure Manifest") + 1
+except ValueError:
+    raise SystemExit("Review packet has no Finding Closure Manifest")
+
+dispositions = {}
+for line in lines[start:]:
+    if line.startswith("## "):
+        break
+    if not line.startswith("|"):
+        continue
+    values = [item.strip() for item in line.strip().strip("|").split("|")]
+    if values and values[0] in {"Finding ID", "---"}:
+        continue
+    if len(values) != 7:
+        raise SystemExit("Finding Closure Manifest row has the wrong number of columns")
+    root_id = values[1]
+    dispositions.setdefault(root_id, []).append(values[3])
+
+repairs = state.get("architecture_review_terminal_repairs", {})
+if not isinstance(repairs, dict):
+    raise SystemExit("terminal repair history must be an object")
+awaiting = [
+    (root, record)
+    for root, record in repairs.items()
+    if isinstance(record, dict) and record.get("status") == "awaiting_verification"
+]
+if not awaiting:
+    raise SystemExit(0)
+
+completed = []
+for root, record in awaiting:
+    root_ids = record.get("root_ids")
+    if not isinstance(root_ids, list) or not root_ids or not all(
+        isinstance(item, str) and item for item in root_ids
+    ):
+        raise SystemExit(f"terminal repair has no complete grouped root set: {root}")
+    missing = sorted(set(root_ids) - set(dispositions))
+    if missing:
+        raise SystemExit(
+            "Terminal repair verification omitted grouped roots: " + ", ".join(missing)
+        )
+    if all(
+        dispositions[item] and all(value == "Closed" for value in dispositions[item])
+        for item in root_ids
+    ):
+        record = dict(record)
+        record["status"] = "complete"
+        repairs[root] = record
+        completed.append(record)
+
+state["architecture_review_terminal_repairs"] = repairs
+remaining = any(
+    isinstance(record, dict) and record.get("status") == "awaiting_verification"
+    for record in repairs.values()
+)
+if remaining:
+    state["architecture_review_due"] = True
+else:
+    state["architecture_review_due"] = False
+    state.pop("architecture_review_due_reason", None)
+    state["slices_completed_since_architecture_review"] = 0
+if completed:
+    history = state.get("architecture_review_terminal_repair_history", [])
+    if not isinstance(history, list):
+        raise SystemExit("terminal repair history ledger must be a list")
+    history.extend(completed)
+    state["architecture_review_terminal_repair_history"] = history
+    state["last_architecture_review_terminal_repair"] = completed[-1]
+temporary = state_path.with_name(f"{state_path.name}.tmp.{os.getpid()}")
+temporary.write_text(json.dumps(state, indent=2) + "\n")
+temporary.replace(state_path)
 PY
 }
 
@@ -1077,6 +1236,25 @@ if isinstance(roots, dict) and roots:
         "another root's history, and never relabel a carried symptom as New. A root may receive at "
         "most one grouped corrective plus one successor; unrelated roots retain independent budgets."
     )
+repairs = state.get("architecture_review_terminal_repairs", {})
+if isinstance(repairs, dict):
+    awaiting = [
+        record for record in repairs.values()
+        if isinstance(record, dict) and record.get("status") == "awaiting_verification"
+    ]
+    for record in awaiting:
+        root_ids = record.get("root_ids", [])
+        if not isinstance(root_ids, list) or not root_ids:
+            continue
+        roots_text = ", ".join(sorted(root_ids))
+        print(
+            "- Independent terminal-repair verification is active for every grouped root: "
+            f"{roots_text}. The Finding Closure Manifest must contain exactly one explicit "
+            "Closed or Carried disposition for each of these roots. If any root is Carried, "
+            "one successor slice must retain the complete grouped Root ID set and the same "
+            "Architecture Review Recurrence Repair contract. This continues the current repair "
+            "episode; it is not a new corrective generation."
+        )
 PY
 }
 
@@ -1894,12 +2072,20 @@ if seen_findings != set(contracts):
     raise SystemExit(f"Finding Evidence is missing corrective findings: {missing}")
 
 seen_acceptance: set[str] = set()
+acceptance_tests: dict[str, str] = {}
 for row in acceptance_rows:
     acceptance_id = row["Acceptance ID"]
     if acceptance_id not in expected_acceptance or acceptance_id in seen_acceptance:
         raise SystemExit(f"Acceptance Evidence has an unknown or duplicate id: {acceptance_id}")
     seen_acceptance.add(acceptance_id)
     test_spec = row["Test"]
+    prior_acceptance = acceptance_tests.get(test_spec)
+    if prior_acceptance is not None:
+        raise SystemExit(
+            "Distinct acceptance obligations require distinct executable tests: "
+            f"{prior_acceptance} and {acceptance_id} both use {test_spec}"
+        )
+    acceptance_tests[test_spec] = acceptance_id
     validate_test_spec(test_spec, f"Acceptance test for {acceptance_id}")
     evidence_path = safe_file(run_dir, row["Evidence"], f"Acceptance evidence for {acceptance_id}")
     if not row["Evidence"].startswith("evidence/"):
@@ -1907,7 +2093,10 @@ for row in acceptance_rows:
     candidate_visible(evidence_path, f"Acceptance evidence for {acceptance_id}")
     evidence_text = evidence_path.read_text(errors="replace")
     if test_spec not in evidence_text:
-        raise SystemExit(f"Acceptance evidence is not bound to its exact test selector: {acceptance_id}")
+        raise SystemExit(
+            "Acceptance evidence is not bound to its exact test selector: "
+            f"{acceptance_id} ({test_spec})"
+        )
     if not successful_evidence(evidence_text):
         raise SystemExit(
             f"Acceptance evidence needs a positive pass, explicit zero exit, and no failure signal for {acceptance_id}."

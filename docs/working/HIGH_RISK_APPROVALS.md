@@ -46,7 +46,7 @@ grouped Root IDs, run every applicable quality gate, and cannot create another c
 generation or finalizer. A recurrence after that repair remains a hard owner-review stop.
 
 - [approved-finalizer-policy] generation 2 | one terminal finalizer per Root ID | 2026-07-20 owner-authorized unattended convergence recovery
-- [approved-terminal-repair-policy] one bounded repair per terminal finalizer | 2026-07-21 owner-authorized recurrence recovery
+- [approved-terminal-repair-policy] one active bounded repair episode per terminal finalizer | 2026-07-22 owner-authorized independently verified recurrence recovery
 
 - [approved-finalizer] CR-013 | Epic 009 | generation 2 | 2026-07-19 owner-authorized terminal root-boundary correction
 

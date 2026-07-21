@@ -360,10 +360,10 @@ for ((i = 1; i <= max_iterations; i++)); do
             && ralph_repair_context_is_resumable \
               "$repo_root" "$repo_root/.ralph/repair-context.json"; then
           terminal_recurrence_rewrite=1
-          echo "Architecture review disproved a consumed terminal finalizer. Converting its grouped recurrence into the one bounded same-finalizer repair in the existing quarantined review; unrelated validated findings are retained." | tee -a "$loop_log"
+          echo "Architecture review disproved a terminal finalizer. Converting its grouped recurrence into one bounded same-finalizer repair episode in the existing quarantined review; unrelated validated findings are retained." | tee -a "$loop_log"
           continue
         fi
-        echo "Architecture review rediscovered a terminal root after its bounded repair budget was unavailable or consumed. Stopping safely instead of starting an infinite correction cycle." | tee -a "$loop_log"
+        echo "Terminal recurrence could not be authenticated or normalized within its bounded rewrite. Stopping on malformed safety state; completed historical episodes alone never trigger this stop." | tee -a "$loop_log"
         exit "$RALPH_EXIT_REVIEW_TERMINAL_RECURRENCE"
       fi
       if (( review_status == RALPH_EXIT_REVIEW_CONVERGENCE )); then
