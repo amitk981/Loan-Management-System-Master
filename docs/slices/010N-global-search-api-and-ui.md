@@ -19,7 +19,7 @@ while sensitive exact matching stays hashed, masked, permission-scoped, and abse
 indexes; S02 becomes complete only when 011M3 registers the compliance group.
 
 ## Depends On
-- 010M
+- 010MB
 
 ## Runtime Capabilities
 

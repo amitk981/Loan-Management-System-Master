@@ -59,8 +59,9 @@ authoritative; this file avoids reopening the full source set during ordinary ex
   combine them into a general interest engine implementation slice.
 - `010I` owns DPD snapshots only; default/grace/extension transitions remain Epic 011.
 - `010J` owns reminder eligibility and records; `010K` owns immutable quarterly MIS snapshots.
-- `010L` is the borrower-safe projection/UI. `010M` wires staff UI. `010N` and `010O` retain their
-  already-sharpened global-search and header-notification scopes.
+- `010L` is the borrower-safe projection/UI. Superseded `010M` is split into `010MA` account/
+  repayment wiring followed by terminal `010MB` interest/monitoring wiring. `010N` and `010O`
+  retain their already-sharpened global-search and header-notification scopes.
 
 ## Per-slice execution extracts
 
@@ -182,7 +183,9 @@ authoritative; this file avoids reopening the full source set during ordinary ex
 
 ### 010M–010O — already concrete
 
-- `010M`: staff S43–S52 wiring, final servicing/monitoring mock removal.
+- Superseded `010M` is preserved by `010MA` (staff S43–S46 account/repayment wiring and three final
+  mock removals) followed by `010MB` (staff S47–S52 interest/monitoring wiring and the terminal
+  monitoring mock removal).
 - `010N`: permission-filtered server-side global-search foundation; no sensitive/client-side index.
   It delivers six groups and a default-empty provider seam; `011M3` adds the seventh compliance
   group only after 011K–011M own real compliance records.

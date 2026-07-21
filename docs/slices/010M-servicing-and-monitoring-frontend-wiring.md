@@ -1,7 +1,17 @@
 # Slice 010M: Servicing and Monitoring Frontend Wiring
 
 ## Status
-Not Started
+Superseded
+
+## Superseded By
+
+- 010MA
+- 010MB
+
+Failed run `2026-07-21_102540_normal_run` implemented the combined candidate successfully but
+measured 2,093 changed lines against the configured 2,000-line limit. The dependency-ordered
+successors preserve the complete scope below: 010MA owns account schedule/ledger and repayment/
+reconciliation wiring, and 010MB owns interest and DPD/reminder monitoring wiring.
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

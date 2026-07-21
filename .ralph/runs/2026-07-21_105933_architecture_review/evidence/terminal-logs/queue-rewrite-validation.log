@@ -1,0 +1,19 @@
+Run: 2026-07-21_105933_architecture_review
+Mode: architecture_review oversized-slice queue rewrite
+Original slice: 010M
+
+PASS: 010M has a dependency-ordered, drainable successor chain.
+PASS: changed paths stay inside the oversized-rewrite allowlist.
+PASS: the complete slice queue is executable and acyclic.
+PASS: 010MA runtime capability declaration is valid.
+PASS: 010MB runtime capability declaration is valid.
+PASS: tracked and new planning files have clean whitespace.
+
+Checks executed:
+- ralph_validate_oversized_slice_split "$PWD" 010M
+- ralph_validate_oversized_split_change_scope "$PWD" 010M
+- ralph_slice_queue_lint docs/slices
+- ralph_validate_slice_runtime_requirements for both successor slice files
+- git diff --check plus a trailing-whitespace scan of new planning files
+
+Product tests were not run because this queue-rewrite mode changes no production code.
