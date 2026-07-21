@@ -4602,6 +4602,17 @@ reasons, and file bytes never enter ordinary API errors, list responses, or reco
 
 ## Subsidiary deduction reconciliation (010E)
 
+`GET /api/v1/loan-accounts/{loan_account_id}/repayments/?page=1&page_size=20` is the
+010MA staff read projection for S44/S45. It reuses the 010A loan-account read permission, active
+source role, object scope, strict pagination validation, and inaccessible-object `404` contract.
+Rows are ordered by received date, retained creation time, and immutable repayment id. Each row
+contains receipt identity/source, decimal-string amount, received date/method/reference, canonical
+statement relationship/status, allocation and SAP statuses/evidence, and nullable retained
+allocation parts. Subsidiary rows additionally include company, produce/transfer reference,
+tri-party-agreement identity, reconciliation status, and Treasury verification status. This read
+never calculates allocation or matching, exposes free-text remarks/narration, or mutates financial
+truth.
+
 `POST /api/v1/loan-accounts/{loan_account_id}/repayments/` dispatches
 `repayment_source: subsidiary_deduction` to the subsidiary owner. In addition to positive numeric
 18,2 amount, ISO received date, nonblank remarks, and a bounded `Idempotency-Key`, it requires

@@ -1,0 +1,5 @@
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+EXIT_STATUS: 0

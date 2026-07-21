@@ -1,0 +1,33 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/servicingApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_111137_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/servicingApi.test.ts [ src/services/servicingApi.test.ts ]
+Error: Cannot find module './servicingApi' imported from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_111137_normal_run/sfpcl-lms/src/services/servicingApi.test.ts'
+ ❯ src/services/servicingApi.test.ts:3:31
+      3| import {
+      4|   fetchLoanLedger,
+      5|   fetchRepaymentSchedule,
+       |   ^
+      6|   postAndAllocateDirectRepayment,
+      7| } from './servicingApi';
+
+Caused by: Error: Failed to load url ./servicingApi (resolved id: ./servicingApi) in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_111137_normal_run/sfpcl-lms/src/services/servicingApi.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  11:20:41
+   Duration  303ms (transform 63ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 43ms)
+
+EXIT_STATUS: 1

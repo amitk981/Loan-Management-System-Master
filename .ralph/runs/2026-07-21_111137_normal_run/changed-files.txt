@@ -1,0 +1,20 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M sfpcl-lms/src/components/loan/RepaymentLedger.tsx
+ M sfpcl-lms/src/pages/loan-accounts/LoanAccount360.test.tsx
+ M sfpcl-lms/src/pages/loan-accounts/LoanAccount360.tsx
+ M sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx
+ M sfpcl_credit/identity/management/commands/seed_e2e_users.py
+ M sfpcl_credit/loans/views.py
+ M sfpcl_credit/processes/loan_servicing.py
+ M sfpcl_credit/tests/test_seed_e2e_users.py
+?? .ralph/runs/2026-07-21_111137_normal_run/
+?? sfpcl-lms/e2e/servicing-monitoring-workflows.e2e.spec.ts
+?? sfpcl-lms/src/pages/repayments/RepaymentsHub.test.tsx
+?? sfpcl-lms/src/services/servicingApi.test.ts
+?? sfpcl-lms/src/services/servicingApi.ts
+?? sfpcl-lms/src/utils/formatMoney.test.ts
+?? sfpcl-lms/src/utils/formatMoney.ts
+?? sfpcl_credit/tests/test_servicing_repayment_read_projection.py

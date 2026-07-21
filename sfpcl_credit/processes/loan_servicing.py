@@ -2,6 +2,8 @@
 
 from math import ceil
 
+from django.core.exceptions import ObjectDoesNotExist
+
 from sfpcl_credit.disbursements.modules.post_transfer_evidence import (
     resolve_historical_post_transfer_evidence,
 )
@@ -45,6 +47,23 @@ def get_ledger(*, actor, loan_account_id, query_params):
     return get_ledger_for_scoped_account(
         account=account, transfer=transfer, query_params=query_params
     )
+
+
+def get_repayments(*, actor, loan_account_id, query_params):
+    account, _ = _scoped_account(actor=actor, loan_account_id=loan_account_id)
+    page, page_size = _pagination(query_params)
+    rows = account.repayments.select_related(
+        "allocation",
+        "matched_bank_statement_line",
+        "sap_posting_obligation",
+        "subsidiary_deduction_evidence",
+    ).order_by("received_date", "created_at", "repayment_id")
+    total_count = rows.count()
+    pagination = _pagination_result(
+        page=page, page_size=page_size, total_count=total_count
+    )
+    window = rows[(page - 1) * page_size : page * page_size]
+    return [_repayment_row(row) for row in window], pagination
 
 
 def get_ledger_for_scoped_account(*, account, transfer, query_params):
@@ -181,6 +200,65 @@ def _schedule_row(row):
     }
 
 
+def _repayment_row(repayment):
+    try:
+        allocation = repayment.allocation
+    except ObjectDoesNotExist:
+        allocation = None
+    try:
+        subsidiary = repayment.subsidiary_deduction_evidence
+    except ObjectDoesNotExist:
+        subsidiary = None
+    obligation = repayment.sap_posting_obligation
+    return {
+        "repayment_id": str(repayment.pk),
+        "loan_account_id": str(repayment.loan_account_id),
+        "repayment_source": repayment.repayment_source,
+        "amount_received": _decimal(repayment.amount_received),
+        "received_date": repayment.received_date.isoformat(),
+        "payment_method": repayment.payment_method,
+        "bank_reference_number": repayment.bank_reference_number,
+        "bank_statement_line_id": (
+            str(repayment.bank_statement_line_id)
+            if repayment.bank_statement_line_id
+            else None
+        ),
+        "statement_match_status": repayment.statement_match_status,
+        "allocation_status": repayment.allocation_status,
+        "sap_posting_status": repayment.sap_posting_status,
+        "sap_posting_due_date": obligation.due_date.isoformat(),
+        "sap_entry_reference": obligation.sap_entry_reference,
+        "sap_posted_at": (
+            obligation.posted_at.isoformat().replace("+00:00", "Z")
+            if obligation.posted_at
+            else None
+        ),
+        "allocation": (
+            {
+                "allocated_to_principal": _decimal(allocation.allocated_to_principal),
+                "allocated_to_interest": _decimal(allocation.allocated_to_interest),
+                "allocated_to_charges": _decimal(allocation.allocated_to_charges),
+                "unallocated_amount": _decimal(allocation.unallocated_amount),
+                "exception_reason": allocation.exception_reason,
+            }
+            if allocation
+            else None
+        ),
+        "subsidiary_reconciliation": (
+            {
+                "subsidiary_company_id": str(subsidiary.subsidiary_company_id),
+                "produce_payment_reference": subsidiary.produce_payment_reference,
+                "transfer_reference": subsidiary.transfer_reference,
+                "tri_party_agreement_id": str(subsidiary.tri_party_agreement_id),
+                "reconciliation_status": subsidiary.reconciliation_status,
+                "treasury_verification_status": subsidiary.treasury_verification_status,
+            }
+            if subsidiary
+            else None
+        ),
+    }
+
+
 def _disbursement_ledger_row(transfer):
     amount = _decimal(transfer.amount)
     return {
@@ -289,5 +367,6 @@ __all__ = [
     "LoanServicingReadValidation",
     "get_ledger",
     "get_ledger_for_scoped_account",
+    "get_repayments",
     "get_schedule",
 ]

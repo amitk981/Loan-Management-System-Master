@@ -1,7 +1,7 @@
 # Slice 010MA: Servicing Account and Repayment Frontend Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `010M`

@@ -9,12 +9,20 @@ import {
   type LoanAccountProjection,
 } from '../../services/loanAccountsApi';
 import { AuthSessionError } from '../../services/authSession';
+import {
+  fetchLoanLedger,
+  fetchRepaymentSchedule,
+} from '../../services/servicingApi';
 import pageSource from './LoanAccount360.tsx?raw';
 import apiSource from '../../services/loanAccountsApi.ts?raw';
 
 vi.mock('../../services/loanAccountsApi', () => ({
   fetchLoanAccounts: vi.fn(),
   fetchLoanAccount: vi.fn(),
+}));
+vi.mock('../../services/servicingApi', () => ({
+  fetchLoanLedger: vi.fn(),
+  fetchRepaymentSchedule: vi.fn(),
 }));
 
 const account: LoanAccountProjection = {
@@ -40,6 +48,8 @@ describe('009J Loan Account 360 initial API view', () => {
   beforeEach(() => {
     vi.mocked(fetchLoanAccounts).mockResolvedValue({ items: [account], pagination });
     vi.mocked(fetchLoanAccount).mockResolvedValue(account);
+    vi.mocked(fetchLoanLedger).mockResolvedValue({ items: [ledgerRow], pagination });
+    vi.mocked(fetchRepaymentSchedule).mockResolvedValue({ items: [scheduleRow], pagination });
   });
   afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -74,9 +84,6 @@ describe('009J Loan Account 360 initial API view', () => {
     expect(screen.getByText('Summary')).toBeTruthy();
     expect(screen.getByText('Loan Ledger')).toBeTruthy();
     expect(screen.getByText('Repayment Schedule')).toBeTruthy();
-    await userEvent.click(screen.getByText('Loan Ledger'));
-    expect(screen.getByText('Loan Ledger is not available yet.')).toBeTruthy();
-    expect(screen.getByText(/governed Epic 010 owner/i)).toBeTruthy();
   });
 
   it('shows honest empty, failure, and unauthorized states without mock fallback', async () => {
@@ -112,4 +119,52 @@ describe('009J Loan Account 360 initial API view', () => {
     expect(pageSource).not.toContain("from '../../data/mockData'");
     expect(pageSource).not.toContain('monthlyEMI');
   });
+
+  it('renders canonical ledger and schedule pages without calculating financial truth', async () => {
+    render(<LoanAccount360 loanAccountId="account-1" onSelect={vi.fn()} />);
+    await screen.findByRole('heading', { name: 'LN-API-001' });
+
+    await userEvent.click(screen.getByText('Loan Ledger'));
+    expect(await screen.findByText('UTR-SERVER-001')).toBeTruthy();
+    expect(screen.getByText('₹1,00,000.00')).toBeTruthy();
+    expect(screen.getAllByText('₹3,00,000.00')).toHaveLength(2);
+    expect(screen.getByText('Page 1 of 1')).toBeTruthy();
+    expect(fetchLoanLedger).toHaveBeenCalledWith('account-1', 1, 20);
+
+    await userEvent.click(screen.getByText('Repayment Schedule'));
+    expect(await screen.findByText('₹4,10,000.00')).toBeTruthy();
+    expect(screen.getByText('Pending')).toBeTruthy();
+    expect(fetchRepaymentSchedule).toHaveBeenCalledWith('account-1', 1, 20);
+  });
+
+  it('resets servicing pagination when the account identity changes', async () => {
+    vi.mocked(fetchLoanLedger).mockResolvedValue({
+      items: [ledgerRow], pagination: { ...pagination, has_next: true, total_pages: 2 },
+    });
+    const view = render(<LoanAccount360 loanAccountId="account-1" onSelect={vi.fn()} />);
+    await screen.findByRole('heading', { name: 'LN-API-001' });
+    await userEvent.click(screen.getByText('Loan Ledger'));
+    await userEvent.click(await screen.findByRole('button', { name: /Next/ }));
+    await waitFor(() => expect(fetchLoanLedger).toHaveBeenCalledWith('account-1', 2, 20));
+
+    view.rerender(<LoanAccount360 loanAccountId="account-2" onSelect={vi.fn()} />);
+    await waitFor(() => expect(fetchLoanLedger).toHaveBeenLastCalledWith('account-2', 1, 20));
+  });
 });
+
+const ledgerRow = {
+  transaction_date: '2026-12-04', transaction_type: 'repayment',
+  owner_reference: { entity_type: 'repayment_allocation', entity_id: 'allocation-1' },
+  reference: 'UTR-SERVER-001', debit: '0.00', credit: '100000.00',
+  principal_balance: '300000.00', interest_balance: '0.00', total_outstanding: '300000.00',
+  actor: { user_id: 'user-1', display_name: 'Accounts User' }, sap_status: 'posted',
+  remarks: 'Repayment allocated principal first.',
+};
+
+const scheduleRow = {
+  repayment_schedule_id: 'schedule-1', installment_number: 1, due_date: '2027-06-22',
+  principal_due: '400000.00', interest_due: '10000.00', charges_due: '0.00',
+  total_due: '410000.00', paid_principal: '0.00', paid_interest: '0.00',
+  paid_charges: '0.00', amount_received: '0.00', schedule_status: 'pending',
+  extended_due_date: null, created_at: '2026-06-22T00:00:00Z',
+};

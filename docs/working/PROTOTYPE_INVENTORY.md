@@ -24,6 +24,10 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
   transport, and fresh-upload-only changed General Meeting evidence.
 - Documentation and disbursement: `DocumentationHub`, `DisbursementHub`, `PaymentAuthorisationHub`
 - Servicing: `LoanAccount360`, `RepaymentsHub`, `InterestManagement`, `MonitoringDashboard`
+
+  `LoanAccount360` S43/S46 and `RepaymentsHub` S44/S45 are API-backed by 010MA, including canonical
+  pagination, backend-only Money/allocation/match truth, real permission/idempotency handling, and
+  loading/empty/error/unauthorised/success states. Interest and monitoring remain owned by 010MB.
 - Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`
 - Reports/tasks/search/profile/settings/admin: `ReportsMIS`, `TaskInbox`, `GlobalSearchResults`, `NotificationsCenter`, `MyProfile`, `SettingsHub`, `AdminUsers`
 - Dev/integration proof: `TracerBullet`

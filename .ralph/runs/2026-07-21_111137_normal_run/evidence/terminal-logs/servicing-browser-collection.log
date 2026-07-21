@@ -1,0 +1,5 @@
+Listing tests:
+  [chromium] › servicing-monitoring-workflows.e2e.spec.ts:13:5 › S43 and S46 render canonical schedule and ledger projections
+  [chromium] › servicing-monitoring-workflows.e2e.spec.ts:27:5 › S44 posts one direct receipt and displays the backend allocation
+Total: 2 tests in 1 file
+EXIT_STATUS: 0

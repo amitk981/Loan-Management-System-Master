@@ -1,0 +1,447 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_111137_normal_run/sfpcl-lms
+
+ ❯ src/services/servicingApi.test.ts (4 tests | 1 failed) 10ms
+   × servicing API module > requires an active source role as well as every combined-action permission 6ms
+     → expected true to be false // Object.is equality
+   ✓ servicing API module > reads schedule and ledger pages through authenticated standard pagination 2ms
+   ✓ servicing API module > captures, SAP-posts, and allocates once with caller-stable action keys 1ms
+   ✓ servicing API module > stops an exact capture replay before a second SAP or allocation mutation 0ms
+ ❯ src/pages/repayments/RepaymentsHub.test.tsx (5 tests | 4 failed) 19ms
+   × 010MA Repayments Hub wiring > renders canonical ledger, statement exceptions, and subsidiary reconciliation evidence 14ms
+     → Cannot read properties of undefined (reading 'includes')
+   × 010MA Repayments Hub wiring > posts one governed direct attempt, displays backend allocation, and refreshes reads 1ms
+     → Cannot read properties of undefined (reading 'includes')
+   × 010MA Repayments Hub wiring > pages each statement queue independently through canonical server pagination 1ms
+     → Cannot read properties of undefined (reading 'includes')
+   × 010MA Repayments Hub wiring > does not expose the combined action to a permission-bearing non-source role 1ms
+     → Cannot read properties of undefined (reading 'includes')
+   ✓ 010MA Repayments Hub wiring > removes every inherited mock and client-owned financial calculation 1ms
+ ❯ src/pages/loan-accounts/LoanAccount360.test.tsx (6 tests | 1 failed) 1300ms
+   ✓ 009J Loan Account 360 initial API view > loads the scoped account list and routes the selected server identity 98ms
+   ✓ 009J Loan Account 360 initial API view > renders the header, KPI row, and Summary from exact active server values 31ms
+   ✓ 009J Loan Account 360 initial API view > shows honest empty, failure, and unauthorized states without mock fallback 20ms
+   ✓ 009J Loan Account 360 initial API view > uses only the shared authenticated boundary for the initial API projection 0ms
+   ✓ 009J Loan Account 360 initial API view > renders canonical ledger and schedule pages without calculating financial truth 55ms
+   × 009J Loan Account 360 initial API view > resets servicing pagination when the account identity changes 1094ms
+     → expected last "spy" call to have been called with [ 'account-2', 1, 20 ]
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 space-y-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-2 flex-wrap"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"text-xl font-bold text-slate-900 num"[39m
+              [36m>[39m
+                [0mLN-API-001[0m
+              [36m</h1>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-green-50 text-green-900 border-green-100 text-xs px-2.5 py-1 h-6"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"10"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"10"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"12"[39m
+                    [33mr[39m=[32m"10"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mActive[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-3 mt-0.5 text-sm text-slate-500"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mAPI Borrower[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0m·[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"num"[39m
+              [36m>[39m
+                [0m₹4,00,000.00[0m
+                [0m disbursed[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0m·[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0mSAP: [0m
+                [36m<span[39m
+                  [33mclass[39m=[32m"num font-medium text-slate-900"[39m
+                [36m>[39m
+                  [0m******-001[0m
+                [36m</span>[39m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mSanctioned[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mDisbursed[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mOutstanding Principal[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mOutstanding Interest[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹0.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mTotal Outstanding[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+              [36m>[39m
+                [0mSummary[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > requires an active source role as well as every combined-action permission
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/services/servicingApi.test.ts:36:82
+     34|     expect(canPostAndAllocateRepayment(permissions, ['accounts_head'])…
+     35|     expect(canPostAndAllocateRepayment(permissions, ['credit_manager']…
+     36|     expect(canPostAndAllocateRepayment(permissions, ['senior_manager_f…
+       |                                                                                  ^
+     37|   });
+     38| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/pages/loan-accounts/LoanAccount360.test.tsx > 009J Loan Account 360 initial API view > resets servicing pagination when the account identity changes
+AssertionError: expected last "spy" call to have been called with [ 'account-2', 1, 20 ]
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 space-y-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-2 flex-wrap"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"text-xl font-bold text-slate-900 num"[39m
+              [36m>[39m
+                [0mLN-API-001[0m
+              [36m</h1>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-green-50 text-green-900 border-green-100 text-xs px-2.5 py-1 h-6"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"10"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"10"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"12"[39m
+                    [33mr[39m=[32m"10"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mActive[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-3 mt-0.5 text-sm text-slate-500"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mAPI Borrower[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0m·[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"num"[39m
+              [36m>[39m
+                [0m₹4,00,000.00[0m
+                [0m disbursed[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0m·[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0mSAP: [0m
+                [36m<span[39m
+                  [33mclass[39m=[32m"num font-medium text-slate-900"[39m
+                [36m>[39m
+                  [0m******-001[0m
+                [36m</span>[39m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mSanctioned[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mDisbursed[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mOutstanding Principal[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mOutstanding Interest[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹0.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 bg-slate-50 border-slate-200"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium"[39m
+            [36m>[39m
+              [0mTotal Outstanding[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-lg font-bold num mt-0.5 text-slate-900"[39m
+            [36m>[39m
+              [0m₹4,00,000.00[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+              [36m>[39m
+                [0mSummary[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus...
+
+- Expected
++ Received
+
+  [
+    "account-2",
+-   1,
++   2,
+    20,
+  ]
+
+ ❯ src/pages/loan-accounts/LoanAccount360.test.tsx:151:49
+    149| 
+    150|     view.rerender(<LoanAccount360 loanAccountId="account-2" onSelect={…
+    151|     await waitFor(() => expect(fetchLoanLedger).toHaveBeenLastCalledWi…
+       |                                                 ^
+    152|   });
+    153| });
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/pages/repayments/RepaymentsHub.test.tsx > 010MA Repayments Hub wiring > renders canonical ledger, statement exceptions, and subsidiary reconciliation evidence
+ FAIL  src/pages/repayments/RepaymentsHub.test.tsx > 010MA Repayments Hub wiring > posts one governed direct attempt, displays backend allocation, and refreshes reads
+ FAIL  src/pages/repayments/RepaymentsHub.test.tsx > 010MA Repayments Hub wiring > pages each statement queue independently through canonical server pagination
+ FAIL  src/pages/repayments/RepaymentsHub.test.tsx > 010MA Repayments Hub wiring > does not expose the combined action to a permission-bearing non-source role
+TypeError: Cannot read properties of undefined (reading 'includes')
+ ❯ Proxy.canPostAndAllocateRepayment src/pages/repayments/RepaymentsHub.test.tsx:21:83
+     19|   fetchBankStatementLines: vi.fn(), fetchLoanLedger: vi.fn(), fetchRep…
+     20|   postAndAllocateDirectRepayment: vi.fn(),
+     21|   canPostAndAllocateRepayment: (_permissions: string[], roles: string[…
+       |                                                                                   ^
+     22| }));
+     23| 
+ ❯ RepaymentsHub src/pages/repayments/RepaymentsHub.tsx:35:19
+ ❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:20
+ ❯ renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:22
+ ❯ updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:19
+ ❯ beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11778:18
+ ❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:874:13
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:22
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:41
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  6 failed | 9 passed (15)
+   Start at  11:42:28
+   Duration  2.61s (transform 364ms, setup 0ms, collect 944ms, tests 1.33s, environment 968ms, prepare 203ms)
+
+EXIT_STATUS: 1

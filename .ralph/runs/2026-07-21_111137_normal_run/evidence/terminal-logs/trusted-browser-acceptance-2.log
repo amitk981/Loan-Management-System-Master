@@ -1,0 +1,39 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_111137_normal_run/.ralph/runs/2026-07-21_111137_normal_run/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/servicing-monitoring-workflows.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/servicing-monitoring-workflows.e2e.spec.ts
+
+[2m[WebServer] [22m[21/Jul/2026 06:36:17] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "GET /api/v1/auth/me/ HTTP/1.1" 200 3058
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[21/Jul/2026 06:36:24] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+  ✓  1 [chromium] › servicing-monitoring-workflows.e2e.spec.ts:13:5 › S43 and S46 render canonical schedule and ledger projections (3.6s)
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "GET /api/v1/auth/me/ HTTP/1.1" 200 3058
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[21/Jul/2026 06:36:27] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+  ✓  2 [chromium] › servicing-monitoring-workflows.e2e.spec.ts:27:5 › S44 posts one direct receipt and displays the backend allocation (2.9s)
+
+  2 passed (52.9s)
+
+Duration milliseconds: 54230
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_111137_normal_run/.ralph/runs/2026-07-21_111137_normal_run/evidence/trusted-browser-screenshots-2.sha256

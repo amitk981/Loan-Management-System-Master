@@ -156,6 +156,11 @@ class SeedE2eUsersTests(TestCase):
                 "members.member.identity_change.approve",
                 "members.witness.read",
                 "members.witness.update",
+                "finance.loan_account.read",
+                "finance.repayment.create",
+                "finance.repayment.mark_sap_posted",
+                "finance.repayment.allocate",
+                "finance.bank_statement.read",
             }.issubset(manager_permissions)
         )
 

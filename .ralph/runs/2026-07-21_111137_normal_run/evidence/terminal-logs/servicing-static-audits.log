@@ -1,0 +1,34 @@
+Owned production mock/business-policy audit (expected no matches)
+Source-role and permission guard
+sfpcl-lms/src/services/servicingApi.ts:180:export const canPostAndAllocateRepayment = (permissions: string[], roleCodes: string[]) =>
+sfpcl-lms/src/services/servicingApi.ts:181:  roleCodes.some(role => ['credit_manager', 'accounts_head'].includes(role))
+sfpcl-lms/src/services/servicingApi.ts:187:  if (!canPostAndAllocateRepayment(attempt.permissions, attempt.roleCodes)) {
+sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx:11:  canPostAndAllocateRepayment,
+sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx:47:  const canPost = canPostAndAllocateRepayment(currentUser.permissions, currentUser.roleCodes);
+Independent queues, stale-response owner, and subsidiary state
+72:  const loanSurfaceRequest = useRef(0);
+73:  const statementRequests = useRef<Record<StatementStatus, number>>({ unmatched: 0, exception: 0 });
+92:    const request = ++loanSurfaceRequest.current;
+96:    if (request !== loanSurfaceRequest.current) return;
+110:  const loadStatementQueue = useCallback(async (status: StatementStatus, page = 1) => {
+111:    const request = ++statementRequests.current[status];
+117:      if (request !== statementRequests.current[status]) return;
+122:      if (request !== statementRequests.current[status]) return;
+135:    void Promise.all([loadStatementQueue('unmatched'), loadStatementQueue('exception')]);
+136:  }, [canReadStatements, loadStatementQueue, refreshVersion]);
+174:          <StatementExceptions queues={statementQueues} canRead={canReadStatements} onPage={loadStatementQueue} />
+210:  if (loading) return <div className="text-center py-8 text-slate-400 text-sm">Loading subsidiary reconciliations…</div>;
+211:  if (error) return <AlertBanner type="error" title={error.unauthorized ? 'Access Denied' : 'Subsidiary Reconciliation Unavailable'} message={error.message} />;
+Auth endpoint interception audit (expected no matches)
+Authenticated request boundary
+2:  authenticatedPaginatedRequest,
+3:  authenticatedRequest,
+139:  authenticatedPaginatedRequest<RepaymentScheduleRow>(
+144:  authenticatedPaginatedRequest<LoanLedgerRow>(
+149:  authenticatedPaginatedRequest<RepaymentProjection>(
+155:) => authenticatedPaginatedRequest<BankStatementLineProjection>(
+190:  const captured = await authenticatedRequest<CapturedRepayment | Replay<CapturedRepayment>>(
+200:  await authenticatedRequest<CapturedRepayment>(
+204:  const allocation = await authenticatedRequest<AllocationResult | Replay<AllocationResult>>(
+Diff whitespace check
+EXIT_STATUS: 0

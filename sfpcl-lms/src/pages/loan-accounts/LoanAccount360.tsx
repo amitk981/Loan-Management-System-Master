@@ -1,19 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, Lock } from 'lucide-react';
 import Tabs from '../../components/ui/Tabs';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
-import { AuthSessionError } from '../../services/authSession';
+import RepaymentLedger, { PaginationControls } from '../../components/loan/RepaymentLedger';
+import { AuthSessionError, type Pagination } from '../../services/authSession';
 import {
   fetchLoanAccount,
   fetchLoanAccounts,
   type LoanAccountProjection,
 } from '../../services/loanAccountsApi';
+import {
+  fetchLoanLedger,
+  fetchRepaymentSchedule,
+  type LoanLedgerRow,
+  type RepaymentScheduleRow,
+} from '../../services/servicingApi';
+import { formatMoney } from '../../utils/formatMoney';
 
-const fmtDecimal = (value: string) => `₹${Number(value).toLocaleString('en-IN', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})}`;
+const fmtDecimal = formatMoney;
 
 const formatDate = (dateStr: string | null | undefined) => dateStr
   ? new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -55,6 +60,16 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
   const [account, setAccount] = useState<LoanAccountProjection | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{ message: string; unauthorized: boolean } | null>(null);
+  const [ledger, setLedger] = useState<LoanLedgerRow[]>([]);
+  const [schedule, setSchedule] = useState<RepaymentScheduleRow[]>([]);
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [schedulePage, setSchedulePage] = useState(1);
+  const [servicingLoading, setServicingLoading] = useState(false);
+  const [servicingError, setServicingError] = useState<{ message: string; unauthorized: boolean } | null>(null);
+  const emptyPagination: Pagination = { page: 1, page_size: 20, total_count: 0, total_pages: 1, has_next: false, has_previous: false };
+  const [ledgerPagination, setLedgerPagination] = useState<Pagination>(emptyPagination);
+  const [schedulePagination, setSchedulePagination] = useState<Pagination>(emptyPagination);
+  const servicingLoan = useRef<string | null>(null);
 
   useEffect(() => {
     let current = true;
@@ -73,6 +88,35 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
     }).finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
   }, [loanAccountId]);
+
+  useEffect(() => {
+    if (!loanAccountId || ![1, 2].includes(activeTab)) return;
+    if (servicingLoan.current !== loanAccountId) {
+      servicingLoan.current = loanAccountId;
+      if (ledgerPage !== 1) setLedgerPage(1);
+      if (schedulePage !== 1) setSchedulePage(1);
+      if (ledgerPage !== 1 || schedulePage !== 1) return;
+    }
+    let current = true;
+    const ledgerActive = activeTab === 1;
+    setServicingLoading(true);
+    setServicingError(null);
+    const request = ledgerActive
+      ? fetchLoanLedger(loanAccountId, ledgerPage, 20).then(result => {
+        if (current) { setLedger(result.items); setLedgerPagination(result.pagination); }
+      })
+      : fetchRepaymentSchedule(loanAccountId, schedulePage, 20).then(result => {
+        if (current) { setSchedule(result.items); setSchedulePagination(result.pagination); }
+      });
+    void request.catch(error => {
+      if (!current) return;
+      setServicingError({
+        message: error instanceof Error ? error.message : 'Servicing records could not be loaded.',
+        unauthorized: error instanceof AuthSessionError && [401, 403].includes(error.status || 0),
+      });
+    }).finally(() => { if (current) setServicingLoading(false); });
+    return () => { current = false; };
+  }, [activeTab, ledgerPage, loanAccountId, schedulePage]);
 
   if (loading) return <div className="p-6"><div className="card text-sm text-slate-500">{loanAccountId ? 'Loading loan account summary…' : 'Loading loan accounts…'}</div></div>;
   if (loadError) return <div className="p-6"><AlertBanner type="error" title={loadError.unauthorized ? 'Access Denied' : 'Loan Accounts Unavailable'} message={loadError.message} /></div>;
@@ -150,7 +194,14 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{facts.map(([key, value]) => <div key={key} className="bg-slate-50 rounded-lg p-3"><p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{key}</p><p className="text-sm font-semibold text-slate-900 mt-0.5">{value}</p></div>)}</div>
           <div className="border-t pt-4"><div className="flex items-center justify-between text-sm"><span className="text-slate-500">Linked Application:</span><span className="text-green-600 flex items-center gap-1 font-medium num">{account.application_reference_number || account.loan_application_id} <ArrowRight size={12} /></span></div></div>
         </div>
-        {ACCOUNT_TABS.slice(1).map(tab => (
+        <div className="card"><RepaymentLedger rows={ledger} pagination={ledgerPagination} loading={servicingLoading} error={servicingError} onPage={setLedgerPage} /></div>
+        <div className="card space-y-4">
+          {servicingLoading && <div className="text-center py-8 text-slate-400 text-sm">Loading repayment schedule…</div>}
+          {!servicingLoading && servicingError && <AlertBanner type="error" title={servicingError.unauthorized ? 'Access Denied' : 'Repayment Schedule Unavailable'} message={servicingError.message} />}
+          {!servicingLoading && !servicingError && schedule.length === 0 && <div className="text-center py-8 text-slate-400 text-sm">No repayment schedule items are recorded for this loan.</div>}
+          {!servicingLoading && !servicingError && schedule.length > 0 && <><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-slate-50 border-b border-slate-200">{['Instalment', 'Due Date', 'Principal Due', 'Interest Due', 'Charges Due', 'Total Due', 'Amount Received', 'Status'].map(column => <th key={column} className={`table-header ${column.includes('Due') || column === 'Amount Received' ? 'text-right' : 'text-left'}`}>{column}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{schedule.map(row => <tr key={row.repayment_schedule_id}><td className="table-cell num">{row.installment_number}</td><td className="table-cell">{formatDate(row.due_date)}</td><td className="table-cell text-right num">{fmtDecimal(row.principal_due)}</td><td className="table-cell text-right num">{fmtDecimal(row.interest_due)}</td><td className="table-cell text-right num">{fmtDecimal(row.charges_due)}</td><td className="table-cell text-right num font-semibold">{fmtDecimal(row.total_due)}</td><td className="table-cell text-right num">{fmtDecimal(row.amount_received)}</td><td className="table-cell"><StatusBadge label={label(row.schedule_status)} size="sm" /></td></tr>)}</tbody></table></div><PaginationControls pagination={schedulePagination} onPage={setSchedulePage} /></>}
+        </div>
+        {ACCOUNT_TABS.slice(3).map(tab => (
           <div key={tab.id} className="card flex items-start gap-3">
             <Lock size={16} className="text-slate-400 mt-0.5" />
             <div>

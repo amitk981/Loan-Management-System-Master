@@ -55,6 +55,7 @@ from sfpcl_credit.processes.loan_servicing import (
     LoanServicingReadNotFound,
     LoanServicingReadValidation,
     get_ledger,
+    get_repayments,
     get_schedule,
 )
 from sfpcl_credit.processes.loan_ledger_statements import (
@@ -231,11 +232,35 @@ def ledger_statement_download(request, statement_job_id):
         return error_response(request, 404, "NOT_FOUND", "The statement download was not found or is inaccessible.")
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def direct_repayment(request, loan_account_id):
     actor, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
+    if request.method == "GET":
+        try:
+            data, pagination = get_repayments(
+                actor=actor,
+                loan_account_id=loan_account_id,
+                query_params=request.GET,
+            )
+            return list_response(data, pagination, request)
+        except LoanServicingReadValidation as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Repayment query failed validation.",
+                exc.field_errors,
+            )
+        except LoanAccountReadPermissionDenied:
+            return error_response(
+                request, 403, "FORBIDDEN", "Loan account read permission is required."
+            )
+        except LoanServicingReadNotFound:
+            return error_response(
+                request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
+            )
     try:
         payload = parse_json_body(request)
         capture = (
