@@ -2,7 +2,7 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
@@ -81,6 +81,44 @@ def get_current_for_loan(*, actor, loan_account_id):
     if row is None:
         raise DpdNotFound
     return serialize_dpd_status(row)
+
+
+def current_portfolio_projection(*, actor):
+    _require_permission(actor, READ_PERMISSION)
+    scoped = _scoped_accounts(actor)
+    rows = list(
+        DpdStatus.objects.select_related("loan_account__member")
+        .filter(
+            loan_account__in=scoped,
+            loan_account__current_dpd_status_id=F("dpd_status_id"),
+        )
+        .order_by("loan_account__loan_account_number", "dpd_status_id")
+    )
+    bucket_counts = {
+        "current": 0,
+        "one_to_two_years": 0,
+        "two_to_three_years": 0,
+        "more_than_three_years": 0,
+    }
+    projected = []
+    for row in rows:
+        bucket_counts[row.sop_bucket] += 1
+        projected.append(
+            {
+                **serialize_dpd_status(row),
+                "loan_account_number": row.loan_account.loan_account_number,
+                "member_display_name": row.loan_account.member.display_name,
+                "loan_account_status": row.loan_account.loan_account_status,
+                "principal_outstanding": f"{row.loan_account.principal_outstanding:.2f}",
+                "interest_outstanding": f"{row.loan_account.interest_outstanding:.2f}",
+                "repayment_date": row.loan_account.repayment_date.isoformat(),
+            }
+        )
+    return {
+        "sop_bucket_counts": bucket_counts,
+        "total_count": len(projected),
+        "rows": projected,
+    }
 
 
 def current_reminder_eligibility_decision(*, actor, loan_account_id):
@@ -528,6 +566,7 @@ __all__ = [
     "DpdPermissionDenied",
     "DpdValidation",
     "calculate_for_loan",
+    "current_portfolio_projection",
     "calculate_portfolio",
     "current_reminder_eligibility_decision",
     "get_current_for_loan",

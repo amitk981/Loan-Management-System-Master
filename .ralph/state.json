@@ -311,14 +311,15 @@
     "010K2-loan-ledger-statements-and-export",
     "010L-member-portal-repayment-view",
     "010MA-servicing-account-and-repayment-frontend-wiring",
-    "CR-015-epic-010-terminal-servicing-owner-finalizer"
+    "CR-015-epic-010-terminal-servicing-owner-finalizer",
+    "010MB-interest-and-monitoring-frontend-wiring"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-21_154238_repair",
+  "last_run_id": "2026-07-21_171151_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

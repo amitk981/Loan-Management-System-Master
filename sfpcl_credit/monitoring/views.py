@@ -10,6 +10,7 @@ from sfpcl_credit.monitoring.modules.dpd_monitoring import (
     DpdValidation,
     calculate_for_loan,
     calculate_portfolio,
+    current_portfolio_projection,
     get_current_for_loan,
 )
 from sfpcl_credit.monitoring.modules.reminder_engine import (
@@ -187,6 +188,19 @@ def dpd_status(request, loan_account_id):
         )
 
 
+@require_http_methods(["GET"])
+def dpd_portfolio(request):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(current_portfolio_projection(actor=actor), request)
+    except DpdPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "DPD read permission and loan scope are required."
+        )
+
+
 @require_http_methods(["POST"])
 def dpd_calculate(request, loan_account_id):
     actor, response = http_auth.authenticated_user(request)
@@ -275,12 +289,15 @@ def reminder_quarter_end_run(request):
         return error_response(request, 409, "CONFLICT", str(exc))
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def reminder_collection(request, loan_account_id):
     actor, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
     try:
+        if request.method == "GET":
+            rows, pagination = ReminderEngine.list_for_loan(actor=actor, loan_account_id=loan_account_id, query_params=request.GET)
+            return list_response(rows, pagination, request)
         return success_response(
             ReminderEngine.create_reminder(
                 actor=actor,
@@ -301,7 +318,7 @@ def reminder_collection(request, loan_account_id):
         )
     except ReminderPermissionDenied:
         return error_response(
-            request, 403, "FORBIDDEN", "Reminder permission and loan scope are required."
+            request, 403, "FORBIDDEN", "Reminder read/create permission and loan scope are required."
         )
     except ReminderNotFound:
         return error_response(
@@ -309,6 +326,20 @@ def reminder_collection(request, loan_account_id):
         )
     except ReminderConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["GET"])
+def reminder_list(request):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        rows, pagination = ReminderEngine.list_scoped(actor=actor, query_params=request.GET)
+        return list_response(rows, pagination, request)
+    except ReminderValidation as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Reminder list failed validation.", exc.field_errors)
+    except ReminderPermissionDenied:
+        return error_response(request, 403, "FORBIDDEN", "Reminder read permission and loan scope are required.")
 
 
 @require_http_methods(["POST"])

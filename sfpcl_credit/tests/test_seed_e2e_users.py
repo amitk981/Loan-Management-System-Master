@@ -161,6 +161,10 @@ class SeedE2eUsersTests(TestCase):
                 "finance.repayment.mark_sap_posted",
                 "finance.repayment.allocate",
                 "finance.bank_statement.read",
+                "finance.interest_invoice.create",
+                "finance.accrual.bulk_generate",
+                "finance.interest_capitalise",
+                "monitoring.dpd.read",
             }.issubset(manager_permissions)
         )
 

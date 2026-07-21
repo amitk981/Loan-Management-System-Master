@@ -135,6 +135,47 @@ class DpdMonitoringApiTests(TestCase):
         )
         self.assertEqual(denied_read.status_code, 403, denied_read.content)
 
+    def test_portfolio_read_returns_backend_bucket_counts_and_scoped_rows(self):
+        from sfpcl_credit.loans.models import RepaymentSchedule
+
+        RepaymentSchedule.objects.create(
+            loan_account=self.account,
+            installment_number=1,
+            due_date=date(2025, 6, 29),
+            principal_due="1000.00",
+            interest_due="100.00",
+            charges_due="0.00",
+            total_due="1100.00",
+            schedule_status="pending",
+        )
+        calculated = self._post_calculation("2026-06-30")
+        self.assertEqual(calculated.status_code, 200, calculated.content)
+
+        response = self.client.get("/api/v1/dpd-statuses/", **self.auth)
+
+        self.assertEqual(response.status_code, 200, response.content)
+        data = response.json()["data"]
+        self.assertEqual(
+            data["sop_bucket_counts"],
+            {
+                "current": 0,
+                "one_to_two_years": 1,
+                "two_to_three_years": 0,
+                "more_than_three_years": 0,
+            },
+        )
+        self.assertEqual(data["total_count"], 1)
+        self.assertEqual(data["rows"][0]["loan_account_number"], self.account.loan_account_number)
+        self.assertEqual(data["rows"][0]["member_display_name"], self.account.member.display_name)
+        self.assertEqual(data["rows"][0]["total_overdue_amount"], "1100.00")
+
+        from sfpcl_credit.identity.models import Permission, RolePermission
+
+        permission = Permission.objects.get(permission_code="monitoring.dpd.read")
+        RolePermission.objects.filter(role=self.actor.primary_role, permission=permission).delete()
+        denied = self.client.get("/api/v1/dpd-statuses/", **self.auth)
+        self.assertEqual(denied.status_code, 403, denied.content)
+
     def test_bounded_active_portfolio_reports_each_outcome(self):
         from django.db import connection
 

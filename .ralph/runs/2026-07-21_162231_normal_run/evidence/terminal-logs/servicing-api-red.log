@@ -1,0 +1,65 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/servicingApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_162231_normal_run/sfpcl-lms
+
+ ❯ src/services/servicingApi.test.ts (7 tests | 3 failed) 9ms
+   × servicing API module > uses exact canonical permissions for interest mutations 4ms
+     → canGenerateAccrual is not a function
+   × servicing API module > reads canonical interest and monitoring projections without client calculations 1ms
+     → fetchInterestInvoices is not a function
+   × servicing API module > sends one caller-stable key for each canonical interest mutation 1ms
+     → generateInterestInvoice is not a function
+   ✓ servicing API module > requires an active source role as well as every combined-action permission 1ms
+   ✓ servicing API module > reads schedule and ledger pages through authenticated standard pagination 1ms
+   ✓ servicing API module > delegates capture, SAP posting, and allocation to one backend-owned command 1ms
+   ✓ servicing API module > stops an exact capture replay before a second SAP or allocation mutation 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > uses exact canonical permissions for interest mutations
+TypeError: canGenerateAccrual is not a function
+ ❯ src/services/servicingApi.test.ts:39:12
+     37| describe('servicing API module', () => {
+     38|   it('uses exact canonical permissions for interest mutations', () => {
+     39|     expect(canGenerateAccrual(['finance.accrual.bulk_generate'])).toBe…
+       |            ^
+     40|     expect(canGenerateAccrual(['finance.accrual.create'])).toBe(false);
+     41|     expect(canCapitaliseInterest(['finance.interest_capitalise'])).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > reads canonical interest and monitoring projections without client calculations
+TypeError: fetchInterestInvoices is not a function
+ ❯ src/services/servicingApi.test.ts:52:18
+     50|     vi.stubGlobal('fetch', fetchMock);
+     51| 
+     52|     await expect(fetchInterestInvoices()).resolves.toMatchObject({ ite…
+       |                  ^
+     53|     await expect(fetchDpdPortfolio()).resolves.toEqual(dpdPortfolio);
+     54|     await expect(fetchLoanReminders('account-1')).resolves.toEqual([re…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/services/servicingApi.test.ts > servicing API module > sends one caller-stable key for each canonical interest mutation
+TypeError: generateInterestInvoice is not a function
+ ❯ src/services/servicingApi.test.ts:70:11
+     68|     vi.stubGlobal('fetch', fetchMock);
+     69| 
+     70|     await generateInterestInvoice('account-1', 'FY2026-27', 'invoice-k…
+       |           ^
+     71|     await runInterestAccrual('2026-06', ['account-1'], 'accrual-key');
+     72|     await previewInterestCapitalisations('FY2026-27', '2027-05-01');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 4 passed (7)
+   Start at  16:32:17
+   Duration  588ms (transform 90ms, setup 0ms, collect 91ms, tests 9ms, environment 0ms, prepare 38ms)
+
+EXIT_CODE=1

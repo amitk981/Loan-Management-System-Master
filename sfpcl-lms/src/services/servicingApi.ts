@@ -195,4 +195,180 @@ export const postAndAllocateDirectRepayment = async (
   );
 };
 
+export interface InterestInvoiceProjection {
+  interest_invoice_id: string;
+  loan_account_id: string;
+  member_id: string;
+  financial_year: string;
+  invoice_number: string;
+  invoice_date: string;
+  interest_period_start: string;
+  interest_period_end: string;
+  principal_base_amount: Money;
+  interest_rate: string;
+  gross_interest_amount: Money;
+  interest_paid_amount: Money;
+  tax_amount: Money;
+  fixed_fee_amount: Money;
+  interest_amount: Money;
+  invoice_status: string;
+  rate_version_number: number;
+  calculation_version: string;
+  document_id: string | null;
+  communication_id: string | null;
+  delivery_status: string | null;
+  generated_by_user_id: string;
+  generated_at: string;
+  issued_by_user_id: string | null;
+  issued_at: string | null;
+}
+
+export interface AccrualProjection {
+  accrual_entry_id: string;
+  loan_account_id: string;
+  accrual_month: string;
+  principal_base_amount: Money;
+  interest_rate: string;
+  calculation_days: number;
+  day_count_basis: string;
+  interest_accrued_amount: Money;
+  sap_posting_status: string;
+  generated_at: string;
+}
+
+export interface AccrualRunProjection {
+  accrual_month: string;
+  dry_run: boolean;
+  results: Array<{
+    loan_account_id: string;
+    outcome: string;
+    persisted: boolean;
+    reason?: string;
+    interest_accrued_amount?: Money;
+  }>;
+}
+
+export interface CapitalisationPreviewRow {
+  loan_account_id: string;
+  eligible: boolean;
+  reason_code: string;
+  old_principal_amount: Money;
+  unpaid_interest_amount: Money;
+  new_principal_amount: Money;
+}
+
+export interface CapitalisationPreview {
+  financial_year: string;
+  as_of_date: string;
+  dry_run: true;
+  results: CapitalisationPreviewRow[];
+}
+
+export interface InterestCapitalisationProjection {
+  interest_capitalisation_id: string;
+  loan_account_id: string;
+  financial_year: string;
+  old_principal_amount: Money;
+  unpaid_interest_amount: Money;
+  new_principal_amount: Money;
+  status: string;
+  borrower_intimation?: { email_delivery_status: string; letter_document_id: string };
+}
+
+export interface DpdPortfolioRow {
+  dpd_status_id: string;
+  loan_account_id: string;
+  loan_account_number: string;
+  member_display_name: string;
+  loan_account_status: string;
+  principal_outstanding: Money;
+  interest_outstanding: Money;
+  repayment_date: string;
+  as_of_date: string;
+  days_past_due: number;
+  sop_bucket: string;
+  standard_bucket: string | null;
+  principal_overdue_amount: Money;
+  interest_overdue_amount: Money;
+  total_overdue_amount: Money;
+}
+
+export interface DpdPortfolioProjection {
+  sop_bucket_counts: Record<'current' | 'one_to_two_years' | 'two_to_three_years' | 'more_than_three_years', number>;
+  total_count: number;
+  rows: DpdPortfolioRow[];
+}
+
+export interface ReminderProjection {
+  reminder_id: string;
+  loan_account_id: string;
+  member_id: string;
+  quarter_end_date: string;
+  eligibility_decision: { eligible: boolean; reason: string };
+  reminder_type: string;
+  origin: string;
+  channel: string;
+  delivery_status: string;
+  status_reason: string | null;
+  next_follow_up_date: string | null;
+  call_outcome: string | null;
+  created_by: { user_id: string; display_name: string };
+  created_at: string;
+}
+
+export const canGenerateInvoice = (permissions: string[]) =>
+  permissions.includes('finance.interest_invoice.create');
+export const canGenerateAccrual = (permissions: string[]) =>
+  permissions.includes('finance.accrual.bulk_generate');
+export const canCapitaliseInterest = (permissions: string[]) =>
+  permissions.includes('finance.interest_capitalise');
+
+export const fetchInterestInvoices = (page = 1, pageSize = 100) =>
+  authenticatedPaginatedRequest<InterestInvoiceProjection>(
+    `/api/v1/interest-invoices/?page=${page}&page_size=${pageSize}`,
+  );
+
+export const generateInterestInvoice = (
+  loanAccountId: string, financialYear: string, idempotencyKey: string,
+) => authenticatedRequest<InterestInvoiceProjection>(
+  `/api/v1/loan-accounts/${loanAccountId}/interest-invoices/`,
+  { method: 'POST', body: { financial_year: financialYear }, headers: { 'Idempotency-Key': idempotencyKey } },
+);
+
+export const runInterestAccrual = (
+  accrualMonth: string, loanAccountIds: string[], idempotencyKey: string,
+) => authenticatedRequest<AccrualRunProjection>('/api/v1/accrual-entries/bulk-generate/', {
+  method: 'POST',
+  body: { accrual_month: accrualMonth, dry_run: false, loan_account_ids: loanAccountIds },
+  headers: { 'Idempotency-Key': idempotencyKey },
+});
+
+export const previewInterestCapitalisations = (financialYear: string, asOfDate: string) =>
+  authenticatedRequest<CapitalisationPreview>('/api/v1/interest-capitalisations/check/', {
+    method: 'POST', body: { financial_year: financialYear, as_of_date: asOfDate, dry_run: true },
+  });
+
+export const capitaliseInterest = (
+  loanAccountId: string, financialYear: string, capitalisationDate: string, idempotencyKey: string,
+) => authenticatedRequest<InterestCapitalisationProjection>(
+  `/api/v1/loan-accounts/${loanAccountId}/interest-capitalisations/`,
+  { method: 'POST', body: { financial_year: financialYear, capitalisation_date: capitalisationDate }, headers: { 'Idempotency-Key': idempotencyKey } },
+);
+
+export const fetchDpdPortfolio = () =>
+  authenticatedRequest<DpdPortfolioProjection>('/api/v1/dpd-statuses/');
+
+export const fetchReminders = async () => {
+  const rows: ReminderProjection[] = [];
+  let page = 1;
+  let hasNext = true;
+  while (hasNext) {
+    const result = await authenticatedPaginatedRequest<ReminderProjection>(`/api/v1/reminders/?page=${page}&page_size=100`);
+    rows.push(...result.items);
+    hasNext = result.pagination.has_next;
+    page += 1;
+  }
+  return rows;
+};
+
 export type ServicingPage<T> = PaginatedResult<T>;

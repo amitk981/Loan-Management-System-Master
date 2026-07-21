@@ -1,0 +1,59 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_162231_normal_run/.ralph/runs/2026-07-21_171151_repair/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/servicing-monitoring-workflows.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/servicing-monitoring-workflows.e2e.spec.ts
+
+[2m[WebServer] [22m[21/Jul/2026 11:51:44] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 4 tests using 1 worker
+
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "GET /api/v1/auth/me/ HTTP/1.1" 200 3256
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[21/Jul/2026 11:51:51] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+  ✓  1 [chromium] › servicing-monitoring-workflows.e2e.spec.ts:13:5 › S43 and S46 render canonical schedule and ledger projections (11.4s)
+[2m[WebServer] [22m[21/Jul/2026 11:52:02] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:03] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[21/Jul/2026 11:52:03] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:03] "GET /api/v1/auth/me/ HTTP/1.1" 200 3256
+[2m[WebServer] [22m[21/Jul/2026 11:52:03] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:03] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:03] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[21/Jul/2026 11:52:03] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+  ✓  2 [chromium] › servicing-monitoring-workflows.e2e.spec.ts:27:5 › S44 posts one direct receipt and displays the backend allocation (7.7s)
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "GET /api/v1/auth/me/ HTTP/1.1" 200 3256
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[21/Jul/2026 11:52:07] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+  ✓  3 [chromium] › servicing-monitoring-workflows.e2e.spec.ts:48:5 › S47-S49 render canonical interest values (2.6s)
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "GET /api/v1/auth/me/ HTTP/1.1" 200 3256
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[21/Jul/2026 11:52:11] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+  ✓  4 [chromium] › servicing-monitoring-workflows.e2e.spec.ts:60:5 › S50-S52 render canonical DPD and retained reminder evidence (4.0s)
+
+  Slow test file: [chromium] › servicing-monitoring-workflows.e2e.spec.ts (25.7s)
+  Consider splitting slow test files to speed up parallel execution
+  4 passed (1.2m)
+
+Duration milliseconds: 72110
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_162231_normal_run/.ralph/runs/2026-07-21_171151_repair/evidence/trusted-browser-screenshots-1.sha256

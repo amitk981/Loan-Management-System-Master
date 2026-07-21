@@ -55,6 +55,8 @@ EPIC_006_MANAGER_PERMISSIONS = (
     "finance.loan_account.read", "finance.repayment.create",
     "finance.repayment.mark_sap_posted", "finance.repayment.allocate",
     "finance.bank_statement.read",
+    "finance.interest_invoice.create", "finance.accrual.bulk_generate",
+    "finance.interest_capitalise", "monitoring.dpd.read",
 )
 EPIC_006_DOCUMENT_TYPES = (
     "loan_application_form", "borrower_pan", "borrower_aadhaar_ovd",

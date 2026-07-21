@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from './authSession';
 import {
+  capitaliseInterest,
+  canCapitaliseInterest,
+  canGenerateAccrual,
+  fetchDpdPortfolio,
+  fetchInterestInvoices,
+  fetchReminders,
+  generateInterestInvoice,
+  previewInterestCapitalisations,
+  runInterestAccrual,
   canPostAndAllocateRepayment,
   fetchLoanLedger,
   fetchRepaymentSchedule,
@@ -26,6 +35,57 @@ afterEach(() => {
 });
 
 describe('servicing API module', () => {
+  it('uses exact canonical permissions for interest mutations', () => {
+    expect(canGenerateAccrual(['finance.accrual.bulk_generate'])).toBe(true);
+    expect(canGenerateAccrual(['finance.accrual.create'])).toBe(false);
+    expect(canCapitaliseInterest(['finance.interest_capitalise'])).toBe(true);
+    expect(canCapitaliseInterest(['monitoring.dpd.read'])).toBe(false);
+  });
+
+  it('reads canonical interest and monitoring projections without client calculations', async () => {
+    const reminderPage = Array.from({ length: 100 }, (_, index) => ({ ...reminder, reminder_id: `reminder-${index + 1}` }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok([invoice], pagination))
+      .mockResolvedValueOnce(ok(dpdPortfolio))
+      .mockResolvedValueOnce(ok(reminderPage, { page: 1, page_size: 100, total_count: 101, total_pages: 2, has_next: true, has_previous: false }))
+      .mockResolvedValueOnce(ok([{ ...reminder, reminder_id: 'reminder-2' }], { page: 2, page_size: 100, total_count: 101, total_pages: 2, has_next: false, has_previous: true }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchInterestInvoices()).resolves.toMatchObject({ items: [invoice] });
+    await expect(fetchDpdPortfolio()).resolves.toEqual(dpdPortfolio);
+    await expect(fetchReminders()).resolves.toEqual([...reminderPage, { ...reminder, reminder_id: 'reminder-2' }]);
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://127.0.0.1:8000/api/v1/interest-invoices/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/dpd-statuses/',
+      'http://127.0.0.1:8000/api/v1/reminders/?page=1&page_size=100',
+      'http://127.0.0.1:8000/api/v1/reminders/?page=2&page_size=100',
+    ]);
+  });
+
+  it('sends one caller-stable key for each canonical interest mutation', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(invoice))
+      .mockResolvedValueOnce(ok(accrualRun))
+      .mockResolvedValueOnce(ok(capitalisationPreview))
+      .mockResolvedValueOnce(ok(capitalisation));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await generateInterestInvoice('account-1', 'FY2026-27', 'invoice-key');
+    await runInterestAccrual('2026-06', ['account-1'], 'accrual-key');
+    await previewInterestCapitalisations('FY2026-27', '2027-05-01');
+    await capitaliseInterest('account-1', 'FY2026-27', '2027-05-01', 'capital-key');
+
+    expect(fetchMock.mock.calls.map(call => [call[0], call[1]?.headers?.['Idempotency-Key']])).toEqual([
+      ['http://127.0.0.1:8000/api/v1/loan-accounts/account-1/interest-invoices/', 'invoice-key'],
+      ['http://127.0.0.1:8000/api/v1/accrual-entries/bulk-generate/', 'accrual-key'],
+      ['http://127.0.0.1:8000/api/v1/interest-capitalisations/check/', undefined],
+      ['http://127.0.0.1:8000/api/v1/loan-accounts/account-1/interest-capitalisations/', 'capital-key'],
+    ]);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      accrual_month: '2026-06', dry_run: false, loan_account_ids: ['account-1'],
+    });
+  });
+
   it('requires an active source role as well as every combined-action permission', () => {
     const permissions = [
       'finance.repayment.create', 'finance.repayment.mark_sap_posted',
@@ -120,6 +180,12 @@ const scheduleRow = { repayment_schedule_id: 'schedule-1', installment_number: 1
 const ledgerRow = { transaction_date: '2026-12-04', transaction_type: 'repayment', owner_reference: { entity_type: 'repayment_allocation', entity_id: 'allocation-1' }, reference: 'UTR-001', debit: '0.00', credit: '100000.00', principal_balance: '300000.00', interest_balance: '0.00', total_outstanding: '300000.00', actor: { user_id: 'user-1', display_name: 'Accounts User' }, sap_status: 'posted', remarks: 'Repayment allocated principal first.' };
 const capture = { repayment_id: 'repayment-1', loan_account_id: 'account-1', repayment_source: 'direct_farmer', amount_received: '100000.00', received_date: '2026-12-04', payment_method: 'rtgs', bank_reference_number: 'UTR-001', bank_statement_line_id: null, statement_match_status: 'not_linked', allocation_status: 'pending', sap_posting: { status: 'pending', due_date: '2026-12-07', sap_entry_reference: null, posted_at: null } };
 const allocation = { repayment_allocation_id: 'allocation-1', repayment_id: 'repayment-1', allocation_rule: 'principal_first', allocation_rule_version: 'v1', allocation_status: 'allocated', allocated_to_principal: '100000.00', allocated_to_interest: '0.00', allocated_to_charges: '0.00', unallocated_amount: '0.00', exception_reason: null, loan_account: { principal_outstanding: '300000.00', interest_outstanding: '0.00', charges_outstanding: '0.00', total_outstanding: '300000.00' } };
+const invoice = { interest_invoice_id: 'invoice-1', loan_account_id: 'account-1', member_id: 'member-1', financial_year: 'FY2026-27', invoice_number: 'INV-001', invoice_date: '2027-03-31', interest_period_start: '2026-04-01', interest_period_end: '2027-03-31', principal_base_amount: '300000.00', interest_rate: '9.2500', gross_interest_amount: '27750.00', interest_paid_amount: '0.00', tax_amount: '0.00', fixed_fee_amount: '0.00', interest_amount: '27750.00', invoice_status: 'issued', rate_version_number: 3, calculation_version: 'INT-1', document_id: 'document-1', communication_id: 'communication-1', delivery_status: 'sent', generated_by_user_id: 'user-1', generated_at: '2027-04-01T10:00:00Z', issued_by_user_id: 'user-1', issued_at: '2027-04-01T11:00:00Z' };
+const accrualRun = { accrual_month: '2026-06', dry_run: false, results: [{ loan_account_id: 'account-1', outcome: 'created', persisted: true, interest_accrued_amount: '2312.50' }] };
+const capitalisationPreview = { financial_year: 'FY2026-27', as_of_date: '2027-05-01', dry_run: true, results: [{ loan_account_id: 'account-1', eligible: true, reason_code: 'eligible_unpaid_interest', old_principal_amount: '300000.00', unpaid_interest_amount: '27750.00', new_principal_amount: '327750.00' }] };
+const capitalisation = { interest_capitalisation_id: 'capital-1', loan_account_id: 'account-1', financial_year: 'FY2026-27', old_principal_amount: '300000.00', unpaid_interest_amount: '27750.00', new_principal_amount: '327750.00', status: 'capitalised' };
+const dpdPortfolio = { sop_bucket_counts: { current: 0, one_to_two_years: 1, two_to_three_years: 0, more_than_three_years: 0 }, total_count: 1, rows: [{ dpd_status_id: 'dpd-1', loan_account_id: 'account-1', loan_account_number: 'LN-001', member_display_name: 'Canonical Member', as_of_date: '2026-06-30', days_past_due: 367, sop_bucket: 'one_to_two_years', standard_bucket: 'over_90', principal_overdue_amount: '1000.00', interest_overdue_amount: '100.00', total_overdue_amount: '1100.00' }] };
+const reminder = { reminder_id: 'reminder-1', loan_account_id: 'account-1', member_id: 'member-1', quarter_end_date: '2026-06-30', eligibility_decision: { eligible: true, reason: 'outstanding_beyond_one_year' }, reminder_type: 'outstanding_beyond_one_year', origin: 'automatic', channel: 'sms', delivery_status: 'sent', status_reason: null, next_follow_up_date: '2026-07-07', call_outcome: null, created_by: { user_id: 'user-1', display_name: 'Credit Manager' }, created_at: '2026-06-30T10:00:00Z' };
 
 function ok(data: unknown, page?: typeof pagination): Response {
   return { ok: true, status: 200, json: async () => ({ success: true, data, pagination: page }) } as Response;

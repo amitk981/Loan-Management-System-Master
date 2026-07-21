@@ -238,6 +238,19 @@ class ReminderQueueApiTests(TestCase):
             **self.auth,
         )
         self.assertEqual(second.status_code, 200, second.content)
+
+        self.account.current_dpd_status = None
+        self.account.save(update_fields=["current_dpd_status"])
+        listed = self.client.get("/api/v1/reminders/", **self.auth)
+        self.assertEqual(listed.status_code, 200, listed.content)
+        reminders = listed.json()["data"]
+        self.assertEqual(listed.json()["pagination"]["total_count"], 2)
+        self.assertEqual(len(reminders), 2)
+        self.assertEqual(reminders[0]["delivery_status"], "call_logged")
+        self.assertEqual(reminders[0]["next_follow_up_date"], "2026-07-14")
+        self.assertEqual(reminders[0]["call_outcome"], "Borrower requested another follow-up.")
+        self.assertNotIn("message_body", reminders[0])
+        self.assertNotIn("contacted_person", reminders[0])
         self.assertEqual(Reminder.objects.count(), 2)
         self.assertEqual(Communication.objects.count(), before)
 

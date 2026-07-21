@@ -1,0 +1,17 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl-lms/e2e/servicing-monitoring-workflows.e2e.spec.ts
+ M sfpcl-lms/src/pages/interest/InterestManagement.tsx
+ M sfpcl-lms/src/pages/monitoring/MonitoringDashboard.tsx
+ M sfpcl-lms/src/services/servicingApi.test.ts
+ M sfpcl-lms/src/services/servicingApi.ts
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/management/commands/seed_e2e_users.py
+ M sfpcl_credit/monitoring/modules/dpd_monitoring.py
+ M sfpcl_credit/monitoring/modules/reminder_engine.py
+ M sfpcl_credit/monitoring/views.py
+ M sfpcl_credit/tests/test_dpd_monitoring_api.py
+ M sfpcl_credit/tests/test_reminder_queue_api.py
+ M sfpcl_credit/tests/test_seed_e2e_users.py
+?? .ralph/runs/2026-07-21_162231_normal_run/
+?? .ralph/runs/2026-07-21_171151_repair/
+?? sfpcl-lms/src/pages/servicing/

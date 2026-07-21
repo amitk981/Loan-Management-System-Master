@@ -1,0 +1,14 @@
+Review result:
+## Result
+Ready for independent validation
+Changed-line forecast:
+1259
+      63 sfpcl-lms/src/pages/servicing/InterestMonitoringWorkspaces.test.tsx
+Protected-path audit:
+No protected files changed.
+Final evidence exit codes:
+EXIT_CODE=0
+EXIT_CODE=0
+EXIT_CODE=0
+EXIT_CODE=0
+EXIT_CODE=0

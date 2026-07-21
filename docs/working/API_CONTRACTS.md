@@ -4820,6 +4820,11 @@ calculated as-of date) snapshot. Missing authentication returns `401`, missing p
 `403`, inaccessible/missing account or snapshot returns `404`, malformed input returns `400`, and
 inactive loan or ambiguous operational policy returns `409`.
 
+`GET /api/v1/dpd-statuses/` requires the same read permission and returns the caller's scoped current
+DPD rows plus backend-owned SOP bucket counts. Rows add safe loan number, member display name,
+account status, canonical outstanding balances, and repayment date for the staff dashboard. Only
+the loan's protected current DPD pointer contributes; the browser never reclassifies or aggregates.
+
 `POST /api/v1/dpd-statuses/bulk-calculate/` accepts exactly `as_of_date`, unique
 `loan_account_ids` (maximum 100), and boolean `include_all_active_loans`. Callers select either one
 or more ids or their bounded scoped active portfolio, never both. It requires
@@ -4886,6 +4891,14 @@ body cannot override the approved rendered template. Phone accepts reminder type
 bounded message and call outcome, contacted person (`borrower`, `nominee`, or `representative`), an
 ISO next-follow-up date on/after quarter end, and `send_now: false`. Phone logs store actor/time and
 audit evidence but create no communication or provider row.
+
+`GET /api/v1/loan-accounts/{loan_account_id}/reminders/?page=1&page_size=20` requires `monitoring.dpd.read` and
+canonical loan-object scope. It returns retained eligibility, channel, delivery, safe status reason,
+call outcome, next follow-up, actor display, and timestamps in the standard paginated envelope. It never returns recipient, contacted
+person, rendered message body, template content, or provider-sensitive evidence.
+
+`GET /api/v1/reminders/?page=1&page_size=20` returns the same safe retained projection across every
+loan in the caller's canonical object scope, including historical reminders whose loan has no current DPD pointer.
 
 `POST /api/v1/reminders/{reminder_id}/send/` accepts an empty body and required nonblank
 `Idempotency-Key`. It rechecks permission, account scope, the DPD owner's current serviceability,

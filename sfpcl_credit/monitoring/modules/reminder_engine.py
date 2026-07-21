@@ -29,6 +29,7 @@ from sfpcl_credit.monitoring.modules.dpd_monitoring import (
 
 
 CREATE_PERMISSION = "monitoring.reminder.create"
+READ_PERMISSION = "monitoring.dpd.read"
 RUN_LIMIT = 100
 SERVICEABLE_STATUSES = {
     "active",
@@ -58,6 +59,23 @@ class ReminderConflict(Exception):
 
 
 class ReminderEngine:
+    @classmethod
+    def list_scoped(cls, *, actor, query_params):
+        if not actor.can_authenticate() or READ_PERMISSION not in auth_service.effective_permission_codes(actor):
+            raise ReminderPermissionDenied
+        return _paginated_reminders(Reminder.objects.filter(loan_account__in=_scoped_accounts(actor)), query_params)
+
+    @classmethod
+    def list_for_loan(cls, *, actor, loan_account_id, query_params):
+        if (
+            not actor.can_authenticate()
+            or READ_PERMISSION not in auth_service.effective_permission_codes(actor)
+        ):
+            raise ReminderPermissionDenied
+        account = _scoped_accounts(actor).filter(pk=loan_account_id).first()
+        if account is None:
+            raise ReminderNotFound
+        return _paginated_reminders(Reminder.objects.filter(loan_account=account), query_params)
     @classmethod
     def execute_owned_delivery(
         cls, *, communication_job_id, worker_effect
@@ -738,3 +756,27 @@ def serialize_reminder(row):
         "next_follow_up_date": row.next_follow_up_date.isoformat() if row.next_follow_up_date else None,
         "created_at": row.created_at.isoformat(),
     }
+
+
+def serialize_reminder_read(row):
+    return {
+        **serialize_reminder(row),
+        "call_outcome": row.call_outcome or None,
+        "created_by": {
+            "user_id": str(row.created_by_user_id),
+            "display_name": row.created_by_user.full_name,
+        },
+    }
+
+
+def _paginated_reminders(queryset, query_params):
+    try:
+        page, page_size = int(query_params.get("page", 1)), int(query_params.get("page_size", 20))
+    except (TypeError, ValueError):
+        raise ReminderValidation({"pagination": "Page and page_size must be integers."})
+    if set(query_params) - {"page", "page_size"} or page < 1 or not 1 <= page_size <= 100:
+        raise ReminderValidation({"pagination": "Use page >= 1 and page_size between 1 and 100."})
+    queryset = queryset.select_related("created_by_user").order_by("-created_at", "-reminder_id")
+    total_count, start = queryset.count(), (page - 1) * page_size
+    total_pages = max(1, (total_count + page_size - 1) // page_size)
+    return [serialize_reminder_read(row) for row in queryset[start:start + page_size]], {"page": page, "page_size": page_size, "total_count": total_count, "total_pages": total_pages, "has_next": page < total_pages, "has_previous": page > 1}

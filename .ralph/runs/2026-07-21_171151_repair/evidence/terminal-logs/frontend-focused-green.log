@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/repayments/RepaymentsHub.test.tsx src/pages/servicing/InterestMonitoringWorkspaces.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_162231_normal_run/sfpcl-lms
+
+ ✓ src/pages/servicing/InterestMonitoringWorkspaces.test.tsx (3 tests) 189ms
+ ✓ src/pages/repayments/RepaymentsHub.test.tsx (9 tests) 896ms
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  17:18:37
+   Duration  1.84s (transform 248ms, setup 0ms, collect 650ms, tests 1.08s, environment 737ms, prepare 104ms)
+

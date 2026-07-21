@@ -73,6 +73,7 @@ urlpatterns = [
         monitoring_views.reminder_quarter_end_run,
         name="reminder-quarter-end-run",
     ),
+    path("api/v1/reminders/", monitoring_views.reminder_list, name="reminder-list"),
     path(
         "api/v1/loan-accounts/<uuid:loan_account_id>/reminders/",
         monitoring_views.reminder_collection,
@@ -82,6 +83,11 @@ urlpatterns = [
         "api/v1/reminders/<uuid:reminder_id>/send/",
         monitoring_views.reminder_send,
         name="reminder-send",
+    ),
+    path(
+        "api/v1/dpd-statuses/",
+        monitoring_views.dpd_portfolio,
+        name="dpd-status-portfolio",
     ),
     path(
         "api/v1/dpd-statuses/bulk-calculate/",

@@ -1,0 +1,21 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+F
+======================================================================
+FAIL: test_seed_creates_idempotent_epic_006_browser_fixture (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_seed_creates_idempotent_epic_006_browser_fixture)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_162231_normal_run/sfpcl_credit/tests/test_seed_e2e_users.py", line 153, in test_seed_creates_idempotent_epic_006_browser_fixture
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.177s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...
+EXIT_CODE=1

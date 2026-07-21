@@ -1,0 +1,10 @@
+Using existing test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+----------------------------------------------------------------------
+Ran 2 tests in 1.208s
+
+OK
+Preserving test database for alias 'default'...
+EXIT_CODE=0

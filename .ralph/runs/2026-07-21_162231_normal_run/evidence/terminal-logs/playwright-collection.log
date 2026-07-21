@@ -1,0 +1,7 @@
+Listing tests:
+  [chromium] › servicing-monitoring-workflows.e2e.spec.ts:13:5 › S43 and S46 render canonical schedule and ledger projections
+  [chromium] › servicing-monitoring-workflows.e2e.spec.ts:27:5 › S44 posts one direct receipt and displays the backend allocation
+  [chromium] › servicing-monitoring-workflows.e2e.spec.ts:49:5 › S47-S49 render canonical interest values
+  [chromium] › servicing-monitoring-workflows.e2e.spec.ts:61:5 › S50-S52 render canonical DPD and retained reminder evidence
+Total: 4 tests in 1 file
+EXIT_CODE=0

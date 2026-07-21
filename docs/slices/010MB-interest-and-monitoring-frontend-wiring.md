@@ -1,7 +1,7 @@
 # Slice 010MB: Interest and Monitoring Frontend Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `010M`
