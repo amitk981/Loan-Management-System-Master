@@ -23,7 +23,7 @@ Accounts and authorised borrowers can download a stable statement whose rows and
 reconcile exactly with Loan Account 360.
 
 ## Depends On
-- 010K
+- 010K3
 
 ## Source References
 - `docs/source/screen-spec.md` S46, especially Actions and Controls

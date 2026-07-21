@@ -19,74 +19,89 @@ through 2026-07-18 is retained unchanged at
   eight completed slices. Any new Critical/High resets cadence to four. Epic boundaries always
   trigger a review.
 
+## AR-010-MIS-001 — quarterly MIS does not retain one authorised cutoff-owner decision
+
+Root: ROOT-010-MIS-AS-OF-OWNER
+
+Severity: High
+Disposition: New
+Reviewed boundary: `b7dbc27b...77bbe9c0` (010K)
+
+Generation and transition replays return retained report data before rechecking canonical portfolio
+scope; review replay also precedes the exact submitted-to-CFO check. A focused public API probe removes
+`finance.loan_account.read` after generation and the same-key request still returns the complete
+report with 200. Possession of an idempotency key is therefore acting as report authority.
+
+The report's as-of reconstruction directly prefetches private live repayment, interest, DPD,
+reminder, disbursement, and status models through separate READ COMMITTED queries. A reminder created
+after 30 June with a retained 30 June quarter date is counted in the 30 June snapshot, and equivalent
+live invoice/status or concurrent source mutations can mix historical states. Tests mutate balances
+only after a report is already frozen and race only duplicate report transitions, not source-owner
+changes or same-key transition replay. Grouped boundary corrective `010K3` owns current replay
+authority, immutable cutoff decisions, late-row exclusion, source-write races, and public owner
+fixtures together with the two related carried servicing roots.
+Reproducer: `.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/mis-owner.log`.
+
 ## AR-010-REMINDER-001 — reminder eligibility and delivery do not retain one serviceable decision
 
 Root: ROOT-010-REMINDER-DELIVERY-OWNER
 
 Severity: High
-Disposition: New
-Reviewed boundary: `016a3a89...b7e802ff` (010J)
+Disposition: Carried
+Reviewed boundary: `b7dbc27b...77bbe9c0` (010J2/010K)
 
-The quarter-end owner substitutes `days_past_due >= 365` for the source's “beyond one year” calendar
-decision. A 365-day leap-year span can therefore queue a borrower message before the first overdue
-anniversary. The retained reminder then depends on the Loan Account's latest DPD pointer rather than
-its own still-valid quarter evidence, while automatic provider execution does not own a final
-serviceability/outstanding check after queueing. A fully repaid or resolved loan can become stale
-between creation and the generic communications worker.
+010J2 closes calendar-anniversary eligibility, changed-key translation, retained quarter evidence,
+and per-row batch outcomes. The final check-to-provider boundary remains unprotected. The process
+coordinator commits `cancel_unserviceable_delivery` before the dispatcher claims and invokes the
+provider. A focused adapter probe makes repayment schedule truth fully paid at that boundary and the
+provider still runs, so the promised execution-time current owner decision is not atomic with send.
 
-The public send edge catches `ReminderConflict`, but the communications owner raises its own
-`CommunicationDispatchConflict` for a changed idempotency key. The review probe sends once, changes
-the key, and receives an uncaught exception instead of the binding zero-write 409. Bounded portfolio
-creation can also retain earlier queue rows before a later missing contact/template turns the whole
-request into one failure without honest per-loan outcomes. Corrective `010J2` groups calendar
-eligibility, execution-time serviceability, conflict translation, batch truth, and public
-communication seams under this delivery owner.
-Reproducer: `.ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/reminder-owner.log`.
+The monitoring owner also continues to import communications template/job models directly despite
+requirement 5's public-facade contract, and a quarter run silently slices the first 100 DPD candidates
+without continuation/truncation truth for later identities. `010K3` is this root's permitted ordinary
+successor (generation 2), grouping final provider authority, public communication evidence, and
+truthful 1/100/101 batch behavior with the common servicing as-of boundary.
+Reproducer: `.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/reminder-owner.log`.
 
 ## AR-010-DPD-001 — current DPD and historical policy evidence are not relationally bound
 
 Root: ROOT-010-DPD-SNAPSHOT-OWNER
 
 Severity: High
-Disposition: New
-Reviewed boundary: `016a3a89...b7e802ff` (010I)
+Disposition: Carried
+Reviewed boundary: `b7dbc27b...77bbe9c0` (010H3/010I2)
 
-Data-model §20.1 declares `loan_accounts.current_dpd_status_id` as a foreign key, but the Loan
-Account model and migration retain an unconstrained nullable UUID. A direct queryset update to an
-arbitrary UUID commits successfully, so current monitoring truth can dangle or point across loans;
-application lookups merely convert that data-integrity failure into missing current evidence.
+010I2 adds a real foreign key, validates legacy pointers, freezes policy bytes, and locks the source
+loan before calculation. Its same-loan database promise is one-sided: migration 0009 checks only
+Loan Account pointer writes. Direct SQL can reparent the referenced DPD snapshot to another valid
+loan while the original account retains its now-cross-loan pointer. Approved active operational
+schemes also remain updateable in place; the replay test performs that mutation instead of requiring
+a distinct approved amendment.
 
-The DPD owner also reaches private schedule/allocation models, updates the pointer after a scope
-decision made outside the protected write, and serializes the current live operational-scheme
-version on replay. It does not freeze the approved policy/version and exact source decision needed
-to reproduce a historical snapshot after configuration changes. Corrective `010I2` groups the
-relational pointer, additive backfill, frozen policy/input decision, public financial-owner reads,
-and current-pointer race semantics under one DPD snapshot owner.
-Reproducer: `.ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/dpd-owner.log`.
+The new H3→I2 reverse consumer is financially wrong as well. Interest capitalisation marks schedule
+interest paid and retains `InterestCapitalisationScheduleEvidence`, but the DPD source sums only
+repayment allocations/reversals. A focused public flow capitalises ₹37,000 and the next DPD snapshot
+reports the same ₹37,000 overdue again. `010K3` is this root's permitted ordinary successor
+(generation 2), grouping bidirectional relational integrity, immutable amendments, and the public
+capitalisation/repayment as-of source decision.
+Reproducer: `.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/dpd-owner.log`.
 
 ## AR-010-INTEREST-001 — interest calculation and replay do not retain one as-of financial decision
 
 Root: ROOT-010-INTEREST-CALCULATION-OWNER
 
 Severity: High
-Disposition: Carried
-Reviewed boundary: `016a3a89...600e9742` (010H2)
+Disposition: Closed
+Reviewed boundary: `b7dbc27b...af2ece48` (010H3)
 
-010H2 closes historical principal/rate segmentation, exact payment ownership through 30 April,
-tax/fee exclusion, hard-copy task evidence, and byte-stable replay. The stable financial root remains
-open at the approval and reclassification boundaries. An approved active
-`InterestInvoiceConfiguration` accepts an in-place day-count change before first consumption, even
-though AC-INT-6 requires approval-time immutability. The calculation decision also hard-codes
-per-segment `ROUND_HALF_UP` without a source or approved configuration rule for rounding mode and
-application boundary.
-
-Capitalisation can add the full unpaid invoice amount to principal while reducing account/schedule
-interest only by the available minimum. If those owners disagree, the operation can therefore
-commit an incoherent partial reclassification rather than failing with zero financial writes under
-AC-INT-4. The permitted grouped successor `010H3` owns approval-time policy immutability, configured
-rounding/fail-closed behavior, and exact invoice/account/schedule/payment reconciliation. The broad
-module split remains carried under the servicing-seam finding.
-Reproducer: `.ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/interest-owner.log`.
+010H3 freezes every approved calculation-policy mutation path, retains rounding mode/precision/
+whole-decision boundary, and fails closed when policy is absent. Capitalisation now requires exact
+invoice, account, schedule, ledger, payment, and principal-increment agreement before any financial
+or communication evidence commits. The focused closure run passes three policy tests and four
+independent mismatch/zero-write matrices. The distinct DPD failure to consume successful
+capitalisation evidence remains under `AR-010-DPD-001`; it does not reopen this calculation owner.
+Reproducer: `.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/interest-owner-reproducer.log`.
+Closure evidence: `.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/interest-owner-closure.log`.
 
 ## AR-010-ALLOCATION-001 — allocation admits unposted and unapproved financial effects
 
@@ -165,18 +180,15 @@ Root: ROOT-010-SERVICING-OWNER-SEAM
 
 Severity: Medium
 Disposition: Carried
-Reviewed boundary: `016a3a89...b7e802ff` (010E4–010J)
+Reviewed boundary: `b7dbc27b...77bbe9c0` (010H3–010K)
 
-010E4/010H2 add useful servicing builders and substantive owner assertions, but monitoring now
-directly imports private loan schedule/allocation and communication template/job models rather than
-public facades. DPD/reminder and PostgreSQL tests also instantiate other `TestCase` classes, call
-`setUp`, and traverse private helpers. That shared setup coupling helped the accepted reminder tests
-miss the communications changed-key exception visible at the public edge.
-
-The four High corrective slices must close the changed owner seams with public decisions and public
-fixtures. Complete removal of older interest/test coupling remains grouped into Epic 010 closure;
-this carried Medium does not create another leaf correction.
-Reproducer: `.ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/servicing-seam.log`.
+The changed tests still instantiate other `TestCase` classes and invoke `setUp`; even the new
+`build_interest_capitalisation_fixture` public wrapper hides that dependency. DPD, reminder, and MIS
+acceptance inherit the same coupled setups, while 010K directly imports private servicing models to
+reconstruct cross-owner truth. The concrete correctness symptoms are grouped into `010K3` under
+their three High roots. Older deep-ledger/test coupling remains Epic 010 closure debt, so this
+carried Medium creates no separate leaf.
+Reproducer: `.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/servicing-seam.log`.
 
 ## Targeted closure review 2026-07-19_193824_architecture_review — Epic 009 generation 2
 

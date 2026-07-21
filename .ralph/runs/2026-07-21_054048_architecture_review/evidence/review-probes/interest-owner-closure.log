@@ -1,0 +1,11 @@
+Finding ID: AR-010-INTEREST-001
+Root ID: ROOT-010-INTEREST-CALCULATION-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_interest_policy_integrity_closure.InterestPolicyIntegrityClosureTests sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_mismatched_account_interest_rejects_every_capitalisation_side_effect sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_mismatched_schedule_interest_rejects_every_capitalisation_side_effect sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_mismatched_interest_ledger_rejects_every_capitalisation_side_effect sfpcl_credit.tests.test_interest_capitalisation_api.InterestCapitalisationApiTests.test_mismatched_payment_owner_rejects_every_capitalisation_side_effect --noinput -v 1
+
+PASS: 7 tests ran in 3.066 seconds.
+PASS: approved-policy immutability/amendment, whole-decision rounding, missing-policy zero-write,
+and the four invoice/account/schedule/ledger/payment mismatch matrices all passed.
+PASS: Django system check reported no issues.
+Exit code: 0

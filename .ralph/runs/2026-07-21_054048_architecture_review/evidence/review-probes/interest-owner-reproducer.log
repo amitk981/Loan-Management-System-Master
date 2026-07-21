@@ -1,0 +1,16 @@
+Finding ID: AR-010-INTEREST-001
+Root ID: ROOT-010-INTEREST-CALCULATION-OWNER
+
+Retained RED command from architecture review 2026-07-20_194456:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/probes.py InterestConfigurationProbe
+
+FAIL: test_approved_configuration_is_immutable_before_first_consumption
+AssertionError: ValidationError not raised
+FAILED (failures=1)
+
+Exit code: 1
+Failing signal: an approved active calculation configuration accepted an in-place day-count change
+before first consumption, so approval did not freeze the financial rule it approved.
+
+Durable original evidence:
+.ralph/runs/2026-07-20_194456_architecture_review/evidence/review-probes/interest-owner.log

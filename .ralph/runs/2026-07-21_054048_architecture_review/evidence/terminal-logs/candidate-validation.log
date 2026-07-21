@@ -1,0 +1,29 @@
+Generated corrective candidate:
+docs/slices/010K3-servicing-as-of-owner-boundary-closure.md
+
+Runtime capability validator: PASS
+Trusted PostgreSQL declaration validator: PASS
+
+Commands:
+source scripts/lib/ralph-runtime-capabilities.sh
+source scripts/lib/ralph-postgresql-acceptance.sh
+ralph_validate_slice_runtime_requirements docs/slices/010K3-servicing-as-of-owner-boundary-closure.md
+ralph_validate_trusted_postgresql_acceptance docs/slices/010K3-servicing-as-of-owner-boundary-closure.md
+
+Exit code: 0
+
+Architecture-review semantic preflight:
+PASS: validated 5 stable finding manifest row(s).
+PASS: architecture review scope.
+PASS: manifest and metrics (closed=1 critical=0 high=1 medium=0 low=0 added=1).
+PASS: corrective count=1 existing mappings=0.
+PASS: convergence budget.
+PASS: runtime and PostgreSQL declarations.
+
+Exit code: 0
+
+Full-wrapper note:
+The agent-side `ralph-validate.sh` preflight stopped before semantic gates because `changed-files.txt`
+is intentionally absent and orchestrator-owned. The file was not created or edited. The trusted
+orchestrator will populate it before independent validation; the equivalent read-only semantic
+functions above pass on the frozen candidate.

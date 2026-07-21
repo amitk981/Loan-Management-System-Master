@@ -36,9 +36,10 @@ member self-service portal.
   correction and hosted staff/member acceptance.
 - Epic 010 servicing is active. Schedule/ledger reads, receipt capture and allocation, statement
   reconciliation, effective-rate versioning, interest invoice/accrual/capitalisation, DPD, and
-  reminder foundations are implemented. Current corrective work closes their rate-current-date,
-  interest-policy/reclassification, DPD-integrity, and reminder-delivery owner boundaries before
-  MIS, statements, portal views, and frontend wiring continue.
+  reminder and quarterly-MIS foundations are implemented. Rate-current-date and interest-policy/
+  reclassification closures are complete; one servicing as-of owner-boundary correction now closes
+  DPD relational/reclassification truth, final reminder delivery authority, and MIS cutoff/replay
+  consistency before statements, portal views, and frontend wiring continue.
 - The remainder of Epics 010–012 owns servicing/repayment, monitoring/default/compliance, reporting,
   operational hardening, end-to-end acceptance, and final release evidence.
 - Current slice and dependency facts must be read from `docs/working/HANDOFF.md` and the selected

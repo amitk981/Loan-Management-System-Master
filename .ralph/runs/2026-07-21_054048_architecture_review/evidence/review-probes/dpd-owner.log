@@ -1,0 +1,23 @@
+Finding ID: AR-010-DPD-001
+Root ID: ROOT-010-DPD-SNAPSHOT-OWNER
+
+Command 1:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py DpdSnapshotOwnerProbe
+
+FAILED (failures=2), exit code 1.
+- `test_approved_operational_policy_amends_by_new_version`: expected ValidationError, but an
+  approved active scheme was updated in place.
+- `test_database_rejects_reparenting_the_current_snapshot`: expected IntegrityError, but direct SQL
+  moved the current snapshot to another valid loan while the old loan retained its pointer.
+
+Command 2:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py DpdCapitalisationReverseConsumerProbe
+
+FAILED (failures=1), exit code 1.
+- `test_capitalised_schedule_interest_is_not_reported_overdue_again`: expected `0.00`, received
+  `37000.00`. The DPD source sums repayment allocations but does not consume the retained interest
+  capitalisation schedule evidence that reclassified the same interest into principal.
+
+PostgreSQL note: the sandbox denied the local Unix socket (`Operation not permitted`). The same-row
+owner mutation has no composite database constraint or snapshot-side trigger in migration 0009;
+the generated successor declares trusted PostgreSQL acceptance so the orchestrator can exercise it.

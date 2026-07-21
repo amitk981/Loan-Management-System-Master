@@ -1,0 +1,18 @@
+Finding ID: AR-010-MIS-001
+Root ID: ROOT-010-MIS-AS-OF-OWNER
+
+Command:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py QuarterlyMisOwnerProbe
+
+FAILED (failures=2), exit code 1.
+- `test_generation_replay_rechecks_current_portfolio_scope`: expected 403 after removing
+  `finance.loan_account.read`; exact generation replay returned 200 with the retained report.
+- `test_late_reminder_does_not_enter_an_as_of_cutoff_snapshot`: expected zero reminders; a reminder
+  created after 30 June but carrying `quarter_end_date=2026-06-30` was counted in the 30 June MIS.
+
+Related code/test signal:
+- submission/review replay paths also return before report-scope and submitted-CFO checks;
+- reminder/invoice/account facts are read through private live models in multiple READ COMMITTED
+  queries, with no mutation race in the declared PostgreSQL acceptance;
+- the accepted concurrency test uses different review keys and expects 200/409, so it does not prove
+  the documented same-key exact replay contract.

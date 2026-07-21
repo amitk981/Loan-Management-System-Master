@@ -1,0 +1,18 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+
+Command:
+PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py ReminderDeliveryOwnerProbe
+
+FAILED (failures=1), exit code 1.
+- `test_provider_cannot_run_after_current_schedule_truth_becomes_paid`: provider adapter invocation
+  was observed after repayment schedule truth became fully paid. The coordinator completes its
+  serviceability transaction before the dispatcher claims and invokes the provider, so no loan/source
+  lock protects the final check-to-send boundary.
+
+Static contract signal:
+- `monitoring/modules/reminder_engine.py` still imports `CommunicationDeliveryJob` and
+  `ContentTemplate` from the communications implementation despite 010J2 requirement 5's public
+  facade contract.
+- the quarter run slices the first 100 DPD rows without truncation/continuation disclosure, so the
+  promised every-identity batch result is not established for a larger bounded portfolio.

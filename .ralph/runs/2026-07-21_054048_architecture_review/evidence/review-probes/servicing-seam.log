@@ -1,0 +1,14 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+
+Static review signal for `b7dbc27b...77bbe9c0`:
+- new DPD, reminder, interest-capitalisation, MIS, and PostgreSQL tests instantiate other `TestCase`
+  classes and invoke `setUp()` instead of using stable public fixture builders;
+- `build_interest_capitalisation_fixture()` advertises a public builder but imports
+  `InterestCapitalisationApiTests` and calls its test setup internally;
+- 010K directly imports repayment, reversal, capitalisation, DPD, reminder, invoice, and disbursement
+  models to rebuild an as-of portfolio rather than consuming immutable owner decisions.
+
+These are carried architecture/test-stability symptoms. The correctness-bearing changed seams are
+grouped into the single High servicing as-of owner-boundary corrective rather than another Medium
+leaf.

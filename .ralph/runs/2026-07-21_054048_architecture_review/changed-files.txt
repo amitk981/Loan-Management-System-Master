@@ -1,0 +1,5 @@
+ M docs/slices/010K2-loan-ledger-statements-and-export.md
+ M docs/working/CONTEXT.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-21_054048_architecture_review/
+?? docs/slices/010K3-servicing-as-of-owner-boundary-closure.md
