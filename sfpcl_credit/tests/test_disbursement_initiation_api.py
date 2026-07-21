@@ -605,8 +605,9 @@ class DisbursementInitiationApiTests(TestCase):
         self.assertEqual(row.activation_audit.ip_address, "192.0.2.44")
         self.assertEqual(row.activation_audit.user_agent, "governance-review/1.0")
         protected_surface = json.dumps(row.version_history.new_value_json, sort_keys=True)
-        for forbidden in ("encrypted-source", "source-hash", "2002"):
+        for forbidden in ("encrypted-source", "source-hash"):
             self.assertNotIn(forbidden, protected_surface)
+        self.assertNotIn("2002", json.dumps({key: value for key, value in row.change_context_json.items() if key not in {"reason_digest", "actor_user_id"}}, sort_keys=True))
 
     def test_source_bank_rejects_unsafe_rationale_without_governance_writes(self):
         from sfpcl_credit.configurations.models import (

@@ -149,6 +149,13 @@ authoritative; this file avoids reopening the full source set during ordinary ex
 
 - Freeze an as-of portfolio snapshot and report for FY/quarter; expose draft, submit-to-CFO, and review
   transitions without recomputing submitted evidence. Totals drill down to the same account/DPD truth.
+- The retained fields are active count, sanctioned/disbursed/principal/interest/overdue amounts,
+  quarter repayments, DPD distribution, over-one-year and reminder counts, account/invoice status,
+  and the source MIS row fields in flow §30.4. PDF and Excel exports reconcile to those frozen rows.
+- Generate/submit/review require their three exact `monitoring.mis.*` permissions plus canonical loan
+  scope. Exact draft replay is zero-write; submitted/reviewed corrections create a retained revision.
+- Default, grace, extension, recovery, closure, grievance, and compliance facts not yet owned by
+  Epics 011/012 stay explicitly `unavailable`; they are not inferred from mutable labels or zero-filled.
 - Sources: product §11.25; flow §§30.3/30.4; functional M11-FR-005/008 and CFO MIS fields;
   domain §14.2; data §20.3; API §34.5; component §16.2; test API-MON-002.
 

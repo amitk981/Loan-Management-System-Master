@@ -24,6 +24,7 @@ from sfpcl_credit.tests.test_interest_capitalisation_api import (
 )
 from sfpcl_credit.tests.test_dpd_monitoring_api import DpdMonitoringApiTests
 from sfpcl_credit.tests.test_reminder_queue_api import ReminderQueueApiTests
+from sfpcl_credit.tests.test_quarterly_mis_api import QuarterlyMisApiTests
 
 
 @override_settings(
@@ -1311,3 +1312,112 @@ class BankStatementMatchingPostgreSQLAcceptanceTests(TransactionTestCase):
             ).count(),
             1,
         )
+
+
+@override_settings(
+    DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-quarterly-mis-pg-tests-")
+)
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class QuarterlyMisPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        fixture = QuarterlyMisApiTests(
+            "test_generate_freezes_cutoff_totals_and_exact_replay"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        calculated = Client().post(
+            f"/api/v1/loan-accounts/{fixture.account.pk}/dpd-status/calculate/",
+            data=json.dumps({"as_of_date": "2026-06-30"}),
+            content_type="application/json",
+            **fixture.auth,
+        )
+        self.assertEqual(calculated.status_code, 200, calculated.content)
+        from sfpcl_credit.documents.models import DocumentFile
+
+        self.document_count_before = DocumentFile.objects.count()
+
+    def test_concurrent_generation_replays_one_authoritative_report(self):
+        barrier = Barrier(2)
+
+        def contender(_index):
+            close_old_connections()
+            barrier.wait(timeout=15)
+            response = Client().post(
+                "/api/v1/quarterly-mis-reports/generate/",
+                data=json.dumps(
+                    {
+                        "financial_year": "FY2026-27",
+                        "quarter": "Q1",
+                        "as_of_date": "2026-06-30",
+                    }
+                ),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="quarterly-mis-pg-generate",
+                **self.fixture.auth,
+            )
+            result = (response.status_code, response.json())
+            close_old_connections()
+            return result
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(pool.map(contender, range(2)))
+
+        from sfpcl_credit.documents.models import DocumentFile
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.monitoring.models import PortfolioSnapshot, QuarterlyMisReport
+
+        self.assertEqual([status for status, _body in outcomes], [200, 200])
+        self.assertEqual(
+            len({body["data"]["quarterly_mis_report_id"] for _status, body in outcomes}),
+            1,
+        )
+        self.assertEqual(QuarterlyMisReport.objects.count(), 1)
+        self.assertEqual(PortfolioSnapshot.objects.count(), 1)
+        self.assertEqual(DocumentFile.objects.count(), self.document_count_before + 2)
+        self.assertEqual(AuditLog.objects.filter(action="monitoring.mis.generated").count(), 1)
+
+    def test_concurrent_cfo_review_retains_one_terminal_transition(self):
+        generated = self.fixture._generate()
+        self.assertEqual(generated.status_code, 200, generated.content)
+        report_id = generated.json()["data"]["quarterly_mis_report_id"]
+        cfo = self.fixture.identity_fixture._user("cfo", "MIS Race CFO")
+        for code in ("finance.loan_account.read", "monitoring.mis.review"):
+            self.fixture.identity_fixture._grant(cfo, code)
+        cfo_auth = self.fixture.auth_fixture._auth(cfo)
+        submitted = Client().post(
+            f"/api/v1/quarterly-mis-reports/{report_id}/submit-to-cfo/",
+            data=json.dumps({"submitted_to_user_id": str(cfo.pk)}),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="quarterly-mis-pg-submit",
+            **self.fixture.auth,
+        )
+        self.assertEqual(submitted.status_code, 200, submitted.content)
+        barrier = Barrier(2)
+
+        def contender(_index):
+            close_old_connections()
+            barrier.wait(timeout=15)
+            response = Client().post(
+                f"/api/v1/quarterly-mis-reports/{report_id}/mark-reviewed/",
+                data="{}",
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY=f"quarterly-mis-pg-review-{_index}",
+                **cfo_auth,
+            )
+            status = response.status_code
+            close_old_connections()
+            return status
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = sorted(pool.map(contender, range(2)))
+
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.monitoring.models import QuarterlyMisReport
+
+        self.assertEqual(statuses, [200, 409])
+        report = QuarterlyMisReport.objects.get(pk=report_id)
+        self.assertEqual(report.status, QuarterlyMisReport.STATUS_REVIEWED)
+        self.assertEqual(report.reviewed_by_user_id, cfo.pk)
+        self.assertEqual(AuditLog.objects.filter(action="monitoring.mis.reviewed").count(), 1)

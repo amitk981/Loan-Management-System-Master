@@ -34,6 +34,41 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/quarterly-mis-reports/generate/",
+        monitoring_views.quarterly_mis_generate,
+        name="quarterly-mis-generate",
+    ),
+    path(
+        "api/v1/quarterly-mis-reports/",
+        monitoring_views.quarterly_mis_collection,
+        name="quarterly-mis-collection",
+    ),
+    path(
+        "api/v1/quarterly-mis-reports/<uuid:report_id>/",
+        monitoring_views.quarterly_mis_detail,
+        name="quarterly-mis-detail",
+    ),
+    path(
+        "api/v1/quarterly-mis-reports/<uuid:report_id>/drill-down/",
+        monitoring_views.quarterly_mis_drill_down,
+        name="quarterly-mis-drill-down",
+    ),
+    path(
+        "api/v1/quarterly-mis-reports/<uuid:report_id>/submit-to-cfo/",
+        monitoring_views.quarterly_mis_submit,
+        name="quarterly-mis-submit",
+    ),
+    path(
+        "api/v1/quarterly-mis-reports/<uuid:report_id>/mark-reviewed/",
+        monitoring_views.quarterly_mis_review,
+        name="quarterly-mis-review",
+    ),
+    path(
+        "api/v1/quarterly-mis-reports/<uuid:report_id>/export/",
+        monitoring_views.quarterly_mis_export,
+        name="quarterly-mis-export",
+    ),
+    path(
         "api/v1/reminders/quarter-end-runs/",
         monitoring_views.reminder_quarter_end_run,
         name="reminder-quarter-end-run",

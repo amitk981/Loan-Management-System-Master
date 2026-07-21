@@ -66,6 +66,26 @@ REPRESENTATIVE_PERMISSIONS_BY_GROUP = {
 
 
 class CatalogueSeedTests(TestCase):
+    def test_quarterly_mis_grants_separate_prepare_submit_review_and_export_roles(self):
+        seed_catalogue()
+
+        def codes(role_code):
+            return set(
+                RolePermission.objects.filter(role__role_code=role_code).values_list(
+                    "permission__permission_code", flat=True
+                )
+            )
+
+        self.assertTrue(
+            {"monitoring.mis.generate", "monitoring.mis.submit", "reports.export"}
+            <= codes("credit_manager")
+        )
+        self.assertTrue(
+            {"monitoring.mis.review", "reports.export"} <= codes("cfo")
+        )
+        self.assertNotIn("monitoring.mis.review", codes("credit_manager"))
+        self.assertNotIn("monitoring.mis.submit", codes("cfo"))
+
     def test_disbursement_advice_grant_matches_stage_five_role_matrix(self):
         seed_catalogue()
         permission_code = "finance.disbursement.send_advice"

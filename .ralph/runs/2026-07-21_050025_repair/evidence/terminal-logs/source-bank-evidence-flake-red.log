@@ -1,0 +1,16 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_activation_retains_reviewable_reason_without_false_approval --verbosity 1
+Working directory: sfpcl_credit
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_source_bank_activation_retains_reviewable_reason_without_false_approval (sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_activation_retains_reviewable_reason_without_false_approval)
+----------------------------------------------------------------------
+AssertionError: '2002' unexpectedly found in retained evidence where source_facts_digest was deterministically forced to a valid 64-character digest containing 2002.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+FAILED (failures=1)
+Exit code: 1

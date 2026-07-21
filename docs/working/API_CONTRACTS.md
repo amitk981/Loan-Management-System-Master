@@ -4881,3 +4881,51 @@ no provider. Exact send replay retains one job. A changed or cross-reminder key 
 inaccessible objects are `404`, malformed direct-request input is `400`, and invalid state or
 changed delivery replay is `409`. Ordinary responses never expose recipient, rendered body, or
 provider-sensitive evidence.
+
+## CFO quarterly MIS snapshots (010K)
+
+`POST /api/v1/quarterly-mis-reports/generate/` accepts exactly `financial_year` in
+`FY2026-27` form, `quarter` (`Q1`–`Q4`), and the ISO calendar quarter-end `as_of_date`. It requires
+one nonblank `Idempotency-Key`, `monitoring.mis.generate`, and the canonical
+`finance.loan_account.read` portfolio/account scope. Unknown body keys and a missing key return
+`400 VALIDATION_ERROR`; a key already bound to a different payload returns `409 CONFLICT`.
+The monitoring owner consumes only loan status history, disbursement/account terms, immutable
+repayment/reversal/capitalisation ledgers, the exact 010I DPD snapshot for the cutoff, interest
+invoice state, and reminders at or before the cutoff. Missing per-account DPD truth returns
+`409 CONFLICT`; the report does not calculate DPD, create reminders, or mutate any source owner.
+
+Success freezes one portfolio snapshot and a versioned report revision containing active-loan,
+sanctioned/disbursed, principal/interest/overdue, quarter-repayment, DPD-distribution, over-one-year,
+reminder, invoice-status, account-status, and source-id truth. Drill-down rows also retain the loan
+application number, borrower display name/type, region, crop, security type, disbursement date,
+revised principal when capitalised, last repayment date, and the precise source identities and
+calculation versions used. The typed `loan_portfolio_snapshots` summary columns reconcile to the
+frozen totals; unavailable typed counts are nullable and paired with explicit availability markers.
+Default, grace, extension, non-recoverable, recovery, closure, grievance,
+and compliance values owned by later epics are the literal `unavailable`, never fabricated zeroes.
+PostgreSQL generation serializes on the FY/quarter/cutoff identity. Exact replay while a draft exists
+returns the same report and export identities with zero new snapshot/audit/document writes; after a
+submitted/reviewed report, generation creates the next retained revision and never rewrites history.
+
+`GET /api/v1/quarterly-mis-reports/?financial_year=FY2026-27&quarter=Q1&page=1&page_size=20`
+returns only reports whose entire frozen portfolio remains in the caller's canonical scope.
+`GET /api/v1/quarterly-mis-reports/{id}/` returns the frozen summary, and
+`GET /api/v1/quarterly-mis-reports/{id}/drill-down/?page=1&page_size=20` returns its stable retained
+rows. Collections require `page >= 1`, `page_size` from 1–100, reject unknown parameters, and use
+the standard pagination envelope. Inaccessible report identities return `404` without disclosure.
+
+`POST /api/v1/quarterly-mis-reports/{id}/submit-to-cfo/` accepts exactly one active CFO
+`submitted_to_user_id` and one nonblank `Idempotency-Key`, and requires `monitoring.mis.submit` plus
+report scope. Only a draft may be
+submitted. `POST /api/v1/quarterly-mis-reports/{id}/mark-reviewed/` accepts an empty body, requires
+one nonblank `Idempotency-Key` and `monitoring.mis.review`, and is allowed only for that submitted-to
+CFO after submission. Exact action replay returns the retained first response with zero writes;
+changed payload binding for that action returns `409`. Each
+transition locks the report, retains a distinct actor/timestamp/audit row, and rejects invalid or
+concurrent order with `409`; reviewed evidence and every portfolio snapshot are immutable.
+
+Generation also stores deterministic internal PDF and XLSX documents from the frozen snapshot.
+`GET /api/v1/quarterly-mis-reports/{id}/export/?format=pdf|xlsx` requires `reports.export` plus report
+scope and returns retained document metadata, SHA-256 checksum, download descriptor, and the same
+frozen totals. Export never reads live account state. Authentication, validation, permission,
+nondisclosing not-found, and state failures use the standard `401/400/403/404/409` envelopes.

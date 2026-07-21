@@ -1,0 +1,16 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_source_bank_activation_retains_reviewable_reason_without_false_approval --verbosity 1
+Working directory: sfpcl_credit
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+OK
+Exit code: 0
+
+The RED harness temporarily forced the otherwise valid opaque source-facts digest to contain the
+fixture suffix `2002`. The final test keeps whole-evidence checks for encrypted/hash secrets and
+scopes the suffix check to non-opaque human audit context; preceding equality assertions continue to
+verify the complete context.
