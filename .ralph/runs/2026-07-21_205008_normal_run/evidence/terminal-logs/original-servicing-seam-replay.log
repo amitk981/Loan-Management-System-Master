@@ -1,0 +1,8 @@
+Command: cd sfpcl-lms && npm exec vitest -- --config ../.ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/vitest.review.config.ts run
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+servicing-replay-review.test.ts (1 test) passed
+Test Files 1 passed (1)
+Tests 1 passed (1)
+PASS: partial capture retry resumes SAP posting and allocation to one complete outcome.
+Exit code: 0

@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/mis_generated_at_cutoff_probe.py
+Finding ID: AR-010-MIS-001
+Root ID: ROOT-010-MIS-AS-OF-OWNER
+Test specification: sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py::Epic010MisOwnerRegressionTests::test_real_invoice_model_projects_before_on_and_after_cutoff_lifecycle
+Observed cutoff status: not_generated
+Expected cutoff status: not_generated
+PASS: immutable generated_at excludes an invoice generated after the historical cutoff.
+Exit code: 0

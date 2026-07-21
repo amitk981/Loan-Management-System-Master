@@ -1,0 +1,3 @@
+Command: ./scripts/ralph-validate-review-closure.sh --slice docs/slices/010N2-epic-010-terminal-servicing-recurrence-repair.md --run-dir .ralph/runs/2026-07-21_205008_normal_run
+PASS: validated semantic closure for 2 finding(s) and 5 acceptance id(s).
+Exit code: 0

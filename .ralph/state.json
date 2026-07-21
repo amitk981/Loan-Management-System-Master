@@ -313,15 +313,16 @@
     "010MA-servicing-account-and-repayment-frontend-wiring",
     "CR-015-epic-010-terminal-servicing-owner-finalizer",
     "010MB-interest-and-monitoring-frontend-wiring",
-    "010N-global-search-api-and-ui"
+    "010N-global-search-api-and-ui",
+    "010N2-epic-010-terminal-servicing-recurrence-repair"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-21_202321_architecture_review",
+  "last_run_id": "2026-07-21_205008_normal_run",
   "last_run_status": "success",
   "slices_completed_since_architecture_review": 0,
-  "architecture_review_due": true,
+  "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
@@ -403,7 +404,23 @@
       "run_id": "2026-07-21_154238_repair"
     }
   },
-  "architecture_review_terminal_repair_pending": {
+  "architecture_review_terminal_repairs": {
+    "ROOT-010-REMINDER-DELIVERY-OWNER": {
+      "epic": "010",
+      "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
+      "root_ids": [
+        "ROOT-010-MIS-AS-OF-OWNER",
+        "ROOT-010-SERVICING-OWNER-SEAM"
+      ],
+      "finalizer_slice": "CR-015-epic-010-terminal-servicing-owner-finalizer",
+      "corrective_slice": "010N2",
+      "attempt": 1,
+      "status": "complete",
+      "slice_id": "010N2-epic-010-terminal-servicing-recurrence-repair",
+      "run_id": "2026-07-21_205008_normal_run"
+    }
+  },
+  "last_architecture_review_terminal_repair": {
     "epic": "010",
     "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
     "root_ids": [
@@ -413,7 +430,8 @@
     "finalizer_slice": "CR-015-epic-010-terminal-servicing-owner-finalizer",
     "corrective_slice": "010N2",
     "attempt": 1,
-    "status": "pending"
-  },
-  "architecture_review_due_reason": "terminal_repair:ROOT-010-REMINDER-DELIVERY-OWNER"
+    "status": "complete",
+    "slice_id": "010N2-epic-010-terminal-servicing-recurrence-repair",
+    "run_id": "2026-07-21_205008_normal_run"
+  }
 }

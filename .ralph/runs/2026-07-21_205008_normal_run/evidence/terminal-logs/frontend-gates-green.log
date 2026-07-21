@@ -1,0 +1,11 @@
+Command: cd sfpcl-lms && npm run typecheck
+PASS: tsc --noEmit
+Exit code: 0
+
+Command: cd sfpcl-lms && npm run lint
+PASS: eslint src
+Exit code: 0
+
+Command: cd sfpcl-lms && npm run build
+PASS: 1886 modules transformed; production build completed.
+Exit code: 0

@@ -1,0 +1,8 @@
+Command: node .ralph/runs/2026-07-21_202321_architecture_review/evidence/review-probes/servicing_finalizer_contract_probe.mjs
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+Test specification: sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py::Epic010DirectRepaymentOwnerRegressionTests::test_exact_command_replay_returns_one_complete_financial_outcome
+Imports another TestCase fixture: true
+Calls the imported TestCase.setUp(): true
+Error: FAIL: the terminal acceptance regression retains the exact private cross-TestCase fixture dependency CR-015 required removed.
+Exit code: 1

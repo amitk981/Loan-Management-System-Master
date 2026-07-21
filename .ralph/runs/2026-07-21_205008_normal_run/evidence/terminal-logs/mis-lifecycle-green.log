@@ -1,0 +1,6 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010MisOwnerRegressionTests.test_real_invoice_model_projects_before_on_and_after_cutoff_lifecycle --verbosity 1
+Test specification: sfpcl_credit/tests/test_epic010_terminal_owner_finalizer.py::Epic010MisOwnerRegressionTests::test_real_invoice_model_projects_before_on_and_after_cutoff_lifecycle
+Found 1 test.
+PASS: before/on/after generated and issued lifecycle matrix is cutoff coherent.
+OK
+Exit code: 0

@@ -96,6 +96,41 @@ class TerminalReminderFixture:
         )
 
 
+@dataclass(frozen=True)
+class TerminalDirectRepaymentFixture:
+    """Public API fixture for the terminal composite repayment command."""
+
+    account: object
+    actor: User
+    client: Client
+    auth: dict
+
+    @staticmethod
+    def payload():
+        return {
+            "repayment_source": "direct_farmer",
+            "amount_received": "100000.00",
+            "received_date": "2026-12-04",
+            "payment_method": "rtgs",
+            "bank_reference_number": "UTR-DIRECT-VALIDATION-001",
+            "remarks": "Confirmed receipt.",
+        }
+
+    def schedule(self, principal):
+        from sfpcl_credit.loans.models import RepaymentSchedule
+
+        return RepaymentSchedule.objects.create(
+            loan_account=self.account,
+            installment_number=1,
+            due_date=self.account.repayment_date,
+            principal_due=principal,
+            interest_due="0.00",
+            charges_due="0.00",
+            total_due=principal,
+            schedule_status="pending",
+        )
+
+
 def build_terminal_reminder_fixture(*, suffix):
     """Build reminder-owner truth without borrowing another TestCase setup."""
     from sfpcl_credit.communications.models import ContentTemplate
@@ -195,6 +230,60 @@ def build_terminal_reminder_fixture(*, suffix):
     )
     return TerminalReminderFixture(
         account=account, actor=actor, template=template, request=request
+    )
+
+
+def build_terminal_direct_repayment_fixture(*, suffix):
+    """Build the composite repayment API seam without another test case."""
+    password = "SyntheticRepayment123!"
+    facts = build_ready_epic009_fixture(
+        password=password,
+        finance_email=f"terminal.repayment.{suffix}@sfpcl.example",
+        credit_email=f"terminal.repayment.credit.{suffix}@sfpcl.example",
+        cfc_email=f"terminal.repayment.cfc.{suffix}@sfpcl.example",
+        borrower_email=f"terminal.repayment.borrower.{suffix}@sfpcl.example",
+    )
+    account = facts["ready"]["account"]
+    type(account).objects.filter(pk=account.pk).update(
+        loan_account_status="active",
+        disbursed_amount=account.sanctioned_amount,
+        principal_outstanding=account.sanctioned_amount,
+        interest_outstanding="0.00",
+        charges_outstanding="0.00",
+        total_outstanding=account.sanctioned_amount,
+    )
+    account.refresh_from_db()
+    actor = facts["credit"]
+    for code in (
+        "finance.loan_account.read",
+        "finance.repayment.create",
+        "finance.repayment.mark_sap_posted",
+        "finance.repayment.allocate",
+    ):
+        permission, _ = Permission.objects.get_or_create(
+            permission_code=code,
+            defaults={
+                "permission_name": code,
+                "module_name": "finance",
+                "risk_level": "critical",
+            },
+        )
+        RolePermission.objects.get_or_create(role=actor.primary_role, permission=permission)
+    client = Client()
+    login = client.post(
+        "/api/v1/auth/login/",
+        {"email": actor.email, "password": password},
+        content_type="application/json",
+    )
+    if login.status_code != 200:
+        raise AssertionError(login.content)
+    return TerminalDirectRepaymentFixture(
+        account=account,
+        actor=actor,
+        client=client,
+        auth={
+            "HTTP_AUTHORIZATION": f"Bearer {login.json()['data']['access_token']}"
+        },
     )
 
 

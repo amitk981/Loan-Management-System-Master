@@ -1,0 +1,7 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py check
+System check identified no issues (0 silenced).
+Exit code: 0
+
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py makemigrations --check --dry-run
+No changes detected
+Exit code: 0

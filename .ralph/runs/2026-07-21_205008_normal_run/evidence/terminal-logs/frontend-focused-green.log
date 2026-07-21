@@ -1,0 +1,9 @@
+Command: cd sfpcl-lms && npm exec vitest -- run src/services/servicingApi.test.ts src/services/portalApi.test.ts src/pages/repayments/RepaymentsHub.test.tsx src/pages/borrower/portal/loans/PortalLoanViews.test.tsx
+servicingApi.test.ts: 7 passed
+portalApi.test.ts: 9 passed
+PortalLoanViews.test.tsx: 6 passed
+RepaymentsHub.test.tsx: 9 passed
+Test Files 4 passed (4)
+Tests 31 passed (31)
+PASS: composite repayment, reminder/portal 101-page traversal, approved instructions, and UI outcomes are green.
+Exit code: 0

@@ -1,0 +1,8 @@
+Command: PYTHONPATH=. DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-21_134356_architecture_review/evidence/review-probes/probes.py ReminderDeliveryGapProbe
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+test_repayment_after_check_but_before_adapter_prevents_provider_call ... ok
+Ran 1 test
+OK
+PASS: repayment after the serviceability check prevents a provider call.
+Exit code: 0

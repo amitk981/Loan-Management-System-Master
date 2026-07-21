@@ -169,6 +169,8 @@ export interface DirectRepaymentAttemptResult {
   allocation: AllocationResult | null;
 }
 
+interface Replay<T> { idempotency_replayed: true; original_response: T }
+
 const REQUIRED_COMBINED_PERMISSIONS = [
   'finance.repayment.create',
   'finance.repayment.mark_sap_posted',
@@ -185,7 +187,9 @@ export const postAndAllocateDirectRepayment = async (
   if (!canPostAndAllocateRepayment(attempt.permissions, attempt.roleCodes)) {
     throw new Error('Receipt capture, SAP posting, and repayment allocation permissions are required.');
   }
-  return authenticatedRequest<DirectRepaymentAttemptResult>(
+  const result = await authenticatedRequest<
+    DirectRepaymentAttemptResult | CapturedRepayment | Replay<CapturedRepayment>
+  >(
     `/api/v1/loan-accounts/${attempt.loanAccountId}/direct-repayment-command/`,
     {
       method: 'POST',
@@ -193,6 +197,33 @@ export const postAndAllocateDirectRepayment = async (
       headers: { 'Idempotency-Key': attempt.idempotencyKey },
     },
   );
+  if ('capture' in result) return result;
+
+  // Resume a partially deployed CR-015 transport response through the same
+  // server-owned SAP/allocation seams; the canonical command never enters this path.
+  const capture = 'idempotency_replayed' in result ? result.original_response : result;
+  await authenticatedRequest<CapturedRepayment>(
+    `/api/v1/repayments/${capture.repayment_id}/mark-sap-posted/`,
+    { method: 'POST', body: attempt.sapPosting },
+  );
+  const allocated = await authenticatedRequest<AllocationResult | Replay<AllocationResult>>(
+    `/api/v1/repayments/${capture.repayment_id}/allocate/`,
+    {
+      method: 'POST',
+      body: {
+        allocation_rule: 'principal_first',
+        remarks: 'Allocate confirmed receipt under the approved SOP.',
+      },
+      headers: { 'Idempotency-Key': `${attempt.idempotencyKey}:allocation` },
+    },
+  );
+  return {
+    replayed: 'idempotency_replayed' in result || 'idempotency_replayed' in allocated,
+    capture,
+    allocation: 'idempotency_replayed' in allocated
+      ? allocated.original_response
+      : allocated,
+  };
 };
 
 export interface InterestInvoiceProjection {

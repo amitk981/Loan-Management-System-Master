@@ -193,6 +193,7 @@ class Epic010MisOwnerRegressionTests(SimpleTestCase):
             pk=uuid4(),
             invoice_date=date(2026, 6, 30),
             invoice_status="issued",
+            generated_at=datetime(2026, 6, 29, tzinfo=datetime_timezone.utc),
             issued_at=datetime(2026, 7, 2, tzinfo=datetime_timezone.utc),
             calculation_version="INV-CALC-1",
         )
@@ -237,6 +238,46 @@ class Epic010MisOwnerRegressionTests(SimpleTestCase):
 
         self.assertEqual(row["interest_invoice_status"], "draft")
 
+    def test_real_invoice_model_projects_before_on_and_after_cutoff_lifecycle(self):
+        from sfpcl_credit.interest.models import InterestInvoice
+        from sfpcl_credit.monitoring.modules.quarterly_mis import (
+            _invoice_status_at_cutoff,
+        )
+
+        cutoff = date(2026, 6, 30)
+        cases = (
+            (
+                InterestInvoice(
+                    generated_at=datetime(2026, 6, 29, tzinfo=datetime_timezone.utc),
+                    issued_at=None,
+                    invoice_status="draft",
+                ),
+                "draft",
+            ),
+            (
+                InterestInvoice(
+                    generated_at=datetime(2026, 6, 30, tzinfo=datetime_timezone.utc),
+                    issued_at=datetime(2026, 6, 30, tzinfo=datetime_timezone.utc),
+                    invoice_status="issued",
+                ),
+                "issued",
+            ),
+            (
+                InterestInvoice(
+                    generated_at=datetime(2026, 7, 1, tzinfo=datetime_timezone.utc),
+                    issued_at=None,
+                    invoice_status="draft",
+                ),
+                "not_generated",
+            ),
+        )
+        for invoice, expected in cases:
+            with self.subTest(expected=expected):
+                self.assertEqual(
+                    _invoice_status_at_cutoff(invoice=invoice, cutoff=cutoff),
+                    expected,
+                )
+
 
 class Epic010StatementOwnerRegressionTests(SimpleTestCase):
     def test_empty_borrower_csv_retains_safe_metadata_without_internal_fields(self):
@@ -275,19 +316,17 @@ class Epic010StatementOwnerRegressionTests(SimpleTestCase):
 
 class Epic010DirectRepaymentOwnerRegressionTests(TestCase):
     def setUp(self):
-        from sfpcl_credit.tests.test_repayment_allocation_api import (
-            RepaymentAllocationApiTests,
+        from sfpcl_credit.tests.servicing_builders import (
+            build_terminal_direct_repayment_fixture,
         )
 
         self.storage = TemporaryDirectory()
         self.storage_settings = override_settings(DOCUMENT_STORAGE_ROOT=self.storage.name)
         self.storage_settings.enable()
-        fixture = RepaymentAllocationApiTests(
-            "test_partial_receipt_reduces_principal_and_appends_immutable_evidence"
+        self.fixture = build_terminal_direct_repayment_fixture(
+            suffix=self._testMethodName[-24:]
         )
-        fixture.setUp()
-        self.fixture = fixture
-        self.fixture._schedule("400000.00")
+        self.fixture.schedule("400000.00")
 
     def tearDown(self):
         self.storage_settings.disable()
@@ -296,7 +335,7 @@ class Epic010DirectRepaymentOwnerRegressionTests(TestCase):
 
     def test_exact_command_replay_returns_one_complete_financial_outcome(self):
         payload = {
-            "capture": self.fixture.fixture._payload(),
+            "capture": self.fixture.payload(),
             "sap_posting": {
                 "sap_entry_reference": "SAP-TERMINAL-001",
                 "sap_posted_at": "2026-12-04T10:00:00Z",

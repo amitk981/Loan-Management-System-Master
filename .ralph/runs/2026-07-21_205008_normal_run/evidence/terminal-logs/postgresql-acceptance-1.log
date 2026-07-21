@@ -1,0 +1,7 @@
+Command: SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_1_2026_07_21_205008_normal_run /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010TerminalOwnerFinalizerPostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 1
+Found 5 tests.
+System check identified no issues (0 silenced).
+Ran 5 tests
+OK
+PASS: five PostgreSQL reminder-owner race cases passed on validation database 1.
+Exit code: 0

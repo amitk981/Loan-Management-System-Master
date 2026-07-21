@@ -583,8 +583,8 @@ def _invoice_status_at_cutoff(*, invoice, cutoff):
     """Project the retained invoice lifecycle decision that was true at cutoff."""
     if invoice is None:
         return "not_generated"
-    created_at = getattr(invoice, "created_at", None)
-    if created_at is not None and created_at.date() > cutoff:
+    generated_at = getattr(invoice, "generated_at", None)
+    if generated_at is not None and generated_at.date() > cutoff:
         return "not_generated"
     issued_at = getattr(invoice, "issued_at", None)
     if issued_at is None or issued_at.date() > cutoff:
@@ -674,8 +674,9 @@ def _snapshot_accounts(*, actor, period):
             Prefetch(
                 "interest_invoices",
                 queryset=InterestInvoice.objects.filter(
-                    invoice_date__lte=cutoff
-                ).order_by("-invoice_date", "-interest_invoice_id"),
+                    invoice_date__lte=cutoff,
+                    generated_at__date__lte=cutoff,
+                ).order_by("-generated_at", "-interest_invoice_id"),
                 to_attr="mis_interest_invoices",
             ),
         )
