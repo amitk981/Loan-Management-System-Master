@@ -63,6 +63,7 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
             onKeyDown={e => {
               if (e.key === 'Enter' && searchQuery.trim()) {
                 onSearch?.(searchQuery.trim());
+                setSearchQuery('');
                 closeAll();
               }
             }}

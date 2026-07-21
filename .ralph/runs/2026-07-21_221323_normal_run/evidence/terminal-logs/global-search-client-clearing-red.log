@@ -1,0 +1,44 @@
+Command: npm test -- --run src/pages/search/GlobalSearchResults.test.tsx
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/search/GlobalSearchResults.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_221323_normal_run/sfpcl-lms
+
+ ❯ src/pages/search/GlobalSearchResults.test.tsx (5 tests | 1 failed) 260ms
+   ✓ 010N Global Search Results > loads server groups, card fields, and permission-valid quick actions 101ms
+   ✓ 010N Global Search Results > requests each result group page independently 34ms
+   ✓ 010N Global Search Results > supports empty query, no results, partial groups, safe errors, and unauthorised state 20ms
+   ✓ 010N Global Search Results > submits a replacement query without URL or local-storage caching 91ms
+   × 010N Global Search Results > clears raw sensitive input after the request and paginates with only an opaque continuation 14ms
+     → expected 'CHEQUE-SENSITIVE-001' to be '' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/search/GlobalSearchResults.test.tsx > 010N Global Search Results > clears raw sensitive input after the request and paginates with only an opaque continuation
+AssertionError: expected 'CHEQUE-SENSITIVE-001' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ CHEQUE-SENSITIVE-001
+
+ ❯ src/pages/search/GlobalSearchResults.test.tsx:125:69
+    123| 
+    124|     await screen.findByText('LN-API-001');
+    125|     expect((screen.getByRole('textbox') as HTMLInputElement).value).to…
+       |                                                                     ^
+    126|     expect(onQueryConsumed).toHaveBeenCalledOnce();
+    127| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  22:24:09
+   Duration  998ms (transform 89ms, setup 0ms, collect 213ms, tests 260ms, environment 199ms, prepare 33ms)
+
+Exit code: 1

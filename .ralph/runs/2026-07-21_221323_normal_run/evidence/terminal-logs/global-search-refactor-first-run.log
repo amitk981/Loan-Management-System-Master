@@ -1,0 +1,70 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_global_search_api --verbosity 1
+Creating test database for alias 'default'...
+Found 10 test(s).
+System check identified no issues (0 silenced).
+FFEEE.........
+======================================================================
+ERROR: test_all_source_inputs_map_to_the_scoped_member_root (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_all_source_inputs_map_to_the_scoped_member_root) (query='CHEQUE-SEARCH-001')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_221323_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 272, in test_all_source_inputs_map_to_the_scoped_member_root
+    with self.subTest(query=query), context as relation_filter:
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1421, in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/pkgutil.py", line 715, in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.processes.global_search' has no attribute 'BlankDatedCheque'
+
+======================================================================
+ERROR: test_all_source_inputs_map_to_the_scoped_member_root (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_all_source_inputs_map_to_the_scoped_member_root) (query='CDSL-SEARCH-001')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_221323_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 272, in test_all_source_inputs_map_to_the_scoped_member_root
+    with self.subTest(query=query), context as relation_filter:
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1421, in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/pkgutil.py", line 715, in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.processes.global_search' has no attribute 'CDSLSharePledge'
+
+======================================================================
+ERROR: test_all_source_inputs_map_to_the_scoped_member_root (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_all_source_inputs_map_to_the_scoped_member_root) (query='00000000-0000-4000-8000-000000000404')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_221323_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 272, in test_all_source_inputs_map_to_the_scoped_member_root
+    with self.subTest(query=query), context as relation_filter:
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1421, in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/pkgutil.py", line 715, in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.processes.global_search' has no attribute 'SH4ShareTransferForm'
+
+======================================================================
+FAIL: test_all_source_inputs_map_to_the_scoped_member_root (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_all_source_inputs_map_to_the_scoped_member_root) (query='LN-SEARCH-001')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_221323_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 283, in test_all_source_inputs_map_to_the_scoped_member_root
+    self.assertIn(expected_title, titles)
+AssertionError: 'Searchable Farmer' not found in []
+
+======================================================================
+FAIL: test_all_source_inputs_map_to_the_scoped_member_root (sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_all_source_inputs_map_to_the_scoped_member_root) (query='SAP-SEARCH-001')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_221323_normal_run/sfpcl_credit/tests/test_global_search_api.py", line 283, in test_all_source_inputs_map_to_the_scoped_member_root
+    self.assertIn(expected_title, titles)
+AssertionError: 'Searchable Farmer' not found in []
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.692s
+
+FAILED (failures=2, errors=3)
+Destroying test database for alias 'default'...
+GLOBAL_SEARCH_INDEX_PLANS {'pan': '3 0 0 SEARCH members USING INDEX idx_members_pan_hash (pan_hash=?)', 'aadhaar': '3 0 0 SEARCH members USING INDEX idx_members_aadhaar_hash (aadhaar_hash=?)', 'aadhaar_last4': '3 0 0 SEARCH members USING INDEX members_aadhaar_last4_6253ff18 (aadhaar_last4=?)', 'share_count': '3 0 0 SEARCH members USING INDEX members_number_of_shares_4d7470ba (number_of_shares=?)', 'bank_last4': '3 0 0 SEARCH bank_accounts USING INDEX bank_accounts_account_number_last4_3bd9ef02 (account_number_last4=?)'}
+Exit code: 1

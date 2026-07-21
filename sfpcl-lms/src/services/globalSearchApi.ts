@@ -36,15 +36,17 @@ export interface GlobalSearchGroup {
 
 export interface GlobalSearchResponse {
   groups: Partial<Record<string, GlobalSearchGroup>>;
+  continuation: string;
 }
 
 export type GlobalSearchPages = Partial<Record<string, number>>;
 
-export const fetchGlobalSearch = (
-  search: string,
-  pages: GlobalSearchPages = {},
-): Promise<GlobalSearchResponse> =>
+export type GlobalSearchRequest = {
+  pages?: GlobalSearchPages;
+} & ({ search: string; continuation?: never } | { continuation: string; search?: never });
+
+export const fetchGlobalSearch = (request: GlobalSearchRequest): Promise<GlobalSearchResponse> =>
   authenticatedRequest<GlobalSearchResponse>('/api/v1/global-search/', {
     method: 'POST',
-    body: { search, pages },
+    body: request,
   });

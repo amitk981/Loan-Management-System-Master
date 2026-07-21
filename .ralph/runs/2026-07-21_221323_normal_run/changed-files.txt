@@ -1,0 +1,16 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl-lms/src/App.tsx
+ M sfpcl-lms/src/components/layout/Header.tsx
+ M sfpcl-lms/src/pages/search/GlobalSearchResults.test.tsx
+ M sfpcl-lms/src/pages/search/GlobalSearchResults.tsx
+ M sfpcl-lms/src/services/globalSearchApi.ts
+ M sfpcl_credit/processes/global_search.py
+ M sfpcl_credit/tests/test_global_search_api.py
+?? .ralph/runs/2026-07-21_221323_normal_run/
+?? sfpcl_credit/applications/modules/search_facade.py
+?? sfpcl_credit/documents/search_facade.py
+?? sfpcl_credit/identity/modules/search_facade.py
+?? sfpcl_credit/loans/modules/search_facade.py
+?? sfpcl_credit/members/search_facade.py
+?? sfpcl_credit/sap_workflow/modules/search_facade.py
+?? sfpcl_credit/security_instruments/search_facade.py

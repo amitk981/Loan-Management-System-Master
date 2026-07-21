@@ -18,6 +18,7 @@ const pagination = {
 };
 
 const response: GlobalSearchResponse = {
+  continuation: 'opaque-search-token',
   groups: {
     members: {
       items: [{
@@ -56,7 +57,7 @@ describe('010N Global Search Results', () => {
     expect(screen.getAllByText('Field Officer')).toHaveLength(2);
     expect(screen.getByText('₹4,00,000.00')).toBeTruthy();
     expect(screen.getByText('Accounts User')).toBeTruthy();
-    expect(fetchGlobalSearch).toHaveBeenCalledWith('API Farmer', {});
+    expect(fetchGlobalSearch).toHaveBeenCalledWith({ search: 'API Farmer', pages: {} });
 
     await userEvent.click(screen.getByRole('button', { name: 'View loan account' }));
     expect(onNavigate).toHaveBeenCalledWith('loan-accounts/detail', 'loan-1');
@@ -66,9 +67,9 @@ describe('010N Global Search Results', () => {
     render(<GlobalSearchResults query="API Farmer" onNavigate={vi.fn()} />);
     await screen.findByText('LN-API-001');
     await userEvent.click(screen.getByRole('button', { name: 'Next Loan Accounts page' }));
-    await waitFor(() => expect(fetchGlobalSearch).toHaveBeenLastCalledWith(
-      'API Farmer', { loan_accounts: 2 },
-    ));
+    await waitFor(() => expect(fetchGlobalSearch).toHaveBeenLastCalledWith({
+      continuation: 'opaque-search-token', pages: { loan_accounts: 2 },
+    }));
   });
 
   it('supports empty query, no results, partial groups, safe errors, and unauthorised state', async () => {
@@ -78,7 +79,9 @@ describe('010N Global Search Results', () => {
     expect(fetchGlobalSearch).not.toHaveBeenCalled();
     emptyQuery.unmount();
 
-    vi.mocked(fetchGlobalSearch).mockResolvedValueOnce({ groups: {} });
+    vi.mocked(fetchGlobalSearch).mockResolvedValue({
+      groups: {}, continuation: 'opaque-empty-token',
+    });
     const noResults = render(<GlobalSearchResults query="missing" onNavigate={vi.fn()} />);
     expect(await screen.findByText('No matching records found')).toBeTruthy();
     noResults.unmount();
@@ -104,9 +107,33 @@ describe('010N Global Search Results', () => {
     await userEvent.clear(input);
     await userEvent.type(input, 'FOL-API-001');
     await userEvent.click(screen.getByRole('button', { name: 'Search' }));
-    await waitFor(() => expect(fetchGlobalSearch).toHaveBeenLastCalledWith('FOL-API-001', {}));
+    await waitFor(() => expect(fetchGlobalSearch).toHaveBeenLastCalledWith({
+      search: 'FOL-API-001', pages: {},
+    }));
     expect(pageSource).not.toContain('localStorage');
     expect(pageSource).not.toContain('URLSearchParams');
     expect(pageSource).not.toContain("from '../../data/mockData'");
+  });
+
+  it('clears raw sensitive input after the request and paginates with only an opaque continuation', async () => {
+    const onQueryConsumed = vi.fn();
+    render(
+      <GlobalSearchResults
+        query="CHEQUE-SENSITIVE-001"
+        onNavigate={vi.fn()}
+        onQueryConsumed={onQueryConsumed}
+      />,
+    );
+
+    await screen.findByText('LN-API-001');
+    expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('');
+    expect(onQueryConsumed).toHaveBeenCalledOnce();
+
+    vi.mocked(fetchGlobalSearch).mockClear();
+    await userEvent.click(screen.getByRole('button', { name: 'Next Loan Accounts page' }));
+    await waitFor(() => expect(fetchGlobalSearch).toHaveBeenCalledWith({
+      continuation: 'opaque-search-token',
+      pages: { loan_accounts: 2 },
+    }));
   });
 });

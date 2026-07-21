@@ -13,11 +13,13 @@ import {
   type GlobalSearchResultType,
   type GlobalSearchResponse,
   type GlobalSearchPages,
+  type GlobalSearchRequest,
 } from '../../services/globalSearchApi';
 
 interface GlobalSearchResultsProps {
   query: string;
   onNavigate: (page: Page, id?: string) => void;
+  onQueryConsumed?: () => void;
 }
 
 const groupOrder = [
@@ -98,36 +100,62 @@ const ResultField: React.FC<{ label: string; value: string }> = ({ label, value 
   </div>
 );
 
-const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ query, onNavigate }) => {
+const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ query, onNavigate, onQueryConsumed }) => {
   const [localQuery, setLocalQuery] = useState(query);
-  const [submittedQuery, setSubmittedQuery] = useState(query.trim());
+  const [request, setRequest] = useState<GlobalSearchRequest | null>(null);
+  const [continuation, setContinuation] = useState('');
   const [response, setResponse] = useState<GlobalSearchResponse | null>(null);
   const [pages, setPages] = useState<GlobalSearchPages>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!query.trim()) {
+      setLocalQuery('');
+      return;
+    }
     setLocalQuery(query);
-    setSubmittedQuery(query.trim());
-    setPages(current => Object.keys(current).length ? {} : current);
+    setPages({});
+    setContinuation('');
+    setRequest(query.trim() ? { search: query.trim(), pages: {} } : null);
   }, [query]);
 
   useEffect(() => {
-    if (!submittedQuery) {
+    if (!request) {
+      return;
+    }
+    if (!('search' in request) && !request.continuation) {
       setResponse(null);
       setError(null);
       setLoading(false);
       return;
     }
     let cancelled = false;
+    const consumedRawSearch = 'search' in request;
     setLoading(true);
     setError(null);
-    fetchGlobalSearch(submittedQuery, pages)
-      .then(data => { if (!cancelled) setResponse(data); })
-      .catch(reason => { if (!cancelled) { setResponse(null); setError(reason as Error); } })
+    fetchGlobalSearch(request)
+      .then(data => {
+        if (!cancelled) {
+          setResponse(data);
+          setContinuation(data.continuation);
+          setLocalQuery('');
+          setRequest(null);
+          if (consumedRawSearch) onQueryConsumed?.();
+        }
+      })
+      .catch(reason => {
+        if (!cancelled) {
+          setResponse(null);
+          setError(reason as Error);
+          setLocalQuery('');
+          setRequest(null);
+          if (consumedRawSearch) onQueryConsumed?.();
+        }
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [submittedQuery, pages]);
+  }, [request, onQueryConsumed]);
 
   const visibleGroups = useMemo(() => groupOrder
     .map(name => [name, response?.groups[name]] as const)
@@ -156,8 +184,12 @@ const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ query, onNavi
           className="flex flex-col gap-3 sm:flex-row"
           onSubmit={event => {
             event.preventDefault();
-            setPages(current => Object.keys(current).length ? {} : current);
-            setSubmittedQuery(localQuery.trim());
+            const search = localQuery.trim();
+            if (!search) return;
+            setPages({});
+            setContinuation('');
+            setResponse(null);
+            setRequest({ search, pages: {} });
           }}
         >
           <div className="relative flex-1">
@@ -174,7 +206,7 @@ const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ query, onNavi
         </form>
       </div>
 
-      {!submittedQuery && (
+      {!request && !response && !error && (
         <div className="card py-12 text-center">
           <Search size={28} className="mx-auto text-slate-300 mb-3" />
           <p className="text-sm font-semibold text-slate-700">Enter a search term to find authorised records.</p>
@@ -190,7 +222,7 @@ const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ query, onNavi
           message={error.message || 'Global search could not be completed.'}
         />
       )}
-      {!loading && !error && submittedQuery && response && resultCount === 0 && (
+      {!loading && !error && response && resultCount === 0 && (
         <div className="card py-12 text-center">
           <Search size={28} className="mx-auto text-slate-300 mb-3" />
           <p className="text-sm font-semibold text-slate-700">No matching records found</p>
@@ -220,9 +252,11 @@ const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ query, onNavi
                 className="btn-secondary text-xs"
                 aria-label={`Previous ${groupLabels[name]} page`}
                 disabled={!group.pagination.has_previous}
-                onClick={() => setPages(current => ({
-                  ...current, [name]: Math.max(1, group.pagination.page - 1),
-                }))}
+                onClick={() => {
+                  const nextPages = { ...pages, [name]: Math.max(1, group.pagination.page - 1) };
+                  setPages(nextPages);
+                  setRequest({ continuation, pages: nextPages });
+                }}
               >
                 Previous
               </button>
@@ -234,9 +268,11 @@ const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ query, onNavi
                 className="btn-secondary text-xs"
                 aria-label={`Next ${groupLabels[name]} page`}
                 disabled={!group.pagination.has_next}
-                onClick={() => setPages(current => ({
-                  ...current, [name]: group.pagination.page + 1,
-                }))}
+                onClick={() => {
+                  const nextPages = { ...pages, [name]: group.pagination.page + 1 };
+                  setPages(nextPages);
+                  setRequest({ continuation, pages: nextPages });
+                }}
               >
                 Next
               </button>

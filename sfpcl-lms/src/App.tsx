@@ -228,7 +228,13 @@ const AppInner: React.FC = () => {
       case 'dashboard':
         return <Dashboard onNavigate={navigate} />;
       case 'search':
-        return <GlobalSearchResults query={searchQuery} onNavigate={navigate} />;
+        return (
+          <GlobalSearchResults
+            query={searchQuery}
+            onNavigate={navigate}
+            onQueryConsumed={() => setSearchQuery('')}
+          />
+        );
       case 'notifications':
         return <NotificationsCenter onNavigate={navigate} />;
       case 'tasks':

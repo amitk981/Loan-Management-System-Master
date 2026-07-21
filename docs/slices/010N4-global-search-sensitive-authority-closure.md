@@ -1,7 +1,7 @@
 # Slice 010N4: Global Search Sensitive Authority Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

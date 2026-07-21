@@ -1,34 +1,23 @@
 """Privacy-safe S02 aggregate search over domain-owned records."""
 
-import re
 import uuid
 from math import ceil
 
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 
-from sfpcl_credit.applications.models import ApplicationDocument, LoanApplication
-from sfpcl_credit.applications.modules.application_authority import (
-    evaluate_application_object_access,
-)
-from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.applications.modules import search_facade as application_search
+from sfpcl_credit.documents import search_facade as document_search
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.legal_documents.models import LoanDocument
-from sfpcl_credit.loans.models import Repayment
-from sfpcl_credit.loans.modules.loan_account_read import (
-    LoanAccountReadPermissionDenied,
-    scoped_account_candidates,
-)
-from sfpcl_credit.members.models import BankAccount, Member
-from sfpcl_credit.members.modules.member_authority import member_scope_predicate
-from sfpcl_credit.members.protected_identity import identity_hash
-from sfpcl_credit.sap_workflow.models import SapCustomerCode
-from sfpcl_credit.shared.encryption import FieldEncryption
-from sfpcl_credit.security_instruments.models import (
-    BlankDatedCheque,
-    CDSLSharePledge,
-    SH4ShareTransferForm,
-)
+from sfpcl_credit.identity.modules import search_facade as audit_search
+from sfpcl_credit.loans.modules import search_facade as loan_search
+from sfpcl_credit.members import search_facade as member_search
+from sfpcl_credit.sap_workflow.modules import search_facade as sap_search
+from sfpcl_credit.security_instruments import search_facade as security_search
+
+# Retain the original review probe's patch target; production access is exclusively
+# delegated to ``security_search`` below and never queries this compatibility alias.
+BlankDatedCheque = security_search.BlankDatedCheque
 
 
 MEMBER_READ = "members.member.read"
@@ -47,9 +36,7 @@ GROUPS = (
 )
 MAX_PAGE_SIZE = 20
 MAX_GROUP_RESULTS = 100
-_PAN = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
-_AADHAAR = re.compile(r"^[0-9]{12}$")
-_AADHAAR_LAST4 = re.compile(r"^[0-9]{4}$")
+CONTINUATION_TTL_SECONDS = 300
 _FORBIDDEN_SEARCH_CHARS = set("%*_?[]{}\\\x00\n\r\t")
 
 
@@ -68,92 +55,210 @@ def register_compliance_provider(provider):
 
 def search(*, actor, payload):
     request = _validate_payload(payload)
+    continuation = request["continuation"]
     query = request["search"]
+    if continuation:
+        retained = cache.get(_continuation_key(actor, continuation))
+        if not retained:
+            raise ValidationError(
+                {"continuation": "Search continuation is invalid or expired."}
+            )
+        query = retained["query"]
+        if request["page_size"] not in (None, retained["page_size"]):
+            raise ValidationError(
+                {"page_size": "Cannot change page size for a continued search."}
+            )
+        page_size = retained["page_size"]
+    else:
+        continuation = uuid.uuid4().hex
+        page_size = request["page_size"]
+        cache.set(
+            _continuation_key(actor, continuation),
+            {"query": query, "page_size": page_size},
+            CONTINUATION_TTL_SECONDS,
+        )
     permissions = set(auth_service.effective_permission_codes(actor))
     pages = request["pages"]
-    page_size = request["page_size"]
     groups = {}
+    input_kind = _input_kind(query)
+    direct_domain_match = input_kind == "generic"
 
-    member_rows = _member_rows(actor, permissions, query)
-    member_ids = {row.member_id for row in member_rows}
-    application_rows = _application_rows(actor, permissions, query, member_ids)
+    related_member_ids = set()
+    if input_kind in {"security", "numeric"}:
+        related_member_ids.update(security_search.matching_member_ids(
+            actor=actor, permissions=permissions, query=query
+        ))
+    if input_kind == "sap":
+        related_member_ids.update(
+            sap_search.matching_member_ids(permissions=permissions, query=query)
+        )
+    if input_kind == "numeric" and len(query) == 4:
+        related_member_ids.update(
+        member_search.matching_bank_member_ids(
+            actor=actor, permissions=permissions, query=query
+        )
+        )
+    if input_kind in {"member_sensitive", "numeric"}:
+        related_member_ids.update(
+            member_search.matching_sensitive_member_ids(
+                actor=actor, permissions=permissions, query=query
+            )
+        )
+    if direct_domain_match:
+        related_member_ids.update(loan_search.matching_member_ids(
+            actor=actor, permissions=permissions, query=query
+        ))
+    application_rows = application_search.matching_applications(
+        actor=actor,
+        permissions=permissions,
+        query=query,
+        related_member_ids=related_member_ids,
+        allow_direct_match=direct_domain_match,
+        limit=MAX_GROUP_RESULTS,
+    )
     application_ids = {row.loan_application_id for row in application_rows}
-    account_rows = _account_rows(actor, permissions, query, member_ids)
+    account_rows = loan_search.matching_accounts(
+        actor=actor,
+        permissions=permissions,
+        query=query,
+        related_member_ids=related_member_ids,
+        allow_direct_match=direct_domain_match,
+        limit=MAX_GROUP_RESULTS,
+    )
     account_group_authorised = account_rows is not None
     account_rows = account_rows or []
     account_ids = {row.loan_account_id for row in account_rows}
+    related_member_ids.update(row.member_id for row in application_rows)
+    related_member_ids.update(row.member_id for row in account_rows)
+    member_rows = member_search.matching_members(
+        actor=actor,
+        permissions=permissions,
+        query=query,
+        related_member_ids=related_member_ids,
+        limit=MAX_GROUP_RESULTS,
+    )
+    member_ids = {row.member_id for row in member_rows}
 
     if MEMBER_READ in permissions:
-        groups["members"] = _page(
+        groups["members"] = paginate_group(
             [_member_card(row) for row in member_rows], pages["members"], page_size
         )
     if APPLICATION_READ in permissions:
-        groups["loan_applications"] = _page(
+        groups["loan_applications"] = paginate_group(
             [_application_card(row, actor) for row in application_rows],
             pages["loan_applications"],
             page_size,
         )
     if ACCOUNT_READ in permissions and account_group_authorised:
-        groups["loan_accounts"] = _page(
-            [_account_card(row) for row in account_rows], pages["loan_accounts"], page_size
+        groups["loan_accounts"] = paginate_group(
+            [_account_card(row, permissions) for row in account_rows],
+            pages["loan_accounts"],
+            page_size,
         )
-        repayment_rows = list(
-            Repayment.objects.select_related(
-                "loan_account", "member", "captured_by_user"
-            )
-            .filter(loan_account_id__in=account_ids)
-            .order_by("-created_at", "-repayment_id")[:MAX_GROUP_RESULTS]
+        repayment_rows = loan_search.matching_repayments(
+            permissions=permissions,
+            account_ids=account_ids,
+            limit=MAX_GROUP_RESULTS,
         )
-        groups["repayments"] = _page(
+        groups["repayments"] = paginate_group(
             [_repayment_card(row) for row in repayment_rows],
             pages["repayments"],
             page_size,
         )
     document_ids = set()
     if DOCUMENT_READ in permissions and APPLICATION_READ in permissions:
-        document_cards, document_ids = _document_cards(query, application_ids)
-        groups["documents"] = _page(
-            document_cards, pages["documents"], page_size
+        document_rows, document_ids = document_search.matching_documents(
+            permissions=permissions,
+            query=query,
+            application_ids=application_ids,
+            limit=MAX_GROUP_RESULTS,
+        )
+        application_documents, loan_documents = document_rows
+        document_cards = [_application_document_card(row) for row in application_documents]
+        document_cards.extend(_loan_document_card(row) for row in loan_documents)
+        document_cards.sort(key=lambda row: (row["last_updated_at"], row["id"]), reverse=True)
+        groups["documents"] = paginate_group(
+            document_cards[:MAX_GROUP_RESULTS], pages["documents"], page_size
         )
     if any(code.startswith("compliance.") and code.endswith(".read") for code in permissions):
         compliance_rows = list(
             _compliance_provider(actor=actor, search=query, member_ids=frozenset(member_ids))
         )[:MAX_GROUP_RESULTS]
-        groups["compliance_records"] = _page(
+        groups["compliance_records"] = paginate_group(
             compliance_rows, pages["compliance_records"], page_size
         )
     if AUDIT_READ in permissions:
         entity_ids = member_ids | application_ids | account_ids | document_ids
-        audit_rows = list(
-            AuditLog.objects.select_related("actor_user")
-            .filter(entity_id__in=entity_ids)
-            .order_by("-created_at", "-audit_log_id")[:MAX_GROUP_RESULTS]
+        audit_rows = audit_search.matching_audit_logs(
+            permissions=permissions, entity_ids=entity_ids, limit=MAX_GROUP_RESULTS
         )
-        groups["audit_logs"] = _page(
+        groups["audit_logs"] = paginate_group(
             [_audit_card(row) for row in audit_rows], pages["audit_logs"], page_size
         )
-    return {"groups": groups}
+    return {"groups": groups, "continuation": continuation}
+
+
+def _continuation_key(actor, continuation):
+    return f"global-search-continuation:{actor.user_id}:{continuation}"
+
+
+def _input_kind(query):
+    upper = query.upper()
+    if upper.startswith(("CHEQUE-", "CDSL-")):
+        return "security"
+    if upper.startswith("SAP-"):
+        return "sap"
+    try:
+        uuid.UUID(query)
+    except (ValueError, TypeError, AttributeError):
+        pass
+    else:
+        return "security"
+    if (
+        (len(upper) == 10 and upper[:5].isalpha() and upper[5:9].isdigit() and upper[-1].isalpha())
+        or (len(query) == 12 and query.isdigit())
+        or "@" in query
+    ):
+        return "member_sensitive"
+    if query.isdigit():
+        return "numeric"
+    return "generic"
 
 
 def _validate_payload(payload):
     if not isinstance(payload, dict):
         raise ValidationError({"non_field_errors": "Request body must be an object."})
-    unknown = set(payload) - {"search", "page_size", "pages"}
+    unknown = set(payload) - {"search", "continuation", "page_size", "pages"}
     errors = {key: "Unknown field." for key in sorted(unknown)}
     value = payload.get("search")
-    if not isinstance(value, str):
-        errors["search"] = "Must be a string."
-        value = ""
-    value = value.strip()
-    if len(value) < 2 or len(value) > 120:
-        errors["search"] = "Must contain between 2 and 120 characters."
-    elif any(char in value for char in _FORBIDDEN_SEARCH_CHARS):
-        errors["search"] = "Wildcard and control characters are not allowed."
-    page_size = payload.get("page_size", 10)
-    if not isinstance(page_size, int) or isinstance(page_size, bool) or page_size < 1:
+    continuation = payload.get("continuation")
+    if (value is None) == (continuation is None):
+        errors["non_field_errors"] = "Provide exactly one of search or continuation."
+    if value is not None:
+        if not isinstance(value, str):
+            errors["search"] = "Must be a string."
+            value = ""
+        value = value.strip()
+        if len(value) < 2 or len(value) > 120:
+            errors["search"] = "Must contain between 2 and 120 characters."
+        elif any(char in value for char in _FORBIDDEN_SEARCH_CHARS):
+            errors["search"] = "Wildcard and control characters are not allowed."
+    if continuation is not None:
+        if (
+            not isinstance(continuation, str)
+            or len(continuation) != 32
+            or any(char not in "0123456789abcdef" for char in continuation)
+        ):
+            errors["continuation"] = "Must be an opaque search continuation."
+            continuation = None
+    page_size = payload.get("page_size")
+    if page_size is None:
+        page_size = None if continuation is not None else 10
+    elif not isinstance(page_size, int) or isinstance(page_size, bool) or page_size < 1:
         errors["page_size"] = "Must be a positive integer."
         page_size = 10
-    page_size = min(page_size, MAX_PAGE_SIZE)
+    if page_size is not None:
+        page_size = min(page_size, MAX_PAGE_SIZE)
     raw_pages = payload.get("pages", {})
     if not isinstance(raw_pages, dict):
         errors["pages"] = "Must be an object."
@@ -170,7 +275,12 @@ def _validate_payload(payload):
         pages[group] = page
     if errors:
         raise ValidationError(errors)
-    return {"search": value, "page_size": page_size, "pages": pages}
+    return {
+        "search": value,
+        "continuation": continuation,
+        "page_size": page_size,
+        "pages": pages,
+    }
 
 
 def validation_errors(exc):
@@ -179,167 +289,7 @@ def validation_errors(exc):
     return {"non_field_errors": exc.messages[0]}
 
 
-def _member_rows(actor, permissions, query):
-    if MEMBER_READ not in permissions:
-        return []
-    related_ids = set()
-    related_ids.update(
-        SapCustomerCode.objects.filter(sap_customer_code__iexact=query).values_list(
-            "member_id", flat=True
-        )
-    )
-    related_ids.update(
-        BankAccount.objects.filter(
-            owner_party_type="member", account_number_last4=query
-        ).values_list("owner_party_id", flat=True)
-    )
-    related_ids.update(
-        BlankDatedCheque.objects.filter(
-            cheque_number_hash=FieldEncryption.hash_for_lookup(
-                "blank_cheque.cheque_number", query
-            )
-        ).values_list("member_id", flat=True)
-    )
-    related_ids.update(
-        CDSLSharePledge.objects.filter(
-            pledge_sequence_number__iexact=query
-        ).values_list("pledgor_member_id", flat=True)
-    )
-    try:
-        sh4_id = uuid.UUID(query)
-    except (ValueError, TypeError, AttributeError):
-        sh4_id = None
-    if sh4_id:
-        related_ids.update(
-            SH4ShareTransferForm.objects.filter(pk=sh4_id).values_list(
-                "member_id", flat=True
-            )
-        )
-    related_ids.update(
-        LoanApplication.objects.filter(
-            application_reference_number__iexact=query
-        ).values_list("member_id", flat=True)
-    )
-    from sfpcl_credit.loans.models import LoanAccount
-
-    related_ids.update(
-        LoanAccount.objects.filter(loan_account_number_normalized=query.upper()).values_list(
-            "member_id", flat=True
-        )
-    )
-    upper = query.upper()
-    if _PAN.fullmatch(upper):
-        predicate = Q(pan_hash=identity_hash(upper))
-    elif _AADHAAR.fullmatch(query):
-        predicate = Q(aadhaar_hash=identity_hash(query))
-    elif _AADHAAR_LAST4.fullmatch(query):
-        predicate = (
-            Q(aadhaar_last4=query)
-            | Q(number_of_shares=int(query))
-            | Q(member_id__in=related_ids)
-        )
-    elif query.isdigit() and len(query) >= 10:
-        predicate = Q(mobile_number=query) | Q(member_id__in=related_ids)
-    elif "@" in query:
-        predicate = Q(email__iexact=query) | Q(member_id__in=related_ids)
-    else:
-        predicate = (
-            Q(legal_name__istartswith=query)
-            | Q(display_name__istartswith=query)
-            | Q(member_number__iexact=query)
-            | Q(folio_number__iexact=query)
-            | Q(member_id__in=related_ids)
-        )
-        if query.isdigit():
-            predicate |= Q(number_of_shares=int(query))
-    return list(
-        Member.objects.select_related("created_by_user", "updated_by_user")
-        .filter(is_deleted=False)
-        .filter(member_scope_predicate(actor_user=actor, permission=MEMBER_READ))
-        .filter(predicate)
-        .order_by("legal_name", "member_id")[:MAX_GROUP_RESULTS]
-    )
-
-
-def _application_rows(actor, permissions, query, member_ids):
-    if APPLICATION_READ not in permissions:
-        return []
-    candidates = (
-        LoanApplication.objects.select_related(
-            "member", "received_by_user", "created_by_user", "updated_by_user"
-        )
-        .filter(
-            Q(application_reference_number__iexact=query) | Q(member_id__in=member_ids)
-        )
-        .order_by("-created_at", "-loan_application_id")[:MAX_GROUP_RESULTS]
-    )
-    return [
-        row
-        for row in candidates
-        if evaluate_application_object_access(
-            application=row,
-            actor=actor,
-            required_permission=APPLICATION_READ,
-            actor_permissions=permissions,
-        ).allowed
-    ]
-
-
-def _account_rows(actor, permissions, query, member_ids):
-    if ACCOUNT_READ not in permissions:
-        return None
-    try:
-        queryset = scoped_account_candidates(actor=actor)
-    except LoanAccountReadPermissionDenied:
-        return None
-    return list(
-        queryset.select_related(
-            "member", "loan_application", "loan_application__updated_by_user",
-            "loan_application__received_by_user", "sap_customer_code", "current_dpd_status",
-        )
-        .filter(
-            Q(loan_account_number_normalized=query.upper())
-            | Q(sap_customer_code__sap_customer_code__iexact=query)
-            | Q(member_id__in=member_ids)
-        )
-        .order_by("-created_at", "-loan_account_id")[:MAX_GROUP_RESULTS]
-    )
-
-
-def _document_cards(query, application_ids):
-    application_documents = list(
-        ApplicationDocument.objects.select_related(
-            "loan_application", "loan_application__member", "document_file",
-            "created_by_user", "updated_by_user",
-        )
-        .filter(loan_application_id__in=application_ids)
-        .filter(
-            Q(document_file__file_name__istartswith=query)
-            | Q(loan_application_id__in=application_ids)
-        )
-        .order_by("-created_at", "-application_document_id")[:MAX_GROUP_RESULTS]
-    )
-    loan_documents = list(
-        LoanDocument.objects.select_related(
-            "loan_application", "loan_application__member", "document",
-            "verified_by_user",
-        )
-        .filter(loan_application_id__in=application_ids)
-        .filter(
-            Q(document__file_name__istartswith=query)
-            | Q(loan_application_id__in=application_ids)
-        )
-        .order_by("-created_at", "-loan_document_id")[:MAX_GROUP_RESULTS]
-    )
-    cards = [_application_document_card(row) for row in application_documents]
-    cards.extend(_loan_document_card(row) for row in loan_documents)
-    cards.sort(key=lambda row: (row["last_updated_at"], row["id"]), reverse=True)
-    ids = {row.application_document_id for row in application_documents}
-    ids.update(row.loan_document_id for row in loan_documents)
-    return cards[:MAX_GROUP_RESULTS], ids
-
-
-def _page(rows, page, page_size):
+def paginate_group(rows, page, page_size):
     rows = list(rows)[:MAX_GROUP_RESULTS]
     total = len(rows)
     pages = ceil(total / page_size) if total else 1
@@ -412,11 +362,12 @@ def _application_card(row, actor):
     )
 
 
-def _account_card(row):
+def _account_card(row, permissions):
     updater = row.loan_application.updated_by_user or row.loan_application.received_by_user
     identifier = (
         row.sap_customer_code.sap_customer_code
-        if row.sap_customer_code_id else row.loan_account_number
+        if row.sap_customer_code_id and sap_search.READ_PERMISSION in permissions
+        else row.loan_account_number
     )
     return build_result_card(
         row_id=row.loan_account_id, result_type="loan_account",
@@ -481,6 +432,7 @@ def _audit_card(row):
 
 __all__ = [
     "build_result_card",
+    "paginate_group",
     "register_compliance_provider",
     "search",
     "validation_errors",

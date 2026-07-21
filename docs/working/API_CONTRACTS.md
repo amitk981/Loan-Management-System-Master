@@ -5056,7 +5056,13 @@ configuration is not repayment authority.
 
 `POST /api/v1/global-search/`
 
-The authenticated request body is `{ "search": "value", "page_size": 10, "pages": {} }`.
+The initial authenticated request body is
+`{ "search": "value", "page_size": 10, "pages": {} }`. A successful response includes a random,
+actor-bound `continuation` token retained server-side for five minutes. Subsequent group pages send
+`{ "continuation": "opaque-token", "pages": {"members": 2} }` and do not resubmit the raw search
+value. Exactly one of `search` or `continuation` is required; invalid, expired, or cross-actor tokens
+return the standard nondisclosing `400 VALIDATION_ERROR`.
+
 `page_size` is capped at 20 and `pages` may independently name `members`, `loan_applications`,
 `loan_accounts`, `documents`, `repayments`, `compliance_records`, and `audit_logs`. The query is in
 the JSON body so sensitive exact values do not enter query-string/access-log or browser-history
@@ -5071,4 +5077,7 @@ permission and object scope. A denied group is absent, including its count. Each
 `risk_status`/`amount`, `owner`, `last_updated_at`, `last_updated_by`, and server-authorised
 `quick_actions`. PAN/Aadhaar/cheque matching uses stored keyed hashes; Aadhaar and bank suffix
 matching uses indexed stored last-four fields. Raw sensitive input and identifiers are never
-returned or audited. The registered compliance provider is intentionally empty until 011M3.
+returned or audited. PAN and Aadhaar inputs additionally require their canonical field-specific
+sensitive authority; SAP input requires `finance.sap_code.read`; blank-cheque input requires
+`security.blank_cheque.manage`; and security summary inputs require security-package or instrument
+authority. The registered compliance provider is intentionally empty until 011M3.

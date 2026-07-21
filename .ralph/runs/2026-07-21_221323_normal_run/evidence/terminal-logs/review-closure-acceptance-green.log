@@ -1,0 +1,14 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_cfo_without_blank_cheque_authority_cannot_resolve_owner_by_cheque sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_application_authority_is_independent_and_scope_precedes_result_cap sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_opaque_continuation_replays_pages_without_resubmitting_sensitive_input sfpcl_credit.tests.test_global_search_api.GlobalSearchApiTests.test_each_delivered_group_uses_1_20_21_100_101_pagination_contract --verbosity 1
+
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.141s
+
+OK
+Destroying test database for alias 'default'...
+
+Positive pass signal: PASS
+Exit code: 0
