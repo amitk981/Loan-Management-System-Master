@@ -5,6 +5,23 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
+class ImmutableDpdOperationalBucketSchemeQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError(
+            {"dpd_operational_bucket_scheme": "Approved DPD policy versions are immutable."}
+        )
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError(
+            {"dpd_operational_bucket_scheme": "Approved DPD policy versions are immutable."}
+        )
+
+    def delete(self):
+        raise ValidationError(
+            {"dpd_operational_bucket_scheme": "Approved DPD policy versions are retained."}
+        )
+
+
 class DpdOperationalBucketScheme(models.Model):
     dpd_operational_bucket_scheme_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -17,6 +34,8 @@ class DpdOperationalBucketScheme(models.Model):
     third_upper_days = models.PositiveIntegerField(default=90)
     status = models.CharField(max_length=20, default="active", db_index=True)
     created_at = models.DateTimeField(default=timezone.now)
+
+    objects = ImmutableDpdOperationalBucketSchemeQuerySet.as_manager()
 
     class Meta:
         db_table = "dpd_operational_bucket_schemes"
@@ -45,6 +64,18 @@ class DpdOperationalBucketScheme(models.Model):
                 name="dpd_scheme_status_bounded",
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"dpd_operational_bucket_scheme": "Approved DPD policy versions are immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"dpd_operational_bucket_scheme": "Approved DPD policy versions are retained."}
+        )
 
 
 class AppendOnlyDpdStatusQuerySet(models.QuerySet):

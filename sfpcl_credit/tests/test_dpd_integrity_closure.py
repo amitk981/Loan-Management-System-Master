@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.test import Client, TestCase
 
@@ -101,9 +102,10 @@ class DpdPolicyReplayTests(TestCase):
             {"first_upper_days": 30, "second_upper_days": 60, "third_upper_days": 90},
         )
 
-        DpdOperationalBucketScheme.objects.filter(pk=scheme.pk).update(
-            version="DPD-POLICY-EDITED"
-        )
+        with self.assertRaises(ValidationError):
+            DpdOperationalBucketScheme.objects.filter(pk=scheme.pk).update(
+                version="DPD-POLICY-EDITED"
+            )
         replayed = Client().get(
             f"/api/v1/loan-accounts/{fixture.account.pk}/dpd-status/",
             **fixture.auth,

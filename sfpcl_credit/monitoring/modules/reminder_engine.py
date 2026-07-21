@@ -17,6 +17,7 @@ from sfpcl_credit.loans.modules.loan_account_read import (
     LoanAccountReadPermissionDenied,
     scoped_account_candidates,
 )
+from sfpcl_credit.loans.modules.dpd_source_decision import has_current_unpaid_schedule
 from sfpcl_credit.monitoring.models import DpdStatus, Reminder
 from sfpcl_credit.monitoring.modules.dpd_monitoring import (
     DpdNotFound,
@@ -176,6 +177,7 @@ class ReminderEngine:
         if job is None or job.status not in {
             CommunicationDeliveryJob.STATUS_QUEUED,
             CommunicationDeliveryJob.STATUS_RETRYING,
+            CommunicationDeliveryJob.STATUS_RUNNING,
         }:
             return None
         row = (
@@ -230,6 +232,7 @@ class ReminderEngine:
         if (
             current_decision is None
             or not current_decision["eligible"]
+            or not has_current_unpaid_schedule(loan_account_id=account.pk)
             or account.total_outstanding <= 0
             or account.loan_account_status not in SERVICEABLE_STATUSES
         ):
@@ -268,14 +271,20 @@ class ReminderEngine:
         cleaned = _validate_quarter_run(payload)
         _require_permission(actor)
         scoped = _scoped_accounts(actor)
-        candidates = list(
+        candidate_query = (
             DpdStatus.objects.select_related("loan_account__member", "loan_account__loan_application")
             .filter(
                 loan_account__in=scoped,
                 as_of_date=cleaned["quarter_end_date"],
             )
-            .order_by("loan_account_id")[:RUN_LIMIT]
         )
+        if cleaned["continuation_after_loan_account_id"] is not None:
+            candidate_query = candidate_query.filter(
+                loan_account_id__gt=cleaned["continuation_after_loan_account_id"]
+            )
+        candidate_rows = list(candidate_query.order_by("loan_account_id")[: RUN_LIMIT + 1])
+        truncated = len(candidate_rows) > RUN_LIMIT
+        candidates = candidate_rows[:RUN_LIMIT]
         results = []
         for dpd_status in candidates:
             decision = reminder_eligibility_decision(
@@ -363,6 +372,11 @@ class ReminderEngine:
             "retained_count": sum(item["outcome"] == "retained" for item in results),
             "skipped_count": sum(item["outcome"] == "skipped" for item in results),
             "failed_count": sum(item["outcome"] == "failed" for item in results),
+            "processed_count": len(results),
+            "truncated": truncated,
+            "continuation_after_loan_account_id": (
+                str(candidates[-1].loan_account_id) if truncated and candidates else None
+            ),
             "results": results,
         }
 
@@ -523,8 +537,9 @@ class ReminderEngine:
 
 
 def _validate_quarter_run(payload):
-    expected = {"quarter_end_date", "channel", "content_template_id"}
-    if set(payload) != expected:
+    required = {"quarter_end_date", "channel", "content_template_id"}
+    allowed = required | {"continuation_after_loan_account_id"}
+    if not required.issubset(payload) or set(payload) - allowed:
         raise ReminderValidation({"body": "Use quarter_end_date, channel and content_template_id."})
     parsed = parse_date(payload.get("quarter_end_date")) if isinstance(payload.get("quarter_end_date"), str) else None
     if parsed is None or (parsed.month, parsed.day) not in {(3, 31), (6, 30), (9, 30), (12, 31)}:
@@ -536,7 +551,19 @@ def _validate_quarter_run(payload):
         template_id = UUID(str(payload.get("content_template_id")))
     except (ValueError, TypeError, AttributeError) as exc:
         raise ReminderValidation({"content_template_id": "Must be a UUID."}) from exc
-    return {"quarter_end_date": parsed, "channel": channel, "content_template_id": template_id}
+    continuation = payload.get("continuation_after_loan_account_id")
+    try:
+        continuation = UUID(str(continuation)) if continuation is not None else None
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise ReminderValidation(
+            {"continuation_after_loan_account_id": "Must be a UUID."}
+        ) from exc
+    return {
+        "quarter_end_date": parsed,
+        "channel": channel,
+        "content_template_id": template_id,
+        "continuation_after_loan_account_id": continuation,
+    }
 
 
 def _validate_phone_log(payload):

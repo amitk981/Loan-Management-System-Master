@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+FF
+======================================================================
+FAIL: test_generation_replay_rechecks_current_portfolio_scope (__main__.QuarterlyMisOwnerProbe.test_generation_replay_rechecks_current_portfolio_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py", line 199, in test_generation_replay_rechecks_current_portfolio_scope
+    self.assertEqual(replay.status_code, 403, replay.content)
+AssertionError: 200 != 403 : b'{"success": true, "data": {"quarterly_mis_report_id": "32b9ba36-6f7a-468c-a81f-6edc364c769e", "portfolio_snapshot_id": "91049975-57c2-450e-a07c-022dab8778b2", "financial_year": "FY2026-27", "quarter": "Q1", "as_of_date": "2026-06-30", "revision": 1, "status": "draft", "totals": {"active_loans_count": 1, "sanctioned_amount": "400000.00", "disbursed_amount": "400000.00", "principal_outstanding_amount": "400000.00", "interest_outstanding_amount": "0.00", "overdue_amount": "0.00", "repayments_received_in_quarter": "0.00", "loans_overdue_beyond_one_year_count": 0, "reminders_count": 0, "dpd_bucket_counts": {"current": 1, "one_to_two_years": 0, "two_to_three_years": 0, "more_than_three_years": 0}, "dimension_summaries": {"crop": {"unavailable": {"loan_count": 1, "sanctioned_amount": "400000.00", "principal_outstanding_amount": "400000.00"}}, "region": {"Nashik": {"loan_count": 1, "sanctioned_amount": "400000.00", "principal_outstanding_amount": "400000.00"}}, "borrower_type": {"individual_farmer": {"loan_count": 1, "sanctioned_amount": "400000.00", "principal_outstanding_amount": "400000.00"}}, "dpd_bucket": {"current": {"loan_count": 1, "sanctioned_amount": "400000.00", "principal_outstanding_amount": "400000.00"}}, "security_type": {"unavailable": {"loan_count": 1, "sanctioned_amount": "400000.00", "principal_outstanding_amount": "400000.00"}}}}, "availability": {"grace_period_count": "unavailable", "extension_count": "unavailable", "non_recoverable_review_count": "unavailable", "recovery_approved_count": "unavailable", "closure_pending_count": "unavailable", "grievances_open_count": "unavailable", "compliance_alert_count": "unavailable", "exceptions_approved_count": "unavailable", "director_related_party_cases_count": "unavailable", "kyc_overdue_cases_count": "unavailable", "pending_documentation_issues_count": "unavailable", "sap_posting_exceptions_count": "unavailable", "pending_noc_count": "unavailable"}, "generated_at": "2026-07-21T00:48:21.040331Z", "submitted_at": null, "reviewed_at": null, "report_document_id": "0bb81128-1937-48fd-a257-98bdf2eda4be", "excel_document_id": "81e97746-5468-4b22-95db-8c7ea20583b1"}, "meta": {"request_id": null, "timestamp": "2026-07-21T00:48:21.088210Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_late_reminder_does_not_enter_an_as_of_cutoff_snapshot (__main__.QuarterlyMisOwnerProbe.test_late_reminder_does_not_enter_an_as_of_cutoff_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py", line 228, in test_late_reminder_does_not_enter_an_as_of_cutoff_snapshot
+    self.assertEqual(report.json()["data"]["totals"]["reminders_count"], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 2 tests in 8.159s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...
+Test specification: .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py QuarterlyMisOwnerProbe
+Exit code: 1
+Permanent test specification: sfpcl_credit/tests/test_servicing_as_of_owner_boundary.py::ServicingAsOfOwnerBoundaryTests::test_mis_replay_and_cutoff_owner

@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+F
+======================================================================
+FAIL: test_capitalised_schedule_interest_is_not_reported_overdue_again (__main__.DpdCapitalisationReverseConsumerProbe.test_capitalised_schedule_interest_is_not_reported_overdue_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py", line 93, in test_capitalised_schedule_interest_is_not_reported_overdue_again
+    self.assertEqual(response.json()["data"]["interest_overdue_amount"], "0.00")
+AssertionError: '37000.00' != '0.00'
+- 37000.00
++ 0.00
+
+
+----------------------------------------------------------------------
+Ran 1 test in 4.321s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Test specification: .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py DpdCapitalisationReverseConsumerProbe
+Exit code: 1
+Permanent test specification: sfpcl_credit/tests/test_servicing_as_of_owner_boundary.py::ServicingAsOfOwnerBoundaryTests::test_capitalisation_is_classified_once

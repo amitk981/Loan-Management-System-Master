@@ -1,0 +1,11 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+sssss
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+OK (skipped=5)
+Destroying test database for alias 'default'...
+Test specification: sfpcl_credit.tests.test_servicing_postgresql_acceptance.ServicingAsOfOwnerBoundaryPostgreSQLAcceptanceTests
+Exit code: 0

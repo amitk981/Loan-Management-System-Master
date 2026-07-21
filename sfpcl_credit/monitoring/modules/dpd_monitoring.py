@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from sfpcl_credit.api import request_ip, request_user_agent
@@ -94,10 +95,25 @@ def current_reminder_eligibility_decision(*, actor, loan_account_id):
     ).first()
     if row is None:
         raise DpdNotFound
-    return reminder_eligibility_decision(
+    decision = reminder_eligibility_decision(
         dpd_status=row,
         quarter_end_date=row.as_of_date,
     )
+    try:
+        source = resolve_locked_dpd_source_decision(
+            actor=actor,
+            loan_account_id=account.pk,
+            as_of_date=timezone.localdate(),
+        )
+    except DpdSourcePermissionDenied as exc:
+        raise DpdPermissionDenied from exc
+    if not any(
+        line.principal_paid_as_of < line.principal_due
+        or line.interest_paid_as_of < line.interest_due
+        for line in source.schedule_lines
+    ):
+        return {**decision, "eligible": False, "reason": "loan_fully_paid"}
+    return decision
 
 
 def calculate_portfolio(*, actor, payload, request=None):
@@ -177,7 +193,6 @@ def calculate_portfolio(*, actor, payload, request=None):
 
 @transaction.atomic
 def _calculate_locked(*, actor, loan_account_id, as_of_date, request):
-    _require_permission(actor, CALCULATE_PERMISSION)
     try:
         source_decision = resolve_locked_dpd_source_decision(
             actor=actor,
@@ -288,6 +303,9 @@ def _calculate_amounts(*, source_decision):
             "schedule_lines": schedule_inputs,
             "applied_allocation_ids": [
                 str(value) for value in source_decision.applied_allocation_ids
+            ],
+            "applied_capitalisation_ids": [
+                str(value) for value in source_decision.applied_capitalisation_ids
             ],
             "as_of_date": source_decision.as_of_date.isoformat(),
         },

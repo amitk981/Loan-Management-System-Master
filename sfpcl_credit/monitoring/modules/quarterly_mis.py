@@ -62,6 +62,7 @@ class QuarterlyMisNotFound(Exception):
 @transaction.atomic
 def generate(*, actor, payload, idempotency_key, request=None):
     period = _validate_period(payload)
+    _begin_cutoff_snapshot()
     _require_permission(actor, GENERATE_PERMISSION)
     key_digest = _idempotency_digest(idempotency_key)
     payload_digest = _payload_digest(payload)
@@ -71,6 +72,7 @@ def generate(*, actor, payload, idempotency_key, request=None):
     if replay is not None:
         if replay.generation_payload_digest != payload_digest:
             raise QuarterlyMisConflict("The idempotency key is already bound to another request.")
+        _accessible_report(actor=actor, report_id=replay.pk)
         return replay.generation_original_response_json or serialize_report(replay)
     _lock_report_period(period)
     _require_permission(actor, GENERATE_PERMISSION)
@@ -80,6 +82,7 @@ def generate(*, actor, payload, idempotency_key, request=None):
     if replay is not None:
         if replay.generation_payload_digest != payload_digest:
             raise QuarterlyMisConflict("The idempotency key is already bound to another request.")
+        _accessible_report(actor=actor, report_id=replay.pk)
         return replay.generation_original_response_json or serialize_report(replay)
     try:
         accounts = [
@@ -180,6 +183,12 @@ def _lock_report_period(period):
     identity = f"{period['financial_year']}:{period['quarter']}:{period['as_of_date'].isoformat()}"
     with connection.cursor() as cursor:
         cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", [identity])
+
+
+def _begin_cutoff_snapshot():
+    if connection.vendor == "postgresql":
+        with connection.cursor() as cursor:
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
 
 def get_report(*, actor, report_id):
     return serialize_report(_accessible_report(actor=actor, report_id=report_id))
@@ -325,6 +334,7 @@ def submit_to_cfo(*, actor, report_id, payload, idempotency_key, request=None):
     if replay is not None:
         if replay.submission_payload_digest != payload_digest:
             raise QuarterlyMisConflict("The idempotency key is already bound to another request.")
+        _accessible_report(actor=actor, report_id=replay.pk)
         return replay.submission_original_response_json
     try:
         cfo = User.objects.get(pk=payload["submitted_to_user_id"], status=User.ACTIVE_STATUS)
@@ -340,6 +350,7 @@ def submit_to_cfo(*, actor, report_id, payload, idempotency_key, request=None):
         if replay is not None:
             if replay.submission_payload_digest != payload_digest:
                 raise QuarterlyMisConflict("The idempotency key is already bound to another request.")
+            _accessible_report(actor=actor, report_id=replay.pk)
             return replay.submission_original_response_json
         report = _locked_accessible_report(actor=actor, report_id=report_id)
         _require_permission(actor, SUBMIT_PERMISSION)
@@ -390,6 +401,9 @@ def mark_reviewed(*, actor, report_id, payload, idempotency_key, request=None):
     if replay is not None:
         if replay.review_payload_digest != payload_digest:
             raise QuarterlyMisConflict("The idempotency key is already bound to another request.")
+        _accessible_report(actor=actor, report_id=replay.pk)
+        if replay.submitted_to_user_id != actor.pk:
+            raise QuarterlyMisPermissionDenied
         return replay.review_original_response_json
     conflict = None
     with transaction.atomic():
@@ -399,6 +413,9 @@ def mark_reviewed(*, actor, report_id, payload, idempotency_key, request=None):
         if replay is not None:
             if replay.review_payload_digest != payload_digest:
                 raise QuarterlyMisConflict("The idempotency key is already bound to another request.")
+            _accessible_report(actor=actor, report_id=replay.pk)
+            if replay.submitted_to_user_id != actor.pk:
+                raise QuarterlyMisPermissionDenied
             return replay.review_original_response_json
         report = _locked_accessible_report(actor=actor, report_id=report_id)
         _require_permission(actor, REVIEW_PERMISSION)
@@ -606,7 +623,9 @@ def _snapshot_accounts(*, actor, period):
             ),
             Prefetch(
                 "dpd_statuses",
-                queryset=DpdStatus.objects.filter(as_of_date=cutoff).order_by("-created_at", "-dpd_status_id"),
+                queryset=DpdStatus.objects.filter(as_of_date=cutoff).order_by(
+                    "-created_at", "-dpd_status_id"
+                ),
                 to_attr="mis_dpd_statuses",
             ),
             Prefetch(
@@ -632,7 +651,9 @@ def _snapshot_accounts(*, actor, period):
             ),
             Prefetch(
                 "reminders",
-                queryset=Reminder.objects.filter(quarter_end_date__lte=cutoff).order_by("reminder_id"),
+                queryset=Reminder.objects.filter(
+                    quarter_end_date__lte=cutoff, created_at__date__lte=cutoff
+                ).order_by("reminder_id"),
                 to_attr="mis_reminders",
             ),
             Prefetch(

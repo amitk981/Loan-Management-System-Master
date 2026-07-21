@@ -1,0 +1,11 @@
+Retained RED output from .ralph/runs/2026-07-21_061125_normal_run/evidence/terminal-logs/mis-owner-red.log
+
+FAIL: test_generation_replay_rechecks_current_portfolio_scope (__main__.QuarterlyMisOwnerProbe.test_generation_replay_rechecks_current_portfolio_scope)
+AssertionError: 200 != 403
+
+FAIL: test_late_reminder_does_not_enter_an_as_of_cutoff_snapshot (__main__.QuarterlyMisOwnerProbe.test_late_reminder_does_not_enter_an_as_of_cutoff_snapshot)
+AssertionError: 1 != 0
+
+FAILED (failures=2)
+Exit code: 1
+Permanent test specification: sfpcl_credit/tests/test_servicing_as_of_owner_boundary.py::ServicingAsOfOwnerBoundaryTests::test_mis_replay_and_cutoff_owner

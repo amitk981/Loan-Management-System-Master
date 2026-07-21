@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+F
+======================================================================
+FAIL: test_provider_cannot_run_after_current_schedule_truth_becomes_paid (__main__.ReminderDeliveryOwnerProbe.test_provider_cannot_run_after_current_schedule_truth_becomes_paid)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py", line 163, in test_provider_cannot_run_after_current_schedule_truth_becomes_paid
+    self.assertFalse(adapter.called)
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 4.343s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+Test specification: .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py ReminderDeliveryOwnerProbe
+Exit code: 1
+Permanent test specification: sfpcl_credit/tests/test_servicing_as_of_owner_boundary.py::ServicingAsOfOwnerBoundaryTests::test_reminder_provider_boundary_rechecks_serviceability

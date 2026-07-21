@@ -1,0 +1,44 @@
+Creating test database for alias 'default'...
+Found 32 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 189 permissions, 20 roles, 8 teams, 225 role-permission links.
+.....................FFFF.......
+======================================================================
+FAIL: test_detail_and_bounded_drilldown_read_only_frozen_snapshot (sfpcl_credit.tests.test_quarterly_mis_api.QuarterlyMisApiTests.test_detail_and_bounded_drilldown_read_only_frozen_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/sfpcl_credit/tests/test_quarterly_mis_api.py", line 150, in test_detail_and_bounded_drilldown_read_only_frozen_snapshot
+    self.assertEqual(rows.json()["pagination"]["total_count"], 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_generate_freezes_cutoff_totals_and_exact_replay (sfpcl_credit.tests.test_quarterly_mis_api.QuarterlyMisApiTests.test_generate_freezes_cutoff_totals_and_exact_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/sfpcl_credit/tests/test_quarterly_mis_api.py", line 96, in test_generate_freezes_cutoff_totals_and_exact_replay
+    self.assertEqual(data["totals"]["active_loans_count"], 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_list_validation_permissions_and_missing_owner_truth_fail_closed (sfpcl_credit.tests.test_quarterly_mis_api.QuarterlyMisApiTests.test_list_validation_permissions_and_missing_owner_truth_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/sfpcl_credit/tests/test_quarterly_mis_api.py", line 347, in test_list_validation_permissions_and_missing_owner_truth_fail_closed
+    self.assertEqual(missing.status_code, 409, missing.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"quarterly_mis_report_id": "508f5c73-f7fc-483b-8eee-325986874f26", "portfolio_snapshot_id": "97e581bd-676f-4c67-806b-8da31f3e5989", "financial_year": "FY2026-27", "quarter": "Q1", "as_of_date": "2026-06-30", "revision": 1, "status": "draft", "totals": {"active_loans_count": 0, "sanctioned_amount": "0.00", "disbursed_amount": "0.00", "principal_outstanding_amount": "0.00", "interest_outstanding_amount": "0.00", "overdue_amount": "0.00", "repayments_received_in_quarter": "0.00", "loans_overdue_beyond_one_year_count": 0, "reminders_count": 0, "dpd_bucket_counts": {"current": 0, "one_to_two_years": 0, "two_to_three_years": 0, "more_than_three_years": 0}, "dimension_summaries": {"crop": {}, "region": {}, "borrower_type": {}, "dpd_bucket": {}, "security_type": {}}}, "availability": {"grace_period_count": "unavailable", "extension_count": "unavailable", "non_recoverable_review_count": "unavailable", "recovery_approved_count": "unavailable", "closure_pending_count": "unavailable", "grievances_open_count": "unavailable", "compliance_alert_count": "unavailable", "exceptions_approved_count": "unavailable", "director_related_party_cases_count": "unavailable", "kyc_overdue_cases_count": "unavailable", "pending_documentation_issues_count": "unavailable", "sap_posting_exceptions_count": "unavailable", "pending_noc_count": "unavailable"}, "generated_at": "2026-07-21T01:01:48.296811Z", "submitted_at": null, "reviewed_at": null, "report_document_id": "08af1e5f-30c2-44a3-bf0d-9e1b3a633d85", "excel_document_id": "d34329da-e5e5-454c-b058-f352403af3e7"}, "meta": {"request_id": null, "timestamp": "2026-07-21T01:01:48.300051Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_pdf_and_excel_exports_reconcile_to_frozen_report (sfpcl_credit.tests.test_quarterly_mis_api.QuarterlyMisApiTests.test_pdf_and_excel_exports_reconcile_to_frozen_report)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/sfpcl_credit/tests/test_quarterly_mis_api.py", line 272, in test_pdf_and_excel_exports_reconcile_to_frozen_report
+    self.assertIn(value, pdf_text)
+AssertionError: '400000.00' not found in 'SFPCL CFO Quarterly MIS - FY2026-27 Q1\nAs of: 2026-06-30 | Revision: 1\nTOTALS {"active_loans_count": 0, "dimension_summaries": {"borrower_type": {}, "crop": {}, "dpd_\nbucket": {}, "region": {}, "security_type": {}}, "disbursed_amount": "0.00", "dpd_bucket_counts\n": {"current": 0, "more_than_three_years": 0, "one_to_two_years": 0, "two_to_three_years": 0}, \n"interest_outstanding_amount": "0.00", "loans_overdue_beyond_one_year_count": 0, "overdue_amoun\nt": "0.00", "principal_outstanding_amount": "0.00", "reminders_count": 0, "repayments_received_\nin_quarter": "0.00", "sanctioned_amount": "0.00"}\nAVAILABILITY {"closure_pending_count": "unavailable", "compliance_alert_count": "unavailable", \n"director_related_party_cases_count": "unavailable", "exceptions_approved_count": "unavailable"\n, "extension_count": "unavailable", "grace_period_count": "unavailable", "grievances_open_count\n": "unavailable", "kyc_overdue_cases_count": "unavailable", "non_recoverable_review_count": "un\navailable", "pending_documentation_issues_count": "unavailable", "pending_noc_count": "unavaila\nble", "recovery_approved_count": "unavailable", "sap_posting_exceptions_count": "unavailable"}\n'
+
+----------------------------------------------------------------------
+Ran 32 tests in 18.377s
+
+FAILED (failures=4)
+Destroying test database for alias 'default'...
+Test specification: impacted servicing owner test modules
+Exit code: 1

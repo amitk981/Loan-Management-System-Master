@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+FF
+======================================================================
+FAIL: test_approved_operational_policy_amends_by_new_version (__main__.DpdSnapshotOwnerProbe.test_approved_operational_policy_amends_by_new_version)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py", line 55, in test_approved_operational_policy_amends_by_new_version
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+======================================================================
+FAIL: test_database_rejects_reparenting_the_current_snapshot (__main__.DpdSnapshotOwnerProbe.test_database_rejects_reparenting_the_current_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-21_061125_normal_run/.ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py", line 39, in test_database_rejects_reparenting_the_current_snapshot
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 8.391s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...
+Test specification: .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py DpdSnapshotOwnerProbe
+Exit code: 1
+Permanent test specification: sfpcl_credit/tests/test_servicing_as_of_owner_boundary.py::ServicingAsOfOwnerBoundaryTests::test_dpd_database_and_policy_owner

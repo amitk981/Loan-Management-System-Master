@@ -6,6 +6,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from django.db.models import Prefetch
+from django.db.models import F, Q
 
 from sfpcl_credit.loans.models import (
     LoanAccount,
@@ -40,6 +41,7 @@ class DpdSourceDecision:
     as_of_date: date
     schedule_lines: tuple[DpdScheduleLineDecision, ...]
     applied_allocation_ids: tuple[UUID, ...]
+    applied_capitalisation_ids: tuple[UUID, ...]
 
 
 def resolve_locked_dpd_source_decision(*, actor, loan_account_id, as_of_date):
@@ -68,12 +70,14 @@ def resolve_locked_dpd_source_decision(*, actor, loan_account_id, as_of_date):
                     "allocation__ledger_entry",
                     "allocation__reversal__ledger_entry",
                 ),
-            )
+            ),
+            "interest_capitalisation_evidence__capitalisation__ledger_entry",
         )
         .order_by("due_date", "installment_number", "repayment_schedule_id")
     )
     lines = []
     allocation_ids = set()
+    capitalisation_ids = set()
     for row in schedule_rows:
         paid_principal = Decimal("0.00")
         paid_interest = Decimal("0.00")
@@ -95,6 +99,18 @@ def resolve_locked_dpd_source_decision(*, actor, loan_account_id, as_of_date):
             ):
                 paid_principal -= application.principal_applied
                 paid_interest -= application.interest_applied
+        capitalisation_evidence = getattr(
+            row, "interest_capitalisation_evidence", None
+        )
+        if capitalisation_evidence is not None:
+            capitalisation = capitalisation_evidence.capitalisation
+            ledger_entry = getattr(capitalisation, "ledger_entry", None)
+            if (
+                ledger_entry is not None
+                and ledger_entry.transaction_date <= as_of_date
+            ):
+                paid_interest += capitalisation_evidence.interest_reclassified_amount
+                capitalisation_ids.add(capitalisation.pk)
         lines.append(
             DpdScheduleLineDecision(
                 repayment_schedule_id=row.pk,
@@ -112,6 +128,21 @@ def resolve_locked_dpd_source_decision(*, actor, loan_account_id, as_of_date):
         as_of_date=as_of_date,
         schedule_lines=tuple(lines),
         applied_allocation_ids=tuple(sorted(allocation_ids, key=str)),
+        applied_capitalisation_ids=tuple(sorted(capitalisation_ids, key=str)),
+    )
+
+
+def has_current_unpaid_schedule(*, loan_account_id):
+    """Lock and answer current schedule serviceability for final delivery owners."""
+    return (
+        RepaymentSchedule.objects.select_for_update()
+        .filter(loan_account_id=loan_account_id)
+        .filter(
+            Q(paid_principal__lt=F("principal_due"))
+            | Q(paid_interest__lt=F("interest_due"))
+            | Q(paid_charges__lt=F("charges_due"))
+        )
+        .exists()
     )
 
 
@@ -120,4 +151,5 @@ __all__ = [
     "DpdSourceDecision",
     "DpdSourcePermissionDenied",
     "resolve_locked_dpd_source_decision",
+    "has_current_unpaid_schedule",
 ]

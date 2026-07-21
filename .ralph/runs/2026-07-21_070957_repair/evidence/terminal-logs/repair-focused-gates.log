@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 8 test(s).
+System check identified no issues (0 silenced).
+........
+----------------------------------------------------------------------
+Ran 8 tests in 4.809s
+
+OK
+Destroying test database for alias 'default'...
+
+DPD impacted tests exit code: 0
+System check identified no issues (0 silenced).
+
+Django check exit code: 0
+No changes detected
+
+Migration sync exit code: 0
+
+Combined exit code: 0

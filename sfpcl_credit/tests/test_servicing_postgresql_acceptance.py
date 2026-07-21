@@ -25,6 +25,9 @@ from sfpcl_credit.tests.test_interest_capitalisation_api import (
 from sfpcl_credit.tests.test_dpd_monitoring_api import DpdMonitoringApiTests
 from sfpcl_credit.tests.test_reminder_queue_api import ReminderQueueApiTests
 from sfpcl_credit.tests.test_quarterly_mis_api import QuarterlyMisApiTests
+from sfpcl_credit.tests.test_servicing_as_of_owner_boundary import (
+    ServicingAsOfOwnerBoundaryAssertions,
+)
 
 
 @override_settings(
@@ -1421,3 +1424,28 @@ class QuarterlyMisPostgreSQLAcceptanceTests(TransactionTestCase):
         self.assertEqual(report.status, QuarterlyMisReport.STATUS_REVIEWED)
         self.assertEqual(report.reviewed_by_user_id, cfo.pk)
         self.assertEqual(AuditLog.objects.filter(action="monitoring.mis.reviewed").count(), 1)
+
+
+@override_settings(
+    DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-servicing-asof-owner-pg-")
+)
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL owner-boundary acceptance")
+class ServicingAsOfOwnerBoundaryPostgreSQLAcceptanceTests(
+    ServicingAsOfOwnerBoundaryAssertions, TransactionTestCase
+):
+    reset_sequences = True
+
+    def test_dpd_database_and_policy_owner(self):
+        self._assert_dpd_database_and_policy_owner()
+
+    def test_capitalisation_is_classified_once(self):
+        self._assert_capitalisation_is_classified_once()
+
+    def test_reminder_provider_boundary_rechecks_serviceability(self):
+        self._assert_reminder_provider_boundary()
+
+    def test_mis_replay_and_cutoff_owner(self):
+        self._assert_mis_replay_and_cutoff_owner()
+
+    def test_batch_continuation_contract(self):
+        self._assert_batch_continuation_contract()

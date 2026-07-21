@@ -1,0 +1,9 @@
+Creating test database for alias 'default'...
+.
+----------------------------------------------------------------------
+Ran 1 test in 4.150s
+
+OK
+Destroying test database for alias 'default'...
+Test specification: .ralph/runs/2026-07-21_054048_architecture_review/evidence/review-probes/probes.py DpdCapitalisationReverseConsumerProbe
+Exit code: 0

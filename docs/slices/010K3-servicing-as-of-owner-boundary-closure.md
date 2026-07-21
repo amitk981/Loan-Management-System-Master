@@ -1,7 +1,7 @@
 # Slice 010K3: Servicing As-Of Owner Boundary Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring

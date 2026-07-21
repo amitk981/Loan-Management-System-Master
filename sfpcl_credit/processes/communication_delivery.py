@@ -10,15 +10,15 @@ from sfpcl_credit.processes.disbursement_advice_delivery import (
 
 
 def execute_communication_job(job_id, *, adapter=None):
-    cancelled = ReminderEngine.cancel_unserviceable_delivery(
-        communication_job_id=job_id
-    )
-    if cancelled is not None:
-        return cancelled
     return CommunicationDispatcher.execute_job(
         job_id,
         adapter=adapter,
         advice_executor=execute_disbursement_advice_job,
+        pre_provider_check=lambda claimed_job_id: (
+            ReminderEngine.cancel_unserviceable_delivery(
+                communication_job_id=claimed_job_id
+            )
+        ),
     )
 
 

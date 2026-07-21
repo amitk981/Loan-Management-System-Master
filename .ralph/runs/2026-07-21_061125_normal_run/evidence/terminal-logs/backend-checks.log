@@ -1,0 +1,4 @@
+System check identified no issues (0 silenced).
+No changes detected
+Test specification: manage.py check + makemigrations --check --dry-run
+Exit code: 0

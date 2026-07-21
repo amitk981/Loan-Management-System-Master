@@ -339,7 +339,9 @@ class CommunicationDispatcher:
         return {"serviceable": True, "reason": None}
 
     @classmethod
-    def execute_job(cls, job_id, *, adapter=None, advice_executor):
+    def execute_job(
+        cls, job_id, *, adapter=None, advice_executor, pre_provider_check=None
+    ):
         job = CommunicationDeliveryJob.objects.only(
             "job_kind", "communication_id"
         ).get(pk=job_id)
@@ -355,7 +357,11 @@ class CommunicationDispatcher:
                 if channel == Communication.CHANNEL_SMS
                 else configured_email_delivery_adapter()
             )
-        result = cls.execute_generic_job(job_id, adapter=adapter)
+        result = cls.execute_generic_job(
+            job_id, adapter=adapter, pre_provider_check=pre_provider_check
+        )
+        if isinstance(result, dict):
+            return result
         return {
             "communication_job_id": str(result.pk),
             "communication_id": str(result.communication_id),
@@ -1448,13 +1454,17 @@ class CommunicationDispatcher:
         )
 
     @classmethod
-    def execute_generic_job(cls, job_id, *, adapter=None):
+    def execute_generic_job(cls, job_id, *, adapter=None, pre_provider_check=None):
         execution = cls.start_job(job_id)
         if execution.job_kind != CommunicationDeliveryJob.KIND_GENERIC:
             raise CommunicationDispatchConflict(
                 "The communication job requires its business process coordinator."
             )
         row = Communication.objects.get(pk=execution.communication_id)
+        if pre_provider_check is not None:
+            cancelled = pre_provider_check(job_id)
+            if cancelled is not None:
+                return cancelled
         if row.channel == Communication.CHANNEL_EMAIL:
             payload = EmailDeliveryPayload(
                 communication_id=row.pk,

@@ -4838,7 +4838,8 @@ without recalculating DPD and fails closed on dangling or cross-loan legacy poin
 ## Quarter-end reminder queue (010J)
 
 `POST /api/v1/reminders/quarter-end-runs/` accepts exactly an ISO calendar quarter-end
-`quarter_end_date`, `channel` (`sms` or `email`), and `content_template_id`. It requires
+`quarter_end_date`, `channel` (`sms` or `email`), and `content_template_id`, plus optional exclusive
+`continuation_after_loan_account_id` from a preceding truncated response. It requires
 `monitoring.reminder.create` plus canonical loan-account scope and processes at most 100 scoped
 accounts with an immutable 010I snapshot for that exact quarter end. The DPD owner decides the
 one-year boundary by calendar anniversary (including leap-year spans), not by a fixed day count.
@@ -4848,6 +4849,12 @@ optional reminder. Aggregate `created_count`, `retained_count`, `skipped_count`,
 must match those rows. Contact/template/late-state failures are isolated per loan, so a later row
 cannot conceal an earlier retained reminder or job. It never recalculates DPD or accepts caller
 eligibility, recipient, message, status, money, or provider evidence.
+
+The response also returns integer `processed_count`, boolean `truncated`, and nullable
+`continuation_after_loan_account_id`. `processed_count` equals the number of disclosed result rows.
+When more than 100 eligible scoped identities exist, `truncated` is true and the continuation value
+is the last processed loan identity (exclusive: a continuation starts strictly after it); otherwise
+`truncated` is false and the continuation value is null.
 
 Each eligible account retains one reminder for `(loan account, quarter end,
 outstanding_beyond_one_year, channel)`, including loan/application/member, exact DPD snapshot,

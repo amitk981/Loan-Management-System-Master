@@ -1,0 +1,8 @@
+Retained RED output from .ralph/runs/2026-07-21_061125_normal_run/evidence/terminal-logs/reminder-owner-red.log
+
+FAIL: test_provider_cannot_run_after_current_schedule_truth_becomes_paid (__main__.ReminderDeliveryOwnerProbe.test_provider_cannot_run_after_current_schedule_truth_becomes_paid)
+AssertionError: True is not false
+
+FAILED (failures=1)
+Exit code: 1
+Permanent test specification: sfpcl_credit/tests/test_servicing_as_of_owner_boundary.py::ServicingAsOfOwnerBoundaryTests::test_reminder_provider_boundary_rechecks_serviceability

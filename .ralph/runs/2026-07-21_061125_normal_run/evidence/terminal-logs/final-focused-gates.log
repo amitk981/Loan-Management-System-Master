@@ -1,0 +1,13 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 3.177s
+
+OK
+Destroying test database for alias 'default'...
+System check identified no issues (0 silenced).
+No changes detected
+Test specification: final focused owner tests + checks
+Exit code: 0
