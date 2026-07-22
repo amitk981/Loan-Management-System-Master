@@ -1,0 +1,16 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/closure/models.py
+ M sfpcl_credit/closure/modules/loan_closure.py
+ M sfpcl_credit/closure/views.py
+ M sfpcl_credit/communications/modules/communication_dispatcher.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/legal_documents/modules/document_generation.py
+ M sfpcl_credit/tests/test_default_recovery_postgresql_acceptance.py
+ M sfpcl_credit/tests/test_loan_document_generation_api.py
+?? .ralph/runs/2026-07-22_213343_normal_run/
+?? sfpcl_credit/closure/migrations/0002_noc_issuance.py
+?? sfpcl_credit/closure/modules/noc_document_facts.py
+?? sfpcl_credit/legal_documents/modules/noc_document.py
+?? sfpcl_credit/tests/test_noc_api.py

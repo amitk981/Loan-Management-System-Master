@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -42,6 +43,12 @@ _SUPPORTED_MERGE_FIELDS = {
     "charges_and_fees",
     "security",
     "dispute_resolution",
+    "loan_account_number",
+    "application_reference",
+    "disbursed_amount",
+    "full_repayment_date",
+    "issued_by",
+    "issue_date",
 }
 
 
@@ -136,7 +143,12 @@ def executable_output_formats(
             )
             if sanction is None:
                 return ()
-            merge_values = _project_merge_values(application, sanction)
+            merge_values = _project_merge_values(
+                application,
+                sanction,
+                actor=actor,
+                document_type=document_type,
+            )
             declared = template.merge_fields_json or []
             _validate_declared_merge_fields(declared, merge_values)
             formats = []
@@ -241,7 +253,12 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
                 raise InvalidGenerationState(
                     "A retained sanctioned decision is required for document generation."
                 )
-            merge_values = _project_merge_values(application, sanction)
+            merge_values = _project_merge_values(
+                application,
+                sanction,
+                actor=actor,
+                document_type=cleaned["document_type"],
+            )
             declared = template.merge_fields_json or []
             _validate_declared_merge_fields(declared, merge_values)
             file_name = _safe_output_name(
@@ -269,7 +286,9 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
             loan_document = LoanDocument.objects.create(
                 loan_application_id=application.application_id,
                 document_type=cleaned["document_type"],
-                document_category="legal",
+                document_category=(
+                    "closure" if cleaned["document_type"] == "noc" else "legal"
+                ),
                 party_required="borrower",
                 document_template=template,
                 document=generated_file,
@@ -286,6 +305,7 @@ def generate(*, actor, application_id, payload, metadata, storage=None):
                 metadata=metadata,
                 loan_document=loan_document,
                 template=template,
+                merge_values={field: merge_values[field] for field in declared},
             )
             return serialize_generation(loan_document)
     except Exception:
@@ -398,12 +418,12 @@ def _resolve_template(cleaned, variant):
     return template
 
 
-def _project_merge_values(application, sanction):
+def _project_merge_values(application, sanction, *, actor, document_type):
     tenure = sanction.sanctioned_tenure_months
     interest = None
     if sanction.interest_rate_type and sanction.interest_rate_value:
         interest = f"{sanction.interest_rate_value} {sanction.interest_rate_type}"
-    return {
+    values = {
         "borrower_name": sanction.borrower_name,
         "nominee_name": sanction.nominee_name,
         "witness_name": sanction.witness_name,
@@ -421,6 +441,22 @@ def _project_merge_values(application, sanction):
         "security": sanction.security,
         "dispute_resolution": sanction.dispute_resolution,
     }
+    if document_type == "noc":
+        from sfpcl_credit.closure.modules.noc_document_facts import (
+            project_for_generation,
+        )
+
+        closure_facts = project_for_generation(application_id=application.pk)
+        if closure_facts is None:
+            raise InvalidGenerationState(
+                "NOC generation requires an eligible retained full-repayment closure."
+            )
+        values.update(
+            closure_facts,
+            issued_by=actor.full_name,
+            issue_date=timezone.localdate().isoformat(),
+        )
+    return values
 
 
 def _require_document_prerequisites(*, application_id, document_type):
@@ -483,7 +519,10 @@ def _safe_output_name(document_type, application_reference, output_format):
     return f"{type_slug}-{reference}.{output_format}"
 
 
-def _record_evidence(*, actor, metadata, loan_document, template):
+def _record_evidence(*, actor, metadata, loan_document, template, merge_values):
+    merge_values_sha256 = hashlib.sha256(
+        json.dumps(merge_values, sort_keys=True, separators=(",", ":"), default=str).encode()
+    ).hexdigest()
     facts = {
         "loan_application_id": str(loan_document.loan_application_id),
         "document_template_id": str(template.pk),
@@ -495,6 +534,8 @@ def _record_evidence(*, actor, metadata, loan_document, template):
         "renderer_validated_checksum_sha256": (
             loan_document.renderer_validated_checksum_sha256
         ),
+        "merge_field_names": sorted(merge_values),
+        "merge_values_sha256": merge_values_sha256,
         "request_id": metadata.request_id,
     }
     AuditLog.objects.create(

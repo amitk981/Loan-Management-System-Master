@@ -741,3 +741,60 @@ class ClosureReadinessPostgreSQLAcceptanceTests(TransactionTestCase):
             self.assertEqual(LoanClosure.objects.filter(loan_account=self.account).count(), 1)
         else:
             self.assertEqual(LoanClosure.objects.filter(loan_account=self.account).count(), 0)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class NocIssuancePostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_noc_api import NocIssuanceApiTests
+
+        fixture = NocIssuanceApiTests(
+            "test_eligible_full_repayment_closure_issues_one_noc_and_queues_delivery"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        self.closure = fixture.closure
+        self.document = fixture.document
+        self.issuer = fixture.issuer
+        self.auth = fixture.auth
+        self.payload = {
+            "document_id": str(self.document.pk),
+            "delivery_mode": "email",
+            "recipient_email": fixture.account.member.email,
+            "signatory_user_id": str(self.issuer.pk),
+        }
+
+    def test_five_concurrent_issue_attempts_create_one_noc_document_and_delivery_chain(self):
+        from sfpcl_credit.closure.models import NocRecord
+        from sfpcl_credit.communications.models import Communication, CommunicationDeliveryJob
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.legal_documents.models import LoanDocument
+
+        barrier = Barrier(5)
+
+        def issue(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/loan-closures/{self.closure.pk}/noc/",
+                    data=json.dumps(self.payload),
+                    content_type="application/json",
+                    HTTP_IDEMPOTENCY_KEY="postgres-noc-issue-001",
+                    **self.auth,
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            responses = list(pool.map(issue, range(5)))
+
+        self.assertEqual([response.status_code for response in responses], [200] * 5)
+        self.assertEqual(len({row.json()["data"]["noc_id"] for row in responses}), 1)
+        self.assertEqual(NocRecord.objects.count(), 1)
+        self.assertEqual(LoanDocument.objects.filter(document_type="noc").count(), 1)
+        self.assertEqual(Communication.objects.filter(related_entity_type="noc").count(), 1)
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="closure.noc.issued").count(), 1)

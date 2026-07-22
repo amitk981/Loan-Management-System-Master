@@ -419,6 +419,7 @@ ROLE_PERMISSIONS = {
         "communications.content_template.manage",
         "communications.communication.read",
         "communications.communication.send",
+        "closure.noc.issue",
         "security.package.create",
         "security.package.update",
         "security.package.read",

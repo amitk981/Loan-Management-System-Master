@@ -27,6 +27,39 @@ alone own their controlled completion. Closed loan accounts reject ordinary mode
 Exact replay returns the original close; changed replay or duplicate/change requests return `409`
 without a second close, requirement set, history entry, or success audit.
 
+## NOC issuance and access (011H)
+
+`POST /api/v1/loan-closures/{loan_closure_id}/noc/` requires an `Idempotency-Key`, critical
+`closure.noc.issue`, an active Company Secretary or Compliance Team Member, and active membership
+in the Compliance Team object scope. It accepts exactly
+`document_id`, `delivery_mode = email`, the canonical retained borrower `recipient_email`, and an
+active Company Secretary `signatory_user_id`. Certificate facts are never accepted from the caller.
+The locked closure must be the retained zero-balance `full_repayment` financial close with a pending
+NOC requirement. Recovery/write-off or unsupported closure evidence is not eligible.
+
+The referenced document must be the same application's current-renderer-validated, generated
+`noc`/`closure` loan document from an approved effective NOC template, with its generation audit.
+The issue freezes borrower, loan account, application reference, disbursed amount, full-repayment
+time, issuer/role, governed signatory/role, document provenance, and request digests in one immutable
+`NocRecord`. It hands one approved `noc_issued_email` snapshot to the existing communication
+dispatcher and retains the resulting queued job before completing only the NOC checklist
+requirement. Provider execution remains asynchronous; reads derive `queued`, `sent`, or `failed`
+from that retained job and never claim provider success early.
+
+Exact replay returns the same NOC/document/communication/job; changed replay or a second issue is
+`409 NOC_ISSUANCE_CONFLICT`. Missing/foreign/stale document, wrong signatory, noncanonical recipient,
+ineligible close, and unavailable delivery handoff fail without a NOC or success audit and retain a
+safe denial audit. A failed handoff can be retried with the same request without generating another
+certificate. Five PostgreSQL racers converge on one issue chain by locking the closure.
+
+`GET /api/v1/loan-closures/{loan_closure_id}/noc/` returns the issued metadata to the owning active
+borrower portal account, the Credit Manager who performed the retained close, Compliance-scoped
+Company Secretary/Compliance readers, or a governed Auditor. Foreign borrowers and same-role staff
+outside those object relationships receive a nondisclosing response. `GET
+/api/v1/loan-closures/{loan_closure_id}/noc/download/` applies the same object scope, delegates the
+signed descriptor to the document owner, and appends the standard `documents.file.downloaded`
+audit without logging certificate contents.
+
 ## Non-Payment Note workflow (011D)
 
 `POST /api/v1/default-cases/{default_case_id}/non-payment-note/` accepts exactly the five fields in

@@ -5,13 +5,24 @@ import json
 import uuid
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.closure.models import ClosureRequirement, LoanClosure
-from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.closure.models import ClosureRequirement, LoanClosure, NocRecord
+from sfpcl_credit.communications.modules.communication_dispatcher import (
+    CommunicationDispatchConflict,
+    CommunicationDispatcher,
+)
+from sfpcl_credit.documents import services as document_services
+from sfpcl_credit.identity.models import AuditLog, PortalAccount, User
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
+from sfpcl_credit.legal_documents.modules.noc_document import (
+    resolve_generated_noc_evidence,
+)
 from sfpcl_credit.loans.models import LoanAccount, LoanStatusHistory
 from sfpcl_credit.shared.audit_text import UnsafeAuditText, safe_audit_text
 from sfpcl_credit.workflows.events import record_workflow_event
@@ -19,7 +30,10 @@ from sfpcl_credit.workflows.events import record_workflow_event
 
 READ_PERMISSION = "closure.readiness.read"
 CLOSE_PERMISSION = "closure.loan.close"
+NOC_ISSUE_PERMISSION = "closure.noc.issue"
 READ_ROLES = {"credit_manager", "company_secretary", "internal_auditor"}
+NOC_ISSUE_ROLES = {"company_secretary", "compliance_team_member"}
+NOC_TEMPLATE_CODE = "noc_issued_email"
 
 
 class ClosurePermissionDenied(Exception):
@@ -36,6 +50,15 @@ class ClosureValidation(Exception):
 
 
 class ClosureConflict(Exception):
+    pass
+
+
+class NocValidation(Exception):
+    def __init__(self, field_errors):
+        self.field_errors = field_errors
+
+
+class NocConflict(Exception):
     pass
 
 
@@ -528,13 +551,579 @@ def _serialize_close(closure, *, replay):
         "requirements": requirements,
         "idempotency_replayed": replay,
         "available_actions": [
-            "closure.noc.issue",
-            "closure.security_return.record",
-            "closure.archive.create",
+            action
+            for action, available in (
+                ("closure.noc.issue", requirements.get("noc") == "pending"),
+                ("closure.security_return.record", requirements.get("security_return") == "pending"),
+                ("closure.archive.create", requirements.get("archive") == "pending"),
+            )
+            if available
         ],
+    }
+
+
+def generate_noc(*, actor, loan_closure_id, payload, idempotency_key, request=None):
+    """Issue one retained NOC and hand its notice to the communication dispatcher."""
+    try:
+        cleaned = _validate_noc_request(payload, idempotency_key)
+        issuer_role = _require_noc_authority(actor)
+    except NocValidation:
+        _record_noc_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="request_validation_failed",
+            request=request,
+        )
+        raise
+    except ClosurePermissionDenied:
+        _record_noc_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="noc_authority_denied",
+            request=request,
+        )
+        raise
+    payload_digest = _digest(
+        {
+            "loan_closure_id": str(loan_closure_id),
+            "actor_id": str(actor.pk),
+            "document_id": str(cleaned["document_id"]),
+            "delivery_mode": cleaned["delivery_mode"],
+            "recipient_email": cleaned["recipient_email"],
+            "signatory_user_id": str(cleaned["signatory_user_id"]),
+        }
+    )
+    outcome = _issue_noc_locked(
+        actor=actor,
+        issuer_role=issuer_role,
+        loan_closure_id=loan_closure_id,
+        cleaned=cleaned,
+        payload_digest=payload_digest,
+        request=request,
+    )
+    if outcome["kind"] == "not_found":
+        raise ClosureNotFound
+    if outcome["kind"] == "denied":
+        raise NocConflict(outcome["message"])
+    return outcome["data"]
+
+
+def read_noc(*, actor, loan_closure_id, request=None):
+    noc = (
+        NocRecord.objects.select_related(
+            "communication_job", "loan_closure", "loan_account__loan_application"
+        )
+        .filter(loan_closure_id=loan_closure_id)
+        .first()
+    )
+    access = _noc_read_access(actor=actor, noc=noc)
+    if access == "forbidden":
+        _record_noc_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="noc_read_authority_denied",
+            request=request,
+        )
+        raise ClosurePermissionDenied
+    if access != "allowed" or noc is None:
+        _record_noc_read_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            request=request,
+        )
+        raise ClosureNotFound
+    return _serialize_noc(noc, replay=False)
+
+
+def download_noc(*, actor, loan_closure_id, request):
+    noc = (
+        NocRecord.objects.select_related(
+            "loan_closure", "loan_account__loan_application"
+        )
+        .filter(loan_closure_id=loan_closure_id)
+        .first()
+    )
+    access = _noc_read_access(actor=actor, noc=noc)
+    if access == "forbidden":
+        _record_noc_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="noc_download_authority_denied",
+            request=request,
+        )
+        raise ClosurePermissionDenied
+    if access != "allowed" or noc is None:
+        _record_noc_read_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            request=request,
+        )
+        raise ClosureNotFound
+    return document_services.download_document_file(
+        actor, request, noc.document_id
+    )
+
+
+@transaction.atomic
+def _issue_noc_locked(
+    *, actor, issuer_role, loan_closure_id, cleaned, payload_digest, request
+):
+    closure = (
+        LoanClosure.objects.select_for_update()
+        .select_related("loan_account__loan_application", "member")
+        .filter(pk=loan_closure_id)
+        .first()
+    )
+    if closure is None:
+        outcome = _record_noc_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="loan_closure_scope_denied",
+            request=request,
+        )
+        outcome["kind"] = "not_found"
+        return outcome
+    if not _actor_in_noc_issue_scope(actor=actor, closure=closure):
+        outcome = _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="loan_closure_scope_denied",
+            request=request,
+        )
+        outcome["kind"] = "not_found"
+        return outcome
+    retained = NocRecord.objects.select_for_update().filter(loan_closure=closure).first()
+    if retained is not None:
+        if (
+            retained.idempotency_key_digest == cleaned["idempotency_key_digest"]
+            and retained.payload_digest == payload_digest
+        ):
+            return {"kind": "success", "data": _serialize_noc(retained, replay=True)}
+        return _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="noc_already_issued",
+            request=request,
+            message="A NOC has already been issued for this loan closure.",
+        )
+    key_replay = NocRecord.objects.select_for_update().filter(
+        idempotency_key_digest=cleaned["idempotency_key_digest"]
+    ).first()
+    if key_replay is not None:
+        return _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="idempotency_key_changed_request",
+            request=request,
+            message="The idempotency key is already bound to another NOC request.",
+        )
+    if not _eligible_noc_closure(closure):
+        return _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="closure_not_eligible_for_noc",
+            request=request,
+            message="NOC issuance requires an eligible full-repayment closure.",
+        )
+    signatory = User.objects.select_related("primary_role").filter(
+        pk=cleaned["signatory_user_id"],
+        status=User.ACTIVE_STATUS,
+        primary_role__status="active",
+        primary_role__role_code="company_secretary",
+    ).first()
+    if signatory is None:
+        return _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="invalid_noc_signatory",
+            request=request,
+            message="The selected NOC signatory is not an active Company Secretary.",
+        )
+    canonical_email = (closure.member.email or "").strip().lower()
+    if not canonical_email or cleaned["recipient_email"].lower() != canonical_email:
+        return _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="recipient_not_canonical_borrower",
+            request=request,
+            message="Delivery must use the retained borrower email address.",
+        )
+    canonical_document_facts = {
+        "borrower_name": closure.member.legal_name,
+        "loan_account_number": closure.loan_account.loan_account_number,
+        "application_reference": (
+            closure.loan_account.loan_application.application_reference_number
+        ),
+        "disbursed_amount": closure.loan_account.disbursed_amount,
+        "full_repayment_date": closure.closed_at.date().isoformat(),
+    }
+    document_evidence = resolve_generated_noc_evidence(
+        application_id=closure.loan_account.loan_application_id,
+        document_id=cleaned["document_id"],
+        canonical_facts=canonical_document_facts,
+        signatory=signatory,
+    )
+    if document_evidence is None:
+        return _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="invalid_noc_document",
+            request=request,
+            message="A governed generated NOC document for this closure is required.",
+        )
+
+    noc_id = uuid.uuid4()
+    try:
+        with transaction.atomic():
+            queued = CommunicationDispatcher.queue_from_template(
+                actor=actor,
+                template_code=NOC_TEMPLATE_CODE,
+                recipient={
+                    "party_type": "member",
+                    "party_id": closure.member_id,
+                    "address": canonical_email,
+                    "channel": "email",
+                },
+                context={
+                    "request": request,
+                    "idempotency_key": f"noc:{noc_id}:communication",
+                    "merge_data": {
+                        "borrower_name": closure.member.legal_name,
+                        "loan_account_number": closure.loan_account.loan_account_number,
+                    },
+                },
+                related_entity={"type": "noc", "id": noc_id},
+                delivery_idempotency_key=f"noc:{noc_id}:delivery",
+            )
+    except (CommunicationDispatchConflict, ValidationError) as exc:
+        return _record_noc_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="delivery_handoff_failed",
+            request=request,
+            message="NOC delivery could not be queued with retained provider truth.",
+            details={"failure_type": type(exc).__name__},
+        )
+
+    workflow = record_workflow_event(
+        actor=actor,
+        workflow_name="loan_closure",
+        entity_type="noc",
+        entity_id=noc_id,
+        from_state="pending",
+        to_state="issued_delivery_queued",
+        trigger_reason="Governed NOC document issued and delivery queued.",
+        action_code=NOC_ISSUE_PERMISSION,
+    )
+    audit = AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.noc.issued",
+        entity_type="noc",
+        entity_id=noc_id,
+        new_value_json={
+            "loan_closure_id": str(closure.pk),
+            "loan_account_id": str(closure.loan_account_id),
+            "member_id": str(closure.member_id),
+            "document_id": str(document_evidence.document_id),
+            "loan_document_id": str(document_evidence.loan_document_id),
+            "generation_audit_id": str(document_evidence.generation_audit_id),
+            "document_template_id": str(document_evidence.document_template_id),
+            "document_template_version": document_evidence.document_template_version,
+            "renderer_contract_version": document_evidence.renderer_contract_version,
+            "document_checksum_sha256": (
+                document_evidence.renderer_validated_checksum_sha256
+            ),
+            "merge_values_sha256": document_evidence.merge_values_sha256,
+            "issued_by_role_code": issuer_role,
+            "signatory_user_id": str(signatory.pk),
+            "signatory_role_code": "company_secretary",
+            "delivery_mode": "email",
+            "delivery_status": "queued",
+            "communication_id": str(queued.communication_id),
+            "communication_job_id": str(queued.communication_job_id),
+            "request_id": request.headers.get("X-Request-ID", "") if request else "",
+        },
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+    noc = NocRecord.objects.create(
+        noc_id=noc_id,
+        loan_closure=closure,
+        loan_account=closure.loan_account,
+        member=closure.member,
+        loan_document_id=document_evidence.loan_document_id,
+        document_id=document_evidence.document_id,
+        generation_audit_id=document_evidence.generation_audit_id,
+        document_template_id_snapshot=document_evidence.document_template_id,
+        document_template_version_snapshot=document_evidence.document_template_version,
+        renderer_contract_version_snapshot=document_evidence.renderer_contract_version,
+        document_checksum_sha256_snapshot=(
+            document_evidence.renderer_validated_checksum_sha256
+        ),
+        merge_values_sha256_snapshot=document_evidence.merge_values_sha256,
+        issued_by_user=actor,
+        issued_by_role_code=issuer_role,
+        signatory_user=signatory,
+        signatory_role_code="company_secretary",
+        signatory_name_snapshot=signatory.full_name,
+        delivery_mode=NocRecord.DELIVERY_EMAIL,
+        delivery_status=NocRecord.DELIVERY_QUEUED,
+        recipient_address=canonical_email,
+        communication_id=queued.communication_id,
+        communication_job_id=queued.communication_job_id,
+        borrower_name_snapshot=closure.member.legal_name,
+        loan_account_number_snapshot=closure.loan_account.loan_account_number,
+        application_reference_snapshot=(
+            closure.loan_account.loan_application.application_reference_number
+        ),
+        disbursed_amount_snapshot=closure.loan_account.disbursed_amount,
+        full_repayment_at_snapshot=closure.closed_at,
+        idempotency_key_digest=cleaned["idempotency_key_digest"],
+        payload_digest=payload_digest,
+        issue_audit=audit,
+        issue_workflow_event=workflow,
+    )
+    if ClosureRequirement.complete_noc_requirement(loan_closure_id=closure.pk) != 1:
+        raise IntegrityError("NOC requirement was not in the expected pending state.")
+    return {"kind": "success", "data": _serialize_noc(noc, replay=False)}
+
+
+def _validate_noc_request(payload, idempotency_key):
+    allowed = {"document_id", "delivery_mode", "recipient_email", "signatory_user_id"}
+    errors = {
+        name: "Unknown field; certificate facts are server-derived."
+        for name in sorted(set(payload) - allowed)
+    }
+    cleaned = {}
+    for field in ("document_id", "signatory_user_id"):
+        try:
+            cleaned[field] = uuid.UUID(str(payload.get(field, "")))
+        except (ValueError, TypeError, AttributeError):
+            errors[field] = "Must be a valid UUID."
+    delivery_mode = str(payload.get("delivery_mode", "")).strip().lower()
+    if delivery_mode != NocRecord.DELIVERY_EMAIL:
+        errors["delivery_mode"] = "Must be email for the configured delivery dispatcher."
+    recipient_email = str(payload.get("recipient_email", "")).strip()
+    try:
+        validate_email(recipient_email)
+    except ValidationError:
+        errors["recipient_email"] = "Must be a valid email address."
+    key = str(idempotency_key or "").strip()
+    if not key or len(key) > 255:
+        errors["Idempotency-Key"] = "Must be nonblank and at most 255 characters."
+    if errors:
+        raise NocValidation(errors)
+    return {
+        **cleaned,
+        "delivery_mode": delivery_mode,
+        "recipient_email": recipient_email,
+        "idempotency_key_digest": hashlib.sha256(key.encode()).hexdigest(),
+    }
+
+
+def _require_noc_authority(actor):
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        not actor.can_authenticate()
+        or NOC_ISSUE_PERMISSION not in permissions
+        or not roles.intersection(NOC_ISSUE_ROLES)
+    ):
+        raise ClosurePermissionDenied
+    return (
+        "company_secretary"
+        if "company_secretary" in roles
+        else "compliance_team_member"
+    )
+
+
+def _noc_read_access(*, actor, noc):
+    if not actor.can_authenticate():
+        return "forbidden"
+    roles = set(auth_service.effective_role_codes(actor))
+    if "borrower_portal_user" in roles:
+        member_id = (
+            PortalAccount.objects.filter(
+                user=actor, status=PortalAccount.STATUS_ACTIVE
+            )
+            .values_list("member_id", flat=True)
+            .first()
+        )
+        return "allowed" if noc is not None and member_id == noc.member_id else "not_found"
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if noc is None:
+        return (
+            "not_found"
+            if roles.intersection(
+                {"credit_manager", "company_secretary", "compliance_team_member", "internal_auditor"}
+            )
+            else "forbidden"
+        )
+    application = noc.loan_account.loan_application
+    approved = application.application_status == application.STATUS_APPROVED_BY_SANCTION
+    if "credit_manager" in roles:
+        access = evaluate_object_access(
+            actor_user_id=actor.pk,
+            actor_team_codes=actor.team_codes(),
+            actor_permission_codes=permissions,
+            required_permission=READ_PERMISSION,
+            object_owner_user_id=noc.loan_closure.closed_by_user_id,
+        )
+        return "allowed" if access.allowed else "not_found"
+    if "company_secretary" in roles:
+        access = evaluate_object_access(
+            actor_user_id=actor.pk,
+            actor_team_codes=actor.team_codes(),
+            actor_permission_codes=permissions,
+            required_permission=NOC_ISSUE_PERMISSION,
+            object_team_code="compliance",
+        )
+        return "allowed" if approved and access.allowed else "not_found"
+    if "compliance_team_member" in roles:
+        access = evaluate_object_access(
+            actor_user_id=actor.pk,
+            actor_team_codes=actor.team_codes(),
+            actor_permission_codes=permissions,
+            required_permission=NOC_ISSUE_PERMISSION,
+            object_team_code="compliance",
+        )
+        return "allowed" if approved and access.allowed else "not_found"
+    if "internal_auditor" in roles:
+        from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
+
+        if not ApprovalCaseReadScopeGrant.objects.filter(
+            role=actor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+            status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+        ).exists():
+            return "not_found"
+        return "allowed" if "documents.loan_document.read" in permissions else "not_found"
+    return "forbidden"
+
+
+def _actor_in_noc_issue_scope(*, actor, closure):
+    roles = set(auth_service.effective_role_codes(actor))
+    application = closure.loan_account.loan_application
+    access = evaluate_object_access(
+        actor_user_id=actor.pk,
+        actor_team_codes=actor.team_codes(),
+        actor_permission_codes=auth_service.effective_permission_codes(actor),
+        required_permission=NOC_ISSUE_PERMISSION,
+        object_team_code="compliance",
+    )
+    return bool(
+        roles.intersection(NOC_ISSUE_ROLES)
+        and access.allowed
+        and application.application_status == application.STATUS_APPROVED_BY_SANCTION
+        and closure.loan_account.loan_account_status == "closed"
+        and closure.loan_account.closed_at == closure.closed_at
+    )
+
+
+def _eligible_noc_closure(closure):
+    return bool(
+        closure.closure_type == LoanClosure.TYPE_FULL_REPAYMENT
+        and closure.closure_stage == LoanClosure.STAGE_FINANCIALLY_CLOSED
+        and closure.principal_paid_flag
+        and closure.interest_paid_flag
+        and closure.charges_paid_flag
+        and closure.total_outstanding_at_closure == Decimal("0.00")
+        and closure.loan_account.loan_account_status == "closed"
+        and closure.loan_account.closed_at == closure.closed_at
+        and closure.loan_account.loan_application.application_status
+        == closure.loan_account.loan_application.STATUS_APPROVED_BY_SANCTION
+        and closure.requirements.filter(
+            requirement_type=ClosureRequirement.TYPE_NOC,
+            requirement_status=ClosureRequirement.STATUS_PENDING,
+        ).exists()
+    )
+
+
+@transaction.atomic
+def _record_noc_denied(
+    *, actor, loan_closure_id, reason, request, message=None, details=None
+):
+    evidence = {"reason": reason, **(details or {})}
+    AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.noc.issue_denied",
+        entity_type="loan_closure",
+        entity_id=loan_closure_id,
+        new_value_json=evidence,
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="loan_closure",
+        entity_type="loan_closure",
+        entity_id=loan_closure_id,
+        from_state=None,
+        to_state="noc_issue_denied",
+        trigger_reason=reason,
+        action_code=NOC_ISSUE_PERMISSION,
+    )
+    return {
+        "kind": "denied",
+        "message": message or "NOC issuance failed retained eligibility checks.",
+    }
+
+
+@transaction.atomic
+def _record_noc_read_denied(*, actor, loan_closure_id, request):
+    AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.noc.read_denied",
+        entity_type="loan_closure",
+        entity_id=loan_closure_id,
+        new_value_json={"reason": "noc_not_found_or_out_of_scope"},
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+
+
+def _serialize_noc(noc, *, replay):
+    status = CommunicationDispatcher.delivery_status(job_id=noc.communication_job_id)
+    if NocRecord.synchronize_delivery_status(noc_id=noc.pk, delivery_status=status):
+        AuditLog.objects.create(
+            action="closure.noc.delivery_status_observed",
+            entity_type="noc",
+            entity_id=noc.pk,
+            old_value_json={"delivery_status": noc.delivery_status},
+            new_value_json={
+                "delivery_status": status,
+                "communication_job_id": str(noc.communication_job_id),
+            },
+        )
+        noc.delivery_status = status
+    return {
+        "noc_id": str(noc.pk),
+        "loan_closure_id": str(noc.loan_closure_id),
+        "loan_account_id": str(noc.loan_account_id),
+        "member_id": str(noc.member_id),
+        "document_id": str(noc.document_id),
+        "issued_by_user_id": str(noc.issued_by_user_id),
+        "issued_at": noc.issued_at.isoformat().replace("+00:00", "Z"),
+        "signatory_user_id": str(noc.signatory_user_id),
+        "signatory_role_code": noc.signatory_role_code,
+        "delivery_mode": noc.delivery_mode,
+        "delivery_status": status,
+        "communication_id": str(noc.communication_id),
+        "communication_job_id": str(noc.communication_job_id),
+        "borrower_name": noc.borrower_name_snapshot,
+        "loan_account_number": noc.loan_account_number_snapshot,
+        "application_reference": noc.application_reference_snapshot,
+        "disbursed_amount": f"{noc.disbursed_amount_snapshot:.2f}",
+        "full_repayment_at": noc.full_repayment_at_snapshot.isoformat().replace(
+            "+00:00", "Z"
+        ),
+        "idempotency_replayed": replay,
     }
 
 
 class LoanClosureModule:
     evaluate_readiness = staticmethod(evaluate_readiness)
     close = staticmethod(close)
+    generate_noc = staticmethod(generate_noc)
+    read_noc = staticmethod(read_noc)
+    download_noc = staticmethod(download_noc)

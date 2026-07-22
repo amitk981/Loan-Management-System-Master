@@ -234,6 +234,13 @@ class _PreparedAdvice:
     template: ContentTemplate
 
 
+@dataclass(frozen=True)
+class QueuedCommunication:
+    communication_id: uuid.UUID
+    communication_job_id: uuid.UUID
+    delivery_status: str
+
+
 class CommunicationDispatcher:
     _EXCEPTION_PERMISSIONS = {
         CommunicationDeliveryJob.KIND_GENERIC: "communications.communication.send",
@@ -308,6 +315,46 @@ class CommunicationDispatcher:
             communication_id=communication_id,
             idempotency_key=idempotency_key,
         )
+
+    @classmethod
+    def queue_from_template(
+        cls,
+        *,
+        actor,
+        template_code,
+        recipient,
+        context,
+        related_entity,
+        delivery_idempotency_key,
+    ):
+        """Create and queue one generic snapshot, returning immutable owner evidence."""
+        communication = cls.create_from_template(
+            actor=actor,
+            template_code=template_code,
+            recipient=recipient,
+            context=context,
+            related_entity=related_entity,
+        )
+        cls.send(
+            communication_id=communication.pk,
+            idempotency_key=delivery_idempotency_key,
+        )
+        job = CommunicationDeliveryJob.objects.get(communication_id=communication.pk)
+        return QueuedCommunication(
+            communication_id=communication.pk,
+            communication_job_id=job.pk,
+            delivery_status=cls.delivery_status(job_id=job.pk),
+        )
+
+    @staticmethod
+    def delivery_status(*, job_id):
+        status = CommunicationDeliveryJob.objects.values_list("status", flat=True).get(
+            pk=job_id
+        )
+        return {
+            CommunicationDeliveryJob.STATUS_SENT: "sent",
+            CommunicationDeliveryJob.STATUS_FAILED: "failed",
+        }.get(status, "queued")
 
     @classmethod
     def current_delivery_serviceability(

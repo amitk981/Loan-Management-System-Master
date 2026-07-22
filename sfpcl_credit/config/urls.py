@@ -38,6 +38,16 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/loan-closures/<uuid:loan_closure_id>/noc/download/",
+        closure_views.noc_download,
+        name="loan-closure-noc-download",
+    ),
+    path(
+        "api/v1/loan-closures/<uuid:loan_closure_id>/noc/",
+        closure_views.noc_issue,
+        name="loan-closure-noc-issue",
+    ),
+    path(
         "api/v1/loan-accounts/<uuid:loan_account_id>/closure/",
         closure_views.loan_close,
         name="loan-account-close",

@@ -1273,7 +1273,9 @@ class LoanDocumentGenerationApiTests(TestCase):
         return document
 
     @staticmethod
-    def _genuine_docx_fixture(fields):
+    def _genuine_docx_fixture(
+        fields, title="Approved Term Sheet", footer="Retained legal footer"
+    ):
         namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
         relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
         labels = {
@@ -1284,6 +1286,12 @@ class LoanDocumentGenerationApiTests(TestCase):
             "interest_tenure": "Interest tenure", "repayment_date": "Repayment",
             "penal_interest_rate": "Penalty", "charges_and_fees": "Charges",
             "security": "Security", "dispute_resolution": "Disputes",
+            "loan_account_number": "Loan account",
+            "application_reference": "Application reference",
+            "disbursed_amount": "Disbursed amount",
+            "full_repayment_date": "Full repayment date",
+            "issued_by": "Issued by",
+            "issue_date": "Issue date",
         }
         rows = []
         for field in fields:
@@ -1297,7 +1305,7 @@ class LoanDocumentGenerationApiTests(TestCase):
         document_xml = (
             f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             f'<w:document xmlns:w="{namespace}" xmlns:r="{relationships}"><w:body>'
-            '<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Approved Term Sheet</w:t></w:r></w:p>'
+            f'<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>{title}</w:t></w:r></w:p>'
             f'<w:tbl>{"".join(rows)}</w:tbl><w:sectPr>'
             '<w:headerReference w:type="default" r:id="rId2"/>'
             '<w:footerReference w:type="default" r:id="rId3"/>'
@@ -1337,7 +1345,7 @@ class LoanDocumentGenerationApiTests(TestCase):
             )
             archive.writestr(
                 "word/footer1.xml",
-                f'<?xml version="1.0"?><w:ftr xmlns:w="{namespace}"><w:p><w:r><w:t>Retained legal footer</w:t></w:r></w:p></w:ftr>',
+                f'<?xml version="1.0"?><w:ftr xmlns:w="{namespace}"><w:p><w:r><w:t>{footer}</w:t></w:r></w:p></w:ftr>',
             )
             archive.writestr(
                 "word/styles.xml",

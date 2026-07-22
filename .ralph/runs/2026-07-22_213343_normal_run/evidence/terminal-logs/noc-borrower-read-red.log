@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_borrower_can_read_only_own_issued_noc (sfpcl_credit.tests.test_noc_api.NocIssuanceApiTests.test_borrower_can_read_only_own_issued_noc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_213343_normal_run/sfpcl_credit/tests/test_noc_api.py", line 137, in test_borrower_can_read_only_own_issued_noc
+    self.assertEqual(owner_response.status_code, 200, owner_response.content)
+AssertionError: 405 != 200 : b''
+
+----------------------------------------------------------------------
+Ran 1 test in 0.064s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "data": {
+    "noc_id": "00000000-0000-4000-8000-000000000101",
+    "loan_closure_id": "00000000-0000-4000-8000-000000000102",
+    "loan_account_id": "00000000-0000-4000-8000-000000000103",
+    "member_id": "00000000-0000-4000-8000-000000000104",
+    "document_id": "00000000-0000-4000-8000-000000000105",
+    "issued_by_user_id": "00000000-0000-4000-8000-000000000106",
+    "issued_at": "2026-07-22T16:30:00Z",
+    "signatory_user_id": "00000000-0000-4000-8000-000000000107",
+    "signatory_role_code": "company_secretary",
+    "delivery_mode": "email",
+    "delivery_status": "queued",
+    "communication_id": "00000000-0000-4000-8000-000000000108",
+    "communication_job_id": "00000000-0000-4000-8000-000000000109",
+    "borrower_name": "Synthetic Member",
+    "loan_account_number": "SYNTHETIC-NOC-001",
+    "application_reference": "SYNTHETIC-APP-001",
+    "disbursed_amount": "100000.00",
+    "full_repayment_at": "2026-07-22T16:00:00Z",
+    "idempotency_replayed": false
+  }
+}

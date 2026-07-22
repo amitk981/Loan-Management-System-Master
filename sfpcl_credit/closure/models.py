@@ -89,6 +89,7 @@ class ClosureRequirement(models.Model):
     TYPE_ARCHIVE = "archive"
     STATUS_PENDING = "pending"
     STATUS_NOT_APPLICABLE = "not_applicable"
+    STATUS_COMPLETED = "completed"
 
     closure_requirement_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -115,7 +116,9 @@ class ClosureRequirement(models.Model):
                 name="closure_requirement_type_bounded",
             ),
             models.CheckConstraint(
-                check=models.Q(requirement_status__in=("pending", "not_applicable")),
+                check=models.Q(
+                    requirement_status__in=("pending", "not_applicable", "completed")
+                ),
                 name="closure_requirement_status_bounded",
             ),
         ]
@@ -127,3 +130,137 @@ class ClosureRequirement(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError("Closure Requirement evidence is immutable until its owner slice.")
+
+    @classmethod
+    def complete_noc_requirement(cls, *, loan_closure_id):
+        """The NOC owner is the sole controlled pending-to-completed transition."""
+        return models.QuerySet.update(
+            cls.objects.filter(
+                loan_closure_id=loan_closure_id,
+                requirement_type=cls.TYPE_NOC,
+                requirement_status=cls.STATUS_PENDING,
+            ),
+            requirement_status=cls.STATUS_COMPLETED,
+        )
+
+
+class ImmutableNocQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValueError("NOC evidence is immutable.")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValueError("NOC evidence is immutable.")
+
+    def delete(self):
+        raise ValueError("NOC evidence is immutable.")
+
+
+class NocRecord(models.Model):
+    DELIVERY_EMAIL = "email"
+    DELIVERY_QUEUED = "queued"
+    DELIVERY_SENT = "sent"
+    DELIVERY_FAILED = "failed"
+
+    noc_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_closure = models.OneToOneField(
+        LoanClosure, on_delete=models.PROTECT, related_name="noc"
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount", on_delete=models.PROTECT, related_name="nocs"
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="nocs"
+    )
+    loan_document = models.OneToOneField(
+        "legal_documents.LoanDocument", on_delete=models.PROTECT, related_name="noc"
+    )
+    document = models.OneToOneField(
+        "documents.DocumentFile", on_delete=models.PROTECT, related_name="noc"
+    )
+    generation_audit = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT, related_name="generated_noc"
+    )
+    document_template_id_snapshot = models.UUIDField()
+    document_template_version_snapshot = models.CharField(max_length=40)
+    renderer_contract_version_snapshot = models.CharField(max_length=64)
+    document_checksum_sha256_snapshot = models.CharField(max_length=128)
+    merge_values_sha256_snapshot = models.CharField(max_length=64)
+    issued_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="issued_nocs"
+    )
+    issued_by_role_code = models.CharField(max_length=100)
+    issued_at = models.DateTimeField(default=timezone.now, db_index=True)
+    signatory_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="signed_nocs"
+    )
+    signatory_role_code = models.CharField(max_length=100)
+    signatory_name_snapshot = models.CharField(max_length=200)
+    delivery_mode = models.CharField(max_length=60)
+    delivery_status = models.CharField(max_length=60)
+    recipient_address = models.CharField(max_length=255)
+    communication = models.OneToOneField(
+        "communications.Communication", on_delete=models.PROTECT, related_name="noc"
+    )
+    communication_job = models.OneToOneField(
+        "communications.CommunicationDeliveryJob",
+        on_delete=models.PROTECT,
+        related_name="noc",
+    )
+    borrower_name_snapshot = models.CharField(max_length=255)
+    loan_account_number_snapshot = models.CharField(max_length=80)
+    application_reference_snapshot = models.CharField(max_length=40)
+    disbursed_amount_snapshot = models.DecimalField(max_digits=18, decimal_places=2)
+    full_repayment_at_snapshot = models.DateTimeField()
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    issue_audit = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT, related_name="noc_issue"
+    )
+    issue_workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent", on_delete=models.PROTECT, related_name="noc_issue"
+    )
+
+    objects = ImmutableNocQuerySet.as_manager()
+
+    class Meta:
+        db_table = "nocs"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(delivery_mode="email"), name="noc_delivery_mode_email"
+            ),
+            models.CheckConstraint(
+                check=models.Q(delivery_status__in=("queued", "sent", "failed")),
+                name="noc_delivery_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(issued_by_role_code="")
+                & ~models.Q(signatory_role_code="")
+                & ~models.Q(signatory_name_snapshot="")
+                & ~models.Q(recipient_address="")
+                & ~models.Q(borrower_name_snapshot="")
+                & ~models.Q(loan_account_number_snapshot="")
+                & ~models.Q(application_reference_snapshot=""),
+                name="noc_required_text_complete",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValueError("NOC evidence is immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("NOC evidence is immutable.")
+
+    @classmethod
+    def synchronize_delivery_status(cls, *, noc_id, delivery_status):
+        if delivery_status not in {
+            cls.DELIVERY_QUEUED,
+            cls.DELIVERY_SENT,
+            cls.DELIVERY_FAILED,
+        }:
+            raise ValueError("Unsupported NOC delivery status.")
+        return models.QuerySet.update(
+            cls.objects.filter(pk=noc_id).exclude(delivery_status=delivery_status),
+            delivery_status=delivery_status,
+        )
