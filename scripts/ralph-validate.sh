@@ -12,6 +12,7 @@ source "$repo_root/scripts/lib/ralph-candidate-limits.sh"
 source "$repo_root/scripts/lib/ralph-fast-candidate-checks.sh"
 source "$repo_root/scripts/lib/ralph-oversized-slice.sh"
 source "$repo_root/scripts/lib/ralph-architecture-review.sh"
+source "$repo_root/scripts/lib/ralph-prompt-policy.sh"
 source "$repo_root/scripts/lib/ralph-backend-validation.sh"
 source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 
@@ -19,6 +20,8 @@ run_id=""
 worktree_dir="$repo_root"
 mode="normal_run"
 slice_id=""
+prompt_role=""
+trusted_state_file=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -38,12 +41,29 @@ while [[ $# -gt 0 ]]; do
       slice_id="${2:?--slice requires a value}"
       shift 2
       ;;
+    --prompt-role)
+      prompt_role="${2:?--prompt-role requires a value}"
+      shift 2
+      ;;
+    --trusted-state)
+      trusted_state_file="${2:?--trusted-state requires a value}"
+      shift 2
+      ;;
     *)
       echo "Unknown validate argument: $1" >&2
       exit 2
       ;;
   esac
 done
+
+trusted_state_file="${trusted_state_file:-$worktree_dir/.ralph/state.json}"
+trusted_prompt_role="$(ralph_prompt_role "$mode" "${RALPH_SPLIT_SLICE_ID:-}" \
+  "$trusted_state_file")" || exit 2
+if [[ -n "$prompt_role" && "$prompt_role" != "$trusted_prompt_role" ]]; then
+  echo "Prompt role does not match trusted run state." >&2
+  exit 2
+fi
+prompt_role="$trusted_prompt_role"
 
 slice_file="$worktree_dir/docs/slices/${slice_id}.md"
 split_slice_id="${RALPH_SPLIT_SLICE_ID:-}"
@@ -312,6 +332,13 @@ elif [[ "$mode" == "architecture_review" ]]; then
       echo "- New Medium: $new_medium"
       echo "- New Low: $new_low"
       echo "- Corrective slices added: $corrective_added"
+      if [[ "$prompt_role" == "review_closure" ]]; then
+        if ! ralph_validate_architecture_review_closure_scope \
+            "$trusted_state_file" "$run_dir/review-packet.md"; then
+          echo "FAIL: closure review changed or expanded its inherited finding set."
+          exit 1
+        fi
+      fi
       if ! ralph_validate_architecture_review_manifest \
           "$run_dir/review-packet.md" "$worktree_dir" \
           "$findings_closed" "$new_critical" "$new_high" "$new_medium" "$new_low"; then

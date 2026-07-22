@@ -1576,6 +1576,10 @@ run:
   architecture_review_clean_streak_required: 2
 EOF
 adaptive_state="$fixture_dir/adaptive-review-state.json"
+[[ "$(ralph_architecture_review_cadence_enabled .ralph/config.yaml)" == True ]] \
+  || fail "repository weakened the mandatory periodic architecture checkpoint"
+[[ "$(ralph_architecture_review_cadence_enabled "$adaptive_config")" == True ]] \
+  || fail "legacy review configuration did not preserve its fail-closed cadence"
 printf '{"architecture_review_clean_streak": 0}\n' > "$adaptive_state"
 [[ "$(ralph_architecture_review_interval "$adaptive_config" "$adaptive_state")" == 4 ]] \
   || fail "adaptive review interval did not retain four-slice scrutiny before clean proof"
@@ -1591,6 +1595,10 @@ printf '{"architecture_review_due": true}\n' > "$adaptive_state"
   || fail "cadence threshold did not schedule a review"
 [[ "$(ralph_architecture_review_due_after_product False 2 8)" == False ]] \
   || fail "clean sub-threshold product progress scheduled an early review"
+[[ "$(ralph_architecture_review_due_after_product False 8 8 False)" == False ]] \
+  || fail "disabled periodic architecture discovery still blocked the product queue"
+[[ "$(ralph_architecture_review_due_after_product True 2 8 False)" == True ]] \
+  || fail "disabled cadence incorrectly cleared an already mandatory review"
 printf '{"architecture_review_due": "unknown"}\n' > "$adaptive_state"
 if ralph_architecture_review_due "$adaptive_state" >/dev/null 2>&1; then
   fail "non-boolean architecture-review state failed open"
@@ -1794,6 +1802,10 @@ auto_finalizer_repo="$fixture_dir/auto-finalizer-repo"
 auto_finalizer_dir="$auto_finalizer_repo/docs/slices"
 mkdir -p "$auto_finalizer_repo/.ralph" "$auto_finalizer_dir" \
   "$auto_finalizer_repo/docs/working"
+printf 'Command:\npython -m unittest rate_owner\nExit code: 1\n' \
+  > "$auto_finalizer_repo/rate.log"
+printf 'Command:\npython -m unittest interest_owner\nExit code: 1\n' \
+  > "$auto_finalizer_repo/interest.log"
 auto_finalizer_config="$auto_finalizer_repo/.ralph/config.yaml"
 cp "$convergence_config" "$auto_finalizer_config"
 auto_finalizer_slice="$auto_finalizer_dir/CR-014-servicing-terminal-finalizer.md"
@@ -2208,6 +2220,29 @@ cat > "$terminal_verified_packet" <<'EOF'
 | AR-010-RATE-001 | ROOT-010-RATE-VERSION-OWNER | High | Closed | rate.log | - | rate-closed.log |
 | AR-010-INTEREST-001 | ROOT-010-INTEREST-OWNER-TRUTH | High | Closed | interest.log | - | interest-closed.log |
 EOF
+terminal_boundary_state="$fixture_dir/terminal-boundary-state.json"
+cp "$auto_finalizer_state" "$terminal_boundary_state"
+python3 - "$terminal_boundary_state" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_due"] = True
+state["architecture_review_due_reason"] = (
+    "terminal_repair_verification:ROOT-010-RATE-VERSION-OWNER+project_completion:010Z10"
+)
+path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+ralph_reconcile_architecture_review_terminal_repair_verification \
+  "$terminal_boundary_state" "$terminal_verified_packet"
+python3 - "$terminal_boundary_state" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+if state.get("architecture_review_due") is not True:
+    raise SystemExit("terminal closure erased the final project discovery checkpoint")
+if state.get("architecture_review_due_reason") != "project_completion:010Z10":
+    raise SystemExit("terminal closure did not preserve only the independent boundary reason")
+PY
 ralph_reconcile_architecture_review_terminal_repair_verification \
   "$auto_finalizer_state" "$terminal_verified_packet"
 python3 - "$auto_finalizer_state" <<'PY'
@@ -3163,7 +3198,7 @@ rg -qF 'ralph_reconcile_architecture_review_terminal_repair_verification' \
   || fail "successful architecture review does not reconcile terminal verification state"
 rg -qF 'ralph_architecture_review_quarantine_count' scripts/ralph-loop.sh \
   || fail "final completion ignores quarantined release blockers"
-rg -qF 'one next-numbered CR-NNN terminal finalizer' scripts/ralph-run.sh \
+rg -qF 'one next-numbered CR-NNN terminal finalizer' scripts/lib/ralph-prompt-policy.sh \
   || fail "architecture reviewer is not instructed to use the standing terminal transition"
 rg -qF 'Every generated corrective slice must declare exactly one `## Runtime Capabilities` section' \
   scripts/ralph-run.sh \
@@ -3946,6 +3981,116 @@ PY
 # Prompt ownership and context discipline: implementation agents own
 # substantive code/evidence; the orchestrator owns mechanical queue state.
 runner="scripts/ralph-run.sh"
+prompt_policy="scripts/lib/ralph-prompt-policy.sh"
+[[ -f "$prompt_policy" ]] || fail "missing mode-pure Ralph prompt policy"
+# shellcheck source=../lib/ralph-prompt-policy.sh
+source "$prompt_policy"
+prompt_state="$fixture_dir/prompt-policy-state.json"
+printf '%s\n' '{"architecture_review_due": false}' > "$prompt_state"
+[[ "$(ralph_prompt_role normal_run "" "$prompt_state")" == "implementation" ]] \
+  || fail "normal run was not classified as a pure implementation role"
+[[ "$(ralph_prompt_role repair "" "$prompt_state")" == "repair" ]] \
+  || fail "repair run was not classified separately from architecture review"
+discovery_instruction="$(ralph_prompt_architecture_instruction review_discovery)"
+[[ "$discovery_instruction" == *"Only Critical/High correctness"* ]] \
+  || fail "architecture discovery lost severity-based queue admission"
+printf '%s\n' '{"architecture_review_due": true, "architecture_review_due_reason": "terminal_repair_verification:ROOT-010-OWNER", "architecture_review_terminal_repairs": {"010": {"status": "awaiting_verification"}}}' > "$prompt_state"
+[[ "$(ralph_prompt_role architecture_review "" "$prompt_state")" == "review_closure" ]] \
+  || fail "terminal verification was not classified as a closure-only review"
+closure_instruction="$(ralph_prompt_architecture_instruction review_closure)"
+[[ "$closure_instruction" == *"Do not discover new findings"* ]] \
+  || fail "closure-only review can still expand its scope"
+if [[ "$closure_instruction" == *"create immediate corrective work"* ]]; then
+  fail "closure-only review still contains architecture-discovery queue mutation policy"
+fi
+[[ -z "$(ralph_prompt_architecture_instruction implementation)" ]] \
+  || fail "implementation role still receives architecture-review instructions"
+[[ -z "$(ralph_prompt_architecture_instruction repair)" ]] \
+  || fail "product repair still receives architecture-review instructions"
+closure_state="$fixture_dir/closure-scope-state.json"
+mkdir -p "$fixture_dir/evidence"
+printf 'Command:\npython -m unittest exact_owner_contract\nPASS: exact owner contract\nExit code: 0\n' \
+  > "$fixture_dir/evidence/reproducer.log"
+printf 'Command:\npython -m unittest exact_owner_contract\nPASS: exact owner contract\nExit code: 0\n' \
+  > "$fixture_dir/evidence/closure.log"
+cat > "$closure_state" <<'EOF'
+{
+  "architecture_review_terminal_repairs": {
+    "ROOT-010-OWNER": {
+      "status": "awaiting_verification",
+      "finding_roots": [
+        {
+          "finding_id": "AR-010-001",
+          "root_id": "ROOT-010-OWNER",
+          "reproducer": "evidence/original.log",
+          "reproducer_command": "python -m unittest exact_owner_contract"
+        }
+      ]
+    }
+  }
+}
+EOF
+closure_packet="$fixture_dir/closure-scope-packet.md"
+cat > "$closure_packet" <<'EOF'
+## Convergence Metrics
+- Findings closed: 1
+- New Critical: 0
+- New High: 0
+- New Medium: 0
+- New Low: 0
+- Corrective slices added: 0
+
+## Finding Closure Manifest
+| Finding ID | Root ID | Severity | Disposition | Reproducer | Corrective Slice | Closure Evidence |
+|---|---|---|---|---|---|---|
+| AR-010-001 | ROOT-010-OWNER | High | Closed | evidence/reproducer.log | - | evidence/closure.log |
+EOF
+ralph_validate_architecture_review_closure_scope "$closure_state" "$closure_packet" \
+  || fail "exact inherited closure packet was rejected"
+sed 's/- New High: 0/- New High: 1/' "$closure_packet" > "$closure_packet.invalid"
+if ralph_validate_architecture_review_closure_scope \
+    "$closure_state" "$closure_packet.invalid" >/dev/null 2>&1; then
+  fail "closure-only validation admitted a new architecture finding"
+fi
+sed 's/AR-010-001/AR-010-UNRELATED/' "$closure_packet" > "$closure_packet.invalid"
+if ralph_validate_architecture_review_closure_scope \
+    "$closure_state" "$closure_packet.invalid" >/dev/null 2>&1; then
+  fail "closure-only validation admitted an unrelated finding identity"
+fi
+printf 'Command:\npython -m unittest narrower_proxy\nPASS: narrower proxy\nExit code: 0\n' \
+  > "$fixture_dir/evidence/reproducer.log"
+if ralph_validate_architecture_review_closure_scope \
+    "$closure_state" "$closure_packet" >/dev/null 2>&1; then
+  fail "closure-only validation admitted a substituted reproducer command"
+fi
+printf 'Command:\npython -m unittest exact_owner_contract\nPASS: exact owner contract\nExit code: 0\n' \
+  > "$fixture_dir/evidence/reproducer.log"
+printf 'Command:\npython -m unittest narrower_proxy\nPASS: narrower proxy\nExit code: 0\n' \
+  > "$fixture_dir/evidence/closure.log"
+if ralph_validate_architecture_review_closure_scope \
+    "$closure_state" "$closure_packet" >/dev/null 2>&1; then
+  fail "closure-only validation admitted a substituted green closure command"
+fi
+trusted_closure_root="$fixture_dir/trusted-closure-root"
+candidate_closure_root="$fixture_dir/candidate-closure-root"
+mkdir -p "$trusted_closure_root/.ralph" \
+  "$candidate_closure_root/.ralph/runs/closure/evidence"
+cp "$closure_state" "$trusted_closure_root/.ralph/state.json"
+sed -e 's#evidence/reproducer.log#.ralph/runs/closure/evidence/reproducer.log#' \
+  -e 's#evidence/closure.log#.ralph/runs/closure/evidence/closure.log#' \
+  "$closure_packet" > "$candidate_closure_root/.ralph/runs/closure/review-packet.md"
+printf 'Command:\npython -m unittest exact_owner_contract\nPASS: exact owner contract\nExit code: 0\n' \
+  > "$candidate_closure_root/.ralph/runs/closure/evidence/reproducer.log"
+printf 'Command:\npython -m unittest exact_owner_contract\nPASS: exact owner contract\nExit code: 0\n' \
+  > "$candidate_closure_root/.ralph/runs/closure/evidence/closure.log"
+ralph_validate_architecture_review_closure_scope \
+  "$trusted_closure_root/.ralph/state.json" \
+  "$candidate_closure_root/.ralph/runs/closure/review-packet.md" \
+  || fail "closure validation did not separate trusted state from fresh candidate evidence"
+rg -qF 'prompt_role="$(ralph_prompt_role' "$runner" \
+  || fail "run prompt does not use the tested mode-pure prompt interface"
+rg -qF 'architecture_instruction="$(ralph_prompt_architecture_instruction "$prompt_role")"' "$runner" \
+  || fail "run prompt bypasses the tested architecture-instruction interface"
 rg -qF 'The orchestrator owns changed-files.txt, .ralph/state.json, .ralph/progress.md, the selected slice Status transition, and mechanical handoff/progress bookkeeping.' "$runner" \
   || fail "run prompt does not assign mechanical bookkeeping to the orchestrator"
 rg -qF 'slice_file="architecture-review.md"' "$runner" \
@@ -3963,11 +4108,11 @@ rg -qF 'Read only the digest shared invariants and the selected slice section by
   || fail "run prompt does not bound epic-digest reads to the selected slice"
 rg -qF 'After roughly 500 changed lines, use diff stats and targeted hunks; never repeatedly print the complete cumulative diff.' "$runner" \
   || fail "run prompt does not prevent cumulative diff churn"
-rg -qF 'Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work.' "$runner" \
+rg -qF 'Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work.' "$prompt_policy" \
   || fail "architecture-review prompt does not enforce severity-based queue admission"
-rg -qF 'Report findings closed, new findings by severity, and corrective slices added' "$runner" \
+rg -qF 'Report findings closed, new findings by severity, and corrective slices added' "$prompt_policy" \
   || fail "architecture-review prompt omits convergence metrics"
-rg -qF 'A terminal recurrence-repair successor may depend only on slices that are already Complete or Superseded.' "$runner" \
+rg -qF 'A terminal recurrence-repair successor may depend only on slices that are already Complete or Superseded.' "$prompt_policy" \
   || fail "architecture-review prompt can place a terminal repair behind unfinished unrelated work"
 rg -qF "set the review-packet.md Result section to exactly 'Ready for independent validation'" "$runner" \
   || fail "run prompt does not safely state the exact agent-declared result"

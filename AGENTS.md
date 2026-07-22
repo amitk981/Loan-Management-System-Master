@@ -27,21 +27,8 @@ It runs the slice queue autonomously: one slice per iteration with every risk-se
 - Never modify protected files (scripts/, .ralph/config.yaml, .ralph/permissions.json, .codex/config.toml, AGENTS.md, CLAUDE.md, .gitignore, HIGH_RISK_APPROVALS.md, DECISION_POLICY.md, docs/source/) — validation fails the run if you do. Never weaken risk rules or quality gates.
 - Frontend changes follow `docs/working/FRONTEND_DESIGN_RULES.md` exactly: reuse existing components/patterns, never introduce new styling; build missing screens from existing patterns when the documents require them.
 - Never change code directly from a chat request. All code changes flow through queued slices. When the owner reports a bug or requests a feature in chat, help them fill the template in `docs/change-requests/` (see its README), run `./scripts/ralph-intake.sh`, and implement only once a CR slice exists in `docs/slices/`. If the template is not satisfied, change nothing.
-- Owner/architecture preparation maintains an 8-10 slice ready runway with concrete, source-cited requirements and bounded epic digests. At an explicit owner-stopped preparation checkpoint it may prepare complete bounded epics to retire known template debt before a long AFK run. A normal implementation run sharpens only its selected slice when that slice is still a template stub; it does not edit unrelated future slices. Store any genuinely missing source fact discovered during implementation in the selected epic digest section.
+- Owner/architecture preparation maintains an 8-10 slice ready runway with concrete, source-cited requirements and bounded epic digests. At an explicit owner-stopped preparation checkpoint it may prepare complete bounded epics to retire known template debt before a long AFK run. A normal implementation run never sharpens a template stub or edits unrelated future slices: specification decisions belong to preparation, while implementation executes an already-ready slice. Store any genuinely missing source fact discovered during implementation in the selected epic digest section.
 - Stop only for the never-do list in DECISION_POLICY.md, unsafe git state, repeated failures, protected/forbidden file edits, an owner veto, or diff limit violations.
 - If a previous session was interrupted mid-run (limit exhaustion, crash — whichever agent was driving), recovery is automatic: `./scripts/ralph-loop.sh` runs `scripts/ralph-recover.sh` at startup, which salvages the dead run's artifacts, removes its worktree, and requeues the slice. For manual single runs, run `./scripts/ralph-recover.sh` yourself first. Never salvage ungated work.
 
-Read in this order during normal runs (same order as the generated run prompt):
-1. `docs/working/TOKEN_RULES.md`
-2. `docs/working/CONTEXT.md`
-3. `docs/working/AFK_RUNBOOK.md`
-4. `.ralph/config.yaml`
-5. `.ralph/permissions.json`
-6. `.ralph/state.json`
-7. `docs/working/HANDOFF.md`
-8. `docs/working/DECISION_POLICY.md`
-9. `docs/working/FRONTEND_DESIGN_RULES.md` (mandatory before any frontend change)
-10. The selected `docs/slices/*.md` file only
-11. The matching `docs/working/digests/` file for the slice's epic, if it exists
-
-Do not load all source documents during normal runs unless the selected slice explicitly requires it.
+The generated prompt contains a role-specific read manifest. Follow that manifest rather than loading every workflow document for every mode. A normal implementation reads the selected slice and its bounded digest before workflow mechanics; an architecture review reads only its fixed diff, active findings, and exact cited evidence. `docs/working/FRONTEND_DESIGN_RULES.md` remains mandatory before any frontend edit. Do not load all source documents or the architecture-review state machine during a normal implementation run.

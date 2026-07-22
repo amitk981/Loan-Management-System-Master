@@ -156,17 +156,35 @@ PY
 # fire after the next product slice. This prevents a failed epic-boundary
 # review from being cleared by work in the following epic.
 ralph_architecture_review_due_after_product() {
-  local prior_due="${1:-}" completed="${2:-}" threshold="${3:-}"
+  local prior_due="${1:-}" completed="${2:-}" threshold="${3:-}" cadence_enabled="${4:-True}"
   if ! [[ "$prior_due" == "True" || "$prior_due" == "False" ]] \
-      || ! [[ "$completed" =~ ^[0-9]+$ && "$threshold" =~ ^[1-9][0-9]*$ ]]; then
+      || ! [[ "$completed" =~ ^[0-9]+$ && "$threshold" =~ ^[1-9][0-9]*$ ]] \
+      || ! [[ "$cadence_enabled" == "True" || "$cadence_enabled" == "False" ]]; then
     echo "Invalid architecture-review product transition inputs." >&2
     return 1
   fi
-  if [[ "$prior_due" == "True" ]] || (( completed >= threshold )); then
+  if [[ "$prior_due" == "True" ]] \
+      || [[ "$cadence_enabled" == "True" && "$completed" -ge "$threshold" ]]; then
     printf 'True\n'
   else
     printf 'False\n'
   fi
+}
+
+# Periodic discovery is optional. Missing configuration preserves the legacy
+# fail-closed cadence; an explicit false keeps architecture discovery at epic
+# and project boundaries while closure verification remains mandatory.
+ralph_architecture_review_cadence_enabled() {
+  local config="${1:?config is required}" value
+  value="$(awk -F': *' '/^[[:space:]]*architecture_review_cadence_enabled:/ {sub(/[[:space:]]*#.*$/, "", $2); print tolower($2); exit}' "$config" | xargs || true)"
+  case "$value" in
+    false) printf 'False\n' ;;
+    true|"") printf 'True\n' ;;
+    *)
+      echo "architecture_review_cadence_enabled must be true or false." >&2
+      return 1
+      ;;
+  esac
 }
 
 # Return the Parent Epic numbers declared by one slice. Older fixture slices
@@ -1250,6 +1268,7 @@ ralph_finalize_architecture_review_terminal_repair() {
   local slice_id="${5:?slice id is required}" run_id="${6:?run id is required}"
   python3 - "$state_file" "$epic" "$root" "$finalizer" "$slice_id" "$run_id" <<'PY'
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -1290,6 +1309,64 @@ if existing is not None:
     else:
         raise SystemExit("terminal repair history has an invalid status")
 record = dict(pending)
+
+# Freeze the exact reproducer commands from the corrective slice that just
+# passed.  A later closure review may write fresh evidence, but it may not
+# broaden, narrow, or otherwise reinterpret what it is independently replaying.
+repository_root = path.parent.parent
+slice_path = repository_root / "docs" / "slices" / f"{slice_id}.md"
+if not slice_path.is_file():
+    raise SystemExit("terminal repair slice is unavailable for reproducer binding")
+slice_lines = slice_path.read_text().splitlines()
+try:
+    closure_start = slice_lines.index("## Review Finding Closure") + 1
+except ValueError:
+    raise SystemExit("terminal repair slice has no Review Finding Closure contract")
+bound_reproducers = {}
+for line in slice_lines[closure_start:]:
+    if line.startswith("## "):
+        break
+    if not line.startswith("|"):
+        continue
+    values = [item.strip() for item in line.strip().strip("|").split("|")]
+    if values and values[0] in {"Finding ID", "---"}:
+        continue
+    if len(values) != 4:
+        raise SystemExit("terminal repair closure contract has malformed rows")
+    finding_id, root_id, reproducer, _ = values
+    reproducer_path = (repository_root / reproducer).resolve()
+    try:
+        reproducer_path.relative_to(repository_root.resolve())
+    except ValueError:
+        raise SystemExit(f"terminal repair reproducer escapes the repository: {finding_id}")
+    if not reproducer_path.is_file():
+        raise SystemExit(f"terminal repair reproducer is unavailable: {finding_id}")
+    command_match = re.search(
+        r"(?m)^Command:\s*\n(?:\s*\n)*([^\n]+?)\s*$",
+        reproducer_path.read_text(errors="replace"),
+    )
+    if command_match is None:
+        raise SystemExit(f"terminal repair reproducer has no exact one-line Command: {finding_id}")
+    key = (finding_id, root_id)
+    if key in bound_reproducers:
+        raise SystemExit(f"terminal repair duplicates inherited finding: {finding_id}")
+    bound_reproducers[key] = (reproducer, command_match.group(1).strip())
+expected_pairs = {
+    (item.get("finding_id"), item.get("root_id"))
+    for item in pending.get("finding_roots", [])
+    if isinstance(item, dict)
+}
+if set(bound_reproducers) != expected_pairs:
+    raise SystemExit("terminal repair changed its inherited finding/reproducer set")
+record["finding_roots"] = [
+    {
+        "finding_id": finding_id,
+        "root_id": root_id,
+        "reproducer": bound_reproducers[(finding_id, root_id)][0],
+        "reproducer_command": bound_reproducers[(finding_id, root_id)][1],
+    }
+    for finding_id, root_id in sorted(expected_pairs)
+]
 record.update({
     "status": "awaiting_verification",
     "slice_id": slice_id,
@@ -1321,6 +1398,16 @@ from pathlib import Path
 state_path = Path(sys.argv[1])
 packet_path = Path(sys.argv[2])
 state = json.loads(state_path.read_text())
+reason = state.get("architecture_review_due_reason", "")
+terminal_prefixes = (
+    "terminal_repair:",
+    "terminal_repair_verification:",
+    "terminal_finalizer:",
+)
+preserved_reasons = [
+    part for part in reason.split("+")
+    if part and not part.startswith(terminal_prefixes)
+] if isinstance(reason, str) else []
 lines = packet_path.read_text().splitlines()
 try:
     start = lines.index("## Finding Closure Manifest") + 1
@@ -1394,6 +1481,17 @@ remaining = any(
 )
 if remaining:
     state["architecture_review_due"] = True
+    terminal_reasons = [
+        f"terminal_repair_verification:{root}"
+        for root, record in repairs.items()
+        if isinstance(record, dict) and record.get("status") == "awaiting_verification"
+    ]
+    state["architecture_review_due_reason"] = "+".join(
+        dict.fromkeys(terminal_reasons + preserved_reasons)
+    )
+elif preserved_reasons:
+    state["architecture_review_due"] = True
+    state["architecture_review_due_reason"] = "+".join(dict.fromkeys(preserved_reasons))
 else:
     state["architecture_review_due"] = False
     state.pop("architecture_review_due_reason", None)
@@ -1514,8 +1612,8 @@ PY
 }
 
 ralph_architecture_review_scope_instruction() {
-  local state_file="${1:?state file is required}"
-  python3 - "$state_file" <<'PY'
+  local state_file="${1:?state file is required}" prompt_role="${2:-review_discovery}"
+  python3 - "$state_file" "$prompt_role" <<'PY'
 import json, re, sys
 from pathlib import Path
 try:
@@ -1523,6 +1621,7 @@ try:
     state = json.loads(state_path.read_text())
 except (OSError, json.JSONDecodeError):
     raise SystemExit(0)
+prompt_role = sys.argv[2]
 episode_limit = 2
 try:
     config_text = state_path.with_name("config.yaml").read_text()
@@ -1535,7 +1634,7 @@ try:
 except OSError:
     pass
 roots = state.get("architecture_review_root_generations", {})
-if isinstance(roots, dict) and roots:
+if prompt_role != "review_closure" and isinstance(roots, dict) and roots:
     budgets = ", ".join(
         f"{root}=generation {entry.get('generation', '?')} via {entry.get('corrective_slice', '?')}"
         for root, entry in sorted(roots.items())
@@ -1579,7 +1678,7 @@ if isinstance(repairs, dict):
         and isinstance(record.get("episode", 1), int)
         and record.get("episode", 1) >= episode_limit
     ]
-    for record in exhausted:
+    for record in (exhausted if prompt_role != "review_closure" else []):
         roots_text = ", ".join(sorted(record.get("root_ids", [])))
         print(
             f"- Terminal repair episode cap {episode_limit} is complete for grouped roots: "
@@ -1588,7 +1687,7 @@ if isinstance(repairs, dict):
             "records a release blocker while allowing unrelated queued product slices to continue."
         )
 quarantines = state.get("architecture_review_quarantined_findings", {})
-if isinstance(quarantines, dict) and quarantines:
+if prompt_role != "review_closure" and isinstance(quarantines, dict) and quarantines:
     identities = ", ".join(
         f"{finding_id}/{record.get('root_id', '?')}"
         for finding_id, record in sorted(quarantines.items())
@@ -1600,6 +1699,176 @@ if isinstance(quarantines, dict) and quarantines:
         "bound failing evidence, or use Closed with fresh bound passing closure evidence. Never omit, "
         "rename, or remap a quarantine."
     )
+PY
+}
+
+# Closure verification is a fixed-set operation. It may close or carry the
+# authenticated inherited findings, but it cannot turn the verification
+# session into a new architecture-discovery or queue-expansion pass.
+ralph_validate_architecture_review_closure_scope() {
+  local trusted_state="${1:?trusted state is required}" packet="${2:?review packet is required}"
+  python3 - "$trusted_state" "$packet" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+state_path = Path(sys.argv[1]).resolve()
+packet_path = Path(sys.argv[2]).resolve()
+state = json.loads(state_path.read_text())
+packet_text = packet_path.read_text()
+trusted_root = state_path.parent.parent if state_path.parent.name == ".ralph" else packet_path.parent
+packet_root = (
+    packet_path.parents[3]
+    if len(packet_path.parents) > 3 and packet_path.parents[2].name == ".ralph"
+    else packet_path.parent
+)
+
+def command_from_evidence(root, relative_path, label):
+    evidence_path = (root / relative_path).resolve()
+    try:
+        evidence_path.relative_to(root.resolve())
+    except ValueError:
+        raise SystemExit(f"{label} escapes the repository")
+    if not evidence_path.is_file():
+        raise SystemExit(f"{label} is unavailable: {relative_path}")
+    match = re.search(
+        r"(?m)^Command:\s*\n(?:\s*\n)*([^\n]+?)\s*$",
+        evidence_path.read_text(errors="replace"),
+    )
+    if match is None:
+        raise SystemExit(f"{label} has no exact one-line Command")
+    return match.group(1).strip()
+
+def legacy_bound_reproducers(record):
+    """Hydrate states written before command binding from their committed repair slice."""
+    slice_id = record.get("slice_id")
+    if not isinstance(slice_id, str) or not slice_id:
+        return {}
+    slice_path = trusted_root / "docs" / "slices" / f"{slice_id}.md"
+    if not slice_path.is_file():
+        return {}
+    lines = slice_path.read_text().splitlines()
+    try:
+        start = lines.index("## Review Finding Closure") + 1
+    except ValueError:
+        return {}
+    result = {}
+    for line in lines[start:]:
+        if line.startswith("## "):
+            break
+        if not line.startswith("|"):
+            continue
+        values = [item.strip() for item in line.strip().strip("|").split("|")]
+        if values and values[0] in {"Finding ID", "---"}:
+            continue
+        if len(values) != 4:
+            raise SystemExit("legacy terminal repair closure contract has malformed rows")
+        pair = (values[0], values[1])
+        result[pair] = command_from_evidence(
+            trusted_root, values[2], f"inherited reproducer for {values[0]}"
+        )
+    return result
+
+repairs = state.get("architecture_review_terminal_repairs", {})
+if not isinstance(repairs, dict):
+    raise SystemExit("terminal repair history must be an object")
+expected = set()
+expected_commands = {}
+for record in repairs.values():
+    if not isinstance(record, dict) or record.get("status") != "awaiting_verification":
+        continue
+    finding_roots = record.get("finding_roots")
+    if not isinstance(finding_roots, list) or not finding_roots:
+        raise SystemExit("closure verification has no authenticated inherited finding set")
+    for item in finding_roots:
+        if not isinstance(item, dict):
+            raise SystemExit("closure verification has malformed inherited finding state")
+        pair = (item.get("finding_id"), item.get("root_id"))
+        if not all(isinstance(value, str) and value for value in pair):
+            raise SystemExit("closure verification has malformed inherited finding identity")
+        expected.add(pair)
+        command = item.get("reproducer_command")
+        if isinstance(command, str) and command:
+            expected_commands[pair] = command
+    legacy_commands = legacy_bound_reproducers(record)
+    for pair in expected:
+        if pair in legacy_commands:
+            expected_commands.setdefault(pair, legacy_commands[pair])
+if not expected:
+    raise SystemExit("closure verification has no awaiting terminal findings")
+missing_commands = sorted(expected - set(expected_commands))
+if missing_commands:
+    raise SystemExit(
+        "closure verification has no authenticated reproducer command for: "
+        + ", ".join(f"{finding}/{root}" for finding, root in missing_commands)
+    )
+
+for severity in ("Critical", "High", "Medium", "Low"):
+    match = re.search(rf"(?m)^- New {severity}:\s*(\d+)\s*$", packet_text)
+    if match is None or int(match.group(1)) != 0:
+        raise SystemExit(f"closure verification must report New {severity}: 0")
+if re.search(r"(?m)^- Existing corrective slice:\s*\S+", packet_text):
+    raise SystemExit("closure verification cannot map unrelated existing corrective work")
+
+lines = packet_text.splitlines()
+try:
+    start = lines.index("## Finding Closure Manifest") + 1
+except ValueError:
+    raise SystemExit("closure verification has no Finding Closure Manifest")
+actual = set()
+actual_commands = {}
+closure_commands = {}
+for line in lines[start:]:
+    if line.startswith("## "):
+        break
+    if not line.startswith("|"):
+        continue
+    values = [item.strip() for item in line.strip().strip("|").split("|")]
+    if values and values[0] in {"Finding ID", "---"}:
+        continue
+    if len(values) != 7:
+        raise SystemExit("closure verification manifest row has the wrong number of columns")
+    pair = (values[0], values[1])
+    if values[3] not in {"Closed", "Carried", "Quarantined"}:
+        raise SystemExit(f"closure verification has invalid disposition for {values[0]}")
+    if pair in actual:
+        raise SystemExit(f"closure verification duplicated {values[0]}/{values[1]}")
+    actual.add(pair)
+    actual_commands[pair] = command_from_evidence(
+        packet_root, values[4], f"closure reproducer for {values[0]}"
+    )
+    if values[3] == "Closed":
+        closure_commands[pair] = command_from_evidence(
+            packet_root, values[6], f"closure evidence for {values[0]}"
+        )
+
+missing = sorted(expected - actual)
+unexpected = sorted(actual - expected)
+if missing or unexpected:
+    parts = []
+    if missing:
+        parts.append("missing " + ", ".join(f"{finding}/{root}" for finding, root in missing))
+    if unexpected:
+        parts.append("unexpected " + ", ".join(f"{finding}/{root}" for finding, root in unexpected))
+    raise SystemExit("closure verification changed its inherited finding set: " + "; ".join(parts))
+changed_commands = sorted(
+    pair for pair in expected if actual_commands.get(pair) != expected_commands[pair]
+)
+if changed_commands:
+    raise SystemExit(
+        "closure verification changed its inherited reproducer command for: "
+        + ", ".join(f"{finding}/{root}" for finding, root in changed_commands)
+    )
+changed_closures = sorted(
+    pair for pair in closure_commands if closure_commands[pair] != expected_commands[pair]
+)
+if changed_closures:
+    raise SystemExit(
+        "closure verification used a substitute green command for: "
+        + ", ".join(f"{finding}/{root}" for finding, root in changed_closures)
+    )
+print(f"PASS: closure verification retained exactly {len(expected)} inherited finding(s).")
 PY
 }
 

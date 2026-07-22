@@ -12,6 +12,8 @@ source "$repo_root/scripts/lib/ralph-node-runtime.sh"
 source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
 source "$repo_root/scripts/lib/ralph-browser-runtime.sh"
 source "$repo_root/scripts/lib/ralph-architecture-review.sh"
+# shellcheck source=lib/ralph-prompt-policy.sh
+source "$repo_root/scripts/lib/ralph-prompt-policy.sh"
 source "$repo_root/scripts/lib/ralph-worktree-ownership.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
@@ -467,14 +469,26 @@ fi
 split_instruction=""
 split_corrective_instruction=""
 split_read_target="docs/slices/$slice_file"
-architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md. Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work. Bundle Medium findings into the owning slice or epic closure and record Low findings unless they naturally combine with higher-severity work. Group related symptoms by root owner instead of creating one slice per symptom. Report findings closed, new findings by severity, and corrective slices added in review-packet.md under '## Convergence Metrics' using the exact lines '- Findings closed: N', '- New Critical: N', '- New High: N', '- New Medium: N', '- New Low: N', and '- Corrective slices added: N'. A normal new corrective must be a numeric Not Started slice with a valid Depends On contract. Exception: when the scope instruction says a carried root is already at the configured generation cap and it genuinely needs a different successor, create exactly one next-numbered CR-NNN terminal finalizer instead of another numeric leaf. Its filename may add a descriptive slug, but every Finding Closure Manifest row must use the CR-NNN identity. It must be Not Started, High risk, owned by the same Parent Epic, group every related Critical/High root into its Review Finding Closure contract, and contain exactly '## Architecture Review Finalizer' followed by '- Epic: NNN', '- Root ID: ROOT-NNN-*', and '- Exhausted corrective generation: N'. The standing owner policy admits only one such terminal CR per root. If executable evidence later disproves that finalizer, preserve the same stable findings and roots and group them into one correction; the orchestrator may rewrite it as one bounded same-finalizer repair episode, never generation 3 or a second finalizer. Product gates leave that episode open until a later independent review explicitly closes every inherited Finding ID/Root ID pair. A genuine later regression opens the next bounded episode on the same stable identities. After the configured episode cap, a further reproduced terminal finding uses disposition Quarantined with no corrective or closure evidence; it becomes a release blocker while unrelated queued slices continue. When an actionable existing root-owner slice already covers a new Critical/High finding, do not duplicate it; add one exact '- Existing corrective slice: ID' line per mapped slice under the convergence metrics. Validation requires every mapped ID to resolve to one tracked Not Started or Blocked slice. If corrective additions exceed closures across two reviews, recommend one root-cause boundary correction instead of further leaf patches."
-architecture_instruction="$architecture_instruction A terminal recurrence-repair successor may depend only on slices that are already Complete or Superseded. Never place it behind unfinished unrelated work or rename it merely to sort first: after authentication, the orchestrator gives that exact pending repair bounded priority over ordinary grabbable slices."
+prompt_role="$(ralph_prompt_role "$mode" "$split_slice_id" \
+  "$worktree_dir/.ralph/state.json")" || exit 1
+architecture_instruction="$(ralph_prompt_architecture_instruction "$prompt_role")" || exit 1
+if [[ "$prompt_role" == "review_discovery" ]]; then
 architecture_runtime_instruction='- Every generated corrective slice must declare exactly one `## Runtime Capabilities` section. Declare `postgresql-five-race-acceptance` when its text or Trusted PostgreSQL Acceptance requires PostgreSQL, concurrency, locking, or race evidence; declare `localhost-e2e-server` when it requires browser, screenshot, Playwright, or trusted-browser evidence; otherwise declare `none`. Before returning, source `scripts/lib/ralph-runtime-capabilities.sh` and `scripts/lib/ralph-postgresql-acceptance.sh`, run `ralph_validate_slice_runtime_requirements` against every untracked `docs/slices/*.md` candidate, and run `ralph_validate_trusted_postgresql_acceptance` for every candidate declaring the PostgreSQL capability. A failure is part of this review candidate and must be corrected here, not deferred to the next product run.'
-architecture_instruction="$architecture_instruction $architecture_runtime_instruction"
 architecture_scope_instruction="$(ralph_architecture_review_scope_instruction \
-  "$repo_root/.ralph/state.json")"
+  "$repo_root/.ralph/state.json" "$prompt_role")"
+architecture_instruction="$(ralph_prompt_architecture_instruction "$prompt_role")"
+architecture_instruction="$architecture_instruction $architecture_runtime_instruction"
 if [[ -n "$architecture_scope_instruction" ]]; then
   architecture_instruction="$architecture_instruction $architecture_scope_instruction"
+fi
+elif [[ "$prompt_role" == "review_closure" ]]; then
+  architecture_runtime_instruction='- Closure verification must not create a new runtime contract. Validate only the runtime capabilities already declared by the inherited corrective slice and replay its exact trusted acceptance commands.'
+  architecture_instruction="$architecture_instruction $architecture_runtime_instruction"
+  architecture_scope_instruction="$(ralph_architecture_review_scope_instruction \
+    "$repo_root/.ralph/state.json" "$prompt_role")"
+  if [[ -n "$architecture_scope_instruction" ]]; then
+    architecture_instruction="$architecture_instruction $architecture_scope_instruction"
+  fi
 fi
 if [[ "$terminal_finalizer_rewrite" == "1" ]]; then
   architecture_instruction="$architecture_instruction This is the single bounded terminal-finalizer rewrite after independent convergence validation rejected an ordinary successor. Do not repeat the architecture critique or change its findings. Read the previous failure-summary.md, rename the one proposed numeric corrective to the next unused CR-NNN terminal finalizer, replace its old ID consistently in the manifest/findings/dependencies, add the exact finalizer section for the exhausted root, retain every acceptance/reproducer contract, and run the fast queue/semantic validators before returning."
@@ -491,6 +505,70 @@ if [[ -n "$split_slice_id" ]]; then
   fi
   architecture_instruction="- In this queue-rewrite architecture mode, perform only the oversized-slice split described above."
 fi
+review_history_instruction=""
+if [[ "$prompt_role" == "review_discovery" || "$prompt_role" == "review_closure" ]]; then
+  review_history_instruction="- Read the bounded active docs/working/REVIEW_FINDINGS.md first. Open its historical archive only when an inherited finding requires an exact prior citation; never ingest the entire archive."
+fi
+role_requirements=""
+case "$prompt_role" in
+  implementation|repair)
+    role_requirements="- Implement only the selected, already-decided vertical slice. Do not perform architecture discovery or expand the queue.
+- Write execution-plan.md before coding and check permissions before editing files.
+- TDD is mandatory for backend and business logic: write one failing behavior test, make it minimally green, then take the next behavior. Save red/green output to evidence/terminal-logs/.
+- Backend Python interpreter: use '$venv_dir/bin/python' for every backend command. Never use bare python3.
+- Frontend node_modules are pre-installed. Do not run npm install unless the slice adds a pinned package. Never run pip install; the orchestrator installs pinned dependencies before validation.
+- Before any frontend edit, read docs/working/FRONTEND_DESIGN_RULES.md and reuse its existing patterns.
+- Run focused red/green backend tests and impacted frontend tests, typecheck, lint, and build as appropriate. Do not run the complete backend suite or full coverage yourself; the orchestrator runs the one authoritative impacted/full lane after you finish.
+- Batch related searches, reads, edits, and focused tests. At roughly 60 tool calls, return to execution-plan.md and finish through focused work instead of rediscovering context. After roughly 500 changed lines, use diff stats and targeted hunks; never repeatedly print the complete cumulative diff.
+- For a slice declaring 'localhost-e2e-server', implement the exact specs and screenshot outputs in its '## Trusted Browser Acceptance' section. Never fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch; trusted validation decides browser acceptance.
+- When a requirement is ambiguous, use docs/working/DECISION_POLICY.md and record the assumption. Never invent an unstated business rule.
+- Execute the prepared slice as written; do not reopen specification decisions or combine unrelated preparation with coding.
+- Do not sharpen or edit unrelated future slices. Read only the digest shared invariants and the selected slice section by default. Read every relevant source document cited by a slice that touches business rules, architecture, permissions, data models, APIs, money, compliance, or end-to-end workflow behavior; never load unrelated source documents.
+- For a CR-* slice, write impact-analysis.md before editing product code and add regression tests for every affected module."
+    ;;
+  review_discovery|review_closure)
+    role_requirements="- Review documentation and fixed evidence only. Do not implement product code, run TDD, sharpen product slices, or broaden the assigned review role.
+- Pin every conclusion to the supplied diff, inherited finding identity, source citation, and executable evidence."
+    ;;
+  queue_rewrite)
+    role_requirements="- Perform only the declared queue rewrite. Do not implement product code, discover architecture findings, or inspect unrelated slices."
+    ;;
+esac
+case "$prompt_role" in
+  implementation|repair)
+    role_read_order="1. docs/working/CONTEXT.md
+2. AGENTS.md or CLAUDE.md
+3. docs/working/TOKEN_RULES.md
+4. docs/working/HANDOFF.md
+5. $split_read_target
+6. The parent Epic file linked by the selected slice
+7. The matching docs/working/digests/ shared invariants and selected-slice section, if it exists
+8. Every relevant source document cited by the selected slice, as required by TOKEN_RULES.md
+9. docs/working/DECISION_POLICY.md
+10. .ralph/permissions.json, .ralph/state.json, and only the relevant .ralph/config.yaml gate section
+11. The relevant docs/working/AFK_RUNBOOK.md section only; do not ingest the architecture-review state machine
+12. docs/working/FRONTEND_DESIGN_RULES.md only before frontend work"
+    ;;
+  review_discovery|review_closure)
+    role_read_order="1. docs/working/CONTEXT.md
+2. AGENTS.md or CLAUDE.md
+3. docs/working/TOKEN_RULES.md
+4. docs/working/HANDOFF.md
+5. .ralph/state.json and docs/working/REVIEW_FINDINGS.md
+6. The fixed review diff and exact evidence named by the assigned review scope
+7. Every relevant source citation needed to decide those findings
+8. The architecture-review section of docs/working/AFK_RUNBOOK.md"
+    ;;
+  queue_rewrite)
+    role_read_order="1. docs/working/CONTEXT.md
+2. AGENTS.md or CLAUDE.md
+3. docs/working/TOKEN_RULES.md
+4. docs/working/HANDOFF.md
+5. $split_read_target and its linked parent Epic
+6. The retained failure-summary and oversized-slice validation named above
+7. Only the queue-contract section of docs/working/AFK_RUNBOOK.md"
+    ;;
+esac
 
 cat > "$run_dir/prompt.md" <<EOF
 You are running Ralph AFK mode.
@@ -500,6 +578,9 @@ $run_id
 
 Mode:
 $mode
+
+Prompt role:
+$prompt_role
 
 Selected slice:
 $slice_id
@@ -512,56 +593,27 @@ You must follow the Ralph workflow exactly.
 Core requirements:
 - Do not rely on chat history.
 - Work only inside the active worktree.
-- Implement only the selected vertical slice.
 - Read only the required context files first.
 - Do not modify docs/source.
 - Never modify protected files: scripts/, .ralph/config.yaml, .ralph/permissions.json, .codex/config.toml, AGENTS.md, CLAUDE.md, .gitignore, docs/working/HIGH_RISK_APPROVALS.md, docs/working/DECISION_POLICY.md. Validation fails the run if you do.
-- Write execution-plan.md before coding.
-- Check permissions before editing files.
-- TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
-- Backend Python interpreter: use "$venv_dir/bin/python" for every backend command (manage.py, tests, coverage). Never use bare python3 — it resolves to the wrong interpreter.
-- Frontend node_modules are pre-installed in the worktree by the orchestrator. Do not run npm install unless you add a new pinned package; if that install fails offline, note it in final-summary.md and finish — the orchestrator installs from the lockfile before validation.
-- Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
-- Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
-- During implementation, run focused red/green tests for the changed backend/business behavior and the impacted frontend tests, typecheck, lint, and build as appropriate.
-- Batch related searches, reads, edits, and focused tests. Aim to stay below roughly 80 tool calls; after that, return to execution-plan.md and finish through focused work instead of rediscovering context.
-- After roughly 500 changed lines, use diff stats and targeted hunks; never repeatedly print the complete cumulative diff.
-- Do not run the complete backend suite or full coverage yourself. The orchestrator runs the authoritative complete backend suite once under coverage after you finish, and rejects any test failure or coverage below the configured floor. This avoids paying for identical full-suite executions without removing any acceptance gate.
-- For a slice declaring 'localhost-e2e-server', implement the exact specs and screenshot outputs in its '## Trusted Browser Acceptance' section. Your coding sandbox may deny Chromium's macOS services: use Playwright collection or non-browser tests for your local feedback, do not fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch. The orchestrator runs the declared browser contract twice outside your sandbox after you finish; that independent gate decides browser acceptance.
+$role_requirements
 - Save evidence.
 - Save risk-assessment.md.
 - Save review-packet.md.
 - Before finishing successfully, set the review-packet.md Result section to exactly 'Ready for independent validation'. Missing, partial, or any other result fails closed.
 - The orchestrator owns changed-files.txt, .ralph/state.json, .ralph/progress.md, the selected slice Status transition, and mechanical handoff/progress bookkeeping. Do not edit those mechanical facts. Put substantive next-run risks or decisions in review-packet.md; edit HANDOFF only when it needs non-mechanical context the orchestrator cannot derive.
 - Never run git commit, git add, or git push: your sandbox cannot write the worktree's git metadata and the attempt will fail your run. The orchestrator independently validates and commits passing work after you finish.
-- High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
-- When requirements are ambiguous, follow docs/working/DECISION_POLICY.md: choose the source-doc-compliant option, or the industry-standard default, record it in docs/working/ASSUMPTIONS.md, and continue. Do not stop to ask. Never invent business rules the documents do not state — stub them, record the open question, and continue.
-- If the selected slice file is still an unsharpened template stub (its Goal reads "Deliver this narrow capability as a small, testable Ralph implementation slice" or its scope sections say only "Implement the named backend/API capability only"), your FIRST deliverable is sharpening that slice file with concrete requirements from the epic digest, docs/working/maps/, and the slice's cited source sections — before writing execution-plan.md. Never implement directly from an unsharpened stub.
-- Do not sharpen or edit unrelated future slices during an implementation run. Owner/architecture preparation maintains a bounded ready runway outside the product session.
-- Prefer docs/working/digests/ over re-reading large docs/source files. Read only the digest shared invariants and the selected slice section by default. If the selected section lacks a required source fact, locate that fact with docs/working/maps/ and rg, then save only the missing distilled fact.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 $repair_instruction
 $closure_preflight_instruction
 $split_instruction
 $split_corrective_instruction
 $architecture_instruction
-- In an ordinary architecture review, read the bounded active docs/working/REVIEW_FINDINGS.md first. Open its historical archive only when a current diff reproduces an archived issue or an exact prior citation is required; never ingest the entire archive by default.
+$review_history_instruction
 - If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
-- If the selected slice is a change request (CR-*): write impact-analysis.md in the run folder BEFORE editing any code — affected backend/frontend pieces, blast radius across modules, and the regression tests to add in each affected module. Validation fails the run without it. Then add those regression tests as part of the fix.
 
 Read in this order:
-1. AGENTS.md or CLAUDE.md
-2. docs/working/TOKEN_RULES.md
-3. docs/working/CONTEXT.md
-4. docs/working/AFK_RUNBOOK.md
-5. .ralph/config.yaml
-6. .ralph/permissions.json
-7. .ralph/state.json
-8. docs/working/HANDOFF.md
-9. docs/working/DECISION_POLICY.md
-10. docs/working/FRONTEND_DESIGN_RULES.md (mandatory before any frontend change)
-11. $split_read_target
-12. The matching docs/working/digests/ shared invariants and selected-slice section, if it exists
+$role_read_order
 
 Do not load all docs/source during a normal run unless the selected slice explicitly requires it.
 EOF
@@ -652,7 +704,9 @@ python3 "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
   --run-id "$run_id" \
   --worktree "$worktree_dir" \
   --mode "$mode" \
-  --slice "$slice_id" || validation_rc=$?
+  --slice "$slice_id" \
+  --prompt-role "$prompt_role" \
+  --trusted-state "$repo_root/.ralph/state.json" || validation_rc=$?
 
 if (( validation_rc != 0 )); then
   if (( validation_rc == 124 )); then
@@ -770,6 +824,8 @@ fi
 
 arch_threshold="$(ralph_architecture_review_interval \
   "$worktree_dir/.ralph/config.yaml" "$repo_root/.ralph/state.json")" || exit 1
+arch_cadence_enabled="$(ralph_architecture_review_cadence_enabled \
+  "$worktree_dir/.ralph/config.yaml")" || exit 1
 arch_base_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_every_completed_slices:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
 arch_clean_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_clean_every_completed_slices:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
 arch_clean_required="$(awk -F': *' '/^[[:space:]]*architecture_review_clean_streak_required:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
@@ -790,7 +846,8 @@ fi
 arch_due_after_product=False
 if [[ "$mode" != "architecture_review" ]]; then
   arch_due_after_product="$(ralph_architecture_review_due_after_product \
-    "$pre_run_arch_due" "$((pre_run_arch_count + 1))" "$arch_threshold")" || exit 1
+    "$pre_run_arch_due" "$((pre_run_arch_count + 1))" "$arch_threshold" \
+    "$arch_cadence_enabled")" || exit 1
 fi
 
 python3 - <<PY
@@ -818,7 +875,7 @@ if "$mode" != "architecture_review":
     state["slices_completed_since_architecture_review"] = count
     prior_due = state.get("architecture_review_due") is True
     prior_reason = state.get("architecture_review_due_reason")
-    cadence_due = count >= threshold
+    cadence_due = "$arch_cadence_enabled" == "True" and count >= threshold
     state["architecture_review_due"] = "$arch_due_after_product" == "True"
     state["architecture_review_interval"] = threshold
     if prior_due:
@@ -849,8 +906,25 @@ elif not "$split_slice_id":
     )
     state["last_architecture_review_metrics"] = metrics
     state["slices_completed_since_architecture_review"] = 0
-    state["architecture_review_due"] = False
-    state.pop("architecture_review_due_reason", None)
+    if "$prompt_role" == "review_closure":
+        prior_reason = state.get("architecture_review_due_reason", "")
+        terminal_prefixes = (
+            "terminal_repair:",
+            "terminal_repair_verification:",
+            "terminal_finalizer:",
+        )
+        retained = [
+            part for part in prior_reason.split("+")
+            if part and not part.startswith(terminal_prefixes)
+        ] if isinstance(prior_reason, str) else []
+        state["architecture_review_due"] = bool(retained)
+        if retained:
+            state["architecture_review_due_reason"] = "+".join(dict.fromkeys(retained))
+        else:
+            state.pop("architecture_review_due_reason", None)
+    else:
+        state["architecture_review_due"] = False
+        state.pop("architecture_review_due_reason", None)
 path.write_text(json.dumps(state, indent=2) + "\n")
 
 slice_path = Path("$worktree_dir/docs/slices") / f"{slice_id}.md"
@@ -947,8 +1021,7 @@ fi
 # An epic boundary is always a review checkpoint, even after the cadence has
 # safely expanded. Determine the next grabbable product slice only after the
 # orchestrator has completed the selected slice's status transition.
-if [[ "$mode" != "architecture_review" && -z "$architecture_finalizer_epic" \
-    && -z "$architecture_terminal_repair_epic" ]]; then
+if [[ "$mode" != "architecture_review" ]]; then
   next_slice_file="$(ralph_first_grabbable_slice "$worktree_dir/docs/slices" 2>/dev/null || true)"
   next_slice_id="${next_slice_file%.md}"
   remaining_after="$(ralph_remaining_slices "$worktree_dir/docs/slices")"

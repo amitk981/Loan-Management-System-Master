@@ -103,9 +103,10 @@ The end-to-end workflow is:
   workers or running concurrent Ralph loops adds contention and is not supported.
 - Protected paths, source documents, frozen-candidate hashes, diff/dependency limits, repair
   signatures, migration sync, and queue semantics fail closed.
-- Architecture reviews are independent critics. Significant means Critical/High correctness,
-  security, financial/data integrity, or binding source-contract risk; lesser findings should be
-  bundled or recorded rather than recursively expanding the active queue.
+- Architecture work is role-pure. Fixed-spec review and independent gates apply to every slice;
+  periodic and Epic/project-boundary discovery remain mandatory, while terminal closure verification
+  may inspect only inherited identities and reproducers. Significant discovery means Critical/High
+  correctness, security, financial/data integrity, or binding source-contract risk.
 - Terminal finalizers retain every grouped Root ID. An executable recurrence receives one active
   bounded repair episode on that same finalizer contract. Product gates leave it awaiting an
   independent review of every grouped root; a later genuine regression opens a new audited episode,

@@ -94,8 +94,10 @@ run:
   environment_setup_timeout_seconds: 900  # dependency preparation is non-interactive and bounded
   validation_timeout_seconds: 3600  # watchdog: gates are unattended and must never wait forever
   auto_deploy: false
-  # Stay at four while reviews find Critical/High issues. After two consecutive
-  # clean reviews, expand to eight; any later Critical/High resets to four.
+  # Periodic discovery remains a mandatory quality checkpoint. Prompt roles
+  # keep it separate from implementation and inherited closure verification.
+  architecture_review_cadence_enabled: true
+  # Stay at four until two clean reviews expand the interval to eight.
   architecture_review_every_completed_slices: 4
   architecture_review_clean_every_completed_slices: 8
   architecture_review_clean_streak_required: 2
