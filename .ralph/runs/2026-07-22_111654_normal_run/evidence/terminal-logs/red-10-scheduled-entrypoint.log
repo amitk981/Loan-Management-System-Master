@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_scheduled_expiry_entrypoint_returns_only_bounded_counts (sfpcl_credit.tests.test_default_grace_assessment_api.DefaultGraceAssessmentApiTests.test_scheduled_expiry_entrypoint_returns_only_bounded_counts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/tests/test_default_grace_assessment_api.py", line 625, in test_scheduled_expiry_entrypoint_returns_only_bounded_counts
+    from sfpcl_credit.processes.tasks import dispatch_default_grace_expiries
+ImportError: cannot import name 'dispatch_default_grace_expiries' from 'sfpcl_credit.processes.tasks' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/processes/tasks.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.616s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

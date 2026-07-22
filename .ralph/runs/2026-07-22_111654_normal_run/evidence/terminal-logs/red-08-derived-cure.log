@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_allocated_full_principal_during_grace_cures_and_retains_case (sfpcl_credit.tests.test_default_grace_assessment_api.DefaultGraceAssessmentApiTests.test_allocated_full_principal_during_grace_cures_and_retains_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/tests/test_default_grace_assessment_api.py", line 197, in test_allocated_full_principal_during_grace_cures_and_retains_case
+    self.assertEqual(derived.status_code, 200, derived.content)
+AssertionError: 404 != 200 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "The default case was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-22T06:12:09.003974Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.625s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

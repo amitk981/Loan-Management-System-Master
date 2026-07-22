@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_credit_assessment_team_stores_expired_case_assessment_and_projects_it (sfpcl_credit.tests.test_default_grace_assessment_api.DefaultGraceAssessmentApiTests.test_credit_assessment_team_stores_expired_case_assessment_and_projects_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/tests/test_default_grace_assessment_api.py", line 252, in test_credit_assessment_team_stores_expired_case_assessment_and_projects_it
+    from sfpcl_credit.defaults.models import DefaultAssessment
+ImportError: cannot import name 'DefaultAssessment' from 'sfpcl_credit.defaults.models' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/defaults/models.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.601s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

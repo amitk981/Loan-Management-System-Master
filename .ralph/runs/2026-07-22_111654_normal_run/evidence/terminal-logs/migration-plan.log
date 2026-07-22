@@ -1,0 +1,1029 @@
+Planned operations:
+identity.0001_initial
+    Create model Role
+    Create model Team
+    Create model User
+    Create model AuditLog
+    Create model UserSession
+    Create model UserTeamMembership
+    Create constraint unique_user_team_membership on model userteammembership
+identity.0002_permission_rolepermission_and_more
+    Create model Permission
+    Create model RolePermission
+    Create constraint unique_role_permission on model rolepermission
+tracer.0001_initial
+    Create model Member
+    Create model LoanApplication
+    Create model LoanAccount
+    Create model Repayment
+    Create model WorkflowEvent
+workflows.0001_canonical_workflow_event
+    Custom state/database change combination
+members.0001_initial
+    Create model Member
+    Create index idx_members_type_status on field(s) member_type, membership_status of model member
+    Create index idx_members_folio_number on field(s) folio_number of model member
+    Create index idx_members_pan_hash on field(s) pan_hash of model member
+    Create index idx_members_aadhaar_hash on field(s) aadhaar_hash of model member
+    Create index idx_members_mobile on field(s) mobile_number of model member
+    Create index idx_members_kyc_status on field(s) kyc_status of model member
+    Create index idx_members_default_status on field(s) default_status of model member
+members.0002_profile_shells
+    Create model IndividualMemberProfile
+    Create model ProducerInstitutionProfile
+members.0003_individual_profile_details
+    Add field date_of_birth to individualmemberprofile
+    Add field employment_or_service_years to individualmemberprofile
+    Add field first_name to individualmemberprofile
+    Add field gender to individualmemberprofile
+    Add field last_name to individualmemberprofile
+    Add field middle_name to individualmemberprofile
+    Add field occupation to individualmemberprofile
+members.0004_nominee
+    Create model Nominee
+    Create index idx_nominees_member on field(s) member of model nominee
+    Create index idx_nominees_minor_flag on field(s) minor_flag of model nominee
+    Create index idx_nominees_pan_hash on field(s) pan_hash of model nominee
+    Create index idx_nominees_aadhaar_hash on field(s) aadhaar_hash of model nominee
+members.0005_shareholding_and_more
+    Create model Shareholding
+    Create constraint shareholdings_non_negative_shares on model shareholding
+    Create constraint shareholdings_non_negative_pledged on model shareholding
+    Create constraint shareholdings_pledged_lte_total on model shareholding
+    Create constraint shareholdings_available_derived on model shareholding
+members.0006_landholding_cropplan_and_more
+    Create model LandHolding
+    Create model CropPlan
+    Create constraint crop_plans_positive_area on model cropplan
+    Create index idx_land_holdings_member on field(s) member of model landholding
+    Create index idx_land_holdings_verify on field(s) verification_status of model landholding
+    Create constraint land_holdings_positive_area on model landholding
+documents.0001_initial
+    Create model DocumentFile
+members.0007_kycprofile_kycdocument_and_more
+    Create model KycProfile
+    Create model KycDocument
+    Create index idx_kyc_profiles_party on field(s) party_type, party_id of model kycprofile
+    Create index idx_kyc_profiles_status on field(s) kyc_status of model kycprofile
+    Create index idx_kyc_profiles_rekyc_due on field(s) rekyc_due_date of model kycprofile
+    Create constraint kyc_profiles_unique_party on model kycprofile
+    Create index idx_kyc_documents_profile on field(s) kyc_profile of model kycdocument
+    Create index idx_kyc_documents_type on field(s) document_type of model kycdocument
+    Create index idx_kyc_documents_status on field(s) verification_status of model kycdocument
+members.0008_cancelledcheque_bankaccount_and_more
+    Create model CancelledCheque
+    Create model BankAccount
+    Create index idx_can_cheques_member on field(s) member of model cancelledcheque
+    Create index idx_can_cheques_doc on field(s) document_id of model cancelledcheque
+    Create index idx_can_cheques_acct_hash on field(s) account_number_hash of model cancelledcheque
+    Create index idx_can_cheques_verify on field(s) verification_status of model cancelledcheque
+    Create index idx_bank_accounts_owner on field(s) owner_party_type, owner_party_id of model bankaccount
+    Create index idx_bank_accounts_hash on field(s) account_number_hash of model bankaccount
+    Create index idx_bank_accounts_ifsc on field(s) ifsc of model bankaccount
+    Create index idx_bank_accounts_verify on field(s) verification_status of model bankaccount
+    Create index idx_bank_accounts_status on field(s) status of model bankaccount
+identity.0003_portal_member_auth
+    Create model PortalAccount
+    Create model PortalOtpChallenge
+members.0009_member_identity_governance
+    Add field version to member
+    Add field authorised_signatory_pan_encrypted to producerinstitutionprofile
+    Add field authorised_signatory_pan_hash to producerinstitutionprofile
+    Add field authorised_signatory_aadhaar_encrypted to producerinstitutionprofile
+    Add field authorised_signatory_aadhaar_hash to producerinstitutionprofile
+    Create model MemberChangeHistory
+members.0010_member_identity_change_request
+    Create constraint uniq_member_pan_hash on model member
+    Create constraint uniq_member_aadhaar_hash on model member
+    Create model MemberIdentityChangeRequest
+members.0011_producesupplyrecord
+    Create model ProduceSupplyRecord
+members.0012_memberserviceevidence_activememberstatus_and_more
+    Create model MemberServiceEvidence
+    Create model ActiveMemberStatus
+    Create constraint uniq_current_active_member_status on model activememberstatus
+    Create index idx_service_evidence_dates on field(s) member, service_from, service_to of model memberserviceevidence
+members.0013_memberserviceevidence_maker_users_and_more
+    Add field maker_users to memberserviceevidence
+    Raw Python operation
+    Create model MemberScopeAssignment
+    Create constraint uniq_member_scope_assignment on model memberscopeassignment
+members.0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more
+    Remove constraint uniq_member_scope_assignment from model memberscopeassignment
+    Raw Python operation
+    Create constraint member_scope_valid_shape on model memberscopeassignment
+    Create constraint uniq_member_scope_unbound on model memberscopeassignment
+    Create constraint uniq_member_scope_assigned on model memberscopeassignment
+    Create constraint uniq_member_scope_team on model memberscopeassignment
+documents.0002_documenttemplate
+    Create model DocumentTemplate
+documents.0003_documenttemplateidentity
+    Create model DocumentTemplateIdentity
+    Raw Python operation
+applications.0001_initial
+    Create model LoanApplication
+    Create constraint loan_apps_positive_required_amount on model loanapplication
+documents.0004_loandocument
+    Create model LoanDocument
+legal_documents.0001_transfer_loan_document_owner
+    Transfer retained loan_documents ownership to legal_documents
+legal_documents.0002_document_checklists
+    Create model DocumentChecklist
+    Create model ChecklistItem
+legal_documents.0003_loan_document_renderer_provenance
+    Add field renderer_contract_version to loandocument
+    Add field renderer_validated_document_id to loandocument
+    Add field renderer_validated_checksum_sha256 to loandocument
+    Create constraint loan_document_renderer_provenance_complete on model loandocument
+legal_documents.0004_checklistitem_notarisation_status_and_more
+    Add field notarisation_status to checklistitem
+    Add field stamp_status to checklistitem
+    Create model NotarisationRecord
+    Create model StampDutyRecord
+    Create constraint notary_status_bounded on model notarisationrecord
+    Create constraint completed_notary_has_evidence_verifier on model notarisationrecord
+    Create constraint stamp_amount_non_negative on model stampdutyrecord
+    Create constraint stamp_type_bounded on model stampdutyrecord
+    Create constraint stamp_status_bounded on model stampdutyrecord
+    Create constraint stamp_purchase_not_after_execution on model stampdutyrecord
+    Create constraint adequate_stamp_has_execution_verifier on model stampdutyrecord
+legal_documents.0005_signature_records
+    Create model SignatureRecord
+    Create constraint unique_signature_document_signer on model signaturerecord
+    Create constraint unique_signature_null_signer on model signaturerecord
+    Create constraint signature_party_type_bounded on model signaturerecord
+    Create constraint signature_method_bounded on model signaturerecord
+    Create constraint signature_status_bounded on model signaturerecord
+    Create constraint signature_resolution_complete on model signaturerecord
+    Create constraint signature_status_facts_consistent on model signaturerecord
+legal_documents.0006_stamp_notary_preparer_identity
+    Alter field verified_by_user on stampdutyrecord
+    Add field prepared_by_user to stampdutyrecord
+    Alter field verified_by_user on notarisationrecord
+    Add field prepared_by_user to notarisationrecord
+legal_documents.0007_signature_capture_maker
+    Add field captured_by_user to signaturerecord
+    Alter field verified_by_user on signaturerecord
+    Add field mismatch_resolution_workflow_event to signaturerecord
+applications.0002_loanapplication_submitted_by_user
+    Add field submitted_by_user to loanapplication
+applications.0003_systemsequence_loanrequestregisterentry
+    Create model SystemSequence
+    Create model LoanRequestRegisterEntry
+applications.0004_applicationdocument_and_more
+    Create model ApplicationDocument
+    Create constraint unique_app_doc_party_version on model applicationdocument
+applications.0005_application_deficiency
+    Create model ApplicationDeficiency
+applications.0006_rejection_note
+    Create model RejectionNote
+applications.0007_eligibilityassessment
+    Create model EligibilityAssessment
+applications.0008_loanlimitassessment
+    Create model LoanLimitAssessment
+applications.0009_loan_limit_policy_snapshot
+    Add field board_approval_reference_snapshot to loanlimitassessment
+    Add field policy_config_id_snapshot to loanlimitassessment
+    Add field policy_name_snapshot to loanlimitassessment
+applications.0010_loanapplication_nominee
+    Add field nominee to loanapplication
+legal_documents.0008_securitypackage_powerofattorney_and_more
+    Add field poa_execution_status to checklistitem
+    Add field poa_status to checklistitem
+    Create model SecurityPackage
+    Create model PowerOfAttorney
+    Create index idx_security_pkg_app_status on field(s) loan_application, security_status of model securitypackage
+    Create constraint security_package_status_bounded on model securitypackage
+    Create constraint security_package_account_requires_009c on model securitypackage
+    Create constraint security_package_poa_always_required on model securitypackage
+    Create index idx_poa_exec_status on field(s) execution_status, status of model powerofattorney
+    Create index idx_poa_parties on field(s) borrower_member, nominee of model powerofattorney
+    Create constraint poa_execution_status_bounded on model powerofattorney
+    Create constraint poa_status_bounded on model powerofattorney
+    Create constraint poa_release_requires_later_slice on model powerofattorney
+    Create constraint active_poa_has_execution_verifier on model powerofattorney
+legal_documents.0009_loandocument_verification_remarks
+    Add field verification_remarks to loandocument
+legal_documents.0010_stage4_maker_checker_constraints
+    Add field legacy_maker_attribution to stampdutyrecord
+    Add field legacy_maker_attribution to notarisationrecord
+    Add field legacy_maker_attribution to signaturerecord
+    Raw Python operation
+    Create constraint stamp_verification_distinct_maker_checker on model stampdutyrecord
+    Create constraint notary_verification_distinct_maker_checker on model notarisationrecord
+    Create constraint signature_resolution_distinct_maker_checker on model signaturerecord
+legal_documents.0011_final_documentation_approval_sequence
+    Create model ChecklistAction
+    Remove constraint document_checklist_valid_status from model documentchecklist
+    Remove constraint checklist_signatures_require_008k from model documentchecklist
+    Remove field company_secretary_signature_id from documentchecklist
+    Remove field credit_manager_signature_id from documentchecklist
+    Remove field sanction_committee_signature_id from documentchecklist
+    Remove field senior_manager_finance_signature_id from documentchecklist
+    Add field actor_user to checklistaction
+    Add field checklist_item to checklistaction
+    Add field document_checklist to checklistaction
+    Add field loan_document to checklistaction
+    Add field workflow_event to checklistaction
+    Add field company_secretary_signature to documentchecklist
+    Add field credit_manager_signature to documentchecklist
+    Add field sanction_committee_signature to documentchecklist
+    Add field senior_manager_finance_signature to documentchecklist
+    Create constraint document_checklist_valid_status on model documentchecklist
+    Create constraint checklist_credit_requires_cs on model documentchecklist
+    Create constraint checklist_sanction_requires_credit on model documentchecklist
+    Create constraint checklist_finance_requires_epic_009 on model documentchecklist
+    Create index idx_check_action_stage on field(s) document_checklist, action_type of model checklistaction
+    Create constraint unique_checklist_item_completion on model checklistaction
+    Create constraint unique_checklist_approval_stage on model checklistaction
+    Create constraint checklist_action_valid_type on model checklistaction
+    Create constraint checklist_action_target_consistent on model checklistaction
+    Create constraint checklist_approval_comments_required on model checklistaction
+legal_documents.0012_portal_documentation_submission
+    Create model PortalDocumentationSubmission
+configurations.0001_initial
+    Create model LoanPolicyConfig
+    Create model VersionHistory
+configurations.0002_version_history_approval_evidence
+    Add field approval_reference to versionhistory
+    Add field approved_at to versionhistory
+    Add field old_value_json to versionhistory
+    Add field new_value_json to versionhistory
+applications.0011_witness
+    Create model Witness
+applications.0012_witness_verification_evidence
+    Add field verification_folio_number to witness
+    Add field verification_shareholding to witness
+    Alter field loan_application on witness
+    Alter field pan_hash on witness
+    Alter field aadhaar_hash on witness
+    Raw Python operation
+applications.0013_witness_correction
+    Add field updated_at to witness
+    Add field version to witness
+    Add field updated_by_user to witness
+    Create model WitnessChangeHistory
+applications.0014_witness_contact_fields
+    Add field address to witness
+    Add field mobile to witness
+applications.0015_applicationdeficiencyresponse
+    Create model ApplicationDeficiencyResponse
+    Create model ApplicationDeficiencyResponseDraft
+applications.0016_bankverificationdecision_and_more
+    Add field audit_log to checklistaction
+    Add field version_history to checklistaction
+    Create model BankVerificationDecision
+    Create constraint unique_bank_verify_app_version on model bankverificationdecision
+    Create constraint bank_verify_status_bounded on model bankverificationdecision
+applications.0017_bank_decision_terminal_sanction_snapshots
+    Add field approval_case_id_snapshot to bankverificationdecision
+    Add field sanction_decision_id_snapshot to bankverificationdecision
+communications.0001_initial
+    Create model ContentTemplate
+communications.0002_communication
+    Create model Communication
+communications.0003_notification
+    Create model Notification
+credit.0001_credit_assessment_model_ownership
+    Move credit assessment model ownership in Django state only
+credit.0002_riskassessment_loanappraisalnote
+    Create model RiskAssessment
+    Create model LoanAppraisalNote
+credit.0003_appraisal_prerequisite_snapshots
+    Add field eligibility_snapshot_json to loanappraisalnote
+    Add field loan_limit_snapshot_json to loanappraisalnote
+    Add field prerequisite_provenance to loanappraisalnote
+    Add field repayment_capacity_notes to loanappraisalnote
+    Add field submission_remarks to loanappraisalnote
+    Raw Python operation
+credit.0004_appraisal_review_facts
+    Add field last_review_decision to loanappraisalnote
+    Add field review_comments to loanappraisalnote
+credit.0005_appraisalreviewdecision
+    Create model AppraisalReviewDecision
+    Raw Python operation
+credit.0006_legacy_appraisal_history_remediation
+    Raw Python operation
+credit.0007_eligibility_active_member_snapshot
+    Add field active_member_snapshot to eligibilityassessment
+approvals.0001_initial
+    Create model ApprovalCase
+approvals.0002_approvalcase_workflow_event
+    Add field workflow_event to approvalcase
+    Raw Python operation
+approvals.0003_approvalmatrixrule_sanctioncommittee
+    Create model ApprovalConfigurationLock
+    Create model ApprovalMatrixRule
+    Create model SanctionCommittee
+    Raw Python operation
+approvals.0004_approval_configuration_history_constraints
+    Create index idx_committee_effective on field(s) status, effective_from, effective_to of model sanctioncommittee
+    Create constraint approval_rule_valid_status on model approvalmatrixrule
+    Create constraint approval_rule_valid_dates on model approvalmatrixrule
+    Create constraint approval_rule_valid_amounts on model approvalmatrixrule
+    Create constraint committee_valid_status on model sanctioncommittee
+    Create constraint committee_valid_dates on model sanctioncommittee
+    Create constraint committee_distinct_members on model sanctioncommittee
+approvals.0005_approvalconfigurationproposal
+    Create model ApprovalConfigurationProposal
+    Create index idx_config_proposal_state on field(s) status, proposal_type of model approvalconfigurationproposal
+    Create constraint config_proposal_valid_status on model approvalconfigurationproposal
+    Create constraint config_proposal_version_positive on model approvalconfigurationproposal
+approvals.0006_approvalcase_configuration_snapshot
+    Add field approval_matrix_rule to approvalcase
+    Add field approval_matrix_rule_version to approvalcase
+    Add field sanction_committee to approvalcase
+    Add field sanction_committee_version to approvalcase
+    Add field required_approvers_json to approvalcase
+    Add field decision_date to approvalcase
+    Add field version to approvalcase
+    Create constraint approval_case_version_positive on model approvalcase
+approvals.0007_approvalcase_enrichment_snapshot
+    Add field amount to approvalcase
+    Add field excluded_approvers_json to approvalcase
+    Add field related_entity_type to approvalcase
+    Add field related_entity_id to approvalcase
+    Add field reason_for_approval to approvalcase
+    Add field exception_condition_code to approvalcase
+    Add field exception_reason to approvalcase
+    Add field matrix_projection_json to approvalcase
+    Add field committee_projection_json to approvalcase
+    Add field loan_limit_provenance_json to approvalcase
+approvals.0008_approvalaction
+    Create model ApprovalAction
+approvals.0009_sanction_decision_and_case_closure
+    Add field closed_at to approvalcase
+    Add field reason_for_rejection to approvalcase
+    Create model SanctionDecision
+    Create index idx_sanction_decision_time on field(s) decision, recorded_at of model sanctiondecision
+approvals.0010_approvalcasereadscopegrant_and_more
+    Add field routing_snapshot_is_coherent to approvalcase
+    Create model ApprovalCaseRequiredApprover
+    Create model ApprovalCaseReadScopeGrant
+    Create constraint unique_case_required_approver on model approvalcaserequiredapprover
+    Create constraint unique_case_read_role_scope on model approvalcasereadscopegrant
+    Create constraint case_read_scope_type_valid on model approvalcasereadscopegrant
+    Create constraint case_read_scope_status_valid on model approvalcasereadscopegrant
+    Raw Python operation
+    Raw Python operation
+approvals.0011_approvalcase_appraisal_facts_json_and_more
+    Add field appraisal_facts_json to approvalcase
+    Add field appraisal_review_decision to approvalcase
+    Add field appraisal_revision to approvalcase
+    Add field cycle_number to approvalcase
+    Alter field loan_application on approvalcase
+    Alter field loan_appraisal_note on approvalcase
+    Raw Python operation
+    Create constraint approval_case_cycle_positive on model approvalcase
+    Create constraint approval_case_appraisal_revision_positive on model approvalcase
+    Create constraint approval_later_cycle_review_required on model approvalcase
+    Create constraint unique_application_approval_cycle on model approvalcase
+    Create constraint unique_pending_application_approval_cycle on model approvalcase
+approvals.0012_approvalconflictdeclaration_and_more
+    Remove constraint approval_action_valid_decision from model approvalaction
+    Create constraint approval_action_valid_decision on model approvalaction
+    Add field general_meeting_evidence_required to approvalcase
+    Add field conflict_block_reason to approvalcase
+    Create model ApprovalConflictDeclaration
+    Create constraint unique_application_user_conflict on model approvalconflictdeclaration
+    Create constraint approval_conflict_type_valid on model approvalconflictdeclaration
+    Create constraint approval_conflict_reason_nonblank on model approvalconflictdeclaration
+    Raw Python operation
+approvals.0013_conflict_projection_scope_closure
+    Remove constraint approval_conflict_reason_nonblank from model approvalconflictdeclaration
+    Create constraint approval_conflict_reason_nonblank on model approvalconflictdeclaration
+    Raw Python operation
+approvals.0014_exceptionregisterentry_and_more
+    Create model ExceptionRegisterEntry
+    Create constraint exception_register_type_valid on model exceptionregisterentry
+    Create constraint exception_register_status_valid on model exceptionregisterentry
+    Create constraint exception_register_description_nonblank on model exceptionregisterentry
+    Create constraint exception_register_reason_nonblank on model exceptionregisterentry
+approvals.0015_generalmeetingapproval_and_more
+    Create model GeneralMeetingApproval
+    Add field general_meeting_approval to approvalcase
+    Create index idx_gm_application_time on field(s) loan_application, recorded_at of model generalmeetingapproval
+    Create constraint gm_related_party_type_valid on model generalmeetingapproval
+    Create constraint gm_approval_status_valid on model generalmeetingapproval
+    Create constraint gm_relationship_nonblank on model generalmeetingapproval
+approvals.0016_creditsanctionregisterentry
+    Create model CreditSanctionRegisterEntry
+approvals.0017_exceptionregisterentry_supporting_documents_json
+    Add field supporting_documents_json to exceptionregisterentry
+approvals.0018_creditsanctionregisterentry_source_review_facts_json
+    Add field source_review_facts_json to creditsanctionregisterentry
+approvals.0019_register_source_facts
+    Add field entry_number to creditsanctionregisterentry
+    Add field approver_decisions_json to creditsanctionregisterentry
+    Add field communication_json to creditsanctionregisterentry
+    Add field terminal_facts_json to creditsanctionregisterentry
+    Add field source_facts_json to exceptionregisterentry
+    Raw Python operation
+    Alter field entry_number on creditsanctionregisterentry
+approvals.0020_approvalaction_approver_display_name
+    Add field approver_display_name to approvalaction
+documents.0005_deterministic_document_template_constraints
+    Remove constraint doc_template_approval_status from model documenttemplate
+    Remove constraint doc_template_borrower_type from model documenttemplate
+    Create constraint doc_template_approval_status on model documenttemplate
+    Create constraint doc_template_borrower_type on model documenttemplate
+finance.0001_initial
+    Create model SapCustomerProfileRequest
+    Create model SapCustomerCode
+    Create constraint uniq_active_sap_code_member on model sapcustomercode
+    Create constraint sap_customer_code_status_valid on model sapcustomercode
+    Create index idx_sap_req_application on field(s) loan_application of model sapcustomerprofilerequest
+    Create index idx_sap_req_member on field(s) member of model sapcustomerprofilerequest
+    Create index idx_sap_req_assignee_status on field(s) assigned_to_user, request_status of model sapcustomerprofilerequest
+    Create constraint uniq_active_sap_request_app on model sapcustomerprofilerequest
+    Create constraint sap_request_status_valid on model sapcustomerprofilerequest
+    Create constraint sap_request_amount_positive on model sapcustomerprofilerequest
+finance.0002_sap_customer_code_confirmation
+    Add field confirmation_notes to sapcustomercode
+    Add field completion_reused_existing_code to sapcustomerprofilerequest
+    Add field sanction_decision_id_snapshot to sapcustomerprofilerequest
+    Add field sanction_approval_case_id_snapshot to sapcustomerprofilerequest
+    Add field sap_customer_code to sapcustomerprofilerequest
+    Add field sent_communication to sapcustomerprofilerequest
+    Add field sent_remarks to sapcustomerprofilerequest
+    Add field sent_task to sapcustomerprofilerequest
+    Create constraint sap_customer_code_not_blank on model sapcustomercode
+    Create constraint uniq_sap_customer_code_ci on model sapcustomercode
+    Create constraint sap_request_lifecycle_evidence on model sapcustomerprofilerequest
+finance.0003_sap_delivery_replay_contract
+    Add field completion_input_digest to sapcustomerprofilerequest
+    Add field delivery_assignee_id_snapshot to sapcustomerprofilerequest
+    Add field delivery_capability_consumed_at to sapcustomerprofilerequest
+    Add field delivery_capability_expires_at to sapcustomerprofilerequest
+    Add field delivery_capability_version to sapcustomerprofilerequest
+    Add field delivery_checksum_sha256 to sapcustomerprofilerequest
+    Add field delivery_file_id_snapshot to sapcustomerprofilerequest
+    Add field delivery_reference to sapcustomerprofilerequest
+loans.0001_initial
+    Create model LoanAccount
+    Create model LoanStatusHistory
+    Create model LoanTerms
+    Create index idx_loan_member_status on field(s) member, loan_account_status of model loanaccount
+    Create index idx_loan_type_repay on field(s) loan_type, repayment_date of model loanaccount
+    Create constraint loan_account_sanction_positive on model loanaccount
+    Create constraint loan_account_disbursed_nonnegative on model loanaccount
+    Create constraint loan_account_principal_nonnegative on model loanaccount
+    Create constraint loan_account_interest_nonnegative on model loanaccount
+    Create constraint loan_account_charges_nonnegative on model loanaccount
+    Create constraint loan_account_total_nonnegative on model loanaccount
+    Create constraint loan_account_type_bounded on model loanaccount
+    Create constraint loan_account_disbursed_lte_sanction on model loanaccount
+    Create index idx_loan_status_time on field(s) loan_account, changed_at of model loanstatushistory
+    Create constraint loan_terms_amount_positive on model loanterms
+    Create constraint loan_terms_facility_bounded on model loanterms
+legal_documents.0013_application_evidence_state_anchor
+legal_documents.0014_staff_documentation_durable_actions
+    Create model StaffDocumentReviewAction
+    Create model StaffSignedDocumentCopy
+disbursements.0001_initial
+    Create model Disbursement
+    Create constraint disb_amount_positive on model disbursement
+    Create constraint disb_init_status_valid on model disbursement
+    Create constraint disb_auth_status_valid on model disbursement
+    Create constraint disb_transfer_status_valid on model disbursement
+    Create constraint disb_method_manual on model disbursement
+    Create constraint disb_maker_checker_distinct on model disbursement
+    Create constraint uniq_active_disb_account on model disbursement
+disbursements.0002_cfc_authorisation_evidence
+    Add field authorisation_action_id to disbursement
+    Add field authorisation_audit to disbursement
+    Add field authorisation_comments to disbursement
+    Add field authorisation_evidence_digest to disbursement
+    Add field authorisation_ip_address to disbursement
+    Add field authorisation_request_id to disbursement
+    Add field authorisation_user_agent to disbursement
+    Add field authorisation_workflow_event to disbursement
+    Add field authorised_at to disbursement
+    Add field checker_role_code to disbursement
+    Add field checker_team_codes_json to disbursement
+    Create constraint disb_auth_terminal_evidence on model disbursement
+disbursements.0003_authorisation_aggregate_integrity
+    Alter field authorisation_comments on disbursement
+    Remove constraint disb_auth_terminal_evidence from model disbursement
+    Create constraint disb_auth_terminal_evidence on model disbursement
+    Create constraint disb_transfer_requires_approval on model disbursement
+disbursements.0004_transfer_success
+    Create model BankTransfer
+    Add field bank_transfer_evidence_document to disbursement
+    Add field transfer_success_action_id to disbursement
+    Add field transfer_success_actor_user to disbursement
+    Add field transfer_success_audit to disbursement
+    Add field transfer_success_evidence_digest to disbursement
+    Add field transfer_success_idempotency_key_digest to disbursement
+    Add field transfer_success_ip_address to disbursement
+    Add field transfer_success_loan_status_history to disbursement
+    Add field transfer_success_payload_digest to disbursement
+    Add field transfer_success_request_id to disbursement
+    Add field transfer_success_role_code to disbursement
+    Add field transfer_success_team_codes_json to disbursement
+    Add field transfer_success_user_agent to disbursement
+    Add field transfer_success_workflow_event to disbursement
+    Create constraint disb_success_evidence_complete on model disbursement
+    Create constraint disb_pending_has_no_transfer on model disbursement
+    Add field destination_bank_account to banktransfer
+    Add field disbursement to banktransfer
+    Add field evidence_document to banktransfer
+    Add field loan_account to banktransfer
+    Add field source_bank_account to banktransfer
+    Create index idx_bank_transfer_related on field(s) transfer_type, related_entity_id of model banktransfer
+    Create index idx_bank_transfer_status on field(s) bank_status, completed_at of model banktransfer
+    Create constraint bank_transfer_amount_positive on model banktransfer
+    Create constraint bank_transfer_manual_success on model banktransfer
+    Create constraint bank_transfer_time_order on model banktransfer
+    Create constraint bank_transfer_reference_present on model banktransfer
+disbursements.0005_disbursementadviceintent_loanregisterupdate_and_more
+    Remove legal checklist constraint checklist_account_requires_epic_009
+    Remove legal checklist constraint checklist_finance_requires_epic_009
+    Add legal checklist constraint checklist_finance_requires_sanction
+    Add legal checklist constraint checklist_ready_evidence_complete
+    Create model DisbursementAdviceIntent
+    Create model LoanRegisterUpdate
+    Remove constraint disb_success_evidence_complete from model disbursement
+    Create constraint disb_success_evidence_complete on model disbursement
+    Add field bank_transfer to disbursementadviceintent
+    Add field disbursement to disbursementadviceintent
+    Add field evidence_document to disbursementadviceintent
+    Add field loan_account to disbursementadviceintent
+    Add field loan_application to disbursementadviceintent
+    Add field member to disbursementadviceintent
+    Add field transfer_audit to disbursementadviceintent
+    Add field transfer_workflow_event to disbursementadviceintent
+    Add field bank_transfer to loanregisterupdate
+    Add field disbursement to loanregisterupdate
+    Add field evidence_document to loanregisterupdate
+    Add field loan_account to loanregisterupdate
+    Add field loan_application to loanregisterupdate
+    Add field member to loanregisterupdate
+    Add field transfer_audit to loanregisterupdate
+    Add field transfer_workflow_event to loanregisterupdate
+    Create constraint advice_intent_amount_positive on model disbursementadviceintent
+    Create constraint advice_intent_status_valid on model disbursementadviceintent
+    Create constraint advice_intent_evidence_present on model disbursementadviceintent
+    Create constraint loan_register_amount_positive on model loanregisterupdate
+    Create constraint loan_register_evidence_present on model loanregisterupdate
+disbursements.0006_disbursementadvicedeliveryreceipt_and_more
+    Create model DisbursementAdviceDeliveryReceipt
+    Add field delivery_action_id to disbursementadviceintent
+    Add field delivery_audit to disbursementadviceintent
+    Add field delivery_evidence_digest to disbursementadviceintent
+    Add field delivery_workflow_event to disbursementadviceintent
+    Create constraint advice_intent_delivery_evidence_complete on model disbursementadviceintent
+    Add field advice_intent to disbursementadvicedeliveryreceipt
+    Create constraint advice_delivery_receipt_complete on model disbursementadvicedeliveryreceipt
+disbursements.0007_remove_disbursement_disb_success_evidence_complete_and_more
+    Remove constraint disb_success_evidence_complete from model disbursement
+    Add field register_update to disbursement
+    Raw Python operation
+    Create constraint disb_success_evidence_complete on model disbursement
+communications.0004_advice_outbox_and_receipt_owner
+    Move advice delivery receipt state ownership to communications
+    Create model CommunicationDeliveryOutbox
+    Create constraint communication_outbox_complete on model communicationdeliveryoutbox
+    Create constraint communication_outbox_provider_result_complete on model communicationdeliveryoutbox
+communications.0005_advice_evidence_and_legacy_replay_closure
+    Create model CommunicationProviderAttempt
+    Remove constraint communication_outbox_complete from model communicationdeliveryoutbox
+    Remove constraint communication_outbox_provider_result_complete from model communicationdeliveryoutbox
+    Add field body_template_snapshot to communicationdeliveryoutbox
+    Add field delivery_receipt to communicationdeliveryoutbox
+    Add field final_communication to communicationdeliveryoutbox
+    Add field subject_template_snapshot to communicationdeliveryoutbox
+    Add field template_approval_status_snapshot to communicationdeliveryoutbox
+    Add field template_audience_snapshot to communicationdeliveryoutbox
+    Add field template_effective_from_snapshot to communicationdeliveryoutbox
+    Add field template_effective_to_snapshot to communicationdeliveryoutbox
+    Add field template_language_code_snapshot to communicationdeliveryoutbox
+    Add field template_name_snapshot to communicationdeliveryoutbox
+    Add field template_provenance_status to communicationdeliveryoutbox
+    Add field template_type_snapshot to communicationdeliveryoutbox
+    Add field template_variables_snapshot to communicationdeliveryoutbox
+    Alter field advice_intent on communicationdeliveryoutbox
+    Alter field advice_intent on disbursementadvicedeliveryreceipt
+    Add field outbox to communicationproviderattempt
+    Add field accepted_provider_attempt to communicationdeliveryoutbox
+    Raw Python operation
+    Alter field template_provenance_status on communicationdeliveryoutbox
+    Create constraint communication_outbox_complete on model communicationdeliveryoutbox
+    Create constraint communication_outbox_provenance_complete on model communicationdeliveryoutbox
+    Create constraint communication_outbox_final_chain_complete on model communicationdeliveryoutbox
+    Create constraint communication_outbox_provider_result_complete on model communicationdeliveryoutbox
+    Create constraint one_accepted_provider_attempt_per_outbox on model communicationproviderattempt
+    Create constraint communication_provider_attempt_complete on model communicationproviderattempt
+communications.0006_communication_delivery_job
+    Create model CommunicationDeliveryJob
+communications.0007_portal_advice_download_capability
+    Add field portal_capability_consumed_at to communicationdeliveryoutbox
+    Add field portal_capability_expires_at to communicationdeliveryoutbox
+    Add field portal_capability_version to communicationdeliveryoutbox
+communications.0008_legacy_template_provenance_closure
+    Remove constraint communication_outbox_complete from model communicationdeliveryoutbox
+    Remove constraint communication_outbox_provenance_complete from model communicationdeliveryoutbox
+    Alter field content_template on communicationdeliveryoutbox
+    Alter field template_code_snapshot on communicationdeliveryoutbox
+    Alter field template_version_snapshot on communicationdeliveryoutbox
+    Alter field template_checksum_sha256 on communicationdeliveryoutbox
+    Add field template_provenance_origin to communicationdeliveryoutbox
+    Raw Python operation
+    Alter field template_provenance_origin on communicationdeliveryoutbox
+    Create constraint communication_outbox_complete on model communicationdeliveryoutbox
+    Create constraint communication_outbox_provenance_complete on model communicationdeliveryoutbox
+    Create constraint communication_outbox_provenance_origin on model communicationdeliveryoutbox
+communications.0009_generic_delivery_job_identity
+    Remove constraint communication_delivery_job_complete from model communicationdeliveryjob
+    Alter field outbox on communicationdeliveryjob
+    Alter field advice_intent_id on communicationdeliveryjob
+    Add field communication_id to communicationdeliveryjob
+    Add field idempotency_key to communicationdeliveryjob
+    Add field job_kind to communicationdeliveryjob
+    Add field provider_accepted_at to communicationdeliveryjob
+    Add field provider_delivery_status to communicationdeliveryjob
+    Add field provider_external_message_id to communicationdeliveryjob
+    Raw Python operation
+    Alter field communication_id on communicationdeliveryjob
+    Alter field idempotency_key on communicationdeliveryjob
+    Alter field job_kind on communicationdeliveryjob
+    Create constraint communication_delivery_job_complete on model communicationdeliveryjob
+    Create constraint communication_job_provider_result_complete on model communicationdeliveryjob
+communications.0010_worker_claim_lease_and_recovery
+    Add field claim_token to communicationdeliveryjob
+    Add field lease_expires_at to communicationdeliveryjob
+    Add field recovery_count to communicationdeliveryjob
+    Add field last_recovered_at to communicationdeliveryjob
+    Raw Python operation
+    Create constraint communication_job_claim_lease_complete on model communicationdeliveryjob
+communications.0011_communication_exception_queue
+    Create model CommunicationException
+    Create constraint communication_exception_complete on model communicationexception
+    Create constraint communication_exception_resolution_complete on model communicationexception
+communications.0012_generic_provider_evidence
+    Add field original_response_json to communicationdeliveryjob
+    Create model CommunicationProviderEvidence
+    Create constraint communication_provider_evidence_complete on model communicationproviderevidence
+    Raw Python operation
+communications.0013_exception_provider_vocabulary
+    Raw Python operation
+    Remove constraint communication_exception_complete from model communicationexception
+    Create constraint communication_exception_complete on model communicationexception
+identity.0004_auditlog_selector_manifest_sha256
+    Add field selector_manifest_json to auditlog
+    Add field selector_manifest_sha256 to auditlog
+loans.0002_repayment_schedule
+    Create model RepaymentSchedule
+loans.0003_repayment_repaymentsappostingobligation_and_more
+    Create model Repayment
+    Create model RepaymentSapPostingObligation
+    Create index idx_repay_account_date on field(s) loan_account, received_date of model repayment
+    Create index idx_repay_member_date on field(s) member, received_date of model repayment
+    Create constraint repayment_amount_positive on model repayment
+    Create constraint repayment_source_bounded on model repayment
+    Create constraint repayment_method_bounded on model repayment
+    Create constraint repayment_allocation_pending on model repayment
+    Create constraint repayment_sap_status_bounded on model repayment
+    Create constraint repayment_required_text on model repayment
+    Create constraint repayment_sap_evidence_complete on model repaymentsappostingobligation
+    Create constraint repayment_sap_reference_present on model repaymentsappostingobligation
+loans.0004_principal_first_allocation
+    Create model RepaymentAllocation
+    Create model RepaymentLedgerEntry
+    Remove constraint repayment_allocation_pending from model repayment
+    Create constraint repayment_allocation_status_bounded on model repayment
+    Create constraint schedule_paid_principal_lte_due on model repaymentschedule
+    Create constraint schedule_paid_interest_lte_due on model repaymentschedule
+    Create constraint schedule_paid_charges_lte_due on model repaymentschedule
+    Add field allocated_by_user to repaymentallocation
+    Add field allocation_audit to repaymentallocation
+    Add field loan_account to repaymentallocation
+    Add field repayment to repaymentallocation
+    Add field repayment_schedule to repaymentallocation
+    Add field actor_user to repaymentledgerentry
+    Add field allocation to repaymentledgerentry
+    Add field loan_account to repaymentledgerentry
+    Create constraint repayment_allocation_amounts_nonnegative on model repaymentallocation
+    Create constraint repayment_allocation_rule_v1 on model repaymentallocation
+    Create constraint repayment_allocation_no_unconfigured_charges on model repaymentallocation
+    Create constraint repay_alloc_principal_arithmetic on model repaymentallocation
+    Create constraint repay_alloc_interest_arithmetic on model repaymentallocation
+    Create constraint repay_alloc_charges_arithmetic on model repaymentallocation
+    Create constraint repay_alloc_total_before_parts on model repaymentallocation
+    Create constraint repay_alloc_total_after_parts on model repaymentallocation
+    Create constraint repayment_ledger_amounts_valid on model repaymentledgerentry
+    Create constraint repayment_ledger_total_parts on model repaymentledgerentry
+loans.0005_bankstatementimport_bankstatementline_and_more
+    Create model BankStatementImport
+    Create model BankStatementLine
+    Add field statement_match_status to repayment
+    Alter field bank_statement_line_id on repayment
+    Create constraint repayment_statement_match_status_bounded on model repayment
+    Add field imported_by_user to bankstatementimport
+    Add field source_document to bankstatementimport
+    Add field match_audit to bankstatementline
+    Add field matched_by_user to bankstatementline
+    Add field matched_repayment to bankstatementline
+    Add field statement_import to bankstatementline
+    Create constraint uniq_bank_statement_account_checksum on model bankstatementimport
+    Create constraint bank_statement_import_status_bounded on model bankstatementimport
+    Create constraint bank_statement_import_account_required on model bankstatementimport
+    Create constraint uniq_bank_statement_import_line on model bankstatementline
+    Create constraint bank_statement_line_number_positive on model bankstatementline
+    Create constraint bank_statement_line_amount_positive on model bankstatementline
+    Create constraint bank_statement_parse_status_bounded on model bankstatementline
+    Create constraint bank_statement_match_status_bounded on model bankstatementline
+    Create constraint bank_statement_match_evidence_coherent on model bankstatementline
+loans.0006_repayment_allocation_admission
+    Create model RepaymentReversal
+    Create model RepaymentReversalLedgerEntry
+    Create model RepaymentScheduleAllocation
+    Create model ManualAllocationApproval
+    Add field decision_reason to repaymentallocation
+    Add field idempotency_key_digest to repaymentallocation
+    Add field payload_digest to repaymentallocation
+    Add field manual_approval to repaymentallocation
+    Add field loan_status_before to repaymentallocation
+    Add field loan_status_after to repaymentallocation
+    Remove constraint repayment_allocation_status_bounded from model repayment
+    Create constraint repayment_allocation_status_bounded on model repayment
+    Add field allocation to repaymentreversal
+    Add field loan_account to repaymentreversal
+    Add field repayment to repaymentreversal
+    Add field reversal_audit to repaymentreversal
+    Add field reversed_by_user to repaymentreversal
+    Add field actor_user to repaymentreversalledgerentry
+    Add field loan_account to repaymentreversalledgerentry
+    Add field reversal to repaymentreversalledgerentry
+    Add field allocation to repaymentscheduleallocation
+    Add field repayment_schedule to repaymentscheduleallocation
+    Create constraint manual_allocation_approval_amount_positive on model manualallocationapproval
+    Create constraint manual_allocation_approval_reason_required on model manualallocationapproval
+    Create constraint repayment_allocation_reason_required on model repaymentallocation
+    Create constraint repayment_reversal_amounts_valid on model repaymentreversal
+    Create constraint repayment_reversal_reason_required on model repaymentreversal
+    Create constraint repayment_reversal_ledger_amounts_valid on model repaymentreversalledgerentry
+    Create constraint repayment_reversal_ledger_total_parts on model repaymentreversalledgerentry
+    Create constraint uniq_allocation_schedule_application on model repaymentscheduleallocation
+    Create constraint schedule_allocation_amounts_nonnegative on model repaymentscheduleallocation
+    Create constraint schedule_allocation_has_amount on model repaymentscheduleallocation
+configurations.0003_source_bank_account_governance
+    Create model SourceBankAccountGovernance
+    Create constraint source_bank_governance_status_valid on model sourcebankaccountgovernance
+    Create constraint uniq_active_source_bank_governance on model sourcebankaccountgovernance
+configurations.0004_source_bank_governance_history
+    Add field deactivated_at to sourcebankaccountgovernance
+    Add field deactivation_audit to sourcebankaccountgovernance
+    Add field deactivation_version_history to sourcebankaccountgovernance
+    Add field predecessor to sourcebankaccountgovernance
+    Raw Python operation
+    Create constraint source_bank_governance_complete_evidence on model sourcebankaccountgovernance
+    Create constraint source_bank_governance_time_order on model sourcebankaccountgovernance
+configurations.0005_source_bank_reviewable_rationale
+    Add field change_context_digest to sourcebankaccountgovernance
+    Add field change_context_json to sourcebankaccountgovernance
+    Add field reason to sourcebankaccountgovernance
+    Raw Python operation
+loans.0007_statement_evidence_owner_scope_closure
+    Create model StatementLinkMigrationException
+    Remove constraint uniq_bank_statement_account_checksum from model bankstatementimport
+    Remove constraint bank_statement_import_account_required from model bankstatementimport
+    Remove constraint bank_statement_match_evidence_coherent from model bankstatementline
+    Remove constraint repayment_statement_match_status_bounded from model repayment
+    Add field collection_bank_account to bankstatementimport
+    Add field legacy_collection_account_encrypted to bankstatementimport
+    Add field repayment to statementlinkmigrationexception
+    Alter field sfpcl_bank_account on bankstatementimport
+    Raw Python operation
+    Remove field sfpcl_bank_account from bankstatementimport
+    Remove field bank_statement_line_id from repayment
+    Remove field statement_match_status from repayment
+    Create constraint uniq_bank_statement_account_checksum on model bankstatementimport
+    Create constraint statement_link_migration_reason_bounded on model statementlinkmigrationexception
+    Create constraint statement_link_migration_unresolved on model statementlinkmigrationexception
+    Create constraint bank_statement_match_evidence_coherent on model bankstatementline
+legal_documents.0015_checklist_constraint_state_owner_anchor
+loans.0008_subsidiary_deduction_reconciliation
+    Create model SubsidiaryDeductionEvidence
+    Create constraint uniq_subsidiary_produce_reference on model subsidiarydeductionevidence
+    Create constraint subsidiary_reconciliation_status_bounded on model subsidiarydeductionevidence
+    Create constraint subsidiary_treasury_evidence_coherent on model subsidiarydeductionevidence
+    Create constraint subsidiary_references_required on model subsidiarydeductionevidence
+configurations.0006_interestrateconfig_borrowerratenoticeobligation_and_more
+    Create model InterestRateConfig
+    Create model BorrowerRateNoticeObligation
+    Create model InterestRateConsumptionSnapshot
+    Create model InterestRateHistory
+    Create index idx_rate_status_period on field(s) status, effective_from, effective_to of model interestrateconfig
+    Create constraint interest_rate_type_floating on model interestrateconfig
+    Create constraint interest_rate_effective_nonnegative on model interestrateconfig
+    Create constraint interest_rate_spread_nonnegative on model interestrateconfig
+    Create constraint interest_rate_period_order on model interestrateconfig
+    Create constraint interest_rate_status_valid on model interestrateconfig
+    Create constraint uniq_rate_notice_loan on model borrowerratenoticeobligation
+    Create constraint uniq_interest_rate_consumer on model interestrateconsumptionsnapshot
+    Create constraint uniq_loan_rate_config_history on model interestratehistory
+configurations.0007_rate_status_approval_coherence
+    Create constraint rate_status_approval_coherent on model interestrateconfig
+    Change Meta options on interestrateconfig
+configurations.0008_current_rate_projection_decision
+    Create model CurrentRateProjectionDecision
+    Create constraint uniq_current_rate_account_version on model currentrateprojectiondecision
+    Create index idx_current_rate_date_account on field(s) as_of_date, loan_account of model currentrateprojectiondecision
+configurations.0009_repaymentinstructionversion_and_more
+    Create model RepaymentInstructionVersion
+    Create constraint repayment_instruction_status_valid on model repaymentinstructionversion
+    Create constraint repayment_instruction_period_order on model repaymentinstructionversion
+    Create constraint uniq_active_repayment_instruction on model repaymentinstructionversion
+contenttypes.0001_initial
+    Create model ContentType
+    Alter unique_together for contenttype (1 constraint(s))
+contenttypes.0002_remove_content_type_name
+    Change Meta options on contenttype
+    Alter field name on contenttype
+    Raw Python operation
+    Remove field name from contenttype
+members.0015_member_aadhaar_last4
+    Add field aadhaar_last4 to member
+    Alter field number_of_shares on member
+    Alter field account_number_last4 on bankaccount
+    Alter field account_number_last4 on cancelledcheque
+    Raw Python operation
+monitoring.0001_initial
+    Create model DpdStatus
+    Create model DpdOperationalBucketScheme
+    Create constraint dpd_scheme_period_order on model dpdoperationalbucketscheme
+    Create constraint dpd_scheme_bounds_order on model dpdoperationalbucketscheme
+    Create constraint dpd_scheme_status_bounded on model dpdoperationalbucketscheme
+    Add field calculated_by_user to dpdstatus
+    Add field calculation_audit to dpdstatus
+    Add field loan_account to dpdstatus
+    Add field operational_scheme to dpdstatus
+    Create index idx_dpd_account_asof on field(s) loan_account, as_of_date of model dpdstatus
+    Create constraint uniq_dpd_account_asof on model dpdstatus
+    Create constraint dpd_amounts_nonnegative on model dpdstatus
+    Create constraint dpd_total_matches_parts on model dpdstatus
+monitoring.0002_reminder_queue
+    Create model Reminder
+    Create index idx_reminder_quarter_status on field(s) quarter_end_date, delivery_status of model reminder
+    Create index idx_reminder_member_date on field(s) member, created_at of model reminder
+    Create constraint uniq_reminder_loan_quarter_reason_channel on model reminder
+    Create constraint reminder_origin_bounded on model reminder
+    Create constraint reminder_channel_bounded on model reminder
+    Create constraint reminder_status_bounded on model reminder
+    Create constraint reminder_channel_evidence_complete on model reminder
+loans.0009_dpd_pointer_integrity
+    Raw Python operation
+    Custom state/database change combination
+    Raw Python operation
+defaults.0001_initial
+    Create model DefaultCase
+    Create constraint uniq_default_missed_obligation on model defaultcase
+    Create constraint default_trigger_bounded on model defaultcase
+    Create constraint default_status_bounded on model defaultcase
+    Create constraint default_grace_starts_due on model defaultcase
+    Create constraint default_grace_period_order on model defaultcase
+    Raw Python operation
+defaults.0002_grace_period_assessment
+    Create model DefaultAssessment
+    Add field current_assessment to defaultcase
+    Create constraint uniq_default_case_assessment_type on model defaultassessment
+    Create constraint default_assessment_type_bounded on model defaultassessment
+    Create constraint default_classification_bounded on model defaultassessment
+    Create constraint default_assessment_text_required on model defaultassessment
+    Raw Python operation
+disbursements.0008_initial_loan_payment_sap_posting
+    Create model InitialLoanPaymentSapPosting
+    Create constraint initial_sap_amount_positive on model initialloanpaymentsapposting
+    Create constraint initial_sap_posting_lifecycle on model initialloanpaymentsapposting
+    Create constraint initial_sap_evidence_present on model initialloanpaymentsapposting
+disbursements.0009_initial_sap_posting_pending_only
+    Remove constraint initial_sap_posting_lifecycle from model initialloanpaymentsapposting
+    Create constraint initial_sap_posting_lifecycle on model initialloanpaymentsapposting
+disbursements.0010_enable_pgcrypto_for_exact_selector
+    Raw Python operation
+interest.0001_initial
+    Create model InterestInvoiceConfiguration
+    Create model InterestInvoice
+    Create constraint interest_invoice_config_period_order on model interestinvoiceconfiguration
+    Create constraint interest_invoice_config_method on model interestinvoiceconfiguration
+    Create constraint interest_invoice_day_basis_positive on model interestinvoiceconfiguration
+    Create constraint interest_invoice_config_amounts_nonnegative on model interestinvoiceconfiguration
+    Create constraint interest_invoice_config_active on model interestinvoiceconfiguration
+    Create index idx_interest_inv_loan_status on field(s) loan_account, invoice_status of model interestinvoice
+    Create index idx_interest_inv_fy_status on field(s) financial_year, invoice_status of model interestinvoice
+    Create constraint uniq_interest_invoice_loan_period on model interestinvoice
+    Create constraint interest_invoice_status_valid on model interestinvoice
+    Create constraint interest_invoice_period_order on model interestinvoice
+    Create constraint interest_invoice_amounts_nonnegative on model interestinvoice
+    Create constraint interest_invoice_issue_evidence_complete on model interestinvoice
+interest.0002_accrualentry_accrualsappostingobligation_and_more
+    Create model AccrualEntry
+    Create model AccrualSapPostingObligation
+    Create index idx_accrual_loan_status on field(s) loan_account, posted_status of model accrualentry
+    Create constraint uniq_accrual_loan_month on model accrualentry
+    Create constraint accrual_posted_status_valid on model accrualentry
+    Create constraint accrual_period_order on model accrualentry
+    Create constraint accrual_calculation_values_valid on model accrualentry
+    Create constraint accrual_posting_evidence_coherent on model accrualentry
+    Create constraint accrual_sap_obligation_status_valid on model accrualsappostingobligation
+interest.0003_interestcapitalisation_and_more
+    Create model InterestCapitalisation
+    Create model InterestCapitalisationInvoiceEvidence
+    Create model InterestCapitalisationLedgerEntry
+    Create index idx_interest_cap_loan_date on field(s) loan_account, capitalisation_date of model interestcapitalisation
+    Create constraint uniq_interest_cap_loan_fy on model interestcapitalisation
+    Create constraint interest_cap_status_final on model interestcapitalisation
+    Create constraint interest_cap_amounts_valid on model interestcapitalisation
+    Create constraint interest_cap_arithmetic on model interestcapitalisation
+    Create constraint interest_cap_invoice_amount_positive on model interestcapitalisationinvoiceevidence
+    Create constraint interest_cap_ledger_amounts_valid on model interestcapitalisationledgerentry
+    Create constraint interest_cap_ledger_total_parts on model interestcapitalisationledgerentry
+interest.0004_interest_accounting_owner
+    Add field calculation_segments_json to accrualentry
+    Add field generation_original_response_json to accrualentry
+    Add field posting_original_response_json to accrualentry
+    Add field original_response_json to interestcapitalisation
+    Add field calculation_segments_json to interestinvoice
+    Add field communication_template_snapshot to interestinvoice
+    Add field generation_original_response_json to interestinvoice
+    Add field issuance_original_response_json to interestinvoice
+    Add field owner_role_codes_snapshot_json to interestinvoice
+    Create model InterestCapitalisationHardCopyTask
+    Create model InterestCapitalisationPaymentEvidence
+    Create model InterestCapitalisationScheduleEvidence
+    Create model InterestInvoicePaymentEvidence
+    Create constraint interest_cap_hard_copy_pending on model interestcapitalisationhardcopytask
+    Create constraint interest_cap_payment_amount_positive on model interestcapitalisationpaymentevidence
+    Create constraint interest_cap_schedule_amount_positive on model interestcapitalisationscheduleevidence
+    Create constraint interest_invoice_payment_positive on model interestinvoicepaymentevidence
+interest.0005_interest_calculation_rounding_policy
+    Add field monetary_precision to interestinvoiceconfiguration
+    Add field monetary_rounding_mode to interestinvoiceconfiguration
+    Add field rounding_application_boundary to interestinvoiceconfiguration
+    Create constraint interest_policy_rounding_mode_valid on model interestinvoiceconfiguration
+    Create constraint interest_policy_money_precision_valid on model interestinvoiceconfiguration
+    Create constraint interest_policy_round_boundary_valid on model interestinvoiceconfiguration
+    Add field monetary_precision to interestinvoice
+    Add field monetary_rounding_mode to interestinvoice
+    Add field rounding_application_boundary to interestinvoice
+    Add field monetary_precision to accrualentry
+    Add field monetary_rounding_mode to accrualentry
+    Add field rounding_application_boundary to accrualentry
+    Add field calculation_policy_json to interestcapitalisation
+    Raw Python operation
+monitoring.0003_reminder_eligibility_decision
+    Add field eligibility_decision_json to reminder
+monitoring.0004_quarterly_mis
+    Create model PortfolioSnapshot
+    Create model QuarterlyMisReport
+    Create constraint uniq_mis_period_revision on model quarterlymisreport
+    Create constraint mis_status_bounded on model quarterlymisreport
+    Create constraint mis_transition_evidence_coherent on model quarterlymisreport
+monitoring.0005_servicing_as_of_owner_boundary
+    Raw Python operation
+sap_workflow.0001_sap_model_owner_state
+    Transfer SAP model ownership in Django state only
+sap_workflow.0002_sapcustomerprofilerequest_delivery_storage_checksum_sha256
+    Add field delivery_storage_checksum_sha256 to sapcustomerprofilerequest
+    Raw Python operation -> Reconcile only legacy deliveries al…
+scheduler.0001_initial
+    Create model ScheduledJob
+    Create index scheduled_j_status_c9e5df_idx on field(s) status, due_at of model scheduledjob
+    Create index scheduled_j_related_b1389d_idx on field(s) related_entity_type, related_entity_id of model scheduledjob
+security_instruments.0001_transfer_security_ownership
+    Transfer retained security models and add activation evidence
+security_instruments.0002_sh4sharetransferform_and_more
+    Create model SH4ShareTransferForm
+    Create constraint sh4_form_status_bounded on model sh4sharetransferform
+    Create constraint sh4_share_count_positive on model sh4sharetransferform
+    Create constraint sh4_return_requires_later_slice on model sh4sharetransferform
+    Create constraint sh4_invocation_requires_later_slice on model sh4sharetransferform
+    Create constraint sh4_status_evidence_consistent on model sh4sharetransferform
+security_instruments.0003_cdslsharepledge_and_more
+    Create model CDSLSharePledge
+    Create constraint cdsl_prf_status_bounded on model cdslsharepledge
+    Create constraint cdsl_accept_status_bounded on model cdslsharepledge
+    Create constraint cdsl_pledge_status_bounded on model cdslsharepledge
+    Create constraint cdsl_share_count_positive on model cdslsharepledge
+    Create constraint cdsl_future_shares_pledged on model cdslsharepledge
+    Create constraint cdsl_invocation_requires_011i on model cdslsharepledge
+    Create constraint cdsl_unpledge_requires_011i on model cdslsharepledge
+    Create constraint cdsl_distinct_maker_checker on model cdslsharepledge
+    Create constraint cdsl_terminal_evidence_consistent on model cdslsharepledge
+security_instruments.0004_migrate_cdsl_field_encryption
+    Raw Python operation
+security_instruments.0005_blankdatedcheque_and_more
+    Create model BlankDatedCheque
+    Create constraint blank_cheque_status_bounded on model blankdatedcheque
+    Create constraint blank_cheque_invocation_requires_later on model blankdatedcheque
+    Create constraint blank_cheque_presentment_requires_later on model blankdatedcheque
+    Create constraint blank_cheque_return_requires_later on model blankdatedcheque
+    Create constraint blank_cheque_custody_consistent on model blankdatedcheque
+    Create constraint blank_cheque_distinct_maker_checker on model blankdatedcheque
+security_instruments.0006_migrate_opaque_field_tokens
+    Add field pledgor_bo_account_last4 to cdslsharepledge
+    Add field pledgee_bo_account_last4 to cdslsharepledge
+    Raw Python operation
+tracer.0002_remove_tracer_workflowevent_state
+    Custom state/database change combination

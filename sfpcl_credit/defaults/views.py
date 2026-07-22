@@ -12,6 +12,7 @@ from sfpcl_credit.defaults.modules.default_workflow import (
     DefaultNotFound,
     DefaultPermissionDenied,
     DefaultValidation,
+    api_assess_default_case,
     api_open_default_case,
     get_default_case,
     list_default_cases,
@@ -57,6 +58,49 @@ def default_case_open(request, loan_account_id):
     except DefaultNotFound:
         return error_response(
             request, 404, "NOT_FOUND", "The loan account was not found or is inaccessible."
+        )
+    except DefaultConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def default_case_assess(request, default_case_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            api_assess_default_case(
+                actor=actor,
+                default_case_id=default_case_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except DefaultValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Default assessment failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Default assessment failed validation.",
+            {"body": exc.messages[0]},
+        )
+    except DefaultPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Default assessment permission is required."
+        )
+    except DefaultNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The default case was not found or is inaccessible."
         )
     except DefaultConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))

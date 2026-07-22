@@ -5103,3 +5103,27 @@ Company Secretary use their persisted loan/workflow scope, configured approvers 
 the retained required-approver index, and Internal Auditor requires the active audit-read scope
 grant. Inaccessible and guessed identities use nondisclosing `404 NOT_FOUND`. List filters are exact,
 pagination is stable with `page_size` bounded to 1–100, and all endpoints use the standard envelope.
+
+## Grace tracking and default assessment (011B)
+
+- `POST /api/v1/default-cases/{default_case_id}/assess/`
+- The existing default-case detail/list responses add `grace_state`, `current_assessment`, and
+  server-authorised `available_actions`.
+
+`grace_state` is derived from the server-local date and canonical loan principal truth: the grace
+end date is the final inclusive grace day, a zero canonical principal balance is `cured`, and an
+unpaid case is `expired` beginning the next day. A bounded scheduled processor reconciles active
+cases, retains cured history, appends workflow/audit evidence, and creates at most one
+`default_assessment` scheduler task for an expired case. Its result contains only processed, cured,
+expired, task-created, and failure counts; no borrower-sensitive values are logged or returned.
+
+Assessment requires `defaults.assessment.create`, active `credit_assessment` team membership,
+`defaults.case.read`, and canonical object scope. The case must be persisted as
+`grace_period_expired`, remain unpaid and open, and have no current assessment. The request accepts
+only `assessment_type=post_grace`, classification `intentional|non_intentional|unclear`, mandatory
+`reason_summary`, one or more same-loan `evidence_document_ids`, optional
+`borrower_interaction_summary`, and a mandatory non-empty `recommended_action`. The response stores
+and returns the assessment ID, case ID, all retained assessment facts, assessor ID, and server time.
+Early, cured, closed, out-of-scope, invalid/missing/foreign-evidence, and duplicate-current attempts
+return standard validation, nondisclosing not-found, permission, or conflict envelopes with zero
+partial assessment/audit/workflow writes.

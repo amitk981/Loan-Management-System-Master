@@ -1,5 +1,5 @@
 import calendar
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from math import ceil
 from uuid import UUID, uuid4
 
@@ -11,7 +11,8 @@ from django.utils.dateparse import parse_date
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
-from sfpcl_credit.defaults.models import DefaultCase
+from sfpcl_credit.defaults.models import DefaultAssessment, DefaultCase
+from sfpcl_credit.legal_documents.models import LoanDocument
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.loans.models import LoanAccount
@@ -19,11 +20,13 @@ from sfpcl_credit.loans.modules.dpd_source_decision import (
     DpdSourcePermissionDenied,
     resolve_locked_dpd_source_decision,
 )
+from sfpcl_credit.scheduler.services import enqueue_scheduled_job
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
 READ_PERMISSION = "defaults.case.read"
 OPEN_PERMISSION = "defaults.case.open"
+ASSESS_PERMISSION = "defaults.assessment.create"
 
 
 class DefaultValidation(Exception):
@@ -144,6 +147,149 @@ class DefaultWorkflow:
             )
             return row
 
+    @classmethod
+    def process_grace_expiries(cls, *, as_of_date, actor=None, limit=100):
+        """Reconcile bounded active grace cases from canonical loan truth."""
+        as_of_date = _parse_date("as_of_date", as_of_date)
+        case_ids = list(
+            DefaultCase.objects.filter(
+                default_case_status=DefaultCase.STATUS_GRACE_PERIOD_ACTIVE
+            )
+            .order_by("grace_period_end_date", "default_case_id")
+            .values_list("pk", flat=True)[:limit]
+        )
+        counts = {
+            "processed_count": 0,
+            "cured_count": 0,
+            "expired_count": 0,
+            "assessment_tasks_created_count": 0,
+            "failure_count": 0,
+        }
+        for case_id in case_ids:
+            result = None
+            task_created = False
+            try:
+                with transaction.atomic():
+                    row = (
+                        DefaultCase.objects.select_for_update()
+                        .select_related("loan_account")
+                        .get(pk=case_id)
+                    )
+                    if row.default_case_status != DefaultCase.STATUS_GRACE_PERIOD_ACTIVE:
+                        continue
+                    counts["processed_count"] += 1
+                    if row.loan_account.principal_outstanding == 0:
+                        _record_grace_transition(
+                            row=row,
+                            actor=actor,
+                            to_state="resolved_by_repayment",
+                            action="default.grace_cured",
+                            as_of_date=as_of_date,
+                            reason="Canonical principal outstanding reached zero.",
+                        )
+                        result = "cured"
+                    elif as_of_date > row.grace_period_end_date:
+                        _, task_created = enqueue_scheduled_job(
+                            job_type="default_assessment",
+                            due_at=timezone.make_aware(
+                                datetime.combine(
+                                    row.grace_period_end_date + timedelta(days=1),
+                                    time.min,
+                                )
+                            ),
+                            idempotency_key=f"default-assessment:{row.pk}",
+                            related_entity_type="default_case",
+                            related_entity_id=row.pk,
+                        )
+                        _record_grace_transition(
+                            row=row,
+                            actor=actor,
+                            to_state="grace_period_expired",
+                            action="default.grace_expired",
+                            as_of_date=as_of_date,
+                            reason="Grace period elapsed with principal outstanding.",
+                        )
+                        result = "expired"
+            except Exception:  # A portfolio run records a bounded case failure and continues.
+                counts["failure_count"] += 1
+                continue
+            if result == "cured":
+                counts["cured_count"] += 1
+            elif result == "expired":
+                counts["expired_count"] += 1
+                counts["assessment_tasks_created_count"] += int(task_created)
+        return counts
+
+    @classmethod
+    def assess(
+        cls, *, actor, default_case_id, payload, request=None, as_of_date=None
+    ):
+        _require_assessment_authority(actor)
+        if not _scoped_case_candidates(actor=actor).filter(pk=default_case_id).exists():
+            raise DefaultNotFound
+        cleaned = _validate_assessment_input(payload)
+        assessment_date = as_of_date or timezone.localdate()
+        with transaction.atomic():
+            row = (
+                DefaultCase.objects.select_for_update()
+                .select_related("loan_account")
+                .get(pk=default_case_id)
+            )
+            if (
+                row.default_case_status != DefaultCase.STATUS_GRACE_PERIOD_EXPIRED
+                or assessment_date <= row.grace_period_end_date
+                or row.loan_account.principal_outstanding == 0
+                or row.loan_account.closed_at is not None
+            ):
+                raise DefaultConflict(
+                    "Only an unpaid, open case after grace expiry can be assessed."
+                )
+            if row.current_assessment_id is not None:
+                raise DefaultConflict("The default case already has a current assessment.")
+            _require_case_evidence(row=row, document_ids=cleaned["evidence_document_ids"])
+            assessment = DefaultAssessment.objects.create(
+                default_case=row,
+                assessment_type=cleaned["assessment_type"],
+                payment_failure_classification=cleaned[
+                    "payment_failure_classification"
+                ],
+                reason_summary=cleaned["reason_summary"],
+                evidence_document_ids_json=[
+                    str(value) for value in cleaned["evidence_document_ids"]
+                ],
+                borrower_interaction_summary=cleaned[
+                    "borrower_interaction_summary"
+                ],
+                assessed_by_user=actor,
+                recommended_action=cleaned["recommended_action"],
+            )
+            old_state = row.default_case_status
+            row.default_case_status = DefaultCase.STATUS_ASSESSMENT_IN_PROGRESS
+            row.current_assessment = assessment
+            evidence = serialize_default_assessment(assessment)
+            AuditLog.objects.create(
+                actor_user=actor,
+                action="default.assessed",
+                entity_type="default_case",
+                entity_id=row.pk,
+                old_value_json={"default_case_status": old_state},
+                new_value_json=evidence,
+                ip_address=request_ip(request) if request is not None else "",
+                user_agent=request_user_agent(request) if request is not None else "",
+            )
+            row.save(update_fields=["default_case_status", "current_assessment"])
+            record_workflow_event(
+                actor=actor,
+                workflow_name="default_case",
+                entity_type="default_case",
+                entity_id=row.pk,
+                from_state=old_state,
+                to_state=row.default_case_status,
+                trigger_reason=assessment.reason_summary,
+                action_code="default.assessed",
+            )
+            return assessment
+
 
 def get_default_case(*, actor, default_case_id):
     row = _scoped_case_candidates(actor=actor).filter(pk=default_case_id).first()
@@ -211,10 +357,72 @@ def serialize_default_case(row, *, actor):
         "default_case_status": row.default_case_status,
         "grace_period_start_date": row.grace_period_start_date.isoformat(),
         "grace_period_end_date": row.grace_period_end_date.isoformat(),
+        "grace_state": _derived_grace_state(row, as_of_date=timezone.localdate()),
+        "current_assessment": (
+            serialize_default_assessment(row.current_assessment)
+            if row.current_assessment_id is not None
+            else None
+        ),
         "reason": row.reason,
-        # Later default actions belong to slices 011B onward.
-        "available_actions": [],
+        "available_actions": _available_actions(row, actor=actor),
     }
+
+
+def serialize_default_assessment(row):
+    return {
+        "default_assessment_id": str(row.pk),
+        "default_case_id": str(row.default_case_id),
+        "assessment_type": row.assessment_type,
+        "payment_failure_classification": row.payment_failure_classification,
+        "reason_summary": row.reason_summary,
+        "evidence_document_ids": list(row.evidence_document_ids_json),
+        "borrower_interaction_summary": row.borrower_interaction_summary,
+        "recommended_action": row.recommended_action,
+        "assessed_by_user_id": str(row.assessed_by_user_id),
+        "assessed_at": row.assessed_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def _derived_grace_state(row, *, as_of_date):
+    if row.default_case_status == "resolved_by_repayment":
+        return "cured"
+    if row.loan_account.principal_outstanding == 0:
+        return "cured"
+    return "expired" if as_of_date > row.grace_period_end_date else "active"
+
+
+def _record_grace_transition(*, row, actor, to_state, action, as_of_date, reason):
+    from_state = row.default_case_status
+    evidence = {
+        "default_case_id": str(row.pk),
+        "loan_account_id": str(row.loan_account_id),
+        "from_state": from_state,
+        "to_state": to_state,
+        "as_of_date": as_of_date.isoformat(),
+    }
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user" if actor is not None else "system",
+        action=action,
+        entity_type="default_case",
+        entity_id=row.pk,
+        old_value_json={"default_case_status": from_state},
+        new_value_json=evidence,
+    )
+    row.default_case_status = to_state
+    if to_state == "resolved_by_repayment":
+        row.closed_at = timezone.now()
+    row.save(update_fields=["default_case_status", "closed_at"])
+    record_workflow_event(
+        actor=actor,
+        workflow_name="default_case",
+        entity_type="default_case",
+        entity_id=row.pk,
+        from_state=from_state,
+        to_state=to_state,
+        trigger_reason=reason,
+        action_code=action,
+    )
 
 
 def serialize_opened_default_case(row):
@@ -242,6 +450,12 @@ def _require_open_authority(actor):
         raise DefaultPermissionDenied
 
 
+def _require_assessment_authority(actor):
+    _require_permission(actor, ASSESS_PERMISSION)
+    if "credit_assessment" not in actor.team_codes():
+        raise DefaultPermissionDenied
+
+
 def _scoped_case_candidates(*, actor):
     _require_permission(actor, READ_PERMISSION)
     roles = set(auth_service.effective_role_codes(actor))
@@ -255,6 +469,19 @@ def _scoped_case_candidates(*, actor):
                 "grace_period",
                 "extended",
                 "non_recoverable_under_review",
+                "repaid",
+            }
+        )
+    if "credit_assessment" in actor.team_codes():
+        scope |= Q(
+            loan_account__loan_account_status__in={
+                "active",
+                "partially_repaid",
+                "overdue",
+                "grace_period",
+                "extended",
+                "non_recoverable_under_review",
+                "repaid",
             }
         )
     if "company_secretary" in roles:
@@ -273,7 +500,9 @@ def _scoped_case_candidates(*, actor):
             status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
         ).exists()
     )
-    queryset = DefaultCase.objects.select_related("loan_account", "member")
+    queryset = DefaultCase.objects.select_related(
+        "loan_account", "member", "current_assessment"
+    )
     if not auditor_portfolio:
         queryset = queryset.filter(scope)
     return queryset.distinct().order_by("-default_detected_at", "-default_case_id")
@@ -335,6 +564,96 @@ def _positive_int(field, value, *, default, maximum):
     return parsed
 
 
+def _validate_assessment_input(payload):
+    allowed = {
+        "assessment_type",
+        "payment_failure_classification",
+        "reason_summary",
+        "evidence_document_ids",
+        "borrower_interaction_summary",
+        "recommended_action",
+    }
+    errors = {
+        field: "Unknown request field." for field in sorted(set(payload) - allowed)
+    }
+    assessment_type = payload.get("assessment_type")
+    if assessment_type != DefaultAssessment.TYPE_POST_GRACE:
+        errors["assessment_type"] = "Must be post_grace."
+    classification = payload.get("payment_failure_classification")
+    if classification not in DefaultAssessment.CLASSIFICATIONS:
+        errors["payment_failure_classification"] = (
+            "Must be intentional, non_intentional, or unclear."
+        )
+    reason = _required_text(
+        "reason_summary", payload.get("reason_summary"), errors, maximum=5000
+    )
+    borrower_summary = payload.get("borrower_interaction_summary", "")
+    if not isinstance(borrower_summary, str):
+        errors["borrower_interaction_summary"] = "Must be a string."
+        borrower_summary = ""
+    elif len(borrower_summary) > 5000:
+        errors["borrower_interaction_summary"] = "Must be at most 5000 characters."
+    recommendation = _required_text(
+        "recommended_action", payload.get("recommended_action"), errors, maximum=100
+    )
+    raw_document_ids = payload.get("evidence_document_ids")
+    document_ids = []
+    if not isinstance(raw_document_ids, list) or not raw_document_ids:
+        errors["evidence_document_ids"] = "At least one evidence document is required."
+    else:
+        try:
+            document_ids = [UUID(str(value)) for value in raw_document_ids]
+        except (TypeError, ValueError, AttributeError):
+            errors["evidence_document_ids"] = "Every item must be a valid UUID."
+        if len(document_ids) != len(set(document_ids)):
+            errors["evidence_document_ids"] = "Duplicate document ids are not allowed."
+    if errors:
+        raise DefaultValidation(errors)
+    return {
+        "assessment_type": assessment_type,
+        "payment_failure_classification": classification,
+        "reason_summary": reason,
+        "evidence_document_ids": document_ids,
+        "borrower_interaction_summary": borrower_summary.strip(),
+        "recommended_action": recommendation,
+    }
+
+
+def _required_text(field, value, errors, *, maximum):
+    if not isinstance(value, str) or not value.strip():
+        errors[field] = "This field is required."
+        return ""
+    if len(value) > maximum:
+        errors[field] = f"Must be at most {maximum} characters."
+    return value.strip()
+
+
+def _require_case_evidence(*, row, document_ids):
+    found = set(
+        LoanDocument.objects.filter(
+            loan_application_id=row.loan_account.loan_application_id,
+            document_id__in=document_ids,
+        ).values_list("document_id", flat=True)
+    )
+    if found != set(document_ids):
+        raise DefaultValidation(
+            {"evidence_document_ids": "Evidence must belong to this loan application."}
+        )
+
+
+def _available_actions(row, *, actor):
+    if (
+        row.default_case_status == DefaultCase.STATUS_GRACE_PERIOD_EXPIRED
+        and row.current_assessment_id is None
+        and row.loan_account.principal_outstanding > 0
+        and row.loan_account.closed_at is None
+        and ASSESS_PERMISSION in auth_service.effective_permission_codes(actor)
+        and "credit_assessment" in actor.team_codes()
+    ):
+        return ["assess"]
+    return []
+
+
 def api_open_default_case(*, actor, loan_account_id, payload, request=None):
     allowed = {"trigger_event", "scheduled_due_date", "reason"}
     unknown = set(payload) - allowed
@@ -354,6 +673,16 @@ def api_open_default_case(*, actor, loan_account_id, payload, request=None):
     if row is None:
         raise DefaultConflict("The scheduled principal obligation is not missed.")
     return serialize_opened_default_case(row)
+
+
+def api_assess_default_case(*, actor, default_case_id, payload, request=None):
+    assessment = DefaultWorkflow.assess(
+        actor=actor,
+        default_case_id=default_case_id,
+        payload=payload,
+        request=request,
+    )
+    return serialize_default_assessment(assessment)
 
 
 _DEFAULT_CASE_STATUSES = {

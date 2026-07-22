@@ -12,6 +12,7 @@ _ALLOWED_JOB_TYPES = {
     "interest_accrual",
     "dpd_calculation",
     "compliance_reminder",
+    "default_assessment",
 }
 _TERMINAL_STATUSES = {
     ScheduledJob.STATUS_SUCCEEDED,
@@ -137,8 +138,8 @@ def _clean_enqueue_args(
     cleaned_job_type = _clean_required_string("job_type", job_type, field_errors)
     if cleaned_job_type and cleaned_job_type not in _ALLOWED_JOB_TYPES:
         field_errors["job_type"] = (
-            "Must be one of compliance_reminder, dpd_calculation, interest_accrual, "
-            "notification_generation, reminder_generation, report_export."
+            "Must be one of compliance_reminder, default_assessment, dpd_calculation, "
+            "interest_accrual, notification_generation, reminder_generation, report_export."
         )
     if due_at is None:
         field_errors["due_at"] = "This field is required."

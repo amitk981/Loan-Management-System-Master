@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_expiry_processor_records_bounded_failure_without_partial_transition (sfpcl_credit.tests.test_default_grace_assessment_api.DefaultGraceAssessmentApiTests.test_expiry_processor_records_bounded_failure_without_partial_transition)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/tests/test_default_grace_assessment_api.py", line 512, in test_expiry_processor_records_bounded_failure_without_partial_transition
+    outcome = DefaultWorkflow.process_grace_expiries(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/defaults/modules/default_workflow.py", line 189, in process_grace_expiries
+    _, created = enqueue_scheduled_job(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/scheduler/services.py", line 40, in enqueue_scheduled_job
+    return _enqueue_idempotently(cleaned)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/scheduler/services.py", line 113, in _enqueue_idempotently
+    raise ValidationError(
+django.core.exceptions.ValidationError: {'idempotency_key': ['Idempotency key already belongs to a completed job.']}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.629s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

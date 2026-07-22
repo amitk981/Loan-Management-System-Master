@@ -357,6 +357,8 @@ ROLE_PERMISSIONS = {
         "credit.appraisal.update",
         "credit.appraisal.submit_review",
         "credit.risk_assessment.manage",
+        "defaults.case.read",
+        "defaults.assessment.create",
     ],
     "credit_manager": [
         "members.witness.read",

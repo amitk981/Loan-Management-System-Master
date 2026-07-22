@@ -76,3 +76,97 @@ class DefaultCaseOpeningPostgreSQLAcceptanceTests(TransactionTestCase):
         self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="default_case").count(), 1
         )
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class GracePeriodPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_default_grace_assessment_api import (
+            DefaultGraceAssessmentApiTests,
+        )
+
+        fixture = DefaultGraceAssessmentApiTests(
+            "test_unpaid_expiry_creates_one_assessment_task_under_replay"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        self.actor = fixture.actor
+        self.case_id = fixture._open_case(date(2023, 11, 30))
+
+    def test_five_concurrent_expiry_and_assessment_runs_converge(self):
+        from sfpcl_credit.defaults.models import DefaultAssessment, DefaultCase
+        from sfpcl_credit.defaults.modules.default_workflow import DefaultWorkflow
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.scheduler.models import ScheduledJob
+        from sfpcl_credit.workflows.models import WorkflowEvent
+
+        barrier = Barrier(5)
+
+        def process(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return DefaultWorkflow.process_grace_expiries(
+                    as_of_date=date(2024, 3, 1), actor=self.actor
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            outcomes = list(pool.map(process, range(5)))
+
+        self.assertEqual(sum(row["expired_count"] for row in outcomes), 1)
+        self.assertEqual(
+            sum(row["assessment_tasks_created_count"] for row in outcomes), 1
+        )
+        self.assertEqual(sum(row["failure_count"] for row in outcomes), 0)
+        case = DefaultCase.objects.get(pk=self.case_id)
+        self.assertEqual(case.default_case_status, "grace_period_expired")
+        self.assertEqual(ScheduledJob.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="default.grace_expired").count(), 1
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="default_case", to_state="grace_period_expired"
+            ).count(),
+            1,
+        )
+
+        _, assessor_auth = self.fixture._make_assessor()
+        evidence = self.fixture._evidence_document()
+        payload = self.fixture._assessment_payload(evidence.pk)
+        assessment_barrier = Barrier(5)
+
+        def assess(_):
+            close_old_connections()
+            try:
+                assessment_barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/default-cases/{self.case_id}/assess/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                    **assessor_auth,
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            responses = list(pool.map(assess, range(5)))
+
+        self.assertEqual(
+            sorted(response.status_code for response in responses),
+            [200, 409, 409, 409, 409],
+        )
+        self.assertEqual(DefaultAssessment.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="default.assessed").count(), 1
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="default_case", to_state="assessment_in_progress"
+            ).count(),
+            1,
+        )

@@ -1,0 +1,32 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_unpaid_expiry_creates_one_assessment_task_under_replay (sfpcl_credit.tests.test_default_grace_assessment_api.DefaultGraceAssessmentApiTests.test_unpaid_expiry_creates_one_assessment_task_under_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/tests/test_default_grace_assessment_api.py", line 183, in test_unpaid_expiry_creates_one_assessment_task_under_replay
+    self.assertEqual(
+AssertionError: {'pro[48 chars]nt': 0, 'assessment_tasks_created_count': 0, '[13 chars]': 0} != {'pro[48 chars]nt': 1, 'assessment_tasks_created_count': 1, '[13 chars]': 0}
+- {'assessment_tasks_created_count': 0,
+?                                    ^
+
++ {'assessment_tasks_created_count': 1,
+?                                    ^
+
+   'cured_count': 0,
+-  'expired_count': 0,
+?                   ^
+
++  'expired_count': 1,
+?                   ^
+
+   'failure_count': 0,
+   'processed_count': 1}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.643s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

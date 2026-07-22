@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_allocated_full_principal_during_grace_cures_and_retains_case (sfpcl_credit.tests.test_default_grace_assessment_api.DefaultGraceAssessmentApiTests.test_allocated_full_principal_during_grace_cures_and_retains_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_111654_normal_run/sfpcl_credit/tests/test_default_grace_assessment_api.py", line 139, in test_allocated_full_principal_during_grace_cures_and_retains_case
+    outcome = DefaultWorkflow.process_grace_expiries(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'DefaultWorkflow' has no attribute 'process_grace_expiries'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.681s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
