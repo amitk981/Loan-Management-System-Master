@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_cdsl_completion_retains_dp_evidence_and_masks_bo_accounts (sfpcl_credit.tests.test_security_return_api.SecurityReturnApiTests.test_cdsl_completion_retains_dp_evidence_and_masks_bo_accounts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_225137_normal_run/sfpcl_credit/tests/test_security_return_api.py", line 278, in test_cdsl_completion_retains_dp_evidence_and_masks_bo_accounts
+    self.assertEqual(cdsl["psn"], "PSN-CLOSE-001")
+                     ~~~~^^^^^^^
+KeyError: 'psn'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.057s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -17,6 +17,13 @@ from sfpcl_credit.closure.modules.loan_closure import (
     read_noc,
 )
 from sfpcl_credit.identity.modules import http_auth
+from sfpcl_credit.closure.modules.security_return import (
+    SecurityReturnConflict,
+    SecurityReturnNotFound,
+    SecurityReturnPermissionDenied,
+    SecurityReturnValidation,
+    record_security_return,
+)
 
 
 @require_http_methods(["GET"])
@@ -169,3 +176,47 @@ def noc_download(request, loan_closure_id):
         return error_response(
             request, 404, "NOT_FOUND", "The NOC was not found or is inaccessible."
         )
+
+
+@require_http_methods(["POST"])
+def security_return_record(request, loan_closure_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            record_security_return(
+                actor=actor,
+                loan_closure_id=loan_closure_id,
+                payload=parse_json_body(request),
+                idempotency_key=request.headers.get("Idempotency-Key"),
+                request=request,
+            ),
+            request,
+        )
+    except SecurityReturnValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Security return failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Security return failed validation.",
+            {"body": exc.messages[0]},
+        )
+    except SecurityReturnPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Security-return authority is required."
+        )
+    except SecurityReturnNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The loan closure was not found or is inaccessible."
+        )
+    except SecurityReturnConflict as exc:
+        return error_response(request, 409, "SECURITY_RETURN_CONFLICT", str(exc))

@@ -798,3 +798,83 @@ class NocIssuancePostgreSQLAcceptanceTests(TransactionTestCase):
         self.assertEqual(Communication.objects.filter(related_entity_type="noc").count(), 1)
         self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="closure.noc.issued").count(), 1)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class SecurityReturnPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_security_return_api import SecurityReturnApiTests
+
+        fixture = SecurityReturnApiTests(
+            "test_no_security_closure_derives_not_applicable_items_and_completes"
+        )
+        fixture.setUp()
+        self.closure = fixture.closure
+        self.auth = fixture.auth
+
+    @staticmethod
+    def _race(*operations):
+        barrier = Barrier(len(operations))
+
+        def run(operation):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return operation()
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=len(operations)) as pool:
+            return list(pool.map(run, operations))
+
+    def _record(self, key):
+        return Client().post(
+            f"/api/v1/loan-closures/{self.closure.pk}/security-return/",
+            data=json.dumps({}),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=key,
+            **self.auth,
+        )
+
+    def test_five_exact_replays_create_one_return_and_one_item_set(self):
+        from sfpcl_credit.closure.models import (
+            SecurityReturn,
+            SecurityReturnItem,
+            SecurityReturnRequest,
+        )
+        from sfpcl_credit.identity.models import AuditLog
+
+        responses = self._race(
+            *(lambda: self._record("postgres-security-return-same") for _ in range(5))
+        )
+
+        self.assertEqual([response.status_code for response in responses], [200] * 5)
+        self.assertEqual(SecurityReturn.objects.count(), 1)
+        self.assertEqual(SecurityReturnItem.objects.count(), 4)
+        self.assertEqual(SecurityReturnRequest.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="closure.security_return.item_transitioned"
+            ).count(),
+            4,
+        )
+
+    def test_five_changed_requests_admit_only_one_completed_return(self):
+        from sfpcl_credit.closure.models import SecurityReturn, SecurityReturnRequest
+
+        responses = self._race(
+            *(
+                lambda index=index: self._record(f"postgres-security-return-{index}")
+                for index in range(5)
+            )
+        )
+
+        self.assertEqual(
+            sorted(response.status_code for response in responses),
+            [200, 409, 409, 409, 409],
+        )
+        self.assertEqual(SecurityReturn.objects.count(), 1)
+        self.assertEqual(SecurityReturnRequest.objects.count(), 1)
+        self.assertEqual(SecurityReturn.objects.get().return_status, "completed")

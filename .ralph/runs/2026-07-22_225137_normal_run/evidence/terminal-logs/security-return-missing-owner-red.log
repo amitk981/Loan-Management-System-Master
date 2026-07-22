@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_applicable_package_without_owned_instrument_is_rejected (sfpcl_credit.tests.test_security_return_api.SecurityReturnApiTests.test_applicable_package_without_owned_instrument_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_225137_normal_run/sfpcl_credit/tests/test_security_return_api.py", line 93, in test_applicable_package_without_owned_instrument_is_rejected
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"security_return_id": "7d131dd8-5d0d-4cf8-b737-a63e2c078fc2", "loan_closure_id": "7ee46c04-8545-49a1-b7c3-90d8fc483639", "security_package_id": "f162e6ea-03f3-4d78-80c1-4af2c6a1ca57", "status": "pending", "completed_at": null, "items": [{"item_type": "sh4", "status": "not_applicable"}, {"item_type": "blank_cheque", "status": "not_applicable"}, {"item_type": "poa", "status": "pending"}, {"item_type": "cdsl", "status": "not_applicable"}], "idempotency_replayed": false, "available_actions": ["closure.security_return.record"]}, "meta": {"request_id": null, "timestamp": "2026-07-22T17:30:11.237910Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.052s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

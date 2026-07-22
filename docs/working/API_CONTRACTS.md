@@ -60,6 +60,34 @@ outside those object relationships receive a nondisclosing response. `GET
 signed descriptor to the document owner, and appends the standard `documents.file.downloaded`
 audit without logging certificate contents.
 
+## Security return and CDSL unpledge tracking (011I)
+
+`POST /api/v1/loan-closures/{loan_closure_id}/security-return/` requires an
+`Idempotency-Key`, critical `closure.security_return.record`, and either Company Secretary authority
+or an authorised Compliance Team Member in active Compliance object scope. The loan must retain the
+matching full-repayment financial close. The server derives the security package, applicability, and
+SH-4/blank-cheque/PoA/CDSL source identities; caller-declared applicability, a foreign package, or a
+foreign source item returns `400 VALIDATION_ERROR` without a return record.
+
+For a closure with no security package, an empty request creates one completed aggregate with four
+`not_applicable` items. Otherwise the request accepts the matching `security_package_id`, an
+`expected_version`, optional verified restricted `acknowledgement_document_id`, and an `items` list.
+Each item names its server-owned `source_item_id` and an outcome. Physical `returned` or `released`
+outcomes require recipient, UTC time, and the governed acknowledgement; `pending` requires a reason.
+CDSL `completed`/`rejected` results retain matching PSN, verified URF, partial/full mode, pledgor and
+pledgee DP timestamps, accepted/rejected DP outcome, auto-unpledge flag, completion time where
+accepted, and verified completion evidence. BO account values are projected only as masked last-four
+values from the CDSL owner.
+
+The aggregate remains `pending` while any applicable item is pending/rejected or the acknowledgement
+is absent. A fresh idempotency key and matching version may advance pending items; returned,
+released, completed, and rejected outcomes are terminal. Completion atomically advances only the
+security-return closure requirement. Exact replay is zero-write, changed replay is
+`409 SECURITY_RETURN_CONFLICT`, and stale versions conflict. Each initial item state and later item
+transition, denial, aggregate record, and CDSL result is append-only audited. PostgreSQL closure
+locking plus unique aggregate/request constraints converge same-key racers on one result and admit
+only one of changed concurrent requests.
+
 ## Non-Payment Note workflow (011D)
 
 `POST /api/v1/default-cases/{default_case_id}/non-payment-note/` accepts exactly the five fields in

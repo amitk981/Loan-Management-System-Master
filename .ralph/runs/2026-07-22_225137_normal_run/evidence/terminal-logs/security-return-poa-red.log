@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_poa_release_requires_owned_identity_recipient_and_acknowledgement (sfpcl_credit.tests.test_security_return_api.SecurityReturnApiTests.test_poa_release_requires_owned_identity_recipient_and_acknowledgement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_225137_normal_run/sfpcl_credit/tests/test_security_return_api.py", line 181, in test_poa_release_requires_owned_identity_recipient_and_acknowledgement
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Security return failed validation.", "details": {}, "field_errors": {"security_package_id": ["Applicability and security-return facts are server-derived."], "expected_version": ["Applicability and security-return facts are server-derived."], "acknowledgement_document_id": ["Applicability and security-return facts are server-derived."], "items": ["Applicability and security-return facts are server-derived."]}}, "meta": {"request_id": null, "timestamp": "2026-07-22T17:33:00.216547Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.050s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

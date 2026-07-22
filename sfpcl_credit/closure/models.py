@@ -143,6 +143,17 @@ class ClosureRequirement(models.Model):
             requirement_status=cls.STATUS_COMPLETED,
         )
 
+    @classmethod
+    def complete_security_return_requirement(cls, *, loan_closure_id):
+        return models.QuerySet.update(
+            cls.objects.filter(
+                loan_closure_id=loan_closure_id,
+                requirement_type=cls.TYPE_SECURITY_RETURN,
+                requirement_status=cls.STATUS_PENDING,
+            ),
+            requirement_status=cls.STATUS_COMPLETED,
+        )
+
 
 class ImmutableNocQuerySet(models.QuerySet):
     def update(self, **kwargs):
@@ -264,3 +275,214 @@ class NocRecord(models.Model):
             cls.objects.filter(pk=noc_id).exclude(delivery_status=delivery_status),
             delivery_status=delivery_status,
         )
+
+
+class ImmutableSecurityReturnQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValueError("Security Return evidence changes only through its owner module.")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValueError("Security Return evidence changes only through its owner module.")
+
+    def delete(self):
+        raise ValueError("Security Return evidence is retained.")
+
+
+class SecurityReturn(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_COMPLETED = "completed"
+
+    security_return_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_closure = models.OneToOneField(
+        LoanClosure, on_delete=models.PROTECT, related_name="security_return"
+    )
+    security_package = models.ForeignKey(
+        "security_instruments.SecurityPackage",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="security_returns",
+    )
+    return_status = models.CharField(max_length=40, db_index=True)
+    version = models.PositiveIntegerField(default=0)
+    recorded_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="recorded_security_returns"
+    )
+    recorded_by_role_code = models.CharField(max_length=100)
+    recorded_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    acknowledgement_document = models.ForeignKey(
+        "documents.DocumentFile",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="security_return_acknowledgements",
+    )
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    record_audit = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT, related_name="security_return_record"
+    )
+
+    objects = ImmutableSecurityReturnQuerySet.as_manager()
+
+    class Meta:
+        db_table = "security_returns"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(return_status__in=("pending", "completed")),
+                name="security_return_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(return_status="pending", completed_at__isnull=True)
+                    | models.Q(return_status="completed", completed_at__isnull=False)
+                ),
+                name="security_return_completion_consistent",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(recorded_by_role_code=""),
+                name="security_return_role_required",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValueError("Security Return evidence changes only through its owner module.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Security Return evidence is retained.")
+
+
+class SecurityReturnItem(models.Model):
+    TYPES = ("sh4", "blank_cheque", "poa", "cdsl")
+    STATUSES = (
+        "not_applicable",
+        "pending",
+        "returned",
+        "released",
+        "rejected",
+        "completed",
+    )
+
+    security_return_item_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    security_return = models.ForeignKey(
+        SecurityReturn, on_delete=models.PROTECT, related_name="items"
+    )
+    item_type = models.CharField(max_length=40)
+    item_status = models.CharField(max_length=40, db_index=True)
+    source_item_id = models.UUIDField(blank=True, null=True)
+    custody_location = models.CharField(max_length=255, blank=True, null=True)
+    returned_released_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="security_return_items_released",
+    )
+    returned_released_to = models.CharField(max_length=255, blank=True, null=True)
+    returned_released_at = models.DateTimeField(blank=True, null=True)
+    pending_reason = models.TextField(blank=True, null=True)
+    acknowledgement_document = models.ForeignKey(
+        "documents.DocumentFile",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="security_return_item_acknowledgements",
+    )
+    psn = models.CharField(max_length=120, blank=True, null=True)
+    urf_document = models.ForeignKey(
+        "documents.DocumentFile",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="security_return_urfs",
+    )
+    urf_date = models.DateField(blank=True, null=True)
+    unpledge_type = models.CharField(max_length=20, blank=True, null=True)
+    pledgor_dp_submitted_at = models.DateTimeField(blank=True, null=True)
+    pledgee_dp_acted_at = models.DateTimeField(blank=True, null=True)
+    pledgee_dp_outcome = models.CharField(max_length=20, blank=True, null=True)
+    auto_unpledge_flag = models.BooleanField(blank=True, null=True)
+    completion_evidence_document = models.ForeignKey(
+        "documents.DocumentFile",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="security_return_completion_evidence",
+    )
+    completed_at = models.DateTimeField(blank=True, null=True)
+    transition_audit = models.OneToOneField(
+        "identity.AuditLog",
+        on_delete=models.PROTECT,
+        related_name="security_return_item_transition",
+    )
+
+    objects = ImmutableSecurityReturnQuerySet.as_manager()
+
+    class Meta:
+        db_table = "security_return_items"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["security_return", "item_type"],
+                name="uniq_security_return_item_type",
+            ),
+            models.CheckConstraint(
+                check=models.Q(item_type__in=("sh4", "blank_cheque", "poa", "cdsl")),
+                name="security_return_item_type_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    item_status__in=(
+                        "not_applicable",
+                        "pending",
+                        "returned",
+                        "released",
+                        "rejected",
+                        "completed",
+                    )
+                ),
+                name="security_return_item_status_bounded",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValueError(
+                "Security Return item evidence changes only through its owner module."
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Security Return item evidence is retained.")
+
+
+class SecurityReturnRequest(models.Model):
+    security_return_request_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    security_return = models.ForeignKey(
+        SecurityReturn, on_delete=models.PROTECT, related_name="requests"
+    )
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    resulting_version = models.PositiveIntegerField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = ImmutableSecurityReturnQuerySet.as_manager()
+
+    class Meta:
+        db_table = "security_return_requests"
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValueError("Security Return request evidence is immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Security Return request evidence is retained.")
