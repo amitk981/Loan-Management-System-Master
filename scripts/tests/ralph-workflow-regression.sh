@@ -1992,6 +1992,22 @@ ralph_validate_architecture_review_convergence \
 # independently verified episodes rather than corrective generations.
 sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$auto_finalizer_slice"
 rm -f "$auto_finalizer_slice.bak" "$auto_finalizer_dir/CR-015-overcap-finalizer.md"
+terminal_unrelated_slice="$auto_finalizer_dir/010Z8-unrelated-product-work.md"
+cat > "$terminal_unrelated_slice" <<'EOF'
+# Slice 010Z8: Unrelated product work
+## Status
+Not Started
+## Parent Epic
+Epic 010: Servicing
+## Depends On
+- CR-014
+## Risk Level
+Low
+EOF
+git init -q "$auto_finalizer_repo"
+git -C "$auto_finalizer_repo" add .
+git -C "$auto_finalizer_repo" -c user.name='Ralph Regression' \
+  -c user.email='ralph-regression@example.invalid' commit -qm fixture
 terminal_repair_slice="$auto_finalizer_dir/010Z9-terminal-recurrence-repair.md"
 cat > "$terminal_repair_slice" <<'EOF'
 # Slice 010Z9: Terminal recurrence repair
@@ -2062,6 +2078,39 @@ ralph_validate_architecture_review_convergence \
 ralph_apply_architecture_review_root_transitions \
   "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_recurrence_packet" \
   "$auto_finalizer_dir" "$auto_finalizer_approvals"
+[[ "$(ralph_first_grabbable_slice "$auto_finalizer_dir")" == \
+    "010Z8-unrelated-product-work.md" ]] \
+  || fail "terminal-priority fixture does not reproduce ordinary queue ordering"
+cp "$terminal_repair_slice" "$terminal_repair_slice.completed-dependencies"
+cp "$terminal_unrelated_slice" "$terminal_unrelated_slice.trusted-status"
+sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$terminal_unrelated_slice"
+rm -f "$terminal_unrelated_slice.bak"
+sed 's/^- CR-014$/- 010Z8 (owner seam)/' "$terminal_repair_slice.completed-dependencies" \
+  > "$terminal_repair_slice"
+if ralph_validate_architecture_review_convergence \
+    "$auto_finalizer_config" "$auto_finalizer_state" "$terminal_recurrence_packet" \
+    "$auto_finalizer_dir" "$auto_finalizer_approvals" >/dev/null 2>&1; then
+  fail "terminal successor was admitted behind an unfinished unrelated dependency"
+fi
+mv "$terminal_repair_slice.completed-dependencies" "$terminal_repair_slice"
+mv "$terminal_unrelated_slice.trusted-status" "$terminal_unrelated_slice"
+declare -F ralph_first_effective_grabbable_slice >/dev/null \
+  || fail "missing priority-aware Ralph selection interface"
+[[ "$(ralph_first_effective_grabbable_slice \
+      "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_dir")" == \
+    "010Z9-terminal-recurrence-repair.md" ]] \
+  || fail "authenticated terminal repair did not outrank unrelated grabbable work"
+declare -F ralph_explicit_slice_respects_effective_selection >/dev/null \
+  || fail "missing explicit-selection terminal barrier interface"
+if ralph_explicit_slice_respects_effective_selection \
+    "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_dir" \
+    "010Z8-unrelated-product-work.md" normal_run /nonexistent >/dev/null 2>&1; then
+  fail "explicit unrelated slice bypassed the authenticated terminal repair"
+fi
+ralph_explicit_slice_respects_effective_selection \
+  "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_dir" \
+  "010Z9-terminal-recurrence-repair.md" normal_run /nonexistent \
+  || fail "explicit authenticated terminal repair was rejected"
 ralph_mark_architecture_review_terminal_repair_due \
   "$auto_finalizer_config" "$auto_finalizer_state" "$auto_finalizer_dir"
 [[ "$(ralph_architecture_review_effective_due \
@@ -2097,6 +2146,9 @@ terminal_verification_scope="$(ralph_architecture_review_scope_instruction \
   || fail "review scope omitted findings awaiting independent terminal verification"
 sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$terminal_repair_slice"
 rm -f "$terminal_repair_slice.bak"
+git -C "$auto_finalizer_repo" add .
+git -C "$auto_finalizer_repo" -c user.name='Ralph Regression' \
+  -c user.email='ralph-regression@example.invalid' commit -qm terminal-repair-complete
 terminal_continuation_slice="$auto_finalizer_dir/010Z10-terminal-recurrence-continuation.md"
 cat > "$terminal_continuation_slice" <<'EOF'
 # Slice 010Z10: Terminal recurrence continuation
@@ -2175,6 +2227,9 @@ PY
 # not turn a historical completed repair into a lifetime queue stop.
 sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' "$terminal_continuation_slice"
 rm -f "$terminal_continuation_slice.bak"
+git -C "$auto_finalizer_repo" add .
+git -C "$auto_finalizer_repo" -c user.name='Ralph Regression' \
+  -c user.email='ralph-regression@example.invalid' commit -qm terminal-continuation-complete
 terminal_episode_two_slice="$auto_finalizer_dir/010Z11-terminal-recurrence-episode-two.md"
 cat > "$terminal_episode_two_slice" <<'EOF'
 # Slice 010Z11: Terminal recurrence repair episode two
@@ -3912,6 +3967,8 @@ rg -qF 'Only Critical/High correctness, security, financial/data-integrity, or b
   || fail "architecture-review prompt does not enforce severity-based queue admission"
 rg -qF 'Report findings closed, new findings by severity, and corrective slices added' "$runner" \
   || fail "architecture-review prompt omits convergence metrics"
+rg -qF 'A terminal recurrence-repair successor may depend only on slices that are already Complete or Superseded.' "$runner" \
+  || fail "architecture-review prompt can place a terminal repair behind unfinished unrelated work"
 rg -qF "set the review-packet.md Result section to exactly 'Ready for independent validation'" "$runner" \
   || fail "run prompt does not safely state the exact agent-declared result"
 if rg -qF 'review-packet.md `## Result`' "$runner"; then
@@ -3958,5 +4015,41 @@ rg -qF 'if (( no_worktree == 0 )); then' scripts/ralph-run.sh \
 if rg -qF 'prior_due or cadence_due' scripts/ralph-run.sh; then
   fail "inline due logic bypasses the tested mandatory-review transition helper"
 fi
+rg -qF 'architecture-review-transition-results.md' scripts/ralph-run.sh \
+  || fail "post-validation architecture-review transition failures have no durable result artifact"
+python3 - scripts/ralph-run.sh <<'PY'
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).read_text()
+start_marker = 'if [[ "$mode" == "architecture_review" && -z "$split_slice_id" ]]; then\n'
+end_marker = '\nif [[ "$mode" != "architecture_review" && -n "$architecture_finalizer_epic" ]]; then'
+start = source.rfind(start_marker)
+end = source.find(end_marker, start)
+if start < 0 or end < 0:
+    raise SystemExit("FAIL: could not isolate the post-validation architecture-review transition block")
+block = source[start:end]
+required = (
+    'architecture-review-transition-results.md',
+    'failure-summary.md',
+    'ralph_write_repair_context',
+)
+missing = [item for item in required if item not in block]
+if missing:
+    raise SystemExit(
+        "FAIL: post-validation architecture-review transition failures are not resumable; "
+        f"missing {', '.join(missing)}"
+    )
+if '|| exit 1' in block:
+    raise SystemExit(
+        "FAIL: post-validation architecture-review transition still exits without preserving repair context"
+    )
+success_marker = 'cat > "$run_dir/final-summary.md" <<EOF\n# Final Summary\n\nResult: Success'
+success = source.find(success_marker)
+if success < end:
+    raise SystemExit(
+        "FAIL: final-summary marks the run successful before post-validation transitions finish"
+    )
+PY
 
 echo "PASS: Ralph workflow regressions"

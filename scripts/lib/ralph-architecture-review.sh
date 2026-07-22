@@ -316,7 +316,8 @@ ralph_queue_first_slice_is_architecture_terminal_repair() {
   local config first
   config="$(dirname "$state_file")/config.yaml"
   [[ -f "$config" ]] || return 1
-  first="$(ralph_first_grabbable_slice "$slice_dir" || true)"
+  first="$(ralph_first_effective_grabbable_slice \
+    "$config" "$state_file" "$slice_dir" || true)"
   [[ -n "$first" ]] || return 1
   ralph_architecture_review_terminal_repair_contract \
     "$config" "$state_file" "$slice_dir/$first" >/dev/null
@@ -371,6 +372,7 @@ ralph_architecture_review_root_transition() {
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -598,6 +600,60 @@ def terminal_repair_contract(corrective, recurrence_roots, finalizer_record):
     ) is None:
         return None
     lines = text.splitlines()
+    try:
+        dependency_start = lines.index("## Depends On") + 1
+    except ValueError:
+        return None
+    dependencies = []
+    for line in lines[dependency_start:]:
+        if line.startswith("## "):
+            break
+        stripped = line.strip()
+        if not stripped.startswith("- "):
+            continue
+        dependency = stripped[2:].split(maxsplit=1)[0]
+        if dependency.lower() == "none":
+            continue
+        if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", dependency) is None:
+            return None
+        dependencies.append(dependency)
+    repository_root = slice_dir.parent.parent.resolve()
+    try:
+        relative_slice_dir = slice_dir.resolve().relative_to(repository_root)
+    except ValueError:
+        return None
+    tracked_slice_result = subprocess.run(
+        [
+            "git", "-C", str(repository_root), "ls-tree", "-r", "--name-only",
+            "HEAD", "--", str(relative_slice_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if tracked_slice_result.returncode != 0:
+        return None
+    tracked_slice_paths = tracked_slice_result.stdout.splitlines()
+    for dependency in dependencies:
+        dependency_matches = list(slice_dir.glob(f"{dependency}-*.md"))
+        if len(dependency_matches) != 1:
+            return None
+        trusted_matches = [
+            path for path in tracked_slice_paths
+            if Path(path).name.startswith(f"{dependency}-") and path.endswith(".md")
+        ]
+        if len(trusted_matches) != 1:
+            return None
+        trusted_result = subprocess.run(
+            ["git", "-C", str(repository_root), "show", f"HEAD:{trusted_matches[0]}"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if trusted_result.returncode != 0 or section_value(
+            trusted_result.stdout, "## Status"
+        ) not in {"Complete", "Superseded"}:
+            return None
     try:
         start = lines.index("## Architecture Review Recurrence Repair") + 1
     except ValueError:
@@ -1060,6 +1116,95 @@ print(f"{epic}\t{root}\t{finalizer}")
 PY
 }
 
+# Return the next product slice after applying trusted orchestration priority.
+# An authenticated pending terminal repair is a narrow execution barrier: it
+# outranks unrelated grabbable work, but never bypasses its own dependencies.
+# With no pending repair this is exactly the ordinary queue selector.
+ralph_terminal_repair_pending_slice_id() {
+  local state_file="${1:?state file is required}"
+  python3 - "$state_file" <<'PY'
+import json, sys
+try:
+    state = json.load(open(sys.argv[1]))
+except (OSError, json.JSONDecodeError):
+    raise SystemExit(1)
+pending = state.get("architecture_review_terminal_repair_pending")
+if pending is None:
+    print("")
+elif isinstance(pending, dict) and isinstance(pending.get("corrective_slice"), str):
+    print(pending["corrective_slice"])
+else:
+    raise SystemExit(1)
+PY
+}
+
+ralph_first_effective_grabbable_slice() {
+  local config="${1:?config is required}" state_file="${2:?state file is required}"
+  local slice_dir="${3:-docs/slices}" corrective matches count candidate unmet contract
+  corrective="$(ralph_terminal_repair_pending_slice_id "$state_file")" || {
+    echo "Cannot select work from malformed terminal-repair state." >&2
+    return 1
+  }
+  if [[ -z "$corrective" ]]; then
+    ralph_first_grabbable_slice "$slice_dir"
+    return
+  fi
+  matches="$(find "$slice_dir" -maxdepth 1 -type f -name "${corrective}-*.md" | sort)"
+  count="$(printf '%s\n' "$matches" | grep -c . || true)"
+  [[ "$count" == "1" ]] || {
+    echo "Pending terminal repair must resolve exactly once: $corrective ($count matches)." >&2
+    return 1
+  }
+  candidate="$matches"
+  [[ "$(ralph_slice_status "$candidate")" == "Not Started" ]] || {
+    echo "Pending terminal repair is not Not Started: $(basename "$candidate")." >&2
+    return 1
+  }
+  if ! unmet="$(ralph_slice_unmet_dependencies "$candidate" "$slice_dir")"; then
+    echo "Pending terminal repair has unmet dependencies: $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')." >&2
+    return 1
+  fi
+  contract="$(ralph_architecture_review_terminal_repair_contract \
+    "$config" "$state_file" "$candidate" true 2>/dev/null || true)"
+  [[ -n "$contract" ]] || {
+    echo "Pending terminal repair does not retain its authenticated contract: $(basename "$candidate")." >&2
+    return 1
+  }
+  basename "$candidate"
+}
+
+# Explicit owner selection may narrow ordinary work, but it cannot bypass an
+# authenticated terminal-repair barrier. Same-worktree repair retains its
+# existing exact trusted-context exception so a failed candidate can recover.
+ralph_explicit_slice_respects_effective_selection() {
+  local config="${1:?config is required}" state_file="${2:?state file is required}"
+  local slice_dir="${3:?slice directory is required}"
+  local resolved_slice="${4:?resolved slice is required}" mode="${5:?mode is required}"
+  local repair_context="${6:-.ralph/repair-context.json}"
+  local pending effective repo_root context_slice
+  pending="$(ralph_terminal_repair_pending_slice_id "$state_file")" || {
+    echo "Cannot validate explicit selection against malformed terminal-repair state." >&2
+    return 1
+  }
+  [[ -n "$pending" ]] || return 0
+  effective="$(ralph_first_effective_grabbable_slice \
+    "$config" "$state_file" "$slice_dir")" || return 1
+  resolved_slice="$(basename "$resolved_slice")"
+  [[ "$resolved_slice" == "$effective" ]] && return 0
+  if [[ "$mode" == "repair" ]] \
+      && declare -F ralph_repair_context_is_resumable >/dev/null \
+      && declare -F ralph_repair_context_value >/dev/null; then
+    repo_root="$(cd "$(dirname "$config")/.." 2>/dev/null && pwd -P)" || return 1
+    if ralph_repair_context_is_resumable "$repo_root" "$repair_context"; then
+      context_slice="$(ralph_repair_context_value \
+        "$repair_context" slice_id 2>/dev/null || true)"
+      [[ "$context_slice" == "${resolved_slice%.md}" ]] && return 0
+    fi
+  fi
+  echo "Refusing explicit slice selection while authenticated terminal repair $pending is pending: $resolved_slice." >&2
+  return 1
+}
+
 ralph_mark_architecture_review_terminal_repair_due() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
   local slice_dir="${3:?slice directory is required}" first contract root pending
@@ -1070,7 +1215,8 @@ print("True" if isinstance(value, dict) else "False")
 PY
 )" || return 1
   [[ "$pending" == "True" ]] || return 0
-  first="$(ralph_first_grabbable_slice "$slice_dir" || true)"
+  first="$(ralph_first_effective_grabbable_slice \
+    "$config" "$state_file" "$slice_dir" || true)"
   [[ -n "$first" ]] || {
     echo "Pending terminal repair has no grabbable corrective slice." >&2
     return 1
@@ -1078,7 +1224,7 @@ PY
   contract="$(ralph_architecture_review_terminal_repair_contract \
     "$config" "$state_file" "$slice_dir/$first" true 2>/dev/null || true)"
   [[ -n "$contract" ]] || {
-    echo "Pending terminal repair is not the exact first grabbable slice." >&2
+    echo "Pending terminal repair is not the authenticated effective grabbable slice." >&2
     return 1
   }
   IFS=$'\t' read -r _ root _ <<< "$contract"

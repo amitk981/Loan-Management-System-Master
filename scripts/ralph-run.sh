@@ -114,12 +114,18 @@ main_run_dir="$repo_root/.ralph/runs/$run_id"
 run_dir="$main_run_dir"
 
 select_slice() {
+  local resolved
   if [[ -n "$selected_slice" ]]; then
-    ralph_resolve_explicit_slice \
-      "$selected_slice" docs/slices "$mode" .ralph/repair-context.json
+    resolved="$(ralph_resolve_explicit_slice \
+      "$selected_slice" docs/slices "$mode" .ralph/repair-context.json)" || return 1
+    ralph_explicit_slice_respects_effective_selection \
+      .ralph/config.yaml .ralph/state.json docs/slices "$resolved" "$mode" \
+      .ralph/repair-context.json || return 1
+    printf '%s\n' "$resolved"
     return
   fi
-  ralph_first_grabbable_slice docs/slices
+  ralph_first_effective_grabbable_slice \
+    .ralph/config.yaml .ralph/state.json docs/slices
 }
 
 slice_file=""
@@ -462,6 +468,7 @@ split_instruction=""
 split_corrective_instruction=""
 split_read_target="docs/slices/$slice_file"
 architecture_instruction="- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md. Only Critical/High correctness, security, financial/data-integrity, or binding source-contract findings create immediate corrective work. Bundle Medium findings into the owning slice or epic closure and record Low findings unless they naturally combine with higher-severity work. Group related symptoms by root owner instead of creating one slice per symptom. Report findings closed, new findings by severity, and corrective slices added in review-packet.md under '## Convergence Metrics' using the exact lines '- Findings closed: N', '- New Critical: N', '- New High: N', '- New Medium: N', '- New Low: N', and '- Corrective slices added: N'. A normal new corrective must be a numeric Not Started slice with a valid Depends On contract. Exception: when the scope instruction says a carried root is already at the configured generation cap and it genuinely needs a different successor, create exactly one next-numbered CR-NNN terminal finalizer instead of another numeric leaf. Its filename may add a descriptive slug, but every Finding Closure Manifest row must use the CR-NNN identity. It must be Not Started, High risk, owned by the same Parent Epic, group every related Critical/High root into its Review Finding Closure contract, and contain exactly '## Architecture Review Finalizer' followed by '- Epic: NNN', '- Root ID: ROOT-NNN-*', and '- Exhausted corrective generation: N'. The standing owner policy admits only one such terminal CR per root. If executable evidence later disproves that finalizer, preserve the same stable findings and roots and group them into one correction; the orchestrator may rewrite it as one bounded same-finalizer repair episode, never generation 3 or a second finalizer. Product gates leave that episode open until a later independent review explicitly closes every inherited Finding ID/Root ID pair. A genuine later regression opens the next bounded episode on the same stable identities. After the configured episode cap, a further reproduced terminal finding uses disposition Quarantined with no corrective or closure evidence; it becomes a release blocker while unrelated queued slices continue. When an actionable existing root-owner slice already covers a new Critical/High finding, do not duplicate it; add one exact '- Existing corrective slice: ID' line per mapped slice under the convergence metrics. Validation requires every mapped ID to resolve to one tracked Not Started or Blocked slice. If corrective additions exceed closures across two reviews, recommend one root-cause boundary correction instead of further leaf patches."
+architecture_instruction="$architecture_instruction A terminal recurrence-repair successor may depend only on slices that are already Complete or Superseded. Never place it behind unfinished unrelated work or rename it merely to sort first: after authentication, the orchestrator gives that exact pending repair bounded priority over ordinary grabbable slices."
 architecture_runtime_instruction='- Every generated corrective slice must declare exactly one `## Runtime Capabilities` section. Declare `postgresql-five-race-acceptance` when its text or Trusted PostgreSQL Acceptance requires PostgreSQL, concurrency, locking, or race evidence; declare `localhost-e2e-server` when it requires browser, screenshot, Playwright, or trusted-browser evidence; otherwise declare `none`. Before returning, source `scripts/lib/ralph-runtime-capabilities.sh` and `scripts/lib/ralph-postgresql-acceptance.sh`, run `ralph_validate_slice_runtime_requirements` against every untracked `docs/slices/*.md` candidate, and run `ralph_validate_trusted_postgresql_acceptance` for every candidate declaring the PostgreSQL capability. A failure is part of this review candidate and must be corrected here, not deferred to the next product run.'
 architecture_instruction="$architecture_instruction $architecture_runtime_instruction"
 architecture_scope_instruction="$(ralph_architecture_review_scope_instruction \
@@ -761,14 +768,6 @@ and $architecture_terminal_repair_root. Successful full gates await independent 
 EOF
 fi
 
-cat > "$run_dir/final-summary.md" <<EOF
-# Final Summary
-
-Result: Success
-
-Ralph run completed for $slice_id.
-EOF
-
 arch_threshold="$(ralph_architecture_review_interval \
   "$worktree_dir/.ralph/config.yaml" "$repo_root/.ralph/state.json")" || exit 1
 arch_base_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_every_completed_slices:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
@@ -878,19 +877,58 @@ path.write_text(json.dumps(state, indent=2) + "\n")
 PY
 
 if [[ "$mode" == "architecture_review" && -z "$split_slice_id" ]]; then
-  ralph_apply_architecture_review_root_transitions \
-    "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
-    "$run_dir/review-packet.md" "$worktree_dir/docs/slices" \
-    "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" || exit 1
-  ralph_reconcile_architecture_review_terminal_repair_verification \
-    "$worktree_dir/.ralph/state.json" "$run_dir/review-packet.md" || exit 1
-  ralph_mark_architecture_review_terminal_finalizer_due \
-    "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
-    "$worktree_dir/docs/slices" \
-    "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" || exit 1
-  ralph_mark_architecture_review_terminal_repair_due \
-    "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
-    "$worktree_dir/docs/slices" || exit 1
+  architecture_transition_results="$run_dir/architecture-review-transition-results.md"
+  architecture_transition_output=""
+  architecture_transition_rc=0
+  architecture_transition_output="$({
+    ralph_apply_architecture_review_root_transitions \
+      "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
+      "$run_dir/review-packet.md" "$worktree_dir/docs/slices" \
+      "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" &&
+    ralph_reconcile_architecture_review_terminal_repair_verification \
+      "$worktree_dir/.ralph/state.json" "$run_dir/review-packet.md" &&
+    ralph_mark_architecture_review_terminal_finalizer_due \
+      "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
+      "$worktree_dir/docs/slices" \
+      "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" &&
+    ralph_mark_architecture_review_terminal_repair_due \
+      "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
+      "$worktree_dir/docs/slices"
+  } 2>&1)" || architecture_transition_rc=$?
+
+  if (( architecture_transition_rc != 0 )); then
+    architecture_transition_failure="$(printf '%s' "$architecture_transition_output" \
+      | tr '\n' ' ' | sed 's/[[:space:]][[:space:]]*/ /g; s/[[:space:]]*$//')"
+    printf '%s\n' "$architecture_transition_output" >&2
+    cat > "$architecture_transition_results" <<EOF
+# Architecture Review Transition Results
+
+FAIL: post-validation architecture-review state transition failed.
+
+$architecture_transition_output
+EOF
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Validation Failure Summary
+
+## architecture-review-transition-results.md
+
+FAIL: post-validation architecture-review state transition failed: $architecture_transition_failure
+EOF
+    if (( no_worktree == 0 )); then
+      ralph_write_repair_context \
+        "$repo_root/.ralph/repair-context.json" \
+        "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+        "$run_dir/failure-summary.md"
+    fi
+    exit "$architecture_transition_rc"
+  fi
+
+  cat > "$architecture_transition_results" <<EOF
+# Architecture Review Transition Results
+
+PASS: validated architecture-review findings were reconciled and the next
+bounded finalizer or terminal-repair transition was recorded successfully.
+EOF
 fi
 
 if [[ "$mode" != "architecture_review" && -n "$architecture_finalizer_epic" ]]; then
@@ -974,6 +1012,15 @@ cat >> "$worktree_dir/.ralph/progress.md" <<EOF
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+EOF
+
+cat > "$run_dir/final-summary.md" <<EOF
+# Final Summary
+
+Result: Success
+
+Ralph run completed for $slice_id after independent validation and trusted
+post-validation state transitions succeeded.
 EOF
 
 committed=0
