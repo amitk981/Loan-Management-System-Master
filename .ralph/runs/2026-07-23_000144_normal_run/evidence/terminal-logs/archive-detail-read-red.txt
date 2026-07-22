@@ -1,0 +1,17 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_authorised_detail_read_returns_manifest_and_audits_without_locations (sfpcl_credit.tests.test_archive_api.ArchiveRecordApiTests.test_authorised_detail_read_returns_manifest_and_audits_without_locations)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/tests/test_archive_api.py", line 100, in test_authorised_detail_read_returns_manifest_and_audits_without_locations
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 405 != 200 : b''
+
+----------------------------------------------------------------------
+Ran 1 test in 0.319s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...

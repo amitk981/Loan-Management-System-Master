@@ -88,6 +88,34 @@ transition, denial, aggregate record, and CDSL result is append-only audited. Po
 locking plus unique aggregate/request constraints converge same-key racers on one result and admit
 only one of changed concurrent requests.
 
+## Archive manifest and retention (011J)
+
+`POST /api/v1/loan-closures/{loan_closure_id}/archive/` requires an `Idempotency-Key`,
+`closure.archive.create`, an active Company Secretary or Compliance Team Member, and active
+Compliance Team object scope. It accepts a physical and/or digital location (at least one is
+required) plus optional source-compatible `retention_start_date` and `retention_until_date` fields.
+The retained financial-close date is always the retention start; a different caller start or an end
+date shorter than the server-calculated eight-calendar-year minimum returns `409 ARCHIVE_CONFLICT`.
+An omitted end date receives that server minimum, while a later supplied obligation is preserved.
+
+Creation locks the retained full-repayment closure and requires its completed NOC requirement plus
+completed or server-derived-not-applicable security return. It creates one immutable archive record
+per loan, completes only the archive requirement, and appends one `fully_closed_and_archived`
+workflow event without rewriting the earlier financial-close record or loan status history. Exact
+replay returns the same manifest; changed-key, changed-location, or duplicate requests return
+`409 ARCHIVE_CONFLICT`. Location correction, certificate/destruction, and all direct model
+mutation/deletion are outside this contract. `destruction_eligible` is a read-only date projection,
+not destruction authority.
+
+`GET /api/v1/loan-closures/{loan_closure_id}/archive/` returns one scoped manifest. `GET
+/api/v1/archive-records/?search=&page=&page_size=` returns a standard paginated searchable manifest;
+search matches loan-account number, member legal name, and physical/digital archive location.
+Both require `closure.archive.read` and Compliance object scope, or active Internal Auditor
+read-only scope. Borrowers do not receive archive locations. Successful detail/search access and
+denials are audited; audit payloads record identifiers/counts only and never archive paths or search
+text. Archived documents remain behind the existing classified document-download owner and its
+download audit.
+
 ## Non-Payment Note workflow (011D)
 
 `POST /api/v1/default-cases/{default_case_id}/non-payment-note/` accepts exactly the five fields in

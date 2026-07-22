@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "data": {
+    "archive_record_id": "00000000-0000-4000-8000-000000000011",
+    "loan_closure_id": "00000000-0000-4000-8000-000000000012",
+    "loan_account_id": "00000000-0000-4000-8000-000000000013",
+    "file_location_physical": "Archive Room / Rack A / Box 12",
+    "file_location_digital": "governed://loan-archive/manifest-25",
+    "retention_start_date": "2026-07-23",
+    "retention_until_date": "2034-07-23",
+    "archived_by_user_id": "00000000-0000-4000-8000-000000000014",
+    "archived_by_role_code": "company_secretary",
+    "archived_at": "2026-07-23T10:30:00Z",
+    "destruction_eligible": false,
+    "destruction_certificate_id": null,
+    "idempotency_replayed": false,
+    "available_actions": []
+  },
+  "meta": {
+    "request_id": "req-archive-record-001",
+    "timestamp": "2026-07-23T10:30:00Z",
+    "api_version": "v1"
+  }
+}

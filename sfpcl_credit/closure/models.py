@@ -154,6 +154,17 @@ class ClosureRequirement(models.Model):
             requirement_status=cls.STATUS_COMPLETED,
         )
 
+    @classmethod
+    def complete_archive_requirement(cls, *, loan_closure_id):
+        return models.QuerySet.update(
+            cls.objects.filter(
+                loan_closure_id=loan_closure_id,
+                requirement_type=cls.TYPE_ARCHIVE,
+                requirement_status=cls.STATUS_PENDING,
+            ),
+            requirement_status=cls.STATUS_COMPLETED,
+        )
+
 
 class ImmutableNocQuerySet(models.QuerySet):
     def update(self, **kwargs):
@@ -486,3 +497,82 @@ class SecurityReturnRequest(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError("Security Return request evidence is retained.")
+
+
+class ImmutableArchiveRecordQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValueError("Archive records are read-only.")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValueError("Archive records are read-only.")
+
+    def delete(self):
+        raise ValueError("Archive records cannot be destroyed through this contract.")
+
+
+class ArchiveRecord(models.Model):
+    archive_record_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_closure = models.OneToOneField(
+        LoanClosure, on_delete=models.PROTECT, related_name="archive_record"
+    )
+    loan_account = models.OneToOneField(
+        "loans.LoanAccount", on_delete=models.PROTECT, related_name="archive_record"
+    )
+    file_location_physical = models.CharField(max_length=255, blank=True, null=True)
+    file_location_digital = models.CharField(max_length=255, blank=True, null=True)
+    retention_start_date = models.DateField()
+    retention_until_date = models.DateField(db_index=True)
+    archived_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="archived_loan_files"
+    )
+    archived_by_role_code = models.CharField(max_length=100)
+    archived_at = models.DateTimeField(default=timezone.now, db_index=True)
+    destruction_eligible_flag = models.BooleanField(default=False)
+    destruction_certificate_id = models.UUIDField(blank=True, null=True)
+    idempotency_key_digest = models.CharField(max_length=64, unique=True)
+    payload_digest = models.CharField(max_length=64)
+    archive_audit = models.OneToOneField(
+        "identity.AuditLog", on_delete=models.PROTECT, related_name="archive_record"
+    )
+    archive_workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent",
+        on_delete=models.PROTECT,
+        related_name="archive_record",
+    )
+
+    objects = ImmutableArchiveRecordQuerySet.as_manager()
+
+    class Meta:
+        db_table = "archive_records"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    (models.Q(file_location_physical__isnull=False) & ~models.Q(file_location_physical=""))
+                    | (models.Q(file_location_digital__isnull=False) & ~models.Q(file_location_digital=""))
+                ),
+                name="archive_record_location_required",
+            ),
+            models.CheckConstraint(
+                check=models.Q(retention_until_date__gte=models.F("retention_start_date")),
+                name="archive_retention_dates_ordered",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(archived_by_role_code=""),
+                name="archive_actor_role_required",
+            ),
+            models.CheckConstraint(
+                check=models.Q(destruction_eligible_flag=False)
+                & models.Q(destruction_certificate_id__isnull=True),
+                name="archive_destruction_future_only",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValueError("Archive records are read-only.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Archive records cannot be destroyed through this contract.")

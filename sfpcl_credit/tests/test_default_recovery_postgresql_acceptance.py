@@ -878,3 +878,102 @@ class SecurityReturnPostgreSQLAcceptanceTests(TransactionTestCase):
         self.assertEqual(SecurityReturn.objects.count(), 1)
         self.assertEqual(SecurityReturnRequest.objects.count(), 1)
         self.assertEqual(SecurityReturn.objects.get().return_status, "completed")
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class ArchiveRecordPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_noc_api import NocIssuanceApiTests
+
+        fixture = NocIssuanceApiTests(
+            "test_eligible_full_repayment_closure_issues_one_noc_and_queues_delivery"
+        )
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        self.fixture = fixture
+        self.closure = fixture.closure
+        self.actor = fixture.issuer
+        fixture.fixture._grant(
+            self.actor,
+            "closure.security_return.record",
+            "closure.archive.create",
+            "closure.archive.read",
+        )
+        self.auth = fixture.fixture._auth(self.actor)
+        issued = fixture._issue("postgres-archive-noc")
+        self.assertEqual(issued.status_code, 200, issued.content)
+        returned = Client().post(
+            f"/api/v1/loan-closures/{self.closure.pk}/security-return/",
+            data=json.dumps({}),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY="postgres-archive-security-return",
+            **self.auth,
+        )
+        self.assertEqual(returned.status_code, 200, returned.content)
+
+    def test_five_concurrent_exact_archives_create_one_manifest_and_terminal_chain(self):
+        from sfpcl_credit.closure.models import ArchiveRecord, ClosureRequirement
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import LoanStatusHistory
+        from sfpcl_credit.workflows.models import WorkflowEvent
+
+        retained_status_history_ids = list(
+            LoanStatusHistory.objects.filter(
+                loan_account=self.closure.loan_account
+            ).values_list("loan_status_history_id", flat=True)
+        )
+        barrier = Barrier(5)
+        payload = {
+            "file_location_physical": "Archive Room / Race Rack / Box 1",
+            "file_location_digital": "governed://archive/race-manifest-1",
+        }
+
+        def archive(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/loan-closures/{self.closure.pk}/archive/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                    HTTP_IDEMPOTENCY_KEY="postgres-archive-exact",
+                    **self.auth,
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            responses = list(pool.map(archive, range(5)))
+
+        self.assertEqual([response.status_code for response in responses], [200] * 5)
+        self.assertEqual(
+            len({row.json()["data"]["archive_record_id"] for row in responses}), 1
+        )
+        self.assertEqual(ArchiveRecord.objects.count(), 1)
+        self.assertEqual(
+            ClosureRequirement.objects.filter(
+                loan_closure=self.closure,
+                requirement_type=ClosureRequirement.TYPE_ARCHIVE,
+                requirement_status=ClosureRequirement.STATUS_COMPLETED,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="loan_closure", to_state="fully_closed_and_archived"
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action="closure.archive.created").count(), 1
+        )
+        self.assertEqual(
+            list(
+                LoanStatusHistory.objects.filter(
+                    loan_account=self.closure.loan_account
+                ).values_list("loan_status_history_id", flat=True)
+            ),
+            retained_status_history_ids,
+        )

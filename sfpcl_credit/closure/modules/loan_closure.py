@@ -3,15 +3,23 @@
 import hashlib
 import json
 import uuid
+from datetime import date
 from decimal import Decimal
+from math import ceil
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.closure.models import ClosureRequirement, LoanClosure, NocRecord
+from sfpcl_credit.closure.models import (
+    ArchiveRecord,
+    ClosureRequirement,
+    LoanClosure,
+    NocRecord,
+)
 from sfpcl_credit.communications.modules.communication_dispatcher import (
     CommunicationDispatchConflict,
     CommunicationDispatcher,
@@ -31,8 +39,11 @@ from sfpcl_credit.workflows.events import record_workflow_event
 READ_PERMISSION = "closure.readiness.read"
 CLOSE_PERMISSION = "closure.loan.close"
 NOC_ISSUE_PERMISSION = "closure.noc.issue"
+ARCHIVE_CREATE_PERMISSION = "closure.archive.create"
+ARCHIVE_READ_PERMISSION = "closure.archive.read"
 READ_ROLES = {"credit_manager", "company_secretary", "internal_auditor"}
 NOC_ISSUE_ROLES = {"company_secretary", "compliance_team_member"}
+ARCHIVE_CREATE_ROLES = {"company_secretary", "compliance_team_member"}
 NOC_TEMPLATE_CODE = "noc_issued_email"
 
 
@@ -59,6 +70,15 @@ class NocValidation(Exception):
 
 
 class NocConflict(Exception):
+    pass
+
+
+class ArchiveValidation(Exception):
+    def __init__(self, field_errors):
+        self.field_errors = field_errors
+
+
+class ArchiveConflict(Exception):
     pass
 
 
@@ -531,6 +551,513 @@ def _digest(value):
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+
+
+def archive(*, actor, loan_closure_id, payload, idempotency_key, request=None):
+    try:
+        cleaned = _validate_archive_request(payload, idempotency_key)
+        archive_role = _require_archive_authority(actor)
+    except ArchiveValidation:
+        _record_archive_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="request_validation_failed",
+            request=request,
+        )
+        raise
+    except ClosurePermissionDenied:
+        _record_archive_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="archive_authority_denied",
+            request=request,
+        )
+        raise
+    payload_digest = _digest(
+        {
+            "loan_closure_id": str(loan_closure_id),
+            "actor_id": str(actor.pk),
+            "file_location_physical": cleaned["file_location_physical"],
+            "file_location_digital": cleaned["file_location_digital"],
+            "retention_start_date": (
+                cleaned["retention_start_date"].isoformat()
+                if cleaned["retention_start_date"]
+                else None
+            ),
+            "retention_until_date": (
+                cleaned["retention_until_date"].isoformat()
+                if cleaned["retention_until_date"]
+                else None
+            ),
+        }
+    )
+    outcome = _archive_locked(
+        actor=actor,
+        archive_role=archive_role,
+        loan_closure_id=loan_closure_id,
+        cleaned=cleaned,
+        payload_digest=payload_digest,
+        request=request,
+    )
+    if outcome["kind"] == "not_found":
+        raise ClosureNotFound
+    if outcome["kind"] == "denied":
+        raise ArchiveConflict(outcome["message"])
+    return outcome["data"]
+
+
+def read_archive(*, actor, loan_closure_id, request=None):
+    record = (
+        ArchiveRecord.objects.select_related(
+            "loan_closure__loan_account__loan_application"
+        )
+        .filter(loan_closure_id=loan_closure_id)
+        .first()
+    )
+    access = _archive_read_access(actor=actor, record=record)
+    if access != "allowed":
+        _record_archive_read_denied(
+            actor=actor, loan_closure_id=loan_closure_id, request=request
+        )
+        if access == "forbidden":
+            raise ClosurePermissionDenied
+        raise ClosureNotFound
+    AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.archive.manifest_accessed",
+        entity_type="archive_record",
+        entity_id=record.pk,
+        new_value_json={
+            "loan_closure_id": str(record.loan_closure_id),
+            "loan_account_id": str(record.loan_account_id),
+            "request_id": request.headers.get("X-Request-ID", "") if request else "",
+        },
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+    return _serialize_archive(record, replay=False)
+
+
+def search_archives(*, actor, query_params, request=None):
+    _require_archive_read_authority(actor=actor, request=request)
+    allowed = {"search", "page", "page_size"}
+    unknown = set(query_params.keys()) - allowed
+    if unknown:
+        _record_archive_read_denied(
+            actor=actor, loan_closure_id=None, request=request
+        )
+        raise ArchiveValidation(
+            {field: "Unknown query parameter." for field in sorted(unknown)}
+        )
+    search = str(query_params.get("search", "")).strip()
+    if len(search) > 200:
+        _record_archive_read_denied(
+            actor=actor, loan_closure_id=None, request=request
+        )
+        raise ArchiveValidation({"search": "Must be at most 200 characters."})
+    page = _positive_archive_int(query_params.get("page"), 1)
+    page_size = min(_positive_archive_int(query_params.get("page_size"), 20), 100)
+    queryset = ArchiveRecord.objects.select_related(
+        "loan_closure__loan_account__loan_application"
+    ).order_by("-archived_at", "-archive_record_id")
+    if search:
+        queryset = queryset.filter(
+            Q(loan_account__loan_account_number__icontains=search)
+            | Q(loan_account__member__legal_name__icontains=search)
+            | Q(file_location_physical__icontains=search)
+            | Q(file_location_digital__icontains=search)
+        )
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    rows = list(queryset[offset : offset + page_size])
+    AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.archive.manifest_searched",
+        entity_type="archive_manifest",
+        new_value_json={
+            "result_count": len(rows),
+            "page": page,
+            "page_size": page_size,
+            "search_applied": bool(search),
+        },
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+    return (
+        [_serialize_archive(row, replay=False) for row in rows],
+        {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        },
+    )
+
+
+@transaction.atomic
+def _archive_locked(
+    *, actor, archive_role, loan_closure_id, cleaned, payload_digest, request
+):
+    closure = (
+        LoanClosure.objects.select_for_update()
+        .select_related("loan_account__loan_application")
+        .filter(pk=loan_closure_id)
+        .first()
+    )
+    if closure is None or not _actor_in_archive_scope(actor=actor, closure=closure):
+        outcome = _record_archive_denied(
+            actor=actor,
+            loan_closure_id=loan_closure_id,
+            reason="loan_closure_scope_denied",
+            request=request,
+            message="The loan closure was not found or is inaccessible.",
+        )
+        outcome["kind"] = "not_found"
+        return outcome
+    retained = ArchiveRecord.objects.filter(
+        idempotency_key_digest=cleaned["idempotency_key_digest"]
+    ).first()
+    if retained is not None:
+        if (
+            retained.loan_closure_id == closure.pk
+            and retained.idempotency_key_digest == cleaned["idempotency_key_digest"]
+            and retained.payload_digest == payload_digest
+        ):
+            return {
+                "kind": "success",
+                "data": _serialize_archive(retained, replay=True),
+            }
+        return _record_archive_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="archive_already_exists",
+            request=request,
+            message="The retained archive manifest is read-only.",
+        )
+    retained = ArchiveRecord.objects.filter(loan_closure=closure).first()
+    if retained is not None:
+        return _record_archive_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="archive_already_exists",
+            request=request,
+            message="The retained archive manifest is read-only.",
+        )
+    requirements = {
+        row.requirement_type: row.requirement_status
+        for row in closure.requirements.select_for_update()
+    }
+    eligible = bool(
+        closure.closure_type == LoanClosure.TYPE_FULL_REPAYMENT
+        and closure.closure_stage == LoanClosure.STAGE_FINANCIALLY_CLOSED
+        and closure.loan_account.loan_account_status == "closed"
+        and closure.loan_account.closed_at == closure.closed_at
+        and NocRecord.objects.filter(loan_closure=closure).exists()
+        and requirements.get(ClosureRequirement.TYPE_NOC)
+        == ClosureRequirement.STATUS_COMPLETED
+        and requirements.get(ClosureRequirement.TYPE_SECURITY_RETURN)
+        in {
+            ClosureRequirement.STATUS_COMPLETED,
+            ClosureRequirement.STATUS_NOT_APPLICABLE,
+        }
+        and requirements.get(ClosureRequirement.TYPE_ARCHIVE)
+        == ClosureRequirement.STATUS_PENDING
+    )
+    if not eligible:
+        return _record_archive_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="archive_prerequisites_incomplete",
+            request=request,
+            message="Archive requires financial close, NOC, and all applicable security returns.",
+        )
+    retention_start = closure.closed_at.date()
+    minimum_retention = _eight_calendar_years_after(retention_start)
+    if cleaned["retention_start_date"] not in {None, retention_start}:
+        return _record_archive_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="retention_start_not_closure_date",
+            request=request,
+            message="Retention starts from the retained financial closure date.",
+        )
+    supplied_until = cleaned["retention_until_date"]
+    if supplied_until is not None and supplied_until < minimum_retention:
+        return _record_archive_denied(
+            actor=actor,
+            loan_closure_id=closure.pk,
+            reason="retention_period_too_short",
+            request=request,
+            message="Archive retention cannot be shorter than eight calendar years.",
+        )
+    retention_until = supplied_until or minimum_retention
+    archive_id = uuid.uuid4()
+    archived_at = timezone.now()
+    workflow = record_workflow_event(
+        actor=actor,
+        workflow_name="loan_closure",
+        entity_type="archive_record",
+        entity_id=archive_id,
+        from_state=LoanClosure.STAGE_FINANCIALLY_CLOSED,
+        to_state="fully_closed_and_archived",
+        trigger_reason="NOC and all applicable security-return prerequisites completed.",
+        action_code=ARCHIVE_CREATE_PERMISSION,
+    )
+    audit = AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.archive.created",
+        entity_type="archive_record",
+        entity_id=archive_id,
+        old_value_json=None,
+        new_value_json={
+            "loan_closure_id": str(closure.pk),
+            "loan_account_id": str(closure.loan_account_id),
+            "retention_start_date": retention_start.isoformat(),
+            "retention_until_date": retention_until.isoformat(),
+            "physical_location_recorded": bool(cleaned["file_location_physical"]),
+            "digital_location_recorded": bool(cleaned["file_location_digital"]),
+            "archived_by_role_code": archive_role,
+            "request_id": request.headers.get("X-Request-ID", "") if request else "",
+        },
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+    record = ArchiveRecord.objects.create(
+        archive_record_id=archive_id,
+        loan_closure=closure,
+        loan_account=closure.loan_account,
+        file_location_physical=cleaned["file_location_physical"],
+        file_location_digital=cleaned["file_location_digital"],
+        retention_start_date=retention_start,
+        retention_until_date=retention_until,
+        archived_by_user=actor,
+        archived_by_role_code=archive_role,
+        archived_at=archived_at,
+        destruction_eligible_flag=False,
+        idempotency_key_digest=cleaned["idempotency_key_digest"],
+        payload_digest=payload_digest,
+        archive_audit=audit,
+        archive_workflow_event=workflow,
+    )
+    if ClosureRequirement.complete_archive_requirement(loan_closure_id=closure.pk) != 1:
+        raise IntegrityError("Archive requirement was not in the expected pending state.")
+    return {"kind": "success", "data": _serialize_archive(record, replay=False)}
+
+
+def _validate_archive_request(payload, idempotency_key):
+    if not isinstance(payload, dict):
+        raise ArchiveValidation({"body": "Expected a JSON object."})
+    allowed = {
+        "file_location_physical",
+        "file_location_digital",
+        "retention_start_date",
+        "retention_until_date",
+    }
+    errors = {field: "Unknown field." for field in sorted(set(payload) - allowed)}
+    cleaned = {}
+    for field in ("file_location_physical", "file_location_digital"):
+        raw_value = payload.get(field)
+        if raw_value is not None and not isinstance(raw_value, str):
+            errors[field] = "Must be a string."
+        value = raw_value.strip() if isinstance(raw_value, str) else ""
+        if len(value) > 255:
+            errors[field] = "Must be at most 255 characters."
+        cleaned[field] = value or None
+    if not cleaned["file_location_physical"] and not cleaned["file_location_digital"]:
+        errors["file_location"] = "A physical or digital archive location is required."
+    for field in ("retention_start_date", "retention_until_date"):
+        value = payload.get(field)
+        if value in {None, ""}:
+            cleaned[field] = None
+            continue
+        try:
+            cleaned[field] = date.fromisoformat(str(value))
+        except ValueError:
+            errors[field] = "Must be an ISO date."
+    key = str(idempotency_key or "").strip()
+    if not key or len(key) > 255:
+        errors["Idempotency-Key"] = "Must be nonblank and at most 255 characters."
+    if errors:
+        raise ArchiveValidation(errors)
+    cleaned["idempotency_key_digest"] = hashlib.sha256(key.encode()).hexdigest()
+    return cleaned
+
+
+def _eight_calendar_years_after(value):
+    try:
+        return value.replace(year=value.year + 8)
+    except ValueError:
+        return value.replace(year=value.year + 8, month=3, day=1)
+
+
+def _require_archive_authority(actor):
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        not actor.can_authenticate()
+        or ARCHIVE_CREATE_PERMISSION not in permissions
+        or not roles.intersection(ARCHIVE_CREATE_ROLES)
+    ):
+        raise ClosurePermissionDenied
+    return (
+        "company_secretary"
+        if "company_secretary" in roles
+        else "compliance_team_member"
+    )
+
+
+def _actor_in_archive_scope(*, actor, closure):
+    access = evaluate_object_access(
+        actor_user_id=actor.pk,
+        actor_team_codes=actor.team_codes(),
+        actor_permission_codes=auth_service.effective_permission_codes(actor),
+        required_permission=ARCHIVE_CREATE_PERMISSION,
+        object_team_code="compliance",
+    )
+    return bool(
+        access.allowed
+        and closure.loan_account.loan_application.application_status
+        == closure.loan_account.loan_application.STATUS_APPROVED_BY_SANCTION
+    )
+
+
+def _archive_read_access(*, actor, record):
+    if not actor.can_authenticate():
+        return "forbidden"
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if ARCHIVE_READ_PERMISSION not in permissions:
+        return "forbidden"
+    allowed_roles = {
+        "company_secretary",
+        "compliance_team_member",
+        "internal_auditor",
+    }
+    if not roles.intersection(allowed_roles):
+        return "forbidden"
+    if record is None:
+        return "not_found"
+    if roles.intersection(ARCHIVE_CREATE_ROLES):
+        access = evaluate_object_access(
+            actor_user_id=actor.pk,
+            actor_team_codes=actor.team_codes(),
+            actor_permission_codes=permissions,
+            required_permission=ARCHIVE_READ_PERMISSION,
+            object_team_code="compliance",
+        )
+        approved = (
+            record.loan_closure.loan_account.loan_application.application_status
+            == record.loan_closure.loan_account.loan_application.STATUS_APPROVED_BY_SANCTION
+        )
+        return "allowed" if access.allowed and approved else "not_found"
+    from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
+
+    auditor_scope = ApprovalCaseReadScopeGrant.objects.filter(
+        role=actor.primary_role,
+        scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+        status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+    ).exists()
+    return "allowed" if auditor_scope else "not_found"
+
+
+def _require_archive_read_authority(*, actor, request):
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        not actor.can_authenticate()
+        or ARCHIVE_READ_PERMISSION not in permissions
+        or not roles.intersection(
+            {"company_secretary", "compliance_team_member", "internal_auditor"}
+        )
+    ):
+        _record_archive_read_denied(
+            actor=actor, loan_closure_id=None, request=request
+        )
+        raise ClosurePermissionDenied
+    if roles.intersection(ARCHIVE_CREATE_ROLES):
+        access = evaluate_object_access(
+            actor_user_id=actor.pk,
+            actor_team_codes=actor.team_codes(),
+            actor_permission_codes=permissions,
+            required_permission=ARCHIVE_READ_PERMISSION,
+            object_team_code="compliance",
+        )
+        if access.allowed:
+            return
+    else:
+        from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
+
+        if ApprovalCaseReadScopeGrant.objects.filter(
+            role=actor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+            status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+        ).exists():
+            return
+    _record_archive_read_denied(actor=actor, loan_closure_id=None, request=request)
+    raise ClosurePermissionDenied
+
+
+def _positive_archive_int(value, default):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
+@transaction.atomic
+def _record_archive_denied(
+    *, actor, loan_closure_id, reason, request, message=None
+):
+    AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.archive.create_denied",
+        entity_type="loan_closure",
+        entity_id=loan_closure_id,
+        new_value_json={"reason": reason},
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+    return {
+        "kind": "denied",
+        "message": message or "Archive creation failed retained eligibility checks.",
+    }
+
+
+@transaction.atomic
+def _record_archive_read_denied(*, actor, loan_closure_id, request):
+    AuditLog.objects.create(
+        actor_user=actor,
+        action="closure.archive.read_denied",
+        entity_type="loan_closure",
+        entity_id=loan_closure_id,
+        new_value_json={"reason": "archive_not_found_or_out_of_scope"},
+        ip_address=request_ip(request) if request else "",
+        user_agent=request_user_agent(request) if request else "",
+    )
+
+
+def _serialize_archive(record, *, replay):
+    return {
+        "archive_record_id": str(record.pk),
+        "loan_closure_id": str(record.loan_closure_id),
+        "loan_account_id": str(record.loan_account_id),
+        "file_location_physical": record.file_location_physical,
+        "file_location_digital": record.file_location_digital,
+        "retention_start_date": record.retention_start_date.isoformat(),
+        "retention_until_date": record.retention_until_date.isoformat(),
+        "archived_by_user_id": str(record.archived_by_user_id),
+        "archived_by_role_code": record.archived_by_role_code,
+        "archived_at": record.archived_at.isoformat().replace("+00:00", "Z"),
+        "destruction_eligible": timezone.localdate() >= record.retention_until_date,
+        "destruction_certificate_id": None,
+        "idempotency_replayed": replay,
+        "available_actions": [],
+    }
 
 
 def _serialize_close(closure, *, replay):
@@ -1127,3 +1654,6 @@ class LoanClosureModule:
     generate_noc = staticmethod(generate_noc)
     read_noc = staticmethod(read_noc)
     download_noc = staticmethod(download_noc)
+    archive = staticmethod(archive)
+    read_archive = staticmethod(read_archive)
+    search_archives = staticmethod(search_archives)

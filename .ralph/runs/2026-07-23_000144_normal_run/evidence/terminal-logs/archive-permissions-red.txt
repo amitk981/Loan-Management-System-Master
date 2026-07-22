@@ -1,0 +1,17 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_compliance_cs_and_auditor_receive_only_their_archive_authorities (sfpcl_credit.tests.test_archive_api.ArchivePermissionCatalogueTests.test_compliance_cs_and_auditor_receive_only_their_archive_authorities)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/tests/test_archive_api.py", line 154, in test_compliance_cs_and_auditor_receive_only_their_archive_authorities
+    self.assertIn("closure.archive.read", ROLE_PERMISSIONS["company_secretary"])
+AssertionError: 'closure.archive.read' not found in ['members.witness.read', 'members.witness.create', 'members.witness.update', 'approvals.case.read', 'approvals.sanction_register.read', 'defaults.case.read', 'documents.checklist.read', 'documents.checklist.update', 'documents.checklist.approve_cs', 'documents.loan_document.verify', 'documents.signature.resolve_mismatch', 'documents.stamp.record', 'documents.notary.record', 'security.package.read', 'security.package.create', 'security.poa.manage', 'security.sh4.manage', 'security.cdsl_pledge.manage', 'security.cdsl_pledge.reveal', 'security.blank_cheque.manage', 'security.custody.record', 'security.instrument.release', 'security.instrument.invoke', 'recovery.action.initiate', 'recovery.action.complete', 'closure.noc.issue', 'closure.security_return.record', 'closure.archive.create', 'compliance.control.read', 'compliance.task.update', 'compliance.evidence.submit', 'compliance.money_lending_review.manage', 'compliance.stamp_duty_review.manage', 'management_readonly', 'communications.notification.read']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...

@@ -1,0 +1,82 @@
+Using existing test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+...E....E
+======================================================================
+ERROR: test_auditor_reads_but_borrower_cannot_read_or_create_archive (sfpcl_credit.tests.test_archive_api.ArchiveRecordApiTests.test_auditor_reads_but_borrower_cannot_read_or_create_archive)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/tests/test_archive_api.py", line 254, in test_auditor_reads_but_borrower_cannot_read_or_create_archive
+    self.assertNotIn("Borrower supplied path", json.dumps(list(denied_audits.values())))
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/__init__.py", line 231, in dumps
+    return _default_encoder.encode(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type UUID is not JSON serializable
+
+======================================================================
+ERROR: test_short_or_forged_retention_is_rejected_then_exact_replay_is_read_only (sfpcl_credit.tests.test_archive_api.ArchiveRecordApiTests.test_short_or_forged_retention_is_rejected_then_exact_replay_is_read_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/tests/test_archive_api.py", line 138, in test_short_or_forged_retention_is_rejected_then_exact_replay_is_read_only
+    short = self._archive(
+            ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/tests/test_archive_api.py", line 280, in _archive
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/closure/views.py", line 258, in archive_record
+    archive(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/closure/modules/loan_closure.py", line 576, in archive
+    payload_digest = _digest(
+                     ^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_000144_normal_run/sfpcl_credit/closure/modules/loan_closure.py", line 552, in _digest
+    json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type date is not JSON serializable
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.811s
+
+FAILED (errors=2)
+Preserving test database for alias 'default'...

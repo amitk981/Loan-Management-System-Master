@@ -1,0 +1,10 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl_credit/closure/models.py
+ M sfpcl_credit/closure/modules/loan_closure.py
+ M sfpcl_credit/closure/views.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/tests/test_default_recovery_postgresql_acceptance.py
+?? .ralph/runs/2026-07-23_000144_normal_run/
+?? sfpcl_credit/closure/migrations/0004_archive_record.py
+?? sfpcl_credit/tests/test_archive_api.py

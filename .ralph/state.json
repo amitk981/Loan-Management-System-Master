@@ -327,14 +327,15 @@
     "011F-recovery-action-execution-shell",
     "011G-closure-readiness",
     "011H-noc-issuance",
-    "011I-security-return-and-cdsl-unpledge-tracking"
+    "011I-security-return-and-cdsl-unpledge-tracking",
+    "011J-archive-record-and-retention"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-22_225137_normal_run",
+  "last_run_id": "2026-07-23_005950_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 10,
+  "slices_completed_since_architecture_review": 11,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
