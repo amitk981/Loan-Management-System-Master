@@ -196,7 +196,7 @@ def serialize_case_detail(case, actor, actor_permissions):
     from sfpcl_credit.approvals.modules import general_meeting
 
     if case.approval_type == ApprovalCase.TYPE_RECOVERY:
-        return _serialize_recovery_case_detail(case)
+        return _serialize_recovery_case_detail(case, actor, actor_permissions)
     action_by_user = {
         str(action.approver_user_id): action for action in case.actions.all()
     }
@@ -218,16 +218,23 @@ def serialize_case_detail(case, actor, actor_permissions):
     return snapshot
 
 
-def _serialize_recovery_case_detail(case):
+def _serialize_recovery_case_detail(case, actor, actor_permissions):
+    action_by_user = {
+        str(action.approver_user_id): action for action in case.actions.all()
+    }
     return {
         **serialize_case_summary(case),
         "sanction_committee_id": str(case.sanction_committee_id),
         "sanction_committee_version": case.sanction_committee_version,
-        "route_approvers": list(case.required_approvers_json),
+        **serialize_case_authority(case),
         "review_facts": dict(case.appraisal_facts_json),
         "submitted_by_user_id": str(case.submitted_by_user_id),
         "submitted_at": _utc_time(case.submitted_at),
-        "available_actions": [],
+        "available_actions": (
+            _available_actions(case, actor, actor_permissions, action_by_user)
+            if recovery_case_is_routable(case)
+            else []
+        ),
     }
 
 
@@ -418,6 +425,8 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
         enabled = (
             case.current_status == ApprovalCase.STATUS_PENDING
             and pending_assignment
+            and actor_id not in action_by_user
+            and not conflict_reason
             and permission in actor_permissions
             and terminal_blocker is None
         )
@@ -459,6 +468,41 @@ def approval_case_action_availability(
             case, actor, set(actor_permissions), action_by_user
         )
         if action["action_code"] == action_code
+    )
+
+
+def recovery_case_is_routable(case):
+    """Validate the exact action-specific authority snapshot for recovery writes."""
+    if case.approval_type != ApprovalCase.TYPE_RECOVERY:
+        return False
+    facts = (
+        case.appraisal_facts_json
+        if isinstance(case.appraisal_facts_json, dict)
+        else {}
+    )
+    note = facts.get("non_payment_note")
+    matrix = case.matrix_projection_json
+    required = case.required_approvers_json
+    user_ids = (
+        [str(item.get("user_id")) for item in required if isinstance(item, dict)]
+        if isinstance(required, list)
+        else []
+    )
+    return (
+        approval_case_is_frozen_readable(case)
+        and case.version >= 2
+        and case.approval_matrix_rule_id is not None
+        and bool(case.approval_matrix_rule_version)
+        and isinstance(matrix, dict)
+        and matrix.get("approval_matrix_rule_id") == str(case.approval_matrix_rule_id)
+        and matrix.get("version_number") == case.approval_matrix_rule_version
+        and matrix.get("decision_type") == ApprovalCase.TYPE_RECOVERY
+        and matrix.get("condition_code") == case.reason_for_approval
+        and isinstance(note, dict)
+        and note.get("recommended_recovery_action") == case.reason_for_approval
+        and len(user_ids) == len(required)
+        and len(user_ids) == len(set(user_ids))
+        and ConflictOfInterestModule.authority_is_satisfiable(case)
     )
 
 

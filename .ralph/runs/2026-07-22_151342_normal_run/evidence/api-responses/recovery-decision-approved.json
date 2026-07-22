@@ -1,0 +1,53 @@
+[
+{
+  "evidence_note": "Representative response shape asserted by RecoveryDecisionApiTests.test_matching_terminal_approval_creates_one_frozen_decision; identifiers and timestamps are placeholders, not production data.",
+  "success": true,
+  "data": {
+    "recovery_decision_id": "00000000-0000-0000-0000-000000000001",
+    "default_case_id": "00000000-0000-0000-0000-000000000002",
+    "non_payment_note_id": "00000000-0000-0000-0000-000000000003",
+    "approval_case_id": "00000000-0000-0000-0000-000000000004",
+    "decision": "invoke_sh4",
+    "decision_reason": "Approved after reviewing the frozen Non-Payment Note.",
+    "status": "approved",
+    "approval_evidence": {
+      "approval_case_id": "00000000-0000-0000-0000-000000000004",
+      "approval_case_status": "approved",
+      "approval_matrix_rule_id": "00000000-0000-0000-0000-000000000005",
+      "approval_matrix_rule_version": "recovery-route-v1",
+      "approved_action": "invoke_sh4",
+      "required_approvers": [
+        {"role_code": "cfo", "user_id": "00000000-0000-0000-0000-000000000006", "full_name": "Configured CFO"},
+        {"role_code": "director", "user_id": "00000000-0000-0000-0000-000000000007", "full_name": "Configured Director One"},
+        {"role_code": "director", "user_id": "00000000-0000-0000-0000-000000000008", "full_name": "Configured Director Two"}
+      ],
+      "approval_actions": [
+        {"approval_action_id": "00000000-0000-0000-0000-000000000009", "approver_user_id": "00000000-0000-0000-0000-000000000006", "approver_role_code": "cfo", "approver_display_name": "Configured CFO", "decision": "approved", "acted_at": "2026-07-22T09:57:00Z"},
+        {"approval_action_id": "00000000-0000-0000-0000-000000000010", "approver_user_id": "00000000-0000-0000-0000-000000000007", "approver_role_code": "director", "approver_display_name": "Configured Director One", "decision": "approved", "acted_at": "2026-07-22T09:58:00Z"},
+        {"approval_action_id": "00000000-0000-0000-0000-000000000011", "approver_user_id": "00000000-0000-0000-0000-000000000008", "approver_role_code": "director", "approver_display_name": "Configured Director Two", "decision": "approved", "acted_at": "2026-07-22T09:59:00Z"}
+      ],
+      "closed_at": "2026-07-22T10:00:00Z"
+    },
+    "decided_by_user_id": "00000000-0000-0000-0000-000000000006",
+    "decided_by_role_code": "cfo",
+    "decided_at": "2026-07-22T10:00:01Z",
+    "available_actions": [
+      {
+        "action_code": "execute_recovery",
+        "action_type": "invoke_sh4",
+        "required_permission": "recovery.action.initiate"
+      }
+    ]
+  }
+},
+{
+  "evidence_note": "Representative negative response asserted by RecoveryDecisionApiTests.test_pending_rejected_incomplete_stale_and_mismatched_approval_are_blocked.",
+  "success": false,
+  "error": {
+    "code": "CONFLICT",
+    "message": "The approval case is not a matching terminal approval for this recovery action.",
+    "details": {},
+    "field_errors": {}
+  }
+}
+]

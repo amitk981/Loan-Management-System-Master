@@ -322,14 +322,15 @@
     "011A-default-case-opening",
     "011B-grace-period-tracking",
     "011C-extension-note-workflow",
-    "011D-non-payment-note-workflow"
+    "011D-non-payment-note-workflow",
+    "011E-recovery-decision-approval"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-22_143202_repair",
+  "last_run_id": "2026-07-22_160215_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 5,
+  "slices_completed_since_architecture_review": 6,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

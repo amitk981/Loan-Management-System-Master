@@ -1,0 +1,13 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.RecoveryDecisionPostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --verbosity 1
+
+Result: PASS, exit 0
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Ran 1 test in 6.066s
+OK
+
+The test released five simultaneous HTTP requests against PostgreSQL and asserted one retained
+RecoveryDecision identity, one `recovery_decision.created` audit row, and one recovery-decision
+workflow event. This is the exact class and positive count declared by slice 011E.

@@ -165,7 +165,7 @@ def _record_action(
     if identifiers is None:
         raise ApprovalCase.DoesNotExist
     if identifiers["approval_type"] == ApprovalCase.TYPE_RECOVERY:
-        return _record_recovery_return(
+        return _record_recovery_action(
             actor=actor,
             case_id=case_id,
             action_code=action_code,
@@ -497,7 +497,7 @@ def _record_action(
     }
 
 
-def _record_recovery_return(
+def _record_recovery_action(
     *, actor, case_id, action_code, version, comments, actor_permissions, request_meta
 ):
     case = (
@@ -514,12 +514,13 @@ def _record_recovery_return(
             code="OBJECT_ACCESS_DENIED",
             status=403,
         )
-    if action_code != "return":
+    if not approval_case_engine.recovery_case_is_routable(case):
         raise ApprovalActionConflict(
-            "Recovery decisions are not available at the Non-Payment Note stage.",
+            "The recovery approval route is incomplete or stale.",
             code="TRANSITION_CONFLICT",
         )
-    if "approvals.case.return" not in actor_permissions:
+    permission = _ACTION_SPECS[action_code].required_permission
+    if permission not in actor_permissions:
         raise ApprovalActionConflict(
             "Required permission is not granted.", code="FORBIDDEN", status=403
         )
@@ -529,10 +530,23 @@ def _record_recovery_return(
         )
     if case.version != version:
         raise ApprovalActionConflict("Approval case version is stale.", code="STALE_VERSION")
+    conflict_reason = ConflictOfInterestModule.conflict_reason(
+        case=case, actor_id=actor.pk
+    )
+    if conflict_reason:
+        raise ApprovalActionConflict(
+            "This user is marked as conflicted for the approval case and cannot approve it.",
+            code="CONFLICTED_APPROVER_NOT_ALLOWED",
+            details={
+                "approval_case_id": str(case.pk),
+                "conflict_reason": conflict_reason,
+            },
+        )
+    effective_approvers = ConflictOfInterestModule.effective_approvers(case)
     authority = next(
         (
             item
-            for item in case.required_approvers_json
+            for item in effective_approvers
             if isinstance(item, dict) and str(item.get("user_id")) == str(actor.pk)
         ),
         None,
@@ -543,21 +557,71 @@ def _record_recovery_return(
             code="OBJECT_ACCESS_DENIED",
             status=403,
         )
+    if case.actions.filter(approver_user=actor).exists():
+        raise ApprovalActionConflict(
+            "You have already acted on this approval case.",
+            code="TRANSITION_CONFLICT",
+        )
+    decision_code = {
+        "approve": "approved",
+        "reject": "rejected",
+        "return": "returned",
+        "abstain": "abstained",
+    }[action_code]
     action = ApprovalAction.objects.create(
         approval_case=case,
         approver_user=actor,
         approver_role_code=authority["role_code"],
-        approver_display_name=authority["full_name"],
-        decision="returned",
+        approver_display_name=authority.get("full_name") or actor.full_name,
+        decision=decision_code,
         comments=comments,
         ip_address=request_meta.get("ip_address") or None,
         user_agent=request_meta.get("user_agent") or None,
     )
     previous_status = case.current_status
-    case.current_status = ApprovalCase.STATUS_RETURNED
-    case.closed_at = timezone.now()
+    approved_ids = set(
+        str(value)
+        for value in case.actions.filter(decision="approved").values_list(
+            "approver_user_id", flat=True
+        )
+    )
+    required_ids = {str(item["user_id"]) for item in effective_approvers}
+    if action_code == "approve" and approved_ids == required_ids:
+        case.current_status = ApprovalCase.STATUS_APPROVED
+        case.closed_at = timezone.now()
+    elif action_code == "reject":
+        case.current_status = ApprovalCase.STATUS_REJECTED
+        case.reason_for_rejection = comments
+        case.closed_at = timezone.now()
+    elif action_code == "return":
+        case.current_status = ApprovalCase.STATUS_RETURNED
+        case.closed_at = timezone.now()
+    elif action_code == "abstain":
+        case.excluded_approvers_json = [
+            *case.excluded_approvers_json,
+            {
+                "user_id": str(actor.pk),
+                "conflict_code": "self_declared_abstention",
+                "reason": comments,
+            },
+        ]
+        if not ConflictOfInterestModule.authority_is_satisfiable(case):
+            case.current_status = ApprovalCase.STATUS_BLOCKED_CONFLICT
+            case.conflict_block_reason = ConflictOfInterestModule.authority_gap_reason(
+                case
+            )
+            case.closed_at = timezone.now()
     case.version += 1
-    case.save(update_fields=["current_status", "closed_at", "version"])
+    case.save(
+        update_fields=[
+            "current_status",
+            "reason_for_rejection",
+            "closed_at",
+            "excluded_approvers_json",
+            "conflict_block_reason",
+            "version",
+        ]
+    )
     AuditLog.objects.create(
         actor_user=actor,
         action="approval_case.action_recorded",

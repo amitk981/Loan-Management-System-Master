@@ -42,7 +42,7 @@ class NonPaymentNoteWorkflowApiTests(TestCase):
         user_fixture._grant(assessor, "defaults.non_payment_note.create")
         return assessor, auth
 
-    def _create_note(self):
+    def _create_note(self, recommended_recovery_action="present_to_sanction_committee"):
         case_id = self._expired_case()
         creator, auth = self._creator()
         payload = {
@@ -50,7 +50,7 @@ class NonPaymentNoteWorkflowApiTests(TestCase):
             "intentionality_assessment": "unclear",
             "outstanding_principal_amount": "300000.00",
             "outstanding_interest_amount": "45000.00",
-            "recommended_recovery_action": "present_to_sanction_committee",
+            "recommended_recovery_action": recommended_recovery_action,
         }
         response = self.client.post(
             f"/api/v1/default-cases/{case_id}/non-payment-note/",
@@ -61,10 +61,15 @@ class NonPaymentNoteWorkflowApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         return response.json()["data"], auth
 
-    def _configure_committee(self):
-        from sfpcl_credit.approvals.models import SanctionCommittee
+    def _configure_committee(
+        self, recovery_action="present_to_sanction_committee"
+    ):
+        from sfpcl_credit.approvals.models import ApprovalMatrixRule, SanctionCommittee
 
         SanctionCommittee.objects.update(status=SanctionCommittee.STATUS_INACTIVE)
+        ApprovalMatrixRule.objects.filter(decision_type="recovery").update(
+            status=ApprovalMatrixRule.STATUS_INACTIVE
+        )
         user_fixture = self.fixture.fixture.fixture.fixture.fixture.fixture.owner.fixture.fixture
         cfo = user_fixture._user("cfo", "Recovery CFO")
         director_1 = user_fixture._user("director", "Recovery Director One")
@@ -81,6 +86,16 @@ class NonPaymentNoteWorkflowApiTests(TestCase):
             effective_from=date(2026, 1, 1),
             status=SanctionCommittee.STATUS_ACTIVE,
             version_number="recovery-v1",
+        )
+        ApprovalMatrixRule.objects.create(
+            decision_type="recovery",
+            condition_code=recovery_action,
+            required_approver_roles_json=["cfo", "director"],
+            required_director_count=2,
+            joint_approval_required_flag=True,
+            effective_from=date(2026, 1, 1),
+            status=ApprovalMatrixRule.STATUS_ACTIVE,
+            version_number="recovery-route-v1",
         )
         return committee, [cfo, director_1, director_2]
 
@@ -180,7 +195,15 @@ class NonPaymentNoteWorkflowApiTests(TestCase):
             f"/api/v1/approval-cases/{case.pk}/", **auth_fixture._auth(approvers[0])
         )
         self.assertEqual(committee_read.status_code, 200, committee_read.content)
-        self.assertEqual(committee_read.json()["data"]["available_actions"], [])
+        recovery_actions = committee_read.json()["data"]["available_actions"]
+        self.assertEqual(
+            [action["action_code"] for action in recovery_actions],
+            ["approve", "reject", "return", "abstain"],
+        )
+        self.assertEqual(
+            [action["action_code"] for action in recovery_actions if action["enabled"]],
+            ["return"],
+        )
 
         from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 

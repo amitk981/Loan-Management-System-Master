@@ -366,3 +366,66 @@ class NonPaymentNotePostgreSQLAcceptanceTests(TransactionTestCase):
         )
         self.assertEqual(NonPaymentNote.objects.get().status, NonPaymentNote.STATUS_SUBMITTED)
         self.assertEqual(AuditLog.objects.filter(action="non_payment_note.submitted").count(), 1)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class RecoveryDecisionPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_recovery_decision_api import (
+            RecoveryDecisionApiTests,
+        )
+
+        fixture = RecoveryDecisionApiTests(
+            "test_matching_terminal_approval_creates_one_frozen_decision"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+
+    def test_five_concurrent_exact_decisions_retain_one_record_and_event_chain(self):
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.recovery.models import RecoveryDecision
+        from sfpcl_credit.workflows.models import WorkflowEvent
+
+        created, case, approvers, _ = self.fixture._submitted_case()
+        self.fixture._force_terminal_approval(case, approvers)
+        auth = self.fixture._grant_decider(approvers[0])
+        payload = self.fixture._decision_payload(case)
+        barrier = Barrier(5)
+
+        def decide(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/default-cases/{created['default_case_id']}"
+                    "/recovery-decision/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                    **auth,
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            responses = list(pool.map(decide, range(5)))
+
+        self.assertEqual([response.status_code for response in responses], [200] * 5)
+        self.assertEqual(
+            len(
+                {
+                    response.json()["data"]["recovery_decision_id"]
+                    for response in responses
+                }
+            ),
+            1,
+        )
+        self.assertEqual(RecoveryDecision.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="recovery_decision.created").count(), 1
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="recovery_decision").count(),
+            1,
+        )

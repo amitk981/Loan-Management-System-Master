@@ -11,6 +11,62 @@ from sfpcl_credit.recovery.modules.recovery_workflow import (
     api_create_non_payment_note,
     api_submit_non_payment_note,
 )
+from sfpcl_credit.recovery.modules.recovery_decision import (
+    RecoveryDecisionConflict,
+    RecoveryDecisionNotFound,
+    RecoveryDecisionPermissionDenied,
+    RecoveryDecisionValidation,
+    api_create_recovery_decision,
+)
+
+
+@require_http_methods(["POST"])
+def recovery_decision_create(request, default_case_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            api_create_recovery_decision(
+                actor=actor,
+                default_case_id=default_case_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except RecoveryDecisionValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Recovery Decision failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Recovery Decision failed validation.",
+            {"body": exc.messages[0]},
+        )
+    except RecoveryDecisionPermissionDenied:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "Configured recovery decision authority is required.",
+        )
+    except RecoveryDecisionNotFound:
+        return error_response(
+            request,
+            404,
+            "NOT_FOUND",
+            "The default or approval case was not found.",
+        )
+    except RecoveryDecisionConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
 
 
 @require_http_methods(["POST"])

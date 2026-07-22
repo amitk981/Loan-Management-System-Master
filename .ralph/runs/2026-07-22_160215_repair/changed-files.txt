@@ -1,0 +1,19 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/approvals/modules/approval_actions.py
+ M sfpcl_credit/approvals/modules/approval_case_engine.py
+ M sfpcl_credit/approvals/modules/recovery_handoff.py
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/recovery/views.py
+ M sfpcl_credit/tests/test_credit_model_ownership_migration.py
+ M sfpcl_credit/tests/test_default_recovery_postgresql_acceptance.py
+ M sfpcl_credit/tests/test_non_payment_note_workflow_api.py
+ M sfpcl_credit/tests/test_witness_evidence_migration.py
+?? .ralph/runs/2026-07-22_151342_normal_run/
+?? .ralph/runs/2026-07-22_160215_repair/
+?? sfpcl_credit/recovery/apps.py
+?? sfpcl_credit/recovery/migrations/
+?? sfpcl_credit/recovery/models.py
+?? sfpcl_credit/recovery/modules/recovery_decision.py
+?? sfpcl_credit/tests/test_recovery_decision_api.py

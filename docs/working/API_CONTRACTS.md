@@ -21,8 +21,9 @@ changed replay returns `409 CONFLICT`. Exact replay returns the retained note wi
 JSON object. The actor must be a Credit Manager with `defaults.non_payment_note.submit`. Submission
 rechecks locked case and canonical balances, freezes UTC submission time, moves the default case to
 `recovery_decision_pending`, and creates/reuses one approval-owned recovery chain containing the
-effective configured Sanction Committee snapshot and immutable note facts. It enables no recovery
-decision/action in 011D. Exact replay returns the retained result without writes; unknown fields are
+effective configured Sanction Committee snapshot, the exact `recovery` approval-matrix rule selected
+by `condition_code = recommended_recovery_action`, and immutable note facts. Exact replay returns the
+retained result without writes; unknown fields are
 `400 VALIDATION_ERROR`, missing authority is `403 FORBIDDEN`, inaccessible identifiers are
 `404 NOT_FOUND`, and changed/stale state or unavailable/ambiguous committee configuration is
 `409 CONFLICT`.
@@ -31,7 +32,39 @@ Decision inputs and the generated document are immutable after submission. A cha
 is accepted only after the linked approval case is explicitly `returned_for_clarification`; that
 return is audited, the corrected draft gets a new retained PDF, and later resubmission creates the
 next case in the same approval chain. Default-case detail projects the note to authorised Credit,
-configured-approver, and Auditor readers with `available_actions: []` at this stage.
+configured-approver, and Auditor readers. Approval-case detail derives approve/reject/return/abstain
+availability from the existing approval owner and its exact permission, assignment, conflict, and
+version evidence.
+
+## Recovery Decision approval (011E)
+
+`POST /api/v1/default-cases/{default_case_id}/recovery-decision/` accepts exactly:
+
+```json
+{
+  "approval_case_id": "uuid",
+  "decision": "invoke_sh4",
+  "decision_reason": "Approved after reviewing the frozen Non-Payment Note."
+}
+```
+
+The actor must retain critical permission `recovery.decision.create`, be one of the distinct frozen
+required authorities, and have recorded an approved action in that case. The locked approval case
+must be the note's recovery case, be terminal `approved`, retain every conflict-free required
+approval, and freeze the same action in the Non-Payment Note recommendation, approval reason, and
+effective recovery matrix `condition_code`. Missing/pending/rejected/returned/foreign, incomplete,
+stale, or mismatched evidence returns `404 NOT_FOUND` or `409 CONFLICT` without a decision.
+
+One immutable decision is retained per default, note, and approval case with the reason, exact matrix
+and authority evidence, approver action identities, attributable role code, UTC time, audit row, and
+workflow event. Exact replay returns that record without writes; changed replay or a second decision
+returns `409 CONFLICT`. Unknown/forged fields, missing reason, or malformed UUIDs return
+`400 VALIDATION_ERROR`; missing permission or non-authority actors return `403 FORBIDDEN`.
+
+Approved `invoke_sh4`, `invoke_cdsl`, and `present_blank_dated_cheque` decisions expose exactly one
+future `execute_recovery` action requiring `recovery.action.initiate`. `continue_follow_up`,
+`no_action`, and any other specifically configured retained decision expose no executable action;
+011F owns actual execution and any further configured action mapping.
 
 ## Communication exception queue (009H9B)
 

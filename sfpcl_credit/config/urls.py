@@ -37,6 +37,11 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/default-cases/<uuid:default_case_id>/recovery-decision/",
+        recovery_views.recovery_decision_create,
+        name="default-case-recovery-decision",
+    ),
+    path(
         "api/v1/default-cases/<uuid:default_case_id>/non-payment-note/",
         recovery_views.non_payment_note_create,
         name="default-case-non-payment-note",
