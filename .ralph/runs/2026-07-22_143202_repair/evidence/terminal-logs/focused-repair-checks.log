@@ -1,0 +1,15 @@
+Focused workflow regression after final lock-target repair
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+......
+----------------------------------------------------------------------
+Ran 6 tests in 3.926s
+
+OK
+Destroying test database for alias 'default'...
+Django system check
+System check identified no issues (0 silenced).
+Migration drift check
+No changes detected
+Exit code: 0

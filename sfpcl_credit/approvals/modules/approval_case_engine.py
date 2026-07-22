@@ -22,7 +22,7 @@ from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 
 
 _LIST_PARAMS = {"page", "page_size", "current_status", "approval_type", "assigned_to_me"}
-_LIST_APPROVAL_TYPES = {ApprovalCase.TYPE_SANCTION}
+_LIST_APPROVAL_TYPES = {ApprovalCase.TYPE_SANCTION, ApprovalCase.TYPE_RECOVERY}
 _LIST_STATUSES = {
     ApprovalCase.STATUS_PENDING,
     ApprovalCase.STATUS_APPROVED,
@@ -66,7 +66,7 @@ def approval_case_is_readable(
     actor_permissions=None,
 ):
     """Apply the single canonical frozen-valid and attributable read decision."""
-    return is_routable_approval_case(case) and can_read_approval_case(
+    return approval_case_is_frozen_readable(case) and can_read_approval_case(
         actor=actor,
         case=case,
         persisted_scope_type=persisted_scope_type,
@@ -145,7 +145,7 @@ def get_approval_case(*, actor, case_id, actor_permissions):
     if not approval_case_is_readable(
         actor=actor, case=case, actor_permissions=actor_permissions
     ):
-        if not is_routable_approval_case(case):
+        if not approval_case_is_frozen_readable(case):
             raise ApprovalCase.DoesNotExist
         raise DomainObjectAccessDenied(
             ObjectAccessResult(
@@ -195,6 +195,8 @@ def serialize_case_summary(case):
 def serialize_case_detail(case, actor, actor_permissions):
     from sfpcl_credit.approvals.modules import general_meeting
 
+    if case.approval_type == ApprovalCase.TYPE_RECOVERY:
+        return _serialize_recovery_case_detail(case)
     action_by_user = {
         str(action.approver_user_id): action for action in case.actions.all()
     }
@@ -214,6 +216,19 @@ def serialize_case_detail(case, actor, actor_permissions):
         "available_actions": available_actions,
     }
     return snapshot
+
+
+def _serialize_recovery_case_detail(case):
+    return {
+        **serialize_case_summary(case),
+        "sanction_committee_id": str(case.sanction_committee_id),
+        "sanction_committee_version": case.sanction_committee_version,
+        "route_approvers": list(case.required_approvers_json),
+        "review_facts": dict(case.appraisal_facts_json),
+        "submitted_by_user_id": str(case.submitted_by_user_id),
+        "submitted_at": _utc_time(case.submitted_at),
+        "available_actions": [],
+    }
 
 
 def serialize_case_snapshot(case):
@@ -487,6 +502,41 @@ def is_routable_approval_case(case):
         and _conflict_authority_state_is_coherent(case)
         and _loan_limit_provenance_is_complete(case)
         and _review_snapshot_is_readable(case)
+    )
+
+
+def approval_case_is_frozen_readable(case):
+    if case.approval_type != ApprovalCase.TYPE_RECOVERY:
+        return is_routable_approval_case(case)
+    facts = case.appraisal_facts_json
+    note = facts.get("non_payment_note") if isinstance(facts, dict) else None
+    required = case.required_approvers_json
+    committee = case.committee_projection_json
+    return (
+        case.related_entity_type == "non_payment_note"
+        and case.related_entity_id is not None
+        and case.sanction_committee_id is not None
+        and bool(case.sanction_committee_version)
+        and case.decision_date is not None
+        and case.amount is not None
+        and isinstance(required, list)
+        and bool(required)
+        and all(
+            isinstance(item, dict)
+            and item.get("role_code")
+            and item.get("user_id")
+            and item.get("full_name")
+            for item in required
+        )
+        and isinstance(committee, dict)
+        and committee.get("sanction_committee_id") == str(case.sanction_committee_id)
+        and committee.get("version_number") == case.sanction_committee_version
+        and isinstance(note, dict)
+        and note.get("non_payment_note_id") == str(case.related_entity_id)
+        and note.get("default_case_id")
+        and note.get("loan_account_id")
+        and note.get("reason_for_non_payment")
+        and note.get("recommended_recovery_action")
     )
 
 

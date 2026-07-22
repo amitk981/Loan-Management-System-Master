@@ -257,3 +257,112 @@ class ExtensionNotePostgreSQLAcceptanceTests(TransactionTestCase):
         self.assertEqual(ExtensionNote.objects.get().status, "expired")
         self.assertEqual(ScheduledJob.objects.filter(job_type="default_assessment").count(), 2)
         self.assertEqual(AuditLog.objects.filter(action="extension.expired").count(), 1)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class NonPaymentNotePostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_non_payment_note_workflow_api import (
+            NonPaymentNoteWorkflowApiTests,
+        )
+
+        fixture = NonPaymentNoteWorkflowApiTests(
+            "test_expired_unpaid_extension_creates_one_frozen_source_derived_draft"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+
+    def test_five_concurrent_exact_creates_converge_on_one_note(self):
+        from sfpcl_credit.defaults.models import NonPaymentNote
+        from sfpcl_credit.identity.models import AuditLog
+
+        case_id = self.fixture._expired_case()
+        _, auth = self.fixture._creator()
+        payload = {
+            "reason_for_non_payment": "Concurrent extension failure narrative.",
+            "intentionality_assessment": "unclear",
+            "outstanding_principal_amount": "300000.00",
+            "outstanding_interest_amount": "45000.00",
+            "recommended_recovery_action": "present_to_sanction_committee",
+        }
+        barrier = Barrier(5)
+
+        def create(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/default-cases/{case_id}/non-payment-note/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                    **auth,
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            responses = list(pool.map(create, range(5)))
+
+        self.assertEqual([response.status_code for response in responses], [200] * 5)
+        self.assertEqual(
+            len(
+                {
+                    response.json()["data"]["non_payment_note_id"]
+                    for response in responses
+                }
+            ),
+            1,
+        )
+        self.assertEqual(NonPaymentNote.objects.count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="non_payment_note.created").count(), 1)
+
+    def test_five_concurrent_exact_submits_converge_on_one_approval_chain(self):
+        from sfpcl_credit.approvals.models import ApprovalCase
+        from sfpcl_credit.defaults.models import NonPaymentNote
+        from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission
+
+        created, _ = self.fixture._create_note()
+        self.fixture._configure_committee()
+        permission, _ = Permission.objects.get_or_create(
+            permission_code="defaults.non_payment_note.submit",
+            defaults={
+                "permission_name": "Submit Non-Payment Note",
+                "module_name": "defaults",
+                "risk_level": "high",
+            },
+        )
+        RolePermission.objects.get_or_create(
+            role=self.fixture.fixture.actor.primary_role,
+            permission=permission,
+        )
+        barrier = Barrier(5)
+
+        def submit(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/non-payment-notes/{created['non_payment_note_id']}"
+                    "/submit-to-sanction-committee/",
+                    data=json.dumps({}),
+                    content_type="application/json",
+                    **self.fixture.fixture.auth,
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            responses = list(pool.map(submit, range(5)))
+
+        self.assertEqual([response.status_code for response in responses], [200] * 5)
+        self.assertEqual(
+            len({response.json()["data"]["approval_case_id"] for response in responses}),
+            1,
+        )
+        self.assertEqual(
+            ApprovalCase.objects.filter(approval_type=ApprovalCase.TYPE_RECOVERY).count(), 1
+        )
+        self.assertEqual(NonPaymentNote.objects.get().status, NonPaymentNote.STATUS_SUBMITTED)
+        self.assertEqual(AuditLog.objects.filter(action="non_payment_note.submitted").count(), 1)

@@ -359,6 +359,7 @@ ROLE_PERMISSIONS = {
         "credit.risk_assessment.manage",
         "defaults.case.read",
         "defaults.assessment.create",
+        "defaults.non_payment_note.create",
     ],
     "credit_manager": [
         "members.witness.read",
@@ -396,7 +397,7 @@ ROLE_PERMISSIONS = {
         "defaults.case.open",
         "defaults.assessment.create",
         "defaults.extension.grant",
-        "defaults.non_payment_note.create",
+        "defaults.non_payment_note.submit",
         "closure.readiness.read",
         "closure.loan.close",
         "management_readonly",

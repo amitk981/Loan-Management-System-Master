@@ -26,6 +26,7 @@ from sfpcl_credit.identity.views import (
 from sfpcl_credit.legal_documents import views as legal_document_views
 from sfpcl_credit.loans import views as loan_views
 from sfpcl_credit.monitoring import views as monitoring_views
+from sfpcl_credit.recovery import views as recovery_views
 from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
@@ -35,6 +36,16 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/default-cases/<uuid:default_case_id>/non-payment-note/",
+        recovery_views.non_payment_note_create,
+        name="default-case-non-payment-note",
+    ),
+    path(
+        "api/v1/non-payment-notes/<uuid:non_payment_note_id>/submit-to-sanction-committee/",
+        recovery_views.non_payment_note_submit,
+        name="non-payment-note-submit-to-sanction-committee",
+    ),
     path(
         "api/v1/loan-accounts/<uuid:loan_account_id>/default-cases/open/",
         default_views.default_case_open,

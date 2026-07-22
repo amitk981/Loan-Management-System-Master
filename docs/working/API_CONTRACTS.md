@@ -1,5 +1,38 @@
 # API Contracts
 
+## Non-Payment Note workflow (011D)
+
+`POST /api/v1/default-cases/{default_case_id}/non-payment-note/` accepts exactly the five fields in
+source API §§35.6: required trimmed `reason_for_non_payment`, `intentionality_assessment`
+(`intentional`, `non_intentional`, or `unclear`), decimal `outstanding_principal_amount`, decimal
+`outstanding_interest_amount`, and required trimmed `recommended_recovery_action`. The authenticated
+actor must belong to the Credit Assessment Team and retain `defaults.non_payment_note.create`.
+Principal and interest are assertions only: both must equal the locked canonical loan-account
+balances. Evidence is inherited from the current default assessment and cannot be caller-substituted.
+
+Creation requires one unpaid, open case whose one-year Extension Note has reached the retained
+`expired` transition. It creates/replays one draft, freezes due/grace/extension/assessment/evidence
+facts, generates one restricted retained PDF through the document owner, and audits the actor and
+snapshot. Unknown fields, malformed/negative amounts, or missing narrative return
+`400 VALIDATION_ERROR`; inaccessible identifiers return `404 NOT_FOUND`; premature/cured/closed or
+changed replay returns `409 CONFLICT`. Exact replay returns the retained note without writes.
+
+`POST /api/v1/non-payment-notes/{non_payment_note_id}/submit-to-sanction-committee/` accepts an empty
+JSON object. The actor must be a Credit Manager with `defaults.non_payment_note.submit`. Submission
+rechecks locked case and canonical balances, freezes UTC submission time, moves the default case to
+`recovery_decision_pending`, and creates/reuses one approval-owned recovery chain containing the
+effective configured Sanction Committee snapshot and immutable note facts. It enables no recovery
+decision/action in 011D. Exact replay returns the retained result without writes; unknown fields are
+`400 VALIDATION_ERROR`, missing authority is `403 FORBIDDEN`, inaccessible identifiers are
+`404 NOT_FOUND`, and changed/stale state or unavailable/ambiguous committee configuration is
+`409 CONFLICT`.
+
+Decision inputs and the generated document are immutable after submission. A changed create request
+is accepted only after the linked approval case is explicitly `returned_for_clarification`; that
+return is audited, the corrected draft gets a new retained PDF, and later resubmission creates the
+next case in the same approval chain. Default-case detail projects the note to authorised Credit,
+configured-approver, and Auditor readers with `available_actions: []` at this stage.
+
 ## Communication exception queue (009H9B)
 
 `GET /api/v1/communication-exceptions/`

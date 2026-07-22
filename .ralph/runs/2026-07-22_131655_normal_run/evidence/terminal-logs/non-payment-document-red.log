@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_expired_unpaid_extension_creates_one_frozen_source_derived_draft (sfpcl_credit.tests.test_non_payment_note_workflow_api.NonPaymentNoteWorkflowApiTests.test_expired_unpaid_extension_creates_one_frozen_source_derived_draft)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "./sfpcl_credit/tests/test_non_payment_note_workflow_api.py", line 126, in test_expired_unpaid_extension_creates_one_frozen_source_derived_draft
+    self.assertEqual(data["document_id"], str(note.loan_document_id))
+                     ~~~~^^^^^^^^^^^^^^^
+KeyError: 'document_id'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.652s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

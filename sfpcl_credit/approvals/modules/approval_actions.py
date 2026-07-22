@@ -160,10 +160,20 @@ def _record_action(
     version = _submitted_version(payload)
     comments = _comments(payload, required=action_code in {"reject", "return", "abstain"})
     identifiers = ApprovalCase.objects.filter(pk=case_id).values(
-        "loan_application_id", "loan_appraisal_note_id"
+        "loan_application_id", "loan_appraisal_note_id", "approval_type"
     ).first()
     if identifiers is None:
         raise ApprovalCase.DoesNotExist
+    if identifiers["approval_type"] == ApprovalCase.TYPE_RECOVERY:
+        return _record_recovery_return(
+            actor=actor,
+            case_id=case_id,
+            action_code=action_code,
+            version=version,
+            comments=comments,
+            actor_permissions=set(actor_permissions),
+            request_meta=request_meta or {},
+        )
 
     application = LoanApplication.objects.select_for_update().get(
         pk=identifiers["loan_application_id"]
@@ -484,6 +494,106 @@ def _record_action(
         "approval_case_status": case.current_status,
         "sanction_decision_created": decision is not None,
         "sanction_decision_id": str(decision.pk) if decision else None,
+    }
+
+
+def _record_recovery_return(
+    *, actor, case_id, action_code, version, comments, actor_permissions, request_meta
+):
+    case = (
+        ApprovalCase.objects.select_for_update(of=("self",))
+        .select_related("loan_application", "submitted_by_user")
+        .prefetch_related("actions")
+        .get(pk=case_id)
+    )
+    if not approval_case_engine.approval_case_is_readable(
+        actor=actor, case=case, actor_permissions=actor_permissions
+    ):
+        raise ApprovalActionConflict(
+            "You cannot access this approval case.",
+            code="OBJECT_ACCESS_DENIED",
+            status=403,
+        )
+    if action_code != "return":
+        raise ApprovalActionConflict(
+            "Recovery decisions are not available at the Non-Payment Note stage.",
+            code="TRANSITION_CONFLICT",
+        )
+    if "approvals.case.return" not in actor_permissions:
+        raise ApprovalActionConflict(
+            "Required permission is not granted.", code="FORBIDDEN", status=403
+        )
+    if case.current_status != ApprovalCase.STATUS_PENDING:
+        raise ApprovalActionConflict(
+            "Approval case is not pending.", code="TRANSITION_CONFLICT"
+        )
+    if case.version != version:
+        raise ApprovalActionConflict("Approval case version is stale.", code="STALE_VERSION")
+    authority = next(
+        (
+            item
+            for item in case.required_approvers_json
+            if isinstance(item, dict) and str(item.get("user_id")) == str(actor.pk)
+        ),
+        None,
+    )
+    if authority is None:
+        raise ApprovalActionConflict(
+            "You are not assigned to this approval case.",
+            code="OBJECT_ACCESS_DENIED",
+            status=403,
+        )
+    action = ApprovalAction.objects.create(
+        approval_case=case,
+        approver_user=actor,
+        approver_role_code=authority["role_code"],
+        approver_display_name=authority["full_name"],
+        decision="returned",
+        comments=comments,
+        ip_address=request_meta.get("ip_address") or None,
+        user_agent=request_meta.get("user_agent") or None,
+    )
+    previous_status = case.current_status
+    case.current_status = ApprovalCase.STATUS_RETURNED
+    case.closed_at = timezone.now()
+    case.version += 1
+    case.save(update_fields=["current_status", "closed_at", "version"])
+    AuditLog.objects.create(
+        actor_user=actor,
+        action="approval_case.action_recorded",
+        entity_type="approval_case",
+        entity_id=case.pk,
+        old_value_json={"current_status": previous_status},
+        new_value_json={
+            "approval_action_id": str(action.pk),
+            "decision": action.decision,
+            "comments": action.comments,
+            "current_status": case.current_status,
+            "related_entity_type": case.related_entity_type,
+            "related_entity_id": str(case.related_entity_id),
+            "request_id": request_meta.get("request_id"),
+        },
+        ip_address=request_meta.get("ip_address", ""),
+        user_agent=request_meta.get("user_agent", ""),
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="recovery_approval",
+        entity_type="approval_case",
+        entity_id=case.pk,
+        from_state=previous_status,
+        to_state=case.current_status,
+        trigger_reason=comments,
+        action_code="approval_case.action_recorded",
+        metadata={"non_payment_note_id": str(case.related_entity_id)},
+    )
+    return {
+        **approval_case_engine.serialize_case_detail(case, actor, actor_permissions),
+        "approval_action_id": str(action.pk),
+        "decision": action.decision,
+        "approval_case_status": case.current_status,
+        "sanction_decision_created": False,
+        "sanction_decision_id": None,
     }
 
 

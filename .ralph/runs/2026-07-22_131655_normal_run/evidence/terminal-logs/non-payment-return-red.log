@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_submitted_inputs_change_only_after_explicit_approval_return (sfpcl_credit.tests.test_non_payment_note_workflow_api.NonPaymentNoteWorkflowApiTests.test_submitted_inputs_change_only_after_explicit_approval_return)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "./sfpcl_credit/tests/test_non_payment_note_workflow_api.py", line 212, in test_submitted_inputs_change_only_after_explicit_approval_return
+    self.assertEqual(corrected.status_code, 200, corrected.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "CONFLICT", "message": "The default case already has a different Non-Payment Note.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-22T08:02:11.139182Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.649s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

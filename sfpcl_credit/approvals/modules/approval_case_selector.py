@@ -29,20 +29,31 @@ def select_approval_case_candidates(
         )
         .prefetch_related("actions")
         .filter(
-            version__gte=2,
-            approval_matrix_rule_id__isnull=False,
-            sanction_committee_id__isnull=False,
-            decision_date__isnull=False,
-            amount__isnull=False,
-            related_entity_id__isnull=False,
-            routing_snapshot_is_coherent=True,
+            Q(
+                version__gte=2,
+                approval_matrix_rule_id__isnull=False,
+                sanction_committee_id__isnull=False,
+                decision_date__isnull=False,
+                amount__isnull=False,
+                related_entity_id__isnull=False,
+                routing_snapshot_is_coherent=True,
+            )
+            | Q(
+                approval_type=ApprovalCase.TYPE_RECOVERY,
+                related_entity_type="non_payment_note",
+                sanction_committee_id__isnull=False,
+                decision_date__isnull=False,
+                amount__isnull=False,
+                related_entity_id__isnull=False,
+            )
         )
     )
     if persisted_scope_type:
-        queryset = queryset.filter(
-            approval_type=ApprovalCase.TYPE_SANCTION,
-            related_entity_type="loan_application",
-        )
+        if persisted_scope_type != "audit_readonly":
+            queryset = queryset.filter(
+                approval_type=ApprovalCase.TYPE_SANCTION,
+                related_entity_type="loan_application",
+            )
     else:
         object_scope = Q(required_approver_index__user_id=actor.pk)
         if "credit_manager" in actor.role_codes():

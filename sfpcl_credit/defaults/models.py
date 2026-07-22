@@ -243,3 +243,128 @@ class ExtensionNote(models.Model):
             ):
                 raise ValueError("Extension effective dates are immutable.")
         return super().save(*args, **kwargs)
+
+
+class NonPaymentNoteQuerySet(models.QuerySet):
+    FROZEN_FIELDS = {
+        "reason_for_non_payment",
+        "intentionality_assessment",
+        "outstanding_principal_amount",
+        "outstanding_interest_amount",
+        "recommended_recovery_action",
+        "evidence_document_ids_json",
+        "frozen_case_facts_json",
+        "loan_document_id",
+    }
+
+    def update(self, **kwargs):
+        if self.FROZEN_FIELDS.intersection(kwargs):
+            raise ValueError("Non-Payment Note decision inputs are immutable.")
+        return super().update(**kwargs)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        if self.FROZEN_FIELDS.intersection(fields):
+            raise ValueError("Non-Payment Note decision inputs are immutable.")
+        return super().bulk_update(objs, fields, batch_size=batch_size)
+
+
+class NonPaymentNote(models.Model):
+    STATUS_DRAFT = "draft"
+    STATUS_SUBMITTED = "submitted"
+    STATUS_RETURNED = "returned"
+    STATUS_REVIEWED = "reviewed"
+
+    non_payment_note_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    default_case = models.OneToOneField(
+        DefaultCase, on_delete=models.PROTECT, related_name="non_payment_note"
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount", on_delete=models.PROTECT, related_name="non_payment_notes"
+    )
+    extension_note = models.ForeignKey(
+        ExtensionNote, on_delete=models.PROTECT, related_name="non_payment_notes"
+    )
+    current_assessment = models.ForeignKey(
+        DefaultAssessment, on_delete=models.PROTECT, related_name="non_payment_notes"
+    )
+    prepared_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="prepared_non_payment_notes"
+    )
+    reason_for_non_payment = models.TextField()
+    intentionality_assessment = models.CharField(max_length=80)
+    outstanding_principal_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    outstanding_interest_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    recommended_recovery_action = models.CharField(max_length=100)
+    evidence_document_ids_json = models.JSONField(default=list)
+    frozen_case_facts_json = models.JSONField(default=dict)
+    loan_document = models.OneToOneField(
+        "legal_documents.LoanDocument",
+        on_delete=models.PROTECT,
+        related_name="non_payment_note",
+    )
+    approval_case = models.OneToOneField(
+        "approvals.ApprovalCase",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="recovery_non_payment_note",
+    )
+    submitted_to_sanction_committee_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=60, default=STATUS_DRAFT, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = NonPaymentNoteQuerySet.as_manager()
+
+    class Meta:
+        db_table = "non_payment_notes"
+        ordering = ["-created_at", "-non_payment_note_id"]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=("draft", "submitted", "returned", "reviewed")),
+                name="non_payment_note_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(outstanding_principal_amount__gte=0),
+                name="non_payment_principal_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=models.Q(outstanding_interest_amount__gte=0),
+                name="non_payment_interest_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(reason_for_non_payment="")
+                & ~models.Q(recommended_recovery_action=""),
+                name="non_payment_note_text_required",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            retained = type(self).objects.filter(pk=self.pk).values(
+                *NonPaymentNoteQuerySet.FROZEN_FIELDS, "status"
+            ).first()
+            changed = (
+                {
+                    field
+                    for field in NonPaymentNoteQuerySet.FROZEN_FIELDS
+                    if retained[field] != getattr(self, field)
+                }
+                if retained is not None
+                else set()
+            )
+            submission_document_freeze = (
+                retained is not None
+                and retained["status"] == self.STATUS_DRAFT
+                and self.status == self.STATUS_SUBMITTED
+                and changed <= {"loan_document_id"}
+            )
+            if (
+                retained is not None
+                and retained["status"] != self.STATUS_RETURNED
+                and changed
+                and not submission_document_freeze
+            ):
+                raise ValueError("Non-Payment Note decision inputs are immutable.")
+        return super().save(*args, **kwargs)

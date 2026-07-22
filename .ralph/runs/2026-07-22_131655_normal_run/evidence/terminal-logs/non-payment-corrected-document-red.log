@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_submitted_inputs_change_only_after_explicit_approval_return (sfpcl_credit.tests.test_non_payment_note_workflow_api.NonPaymentNoteWorkflowApiTests.test_submitted_inputs_change_only_after_explicit_approval_return)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "./sfpcl_credit/tests/test_non_payment_note_workflow_api.py", line 226, in test_submitted_inputs_change_only_after_explicit_approval_return
+    self.assertNotEqual(str(note.loan_document_id), created["document_id"])
+AssertionError: '044ff924-ace1-40c4-8164-1bf38ebc47a8' == '044ff924-ace1-40c4-8164-1bf38ebc47a8'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.763s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

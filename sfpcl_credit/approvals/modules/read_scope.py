@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from sfpcl_credit.applications.modules.application_authority import (
     evaluate_application_object_access,
 )
-from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
+from sfpcl_credit.approvals.models import ApprovalCase, ApprovalCaseReadScopeGrant
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 from sfpcl_credit.identity.models import Role
@@ -52,15 +52,20 @@ def evaluate_approval_case_read_scope(
         isinstance(item, dict) and str(item.get("user_id")) == actor_id
         for item in case.required_approvers_json
     )
-    is_effective_actor = any(
-        str(item.get("user_id")) == actor_id
-        for item in ConflictOfInterestModule.effective_approvers(case)
+    is_recovery_case = case.approval_type == ApprovalCase.TYPE_RECOVERY
+    is_effective_actor = (
+        False
+        if is_recovery_case
+        else any(
+            str(item.get("user_id")) == actor_id
+            for item in ConflictOfInterestModule.effective_approvers(case)
+        )
     )
     has_acted = any(
         str(action.approver_user_id) == actor_id for action in case.actions.all()
     )
     attributable = is_original_actor or is_effective_actor or has_acted
-    if attributable and ConflictOfInterestModule.conflict_reason(
+    if attributable and not is_recovery_case and ConflictOfInterestModule.conflict_reason(
         case=case, actor_id=actor_id
     ):
         return ApprovalCaseReadScopeDecision(

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_expired_unpaid_extension_creates_one_frozen_source_derived_draft (sfpcl_credit.tests.test_non_payment_note_workflow_api.NonPaymentNoteWorkflowApiTests.test_expired_unpaid_extension_creates_one_frozen_source_derived_draft)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "./sfpcl_credit/tests/test_non_payment_note_workflow_api.py", line 44, in test_expired_unpaid_extension_creates_one_frozen_source_derived_draft
+    from sfpcl_credit.defaults.models import NonPaymentNote
+ImportError: cannot import name 'NonPaymentNote' from 'sfpcl_credit.defaults.models' (./sfpcl_credit/defaults/models.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.657s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

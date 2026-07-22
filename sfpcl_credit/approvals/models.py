@@ -153,6 +153,7 @@ class SanctionCommittee(models.Model):
 
 class ApprovalCase(models.Model):
     TYPE_SANCTION = "sanction"
+    TYPE_RECOVERY = "recovery"
     STATUS_PENDING = "pending"
     STATUS_APPROVED = "approved"
     STATUS_REJECTED = "rejected"

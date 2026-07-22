@@ -515,6 +515,11 @@ def list_default_cases(*, actor, query_params):
 
 
 def serialize_default_case(row, *, actor):
+    from sfpcl_credit.recovery.modules.recovery_workflow import (
+        can_read_non_payment_note,
+        serialize_non_payment_note,
+    )
+
     return {
         "default_case_id": str(row.pk),
         "loan_account_id": str(row.loan_account_id),
@@ -534,6 +539,12 @@ def serialize_default_case(row, *, actor):
         "extension_note": (
             serialize_extension_note(row.extension_note)
             if row.extension_note_id is not None
+            else None
+        ),
+        "non_payment_note": (
+            serialize_non_payment_note(row.non_payment_note)
+            if hasattr(row, "non_payment_note")
+            and can_read_non_payment_note(actor=actor, note=row.non_payment_note)
             else None
         ),
         "reason": row.reason,
@@ -732,6 +743,7 @@ def _scoped_case_candidates(*, actor):
     scope |= Q(
         loan_account__sanction_decision__approval_case__required_approver_index__user_id=actor.pk
     )
+    scope |= Q(non_payment_note__approval_case__required_approver_index__user_id=actor.pk)
     auditor_portfolio = (
         "internal_auditor" in roles
         and ApprovalCaseReadScopeGrant.objects.filter(
@@ -741,7 +753,12 @@ def _scoped_case_candidates(*, actor):
         ).exists()
     )
     queryset = DefaultCase.objects.select_related(
-        "loan_account", "member", "current_assessment", "extension_note"
+        "loan_account",
+        "member",
+        "current_assessment",
+        "extension_note",
+        "non_payment_note__loan_document",
+        "non_payment_note__approval_case",
     )
     if not auditor_portfolio:
         queryset = queryset.filter(scope)
