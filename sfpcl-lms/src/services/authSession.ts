@@ -195,6 +195,7 @@ export const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
   'defaults.case.open': 'manage_defaults',
   'defaults.assessment.create': 'manage_defaults',
   'defaults.extension.grant': 'manage_defaults',
+  'recovery.action.initiate': 'manage_defaults', 'recovery.action.complete': 'manage_defaults',
   'recovery.decision.create': 'approve_recovery',
   'closure.readiness.read': 'manage_closure',
   'closure.loan.close': 'manage_closure',

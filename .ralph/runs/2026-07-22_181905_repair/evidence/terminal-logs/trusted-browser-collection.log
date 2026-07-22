@@ -1,0 +1,15 @@
+# Trusted Browser Collection
+
+Command:
+`RALPH_EVIDENCE_DIR=<repair screenshots> E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- --list e2e/recovery-action-execution.e2e.spec.ts`
+
+```text
+Listing tests:
+  [chromium] recovery-action-execution.e2e.spec.ts:12:5 S57 blocks execution when no approved action is exposed
+  [chromium] recovery-action-execution.e2e.spec.ts:19:5 S57 renders the exact approved route and evidence controls
+Total: 2 tests in 1 file
+Exit code: 0
+```
+
+Actual Chrome execution is unavailable in the agent sandbox. The trusted validator must execute both
+tests twice and create the declared screenshot manifests; no screenshot was fabricated here.

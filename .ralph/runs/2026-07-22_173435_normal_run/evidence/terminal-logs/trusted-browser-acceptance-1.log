@@ -1,0 +1,77 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_173435_normal_run/.ralph/runs/2026-07-22_173435_normal_run/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/recovery-action-execution.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/recovery-action-execution.e2e.spec.ts
+
+[2m[WebServer] [22m[22/Jul/2026 12:48:21] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22m[22/Jul/2026 12:48:26] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[22/Jul/2026 12:48:26] "GET /api/v1/auth/me/ HTTP/1.1" 200 3300
+[2m[WebServer] [22m[22/Jul/2026 12:48:26] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[22/Jul/2026 12:48:26] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[22/Jul/2026 12:48:26] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[22/Jul/2026 12:48:26] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✘  1 [chromium] › recovery-action-execution.e2e.spec.ts:12:5 › S57 blocks execution when no approved action is exposed (7.7s)
+[2m[WebServer] [22m[22/Jul/2026 12:48:35] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[22/Jul/2026 12:48:35] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[22/Jul/2026 12:48:35] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[22/Jul/2026 12:48:35] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[22/Jul/2026 12:48:35] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✘  2 [chromium] › recovery-action-execution.e2e.spec.ts:19:5 › S57 renders the exact approved route and evidence controls (30.0s)
+
+
+  1) [chromium] › recovery-action-execution.e2e.spec.ts:12:5 › S57 blocks execution when no approved action is exposed 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText('Security Invocation Locked')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Security Invocation Locked')[22m
+
+
+      14 |   await staffLogin(page, email, E2E_PASSWORD);
+      15 |   await openRecovery(page);
+    > 16 |   await expect(page.getByText('Security Invocation Locked')).toBeVisible();
+         |                                                              ^
+      17 |   await capture(page, 'recovery-action-blocked.png');
+      18 | });
+      19 | test('S57 renders the exact approved route and evidence controls', async ({ page }) => {
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_173435_normal_run/sfpcl-lms/e2e/recovery-action-execution.e2e.spec.ts:16:62
+
+  2) [chromium] › recovery-action-execution.e2e.spec.ts:19:5 › S57 renders the exact approved route and evidence controls 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Default & Recovery' })[22m
+
+
+      29 | });
+      30 | async function openRecovery(page: Page) {
+    > 31 |   await page.getByRole('button', { name: 'Default & Recovery' }).click();
+         |                                                                  ^
+      32 |   await page.getByRole('button', { name: 'Security Invocation' }).click();
+      33 | }
+      34 | const json = (route: Route, data: unknown, extra?: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, ...(extra ? { pagination: extra } : {}) }) });
+        at openRecovery (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_173435_normal_run/sfpcl-lms/e2e/recovery-action-execution.e2e.spec.ts:31:66)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_173435_normal_run/sfpcl-lms/e2e/recovery-action-execution.e2e.spec.ts:23:9
+
+  2 failed
+    [chromium] › recovery-action-execution.e2e.spec.ts:12:5 › S57 blocks execution when no approved action is exposed 
+    [chromium] › recovery-action-execution.e2e.spec.ts:19:5 › S57 renders the exact approved route and evidence controls 
+
+Duration milliseconds: 84291
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_173435_normal_run/.ralph/runs/2026-07-22_173435_normal_run/evidence/trusted-browser-screenshots-1.sha256

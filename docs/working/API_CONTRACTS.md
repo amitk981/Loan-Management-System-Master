@@ -5221,3 +5221,9 @@ without deleting or rewriting the retained note. An unpaid extension becomes `ex
 its inclusive end date and creates one retry-safe `default_assessment` review task; it never creates
 a Non-Payment Note. Grant, cure, and expiry append audit/workflow evidence, and PostgreSQL locking
 plus one-to-one constraints make five concurrent grants/expiry runs converge.
+
+## Recovery action execution (011F)
+- `POST /api/v1/recovery-decisions/{recovery_decision_id}/actions/`
+- `POST /api/v1/recovery-actions/{recovery_action_id}/complete/`
+
+Company Secretary execution requires the Critical action permission, canonical case scope, the exact approved decision, matching usable security-owner evidence, and governed documents. Initiation retains fair-conduct interaction evidence. Completion atomically posts verified proceeds through the canonical loan-balance owner; exact replay returns the retained action, changed/stale replay conflicts, and SAP remains `pending` without real adapter acceptance.

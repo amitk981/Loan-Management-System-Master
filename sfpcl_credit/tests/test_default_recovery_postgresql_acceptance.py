@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from threading import Barrier
 from unittest import skipUnless
+from unittest.mock import patch
 
 from django.db import close_old_connections, connection
 from django.test import Client, TransactionTestCase
@@ -429,3 +430,129 @@ class RecoveryDecisionPostgreSQLAcceptanceTests(TransactionTestCase):
             WorkflowEvent.objects.filter(workflow_name="recovery_decision").count(),
             1,
         )
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class RecoveryActionPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_recovery_action_api import RecoveryActionApiTests
+
+        fixture = RecoveryActionApiTests(
+            "test_company_secretary_initiates_exact_approved_sh4_with_governed_evidence"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        self.decision, _ = fixture._approved_decision()
+        self.actor, self.auth = fixture._executor()
+        fixture._held_sh4(self.actor)
+        self.evidence = fixture._recovery_evidence(self.actor)
+
+    def _initiate(self):
+        return Client().post(
+            f"/api/v1/recovery-decisions/{self.decision['recovery_decision_id']}/actions/",
+            data=json.dumps(self.fixture._initiation_payload(self.evidence)),
+            content_type="application/json",
+            **self.auth,
+        )
+
+    def _race(self, submit):
+        barrier = Barrier(5)
+
+        def run(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return submit()
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            return list(pool.map(run, range(5)))
+
+    def test_five_initiations_retain_one_action_and_handoff_event(self):
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.recovery.models import RecoveryAction
+        from sfpcl_credit.workflows.models import WorkflowEvent
+
+        responses = self._race(self._initiate)
+        self.assertEqual([row.status_code for row in responses], [200] * 5)
+        self.assertEqual(RecoveryAction.objects.count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="recovery.action.initiated").count(), 1)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="recovery_action", to_state="pending").count(),
+            1,
+        )
+
+    def test_five_completions_post_one_balance_movement(self):
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import LoanAccount
+        from sfpcl_credit.recovery.models import RecoveryAction
+
+        initiated = self._initiate()
+        action_id = initiated.json()["data"]["recovery_action_id"]
+        before = LoanAccount.objects.get(pk=self.fixture.account.pk).principal_outstanding
+        payload = {
+            "completed_at": "2028-10-15T10:00:00Z",
+            "amount_recovered": "1000.00",
+            "evidence_document_ids": [str(self.evidence.pk)],
+            "remarks": "Concurrent verified recovery completion.",
+        }
+
+        def complete():
+            return Client().post(
+                f"/api/v1/recovery-actions/{action_id}/complete/",
+                data=json.dumps(payload),
+                content_type="application/json",
+                **self.auth,
+            )
+
+        responses = self._race(complete)
+        self.assertEqual([row.status_code for row in responses], [200] * 5)
+        self.assertEqual(RecoveryAction.objects.get().action_status, "completed")
+        self.assertEqual(
+            LoanAccount.objects.get(pk=self.fixture.account.pk).principal_outstanding,
+            before - 1000,
+        )
+        self.assertEqual(AuditLog.objects.filter(action="recovery.proceeds_posted").count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="recovery.action.completed").count(), 1)
+
+    def test_failed_loan_owner_call_rolls_back_terminal_state(self):
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import LoanAccount
+        from sfpcl_credit.loans.modules.recovery_proceeds import RecoveryProceedsConflict
+        from sfpcl_credit.recovery.models import RecoveryAction
+
+        initiated = self._initiate()
+        action_id = initiated.json()["data"]["recovery_action_id"]
+        before = LoanAccount.objects.values("principal_outstanding", "total_outstanding").get(
+            pk=self.fixture.account.pk
+        )
+        with patch(
+            "sfpcl_credit.recovery.modules.recovery_workflow.post_verified_recovery_proceeds",
+            side_effect=RecoveryProceedsConflict("Injected owner failure."),
+        ):
+            response = Client().post(
+                f"/api/v1/recovery-actions/{action_id}/complete/",
+                data=json.dumps(
+                    {
+                        "completed_at": "2028-10-15T10:00:00Z",
+                        "amount_recovered": "1000.00",
+                        "evidence_document_ids": [str(self.evidence.pk)],
+                        "remarks": "Verified recovery completion.",
+                    }
+                ),
+                content_type="application/json",
+                **self.auth,
+            )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(RecoveryAction.objects.get().action_status, "pending")
+        self.assertEqual(
+            LoanAccount.objects.values("principal_outstanding", "total_outstanding").get(
+                pk=self.fixture.account.pk
+            ),
+            before,
+        )
+        self.assertEqual(AuditLog.objects.filter(action="recovery.proceeds_posted").count(), 0)
+        self.assertEqual(AuditLog.objects.filter(action="recovery.action.completed").count(), 0)

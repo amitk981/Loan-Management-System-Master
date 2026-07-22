@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle, Clock, FileText, CheckCircle2, XCircle,
   ChevronRight, Calendar, IndianRupee, User, MessageSquare,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { useRole } from '../../contexts/RoleContext';
+import { completeRecoveryAction, fetchRecoveryCases, initiateRecoveryAction, uploadRecoveryEvidence, type RecoveryCaseProjection } from '../../services/recoveryApi';
 
 type DefaultTab = 'cases' | 'grace' | 'non_payment' | 'recovery' | 'security';
 
@@ -44,7 +45,6 @@ const DefaultRecoveryHub: React.FC = () => {
   const canAccess = ['admin', 'credit_manager', 'senior_manager_finance', 'deputy_manager_finance', 'accounts_team', 'cfo', 'auditor', 'compliance_team', 'company_secretary', 'sanction_committee'].includes(role);
   const canCreditAct = ['credit_manager'].includes(role);
   const canApproveRecovery = ['cfo', 'sanction_committee'].includes(role);
-  const canInvokeSecurity = ['compliance_team', 'company_secretary'].includes(role);
   
   const [activeTab, setActiveTab] = useState<DefaultTab>('cases');
   const [selectedCase, setSelectedCase] = useState<DefaultCase>(defaultCases[0]);
@@ -62,6 +62,49 @@ const DefaultRecoveryHub: React.FC = () => {
   
   const [invocationDate, setInvocationDate] = useState('');
   const [invocationRemarks, setInvocationRemarks] = useState('');
+  const [recoveryCases, setRecoveryCases] = useState<RecoveryCaseProjection[]>([]);
+  const [recoveryLoad, setRecoveryLoad] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [recoveryEvidence, setRecoveryEvidence] = useState<File | null>(null);
+  const [recoveredAmount, setRecoveredAmount] = useState('');
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+
+  const loadRecovery = async () => {
+    try {
+      const result = await fetchRecoveryCases();
+      setRecoveryCases(result.items.filter(row => row.recovery_decision));
+      setRecoveryLoad('ready');
+    } catch (error) {
+      setRecoveryMessage(error instanceof Error ? error.message : 'Recovery actions could not be loaded.');
+      setRecoveryLoad('error');
+    }
+  };
+  useEffect(() => { void loadRecovery(); }, []);
+  const recoveryCase = recoveryCases.find(row => row.recovery_decision?.available_actions.some(action => action.action_code === 'execute_recovery') || row.recovery_action?.available_actions.length || row.recovery_action?.action_status === 'completed') ?? null;
+
+  const submitRecovery = async () => {
+    if (!recoveryCase || !recoveryEvidence || !invocationRemarks.trim()) return;
+    setRecoveryBusy(true); setRecoveryMessage('');
+    try {
+      const documentId = await uploadRecoveryEvidence(recoveryCase.loan_account_id, recoveryEvidence);
+      const action = recoveryCase.recovery_action;
+      if (!action) {
+        const initiatedAt = invocationDate ? new Date(`${invocationDate}T00:00:00`).toISOString() : new Date().toISOString();
+        await initiateRecoveryAction(recoveryCase.recovery_decision!.recovery_decision_id, {
+          action_type: recoveryCase.recovery_decision!.decision, initiated_at: initiatedAt,
+          evidence_document_ids: [documentId], remarks: invocationRemarks,
+          interaction_log: [{ interaction_at: initiatedAt, interaction_mode: 'borrower_contact', person_contacted: 'Borrower', summary: invocationRemarks, next_action: 'Execute only the approved recovery route.', complaint_raised: false, grievance_reference: '/grievances', evidence_document_ids: [documentId] }],
+        });
+        setRecoveryMessage('Approved recovery action initiated successfully.');
+      } else {
+        await completeRecoveryAction(action.recovery_action_id, { completed_at: new Date().toISOString(), amount_recovered: recoveredAmount, evidence_document_ids: [documentId], remarks: invocationRemarks });
+        setRecoveryMessage('Verified recovery proceeds posted successfully.');
+      }
+      await loadRecovery();
+    } catch (error) {
+      setRecoveryMessage(error instanceof Error ? error.message : 'Recovery action failed.');
+    } finally { setRecoveryBusy(false); }
+  };
 
   if (!canAccess) {
     return <div className="p-6 text-red-600">Access Denied. You do not have permission to view this module.</div>;
@@ -670,11 +713,13 @@ const DefaultRecoveryHub: React.FC = () => {
       {/* Security Invocation */}
       {activeTab === 'security' && (
         <div className="max-w-2xl space-y-5">
-          {(!localRecoveryApproved && selectedCase.status !== 'recovery_action_approved' && selectedCase.status !== 'recovery_approved') ? (
+          {recoveryLoad === 'loading' ? <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-500">Loading approved recovery actions…</div> : recoveryLoad === 'error' ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">{recoveryMessage}</div>
+          ) : !recoveryCase ? (
             <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
               <Lock size={32} className="mx-auto text-slate-300 mb-3" />
               <div className="font-semibold text-slate-700">Security Invocation Locked</div>
-              <div className="text-sm text-slate-500 mt-1">Security invocation is permitted only after approved recovery decision.</div>
+              <div className="text-sm text-slate-500 mt-1">No approved recovery action is available to this user.</div>
             </div>
           ) : (
             <>
@@ -689,39 +734,15 @@ const DefaultRecoveryHub: React.FC = () => {
                 <h3 className="font-semibold text-slate-900 mb-4">Security Invocation</h3>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-sm bg-slate-50 rounded-lg p-4">
-                    <div><div className="text-slate-500">Loan</div><div className="font-medium">{selectedCase.loanNo} — {selectedCase.borrower}</div></div>
+                    <div><div className="text-slate-500">Loan</div><div className="font-medium">{recoveryCase.loan_account_number} — {recoveryCase.borrower_name}</div></div>
                     <div><div className="text-slate-500">Recovery Approval</div><div className="font-medium text-green-700">Approved</div></div>
-                    <div><div className="text-slate-500">Approved Recovery Action Ref.</div><div className="font-medium">RA-2025-098</div></div>
-                    <div><div className="text-slate-500">Security Custody Ref.</div><div className="font-medium">SEC-1102</div></div>
+                    <div><div className="text-slate-500">Approved Recovery Action Ref.</div><div className="font-medium">{recoveryCase.recovery_decision?.recovery_decision_id}</div></div>
+                    <div><div className="text-slate-500">Security Status</div><div className="font-medium">{recoveryCase.recovery_action?.source_security.status ?? 'Validated on initiation'}</div></div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Approved Recovery Mode</label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-3 text-sm p-3 rounded-lg border border-slate-200 bg-slate-50">
-                        <input
-                          type="checkbox"
-                          checked={true}
-                          readOnly
-                          className="accent-green-600"
-                        />
-                        {selectedCase.approvedRecoveryMode || 'SH-4 invocation'}
-                      </label>
-                    </div>
+                    <div className="text-sm p-3 rounded-lg border border-slate-200 bg-slate-50">{recoveryCase.recovery_decision?.decision.replace(/_/g, ' ')}</div>
                   </div>
-
-                  {(!selectedCase.approvedRecoveryMode || selectedCase.approvedRecoveryMode.includes('SH-4')) && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Share Certificate Details</label>
-                        <input type="text" placeholder="Cert #..." className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Number of Shares</label>
-                        <input type="number" placeholder="Qty..." className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm" />
-                      </div>
-                    </div>
-                  )}
-
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1.5">Invocation Date (Transfer Init)</label>
@@ -734,27 +755,15 @@ const DefaultRecoveryHub: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1.5">Execution Status</label>
-                      <select className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
-                        <option>Initiated</option>
-                        <option>Completed</option>
-                      </select>
+                      <input readOnly value={recoveryCase.recovery_action?.action_status ?? 'Approved — not initiated'} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" />
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Borrower Notice Status</label>
-                      <input type="text" readOnly value={recoveryLogged ? 'Notice Generated' : 'Pending Generation'} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Security Register Entry</label>
-                      <input type="text" readOnly value={recoveryLogged ? 'Recorded' : 'Pending'} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" />
-                    </div>
-                  </div>
-
+                  <div><label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="recovery-evidence">Recovery evidence</label><input id="recovery-evidence" type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={event => setRecoveryEvidence(event.target.files?.[0] ?? null)} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm" /></div>
+                  {recoveryCase.recovery_action?.action_status === 'pending' && <div><label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="recovered-amount">Verified amount recovered</label><input id="recovered-amount" value={recoveredAmount} onChange={event => setRecoveredAmount(event.target.value)} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm" /></div>}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Remarks / Proceeds Received</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="recovery-remarks">Remarks / Proceeds Received</label>
                     <textarea 
+                      id="recovery-remarks"
                       value={invocationRemarks}
                       onChange={e => setInvocationRemarks(e.target.value)}
                       rows={3} 
@@ -762,29 +771,9 @@ const DefaultRecoveryHub: React.FC = () => {
                       className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" 
                     />
                   </div>
-
-                  {!canInvokeSecurity ? (
-                    <div className="bg-slate-50 p-4 rounded-lg text-sm text-slate-600 text-center border border-slate-100">
-                      Security invocation can be recorded only by authorised legal/compliance role after recovery approval.
-                    </div>
-                  ) : (
-                    <div className="flex gap-3 mt-2">
-                      <button
-                        onClick={() => {
-                          setRecoveryLogged(true);
-                        }}
-                        disabled={!invocationDate || !invocationRemarks}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                      >
-                        <Shield size={16} />
-                        {recoveryLogged ? 'Security Invocation Recorded' : 'Record Security Invocation'}
-                      </button>
-                      <button className="flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-                        <FileText size={16} />
-                        {recoveryLogged ? 'Download Invocation Notice' : 'Preview Invocation Notice'}
-                      </button>
-                    </div>
-                  )}
+                  {recoveryMessage && <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-700">{recoveryMessage}</div>}
+                  {recoveryCase.recovery_action?.interaction_log.map(item => <div key={item.interaction_at} className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-sm"><div className="font-medium">{item.interaction_mode.replace(/_/g, ' ')}</div><div className="text-slate-600 mt-1">{item.summary}</div><a className="text-green-700 text-xs" href={item.grievance_reference}>Grievance route</a></div>)}
+                  {recoveryCase.recovery_action?.action_status !== 'completed' && <button onClick={() => void submitRecovery()} disabled={!recoveryEvidence || !invocationRemarks.trim() || recoveryBusy || (recoveryCase.recovery_action?.action_status === 'pending' && !recoveredAmount)} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"><Shield size={16} />{recoveryBusy ? 'Submitting…' : recoveryCase.recovery_action ? 'Complete and Post Proceeds' : 'Initiate Approved Recovery'}</button>}
                 </div>
               </div>
             </>

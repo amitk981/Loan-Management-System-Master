@@ -449,6 +449,8 @@ ROLE_PERMISSIONS = {
         "security.custody.record",
         "security.instrument.release",
         "security.instrument.invoke",
+        "recovery.action.initiate",
+        "recovery.action.complete",
         "closure.noc.issue",
         "closure.security_return.record",
         "closure.archive.create",

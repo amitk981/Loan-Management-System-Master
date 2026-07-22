@@ -121,11 +121,15 @@ def create_recovery_decision(*, actor, default_case_id, payload, request=None):
         return decision
 
 
-def serialize_recovery_decision(decision):
+def serialize_recovery_decision(decision, *, actor=None):
     available_actions = []
     if (
         decision.status == RecoveryDecision.STATUS_APPROVED
         and decision.decision in EXECUTABLE_ACTIONS
+        and actor is not None
+        and "recovery.action.initiate"
+        in auth_service.effective_permission_codes(actor)
+        and "company_secretary" in auth_service.effective_role_codes(actor)
     ):
         available_actions.append(
             {
@@ -157,7 +161,8 @@ def api_create_recovery_decision(*, actor, default_case_id, payload, request=Non
             default_case_id=default_case_id,
             payload=payload,
             request=request,
-        )
+        ),
+        actor=actor,
     )
 
 

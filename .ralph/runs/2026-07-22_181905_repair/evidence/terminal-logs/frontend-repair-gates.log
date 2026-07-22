@@ -1,0 +1,22 @@
+# Frontend Repair Gates
+
+```text
+npm run typecheck
+> tsc --noEmit
+Exit code: 0
+
+npm run lint
+> eslint src
+Exit code: 0
+
+npm run build
+> vite build
+1887 modules transformed
+dist/index.html                     0.75 kB | gzip:   0.43 kB
+dist/assets/index-CpK71YI6.css     49.40 kB | gzip:   8.54 kB
+dist/assets/index-Ba7pnccG.js   1,072.78 kB | gzip: 239.93 kB
+Build completed in 2.22s
+Exit code: 0
+```
+
+The pre-existing Vite large-chunk advisory remains a warning, not a failed gate.

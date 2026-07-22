@@ -1,0 +1,706 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/defaults/DefaultRecoveryHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_173435_normal_run/sfpcl-lms
+
+ ❯ src/pages/defaults/DefaultRecoveryHub.test.tsx (1 test | 1 failed) 1146ms
+   × 011F recovery execution surface > uses the approved backend action and uploaded evidence to initiate S57 1145ms
+     → Unable to find an element with the text: Backend Borrower. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage overdue loans, grace periods, extension notes, recovery approvals and security invocation.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-orange-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace Period[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹3.5L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹1.8L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-violet-700"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mRecovery Approved[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹8.9L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-600"[39m
+            [36m>[39m
+              [0m5[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mWorkflow Status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent status across monitoring, notices, registers and audit.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrace Period Active[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage overdue loans, grace periods, extension notes, recovery approvals and security invocation.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-orange-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace Period[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹3.5L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹1.8L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-violet-700"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mRecovery Approved[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹8.9L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-600"[39m
+            [36m>[39m
+              [0m5[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mWorkflow Status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent status across monitoring, notices, registers and audit.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrace Period Active[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/defaults/DefaultRecoveryHub.test.tsx > 011F recovery execution surface > uses the approved backend action and uploaded evidence to initiate S57
+TestingLibraryElementError: Unable to find an element with the text: Backend Borrower. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage overdue loans, grace periods, extension notes, recovery approvals and security invocation.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-orange-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace Period[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹3.5L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹1.8L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-violet-700"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mRecovery Approved[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹8.9L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-600"[39m
+            [36m>[39m
+              [0m5[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mWorkflow Status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent status across monitoring, notices, registers and audit.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrace Period Active[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage overdue loans, grace periods, extension notes, recovery approvals and security invocation.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-orange-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace Period[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹3.5L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹1.8L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-violet-700"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mRecovery Approved[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-slate-700 mt-1"[39m
+          [36m>[39m
+            [0m₹8.9L[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-600"[39m
+            [36m>[39m
+              [0m5[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mWorkflow Status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent status across monitoring, notices, registers and audit.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrace Period Active[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/defaults/DefaultRecoveryHub.test.tsx:36:25
+     34|     render(<DefaultRecoveryHub />);
+     35|     await userEvent.click(await screen.findByRole('button', { name: 'S…
+     36|     expect(await screen.findByText('Backend Borrower')).toBeTruthy();
+       |                         ^
+     37|     await userEvent.upload(screen.getByLabelText('Recovery evidence'),…
+     38|     await userEvent.type(screen.getByLabelText('Remarks / Proceeds Rec…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  17:59:12
+   Duration  2.03s (transform 151ms, setup 0ms, collect 315ms, tests 1.15s, environment 321ms, prepare 37ms)
+

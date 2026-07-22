@@ -416,6 +416,7 @@ describe('member portal auth API flow', () => {
 });
 
 describe('backend current-user mapping', () => {
+  it('maps recovery execution permissions to the default/recovery workspace', () => { expect(mapCanonicalPermissions(['recovery.action.initiate', 'recovery.action.complete'])).toEqual(['manage_defaults']); });
   it('uses roles and teams objects for display and derives compatibility codes from those arrays', () => {
     const user = mapBackendUserToFrontendUser(currentUserEnvelope.data);
 

@@ -515,15 +515,31 @@ def list_default_cases(*, actor, query_params):
 
 
 def serialize_default_case(row, *, actor):
+    from sfpcl_credit.recovery.modules.recovery_decision import (
+        serialize_recovery_decision,
+    )
     from sfpcl_credit.recovery.modules.recovery_workflow import (
         can_read_non_payment_note,
         serialize_non_payment_note,
+        serialize_recovery_action,
+    )
+
+    decision = row.recovery_decision if hasattr(row, "recovery_decision") else None
+    action = (
+        decision.recovery_action
+        if decision is not None and hasattr(decision, "recovery_action")
+        else None
     )
 
     return {
         "default_case_id": str(row.pk),
         "loan_account_id": str(row.loan_account_id),
+        "loan_account_number": row.loan_account.loan_account_number,
         "member_id": str(row.member_id),
+        "borrower_name": row.member.display_name or row.member.legal_name,
+        "principal_outstanding": f"{row.loan_account.principal_outstanding:.2f}",
+        "interest_outstanding": f"{row.loan_account.interest_outstanding:.2f}",
+        "total_outstanding": f"{row.loan_account.total_outstanding:.2f}",
         "trigger_event": row.trigger_event,
         "scheduled_due_date": row.scheduled_due_date.isoformat(),
         "repayment_schedule_id": str(row.repayment_schedule_id),
@@ -546,6 +562,12 @@ def serialize_default_case(row, *, actor):
             if hasattr(row, "non_payment_note")
             and can_read_non_payment_note(actor=actor, note=row.non_payment_note)
             else None
+        ),
+        "recovery_decision": (
+            serialize_recovery_decision(decision, actor=actor) if decision else None
+        ),
+        "recovery_action": (
+            serialize_recovery_action(action, actor=actor) if action else None
         ),
         "reason": row.reason,
         "available_actions": _available_actions(row, actor=actor),
@@ -759,6 +781,8 @@ def _scoped_case_candidates(*, actor):
         "extension_note",
         "non_payment_note__loan_document",
         "non_payment_note__approval_case",
+        "recovery_decision__approval_case",
+        "recovery_decision__recovery_action",
     )
     if not auditor_portfolio:
         queryset = queryset.filter(scope)

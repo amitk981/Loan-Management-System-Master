@@ -98,16 +98,7 @@ class RecoveryDecisionApiTests(TestCase):
         self.assertEqual(data["approval_case_id"], str(case.pk))
         self.assertEqual(data["decision"], "invoke_sh4")
         self.assertEqual(data["status"], "approved")
-        self.assertEqual(
-            data["available_actions"],
-            [
-                {
-                    "action_code": "execute_recovery",
-                    "action_type": "invoke_sh4",
-                    "required_permission": "recovery.action.initiate",
-                }
-            ],
-        )
+        self.assertEqual(data["available_actions"], [])
         self.assertEqual(
             AuditLog.objects.filter(action="recovery_decision.created").count(), 1
         )

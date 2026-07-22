@@ -1,0 +1,14 @@
+# Focused Frontend GREEN
+
+Command:
+`npm test -- --run src/services/authSession.test.ts src/pages/defaults/DefaultRecoveryHub.test.tsx`
+
+Result:
+
+```text
+PASS src/services/authSession.test.ts (39 tests)
+PASS src/pages/defaults/DefaultRecoveryHub.test.tsx (1 test)
+Test Files  2 passed (2)
+Tests       40 passed (40)
+Exit code: 0
+```

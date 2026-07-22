@@ -8,7 +8,9 @@ from sfpcl_credit.recovery.modules.recovery_workflow import (
     RecoveryNotFound,
     RecoveryPermissionDenied,
     RecoveryValidation,
+    api_complete_recovery_action,
     api_create_non_payment_note,
+    api_initiate_recovery_action,
     api_submit_non_payment_note,
 )
 from sfpcl_credit.recovery.modules.recovery_decision import (
@@ -66,6 +68,104 @@ def recovery_decision_create(request, default_case_id):
             "The default or approval case was not found.",
         )
     except RecoveryDecisionConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def recovery_action_create(request, recovery_decision_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            api_initiate_recovery_action(
+                actor=actor,
+                recovery_decision_id=recovery_decision_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except RecoveryValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Recovery Action initiation failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Recovery Action initiation failed validation.",
+            {"body": exc.messages[0]},
+        )
+    except RecoveryPermissionDenied:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "Company Secretary recovery initiation authority is required.",
+        )
+    except RecoveryNotFound:
+        return error_response(
+            request,
+            404,
+            "NOT_FOUND",
+            "The Recovery Decision was not found or is inaccessible.",
+        )
+    except RecoveryConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def recovery_action_complete(request, recovery_action_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            api_complete_recovery_action(
+                actor=actor,
+                recovery_action_id=recovery_action_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except RecoveryValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Recovery Action completion failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Recovery Action completion failed validation.",
+            {"body": exc.messages[0]},
+        )
+    except RecoveryPermissionDenied:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "Company Secretary recovery completion authority is required.",
+        )
+    except RecoveryNotFound:
+        return error_response(
+            request,
+            404,
+            "NOT_FOUND",
+            "The Recovery Action was not found or is inaccessible.",
+        )
+    except RecoveryConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
 
 
