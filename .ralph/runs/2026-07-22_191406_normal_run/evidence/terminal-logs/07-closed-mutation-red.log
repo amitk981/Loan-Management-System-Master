@@ -1,0 +1,17 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_financially_closed_account_rejects_direct_balance_mutation (sfpcl_credit.tests.test_closure_api.LoanClosureApiTests.test_financially_closed_account_rejects_direct_balance_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/tests/test_closure_api.py", line 273, in test_financially_closed_account_rejects_direct_balance_mutation
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.045s
+
+FAILED (failures=1)

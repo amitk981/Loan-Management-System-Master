@@ -1,0 +1,58 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_bounded_active_portfolio_reports_each_outcome (sfpcl_credit.tests.test_dpd_monitoring_api.DpdMonitoringApiTests.test_bounded_active_portfolio_reports_each_outcome)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/tests/test_dpd_monitoring_api.py", line 220, in test_bounded_active_portfolio_reports_each_outcome
+    self.assertLessEqual(len(queries), 20)
+AssertionError: 23 not less than or equal to 20
+
+----------------------------------------------------------------------
+Destroying test database for alias 'default'...
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/manage.py", line 17, in <module>
+    main()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/manage.py", line 13, in main
+    execute_from_command_line(sys.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/test.py", line 24, in run_from_argv
+    super().run_from_argv(argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 413, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/test.py", line 68, in handle
+    failures = test_runner.run_tests(test_labels)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/runner.py", line 1068, in run_tests
+    result = self.run_suite(suite)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/runner.py", line 995, in run_suite
+    return runner.run(suite)
+           ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/runner.py", line 224, in run
+    result.printErrors()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/runner.py", line 144, in printErrors
+    self.printErrorList('FAIL', self.failures)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/runner.py", line 100, in printErrorList
+    sqlparse.format(sql_debug, reindent=True, keyword_case="upper")
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/sqlparse/__init__.py", line 65, in format
+    return "".join(stack.run(sql, encoding))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/sqlparse/engine/filter_stack.py", line 41, in run
+    stmt = grouping.group(stmt)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/sqlparse/engine/grouping.py", line 474, in group
+    func(stmt)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/sqlparse/engine/grouping.py", line 77, in group_brackets
+    _group_matching(tlist, sql.SquareBrackets)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/sqlparse/engine/grouping.py", line 37, in _group_matching
+    raise SQLParseError(
+sqlparse.exceptions.SQLParseError: Maximum number of tokens exceeded (10000).

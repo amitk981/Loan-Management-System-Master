@@ -1,0 +1,13 @@
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_full_repayment_close_freezes_fresh_facts_and_creates_controlled_requirements (sfpcl_credit.tests.test_closure_api.LoanClosureApiTests.test_full_repayment_close_freezes_fresh_facts_and_creates_controlled_requirements)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/tests/test_closure_api.py", line 64, in test_full_repayment_close_freezes_fresh_facts_and_creates_controlled_requirements
+    from sfpcl_credit.closure.models import ClosureRequirement, LoanClosure
+ModuleNotFoundError: No module named 'sfpcl_credit.closure.models'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+FAILED (errors=1)

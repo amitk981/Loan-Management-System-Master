@@ -1,5 +1,32 @@
 # API Contracts
 
+## Closure readiness and financial close (011G)
+
+`GET /api/v1/loan-accounts/{loan_account_id}/closure-readiness/` requires
+`closure.readiness.read` plus current Credit Manager, Company Secretary, or governed Auditor object
+scope. It is non-mutating and derives principal, interest, charges, total outstanding, unresolved
+repayment/SAP/reconciliation evidence, pending recovery, and applicable security-return tasks from
+canonical records. Its ordered checks are `principal_paid`,
+`interest_paid_or_approved_adjustment`, `charges_paid`, `ledger_reconciled`, `recovery_clear`, and
+`security_tasks_identified`. This full-repayment slice does not invent an adjustment/settlement
+policy: `interest_adjustment_applied` is false and non-zero interest remains a blocker.
+
+`POST /api/v1/loan-accounts/{loan_account_id}/closure/` requires an `Idempotency-Key`, critical
+`closure.loan.close`, and an active Credit Manager or Company Secretary in object scope. It accepts
+exactly `closure_type = full_repayment` and bounded safe `closure_notes`; caller-supplied readiness or
+balance fields return `400 VALIDATION_ERROR`. Inside one transaction it locks the loan, re-evaluates
+all canonical checks, and either returns `409 LOAN_NOT_FULLY_REPAID` with retained safe denial
+evidence or creates one immutable financial close.
+
+The close freezes all readiness checks and balances, member/account identity, actor and effective
+role, UTC time, type, notes, idempotency/payload digests, audit, workflow event, and loan status
+history. It sets the account API status to `closed` as required by source API §36.2, while exposing
+`closure_stage = financially_closed` rather than claiming `fully_closed_and_archived`. Three
+explicit requirement records are created for NOC, applicable security return, and archive; 011H-J
+alone own their controlled completion. Closed loan accounts reject ordinary model/API mutation.
+Exact replay returns the original close; changed replay or duplicate/change requests return `409`
+without a second close, requirement set, history entry, or success audit.
+
 ## Non-Payment Note workflow (011D)
 
 `POST /api/v1/default-cases/{default_case_id}/non-payment-note/` accepts exactly the five fields in

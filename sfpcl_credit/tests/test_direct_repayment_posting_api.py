@@ -132,13 +132,11 @@ class DirectRepaymentPostingApiTests(TestCase):
             self.assertEqual(response.status_code, expected, response.content)
             self.assertEqual(self._write_counts(), (0, 0, 0, 0))
 
-        original = self.account.loan_account_status
-        for status in ("closed", "sanctioned"):
+        for status in ("sanctioned", "closed"):
             type(self.account).objects.filter(pk=self.account.pk).update(loan_account_status=status)
             response = self._capture(payload, str(uuid4()))
             self.assertEqual(response.status_code, 409, response.content)
             self.assertEqual(self._write_counts(), (0, 0, 0, 0))
-        type(self.account).objects.filter(pk=self.account.pk).update(loan_account_status=original)
 
     def test_sap_posting_requires_permission_reference_and_records_safe_audit_truth(self):
         from sfpcl_credit.identity.models import AuditLog

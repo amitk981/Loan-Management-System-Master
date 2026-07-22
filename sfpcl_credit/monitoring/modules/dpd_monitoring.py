@@ -308,9 +308,11 @@ def _advance_current_pointer(*, source_decision, candidate):
     ).values_list("as_of_date", flat=True).first()
     if current_date is not None and current_date > candidate.as_of_date:
         return
-    LoanAccount.objects.filter(pk=source_decision.loan_account_id).update(
-        current_dpd_status_id=candidate.pk
-    )
+    updated = LoanAccount.objects.filter(
+        pk=source_decision.loan_account_id
+    ).update_current_dpd_status_if_open(dpd_status_id=candidate.pk)
+    if updated != 1:
+        raise DpdConflict("The loan is not active for DPD calculation.")
 
 
 def _calculate_amounts(*, source_decision):

@@ -1,0 +1,5 @@
+closure_leaf [('closure', '0001_initial')]
+credit_via_closure True
+current_has_app_model False
+without_closure_has_app_model True
+without_closure_has_credit_model False

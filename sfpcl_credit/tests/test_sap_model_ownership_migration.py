@@ -99,7 +99,7 @@ class SapModelOwnershipMigrationTests(TransactionTestCase):
         self.executor.migrate(self.migrate_from)
         old_targets = [
             node for node in self.executor.loader.graph.leaf_nodes()
-            if node[0] not in {"sap_workflow", "disbursements"}
+            if node[0] not in {"sap_workflow", "disbursements", "closure"}
         ]
         self.old_apps = self.executor.loader.project_state(old_targets).apps
         self.identifiers = self._create_finance_owned_rows(self.old_apps)
@@ -136,7 +136,7 @@ class SapModelOwnershipMigrationTests(TransactionTestCase):
         self.executor.migrate(self.migrate_from)
         reversed_targets = [
             node for node in self.executor.loader.graph.leaf_nodes()
-            if node[0] not in {"sap_workflow", "disbursements"}
+            if node[0] not in {"sap_workflow", "disbursements", "closure"}
         ]
         reversed_apps = self.executor.loader.project_state(reversed_targets).apps
         with self.assertRaises(LookupError):

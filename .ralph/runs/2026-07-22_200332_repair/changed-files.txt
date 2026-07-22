@@ -1,0 +1,11 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/loans/models.py
+ M sfpcl_credit/tests/test_default_grace_assessment_api.py
+ M sfpcl_credit/tests/test_default_recovery_postgresql_acceptance.py
+ M sfpcl_credit/tests/test_direct_repayment_posting_api.py
+?? .ralph/runs/2026-07-22_191406_normal_run/
+?? .ralph/runs/2026-07-22_200332_repair/
+?? sfpcl_credit/closure/
+?? sfpcl_credit/tests/test_closure_api.py

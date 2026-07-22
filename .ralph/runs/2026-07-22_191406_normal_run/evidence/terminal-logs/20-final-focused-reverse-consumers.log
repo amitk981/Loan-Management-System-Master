@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 69 test(s).
+System check identified no issues (0 silenced).
+..........E...................Catalogue seeded: 189 permissions, 20 roles, 8 teams, 235 role-permission links.
+.......................................
+======================================================================
+ERROR: test_capture_requires_effective_authority_and_serviceable_loan (sfpcl_credit.tests.test_direct_repayment_posting_api.DirectRepaymentPostingApiTests.test_capture_requires_effective_authority_and_serviceable_loan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/tests/test_direct_repayment_posting_api.py", line 137, in test_capture_requires_effective_authority_and_serviceable_loan
+    type(self.account).objects.filter(pk=self.account.pk).update(loan_account_status=status)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/loans/models.py", line 40, in update
+    self._reject_closed()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/loans/models.py", line 35, in _reject_closed
+    raise ValidationError(
+django.core.exceptions.ValidationError: {'loan_account': ['Closed loan accounts are read-only.']}
+
+----------------------------------------------------------------------
+Ran 69 tests in 127.970s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

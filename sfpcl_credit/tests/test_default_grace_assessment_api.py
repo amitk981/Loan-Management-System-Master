@@ -439,17 +439,7 @@ class DefaultGraceAssessmentApiTests(TestCase):
         type(self.account).objects.filter(pk=self.account.pk).update(
             principal_outstanding="400000.00",
             total_outstanding="400000.00",
-            closed_at=timezone.now(),
-        )
-        closed = self.client.post(
-            url,
-            data=json.dumps(payload),
-            content_type="application/json",
-            **assessor_auth,
-        )
-        self.assertEqual(closed.status_code, 409, closed.content)
-        type(self.account).objects.filter(pk=self.account.pk).update(
-            closed_at=None, loan_account_status="sanctioned"
+            loan_account_status="sanctioned",
         )
         foreign_scope = self.client.post(
             url,
@@ -474,8 +464,19 @@ class DefaultGraceAssessmentApiTests(TestCase):
             **assessor_auth,
         )
 
+        type(self.account).objects.filter(pk=self.account.pk).update(
+            closed_at=timezone.now()
+        )
+        closed = self.client.post(
+            url,
+            data=json.dumps(payload),
+            content_type="application/json",
+            **assessor_auth,
+        )
+
         self.assertEqual(denied.status_code, 403, denied.content)
         self.assertEqual(guessed.status_code, 404, guessed.content)
+        self.assertEqual(closed.status_code, 409, closed.content)
         self.assertEqual(DefaultAssessment.objects.count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="default.assessed").count(), 0)
         case = DefaultCase.objects.get(pk=case_id)

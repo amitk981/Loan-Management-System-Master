@@ -3,6 +3,7 @@ from django.urls import path
 from sfpcl_credit.applications import views as application_views
 from sfpcl_credit.approvals import views as approval_views
 from sfpcl_credit.communications import views as communication_views
+from sfpcl_credit.closure import views as closure_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
@@ -36,6 +37,16 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/closure/",
+        closure_views.loan_close,
+        name="loan-account-close",
+    ),
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/closure-readiness/",
+        closure_views.closure_readiness,
+        name="loan-account-closure-readiness",
+    ),
     path(
         "api/v1/recovery-actions/<uuid:recovery_action_id>/complete/",
         recovery_views.recovery_action_complete,

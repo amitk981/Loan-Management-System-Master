@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 67 test(s).
+System check identified no issues (0 silenced).
+F...........................Catalogue seeded: 189 permissions, 20 roles, 8 teams, 235 role-permission links.
+.......................................
+======================================================================
+FAIL: test_auditor_can_read_but_cannot_close_and_permission_without_role_is_denied (sfpcl_credit.tests.test_closure_api.LoanClosureApiTests.test_auditor_can_read_but_cannot_close_and_permission_without_role_is_denied)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_191406_normal_run/sfpcl_credit/tests/test_closure_api.py", line 306, in test_auditor_can_read_but_cannot_close_and_permission_without_role_is_denied
+    self.assertEqual(
+AssertionError: 1 != 2
+
+----------------------------------------------------------------------
+Ran 67 tests in 128.092s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

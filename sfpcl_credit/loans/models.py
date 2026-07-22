@@ -1,7 +1,7 @@
 import uuid
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -25,6 +25,40 @@ class AppendOnlyLoanStatusHistoryQuerySet(models.QuerySet):
 
     def delete(self):
         raise ValidationError({"loan_status_history": "Loan status history is append-only."})
+
+
+class LoanAccountQuerySet(models.QuerySet):
+    def _lock_and_reject_closed(self):
+        rows = list(
+            self.select_for_update(of=("self",)).values_list(
+                "loan_account_status", "closed_at"
+            )
+        )
+        if any(status == "closed" or closed_at is not None for status, closed_at in rows):
+            raise ValidationError(
+                {"loan_account": "Closed loan accounts are read-only."}
+            )
+
+    def update(self, **kwargs):
+        with transaction.atomic():
+            self._lock_and_reject_closed()
+            return models.QuerySet.update(self, **kwargs)
+
+    def update_current_dpd_status_if_open(self, *, dpd_status_id):
+        open_accounts = self.filter(closed_at__isnull=True).exclude(
+            loan_account_status="closed"
+        )
+        return models.QuerySet.update(
+            open_accounts, current_dpd_status_id=dpd_status_id
+        )
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        return super().bulk_update(objs, fields, batch_size=batch_size)
+
+    def delete(self):
+        with transaction.atomic():
+            self._lock_and_reject_closed()
+            return models.QuerySet.delete(self)
 
 
 class LoanAccount(models.Model):
@@ -81,6 +115,28 @@ class LoanAccount(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now)
     closed_at = models.DateTimeField(null=True, blank=True)
+
+    objects = LoanAccountQuerySet.as_manager()
+
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            return super().save(*args, **kwargs)
+        with transaction.atomic():
+            retained = (
+                type(self)
+                .objects.select_for_update(of=("self",))
+                .filter(pk=self.pk)
+                .values("loan_account_status", "closed_at")
+                .first()
+            )
+            if retained and (
+                retained["loan_account_status"] == "closed"
+                or retained["closed_at"] is not None
+            ):
+                raise ValidationError(
+                    {"loan_account": "Closed loan accounts are read-only."}
+                )
+            return super().save(*args, **kwargs)
 
     class Meta:
         db_table = "loan_accounts"

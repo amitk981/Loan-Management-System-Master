@@ -556,3 +556,188 @@ class RecoveryActionPostgreSQLAcceptanceTests(TransactionTestCase):
         )
         self.assertEqual(AuditLog.objects.filter(action="recovery.proceeds_posted").count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="recovery.action.completed").count(), 0)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class ClosureReadinessPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        self.close_payload = {
+            "closure_type": "full_repayment",
+            "closure_notes": "Concurrent fresh full-repayment financial close.",
+        }
+        if self._testMethodName == "test_close_vs_recovery_completion_never_closes_a_pending_action":
+            return
+        from sfpcl_credit.tests.test_closure_api import LoanClosureApiTests
+
+        fixture = LoanClosureApiTests(
+            "test_full_repayment_close_freezes_fresh_facts_and_creates_controlled_requirements"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        self.account = fixture.account
+        self.actor = fixture.actor
+        self.auth = fixture.auth
+
+    def _close(self, key="postgres-close-001"):
+        return Client().post(
+            f"/api/v1/loan-accounts/{self.account.pk}/closure/",
+            data=json.dumps(self.close_payload),
+            content_type="application/json",
+            HTTP_IDEMPOTENCY_KEY=key,
+            **self.auth,
+        )
+
+    @staticmethod
+    def _race(*operations):
+        barrier = Barrier(len(operations))
+
+        def run(operation):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return operation()
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=len(operations)) as pool:
+            return list(pool.map(run, operations))
+
+    def test_five_duplicate_close_attempts_converge_on_one_financial_close(self):
+        from sfpcl_credit.closure.models import ClosureRequirement, LoanClosure
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.loans.models import LoanStatusHistory
+
+        responses = self._race(*(lambda: self._close() for _ in range(5)))
+
+        self.assertEqual([row.status_code for row in responses], [200] * 5)
+        self.assertEqual(
+            len({row.json()["data"]["loan_closure_id"] for row in responses}), 1
+        )
+        self.assertEqual(LoanClosure.objects.count(), 1)
+        self.assertEqual(ClosureRequirement.objects.count(), 3)
+        self.assertEqual(
+            AuditLog.objects.filter(action="closure.loan.financially_closed").count(), 1
+        )
+        self.assertEqual(
+            LoanStatusHistory.objects.filter(to_status="closed").count(), 1
+        )
+
+    def test_close_vs_repayment_serializes_to_one_admitted_mutation(self):
+        from sfpcl_credit.closure.models import LoanClosure
+        from sfpcl_credit.identity.models import Permission, RolePermission
+        from sfpcl_credit.loans.models import LoanAccount, Repayment
+
+        permission, _ = Permission.objects.get_or_create(
+            permission_code="finance.repayment.create",
+            defaults={
+                "permission_name": "Capture repayment",
+                "module_name": "finance",
+                "risk_level": "high",
+            },
+        )
+        RolePermission.objects.get_or_create(
+            role=self.actor.primary_role, permission=permission
+        )
+        LoanAccount.objects.filter(pk=self.account.pk).update(disbursed_amount="100.00")
+
+        def repay():
+            return Client().post(
+                f"/api/v1/loan-accounts/{self.account.pk}/repayments/",
+                data=json.dumps(
+                    {
+                        "repayment_source": "direct_farmer",
+                        "amount_received": "1.00",
+                        "received_date": "2026-07-22",
+                        "payment_method": "neft",
+                        "bank_reference_number": "CLOSE-RACE-REPAY-001",
+                        "remarks": "Concurrent repayment capture versus closure.",
+                    }
+                ),
+                content_type="application/json",
+                HTTP_IDEMPOTENCY_KEY="close-race-repayment-001",
+                **self.auth,
+            )
+
+        close_response, repayment_response = self._race(self._close, repay)
+
+        self.assertEqual(
+            sorted((close_response.status_code, repayment_response.status_code)),
+            [200, 409],
+        )
+        self.assertEqual(LoanClosure.objects.count() + Repayment.objects.count(), 1)
+        account = LoanAccount.objects.get(pk=self.account.pk)
+        if LoanClosure.objects.exists():
+            self.assertEqual(account.loan_account_status, "closed")
+        else:
+            self.assertNotEqual(account.loan_account_status, "closed")
+
+    def test_close_vs_recovery_completion_never_closes_a_pending_action(self):
+        from sfpcl_credit.closure.models import LoanClosure
+        from sfpcl_credit.identity.models import Permission, RolePermission
+        from sfpcl_credit.loans.models import LoanAccount
+        from sfpcl_credit.recovery.models import RecoveryAction
+        from sfpcl_credit.tests.test_recovery_action_api import RecoveryActionApiTests
+
+        recovery_fixture = RecoveryActionApiTests(
+            "test_company_secretary_initiates_exact_approved_sh4_with_governed_evidence"
+        )
+        recovery_fixture.setUp()
+        decision, _ = recovery_fixture._approved_decision()
+        recovery_actor, recovery_auth = recovery_fixture._executor()
+        evidence = recovery_fixture._recovery_evidence(recovery_actor)
+        initiated = Client().post(
+            f"/api/v1/recovery-decisions/{decision['recovery_decision_id']}/actions/",
+            data=json.dumps(recovery_fixture._initiation_payload(evidence)),
+            content_type="application/json",
+            **recovery_auth,
+        )
+        self.assertEqual(initiated.status_code, 200, initiated.content)
+        action_id = initiated.json()["data"]["recovery_action_id"]
+        self.account = recovery_fixture.account
+        LoanAccount.objects.filter(pk=self.account.pk).update(
+            principal_outstanding="0.00",
+            interest_outstanding="0.00",
+            charges_outstanding="0.00",
+            total_outstanding="0.00",
+            loan_account_status="under_recovery",
+        )
+        for code in ("closure.readiness.read", "closure.loan.close"):
+            permission, _ = Permission.objects.get_or_create(
+                permission_code=code,
+                defaults={
+                    "permission_name": code,
+                    "module_name": "closure",
+                    "risk_level": "critical",
+                },
+            )
+            RolePermission.objects.get_or_create(
+                role=recovery_actor.primary_role, permission=permission
+            )
+        self.auth = recovery_auth
+
+        def complete():
+            return Client().post(
+                f"/api/v1/recovery-actions/{action_id}/complete/",
+                data=json.dumps(
+                    {
+                        "completed_at": "2028-10-15T10:00:00Z",
+                        "amount_recovered": "0.00",
+                        "evidence_document_ids": [str(evidence.pk)],
+                        "remarks": "Concurrent zero residual recovery completion.",
+                    }
+                ),
+                content_type="application/json",
+                **recovery_auth,
+            )
+
+        close_response, completion_response = self._race(self._close, complete)
+
+        self.assertEqual(completion_response.status_code, 200, completion_response.content)
+        self.assertIn(close_response.status_code, {200, 409})
+        self.assertEqual(RecoveryAction.objects.get(pk=action_id).action_status, "completed")
+        if close_response.status_code == 200:
+            self.assertEqual(LoanClosure.objects.filter(loan_account=self.account).count(), 1)
+        else:
+            self.assertEqual(LoanClosure.objects.filter(loan_account=self.account).count(), 0)
