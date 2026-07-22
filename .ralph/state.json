@@ -317,14 +317,15 @@
     "010N2-epic-010-terminal-servicing-recurrence-repair",
     "010N3-interest-portfolio-completeness-closure",
     "010N4-global-search-sensitive-authority-closure",
-    "010N5-terminal-servicing-recurrence-owner-closure"
+    "010N5-terminal-servicing-recurrence-owner-closure",
+    "010O-header-notification-summary-wiring"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-22_055158_architecture_review",
+  "last_run_id": "2026-07-22_084434_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

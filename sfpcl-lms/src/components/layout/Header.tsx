@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Search, Bell, HelpCircle, ChevronDown, User, ChevronRight, LogOut, RefreshCw } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { Role } from '../../types';
-import { DEMO_AUTH_ENABLED } from '../../services/authSession';
+import { AuthSessionError, DEMO_AUTH_ENABLED } from '../../services/authSession';
+import { fetchNotifications, markNotificationRead, type NotificationListItem } from '../../services/notificationsApi';
 
 // Internal roles only — Borrower logs in separately via Login screen
 const ALL_ROLES: { role: Role; label: string; group?: string }[] = [
@@ -23,13 +24,6 @@ const ALL_ROLES: { role: Role; label: string; group?: string }[] = [
   // Note: 'borrower' role is NOT listed here — borrowers use the login screen
 ];
 
-const notifications = [
-  { id: 1, type: 'approval', message: 'LO00000042 — Sanction approval required', time: '10 min ago', urgent: true },
-  { id: 2, type: 'tat',      message: 'LO00000043 — Appraisal TAT will breach in 4 hours', time: '1 hr ago', urgent: true },
-  { id: 3, type: 'doc',      message: 'LO00000039 — PoA pending notarisation', time: '2 hr ago', urgent: false },
-  { id: 4, type: 'kyc',      message: 'Re-KYC due for 2 borrowers', time: '3 hr ago', urgent: false },
-];
-
 interface HeaderProps {
   activePage?: string;
   onNavigate?: (page: string, entityId?: string) => void;
@@ -43,6 +37,40 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
   const [showProfile, setShowProfile] = useState(false);
   const [showRolePicker, setShowRolePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState<NotificationListItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationStatus, setNotificationStatus] = useState<'loading' | 'success' | 'unauthorized' | 'error'>('loading');
+
+  const refreshNotificationSummary = useCallback(async () => {
+    setNotificationStatus('loading');
+    try {
+      const result = await fetchNotifications({ readStatus: 'unread', pageSize: 4 });
+      setNotifications(result.items);
+      setUnreadCount(result.pagination.total_count);
+      setNotificationStatus('success');
+    } catch (error) {
+      setNotifications([]);
+      setUnreadCount(0);
+      setNotificationStatus(error instanceof AuthSessionError && error.status === 401 ? 'unauthorized' : 'error');
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshNotificationSummary();
+  }, [refreshNotificationSummary]);
+
+  const handleMarkNotificationRead = async (notification: NotificationListItem) => {
+    try {
+      await markNotificationRead(notification.notification_id, notification.read_state_version);
+      await refreshNotificationSummary();
+    } catch (error) {
+      if (error instanceof AuthSessionError && error.status === 409 && error.code === 'STALE_WRITE') {
+        await refreshNotificationSummary();
+        return;
+      }
+      setNotificationStatus(error instanceof AuthSessionError && error.status === 401 ? 'unauthorized' : 'error');
+    }
+  };
 
   const closeAll = () => {
     setShowNotifications(false);
@@ -136,23 +164,51 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
         <div className="relative">
           <button
             onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowRolePicker(false); }}
+            aria-label={`Notifications, ${unreadCount} unread`}
             className="h-10 w-10 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors relative"
           >
             <Bell size={18} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 rounded-full ring-2 ring-white text-[10px] leading-4 text-white font-semibold">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </button>
           {showNotifications && (
             <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                 <span className="text-sm font-semibold text-slate-900">Notifications</span>
-                <span className="text-xs text-green-600 font-medium cursor-pointer">Mark all read</span>
+                {notificationStatus === 'success' && unreadCount > 0 && (
+                  <span className="text-xs text-slate-500 font-medium">{unreadCount} unread</span>
+                )}
               </div>
-              {notifications.map(n => (
-                <div key={n.id} className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer flex gap-3 ${n.urgent ? 'bg-amber-50/50' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.urgent ? 'bg-amber-500' : 'bg-slate-300'}`} />
-                  <div>
-                    <p className="text-sm text-slate-700">{n.message}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{n.time}</p>
+              {notificationStatus === 'loading' && (
+                <div className="px-4 py-6 text-center text-sm text-slate-500">Loading notifications…</div>
+              )}
+              {notificationStatus === 'success' && notifications.length === 0 && (
+                <div className="px-4 py-6 text-center text-sm text-slate-500">You have no unread notifications.</div>
+              )}
+              {notificationStatus === 'error' && (
+                <div className="px-4 py-6 text-center text-sm text-red-600">Notifications could not be loaded.</div>
+              )}
+              {notificationStatus === 'unauthorized' && (
+                <div className="px-4 py-6 text-center text-sm text-amber-700">Please sign in to view notifications.</div>
+              )}
+              {notificationStatus === 'success' && notifications.map(notification => (
+                <div key={notification.notification_id} className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 flex gap-3 ${notification.severity === 'urgent' || notification.severity === 'warning' ? 'bg-amber-50/50' : ''}`}>
+                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${notification.severity === 'urgent' || notification.severity === 'warning' ? 'bg-amber-500' : 'bg-slate-300'}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-700">{notification.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{notification.message}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{formatNotificationTime(notification.created_at)}</p>
+                    <button
+                      type="button"
+                      aria-label={`Mark ${notification.title} as read`}
+                      onClick={() => { void handleMarkNotificationRead(notification); }}
+                      className="text-xs text-green-600 font-medium mt-1 hover:text-green-700"
+                    >
+                      Mark as read
+                    </button>
                   </div>
                 </div>
               ))}
@@ -216,6 +272,14 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
       </div>
     </header>
   );
+};
+
+const formatNotificationTime = (value: string): string => {
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) return 'Time not recorded';
+  return date.toLocaleString('en-IN', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  });
 };
 
 export default Header;

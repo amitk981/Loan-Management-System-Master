@@ -1,0 +1,42 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_084434_normal_run/.ralph/runs/2026-07-22_084434_normal_run/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/header-notifications.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/header-notifications.e2e.spec.ts
+
+[2m[WebServer] [22m[22/Jul/2026 03:32:51] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 3 tests using 1 worker
+
+[2m[WebServer] [22m[22/Jul/2026 03:32:55] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[22/Jul/2026 03:32:55] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[22/Jul/2026 03:32:55] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[22/Jul/2026 03:32:55] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+  ✓  1 [chromium] › header-notifications.e2e.spec.ts:14:5 › 010O header renders the bounded populated notification summary (2.5s)
+[2m[WebServer] [22m[22/Jul/2026 03:32:57] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[22/Jul/2026 03:32:57] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[22/Jul/2026 03:32:57] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[22/Jul/2026 03:32:57] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+  ✓  2 [chromium] › header-notifications.e2e.spec.ts:34:5 › 010O header renders the empty notification summary (2.3s)
+[2m[WebServer] [22m[22/Jul/2026 03:33:00] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[22/Jul/2026 03:33:00] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[22/Jul/2026 03:33:00] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[22/Jul/2026 03:33:00] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+  ✓  3 [chromium] › header-notifications.e2e.spec.ts:44:5 › 010O header renders the notification API error state (2.4s)
+
+  3 passed (47.5s)
+
+Duration milliseconds: 48223
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_084434_normal_run/.ralph/runs/2026-07-22_084434_normal_run/evidence/trusted-browser-screenshots-2.sha256

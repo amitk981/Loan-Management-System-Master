@@ -1,0 +1,5 @@
+Listing tests:
+  [chromium] › header-notifications.e2e.spec.ts:14:5 › 010O header renders the bounded populated notification summary
+  [chromium] › header-notifications.e2e.spec.ts:34:5 › 010O header renders the empty notification summary
+  [chromium] › header-notifications.e2e.spec.ts:44:5 › 010O header renders the notification API error state
+Total: 3 tests in 1 file

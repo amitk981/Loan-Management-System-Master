@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/components/layout/Header.notifications.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-22_084434_normal_run/sfpcl-lms
+
+ ✓ src/components/layout/Header.notifications.test.tsx (1 test) 145ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  08:48:38
+   Duration  1.25s (transform 257ms, setup 0ms, collect 426ms, tests 145ms, environment 366ms, prepare 52ms)
+

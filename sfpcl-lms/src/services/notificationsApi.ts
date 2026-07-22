@@ -58,6 +58,7 @@ export const fetchNotifications = async (filters: {
   readStatus?: NotificationReadStatus;
   severity?: NotificationSeverity | 'all';
   category?: string;
+  pageSize?: number;
 } = {}): Promise<NotificationList> => {
   const params = new URLSearchParams();
   if (filters.readStatus && filters.readStatus !== 'all') {
@@ -67,6 +68,7 @@ export const fetchNotifications = async (filters: {
     params.set('severity', filters.severity);
   }
   if (filters.category) params.set('category', filters.category);
+  if (filters.pageSize) params.set('page_size', String(filters.pageSize));
   const query = params.toString();
   const envelope = await request<NotificationListItem[]>(
     `/api/v1/notifications/${query ? `?${query}` : ''}`,

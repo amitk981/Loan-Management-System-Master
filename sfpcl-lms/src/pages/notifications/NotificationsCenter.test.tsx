@@ -32,10 +32,10 @@ describe('notification API client', () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(ok([notification]));
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await fetchNotifications({ readStatus: 'unread' });
+    const result = await fetchNotifications({ readStatus: 'unread', pageSize: 4 });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/api/v1/notifications/?read_status=unread',
+      'http://127.0.0.1:8000/api/v1/notifications/?read_status=unread&page_size=4',
       expect.objectContaining({
         method: 'GET',
         headers: expect.objectContaining({
