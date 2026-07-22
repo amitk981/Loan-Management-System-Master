@@ -1,0 +1,11 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_witness_evidence_migration.WitnessEvidenceMigrationTests.test_backfill_is_idempotent_and_reverse_preserves_legacy_rows --verbosity 2
+
+Result: GREEN (exit code 0)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+test_backfill_is_idempotent_and_reverse_preserves_legacy_rows ... ok
+
+Ran 1 test in 85.863s
+OK

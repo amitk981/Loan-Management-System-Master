@@ -1,7 +1,7 @@
 # Slice 011A: Default Case Opening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance

@@ -1,0 +1,12 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_credit_model_ownership_migration.CreditAssessmentModelOwnershipMigrationTests.test_forward_move_preserves_rows_relationships_and_evidence_references --verbosity 1
+
+Result: GREEN (exit code 0)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 98.810s
+
+OK

@@ -6,6 +6,7 @@ from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
+from sfpcl_credit.defaults import views as default_views
 from sfpcl_credit.disbursements import views as disbursement_views
 from sfpcl_credit.finance import views as finance_views
 from sfpcl_credit.identity import admin_views, audit_views
@@ -34,6 +35,21 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/loan-accounts/<uuid:loan_account_id>/default-cases/open/",
+        default_views.default_case_open,
+        name="loan-account-default-case-open",
+    ),
+    path(
+        "api/v1/default-cases/",
+        default_views.default_case_list,
+        name="default-case-list",
+    ),
+    path(
+        "api/v1/default-cases/<uuid:default_case_id>/",
+        default_views.default_case_detail,
+        name="default-case-detail",
+    ),
     path("api/v1/global-search/", global_search_results, name="global-search"),
     path(
         "api/v1/quarterly-mis-reports/generate/",

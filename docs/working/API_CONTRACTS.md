@@ -5081,3 +5081,25 @@ returned or audited. PAN and Aadhaar inputs additionally require their canonical
 sensitive authority; SAP input requires `finance.sap_code.read`; blank-cheque input requires
 `security.blank_cheque.manage`; and security summary inputs require security-package or instrument
 authority. The registered compliance provider is intentionally empty until 011M3.
+
+## Default case opening and reads (011A)
+
+- `POST /api/v1/loan-accounts/{loan_account_id}/default-cases/open/`
+- `GET /api/v1/default-cases/{default_case_id}/`
+- `GET /api/v1/default-cases/?default_case_status=&member_id=&loan_account_id=&page=&page_size=`
+
+Open requires `defaults.case.open`, the Credit Manager role, and canonical loan object scope. The
+request accepts only `trigger_event=missed_principal_repayment`, `scheduled_due_date`, and an
+optional safe `reason`; a caller cannot submit a missed/paid result. The defaults owner locks and
+consumes the loan-owned schedule/allocation decision, opens only an unpaid scheduled principal
+obligation whose due date has passed, and returns the standard success envelope. The open response
+contains the source §35.1 case ID, status, grace dates, and server-derived `available_actions`.
+Detail/list additionally expose retained loan, member, schedule, trigger, and safe reason facts.
+Exact replay returns the same case; it never appends another audit/workflow transition or changes
+servicing balances.
+
+Detail and list require `defaults.case.read` plus defaults-owned object scope. Credit Manager and
+Company Secretary use their persisted loan/workflow scope, configured approvers are matched through
+the retained required-approver index, and Internal Auditor requires the active audit-read scope
+grant. Inaccessible and guessed identities use nondisclosing `404 NOT_FOUND`. List filters are exact,
+pagination is stable with `page_size` bounded to 1–100, and all endpoints use the standard envelope.

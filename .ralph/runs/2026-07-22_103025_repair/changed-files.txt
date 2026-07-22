@@ -1,0 +1,12 @@
+ M docs/working/API_CONTRACTS.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/tests/test_credit_model_ownership_migration.py
+ M sfpcl_credit/tests/test_witness_evidence_migration.py
+?? .ralph/runs/2026-07-22_090320_normal_run/
+?? .ralph/runs/2026-07-22_095219_repair/
+?? .ralph/runs/2026-07-22_103025_repair/
+?? sfpcl_credit/defaults/
+?? sfpcl_credit/tests/test_default_case_opening_api.py
+?? sfpcl_credit/tests/test_default_recovery_postgresql_acceptance.py

@@ -1,0 +1,4 @@
+Isolated SQLite migration proof using the required backend interpreter:
+initial forward: OK
+defaults reverse: OK
+defaults reapply: OK

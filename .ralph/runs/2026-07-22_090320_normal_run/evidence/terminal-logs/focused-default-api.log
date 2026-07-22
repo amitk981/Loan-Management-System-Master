@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+.E.F
+======================================================================
+ERROR: test_invalid_unpaid_claims_and_denied_or_foreign_opens_are_zero_write (sfpcl_credit.tests.test_default_case_opening_api.DefaultCaseOpeningApiTests.test_invalid_unpaid_claims_and_denied_or_foreign_opens_are_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<active-worktree>/sfpcl_credit/tests/test_default_case_opening_api.py", line 249, in test_invalid_unpaid_claims_and_denied_or_foreign_opens_are_zero_write
+    denied_actor = user_fixture._user("field_officer", "Denied Default Opener")
+                   ^^^^^^^^^^^^^^^^^^
+AttributeError: 'DisbursementTransferSuccessApiTests' object has no attribute '_user'
+
+======================================================================
+FAIL: test_scoped_detail_and_filtered_list_return_the_same_case_contract (sfpcl_credit.tests.test_default_case_opening_api.DefaultCaseOpeningApiTests.test_scoped_detail_and_filtered_list_return_the_same_case_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<active-worktree>/sfpcl_credit/tests/test_default_case_opening_api.py", line 219, in test_scoped_detail_and_filtered_list_return_the_same_case_contract
+    self.assertEqual(detail.status_code, 200, detail.content)
+AssertionError: 404 != 200 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "The default case was not found or is inaccessible.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-22T03:49:27.631583Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.439s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...

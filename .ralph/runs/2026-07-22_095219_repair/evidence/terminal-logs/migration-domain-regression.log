@@ -1,0 +1,55 @@
+Credit ownership migration module
+=================================
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_credit_model_ownership_migration --verbosity 1
+
+Result: GREEN (exit code 0)
+
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+----------------------------------------------------------------------
+Ran 2 tests in 195.832s
+
+OK
+
+Django system check
+===================
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py check
+
+Result: GREEN (exit code 0)
+System check identified no issues (0 silenced).
+
+Migration consistency
+=====================
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py makemigrations --check --dry-run
+
+Result: GREEN (exit code 0)
+No changes detected
+
+Default-opening API regression
+==============================
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_default_case_opening_api --verbosity 1
+
+Result: GREEN (exit code 0)
+
+Found 6 test(s).
+System check identified no issues (0 silenced).
+......
+----------------------------------------------------------------------
+Ran 6 tests in 4.353s
+
+OK
+
+Diff integrity
+==============
+
+Command: git diff --check
+Result: GREEN (exit code 0; no output)

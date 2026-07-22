@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.configurations",
     "sfpcl_credit.credit",
     "sfpcl_credit.documents",
+    "sfpcl_credit.defaults",
     "sfpcl_credit.disbursements",
     "sfpcl_credit.finance",
     "sfpcl_credit.interest",
