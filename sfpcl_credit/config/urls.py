@@ -4,6 +4,7 @@ from sfpcl_credit.applications import views as application_views
 from sfpcl_credit.approvals import views as approval_views
 from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.closure import views as closure_views
+from sfpcl_credit.compliance import views as compliance_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
@@ -37,6 +38,13 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path("api/v1/compliance-controls/", compliance_views.controls, name="compliance-controls"),
+    path("api/v1/compliance-controls/<uuid:compliance_control_id>/", compliance_views.control_detail, name="compliance-control-detail"),
+    path("api/v1/compliance-tasks/", compliance_views.tasks, name="compliance-tasks"),
+    path("api/v1/compliance-tasks/<uuid:compliance_task_id>/", compliance_views.task_detail, name="compliance-task-detail"),
+    path("api/v1/compliance-tasks/<uuid:compliance_task_id>/evidence/", compliance_views.evidence_submit, name="compliance-evidence-submit"),
+    path("api/v1/compliance-evidence/<uuid:compliance_evidence_id>/review/", compliance_views.evidence_review, name="compliance-evidence-review"),
+    path("api/v1/compliance/money-lending-law-reviews/", compliance_views.money_lending_review, name="money-lending-law-review"),
     path(
         "api/v1/archive-records/",
         closure_views.archive_manifest,

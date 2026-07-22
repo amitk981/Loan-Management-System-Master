@@ -21,9 +21,9 @@ class CreditAssessmentModelOwnershipMigrationTests(TransactionTestCase):
             node
             for node in self.executor.loader.graph.leaf_nodes()
             # Downstream configuration, legal-document, loan-account, monitoring, default,
-            # recovery, closure, SAP, and communications ownership (including interest invoices)
-            # anchors current approval/application state and must not outrun this historical
-            # pre-move projection.
+            # recovery, closure, compliance, SAP, and communications ownership (including interest
+            # invoices) anchors current approval/application state and must not outrun this
+            # historical pre-move projection.
             if node[0]
             not in {
                 "credit",
@@ -39,6 +39,7 @@ class CreditAssessmentModelOwnershipMigrationTests(TransactionTestCase):
                 "defaults",
                 "recovery",
                 "closure",
+                "compliance",
             }
         ]
         old_apps = self.executor.loader.project_state(pre_move_state_targets).apps

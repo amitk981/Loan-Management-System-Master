@@ -1,0 +1,13 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+?? .ralph/runs/2026-07-23_014100_normal_run/
+?? sfpcl_credit/closure/compliance_evidence_facade.py
+?? sfpcl_credit/compliance/
+?? sfpcl_credit/legal_documents/compliance_evidence_facade.py
+?? sfpcl_credit/recovery/compliance_evidence_facade.py
+?? sfpcl_credit/tests/test_compliance_api.py
+?? sfpcl_credit/tests/test_compliance_postgresql_acceptance.py
+?? sfpcl_credit/tests/test_compliance_task_engine.py

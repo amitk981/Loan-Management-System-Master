@@ -1,0 +1,6 @@
+Django check: exit 0; system check identified no issues.
+Migration sync: exit 0; no changes detected.
+Compileall for compliance and focused tests: exit 0.
+Combined compliance/catalogue/reverse-owner pack: 53 tests in 4.731s, OK (2 skips: the declared
+PostgreSQL acceptance on SQLite and one existing reverse-owner skip).
+git diff --check: exit 0.

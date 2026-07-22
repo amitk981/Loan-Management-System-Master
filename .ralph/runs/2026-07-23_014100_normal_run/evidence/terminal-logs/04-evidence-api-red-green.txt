@@ -1,0 +1,9 @@
+RED evidence behavior: focused engine test exited 1 because ComplianceEvidence did not exist.
+RED API behavior: focused API test exited 1 with 404 because compliance routes did not exist.
+
+GREEN command: mandated Python manage.py test for compliance API, engine, PostgreSQL acceptance,
+and catalogue seed. Exit 0. Found 25 tests; 25 completed in 2.237s; OK (skipped=1).
+The one skip is the exact PostgreSQL race acceptance on local SQLite; Ralph runs it on PostgreSQL.
+
+This proves standard control/task envelopes, maker-checker submit/review, accepted immutability,
+frequency/replay/escalation, R7 source mapping, role catalogue stability, and migration-backed models.

@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.applications",
     "sfpcl_credit.communications",
     "sfpcl_credit.closure.apps.ClosureConfig",
+    "sfpcl_credit.compliance.apps.ComplianceConfig",
     "sfpcl_credit.configurations",
     "sfpcl_credit.credit",
     "sfpcl_credit.documents",

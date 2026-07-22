@@ -1,0 +1,10 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_compliance_task_engine.ComplianceTaskEngineTests.test_monthly_generation_is_due_and_exact_replay_creates_one_task --noinput --verbosity 1
+Exit: 0
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.007s
+OK
+
+GREEN proves the public engine creates one overdue monthly task and exact replay creates no duplicate.

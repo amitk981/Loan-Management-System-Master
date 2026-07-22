@@ -1,0 +1,16 @@
+RED command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_compliance_task_engine.ComplianceTaskEngineTests.test_each_frequency_generates_stable_periods_and_one_overdue_escalation --noinput --verbosity 1
+Exit: 1
+Found 1 test(s). System check identified no issues (0 silenced).
+AssertionError: 4 != 10. Ran 1 test; FAILED (failures=1).
+The engine initially generated only each control's first period.
+
+GREEN command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_compliance_task_engine --noinput --verbosity 1
+Exit: 0
+Found 2 test(s).
+System check identified no issues (0 silenced).
+..
+Ran 2 tests in 0.023s
+OK
+
+GREEN proves monthly, quarterly, annual, and ongoing period generation, replay-safe overdue
+notifications, and successful scheduler job recording through the public engine interface.

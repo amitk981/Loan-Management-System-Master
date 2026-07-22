@@ -1,0 +1,27 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_credit_model_ownership_migration.CreditAssessmentModelOwnershipMigrationTests --verbosity 2
+
+Result: RED (exit code 1)
+
+Found 2 test(s).
+test_forward_move_preserves_rows_relationships_and_evidence_references ... ERROR
+test_reverse_move_restores_application_state_without_changing_rows ... ERROR
+
+Both errors:
+LookupError: App 'applications' doesn't have a 'EligibilityAssessment' model.
+
+Ran 2 tests in 86.250s
+FAILED (errors=2)
+
+Diagnosis probe:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py shell -c "from django.db import connection; from django.db.migrations.loader import MigrationLoader; l=MigrationLoader(connection); n=('compliance','0001_initial'); ancestors=l.graph.forwards_plan(n); print([x for x in ancestors if x[0] in {'applications','credit','communications','documents','identity','compliance'}]); print('leaf?', n in l.graph.leaf_nodes())"
+
+Relevant output:
+- compliance.0001_initial is a migration-graph leaf.
+- Its ancestor plan includes credit.0001_credit_assessment_model_ownership through
+  credit.0007_eligibility_active_member_snapshot.
+
+Cause:
+The historical migration test projects all current leaf apps except a fixed set of downstream
+owners. The newly introduced compliance leaf was not excluded, so its dependency chain reintroduced
+the post-move credit model state into the test's intended pre-move projection.

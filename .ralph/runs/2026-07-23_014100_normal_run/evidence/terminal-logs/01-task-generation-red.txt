@@ -1,0 +1,12 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_compliance_task_engine.ComplianceTaskEngineTests.test_monthly_generation_is_due_and_exact_replay_creates_one_task --noinput --verbosity 2
+Exit: 1
+
+System check identified no issues (0 silenced).
+test_monthly_generation_is_due_and_exact_replay_creates_one_task ... ERROR
+
+ModuleNotFoundError: No module named 'sfpcl_credit.compliance'
+
+Ran 1 test in 0.002s
+FAILED (errors=1)
+
+This is the expected RED: the public compliance module does not yet exist.

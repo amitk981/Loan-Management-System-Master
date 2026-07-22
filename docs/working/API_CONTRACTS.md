@@ -5343,3 +5343,28 @@ plus one-to-one constraints make five concurrent grants/expiry runs converge.
 - `POST /api/v1/recovery-actions/{recovery_action_id}/complete/`
 
 Company Secretary execution requires the Critical action permission, canonical case scope, the exact approved decision, matching usable security-owner evidence, and governed documents. Initiation retains fair-conduct interaction evidence. Completion atomically posts verified proceeds through the canonical loan-balance owner; exact replay returns the retained action, changed/stale replay conflicts, and SAP remains `pending` without real adapter acceptance.
+
+## Compliance control tracker foundation (011K)
+
+- `GET|POST /api/v1/compliance-controls/`
+- `PATCH /api/v1/compliance-controls/{compliance_control_id}/`
+- `GET|POST /api/v1/compliance-tasks/`
+- `PATCH /api/v1/compliance-tasks/{compliance_task_id}/`
+- `POST /api/v1/compliance-tasks/{compliance_task_id}/evidence/`
+- `POST /api/v1/compliance-evidence/{compliance_evidence_id}/review/`
+- `POST /api/v1/compliance/money-lending-law-reviews/`
+
+Controls require an explicit active owner, distinct reviewer, first due date, valid frequency/type,
+evidence requirement, legal basis, missed-risk text, and status. The configured first due date is the
+calendar anchor for monthly, quarterly, and annual periods; ongoing controls retain one evergreen
+period. Task generation is unique by control/period, rejects changed replay, queues one overdue
+escalation, and records the scheduler result. Task completion is owned only by accepted evidence.
+
+Evidence submission requires the assigned owner, submit permission, a confidential/restricted
+governed document, and a non-completed matching task. Review requires the configured distinct
+reviewer, review permission, a pending submission, and nonblank comments. Rejection remains in
+append-only review history and reopens the due/overdue task; accepted evidence, comments, and task
+closure are immutable through the public interface. Annual money-lending review is Company
+Secretary-only, requires its dedicated permission, matching accepted annual task evidence, and
+restricted legal-opinion and Board-note documents. All responses use the standard envelope and
+return server-owned `available_actions`.

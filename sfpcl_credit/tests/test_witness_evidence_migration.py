@@ -18,7 +18,8 @@ class WitnessEvidenceMigrationTests(TransactionTestCase):
             node
             for node in executor.loader.graph.leaf_nodes()
             # Configuration, legal, finance, loan, interest, monitoring, default, recovery,
-            # closure, SAP, and communications owners explicitly anchor later application state.
+            # closure, compliance, SAP, and communications owners explicitly anchor later
+            # application state.
             # Exclude those descendants when projecting the pre-0012 application model or the
             # historical state would outrun the reversed schema.
             if node[0]
@@ -36,9 +37,14 @@ class WitnessEvidenceMigrationTests(TransactionTestCase):
                 "defaults",
                 "recovery",
                 "closure",
+                "compliance",
             }
         ] + self.migrate_from
         old_apps = executor.loader.project_state(legacy_targets).apps
+        self.assertNotIn(
+            "verification_folio_number",
+            {field.name for field in old_apps.get_model("applications", "Witness")._meta.fields},
+        )
         self.ids = self._create_legacy_rows(old_apps)
 
     def tearDown(self):

@@ -426,6 +426,7 @@ ROLE_PERMISSIONS = {
         "security.package.update",
         "security.package.read",
         "security.poa.manage",
+        "compliance.evidence.submit",
         "management_readonly",
     ],
     "company_secretary": [
@@ -459,6 +460,9 @@ ROLE_PERMISSIONS = {
         "closure.archive.create",
         "closure.archive.read",
         "compliance.control.read",
+        "compliance.control.manage",
+        "compliance.task.read",
+        "compliance.task.create",
         "compliance.task.update",
         "compliance.evidence.submit",
         "compliance.money_lending_review.manage",
@@ -513,6 +517,9 @@ ROLE_PERMISSIONS = {
         "reports.export",
         "compliance.section186.read",
         "compliance.nbfc_test.read",
+        "compliance.control.read",
+        "compliance.control.manage",
+        "compliance.task.read",
         "compliance.evidence.review",
         "config.loan_policy.read",
         "recovery.decision.create",
@@ -548,6 +555,7 @@ ROLE_PERMISSIONS = {
         "finance.interest_capitalise",
         "reports.portfolio.read",
         "monitoring.dpd.read",
+        "compliance.task.read",
         "compliance.evidence.submit",
         "management_readonly",
     ],
@@ -568,6 +576,7 @@ ROLE_PERMISSIONS = {
         "documents.loan_document.read",
         "closure.archive.read",
         "compliance.task.read",
+        "compliance.control.read",
         "compliance.evidence.review",
         # A-023 maps internal_auditor to the "compliance" dashboard context; the
         # dashboard endpoint gates on management_readonly, so the auditor needs it
@@ -591,6 +600,8 @@ ROLE_PERMISSIONS = {
         "config.share_valuation.manage",
         "config.scale_of_finance.manage",
         "config.interest_rate.manage",
+        "compliance.control.read",
+        "compliance.control.manage",
     ],
     "management_viewer": [
         "management_readonly",
