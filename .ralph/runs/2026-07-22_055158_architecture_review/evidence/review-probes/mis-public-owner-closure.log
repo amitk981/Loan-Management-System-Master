@@ -1,0 +1,13 @@
+Finding ID: AR-010-MIS-001
+Root ID: ROOT-010-MIS-AS-OF-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-22_055158_architecture_review/evidence/review-probes/inherited_owner_contract_probe.py mis
+
+FAIL: AC-E10-RR1 uses SimpleTestCase, so it cannot persist invoice lifecycle truth or generate/replay
+a public MIS report. The permanent method constructs unsaved InterestInvoice instances and invokes
+the private `_invoice_status_at_cutoff` helper. It does not cross the public MIS owner or assert exact
+historical replay after before/on/after-cutoff source mutations as the acceptance criterion requires.
+
+The inherited narrow helper command remains green (2 tests), but it cannot close this grouped root.
+Exit code: 1

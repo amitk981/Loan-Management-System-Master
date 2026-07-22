@@ -1,0 +1,25 @@
+Reviewed boundary: bbc8aa74...92053395
+Reviewed product slice: 010N5-terminal-servicing-recurrence-owner-closure
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010MisOwnerRegressionTests --verbosity 1 --keepdb
+Found 2 test(s).
+Ran 2 tests in 0.001s
+OK
+Exit code: 0
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_epic010_terminal_owner_finalizer.Epic010ReminderOwnerRegressionTests.test_repayment_after_check_but_before_adapter_prevents_provider_call --verbosity 1 --keepdb
+Found 1 test(s).
+Ran 1 test in 0.262s
+OK
+Exit code: 0
+
+Command:
+cd sfpcl-lms && npm exec vitest -- --config ../.ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/vitest.review.config.ts run -t 'AR-010-SERVICING-SEAM-001'
+Test Files: 1 passed (1)
+Tests: 1 passed, 2 skipped (3)
+Exit code: 0
+
+These narrow inherited commands are green. The current review's separately retained failing probes
+show why their assertions are insufficient to close the three grouped acceptance contracts.

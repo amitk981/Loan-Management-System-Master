@@ -1,0 +1,14 @@
+Finding ID: AR-010-REMINDER-001
+Root ID: ROOT-010-REMINDER-DELIVERY-OWNER
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python .ralph/runs/2026-07-22_055158_architecture_review/evidence/review-probes/inherited_owner_contract_probe.py reminder
+
+FAIL: AC-E10-RR2 changes recipient source and revokes scope in the same trusted PostgreSQL case, so
+recipient-source cancellation is not isolated. The case asserts only `delivery_status`; it does not
+use a counting adapter or assert zero provider effects. A broken source binding can remain green when
+the independent scope-revocation branch performs the cancellation.
+
+The inherited repayment-after-check command remains green (1 test), but it cannot prove the separate
+source-owner obligation or close this grouped root.
+Exit code: 1

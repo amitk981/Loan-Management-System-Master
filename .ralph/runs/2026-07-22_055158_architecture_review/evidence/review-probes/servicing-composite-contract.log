@@ -1,0 +1,17 @@
+Finding ID: AR-010-SERVICING-SEAM-001
+Root ID: ROOT-010-SERVICING-OWNER-SEAM
+
+Command:
+cd sfpcl-lms && npm exec vitest -- --config ../.ralph/runs/2026-07-22_055158_architecture_review/evidence/review-probes/vitest.review.config.ts run
+
+FAIL: identifier-only composite truth resolved instead of rejecting. The accepted value contained
+only `capture.repayment_id` and `allocation.repayment_allocation_id`, so the staff UI could report a
+complete financial result without the declared capture, SAP, allocation, and balance fields.
+
+FAIL: cross-repayment composite truth resolved instead of rejecting. The accepted allocation named
+`different-repayment-review-2` while capture named `repayment-review-1`; the client did not bind the
+allocation owner to the captured repayment.
+
+Test Files: 1 failed (1)
+Tests: 2 failed (2)
+Exit code: 1

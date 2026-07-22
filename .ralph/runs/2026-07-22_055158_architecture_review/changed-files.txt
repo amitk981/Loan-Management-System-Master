@@ -1,0 +1,4 @@
+ M docs/working/CONTEXT.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-22_055158_architecture_review/
+?? docs/slices/010N8-terminal-servicing-recurrence-verification-closure.md

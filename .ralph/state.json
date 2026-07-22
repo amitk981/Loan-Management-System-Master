@@ -322,22 +322,22 @@
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-22_034151_normal_run",
+  "last_run_id": "2026-07-22_055158_architecture_review",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 0,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null,
-  "architecture_review_interval": 4,
-  "architecture_review_clean_streak": 1,
+  "architecture_review_interval": 8,
+  "architecture_review_clean_streak": 2,
   "last_architecture_review_metrics": {
     "findings_closed": 0,
     "new_critical": 0,
     "new_high": 0,
     "new_medium": 0,
     "new_low": 0,
-    "corrective_slices_added": 3
+    "corrective_slices_added": 1
   },
   "last_architecture_review_finalizer": {
     "epic": "010",
@@ -471,5 +471,33 @@
   },
   "architecture_review_quarantined_findings": {},
   "architecture_review_quarantine_history": [],
-  "architecture_review_due_reason": "terminal_repair_verification:ROOT-010-REMINDER-DELIVERY-OWNER"
+  "architecture_review_terminal_repair_pending": {
+    "epic": "010",
+    "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER",
+    "root_ids": [
+      "ROOT-010-MIS-AS-OF-OWNER",
+      "ROOT-010-REMINDER-DELIVERY-OWNER",
+      "ROOT-010-SERVICING-OWNER-SEAM"
+    ],
+    "finding_roots": [
+      {
+        "finding_id": "AR-010-MIS-001",
+        "root_id": "ROOT-010-MIS-AS-OF-OWNER"
+      },
+      {
+        "finding_id": "AR-010-REMINDER-001",
+        "root_id": "ROOT-010-REMINDER-DELIVERY-OWNER"
+      },
+      {
+        "finding_id": "AR-010-SERVICING-SEAM-001",
+        "root_id": "ROOT-010-SERVICING-OWNER-SEAM"
+      }
+    ],
+    "finalizer_slice": "CR-015-epic-010-terminal-servicing-owner-finalizer",
+    "corrective_slice": "010N8",
+    "episode": 1,
+    "attempt": 1,
+    "status": "pending"
+  },
+  "architecture_review_due_reason": "terminal_repair:ROOT-010-REMINDER-DELIVERY-OWNER"
 }

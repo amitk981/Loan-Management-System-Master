@@ -71,19 +71,18 @@ Root: ROOT-010-MIS-AS-OF-OWNER
 
 Severity: High
 Disposition: Carried
-Reviewed boundary: `fff95e9d...71fd80df` (010N2)
+Reviewed boundary: `bbc8aa74...92053395` (010N5)
 
-010N2 correctly uses the real `InterestInvoice.generated_at` field and its two focused current tests
-pass the historical issuance and before/on/after generation lifecycle. No new MIS-specific cutoff
-defect was reproduced. The inherited identity nevertheless remains carried because the active
-terminal-repair episode is one grouped CR-015 contract and `AR-010-SERVICING-SEAM-001` still fails
-inside it. The workflow contract requires one successor to retain every inherited Finding ID/Root ID
-pair until a later independent review can close all three together.
+010N5 preserves two green cutoff-helper tests, but its new “real model” case constructs unsaved
+`InterestInvoice` instances inside `SimpleTestCase` and calls private
+`_invoice_status_at_cutoff`. It never persists the before/on/after lifecycle, generates a report
+through the public MIS owner, mutates sources after generation, or replays that historical report.
+The existing public replay test does not combine invoice lifecycle with post-cutoff mutation.
 
-Corrective 010N5 therefore preserves the green MIS owner tests and exact replay while closing the
-remaining servicing seam; this is continuation of repair episode 1, not a new generation or second
-finalizer.
-Reproducer: `.ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/terminal-mis-carried.log`.
+This is incomplete closure evidence for the inherited root, not a new finding. Successor 010N8 must
+cross the public generate/detail/drill-down/export/replay seam with real invoice lifecycle records
+and retain the same grouped repair episode.
+Reproducer: `.ralph/runs/2026-07-22_055158_architecture_review/evidence/review-probes/mis-public-owner-closure.log`.
 
 ## AR-010-REMINDER-001 — reminder eligibility and delivery do not retain one serviceable decision
 
@@ -91,17 +90,18 @@ Root: ROOT-010-REMINDER-DELIVERY-OWNER
 
 Severity: High
 Disposition: Carried
-Reviewed boundary: `fff95e9d...71fd80df` (010N2)
+Reviewed boundary: `bbc8aa74...92053395` (010N5)
 
-The current public repayment-after-check probe passes with zero provider calls, and the product run
-retains the exact five-case PostgreSQL reminder class. No new provider-effect defect was reproduced.
-The inherited identity is carried only because the same active CR-015 terminal-repair episode still
-fails at the servicing command seam; Ralph requires the successor contract to retain the complete
-grouped root set rather than prematurely discard one inherited pair.
+The repayment-after-check probe remains green and the trusted class still declares five cases, but
+the recipient-source case changes the member mobile number and deletes the actor's loan-read role
+permission in the same setup. It then asserts only `delivery_status`, not the provider call count.
+A broken current-recipient binding can therefore remain green because the separate scope-revocation
+branch cancels first; “at most one justified provider effect” is not proved for the source cause.
 
-Corrective 010N5 keeps all five reminder cases binding while closing the remaining grouped owner
-failure. This does not reopen a separate reminder generation or admit a second finalizer.
-Reproducer: `.ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/terminal-reminder-carried.log`.
+This is incomplete closure evidence for the inherited root. Successor 010N8 must isolate source and
+scope causes and assert exact provider effects in every retained PostgreSQL case while keeping the
+complete grouped repair episode.
+Reproducer: `.ralph/runs/2026-07-22_055158_architecture_review/evidence/review-probes/reminder-source-owner-closure.log`.
 
 ## AR-010-DPD-001 — current DPD and historical policy evidence are not relationally bound
 
@@ -214,21 +214,20 @@ Root: ROOT-010-SERVICING-OWNER-SEAM
 
 Severity: High
 Disposition: Carried
-Reviewed boundary: `fff95e9d...71fd80df` (010N2)
+Reviewed boundary: `bbc8aa74...92053395` (010N5)
 
-010N2 removes the direct cross-`TestCase.setUp()` dependency, but makes the historical frontend probe
-green by adding a capture-only compatibility branch to `postAndAllocateDirectRepayment`. That branch
-accepts a partial response from the composite endpoint, then calls separate SAP-posting and allocation
-mutations and supplies `principal_first` policy from React. A current executable probe returns a
-capture-only response and observes a complete-looking resolved result rather than a malformed-response
-failure after one request.
+010N5 removes the capture-only browser coordinator and the original one-request probe is green.
+However, the replacement validator checks only exact top-level keys plus
+`capture.repayment_id` and `allocation.repayment_allocation_id` before casting the rest of the
+payload. A current executable probe supplies identifier-only nested objects and a second response
+whose allocation names a different repayment; both resolve as successful complete outcomes.
 
-This restores the exact browser-owned financial sequence that CR-015 requirement 3 and the binding
-API contract replaced with the backend command as the sole mutation. Existing permanent tests cover
-only complete/replayed composite responses, so they never execute the new branch. Corrective 010N5
-continues the same repair episode with all three grouped roots: remove the client substeps, reject
-partial transport truth, and prove one backend transaction across replay/conflict/crash boundaries.
-Reproducer: `.ralph/runs/2026-07-22_031437_architecture_review/evidence/review-probes/servicing-composite-owner.log`.
+The backend additions cover exact replay, changed payload, allocation rollback, and an equal-key
+race, but the crash test never retries and no test proves one retained SAP decision, full response,
+ledger/balance effect, or audit result across capture/SAP/allocation/response boundaries. Successor
+010N8 must enforce the complete relational response contract and finish that public-command matrix,
+retaining all three inherited roots in the same episode.
+Reproducer: `.ralph/runs/2026-07-22_055158_architecture_review/evidence/review-probes/servicing-composite-contract.log`.
 
 ## Targeted closure review 2026-07-19_193824_architecture_review — Epic 009 generation 2
 
