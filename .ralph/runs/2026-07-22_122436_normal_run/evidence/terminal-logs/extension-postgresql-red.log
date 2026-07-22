@@ -1,0 +1,9 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.ExtensionNotePostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --verbosity 1
+Exit code: 1
+Found 2 test(s).
+System check identified no issues (0 silenced).
+ERROR: test_five_concurrent_exact_grants_converge_on_one_note_and_transition
+ERROR: test_five_concurrent_expiry_runs_create_one_review_transition
+django.db.utils.NotSupportedError: FOR UPDATE cannot be applied to the nullable side of an outer join
+Ran 2 tests in 10.962s
+FAILED (errors=2)

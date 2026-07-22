@@ -11,7 +11,7 @@ from django.utils.dateparse import parse_date
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
-from sfpcl_credit.defaults.models import DefaultAssessment, DefaultCase
+from sfpcl_credit.defaults.models import DefaultAssessment, DefaultCase, ExtensionNote
 from sfpcl_credit.legal_documents.models import LoanDocument
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
@@ -27,6 +27,7 @@ from sfpcl_credit.workflows.events import record_workflow_event
 READ_PERMISSION = "defaults.case.read"
 OPEN_PERMISSION = "defaults.case.open"
 ASSESS_PERMISSION = "defaults.assessment.create"
+EXTENSION_PERMISSION = "defaults.extension.grant"
 
 
 class DefaultValidation(Exception):
@@ -221,6 +222,83 @@ class DefaultWorkflow:
         return counts
 
     @classmethod
+    def process_extension_expiries(cls, *, as_of_date, actor=None, limit=100):
+        """Reconcile active extensions without creating recovery artifacts."""
+        as_of_date = _parse_date("as_of_date", as_of_date)
+        note_ids = list(
+            ExtensionNote.objects.filter(status=ExtensionNote.STATUS_ACTIVE)
+            .order_by("extension_end_date", "extension_note_id")
+            .values_list("pk", flat=True)[:limit]
+        )
+        counts = {
+            "processed_count": 0,
+            "cured_count": 0,
+            "expired_count": 0,
+            "review_tasks_created_count": 0,
+            "failure_count": 0,
+        }
+        for note_id in note_ids:
+            result = None
+            task_created = False
+            try:
+                with transaction.atomic():
+                    note = (
+                        ExtensionNote.objects.select_for_update()
+                        .select_related("default_case__loan_account")
+                        .get(pk=note_id)
+                    )
+                    if note.status != ExtensionNote.STATUS_ACTIVE:
+                        continue
+                    row = DefaultCase.objects.select_for_update().get(
+                        pk=note.default_case_id
+                    )
+                    if row.default_case_status != "extension_granted":
+                        continue
+                    counts["processed_count"] += 1
+                    if row.loan_account.principal_outstanding == 0:
+                        _record_extension_transition(
+                            note=note,
+                            row=row,
+                            actor=actor,
+                            to_state=DefaultCase.STATUS_RESOLVED_BY_REPAYMENT,
+                            action="extension.cured",
+                            as_of_date=as_of_date,
+                            expire_note=False,
+                        )
+                        result = "cured"
+                    elif as_of_date > note.extension_end_date:
+                        _, task_created = enqueue_scheduled_job(
+                            job_type="default_assessment",
+                            due_at=timezone.make_aware(
+                                datetime.combine(
+                                    note.extension_end_date + timedelta(days=1), time.min
+                                )
+                            ),
+                            idempotency_key=f"extension-review:{row.pk}",
+                            related_entity_type="default_case",
+                            related_entity_id=row.pk,
+                        )
+                        _record_extension_transition(
+                            note=note,
+                            row=row,
+                            actor=actor,
+                            to_state="extension_expired",
+                            action="extension.expired",
+                            as_of_date=as_of_date,
+                            expire_note=True,
+                        )
+                        result = "expired"
+            except Exception:
+                counts["failure_count"] += 1
+                continue
+            if result == "cured":
+                counts["cured_count"] += 1
+            elif result == "expired":
+                counts["expired_count"] += 1
+                counts["review_tasks_created_count"] += int(task_created)
+        return counts
+
+    @classmethod
     def assess(
         cls, *, actor, default_case_id, payload, request=None, as_of_date=None
     ):
@@ -289,6 +367,96 @@ class DefaultWorkflow:
                 action_code="default.assessed",
             )
             return assessment
+
+    @classmethod
+    def grant_extension(
+        cls, *, actor, default_case_id, payload, request=None
+    ):
+        _require_extension_authority(actor)
+        if not _scoped_case_candidates(actor=actor).filter(pk=default_case_id).exists():
+            raise DefaultNotFound
+        cleaned = _validate_extension_input(payload)
+        with transaction.atomic():
+            row = (
+                DefaultCase.objects.select_for_update()
+                .select_related("loan_account")
+                .get(pk=default_case_id)
+            )
+            existing = row.extension_note
+            if existing is not None:
+                if _extension_replay_matches(existing, cleaned):
+                    return existing
+                raise DefaultConflict("The default case already has a different extension note.")
+            assessment = row.current_assessment
+            if (
+                row.default_case_status != DefaultCase.STATUS_ASSESSMENT_IN_PROGRESS
+                or assessment is None
+                or assessment.assessment_type != DefaultAssessment.TYPE_POST_GRACE
+                or assessment.payment_failure_classification != "non_intentional"
+                or assessment.recommended_action != "grant_extension"
+                or row.loan_account.principal_outstanding == 0
+                or row.loan_account.closed_at is not None
+            ):
+                raise DefaultConflict(
+                    "Only an unpaid, open case with a current non-intentional extension recommendation is eligible."
+                )
+            expected_start = row.grace_period_end_date + timedelta(days=1)
+            expected_end = _add_calendar_months(expected_start, 12) - timedelta(days=1)
+            date_errors = {}
+            if cleaned["extension_start_date"] != expected_start:
+                date_errors["extension_start_date"] = "Must be the day after grace expiry."
+            if cleaned["extension_end_date"] != expected_end:
+                date_errors["extension_end_date"] = "Must end after exactly one calendar year."
+            if date_errors:
+                raise DefaultValidation(date_errors)
+            document = LoanDocument.objects.filter(
+                pk=cleaned["document_id"],
+                loan_application_id=row.loan_account.loan_application_id,
+                document_type="extension_note",
+                generation_status=LoanDocument.GENERATION_GENERATED,
+                document_id__isnull=False,
+            ).first()
+            if document is None:
+                raise DefaultValidation(
+                    {"document_id": "Must identify a generated Extension Note in this loan file."}
+                )
+            note = ExtensionNote.objects.create(
+                default_case=row,
+                loan_account=row.loan_account,
+                extension_reason=cleaned["extension_reason"],
+                extension_start_date=cleaned["extension_start_date"],
+                extension_end_date=cleaned["extension_end_date"],
+                prepared_by_user=actor,
+                approved_by_user=None,
+                loan_document=document,
+                status=ExtensionNote.STATUS_ACTIVE,
+            )
+            old_state = row.default_case_status
+            row.extension_note = note
+            row.default_case_status = "extension_granted"
+            row.save(update_fields=["extension_note", "default_case_status"])
+            evidence = serialize_extension_note(note)
+            AuditLog.objects.create(
+                actor_user=actor,
+                action="extension.granted",
+                entity_type="extension_note",
+                entity_id=note.pk,
+                old_value_json={"default_case_status": old_state},
+                new_value_json=evidence,
+                ip_address=request_ip(request) if request is not None else "",
+                user_agent=request_user_agent(request) if request is not None else "",
+            )
+            record_workflow_event(
+                actor=actor,
+                workflow_name="default_case",
+                entity_type="default_case",
+                entity_id=row.pk,
+                from_state=old_state,
+                to_state=row.default_case_status,
+                trigger_reason=note.extension_reason,
+                action_code="extension.granted",
+            )
+            return note
 
 
 def get_default_case(*, actor, default_case_id):
@@ -363,6 +531,11 @@ def serialize_default_case(row, *, actor):
             if row.current_assessment_id is not None
             else None
         ),
+        "extension_note": (
+            serialize_extension_note(row.extension_note)
+            if row.extension_note_id is not None
+            else None
+        ),
         "reason": row.reason,
         "available_actions": _available_actions(row, actor=actor),
     }
@@ -380,6 +553,23 @@ def serialize_default_assessment(row):
         "recommended_action": row.recommended_action,
         "assessed_by_user_id": str(row.assessed_by_user_id),
         "assessed_at": row.assessed_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def serialize_extension_note(row):
+    return {
+        "extension_note_id": str(row.pk),
+        "default_case_id": str(row.default_case_id),
+        "loan_account_id": str(row.loan_account_id),
+        "extension_reason": row.extension_reason,
+        "extension_start_date": row.extension_start_date.isoformat(),
+        "extension_end_date": row.extension_end_date.isoformat(),
+        "document_id": str(row.loan_document_id),
+        "prepared_by_user_id": str(row.prepared_by_user_id),
+        "approved_by_user_id": (
+            str(row.approved_by_user_id) if row.approved_by_user_id else None
+        ),
+        "status": row.status,
     }
 
 
@@ -425,6 +615,50 @@ def _record_grace_transition(*, row, actor, to_state, action, as_of_date, reason
     )
 
 
+def _record_extension_transition(
+    *, note, row, actor, to_state, action, as_of_date, expire_note
+):
+    from_state = row.default_case_status
+    evidence = {
+        "extension_note_id": str(note.pk),
+        "default_case_id": str(row.pk),
+        "loan_account_id": str(row.loan_account_id),
+        "from_state": from_state,
+        "to_state": to_state,
+        "as_of_date": as_of_date.isoformat(),
+    }
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user" if actor is not None else "system",
+        action=action,
+        entity_type="extension_note",
+        entity_id=note.pk,
+        old_value_json={"status": note.status, "default_case_status": from_state},
+        new_value_json=evidence,
+    )
+    if expire_note:
+        note.status = ExtensionNote.STATUS_EXPIRED
+        note.save(update_fields=["status"])
+    row.default_case_status = to_state
+    if to_state == DefaultCase.STATUS_RESOLVED_BY_REPAYMENT:
+        row.closed_at = timezone.now()
+    row.save(update_fields=["default_case_status", "closed_at"])
+    record_workflow_event(
+        actor=actor,
+        workflow_name="default_case",
+        entity_type="default_case",
+        entity_id=row.pk,
+        from_state=from_state,
+        to_state=to_state,
+        trigger_reason=(
+            "Canonical principal outstanding reached zero."
+            if to_state == DefaultCase.STATUS_RESOLVED_BY_REPAYMENT
+            else "Extension elapsed with principal outstanding; review is required."
+        ),
+        action_code=action,
+    )
+
+
 def serialize_opened_default_case(row):
     """Return the exact source §35.1 result plus server-owned actions."""
     return {
@@ -453,6 +687,12 @@ def _require_open_authority(actor):
 def _require_assessment_authority(actor):
     _require_permission(actor, ASSESS_PERMISSION)
     if "credit_assessment" not in actor.team_codes():
+        raise DefaultPermissionDenied
+
+
+def _require_extension_authority(actor):
+    _require_permission(actor, EXTENSION_PERMISSION)
+    if "credit_manager" not in auth_service.effective_role_codes(actor):
         raise DefaultPermissionDenied
 
 
@@ -501,7 +741,7 @@ def _scoped_case_candidates(*, actor):
         ).exists()
     )
     queryset = DefaultCase.objects.select_related(
-        "loan_account", "member", "current_assessment"
+        "loan_account", "member", "current_assessment", "extension_note"
     )
     if not auditor_portfolio:
         queryset = queryset.filter(scope)
@@ -619,6 +859,46 @@ def _validate_assessment_input(payload):
     }
 
 
+def _validate_extension_input(payload):
+    allowed = {
+        "extension_reason",
+        "extension_start_date",
+        "extension_end_date",
+        "document_id",
+    }
+    errors = {field: "Unknown request field." for field in sorted(set(payload) - allowed)}
+    reason = _required_text(
+        "extension_reason", payload.get("extension_reason"), errors, maximum=5000
+    )
+    parsed = {}
+    for field in ("extension_start_date", "extension_end_date"):
+        try:
+            parsed[field] = _parse_date(field, payload.get(field))
+        except DefaultValidation as exc:
+            errors.update(exc.field_errors)
+    try:
+        document_id = UUID(str(payload.get("document_id")))
+    except (TypeError, ValueError, AttributeError):
+        errors["document_id"] = "Must be a valid UUID."
+        document_id = None
+    if errors:
+        raise DefaultValidation(errors)
+    return {
+        "extension_reason": reason,
+        **parsed,
+        "document_id": document_id,
+    }
+
+
+def _extension_replay_matches(row, cleaned):
+    return (
+        row.extension_reason == cleaned["extension_reason"]
+        and row.extension_start_date == cleaned["extension_start_date"]
+        and row.extension_end_date == cleaned["extension_end_date"]
+        and row.loan_document_id == cleaned["document_id"]
+    )
+
+
 def _required_text(field, value, errors, *, maximum):
     if not isinstance(value, str) or not value.strip():
         errors[field] = "This field is required."
@@ -651,6 +931,18 @@ def _available_actions(row, *, actor):
         and "credit_assessment" in actor.team_codes()
     ):
         return ["assess"]
+    if (
+        row.default_case_status == DefaultCase.STATUS_ASSESSMENT_IN_PROGRESS
+        and row.extension_note_id is None
+        and row.current_assessment_id is not None
+        and row.current_assessment.payment_failure_classification == "non_intentional"
+        and row.current_assessment.recommended_action == "grant_extension"
+        and row.loan_account.principal_outstanding > 0
+        and row.loan_account.closed_at is None
+        and EXTENSION_PERMISSION in auth_service.effective_permission_codes(actor)
+        and "credit_manager" in auth_service.effective_role_codes(actor)
+    ):
+        return ["grant_extension"]
     return []
 
 
@@ -683,6 +975,16 @@ def api_assess_default_case(*, actor, default_case_id, payload, request=None):
         request=request,
     )
     return serialize_default_assessment(assessment)
+
+
+def api_grant_extension(*, actor, default_case_id, payload, request=None):
+    note = DefaultWorkflow.grant_extension(
+        actor=actor,
+        default_case_id=default_case_id,
+        payload=payload,
+        request=request,
+    )
+    return serialize_extension_note(note)
 
 
 _DEFAULT_CASE_STATUSES = {

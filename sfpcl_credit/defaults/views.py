@@ -13,6 +13,7 @@ from sfpcl_credit.defaults.modules.default_workflow import (
     DefaultPermissionDenied,
     DefaultValidation,
     api_assess_default_case,
+    api_grant_extension,
     api_open_default_case,
     get_default_case,
     list_default_cases,
@@ -97,6 +98,49 @@ def default_case_assess(request, default_case_id):
     except DefaultPermissionDenied:
         return error_response(
             request, 403, "FORBIDDEN", "Default assessment permission is required."
+        )
+    except DefaultNotFound:
+        return error_response(
+            request, 404, "NOT_FOUND", "The default case was not found or is inaccessible."
+        )
+    except DefaultConflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+
+
+@require_http_methods(["POST"])
+def default_case_grant_extension(request, default_case_id):
+    actor, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            api_grant_extension(
+                actor=actor,
+                default_case_id=default_case_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except DefaultValidation as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Extension grant failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Extension grant failed validation.",
+            {"body": exc.messages[0]},
+        )
+    except DefaultPermissionDenied:
+        return error_response(
+            request, 403, "FORBIDDEN", "Extension grant permission is required."
         )
     except DefaultNotFound:
         return error_response(

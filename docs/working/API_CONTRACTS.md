@@ -5127,3 +5127,31 @@ and returns the assessment ID, case ID, all retained assessment facts, assessor 
 Early, cured, closed, out-of-scope, invalid/missing/foreign-evidence, and duplicate-current attempts
 return standard validation, nondisclosing not-found, permission, or conflict envelopes with zero
 partial assessment/audit/workflow writes.
+
+## Extension Note workflow (011C)
+
+- `POST /api/v1/default-cases/{default_case_id}/grant-extension/`
+- Existing default-case detail/list responses additionally expose `extension_note` and the
+  server-authorised `grant_extension` action.
+
+Grant requires `defaults.extension.grant`, the Credit Manager role, `defaults.case.read`, and
+canonical default-case scope. The case must remain open and unpaid after inclusive grace expiry,
+and its current assessment must be `post_grace`, `non_intentional`, and recommend
+`grant_extension`. The request accepts only nonblank `extension_reason`, the day immediately after
+grace as `extension_start_date`, the inclusive final day of exactly twelve calendar months as
+`extension_end_date`, and a `document_id` identifying a generated `extension_note` LoanDocument in
+the exact loan-application file. Callers cannot assert eligibility, payment, loan scope, or approval.
+
+When no extension-specific checker route is configured, a valid grant creates one retained active
+note with the Credit Manager as preparer and a null approver; it does not infer an approver from the
+sanction matrix. The response returns note/case/loan/document IDs, reason, immutable dates,
+preparer/approver IDs, and state. Exact replay returns the same note and transition; changed replay,
+a second extension, intentional/unclear or stale assessment, premature/wrong dates, cured/closed
+case, foreign/missing/wrong-type document, or insufficient authority returns the standard
+validation, permission, nondisclosing not-found, or conflict envelope without partial writes.
+
+The bounded extension-expiry processor reads canonical principal truth. Payment cures the default
+without deleting or rewriting the retained note. An unpaid extension becomes `expired` only after
+its inclusive end date and creates one retry-safe `default_assessment` review task; it never creates
+a Non-Payment Note. Grant, cure, and expiry append audit/workflow evidence, and PostgreSQL locking
+plus one-to-one constraints make five concurrent grants/expiry runs converge.

@@ -1,0 +1,10 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/defaults/models.py
+ M sfpcl_credit/defaults/modules/default_workflow.py
+ M sfpcl_credit/defaults/views.py
+ M sfpcl_credit/tests/test_default_recovery_postgresql_acceptance.py
+?? .ralph/runs/2026-07-22_122436_normal_run/
+?? sfpcl_credit/defaults/migrations/0003_extension_note.py
+?? sfpcl_credit/tests/test_extension_note_workflow_api.py

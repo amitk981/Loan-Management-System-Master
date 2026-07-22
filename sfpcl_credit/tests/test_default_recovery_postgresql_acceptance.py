@@ -170,3 +170,90 @@ class GracePeriodPostgreSQLAcceptanceTests(TransactionTestCase):
             ).count(),
             1,
         )
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class ExtensionNotePostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from sfpcl_credit.tests.test_extension_note_workflow_api import (
+            ExtensionNoteWorkflowApiTests,
+        )
+
+        fixture = ExtensionNoteWorkflowApiTests(
+            "test_eligible_case_grants_one_audited_extension_with_exact_loan_file_note"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+
+    def test_five_concurrent_exact_grants_converge_on_one_note_and_transition(self):
+        from sfpcl_credit.defaults.models import ExtensionNote
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.workflows.models import WorkflowEvent
+
+        case_id, _ = self.fixture._eligible_case()
+        document = self.fixture._extension_document()
+        payload = {
+            "extension_reason": "Concurrent documented hardship.",
+            "extension_start_date": "2026-07-01",
+            "extension_end_date": "2027-06-30",
+            "document_id": str(document.pk),
+        }
+        barrier = Barrier(5)
+
+        def submit(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return Client().post(
+                    f"/api/v1/default-cases/{case_id}/grant-extension/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                    **self.fixture.auth,
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            responses = list(pool.map(submit, range(5)))
+
+        self.assertEqual([row.status_code for row in responses], [200] * 5)
+        self.assertEqual(len({row.json()["data"]["extension_note_id"] for row in responses}), 1)
+        self.assertEqual(ExtensionNote.objects.count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="extension.granted").count(), 1)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="default_case", to_state="extension_granted"
+            ).count(),
+            1,
+        )
+
+    def test_five_concurrent_expiry_runs_create_one_review_transition(self):
+        from sfpcl_credit.defaults.models import ExtensionNote
+        from sfpcl_credit.defaults.modules.default_workflow import DefaultWorkflow
+        from sfpcl_credit.identity.models import AuditLog
+        from sfpcl_credit.scheduler.models import ScheduledJob
+
+        self.fixture._grant_extension()
+        barrier = Barrier(5)
+
+        def process(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return DefaultWorkflow.process_extension_expiries(
+                    as_of_date=date(2027, 7, 1), actor=self.fixture.actor
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            outcomes = list(pool.map(process, range(5)))
+
+        self.assertEqual(sum(row["expired_count"] for row in outcomes), 1)
+        self.assertEqual(sum(row["review_tasks_created_count"] for row in outcomes), 1)
+        self.assertEqual(sum(row["failure_count"] for row in outcomes), 0)
+        self.assertEqual(ExtensionNote.objects.get().status, "expired")
+        self.assertEqual(ScheduledJob.objects.filter(job_type="default_assessment").count(), 2)
+        self.assertEqual(AuditLog.objects.filter(action="extension.expired").count(), 1)

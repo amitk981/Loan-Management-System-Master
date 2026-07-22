@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_extension_note_workflow_api.ExtensionNoteWorkflowApiTests.test_unpaid_extension_expiry_marks_one_review_required_under_replay --verbosity 1
+Exit code: 1
+Found 1 test(s).
+System check identified no issues (0 silenced).
+ERROR: test_unpaid_extension_expiry_marks_one_review_required_under_replay
+AttributeError: type object 'DefaultWorkflow' has no attribute 'process_extension_expiries'
+Ran 1 test in 0.630s
+FAILED (errors=1)

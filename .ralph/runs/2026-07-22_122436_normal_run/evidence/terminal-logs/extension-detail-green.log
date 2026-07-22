@@ -1,0 +1,6 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_extension_note_workflow_api.ExtensionNoteWorkflowApiTests.test_case_detail_projects_grant_action_then_retained_extension_note --verbosity 1
+Exit code: 0
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Ran 1 test in 0.691s
+OK

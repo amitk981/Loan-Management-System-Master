@@ -38,6 +38,13 @@ class DefaultCase(models.Model):
         on_delete=models.PROTECT,
         related_name="current_for_cases",
     )
+    extension_note = models.ForeignKey(
+        "ExtensionNote",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="current_for_cases",
+    )
     reason = models.CharField(max_length=2000, blank=True)
     opened_by_user = models.ForeignKey(
         "identity.User", on_delete=models.PROTECT, related_name="opened_default_cases"
@@ -153,3 +160,86 @@ class DefaultAssessment(models.Model):
                 name="default_assessment_text_required",
             ),
         ]
+
+
+class ExtensionNoteQuerySet(models.QuerySet):
+    IMMUTABLE_DATE_FIELDS = {"extension_start_date", "extension_end_date"}
+
+    def update(self, **kwargs):
+        if self.IMMUTABLE_DATE_FIELDS.intersection(kwargs):
+            raise ValueError("Extension effective dates are immutable.")
+        return super().update(**kwargs)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        if self.IMMUTABLE_DATE_FIELDS.intersection(fields):
+            raise ValueError("Extension effective dates are immutable.")
+        return super().bulk_update(objs, fields, batch_size=batch_size)
+
+
+class ExtensionNote(models.Model):
+    STATUS_DRAFT = "draft"
+    STATUS_APPROVED = "approved"
+    STATUS_ACTIVE = "active"
+    STATUS_EXPIRED = "expired"
+
+    extension_note_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    default_case = models.OneToOneField(
+        DefaultCase, on_delete=models.PROTECT, related_name="owned_extension_note"
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount", on_delete=models.PROTECT, related_name="extension_notes"
+    )
+    extension_reason = models.TextField()
+    extension_start_date = models.DateField()
+    extension_end_date = models.DateField(db_index=True)
+    prepared_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="prepared_extension_notes"
+    )
+    approved_by_user = models.ForeignKey(
+        "identity.User",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="approved_extension_notes",
+    )
+    loan_document = models.ForeignKey(
+        "legal_documents.LoanDocument",
+        on_delete=models.PROTECT,
+        related_name="extension_notes",
+    )
+    status = models.CharField(max_length=60, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = ExtensionNoteQuerySet.as_manager()
+
+    class Meta:
+        db_table = "extension_notes"
+        ordering = ["-created_at", "-extension_note_id"]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=("draft", "approved", "active", "expired")),
+                name="extension_note_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(extension_end_date__gt=models.F("extension_start_date")),
+                name="extension_note_dates_ordered",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(extension_reason=""),
+                name="extension_note_reason_required",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            retained = type(self).objects.filter(pk=self.pk).values(
+                "extension_start_date", "extension_end_date"
+            ).first()
+            if retained is not None and any(
+                retained[field] != getattr(self, field)
+                for field in ("extension_start_date", "extension_end_date")
+            ):
+                raise ValueError("Extension effective dates are immutable.")
+        return super().save(*args, **kwargs)

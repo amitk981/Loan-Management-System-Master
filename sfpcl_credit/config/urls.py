@@ -51,6 +51,11 @@ urlpatterns = [
         name="default-case-assess",
     ),
     path(
+        "api/v1/default-cases/<uuid:default_case_id>/grant-extension/",
+        default_views.default_case_grant_extension,
+        name="default-case-grant-extension",
+    ),
+    path(
         "api/v1/default-cases/<uuid:default_case_id>/",
         default_views.default_case_detail,
         name="default-case-detail",

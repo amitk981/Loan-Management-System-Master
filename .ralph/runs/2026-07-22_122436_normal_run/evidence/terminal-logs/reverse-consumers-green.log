@@ -1,0 +1,6 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_document_files_api sfpcl_credit.tests.test_object_permissions --verbosity 1
+Exit code: 0
+Found 23 test(s).
+System check identified no issues (0 silenced).
+Ran 23 tests in 0.096s
+OK

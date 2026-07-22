@@ -1,0 +1,6 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_extension_note_workflow_api.ExtensionNoteWorkflowApiTests.test_unpaid_extension_expiry_marks_one_review_required_under_replay --verbosity 1
+Exit code: 0
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Ran 1 test in 0.683s
+OK

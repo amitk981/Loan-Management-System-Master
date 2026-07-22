@@ -1,0 +1,6 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_default_recovery_postgresql_acceptance.ExtensionNotePostgreSQLAcceptanceTests --settings=sfpcl_credit.config.postgres_test_settings --verbosity 1
+Exit code: 0
+Found 2 test(s).
+System check identified no issues (0 silenced).
+Ran 2 tests in 11.232s
+OK

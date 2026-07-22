@@ -1,0 +1,6 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_extension_note_workflow_api sfpcl_credit.tests.test_default_grace_assessment_api sfpcl_credit.tests.test_default_case_opening_api --verbosity 1
+Exit code: 0
+Found 24 test(s).
+System check identified no issues (0 silenced).
+Ran 24 tests in 14.776s
+OK
