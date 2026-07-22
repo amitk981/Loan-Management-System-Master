@@ -1103,6 +1103,121 @@ declare -F ralph_validate_architecture_review_manifest >/dev/null \
   || fail "missing structured architecture-review finding manifest validator"
 declare -F ralph_validate_review_finding_closure >/dev/null \
   || fail "missing corrective-slice closure evidence validator"
+
+# An owner-frozen completion baseline defers ordinary cadence, Epic-boundary,
+# and inherited High review work until the original product tail is finished.
+# The baseline is explicit state, not a filename heuristic: review-generated
+# corrections cannot grow or reorder it after activation.
+completion_baseline_dir="$fixture_dir/completion-baseline-slices"
+mkdir -p "$completion_baseline_dir"
+cat > "$completion_baseline_dir/010N6-review-correction.md" <<'EOF'
+# Review correction
+## Status
+Not Started
+## Depends On
+- None
+EOF
+cat > "$completion_baseline_dir/010O-original-tail.md" <<'EOF'
+# Original tail
+## Status
+Not Started
+## Depends On
+- None
+EOF
+cat > "$completion_baseline_dir/011A-original-tail.md" <<'EOF'
+# Original tail continuation
+## Status
+Not Started
+## Depends On
+- 010O
+EOF
+completion_baseline_state="$fixture_dir/completion-baseline-state.json"
+cat > "$completion_baseline_state" <<'EOF'
+{
+  "architecture_review_due": true,
+  "architecture_review_due_reason": "terminal_repair:ROOT-010-OWNER",
+  "architecture_review_completion_baseline": {
+    "id": "original-product-tail-2026-07-22",
+    "status": "active",
+    "slice_ids": ["010O", "011A"]
+  },
+  "architecture_review_root_generations": {
+    "ROOT-010-OWNER": {
+      "epic": "010",
+      "generation": 2,
+      "corrective_slice": "010N6",
+      "finding_id": "AR-010-OWNER-001",
+      "severity": "High"
+    }
+  }
+}
+EOF
+[[ "$(ralph_architecture_review_effective_due \
+      "$completion_baseline_state" "$completion_baseline_dir")" == False ]] \
+  || fail "active completion baseline did not defer a non-Critical review barrier"
+[[ "$(ralph_first_effective_grabbable_slice \
+      "$fixture_dir/retries.yaml" "$completion_baseline_state" \
+      "$completion_baseline_dir")" == "010O-original-tail.md" ]] \
+  || fail "review-generated correction outranked the frozen completion baseline"
+if ralph_explicit_slice_respects_effective_selection \
+    "$fixture_dir/retries.yaml" "$completion_baseline_state" \
+    "$completion_baseline_dir" "010N6-review-correction.md" normal_run \
+    /nonexistent >/dev/null 2>&1; then
+  fail "explicit selection bypassed the frozen completion baseline"
+fi
+ralph_explicit_slice_respects_effective_selection \
+  "$fixture_dir/retries.yaml" "$completion_baseline_state" \
+  "$completion_baseline_dir" "010O-original-tail.md" normal_run /nonexistent \
+  || fail "first frozen completion-baseline slice was rejected"
+
+python3 - "$completion_baseline_state" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_root_generations"]["ROOT-010-OWNER"]["severity"] = "Critical"
+path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+[[ "$(ralph_architecture_review_effective_due \
+      "$completion_baseline_state" "$completion_baseline_dir")" == True ]] \
+  || fail "completion baseline deferred a Critical architecture blocker"
+python3 - "$completion_baseline_state" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+state["architecture_review_root_generations"]["ROOT-010-OWNER"]["severity"] = "High"
+path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+
+sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' \
+  "$completion_baseline_dir/010O-original-tail.md"
+rm -f "$completion_baseline_dir/010O-original-tail.md.bak"
+[[ "$(ralph_first_effective_grabbable_slice \
+      "$fixture_dir/retries.yaml" "$completion_baseline_state" \
+      "$completion_baseline_dir")" == "011A-original-tail.md" ]] \
+  || fail "completion baseline did not advance in its frozen order"
+sed -i.bak '/^## Status$/{n;s/^Not Started$/Complete/;}' \
+  "$completion_baseline_dir/011A-original-tail.md"
+rm -f "$completion_baseline_dir/011A-original-tail.md.bak"
+ralph_mark_architecture_review_completion_baseline_awaiting_review \
+  "$completion_baseline_state" "$completion_baseline_dir"
+[[ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["architecture_review_completion_baseline"]["status"])' \
+      "$completion_baseline_state")" == "awaiting_review" ]] \
+  || fail "completed frozen baseline was not moved to awaiting_review"
+[[ "$(ralph_architecture_review_effective_due \
+      "$completion_baseline_state" "$completion_baseline_dir")" == True ]] \
+  || fail "completed frozen baseline did not force its consolidated review"
+ralph_mark_architecture_review_completion_baseline_reviewed \
+  "$completion_baseline_state" consolidated-review-run
+[[ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["architecture_review_completion_baseline"]["status"])' \
+      "$completion_baseline_state")" == "reviewed" ]] \
+  || fail "consolidated review did not close the completion baseline"
+[[ "$(ralph_first_effective_grabbable_slice \
+      "$fixture_dir/retries.yaml" "$completion_baseline_state" \
+      "$completion_baseline_dir")" == "010N6-review-correction.md" ]] \
+  || fail "accepted review correction did not resume after consolidated review"
+
 metrics_packet="$fixture_dir/architecture-review-packet.md"
 cat > "$metrics_packet" <<'EOF'
 # Review Packet
@@ -3997,6 +4112,9 @@ discovery_instruction="$(ralph_prompt_architecture_instruction review_discovery)
 printf '%s\n' '{"architecture_review_due": true, "architecture_review_due_reason": "terminal_repair_verification:ROOT-010-OWNER", "architecture_review_terminal_repairs": {"010": {"status": "awaiting_verification"}}}' > "$prompt_state"
 [[ "$(ralph_prompt_role architecture_review "" "$prompt_state")" == "review_closure" ]] \
   || fail "terminal verification was not classified as a closure-only review"
+printf '%s\n' '{"architecture_review_due": true, "architecture_review_due_reason": "terminal_repair_verification:ROOT-010-OWNER+completion_baseline:original-product-tail-2026-07-22", "architecture_review_completion_baseline": {"id": "original-product-tail-2026-07-22", "status": "awaiting_review", "slice_ids": ["010O"]}, "architecture_review_terminal_repairs": {"010": {"status": "awaiting_verification"}}}' > "$prompt_state"
+[[ "$(ralph_prompt_role architecture_review "" "$prompt_state")" == "review_discovery" ]] \
+  || fail "completion-baseline checkpoint was narrowed to closure-only review"
 closure_instruction="$(ralph_prompt_architecture_instruction review_closure)"
 [[ "$closure_instruction" == *"Do not discover new findings"* ]] \
   || fail "closure-only review can still expand its scope"

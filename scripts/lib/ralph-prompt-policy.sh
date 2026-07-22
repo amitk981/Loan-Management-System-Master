@@ -30,6 +30,10 @@ except (IndexError, OSError, json.JSONDecodeError) as exc:
     raise SystemExit(f"Cannot classify architecture-review prompt: {exc}")
 
 reason = state.get("architecture_review_due_reason", "")
+baseline = state.get("architecture_review_completion_baseline")
+completion_checkpoint = (
+    isinstance(baseline, dict) and baseline.get("status") == "awaiting_review"
+)
 repairs = state.get("architecture_review_terminal_repairs", {})
 awaiting_terminal_verification = isinstance(repairs, dict) and any(
     isinstance(record, dict) and record.get("status") == "awaiting_verification"
@@ -39,7 +43,12 @@ closure_reason = isinstance(reason, str) and any(
     part.startswith(("terminal_repair:", "terminal_repair_verification:", "terminal_finalizer:"))
     for part in reason.split("+")
 )
-print("review_closure" if closure_reason or awaiting_terminal_verification else "review_discovery")
+if completion_checkpoint:
+    print("review_discovery")
+elif closure_reason or awaiting_terminal_verification:
+    print("review_closure")
+else:
+    print("review_discovery")
 PY
       ;;
     *)

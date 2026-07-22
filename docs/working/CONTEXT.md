@@ -37,10 +37,10 @@ member self-service portal.
 - Epic 010 servicing is active. Schedule/ledger reads, receipt capture and allocation, statement
   reconciliation, effective-rate versioning, interest invoice/accrual/capitalisation, DPD, and
   reminder and quarterly-MIS foundations are implemented. Rate-current-date and interest-policy/
-  reclassification closures are complete. A grouped terminal-repair episode remains active for
-  public MIS cutoff/replay proof, isolated reminder delivery-source evidence, and complete composite
-  repayment-response validation; interest-portfolio identity and sensitive global-search authority
-  corrections are also queued before Epic 010 closes.
+  reclassification closures are complete. A grouped terminal-repair episode and interest-portfolio
+  identity and sensitive global-search corrections remain durable, but the owner-frozen 39-slice
+  product baseline executes first. One consolidated architecture review follows that baseline;
+  accepted corrections then resume before release completion.
 - The remainder of Epics 010–012 owns servicing/repayment, monitoring/default/compliance, reporting,
   operational hardening, end-to-end acceptance, and final release evidence.
 - Current slice and dependency facts must be read from `docs/working/HANDOFF.md` and the selected
@@ -107,6 +107,9 @@ The end-to-end workflow is:
   periodic and Epic/project-boundary discovery remain mandatory, while terminal closure verification
   may inspect only inherited identities and reproducers. Significant discovery means Critical/High
   correctness, security, financial/data integrity, or binding source-contract risk.
+- During the explicit owner-maintainer completion baseline recorded on 2026-07-22, non-Critical
+  architecture barriers are accumulated rather than executed. Only the exact frozen baseline is
+  selectable until it completes; one consolidated discovery checkpoint then runs before corrections.
 - Terminal finalizers retain every grouped Root ID. An executable recurrence receives one active
   bounded repair episode on that same finalizer contract. Product gates leave it awaiting an
   independent review of every grouped root; a later genuine regression opens a new audited episode,

@@ -950,6 +950,11 @@ state["blocked_slices"] = blocked
 path.write_text(json.dumps(state, indent=2) + "\n")
 PY
 
+if [[ "$mode" != "architecture_review" ]]; then
+  ralph_mark_architecture_review_completion_baseline_awaiting_review \
+    "$worktree_dir/.ralph/state.json" "$worktree_dir/docs/slices" || exit 1
+fi
+
 if [[ "$mode" == "architecture_review" && -z "$split_slice_id" ]]; then
   architecture_transition_results="$run_dir/architecture-review-transition-results.md"
   architecture_transition_output=""
@@ -967,7 +972,9 @@ if [[ "$mode" == "architecture_review" && -z "$split_slice_id" ]]; then
       "$worktree_dir/docs/working/HIGH_RISK_APPROVALS.md" &&
     ralph_mark_architecture_review_terminal_repair_due \
       "$worktree_dir/.ralph/config.yaml" "$worktree_dir/.ralph/state.json" \
-      "$worktree_dir/docs/slices"
+      "$worktree_dir/docs/slices" &&
+    ralph_mark_architecture_review_completion_baseline_reviewed \
+      "$worktree_dir/.ralph/state.json" "$run_id"
   } 2>&1)" || architecture_transition_rc=$?
 
   if (( architecture_transition_rc != 0 )); then

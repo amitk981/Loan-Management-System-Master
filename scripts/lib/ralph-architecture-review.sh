@@ -263,6 +263,166 @@ ralph_architecture_review_boundary_reason() {
   fi
 }
 
+# Validate and return the owner-frozen completion-baseline status. The record
+# is optional; when present it is deliberately exact so later review-generated
+# slices cannot silently join, reorder, or shrink the original product tail.
+ralph_architecture_review_completion_baseline_status() {
+  local state_file="${1:?state file is required}"
+  python3 - "$state_file" <<'PY'
+import json
+import re
+import sys
+
+try:
+    state = json.load(open(sys.argv[1]))
+except (OSError, json.JSONDecodeError) as exc:
+    raise SystemExit(f"Cannot read completion-baseline state: {exc}")
+
+record = state.get("architecture_review_completion_baseline")
+if record is None:
+    print("none")
+    raise SystemExit(0)
+if not isinstance(record, dict):
+    raise SystemExit("architecture_review_completion_baseline must be an object")
+status = record.get("status")
+if status not in {"active", "awaiting_review", "reviewed"}:
+    raise SystemExit("completion-baseline status must be active, awaiting_review, or reviewed")
+baseline_id = record.get("id")
+if not isinstance(baseline_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]*", baseline_id):
+    raise SystemExit("completion-baseline id is missing or invalid")
+slice_ids = record.get("slice_ids")
+if not isinstance(slice_ids, list) or not slice_ids:
+    raise SystemExit("completion-baseline slice_ids must be a non-empty list")
+if any(not isinstance(item, str) or not re.fullmatch(r"[A-Za-z0-9]+", item) for item in slice_ids):
+    raise SystemExit("completion-baseline slice_ids contain an invalid slice id")
+if len(set(slice_ids)) != len(slice_ids):
+    raise SystemExit("completion-baseline slice_ids contain duplicates")
+print(status)
+PY
+}
+
+ralph_architecture_review_completion_baseline_pending_ids() {
+  local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
+  local status ids slice_id matches count candidate slice_status
+  status="$(ralph_architecture_review_completion_baseline_status "$state_file")" || return 1
+  [[ "$status" == "active" ]] || return 0
+  ids="$(python3 - "$state_file" <<'PY'
+import json, sys
+record = json.load(open(sys.argv[1]))["architecture_review_completion_baseline"]
+print("\n".join(record["slice_ids"]))
+PY
+)" || return 1
+  while IFS= read -r slice_id; do
+    [[ -n "$slice_id" ]] || continue
+    matches="$(find "$slice_dir" -maxdepth 1 -type f -name "${slice_id}-*.md" | sort)"
+    count="$(printf '%s\n' "$matches" | grep -c . || true)"
+    [[ "$count" == "1" ]] || {
+      echo "Completion-baseline slice must resolve exactly once: $slice_id ($count matches)." >&2
+      return 1
+    }
+    candidate="$matches"
+    slice_status="$(ralph_slice_status "$candidate")"
+    case "$slice_status" in
+      "Not Started"|Blocked) printf '%s\n' "$slice_id" ;;
+      Complete|Superseded) ;;
+      *)
+        echo "Completion-baseline slice has invalid status: $slice_id ($slice_status)." >&2
+        return 1
+        ;;
+    esac
+  done <<< "$ids"
+}
+
+ralph_architecture_review_completion_baseline_has_critical_blocker() {
+  local state_file="${1:?state file is required}"
+  python3 - "$state_file" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+records = []
+roots = state.get("architecture_review_root_generations", {})
+if isinstance(roots, dict):
+    records.extend(value for value in roots.values() if isinstance(value, dict))
+quarantined = state.get("architecture_review_quarantined_findings", {})
+if isinstance(quarantined, dict):
+    records.extend(value for value in quarantined.values() if isinstance(value, dict))
+print("True" if any(record.get("severity") == "Critical" for record in records) else "False")
+PY
+}
+
+ralph_first_completion_baseline_grabbable_slice() {
+  local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
+  local pending slice_id matches candidate unmet
+  pending="$(ralph_architecture_review_completion_baseline_pending_ids \
+    "$state_file" "$slice_dir")" || return 1
+  [[ -n "$pending" ]] || return 1
+  while IFS= read -r slice_id; do
+    [[ -n "$slice_id" ]] || continue
+    matches="$(find "$slice_dir" -maxdepth 1 -type f -name "${slice_id}-*.md" | sort)"
+    candidate="$matches"
+    [[ "$(ralph_slice_status "$candidate")" == "Not Started" ]] || continue
+    if unmet="$(ralph_slice_unmet_dependencies "$candidate" "$slice_dir")"; then
+      basename "$candidate"
+      return 0
+    fi
+    echo "Skipping completion-baseline slice $slice_id: waiting on $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')" >&2
+  done <<< "$pending"
+  echo "Frozen completion baseline has unfinished work but no grabbable slice." >&2
+  return 1
+}
+
+ralph_mark_architecture_review_completion_baseline_awaiting_review() {
+  local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
+  local status pending
+  status="$(ralph_architecture_review_completion_baseline_status "$state_file")" || return 1
+  [[ "$status" == "active" ]] || return 0
+  pending="$(ralph_architecture_review_completion_baseline_pending_ids \
+    "$state_file" "$slice_dir")" || return 1
+  [[ -z "$pending" ]] || return 0
+  python3 - "$state_file" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+record = state["architecture_review_completion_baseline"]
+record["status"] = "awaiting_review"
+reason = f"completion_baseline:{record['id']}"
+prior = state.get("architecture_review_due_reason")
+parts = prior.split("+") if isinstance(prior, str) and prior else []
+if reason not in parts:
+    parts.append(reason)
+state["architecture_review_due"] = True
+state["architecture_review_due_reason"] = "+".join(parts)
+temporary = path.with_name(f"{path.name}.tmp.{os.getpid()}")
+temporary.write_text(json.dumps(state, indent=2) + "\n")
+temporary.replace(path)
+PY
+}
+
+ralph_mark_architecture_review_completion_baseline_reviewed() {
+  local state_file="${1:?state file is required}" run_id="${2:?run id is required}"
+  local status
+  status="$(ralph_architecture_review_completion_baseline_status "$state_file")" || return 1
+  [[ "$status" == "awaiting_review" ]] || return 0
+  python3 - "$state_file" "$run_id" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = json.loads(path.read_text())
+record = state["architecture_review_completion_baseline"]
+record["status"] = "reviewed"
+record["review_run_id"] = sys.argv[2]
+temporary = path.with_name(f"{path.name}.tmp.{os.getpid()}")
+temporary.write_text(json.dumps(state, indent=2) + "\n")
+temporary.replace(path)
+PY
+}
+
 # Return the review decision the loop should enforce without rewriting durable
 # state. A boundary reason is temporarily deferred while explicit same-epic
 # work remains; cadence, failed-review, completion, malformed, and mixed reasons
@@ -270,11 +430,33 @@ ralph_architecture_review_boundary_reason() {
 # until the terminal corrective actually completes.
 ralph_architecture_review_effective_due() {
   local state_file="${1:?state file is required}" slice_dir="${2:?slice directory is required}"
-  local due reason part epic kept=0 deferred=0
+  local due reason part epic kept=0 deferred=0 baseline_status baseline_pending critical
   local boundary_pattern='^epic_boundary:([0-9][0-9][0-9])->'
   due="$(ralph_architecture_review_due "$state_file")" || return 1
   if [[ "$due" != "True" ]]; then
     printf 'False\n'
+    return 0
+  fi
+  baseline_status="$(ralph_architecture_review_completion_baseline_status "$state_file")" \
+    || return 1
+  if [[ "$baseline_status" == "active" ]]; then
+    critical="$(ralph_architecture_review_completion_baseline_has_critical_blocker \
+      "$state_file")" || return 1
+    if [[ "$critical" != "True" ]]; then
+      baseline_pending="$(ralph_architecture_review_completion_baseline_pending_ids \
+        "$state_file" "$slice_dir")" || return 1
+      if [[ -n "$baseline_pending" ]]; then
+        printf 'False\n'
+        return 0
+      fi
+      # The final baseline slice is complete. Fail closed until the durable
+      # state transition records awaiting_review and the consolidated review
+      # clears it.
+      printf 'True\n'
+      return 0
+    fi
+  elif [[ "$baseline_status" == "awaiting_review" ]]; then
+    printf 'True\n'
     return 0
   fi
   # A due review may yield only to the exact first grabbable owner-approved
@@ -1159,6 +1341,26 @@ PY
 ralph_first_effective_grabbable_slice() {
   local config="${1:?config is required}" state_file="${2:?state file is required}"
   local slice_dir="${3:-docs/slices}" corrective matches count candidate unmet contract
+  local baseline_status baseline_pending critical
+  baseline_status="$(ralph_architecture_review_completion_baseline_status "$state_file")" \
+    || return 1
+  if [[ "$baseline_status" == "active" ]]; then
+    critical="$(ralph_architecture_review_completion_baseline_has_critical_blocker \
+      "$state_file")" || return 1
+    if [[ "$critical" != "True" ]]; then
+      baseline_pending="$(ralph_architecture_review_completion_baseline_pending_ids \
+        "$state_file" "$slice_dir")" || return 1
+      if [[ -n "$baseline_pending" ]]; then
+        ralph_first_completion_baseline_grabbable_slice "$state_file" "$slice_dir"
+        return
+      fi
+      echo "Frozen completion baseline is complete but has not entered awaiting_review." >&2
+      return 1
+    fi
+  elif [[ "$baseline_status" == "awaiting_review" ]]; then
+    echo "Frozen completion baseline awaits its consolidated architecture review." >&2
+    return 1
+  fi
   corrective="$(ralph_terminal_repair_pending_slice_id "$state_file")" || {
     echo "Cannot select work from malformed terminal-repair state." >&2
     return 1
@@ -1199,7 +1401,30 @@ ralph_explicit_slice_respects_effective_selection() {
   local slice_dir="${3:?slice directory is required}"
   local resolved_slice="${4:?resolved slice is required}" mode="${5:?mode is required}"
   local repair_context="${6:-.ralph/repair-context.json}"
-  local pending effective repo_root context_slice
+  local pending effective repo_root context_slice baseline_status baseline_pending critical
+  baseline_status="$(ralph_architecture_review_completion_baseline_status "$state_file")" \
+    || return 1
+  if [[ "$baseline_status" == "active" ]]; then
+    critical="$(ralph_architecture_review_completion_baseline_has_critical_blocker \
+      "$state_file")" || return 1
+    if [[ "$critical" != "True" ]]; then
+      baseline_pending="$(ralph_architecture_review_completion_baseline_pending_ids \
+        "$state_file" "$slice_dir")" || return 1
+      [[ -n "$baseline_pending" ]] || {
+        echo "Frozen completion baseline is complete but has not entered awaiting_review." >&2
+        return 1
+      }
+      effective="$(ralph_first_completion_baseline_grabbable_slice \
+        "$state_file" "$slice_dir")" || return 1
+      resolved_slice="$(basename "$resolved_slice")"
+      [[ "$resolved_slice" == "$effective" ]] && return 0
+      echo "Refusing explicit slice selection outside frozen completion baseline: $resolved_slice." >&2
+      return 1
+    fi
+  elif [[ "$baseline_status" == "awaiting_review" ]]; then
+    echo "Refusing product selection until the consolidated architecture review completes." >&2
+    return 1
+  fi
   pending="$(ralph_terminal_repair_pending_slice_id "$state_file")" || {
     echo "Cannot validate explicit selection against malformed terminal-repair state." >&2
     return 1
