@@ -516,7 +516,9 @@ ROLE_PERMISSIONS = {
         "monitoring.mis.review",
         "reports.export",
         "compliance.section186.read",
+        "compliance.section186.create",
         "compliance.nbfc_test.read",
+        "compliance.nbfc_test.create",
         "compliance.control.read",
         "compliance.control.manage",
         "compliance.task.read",
@@ -557,6 +559,10 @@ ROLE_PERMISSIONS = {
         "monitoring.dpd.read",
         "compliance.task.read",
         "compliance.evidence.submit",
+        "compliance.section186.create",
+        "compliance.section186.read",
+        "compliance.nbfc_test.create",
+        "compliance.nbfc_test.read",
         "management_readonly",
     ],
     "internal_auditor": [
@@ -578,6 +584,8 @@ ROLE_PERMISSIONS = {
         "compliance.task.read",
         "compliance.control.read",
         "compliance.evidence.review",
+        "compliance.section186.read",
+        "compliance.nbfc_test.read",
         # A-023 maps internal_auditor to the "compliance" dashboard context; the
         # dashboard endpoint gates on management_readonly, so the auditor needs it
         # to reach the shell the mapping promises (003G2 regression).

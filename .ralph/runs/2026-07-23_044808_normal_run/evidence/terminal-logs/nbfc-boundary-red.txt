@@ -1,0 +1,10 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_nbfc_exact_fifty_and_one_ratio_over_warns_without_trigger --verbosity 1 --keepdb
+Exit: 1
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+ERROR: test_nbfc_exact_fifty_and_one_ratio_over_warns_without_trigger
+ModuleNotFoundError: No module named 'sfpcl_credit.compliance.modules.nbfc_principal_business_test'
+Ran 1 test in 0.003s
+FAILED (errors=1)

@@ -5368,3 +5368,38 @@ closure are immutable through the public interface. Annual money-lending review 
 Secretary-only, requires its dedicated permission, matching accepted annual task evidence, and
 restricted legal-opinion and Board-note documents. All responses use the standard envelope and
 return server-owned `available_actions`.
+
+## Section 186 and NBFC statutory trackers (011L)
+
+- `POST /api/v1/compliance/section-186-trackers/`
+- `GET /api/v1/compliance/section-186-trackers/{section_186_tracker_id}/`
+- `POST /api/v1/compliance/section-186-trackers/{section_186_tracker_id}/submit-for-review/`
+- `POST /api/v1/compliance/section-186-trackers/{section_186_tracker_id}/review/`
+- `POST /api/v1/compliance/nbfc-principal-tests/`
+- `GET /api/v1/compliance/nbfc-principal-tests/{nbfc_principal_test_id}/`
+- `POST /api/v1/compliance/nbfc-principal-tests/{nbfc_principal_test_id}/submit-for-review/`
+- `POST /api/v1/compliance/nbfc-principal-tests/{nbfc_principal_test_id}/review/`
+
+Creation requires the exact Critical tracker permission, the matching quarterly 011K task assigned to
+the caller, and that task's current accepted governed evidence. Requests add
+`compliance_task_id` and `compliance_evidence_id` to the source calculation inputs; NBFC requests
+also require the configured `early_warning_threshold_ratio`. The server rejects caller-supplied
+derived/review fields, negative inputs, invalid FY/quarter values, zero ratio denominators, foreign
+or stale evidence, and maker-checker overlap.
+
+Section 186 stores two Decimal limits, the higher applicable limit, exposure, headroom, equality as
+within-limit, and excess as special-resolution-required. NBFC stores four-decimal ratios, triggers
+only when both are strictly above 50%, identifies the one-ratio warning case, and applies the frozen
+early-warning threshold without changing that statutory trigger. One result per tracker type and
+financial-year/quarter is retained. Exact POST replay returns it; changed or duplicate-period replay
+returns `409 COMPLIANCE_CONFLICT`.
+
+Reads require the tracker-specific read permission. The preparer must explicitly submit a draft
+before the task's snapshotted distinct reviewer may use `compliance.evidence.review` with nonblank
+comments, an accepted/rejected decision, and an explicit Board-presentation flag. Accepted
+breached/triggered results require Board presentation and a reviewer-owned restricted
+`board_document_id`; any declared Board presentation also requires that governed evidence. Review
+is final and audited. Calculation inputs/results, evidence,
+reviewer identity/role, preparation/review times, Board state, denied access, and exact replay truth
+remain server-owned and traceable. All routes use the standard envelope and project only
+server-derived `available_actions`.

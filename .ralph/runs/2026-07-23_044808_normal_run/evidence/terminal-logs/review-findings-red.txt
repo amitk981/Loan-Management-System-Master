@@ -1,0 +1,14 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_nbfc_exact_trigger_and_review_handoff_freeze_board_evidence --verbosity 1 --keepdb
+Exit: 1
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+FAIL: test_nbfc_exact_trigger_and_review_handoff_freeze_board_evidence
+AssertionError: False is not true
+Ran 1 test in 0.010s
+FAILED (failures=1)
+
+Review RED also identified missing submit-for-review, Board document identity, complete review audit,
+terminal review immutability, and tracker-scoped denial audit. The integrated test exercises these
+after the exact-ratio assertion.

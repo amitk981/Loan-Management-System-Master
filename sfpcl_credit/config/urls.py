@@ -38,6 +38,14 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path("api/v1/compliance/nbfc-principal-tests/", compliance_views.nbfc_principal_tests, name="nbfc-principal-tests"),
+    path("api/v1/compliance/nbfc-principal-tests/<uuid:nbfc_principal_test_id>/", compliance_views.nbfc_principal_test_detail, name="nbfc-principal-test-detail"),
+    path("api/v1/compliance/nbfc-principal-tests/<uuid:nbfc_principal_test_id>/review/", compliance_views.nbfc_principal_test_review, name="nbfc-principal-test-review"),
+    path("api/v1/compliance/nbfc-principal-tests/<uuid:nbfc_principal_test_id>/submit-for-review/", compliance_views.nbfc_principal_test_submit, name="nbfc-principal-test-submit"),
+    path("api/v1/compliance/section-186-trackers/", compliance_views.section_186_trackers, name="section-186-trackers"),
+    path("api/v1/compliance/section-186-trackers/<uuid:section_186_tracker_id>/", compliance_views.section_186_tracker_detail, name="section-186-tracker-detail"),
+    path("api/v1/compliance/section-186-trackers/<uuid:section_186_tracker_id>/review/", compliance_views.section_186_tracker_review, name="section-186-tracker-review"),
+    path("api/v1/compliance/section-186-trackers/<uuid:section_186_tracker_id>/submit-for-review/", compliance_views.section_186_tracker_submit, name="section-186-tracker-submit"),
     path("api/v1/compliance-controls/", compliance_views.controls, name="compliance-controls"),
     path("api/v1/compliance-controls/<uuid:compliance_control_id>/", compliance_views.control_detail, name="compliance-control-detail"),
     path("api/v1/compliance-tasks/", compliance_views.tasks, name="compliance-tasks"),

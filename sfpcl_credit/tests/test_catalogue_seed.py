@@ -127,6 +127,17 @@ class CatalogueSeedTests(TestCase):
                 msg=f"missing representative permission for module group {group}",
             )
 
+        def role_codes(role_code):
+            return set(RolePermission.objects.filter(role__role_code=role_code).values_list(
+                "permission__permission_code", flat=True
+            ))
+
+        creates = {"compliance.section186.create", "compliance.nbfc_test.create"}
+        reads = {"compliance.section186.read", "compliance.nbfc_test.read"}
+        self.assertTrue(creates | reads <= role_codes("cfo"))
+        self.assertTrue(creates | reads <= role_codes("accounts_head"))
+        self.assertTrue(reads <= role_codes("internal_auditor"))
+
         # Every declared catalogue permission is persisted with a module name and risk level.
         self.assertEqual(Permission.objects.count(), len(PERMISSIONS))
         for permission in Permission.objects.all():

@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_denied_tracker_access_is_audited --verbosity 1 --keepdb
+Exit: 0
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.010s
+OK

@@ -1,0 +1,10 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_denied_tracker_access_is_audited --verbosity 1 --keepdb
+Exit: 1
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+ERROR: test_denied_tracker_access_is_audited
+sfpcl_credit.identity.models.AuditLog.DoesNotExist: AuditLog matching query does not exist.
+Ran 1 test in 0.012s
+FAILED (errors=1)

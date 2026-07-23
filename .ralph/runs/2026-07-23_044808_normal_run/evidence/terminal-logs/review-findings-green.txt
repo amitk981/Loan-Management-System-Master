@@ -1,0 +1,12 @@
+Review-driven command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_nbfc_exact_trigger_and_review_handoff_freeze_board_evidence --verbosity 1 --keepdb
+Exit: 0
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.014s
+OK
+
+This closes the retained RED for unrounded strict triggering, explicit review handoff, governed
+Board evidence, complete review audit evidence, and terminal-review immutability.

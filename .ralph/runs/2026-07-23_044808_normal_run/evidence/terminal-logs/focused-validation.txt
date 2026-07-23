@@ -1,0 +1,19 @@
+Backend interpreter: /Users/amitkallapa/LMS/.ralph/venv/bin/python
+
+Focused command:
+manage.py test sfpcl_credit.tests.test_statutory_trackers sfpcl_credit.tests.test_compliance_api sfpcl_credit.tests.test_compliance_task_engine sfpcl_credit.tests.test_catalogue_seed sfpcl_credit.tests.test_compliance_postgresql_acceptance --verbosity 1 --keepdb
+
+Found 34 test(s).
+System check identified no issues (0 silenced).
+Ran 34 tests in 2.327s
+OK (skipped=2)
+
+The two skips are the PostgreSQL-only scheduler class and the slice-owned exact class
+`StatutoryTrackerPostgreSQLAcceptanceTests`. The Ralph runtime capability gate executes the latter
+against PostgreSQL twice and expects exactly one test.
+
+Additional gates:
+- `manage.py check` — exit 0, no issues.
+- `manage.py makemigrations --check --dry-run` — exit 0, no changes detected.
+- `git diff --check` — exit 0.
+- Static `float(...)` scan of both statutory policy modules — no matches.

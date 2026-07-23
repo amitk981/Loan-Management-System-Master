@@ -1,0 +1,10 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_nbfc_api_creates_reads_and_reviews_both_over_trigger --verbosity 1 --keepdb
+Exit: 1
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+FAIL: test_nbfc_api_creates_reads_and_reviews_both_over_trigger
+AssertionError: 404 != 200
+Ran 1 test in 0.012s
+FAILED (failures=1)

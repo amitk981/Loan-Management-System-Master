@@ -271,3 +271,210 @@ class MoneyLendingLawReview(models.Model):
                 name="money_lending_applicability_bounded",
             ),
         ]
+
+
+class Section186Tracker(models.Model):
+    FROZEN_FIELDS = (
+        "financial_year",
+        "quarter",
+        "paid_up_capital_amount",
+        "free_reserves_amount",
+        "securities_premium_amount",
+        "limit_60_percent_basis_amount",
+        "limit_100_percent_basis_amount",
+        "applicable_limit_amount",
+        "total_loans_exposure_amount",
+        "headroom_amount",
+        "within_limit_flag",
+        "special_resolution_required_flag",
+        "task_id",
+        "evidence_id",
+        "prepared_by_user_id",
+        "reviewer_user_id",
+        "prepared_at",
+        "input_snapshot_json",
+        "result_snapshot_json",
+        "reviewer_snapshot_json",
+        "evidence_snapshot_json",
+    )
+    section_186_tracker_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    financial_year = models.CharField(max_length=20, db_index=True)
+    quarter = models.CharField(max_length=10, db_index=True)
+    paid_up_capital_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    free_reserves_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    securities_premium_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    limit_60_percent_basis_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    limit_100_percent_basis_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    applicable_limit_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    total_loans_exposure_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    headroom_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    within_limit_flag = models.BooleanField(db_index=True)
+    special_resolution_required_flag = models.BooleanField()
+    task = models.OneToOneField(
+        ComplianceTask, on_delete=models.PROTECT, related_name="section_186_tracker"
+    )
+    evidence = models.ForeignKey(
+        ComplianceEvidence, on_delete=models.PROTECT, related_name="section_186_trackers"
+    )
+    prepared_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="prepared_section_186_trackers"
+    )
+    reviewer_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="section_186_trackers_to_review"
+    )
+    prepared_at = models.DateTimeField(default=timezone.now)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    submitted_for_review_at = models.DateTimeField(blank=True, null=True)
+    review_decision = models.CharField(max_length=40, blank=True)
+    review_comments = models.TextField(blank=True)
+    presented_to_board_flag = models.BooleanField(default=False)
+    board_document = models.ForeignKey(
+        "documents.DocumentFile", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="section_186_board_reviews",
+    )
+    board_evidence_snapshot_json = models.JSONField(default=dict)
+    input_snapshot_json = models.JSONField()
+    result_snapshot_json = models.JSONField()
+    reviewer_snapshot_json = models.JSONField()
+    evidence_snapshot_json = models.JSONField()
+
+    class Meta:
+        db_table = "section_186_trackers"
+        ordering = ["financial_year", "quarter"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["financial_year", "quarter"],
+                name="uniq_section_186_period",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    review_decision__in=("", "accepted", "rejected")
+                ),
+                name="section_186_review_bounded",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(prepared_by_user=models.F("reviewer_user")),
+                name="section_186_maker_checker",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        _reject_frozen_statutory_changes(self, self.FROZEN_FIELDS)
+        _reject_final_review_changes(self)
+        return super().save(*args, **kwargs)
+
+
+class NbfcPrincipalBusinessTest(models.Model):
+    FROZEN_FIELDS = (
+        "financial_year",
+        "quarter",
+        "financial_assets_amount",
+        "total_assets_amount",
+        "financial_asset_ratio",
+        "financial_income_amount",
+        "gross_income_amount",
+        "financial_income_ratio",
+        "early_warning_threshold_ratio",
+        "registration_triggered_flag",
+        "one_ratio_above_statutory_flag",
+        "early_warning_flag",
+        "task_id",
+        "evidence_id",
+        "prepared_by_user_id",
+        "reviewer_user_id",
+        "prepared_at",
+        "input_snapshot_json",
+        "result_snapshot_json",
+        "reviewer_snapshot_json",
+        "evidence_snapshot_json",
+    )
+    nbfc_principal_test_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    financial_year = models.CharField(max_length=20, db_index=True)
+    quarter = models.CharField(max_length=10, db_index=True)
+    financial_assets_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    total_assets_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    financial_asset_ratio = models.DecimalField(max_digits=8, decimal_places=4)
+    financial_income_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    gross_income_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    financial_income_ratio = models.DecimalField(max_digits=8, decimal_places=4)
+    early_warning_threshold_ratio = models.DecimalField(max_digits=6, decimal_places=4)
+    registration_triggered_flag = models.BooleanField(db_index=True)
+    one_ratio_above_statutory_flag = models.BooleanField(default=False)
+    early_warning_flag = models.BooleanField()
+    presented_to_board_flag = models.BooleanField(default=False)
+    task = models.OneToOneField(
+        ComplianceTask, on_delete=models.PROTECT, related_name="nbfc_principal_test"
+    )
+    evidence = models.ForeignKey(
+        ComplianceEvidence, on_delete=models.PROTECT, related_name="nbfc_principal_tests"
+    )
+    prepared_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="prepared_nbfc_principal_tests"
+    )
+    reviewer_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="nbfc_principal_tests_to_review"
+    )
+    prepared_at = models.DateTimeField(default=timezone.now)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    submitted_for_review_at = models.DateTimeField(blank=True, null=True)
+    review_decision = models.CharField(max_length=40, blank=True)
+    review_comments = models.TextField(blank=True)
+    board_document = models.ForeignKey(
+        "documents.DocumentFile", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="nbfc_board_reviews",
+    )
+    board_evidence_snapshot_json = models.JSONField(default=dict)
+    input_snapshot_json = models.JSONField()
+    result_snapshot_json = models.JSONField()
+    reviewer_snapshot_json = models.JSONField()
+    evidence_snapshot_json = models.JSONField()
+
+    class Meta:
+        db_table = "nbfc_principal_tests"
+        ordering = ["financial_year", "quarter"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["financial_year", "quarter"],
+                name="uniq_nbfc_principal_period",
+            ),
+            models.CheckConstraint(
+                check=models.Q(review_decision__in=("", "accepted", "rejected")),
+                name="nbfc_principal_review_bounded",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(prepared_by_user=models.F("reviewer_user")),
+                name="nbfc_principal_maker_checker",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        _reject_frozen_statutory_changes(self, self.FROZEN_FIELDS)
+        _reject_final_review_changes(self)
+        return super().save(*args, **kwargs)
+
+
+def _reject_frozen_statutory_changes(instance, frozen_fields):
+    if not instance.pk:
+        return
+    previous = type(instance).objects.filter(pk=instance.pk).values(*frozen_fields).first()
+    if previous is None:
+        return
+    if any(previous[field] != getattr(instance, field) for field in frozen_fields):
+        raise ValueError("Retained statutory calculation facts are immutable.")
+
+
+def _reject_final_review_changes(instance):
+    if not instance.pk:
+        return
+    fields = (
+        "submitted_for_review_at", "review_decision", "review_comments", "reviewed_at",
+        "presented_to_board_flag", "board_document_id", "board_evidence_snapshot_json",
+    )
+    previous = type(instance).objects.filter(pk=instance.pk).values(*fields).first()
+    if previous and previous["reviewed_at"] is not None:
+        if any(previous[field] != getattr(instance, field) for field in fields):
+            raise ValueError("Retained statutory final review is immutable.")

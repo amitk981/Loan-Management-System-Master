@@ -1,0 +1,8 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_nbfc_exact_fifty_and_one_ratio_over_warns_without_trigger --verbosity 1
+Exit: 0
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.008s
+OK

@@ -4,16 +4,36 @@ from django.views.decorators.http import require_http_methods
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.compliance.modules import compliance_control_tracker as tracker
 from sfpcl_credit.compliance.modules.compliance_task_engine import ComplianceTaskEngine
+from sfpcl_credit.compliance.modules.section186_tracker import Section186TrackerModule
+from sfpcl_credit.compliance.modules.nbfc_principal_business_test import (
+    NbfcPrincipalBusinessTestModule,
+)
 from sfpcl_credit.identity.modules import http_auth
 
 
 def _actor(request):
-    return http_auth.authenticated_user(request)
+    actor, response = http_auth.authenticated_user(request)
+    if actor is not None:
+        request.compliance_actor = actor
+    return actor, response
 
 
-def _error(request, exc):
+def _error(request, exc, *, audit_denial=False):
     from django.core.exceptions import ObjectDoesNotExist
     if isinstance(exc, tracker.ComplianceDenied) or isinstance(exc, PermissionError):
+        if audit_denial:
+            from sfpcl_credit.api import request_ip, request_user_agent
+            from sfpcl_credit.identity.models import AuditLog
+
+            AuditLog.objects.create(
+                actor_user=getattr(request, "compliance_actor", None),
+                actor_type="user",
+                action="compliance.access.denied",
+                entity_type="statutory_tracker_endpoint",
+                new_value_json={"method": request.method, "path": request.path},
+                ip_address=request_ip(request),
+                user_agent=request_user_agent(request),
+            )
         return error_response(request, 403, "FORBIDDEN", "Compliance authority is required.")
     if isinstance(exc, tracker.ComplianceMissing):
         return error_response(request, 404, "NOT_FOUND", "Compliance record was not found.")
@@ -108,3 +128,149 @@ def money_lending_review(request):
             ComplianceTaskEngine.create_money_lending_review(actor=actor, payload=parse_json_body(request)), request
         )
     except Exception as exc: return _error(request, exc)
+
+
+@require_http_methods(["POST"])
+def section_186_trackers(request):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        payload = parse_json_body(request)
+        period_id = payload.pop("compliance_task_id", None)
+        row = Section186TrackerModule.calculate(
+            actor=actor, period_id=period_id, payload=payload
+        )
+        return success_response(Section186TrackerModule.serialize(row, actor), request)
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["POST"])
+def section_186_tracker_submit(request, section_186_tracker_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        if parse_json_body(request):
+            raise tracker.ComplianceInvalid({"request": "Submit request must be empty."})
+        return success_response(
+            Section186TrackerModule.submit_for_review(
+                actor=actor, tracker_id=section_186_tracker_id
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["GET"])
+def section_186_tracker_detail(request, section_186_tracker_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            Section186TrackerModule.retrieve(
+                actor=actor, tracker_id=section_186_tracker_id
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["POST"])
+def section_186_tracker_review(request, section_186_tracker_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        payload = parse_json_body(request)
+        return success_response(
+            Section186TrackerModule.review(
+                actor=actor,
+                tracker_id=section_186_tracker_id,
+                decision=payload.get("decision"),
+                comments=payload.get("comments"),
+                presented_to_board_flag=payload.get("presented_to_board_flag"),
+                board_document_id=payload.get("board_document_id"),
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["POST"])
+def nbfc_principal_tests(request):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        payload = parse_json_body(request)
+        period_id = payload.pop("compliance_task_id", None)
+        row = NbfcPrincipalBusinessTestModule.calculate(
+            actor=actor, period_id=period_id, payload=payload
+        )
+        return success_response(
+            NbfcPrincipalBusinessTestModule.serialize(row, actor), request
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["GET"])
+def nbfc_principal_test_detail(request, nbfc_principal_test_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            NbfcPrincipalBusinessTestModule.retrieve(
+                actor=actor, result_id=nbfc_principal_test_id
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["POST"])
+def nbfc_principal_test_submit(request, nbfc_principal_test_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        if parse_json_body(request):
+            raise tracker.ComplianceInvalid({"request": "Submit request must be empty."})
+        return success_response(
+            NbfcPrincipalBusinessTestModule.submit_for_review(
+                actor=actor, result_id=nbfc_principal_test_id
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["POST"])
+def nbfc_principal_test_review(request, nbfc_principal_test_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        payload = parse_json_body(request)
+        return success_response(
+            NbfcPrincipalBusinessTestModule.review(
+                actor=actor,
+                result_id=nbfc_principal_test_id,
+                decision=payload.get("decision"),
+                comments=payload.get("comments"),
+                presented_to_board_flag=payload.get("presented_to_board_flag"),
+                board_document_id=payload.get("board_document_id"),
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
