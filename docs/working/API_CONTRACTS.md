@@ -5431,8 +5431,9 @@ scheduled-job outcome are retained. Exact replay is zero-duplicate; changed task
 List filters are `status`, `due_within_days=30`, `member_type`, `member_status`,
 `assigned_to_me`, `page`, and `page_size`. A manager requires
 `compliance.kyc_review.manage` plus member object scope. Compliance/CFO readers with
-`compliance.task.read` see only assigned/reviewer rows; a governed Internal Auditor receives safe
-read-only summaries. List payloads contain no KYC document identifiers or PAN/Aadhaar values.
+`compliance.task.read` see only assigned/reviewer rows; a governed Internal Auditor with an active
+persisted `audit_readonly` grant receives safe read-only summaries. List payloads contain no KYC
+document identifiers or PAN/Aadhaar values.
 
 `PATCH` accepts exactly `assigned_to_user_id`. Only the current assigned owner may select a distinct,
 active user who also has the manage permission and member scope. `remind` accepts an empty body and
@@ -5497,7 +5498,8 @@ TAT is source-defined. The server generates one `GRV-{year}-{identity}` referenc
 
 List filters are `status`, `member_id`, `grievance_category`, `assigned_to_user_id`, `overdue`,
 `page`, and `page_size`. Staff reads require `compliance.grievance.read` plus canonical member
-scope; Internal Auditor is global read-only. `PATCH` lets Company Secretary reassign to an active,
+scope; Internal Auditor is portfolio read-only only while its persisted `audit_readonly` grant is
+active. `PATCH` lets Company Secretary reassign to an active,
 member-scoped grievance reader and lets only the assigned owner advance `open` to `investigating`
 with internal notes. Escalation and resolution use their dedicated module interfaces.
 
@@ -5544,3 +5546,31 @@ Notification mark-read requires the current `read_state_version`; stale writes r
 authenticated member's loan number, repayment/closure/NOC state, security-return items, and CDSL
 unpledge state. An absent CDSL return record remains `pending`; `not_applicable` is shown only when
 retained security-return evidence says so.
+
+## Internal Auditor Epic 011 read view (011O)
+
+- `GET /api/v1/auditor/epic-011/`
+- `GET|POST /api/v1/compliance/section-186-trackers/`
+- `GET|POST /api/v1/compliance/nbfc-principal-tests/`
+
+The focused aggregate requires the active `internal_auditor` role,
+`reports.compliance.read`, and that exact role's active persisted `audit_readonly` grant. It returns
+four bounded read families: nested default/assessment/extension/non-payment/recovery truth,
+closure/NOC/security-return/archive summary truth, controls/tasks/evidence/statutory/KYC/
+money-lending truth, and grievances. Every row carries immutable audit/workflow identifiers when
+recorded. Evidence is metadata only (`evidence_id`, governed document id/name, sensitivity, source,
+period, review state, and the existing guarded download path); file content remains behind the
+document owner's permission, object-scope, reason, audit, and signed-download contract.
+
+The projection recursively omits `available_actions`. It does not grant evidence review, audit
+observation, export, or any operational permission. The auditor permission catalogue therefore
+contains only reads for these families. All Epic 011 POST/PATCH operational calls reject an auditor
+with `403` before payload validation or object lookup, and denied calls create no domain write.
+Inactive/missing audit scope also denies the aggregate and the underlying compliance control, task,
+evidence, statutory, KYC, money-lending, and grievance query owners. Normal staff/member object
+filters are unchanged.
+
+The Section 186 and NBFC collection routes now expose GET list projections in addition to their
+existing POST calculation contracts. GET accepts optional `search`, returns the standard bounded
+list envelope, and uses the same tracker serializers; an auditor receives action-free output because
+it has no create/review authority.

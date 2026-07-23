@@ -28,7 +28,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
   `LoanAccount360` S43/S46 and `RepaymentsHub` S44/S45 are API-backed by 010MA, including canonical
   pagination, backend-only Money/allocation/match truth, real permission/idempotency handling, and
   loading/empty/error/unauthorised/success states. Interest and monitoring remain owned by 010MB.
-- Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`
+- Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `AuditorEpic011View`, `RegistersHub`
 - Reports/tasks/search/profile/settings/admin: `ReportsMIS`, `TaskInbox`, `GlobalSearchResults` (010N grouped API-backed foundation; compliance group deferred to 011M3), `NotificationsCenter`, `MyProfile`, `SettingsHub`, `AdminUsers`
 - Dev/integration proof: `TracerBullet`
 - Borrower portal: `BorrowerPortal` and `src/pages/borrower/portal/**`
@@ -56,6 +56,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 | `SettingsHub` S71 | `GET/PATCH /api/v1/approval-matrix-rules/` | API-backed versioned matrix panel | Renders retained matrix versions. Canonical managers submit complete successor versions as pending maker-checker proposals; the UI never overwrites an active rule or activates its maker's proposal. Remaining SettingsHub panels remain owned by 007J2. |
 | `DocumentationHub` S26-S35 | Paginated `/api/v1/documentation-workspaces/` queue; per-application workspace/action/signed-download routes | API-backed staff documentation | One locked redacted snapshot owns S26 facts, blockers, statuses, timeline, and §44 owner-authorized actions; status/download/mutations stay independent and writes refetch without optimism. |
 | `LoanAccount360` initial view | `GET /api/v1/loan-accounts/`; `GET /api/v1/loan-accounts/{id}/` | API-backed list/header/KPI/Summary | 009J renders only scoped current 009C creation and exact 009G3 activation/funding values with loading, empty, error, and unauthorized states. Later ledger, schedule, interest, document, security, monitoring, default, closure, and audit tabs retain their 010M ownership and existing prototype fixtures. |
+| `AuditorEpic011View` | `GET /api/v1/auditor/epic-011/` | API-backed read-only audit view | 011O composes existing card, filter, badge, table, and detail patterns at the existing Audit & Archive route for Internal Auditor only. It exposes action-free default/recovery, closure/archive, compliance/KYC/evidence, and grievance truth with immutable references and explicit loading/empty/error/unauthorised states. The broader mock-backed `AuditArchiveHub` remains owned by 011P/012 audit tooling. |
 
 ## API-Backed Borrower Portal Screens
 

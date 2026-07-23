@@ -38,6 +38,18 @@ def resolve_persisted_role_scope(actor):
     )
 
 
+def has_active_audit_read_scope(actor):
+    return (
+        actor.primary_role.status == "active"
+        and actor.primary_role.role_code == "internal_auditor"
+        and ApprovalCaseReadScopeGrant.objects.filter(
+            role=actor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+            status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+        ).exists()
+    )
+
+
 def evaluate_approval_case_read_scope(
     *,
     actor,

@@ -1,0 +1,41 @@
+^D
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/compliance/AuditorEpic011View.test.tsx
+
+[?25l[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl-lms
+
+[?2026h
+ ❯ src/pages/compliance/AuditorEpic011View.test.tsx [queued]
+
+ Test Files 0 passed (1)
+      Tests 0 passed (0)
+   Start at 21:55:22
+   Duration 410ms
+[?2026l[?2026h[K
+ ❯ src/pages/compliance/AuditorEpic011View.test.tsx 0/4
+
+ Test Files 0 passed (1)
+      Tests 0 passed (4)
+   Start at 21:55:22
+   Duration 716ms
+[?2026l[?2026h[K
+ ❯ src/pages/compliance/AuditorEpic011View.test.tsx 1/4
+
+ Test Files 0 passed (1)
+      Tests 1 passed (4)
+   Start at 21:55:22
+   Duration 918ms
+[?2026l[K ✓ src/pages/compliance/AuditorEpic011View.test.tsx (4 tests) 136ms
+   ✓ 011O auditor read-only view > filters and opens populated Epic 011 records without mutation controls 109ms
+   ✓ 011O auditor read-only view > shows the declared empty state 6ms
+   ✓ 011O auditor read-only view > shows the declared unauthorised state for a denied read 4ms
+   ✓ 011O auditor read-only view > shows a retryable error state 17ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  21:55:22
+   Duration  936ms (transform 110ms, setup 0ms, collect 268ms, tests 136ms, environment 311ms, prepare 36ms)
+
+[?25h

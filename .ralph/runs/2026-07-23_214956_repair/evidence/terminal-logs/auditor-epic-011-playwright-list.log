@@ -1,0 +1,5 @@
+^DListing tests:
+  [chromium] › auditor-read-only-epic-011.e2e.spec.ts:19:5 › auditor opens populated action-free Epic 011 evidence
+  [chromium] › auditor-read-only-epic-011.e2e.spec.ts:41:5 › auditor sees the explicit empty state
+  [chromium] › auditor-read-only-epic-011.e2e.spec.ts:49:5 › missing audit scope renders the explicit unauthorised state
+Total: 3 tests in 1 file

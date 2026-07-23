@@ -183,6 +183,11 @@ class GrievanceWorkflow:
 
     @classmethod
     def update(cls, *, actor, grievance_id, payload):
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            forbid_auditor_mutation,
+        )
+
+        forbid_auditor_mutation(actor)
         if not isinstance(payload, dict):
             raise ComplianceInvalid({'request': 'A JSON object is required.'})
         allowed = {'assigned_to_user_id', 'status', 'internal_notes'}
@@ -245,6 +250,11 @@ class GrievanceWorkflow:
 
     @classmethod
     def resolve(cls, *, actor, grievance_id, payload, idempotency_key, request=None):
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            forbid_auditor_mutation,
+        )
+
+        forbid_auditor_mutation(actor)
         if not isinstance(payload, dict):
             raise ComplianceInvalid({'request': 'A JSON object is required.'})
         allowed = {'resolution_summary', 'resolution_document_id', 'borrower_acknowledgement'}
@@ -344,7 +354,10 @@ class GrievanceWorkflow:
         data = {'grievance_id': str(grievance.pk), 'grievance_reference': grievance.grievance_reference, 'member_id': str(grievance.member_id), 'loan_account_id': str(grievance.loan_account_id) if grievance.loan_account_id else None, 'loan_application_id': str(grievance.loan_application_id) if grievance.loan_application_id else None, 'default_case_id': str(grievance.default_case_id) if grievance.default_case_id else None, 'recovery_action_id': str(grievance.recovery_action_id) if grievance.recovery_action_id else None, 'grievance_category': grievance.grievance_category, 'subject': subject, 'description': description, 'received_date': grievance.received_date.isoformat(), 'received_channel': grievance.received_channel, 'assigned_to_user_id': str(grievance.assigned_to_user_id), 'resolution_due_date': grievance.resolution_due_date.isoformat(), 'status': grievance.status, 'tat_days': (grievance.resolution_due_date - grievance.received_date).days, 'days_overdue': max(0, (timezone.localdate() - grievance.resolution_due_date).days), 'is_overdue': grievance.status != Grievance.STATUS_RESOLVED and grievance.resolution_due_date < timezone.localdate(), 'resolution_summary': grievance.resolution_summary, 'closed_at': grievance.closed_at.isoformat() if grievance.closed_at else None, 'borrower_informed': cls._borrower_informed(grievance), 'borrower_acknowledged': grievance.borrower_acknowledged_at is not None, 'history': history, 'available_actions': cls._available_actions(grievance, actor)}
         if not borrower_safe:
             data.update({'supporting_document_ids': [str(document_id) for document_id in grievance.document_links.filter(purpose=GrievanceDocument.PURPOSE_SUPPORTING).order_by('linked_at', 'grievance_document_id').values_list('document_id', flat=True)], 'resolution_document_id': str(grievance.resolution_document_id) if grievance.resolution_document_id else None, 'internal_notes': grievance.internal_notes, 'borrower_acknowledgement': grievance.borrower_acknowledgement, 'escalation_count': grievance.escalation_count, 'notice_communication_id': str(grievance.notice_communication_id) if grievance.notice_communication_id else None, 'notice_delivery_status': cls._notice_delivery_status(grievance)})
-        return data
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            auditor_read_projection,
+        )
+        return auditor_read_projection(actor, data)
 
     @classmethod
     def _create_values(cls, *, actor, payload, member_override=None):
@@ -572,8 +585,13 @@ class GrievanceWorkflow:
 
     @staticmethod
     def _require_active_permission(actor, permission):
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            require_auditor_scope,
+        )
+
         if actor.status != 'active' or actor.primary_role.status != 'active' or permission not in auth_service.effective_permission_codes(actor):
             raise ComplianceDenied()
+        require_auditor_scope(actor)
 
     @classmethod
     def _available_actions(cls, grievance, actor):

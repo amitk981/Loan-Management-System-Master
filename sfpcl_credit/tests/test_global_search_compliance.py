@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.utils import timezone
 
+from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.compliance.models import (
     ComplianceControl,
     ComplianceEvidence,
@@ -356,6 +357,11 @@ class GlobalSearchComplianceTests(TestCase):
             "compliance.control.read",
             "compliance.task.read",
             "compliance.evidence.review",
+        )
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=auditor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+            status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
         )
 
         expected = {

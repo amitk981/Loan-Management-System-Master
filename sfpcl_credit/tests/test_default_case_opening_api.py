@@ -335,7 +335,7 @@ class DefaultCaseOpeningApiTests(TestCase):
         )
 
         self.assertEqual(detail.status_code, 200, detail.content)
-        self.assertEqual(detail.json()["data"]["available_actions"], [])
+        self.assertNotIn("available_actions", detail.json()["data"])
         self.assertEqual(denied_open.status_code, 403, denied_open.content)
 
     def test_allocated_principal_obligation_does_not_open_a_case(self):

@@ -602,7 +602,6 @@ ROLE_PERMISSIONS = {
         "closure.archive.read",
         "compliance.task.read",
         "compliance.control.read",
-        "compliance.evidence.review",
         "compliance.section186.read",
         "compliance.nbfc_test.read",
         "compliance.grievance.read",

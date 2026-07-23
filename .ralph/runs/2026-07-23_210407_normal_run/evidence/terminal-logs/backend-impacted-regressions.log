@@ -1,0 +1,44 @@
+Creating test database for alias 'default'...
+Found 118 test(s).
+System check identified no issues (0 silenced).
+...........Catalogue seeded: 195 permissions, 20 roles, 8 teams, 272 role-permission links.
+Catalogue seeded: 195 permissions, 20 roles, 8 teams, 272 role-permission links.
+............E....................................................................F...F......F..............
+======================================================================
+ERROR: test_auditor_with_active_scope_can_read_but_cannot_open (sfpcl_credit.tests.test_default_case_opening_api.DefaultCaseOpeningApiTests.test_auditor_with_active_scope_can_read_but_cannot_open)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_default_case_opening_api.py", line 338, in test_auditor_with_active_scope_can_read_but_cannot_open
+    self.assertEqual(detail.json()["data"]["available_actions"], [])
+                     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'available_actions'
+
+======================================================================
+FAIL: test_denied_tracker_access_is_audited (sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_denied_tracker_access_is_audited)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_statutory_trackers.py", line 352, in test_denied_tracker_access_is_audited
+    self.assertFalse(AuditLog.objects.filter(action="compliance.access.denied").exists())
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_section_186_api_creates_reads_and_reviews_retained_calculation (sfpcl_credit.tests.test_statutory_trackers.StatutoryTrackerModuleTests.test_section_186_api_creates_reads_and_reviews_retained_calculation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_statutory_trackers.py", line 115, in test_section_186_api_creates_reads_and_reviews_retained_calculation
+    self.assertEqual(retained.status_code, 200, retained.content)
+AssertionError: 403 != 200 : b'{"success": false, "error": {"code": "FORBIDDEN", "message": "Compliance authority is required.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-23T16:08:09.439357Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_governed_auditor_reads_safe_summary_but_cannot_mutate (sfpcl_credit.tests.test_kyc_review_api.KycReviewApiTests.test_governed_auditor_reads_safe_summary_but_cannot_mutate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_kyc_review_api.py", line 315, in test_governed_auditor_reads_safe_summary_but_cannot_mutate
+    self.assertEqual(listed.status_code, 200, listed.content)
+AssertionError: 403 != 200 : b'{"success": false, "error": {"code": "FORBIDDEN", "message": "Compliance authority is required.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-23T16:08:09.551203Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 118 tests in 26.535s
+
+FAILED (failures=3, errors=1)
+Destroying test database for alias 'default'...

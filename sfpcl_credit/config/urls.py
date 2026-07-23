@@ -38,6 +38,11 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/auditor/epic-011/",
+        compliance_views.auditor_epic_011,
+        name="auditor-epic-011",
+    ),
     path("api/v1/grievances/", compliance_views.grievances, name="grievances"),
     path(
         "api/v1/grievances/<uuid:grievance_id>/",

@@ -38,6 +38,37 @@ def permission_codes(actor):
 def require(actor, code):
     if code not in permission_codes(actor):
         raise ComplianceDenied()
+    require_auditor_scope(actor)
+
+
+def require_auditor_scope(actor):
+    if actor.primary_role.role_code != "internal_auditor":
+        return
+    from sfpcl_credit.approvals.modules.read_scope import (
+        has_active_audit_read_scope,
+    )
+
+    if not has_active_audit_read_scope(actor):
+        raise ComplianceDenied()
+
+
+def forbid_auditor_mutation(actor):
+    if actor.primary_role.role_code == "internal_auditor":
+        raise ComplianceDenied()
+
+
+def auditor_read_projection(actor, data):
+    if actor.primary_role.role_code != "internal_auditor":
+        return data
+    if isinstance(data, dict):
+        return {
+            key: auditor_read_projection(actor, value)
+            for key, value in data.items()
+            if key != "available_actions"
+        }
+    if isinstance(data, list):
+        return [auditor_read_projection(actor, value) for value in data]
+    return data
 
 
 def create_control(*, actor, payload):
@@ -133,7 +164,7 @@ def update_control(*, actor, control_id, payload):
 
 def serialize_control(row, actor):
     permissions = permission_codes(actor)
-    return {
+    return auditor_read_projection(actor, {
         "compliance_control_id": str(row.pk), "control_code": row.control_code,
         "control_name": row.control_name, "control_area": row.control_area,
         "legal_basis": row.legal_basis, "control_type": row.control_type,
@@ -142,7 +173,7 @@ def serialize_control(row, actor):
         "first_due_date": row.first_due_date.isoformat(), "evidence_required": row.evidence_required,
         "risk_if_missed": row.risk_if_missed, "status": row.status,
         "available_actions": ["update"] if "compliance.control.manage" in permissions else [],
-    }
+    })
 
 
 def create_task(*, actor, payload):
@@ -217,6 +248,7 @@ def search_tasks(*, actor, search, control_ids):
 
 def search_evidence(*, actor, search):
     """Canonical evidence selector; restricted payload fields are never searched."""
+    require_auditor_scope(actor)
     permissions = permission_codes(actor)
     queryset = ComplianceEvidence.objects.select_related(
         "task__control", "submitted_by_user", "reviewed_by_user"
@@ -247,6 +279,7 @@ def search_evidence(*, actor, search):
 
 def search_money_lending_reviews(*, actor, search):
     """Canonical object-scoped annual-review selector for safe projections."""
+    require_auditor_scope(actor)
     permissions = permission_codes(actor)
     queryset = MoneyLendingLawReview.objects.select_related(
         "task", "reviewed_by_user"
@@ -303,7 +336,7 @@ def serialize_task(row, actor):
     if row.reviewer_user_id == actor.pk and row.task_status == ComplianceTask.STATUS_EVIDENCE_SUBMITTED and "compliance.evidence.review" in permissions:
         actions.append("review_evidence")
     latest_evidence = row.evidence_submissions.order_by("-submitted_at").first()
-    return {
+    return auditor_read_projection(actor, {
         "compliance_task_id": str(row.pk), "compliance_control_id": str(row.control_id),
         "control_code": row.control.control_code, "task_period": row.task_period,
         "due_date": row.due_date.isoformat(), "assigned_to_user_id": str(row.assigned_to_user_id),
@@ -311,7 +344,7 @@ def serialize_task(row, actor):
         "remarks": row.remarks, "closed_at": row.closed_at.isoformat() if row.closed_at else None,
         "compliance_evidence_id": str(latest_evidence.pk) if latest_evidence else None,
         "available_actions": actions,
-    }
+    })
 
 
 def create_money_lending_review(*, actor, payload):

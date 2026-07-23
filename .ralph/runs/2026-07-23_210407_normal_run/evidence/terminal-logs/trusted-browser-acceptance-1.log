@@ -1,0 +1,85 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/.ralph/runs/2026-07-23_210407_normal_run/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/auditor-read-only-epic-011.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/auditor-read-only-epic-011.e2e.spec.ts
+
+[2m[WebServer] [22m[23/Jul/2026 16:19:35] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 3 tests using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 16:19:40] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 16:19:40] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✘  1 [chromium] › auditor-read-only-epic-011.e2e.spec.ts:19:5 › auditor opens populated action-free Epic 011 evidence (7.6s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 16:19:47] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22m[23/Jul/2026 16:19:47] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  2 [chromium] › auditor-read-only-epic-011.e2e.spec.ts:38:5 › auditor sees the explicit empty state (1.9s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 16:19:50] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 16:19:50] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✘  3 [chromium] › auditor-read-only-epic-011.e2e.spec.ts:45:5 › missing audit scope renders the explicit unauthorised state (6.8s)
+
+
+  1) [chromium] › auditor-read-only-epic-011.e2e.spec.ts:19:5 › auditor opens populated action-free Epic 011 evidence 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoHaveCount[2m([22m[32mexpected[39m[2m)[22m
+
+    Locator: getByRole('button', { name: /approve|review evidence|update|close|issue|return|archive/i })
+    Expected: [32m0[39m
+    Received: [31m3[39m
+    Call log:
+    [2m  - expect.toHaveCount with timeout 5000ms[22m
+    [2m  - waiting for getByRole('button', { name: /approve|review evidence|update|close|issue|return|archive/i })[22m
+    [2m    9 × locator resolved to 3 elements[22m
+    [2m      - unexpected value "3"[22m
+
+
+      31 |   await page.getByRole('button', { name: 'View task-browser-1' }).click();
+      32 |   await expect(page.getByText('audit-task-browser-1')).toBeVisible();
+    > 33 |   await expect(page.getByRole('button', { name: /approve|review evidence|update|close|issue|return|archive/i })).toHaveCount(0);
+         |                                                                                                                  ^
+      34 |   expect(mutationRequests).toEqual([]);
+      35 |   await capture(page, 'auditor-epic-011-populated.png');
+      36 | });
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl-lms/e2e/auditor-read-only-epic-011.e2e.spec.ts:33:114
+
+  2) [chromium] › auditor-read-only-epic-011.e2e.spec.ts:45:5 › missing audit scope renders the explicit unauthorised state 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByRole('heading', { name: 'Epic 011 Audit View' })
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByRole('heading', { name: 'Epic 011 Audit View' })[22m
+
+
+      60 |   await page.goto('/');
+      61 |   await page.getByRole('button', { name: 'Audit & Archive' }).click();
+    > 62 |   await expect(page.getByRole('heading', { name: 'Epic 011 Audit View' })).toBeVisible();
+         |                                                                            ^
+      63 | }
+      64 |
+      65 | const capture = (page: Page, fileName: string) =>
+        at openAuditorView (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl-lms/e2e/auditor-read-only-epic-011.e2e.spec.ts:62:76)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl-lms/e2e/auditor-read-only-epic-011.e2e.spec.ts:54:3
+
+  2 failed
+    [chromium] › auditor-read-only-epic-011.e2e.spec.ts:19:5 › auditor opens populated action-free Epic 011 evidence 
+    [chromium] › auditor-read-only-epic-011.e2e.spec.ts:45:5 › missing audit scope renders the explicit unauthorised state 
+  1 passed (1.1m)
+
+Duration milliseconds: 68998
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/.ralph/runs/2026-07-23_210407_normal_run/evidence/trusted-browser-screenshots-1.sha256

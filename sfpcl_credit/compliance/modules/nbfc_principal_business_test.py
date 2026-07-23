@@ -32,6 +32,11 @@ class NbfcPrincipalBusinessTestModule:
     def search(cls, *, actor, search):
         if cls.READ_PERMISSION not in permission_codes(actor):
             return NbfcPrincipalBusinessTest.objects.none()
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            require_auditor_scope,
+        )
+
+        require_auditor_scope(actor)
         return NbfcPrincipalBusinessTest.objects.select_related(
             "prepared_by_user", "reviewer_user"
         ).filter(
@@ -146,6 +151,11 @@ class NbfcPrincipalBusinessTestModule:
     def retrieve(cls, *, actor, result_id):
         if cls.READ_PERMISSION not in permission_codes(actor):
             raise ComplianceDenied()
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            require_auditor_scope,
+        )
+
+        require_auditor_scope(actor)
         try:
             row = NbfcPrincipalBusinessTest.objects.select_related(
                 "task", "evidence", "prepared_by_user", "reviewer_user"
@@ -242,6 +252,9 @@ class NbfcPrincipalBusinessTestModule:
 
     @classmethod
     def serialize(cls, row, actor):
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            auditor_read_projection,
+        )
         permissions = permission_codes(actor)
         available_actions = []
         if (
@@ -258,7 +271,7 @@ class NbfcPrincipalBusinessTestModule:
             and cls.REVIEW_PERMISSION in permissions
         ):
             available_actions.append("review")
-        return {
+        return auditor_read_projection(actor, {
             "nbfc_principal_test_id": str(row.pk),
             "financial_year": row.financial_year,
             "quarter": row.quarter,
@@ -290,7 +303,7 @@ class NbfcPrincipalBusinessTestModule:
             "review_comments": row.review_comments,
             "board_document_id": str(row.board_document_id) if row.board_document_id else None,
             "available_actions": available_actions,
-        }
+        })
 
     @staticmethod
     def _board_evidence(*, actor, document_id, required):

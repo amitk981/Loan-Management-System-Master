@@ -239,8 +239,8 @@ def evaluate_readiness(*, actor, loan_account_id):
 
 def close(*, actor, loan_account_id, payload, idempotency_key, request=None):
     try:
-        cleaned = _validate_close(payload, idempotency_key)
         _require_close_authority(actor)
+        cleaned = _validate_close(payload, idempotency_key)
     except ClosureValidation:
         _record_denied(
             actor=actor,
@@ -555,8 +555,8 @@ def _digest(value):
 
 def archive(*, actor, loan_closure_id, payload, idempotency_key, request=None):
     try:
-        cleaned = _validate_archive_request(payload, idempotency_key)
         archive_role = _require_archive_authority(actor)
+        cleaned = _validate_archive_request(payload, idempotency_key)
     except ArchiveValidation:
         _record_archive_denied(
             actor=actor,
@@ -635,7 +635,7 @@ def read_archive(*, actor, loan_closure_id, request=None):
         ip_address=request_ip(request) if request else "",
         user_agent=request_user_agent(request) if request else "",
     )
-    return _serialize_archive(record, replay=False)
+    return _auditor_without_actions(actor, _serialize_archive(record, replay=False))
 
 
 def search_archives(*, actor, query_params, request=None):
@@ -686,7 +686,10 @@ def search_archives(*, actor, query_params, request=None):
         user_agent=request_user_agent(request) if request else "",
     )
     return (
-        [_serialize_archive(row, replay=False) for row in rows],
+        [
+            _auditor_without_actions(actor, _serialize_archive(row, replay=False))
+            for row in rows
+        ],
         {
             "page": page,
             "page_size": page_size,
@@ -1060,6 +1063,15 @@ def _serialize_archive(record, *, replay):
     }
 
 
+def _auditor_without_actions(actor, data):
+    if (
+        "internal_auditor" in auth_service.effective_role_codes(actor)
+        and isinstance(data, dict)
+    ):
+        return {key: value for key, value in data.items() if key != "available_actions"}
+    return data
+
+
 def _serialize_close(closure, *, replay):
     requirements = {
         row.requirement_type: row.requirement_status
@@ -1092,8 +1104,8 @@ def _serialize_close(closure, *, replay):
 def generate_noc(*, actor, loan_closure_id, payload, idempotency_key, request=None):
     """Issue one retained NOC and hand its notice to the communication dispatcher."""
     try:
-        cleaned = _validate_noc_request(payload, idempotency_key)
         issuer_role = _require_noc_authority(actor)
+        cleaned = _validate_noc_request(payload, idempotency_key)
     except NocValidation:
         _record_noc_denied(
             actor=actor,

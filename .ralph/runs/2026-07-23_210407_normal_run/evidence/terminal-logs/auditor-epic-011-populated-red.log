@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_scoped_auditor_reads_each_epic_011_family_with_immutable_references (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_scoped_auditor_reads_each_epic_011_family_with_immutable_references)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 240, in test_scoped_auditor_reads_each_epic_011_family_with_immutable_references
+    self.assertEqual(data["summary"]["default_cases"], 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.601s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

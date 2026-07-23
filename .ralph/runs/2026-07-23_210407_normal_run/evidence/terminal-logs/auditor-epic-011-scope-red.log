@@ -1,0 +1,65 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFFFF
+======================================================================
+FAIL: test_auditor_without_active_scope_cannot_query_epic_011_collections (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_without_active_scope_cannot_query_epic_011_collections) (path='/api/v1/auditor/epic-011/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 93, in test_auditor_without_active_scope_cannot_query_epic_011_collections
+    self.assertEqual(AuditLog.objects.count(), before + 1)
+AssertionError: 2 != 1
+
+======================================================================
+FAIL: test_auditor_without_active_scope_cannot_query_epic_011_collections (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_without_active_scope_cannot_query_epic_011_collections) (path='/api/v1/compliance-controls/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 92, in test_auditor_without_active_scope_cannot_query_epic_011_collections
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 200 != 403 : b'{"success": true, "data": [], "pagination": {"page": 1, "page_size": 20, "total_count": 0, "total_pages": 1, "has_next": false, "has_previous": false}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:45:14.362735Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_without_active_scope_cannot_query_epic_011_collections (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_without_active_scope_cannot_query_epic_011_collections) (path='/api/v1/compliance-tasks/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 92, in test_auditor_without_active_scope_cannot_query_epic_011_collections
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 200 != 403 : b'{"success": true, "data": [], "pagination": {"page": 1, "page_size": 20, "total_count": 0, "total_pages": 1, "has_next": false, "has_previous": false}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:45:14.367233Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_without_active_scope_cannot_query_epic_011_collections (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_without_active_scope_cannot_query_epic_011_collections) (path='/api/v1/kyc-reviews/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 92, in test_auditor_without_active_scope_cannot_query_epic_011_collections
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 200 != 403 : b'{"success": true, "data": [], "pagination": {"page": 1, "page_size": 20, "total_count": 0, "total_pages": 1, "has_next": false, "has_previous": false}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:45:14.371632Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_without_active_scope_cannot_query_epic_011_collections (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_without_active_scope_cannot_query_epic_011_collections) (path='/api/v1/compliance/section-186-trackers/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 92, in test_auditor_without_active_scope_cannot_query_epic_011_collections
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 405 != 403 : b''
+
+======================================================================
+FAIL: test_auditor_without_active_scope_cannot_query_epic_011_collections (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_without_active_scope_cannot_query_epic_011_collections) (path='/api/v1/compliance/nbfc-principal-tests/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 92, in test_auditor_without_active_scope_cannot_query_epic_011_collections
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 405 != 403 : b''
+
+======================================================================
+FAIL: test_auditor_without_active_scope_cannot_query_epic_011_collections (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_without_active_scope_cannot_query_epic_011_collections) (path='/api/v1/grievances/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 92, in test_auditor_without_active_scope_cannot_query_epic_011_collections
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 200 != 403 : b'{"success": true, "data": [], "pagination": {"page": 1, "page_size": 20, "total_count": 0, "total_pages": 1, "has_next": false, "has_previous": false}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:45:14.381308Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.036s
+
+FAILED (failures=7)
+Destroying test database for alias 'default'...

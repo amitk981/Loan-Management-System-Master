@@ -1,0 +1,25 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M sfpcl-lms/src/App.tsx
+ M sfpcl_credit/approvals/modules/read_scope.py
+ M sfpcl_credit/closure/modules/loan_closure.py
+ M sfpcl_credit/compliance/modules/compliance_control_tracker.py
+ M sfpcl_credit/compliance/modules/grievance_workflow.py
+ M sfpcl_credit/compliance/modules/kyc_review_tracker.py
+ M sfpcl_credit/compliance/modules/nbfc_principal_business_test.py
+ M sfpcl_credit/compliance/modules/section186_tracker.py
+ M sfpcl_credit/compliance/views.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/defaults/modules/default_workflow.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/tests/test_default_case_opening_api.py
+ M sfpcl_credit/tests/test_kyc_review_api.py
+ M sfpcl_credit/tests/test_statutory_trackers.py
+?? .ralph/runs/2026-07-23_210407_normal_run/
+?? sfpcl-lms/e2e/auditor-read-only-epic-011.e2e.spec.ts
+?? sfpcl-lms/src/pages/compliance/AuditorEpic011View.test.tsx
+?? sfpcl-lms/src/pages/compliance/AuditorEpic011View.tsx
+?? sfpcl-lms/src/services/auditorApi.ts
+?? sfpcl_credit/compliance/modules/auditor_epic_011.py
+?? sfpcl_credit/tests/test_auditor_epic_011_api.py

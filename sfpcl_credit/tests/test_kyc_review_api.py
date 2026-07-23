@@ -4,6 +4,7 @@ from django.test import Client, TestCase
 from django.utils import timezone
 
 from sfpcl_credit.compliance.models import ComplianceControl
+from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import KycProfile, Member, MemberScopeAssignment
 
@@ -301,6 +302,11 @@ class KycReviewApiTests(TestCase):
             risk_level="medium",
         )
         RolePermission.objects.create(role=auditor_role, permission=read_permission)
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=auditor_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+            status=ApprovalCaseReadScopeGrant.STATUS_ACTIVE,
+        )
         auditor_auth = self._auth(auditor)
 
         listed = self.client.get("/api/v1/kyc-reviews/", **auditor_auth)
@@ -314,7 +320,7 @@ class KycReviewApiTests(TestCase):
 
         self.assertEqual(listed.status_code, 200, listed.content)
         self.assertEqual(listed.json()["pagination"]["total_count"], 1)
-        self.assertEqual(listed.json()["data"][0]["available_actions"], [])
+        self.assertNotIn("available_actions", listed.json()["data"][0])
         self.assertEqual(detail.status_code, 200, detail.content)
         self.assertEqual(mutation.status_code, 403, mutation.content)
 

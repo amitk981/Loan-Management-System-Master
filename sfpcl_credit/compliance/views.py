@@ -10,6 +10,7 @@ from sfpcl_credit.compliance.modules.nbfc_principal_business_test import (
 )
 from sfpcl_credit.compliance.modules.kyc_review_tracker import KYCReviewTracker
 from sfpcl_credit.compliance.modules.grievance_workflow import GrievanceWorkflow
+from sfpcl_credit.compliance.modules.auditor_epic_011 import project_epic_011
 from sfpcl_credit.identity.modules import http_auth
 
 
@@ -57,6 +58,23 @@ def _error(
     raise exc
 
 
+@require_http_methods(["GET"])
+def auditor_epic_011(request):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(project_epic_011(actor=actor), request)
+    except Exception as exc:
+        return _error(
+            request,
+            exc,
+            audit_denial=True,
+            denial_action="audit.epic_011.access_denied",
+            denial_entity_type="epic_011_auditor_view",
+        )
+
+
 @require_http_methods(["GET", "POST"])
 def controls(request):
     actor, response = _actor(request)
@@ -67,7 +85,7 @@ def controls(request):
         data, pagination = ComplianceTaskEngine.list_controls(actor=actor, query=request.GET)
         return list_response(data, pagination, request)
     except Exception as exc:
-        return _error(request, exc)
+        return _error(request, exc, audit_denial=request.method == "GET")
 
 
 @require_http_methods(["PATCH"])
@@ -88,7 +106,8 @@ def tasks(request):
             return success_response(ComplianceTaskEngine.create_task(actor=actor, payload=parse_json_body(request)), request)
         data, pagination = ComplianceTaskEngine.list_tasks(actor=actor, query=request.GET)
         return list_response(data, pagination, request)
-    except Exception as exc: return _error(request, exc)
+    except Exception as exc:
+        return _error(request, exc, audit_denial=request.method == "GET")
 
 
 @require_http_methods(["PATCH"])
@@ -273,6 +292,7 @@ def kyc_review_detail(request, kyc_review_id):
         if request.method == "GET":
             data = KYCReviewTracker.retrieve(actor=actor, review_id=kyc_review_id)
         else:
+            tracker.forbid_auditor_mutation(actor)
             payload = parse_json_body(request)
             unknown = set(payload) - {"assigned_to_user_id"}
             if unknown or not payload.get("assigned_to_user_id"):
@@ -332,12 +352,29 @@ def kyc_review_complete(request, kyc_review_id):
         return _error(request, exc, audit_denial=True)
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def section_186_trackers(request):
     actor, response = _actor(request)
     if response is not None:
         return response
     try:
+        if request.method == "GET":
+            rows = Section186TrackerModule.search(
+                actor=actor, search=request.GET.get("search", "")
+            )
+            data = [Section186TrackerModule.serialize(row, actor) for row in rows]
+            return list_response(
+                data,
+                {
+                    "page": 1,
+                    "page_size": len(data) or 20,
+                    "total_count": len(data),
+                    "total_pages": 1,
+                    "has_next": False,
+                    "has_previous": False,
+                },
+                request,
+            )
         payload = parse_json_body(request)
         period_id = payload.pop("compliance_task_id", None)
         row = Section186TrackerModule.calculate(
@@ -404,12 +441,32 @@ def section_186_tracker_review(request, section_186_tracker_id):
         return _error(request, exc, audit_denial=True)
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def nbfc_principal_tests(request):
     actor, response = _actor(request)
     if response is not None:
         return response
     try:
+        if request.method == "GET":
+            rows = NbfcPrincipalBusinessTestModule.search(
+                actor=actor, search=request.GET.get("search", "")
+            )
+            data = [
+                NbfcPrincipalBusinessTestModule.serialize(row, actor)
+                for row in rows
+            ]
+            return list_response(
+                data,
+                {
+                    "page": 1,
+                    "page_size": len(data) or 20,
+                    "total_count": len(data),
+                    "total_pages": 1,
+                    "has_next": False,
+                    "has_previous": False,
+                },
+                request,
+            )
         payload = parse_json_body(request)
         period_id = payload.pop("compliance_task_id", None)
         row = NbfcPrincipalBusinessTestModule.calculate(

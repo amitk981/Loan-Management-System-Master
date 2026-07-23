@@ -1,0 +1,36 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/.ralph/runs/2026-07-23_220436_repair/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/auditor-read-only-epic-011.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/auditor-read-only-epic-011.e2e.spec.ts
+
+[2m[WebServer] [22m[23/Jul/2026 17:22:57] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 3 tests using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 17:23:03] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 17:23:03] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  1 [chromium] › auditor-read-only-epic-011.e2e.spec.ts:19:5 › auditor opens populated action-free Epic 011 evidence (2.7s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 17:23:05] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22m[23/Jul/2026 17:23:05] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  2 [chromium] › auditor-read-only-epic-011.e2e.spec.ts:41:5 › auditor sees the explicit empty state (2.3s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 17:23:07] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[23/Jul/2026 17:23:07] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  3 [chromium] › auditor-read-only-epic-011.e2e.spec.ts:49:5 › missing audit scope renders the explicit unauthorised state (2.3s)
+
+  3 passed (59.4s)
+
+Duration milliseconds: 60157
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/.ralph/runs/2026-07-23_220436_repair/evidence/trusted-browser-screenshots-1.sha256

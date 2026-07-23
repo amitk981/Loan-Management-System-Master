@@ -27,10 +27,12 @@ class KYCReviewTracker:
     def list_reviews(cls, *, actor, query):
         from sfpcl_credit.compliance.modules.compliance_control_tracker import (
             ComplianceInvalid,
+            require_auditor_scope,
         )
         from sfpcl_credit.identity.modules import auth_service
         from sfpcl_credit.members.modules.member_authority import member_scope_predicate
 
+        require_auditor_scope(actor)
         allowed = {
             "status",
             "due_within_days",
@@ -117,9 +119,13 @@ class KYCReviewTracker:
     @classmethod
     def search_reviews(cls, *, actor, search, member_ids):
         """Canonical object-scoped KYC selector for safe search projections."""
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            require_auditor_scope,
+        )
         from sfpcl_credit.identity.modules import auth_service
         from sfpcl_credit.members.modules.member_authority import member_scope_predicate
 
+        require_auditor_scope(actor)
         permissions = set(auth_service.effective_permission_codes(actor))
         queryset = KYCReview.objects.select_related(
             "member", "task__assigned_to_user", "reviewed_by_user"
@@ -153,6 +159,9 @@ class KYCReviewTracker:
 
     @classmethod
     def _serialize_summary(cls, review, actor):
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            auditor_read_projection,
+        )
         from sfpcl_credit.identity.modules import auth_service
 
         today = timezone.localdate()
@@ -164,7 +173,7 @@ class KYCReviewTracker:
             and review.status != KYCReview.STATUS_COMPLETED
         ):
             actions = ["complete", "send_reminder", "assign"]
-        return {
+        return auditor_read_projection(actor, {
             "kyc_review_id": str(review.pk),
             "member_id": str(review.member_id),
             "member_name": review.member.display_name,
@@ -178,7 +187,7 @@ class KYCReviewTracker:
             "assigned_to_user_id": str(review.task.assigned_to_user_id),
             "completeness": review.completeness_snapshot_json,
             "available_actions": actions,
-        }
+        })
 
     @classmethod
     def generate_due_reviews(cls, *, as_of_date):
@@ -529,8 +538,12 @@ class KYCReviewTracker:
 
     @classmethod
     def _require_read_authority(cls, *, actor, review_id):
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            require_auditor_scope,
+        )
         from sfpcl_credit.identity.modules import auth_service
 
+        require_auditor_scope(actor)
         permissions = set(auth_service.effective_permission_codes(actor))
         if cls.MANAGE_PERMISSION in permissions:
             cls._require_member_authority(actor=actor, review_id=review_id)

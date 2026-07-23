@@ -1,0 +1,37 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/compliance/AuditorEpic011View.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/compliance/AuditorEpic011View.test.tsx [ src/pages/compliance/AuditorEpic011View.test.tsx ]
+Error: Failed to resolve import "../../services/auditorApi" from "src/pages/compliance/AuditorEpic011View.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl-lms/src/pages/compliance/AuditorEpic011View.test.tsx:6:0
+  5  |  const __vi_import_1__ = await import("@testing-library/react");
+  6  |  const __vi_import_2__ = await import("@testing-library/user-event");
+  7  |  const __vi_import_3__ = await import("../../services/auditorApi");
+     |                                       ^
+  8  |  const __vi_import_4__ = await import("./AuditorEpic011View");
+  9  |  
+ ❯ TransformPluginContext._formatError node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41
+ ❯ TransformPluginContext.error node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16
+ ❯ normalizeUrl node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23
+ ❯ node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+ ❯ TransformPluginContext.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7
+ ❯ PluginContainer.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  21:29:10
+   Duration  597ms (transform 9ms, setup 0ms, collect 0ms, tests 0ms, environment 339ms, prepare 40ms)
+

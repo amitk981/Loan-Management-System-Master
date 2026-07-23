@@ -29,6 +29,11 @@ class Section186TrackerModule:
     def search(cls, *, actor, search):
         if cls.READ_PERMISSION not in permission_codes(actor):
             return Section186Tracker.objects.none()
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            require_auditor_scope,
+        )
+
+        require_auditor_scope(actor)
         return Section186Tracker.objects.select_related(
             "prepared_by_user", "reviewer_user"
         ).filter(
@@ -135,6 +140,11 @@ class Section186TrackerModule:
     def retrieve(cls, *, actor, tracker_id):
         if cls.READ_PERMISSION not in permission_codes(actor):
             raise ComplianceDenied()
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            require_auditor_scope,
+        )
+
+        require_auditor_scope(actor)
         try:
             row = Section186Tracker.objects.select_related(
                 "task", "evidence", "prepared_by_user", "reviewer_user"
@@ -231,6 +241,9 @@ class Section186TrackerModule:
 
     @classmethod
     def serialize(cls, row, actor):
+        from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+            auditor_read_projection,
+        )
         permissions = permission_codes(actor)
         available_actions = []
         if (
@@ -247,7 +260,7 @@ class Section186TrackerModule:
             and cls.REVIEW_PERMISSION in permissions
         ):
             available_actions.append("review")
-        return {
+        return auditor_read_projection(actor, {
             "section_186_tracker_id": str(row.pk),
             "financial_year": row.financial_year,
             "quarter": row.quarter,
@@ -279,7 +292,7 @@ class Section186TrackerModule:
             "presented_to_board_flag": row.presented_to_board_flag,
             "board_document_id": str(row.board_document_id) if row.board_document_id else None,
             "available_actions": available_actions,
-        }
+        })
 
     @staticmethod
     def _board_evidence(*, actor, document_id, required):

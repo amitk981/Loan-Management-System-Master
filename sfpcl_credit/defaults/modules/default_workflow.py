@@ -531,7 +531,7 @@ def serialize_default_case(row, *, actor):
         else None
     )
 
-    return {
+    data = {
         "default_case_id": str(row.pk),
         "loan_account_id": str(row.loan_account_id),
         "loan_account_number": row.loan_account.loan_account_number,
@@ -572,6 +572,21 @@ def serialize_default_case(row, *, actor):
         "reason": row.reason,
         "available_actions": _available_actions(row, actor=actor),
     }
+    if "internal_auditor" in auth_service.effective_role_codes(actor):
+        return _without_available_actions(data)
+    return data
+
+
+def _without_available_actions(value):
+    if isinstance(value, dict):
+        return {
+            key: _without_available_actions(item)
+            for key, item in value.items()
+            if key != "available_actions"
+        }
+    if isinstance(value, list):
+        return [_without_available_actions(item) for item in value]
+    return value
 
 
 def serialize_default_assessment(row):

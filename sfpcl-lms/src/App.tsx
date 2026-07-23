@@ -37,6 +37,7 @@ import MonitoringDashboard from './pages/monitoring/MonitoringDashboard';
 import ComplianceDashboard from './pages/compliance/ComplianceDashboard';
 import GrievancesHub from './pages/compliance/GrievancesHub';
 import AuditArchiveHub from './pages/compliance/AuditArchiveHub';
+import AuditorEpic011View from './pages/compliance/AuditorEpic011View';
 import RegistersHub from './pages/registers/RegistersHub';
 import TaskInbox from './pages/tasks/TaskInbox';
 import DefaultRecoveryHub from './pages/defaults/DefaultRecoveryHub';
@@ -318,7 +319,7 @@ const AppInner: React.FC = () => {
       case 'registers':
         return <RegistersHub onOpenLoan={id => navigate('loan-accounts/detail', id)} onOpenApplication={id => navigate('applications/detail', id)} />;
       case 'audit':
-        return <AuditArchiveHub />;
+        return currentUser.role === 'auditor' ? <AuditorEpic011View /> : <AuditArchiveHub />;
       case 'grievances':
         return <GrievancesHub />;
       case 'reports':

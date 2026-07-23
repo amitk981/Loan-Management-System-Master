@@ -1,0 +1,129 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFFFFFFFFFFFF
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/loan-accounts/d4b61777-a392-4c96-8a57-1eea2ad552de/default-cases/open/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/default-cases/d4b61777-a392-4c96-8a57-1eea2ad552de/assess/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/default-cases/d4b61777-a392-4c96-8a57-1eea2ad552de/grant-extension/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/default-cases/d4b61777-a392-4c96-8a57-1eea2ad552de/recovery-decision/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/default-cases/d4b61777-a392-4c96-8a57-1eea2ad552de/non-payment-note/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/non-payment-notes/d4b61777-a392-4c96-8a57-1eea2ad552de/submit-to-sanction-committee/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/loan-accounts/d4b61777-a392-4c96-8a57-1eea2ad552de/closure/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 339, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(WorkflowEvent.objects.count(), workflow_count)
+AssertionError: 1 != 0
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/loan-closures/d4b61777-a392-4c96-8a57-1eea2ad552de/noc/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 339, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(WorkflowEvent.objects.count(), workflow_count)
+AssertionError: 2 != 1
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/compliance-controls/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 7 != 8
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='patch', path='/api/v1/compliance-controls/d4b61777-a392-4c96-8a57-1eea2ad552de/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 7 != 8
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/compliance-tasks/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 7 != 8
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='patch', path='/api/v1/compliance-tasks/d4b61777-a392-4c96-8a57-1eea2ad552de/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 7 != 8
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/compliance-tasks/d4b61777-a392-4c96-8a57-1eea2ad552de/evidence/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 7 != 8
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/compliance-evidence/d4b61777-a392-4c96-8a57-1eea2ad552de/review/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 7 != 8
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/compliance/money-lending-law-reviews/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 338, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(AuditLog.objects.count(), audit_count + 1)
+AssertionError: 7 != 8
+
+----------------------------------------------------------------------
+Ran 1 test in 0.134s
+
+FAILED (failures=15)
+Destroying test database for alias 'default'...

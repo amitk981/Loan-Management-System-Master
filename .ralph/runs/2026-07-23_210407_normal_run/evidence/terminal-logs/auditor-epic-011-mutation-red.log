@@ -1,0 +1,57 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFFF
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/loan-accounts/399e8e01-333d-4d9b-bb7c-204757b13801/closure/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 333, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Loan closure failed validation.", "details": {}, "field_errors": {"closure_type": "Must be full_repayment.", "closure_notes": "The reason contains unsafe or invalid audit text."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:56:32.514917Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/loan-closures/399e8e01-333d-4d9b-bb7c-204757b13801/noc/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 333, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "NOC issuance failed validation.", "details": {}, "field_errors": {"document_id": "Must be a valid UUID.", "signatory_user_id": "Must be a valid UUID.", "delivery_mode": "Must be email for the configured delivery dispatcher.", "recipient_email": "Must be a valid email address."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:56:32.516441Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/loan-closures/399e8e01-333d-4d9b-bb7c-204757b13801/archive/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 333, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Archive creation failed validation.", "details": {}, "field_errors": {"file_location": "A physical or digital archive location is required."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:56:32.519012Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='patch', path='/api/v1/grievances/399e8e01-333d-4d9b-bb7c-204757b13801/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 333, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Compliance request failed validation.", "details": {}, "field_errors": {"request": "Unsupported grievance update field."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:56:32.528629Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='post', path='/api/v1/grievances/399e8e01-333d-4d9b-bb7c-204757b13801/resolve/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 333, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Compliance request failed validation.", "details": {}, "field_errors": {"resolution_summary": "This field is required."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:56:32.529612Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_auditor_permission_and_http_method_matrix_has_no_operational_mutation (sfpcl_credit.tests.test_auditor_epic_011_api.AuditorEpic011ApiTests.test_auditor_permission_and_http_method_matrix_has_no_operational_mutation) (method='patch', path='/api/v1/kyc-reviews/399e8e01-333d-4d9b-bb7c-204757b13801/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_210407_normal_run/sfpcl_credit/tests/test_auditor_epic_011_api.py", line 333, in test_auditor_permission_and_http_method_matrix_has_no_operational_mutation
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Compliance request failed validation.", "details": {}, "field_errors": {"assigned_to_user_id": "Only assigned_to_user_id may be changed."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T15:56:32.530596Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.049s
+
+FAILED (failures=6)
+Destroying test database for alias 'default'...

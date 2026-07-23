@@ -335,14 +335,15 @@
     "011M2-member-portal-kyc-correction-request",
     "011M3-global-search-compliance-results",
     "011N-grievance-workflow",
-    "011NA-member-portal-notices-grievances-and-notifications"
+    "011NA-member-portal-notices-grievances-and-notifications",
+    "011O-auditor-read-only-views"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-23_201453_repair",
+  "last_run_id": "2026-07-23_220436_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 18,
+  "slices_completed_since_architecture_review": 19,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

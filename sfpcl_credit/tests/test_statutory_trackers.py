@@ -13,7 +13,9 @@ from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
 class StatutoryTrackerModuleTests(TestCase):
     def setUp(self):
         self.cfo_role = Role.objects.create(role_code="cfo", role_name="CFO")
-        self.reviewer_role = Role.objects.create(role_code="internal_auditor", role_name="Internal Auditor")
+        self.reviewer_role = Role.objects.create(
+            role_code="compliance_team_member", role_name="Compliance Team Member"
+        )
         self.cfo = User.objects.create(
             full_name="CFO Owner", email="statutory-cfo@example.test", primary_role=self.cfo_role,
         )
@@ -349,7 +351,10 @@ class StatutoryTrackerModuleTests(TestCase):
             "/api/v1/compliance-controls/", **self._auth(viewer)
         )
         self.assertEqual(existing_endpoint.status_code, 403)
-        self.assertFalse(AuditLog.objects.filter(action="compliance.access.denied").exists())
+        denied = AuditLog.objects.get(
+            actor_user=viewer, action="compliance.access.denied"
+        )
+        self.assertEqual(denied.new_value_json["path"], "/api/v1/compliance-controls/")
 
     def test_nbfc_exact_trigger_and_review_handoff_freeze_board_evidence(self):
         from sfpcl_credit.compliance.modules.compliance_control_tracker import (
