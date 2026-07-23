@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_011k_compliance_job_invokes_grievance_escalation_owner (sfpcl_credit.tests.test_grievance_workflow.GrievanceWorkflowApiTests.test_011k_compliance_job_invokes_grievance_escalation_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_164006_normal_run/sfpcl_credit/tests/test_grievance_workflow.py", line 564, in test_011k_compliance_job_invokes_grievance_escalation_owner
+    self.assertEqual(grievance.status, Grievance.STATUS_ESCALATED)
+AssertionError: 'open' != 'escalated'
+- open
++ escalated
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.023s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

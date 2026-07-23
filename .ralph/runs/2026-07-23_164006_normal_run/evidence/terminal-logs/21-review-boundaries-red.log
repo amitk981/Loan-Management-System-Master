@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+EF
+======================================================================
+ERROR: test_borrower_scope_is_derived_and_safe_for_create_and_retrieve (sfpcl_credit.tests.test_grievance_workflow.GrievanceWorkflowApiTests.test_borrower_scope_is_derived_and_safe_for_create_and_retrieve)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_164006_normal_run/sfpcl_credit/tests/test_grievance_workflow.py", line 236, in test_borrower_scope_is_derived_and_safe_for_create_and_retrieve
+    retrieved = GrievanceWorkflow.retrieve_for_borrower(portal_account=portal, grievance_id=created['grievance_id'])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: GrievanceWorkflow.retrieve_for_borrower() got an unexpected keyword argument 'portal_account'
+
+======================================================================
+FAIL: test_unproven_document_and_inconsistent_notice_truth_are_rejected (sfpcl_credit.tests.test_grievance_workflow.GrievanceWorkflowApiTests.test_unproven_document_and_inconsistent_notice_truth_are_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_164006_normal_run/sfpcl_credit/tests/test_grievance_workflow.py", line 252, in test_unproven_document_and_inconsistent_notice_truth_are_rejected
+    with self.assertRaises(ComplianceDenied):
+AssertionError: ComplianceDenied not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.043s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...

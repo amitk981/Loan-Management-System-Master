@@ -38,6 +38,23 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path("api/v1/grievances/", compliance_views.grievances, name="grievances"),
+    path(
+        "api/v1/grievances/<uuid:grievance_id>/",
+        compliance_views.grievance_detail,
+        name="grievance-detail",
+    ),
+    path(
+        "api/v1/grievances/<uuid:grievance_id>/resolve/",
+        compliance_views.grievance_resolve,
+        name="grievance-resolve",
+    ),
+    path(
+        "api/v1/grievances/<uuid:grievance_id>/documents/"
+        "<uuid:document_id>/download/",
+        compliance_views.grievance_document_download,
+        name="grievance-document-download",
+    ),
     path("api/v1/kyc-reviews/", compliance_views.kyc_reviews, name="kyc-reviews"),
     path("api/v1/kyc-reviews/<uuid:kyc_review_id>/", compliance_views.kyc_review_detail, name="kyc-review-detail"),
     path("api/v1/kyc-reviews/<uuid:kyc_review_id>/remind/", compliance_views.kyc_review_remind, name="kyc-review-remind"),

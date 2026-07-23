@@ -128,6 +128,11 @@ class ComplianceTaskEngine:
                             task.task_status = ComplianceTask.STATUS_OVERDUE
                             cls._queue_overdue_escalation(task)
                             cls._record_overdue(task)
+                from sfpcl_credit.compliance.modules.grievance_workflow import (
+                    GrievanceWorkflow,
+                )
+
+                GrievanceWorkflow.process_escalations(as_of_date=as_of_date)
                 ScheduledJob.objects.filter(pk=job.pk).update(
                     status=ScheduledJob.STATUS_SUCCEEDED,
                     completed_at=timezone.now(),

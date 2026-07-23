@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_active_portal_primitive_creates_only_for_its_own_member (sfpcl_credit.tests.test_grievance_workflow.GrievanceWorkflowApiTests.test_active_portal_primitive_creates_only_for_its_own_member)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_164006_normal_run/sfpcl_credit/tests/test_grievance_workflow.py", line 198, in test_active_portal_primitive_creates_only_for_its_own_member
+    created = GrievanceWorkflow.create_for_borrower(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'GrievanceWorkflow' has no attribute 'create_for_borrower'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.025s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

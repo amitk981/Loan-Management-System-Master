@@ -9,6 +9,7 @@ from sfpcl_credit.compliance.modules.nbfc_principal_business_test import (
     NbfcPrincipalBusinessTestModule,
 )
 from sfpcl_credit.compliance.modules.kyc_review_tracker import KYCReviewTracker
+from sfpcl_credit.compliance.modules.grievance_workflow import GrievanceWorkflow
 from sfpcl_credit.identity.modules import http_auth
 
 
@@ -19,7 +20,14 @@ def _actor(request):
     return actor, response
 
 
-def _error(request, exc, *, audit_denial=False):
+def _error(
+    request,
+    exc,
+    *,
+    audit_denial=False,
+    denial_action="compliance.access.denied",
+    denial_entity_type="statutory_tracker_endpoint",
+):
     from django.core.exceptions import ObjectDoesNotExist
     if isinstance(exc, tracker.ComplianceDenied) or isinstance(exc, PermissionError):
         if audit_denial:
@@ -29,8 +37,8 @@ def _error(request, exc, *, audit_denial=False):
             AuditLog.objects.create(
                 actor_user=getattr(request, "compliance_actor", None),
                 actor_type="user",
-                action="compliance.access.denied",
-                entity_type="statutory_tracker_endpoint",
+                action=denial_action,
+                entity_type=denial_entity_type,
                 new_value_json={"method": request.method, "path": request.path},
                 ip_address=request_ip(request),
                 user_agent=request_user_agent(request),
@@ -129,6 +137,119 @@ def money_lending_review(request):
             ComplianceTaskEngine.create_money_lending_review(actor=actor, payload=parse_json_body(request)), request
         )
     except Exception as exc: return _error(request, exc)
+
+
+@require_http_methods(["GET", "POST"])
+def grievances(request):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "POST":
+            idempotency_key = request.headers.get("Idempotency-Key")
+            if not idempotency_key:
+                raise tracker.ComplianceInvalid(
+                    {"Idempotency-Key": "This header is required."}
+                )
+            data = GrievanceWorkflow.create(
+                actor=actor,
+                payload=parse_json_body(request),
+                idempotency_key=idempotency_key,
+            )
+            return success_response(data, request)
+        data, pagination = GrievanceWorkflow.list(actor=actor, query=request.GET)
+        return list_response(data, pagination, request)
+    except Exception as exc:
+        return _error(
+            request,
+            exc,
+            audit_denial=True,
+            denial_action="compliance.grievance.access_denied",
+            denial_entity_type="grievance_endpoint",
+        )
+
+
+@require_http_methods(["GET", "PATCH"])
+def grievance_detail(request, grievance_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "GET":
+            data = GrievanceWorkflow.retrieve(
+                actor=actor, grievance_id=grievance_id
+            )
+        else:
+            data = GrievanceWorkflow.update(
+                actor=actor,
+                grievance_id=grievance_id,
+                payload=parse_json_body(request),
+            )
+        return success_response(data, request)
+    except Exception as exc:
+        return _error(
+            request,
+            exc,
+            audit_denial=True,
+            denial_action="compliance.grievance.access_denied",
+            denial_entity_type="grievance_endpoint",
+        )
+
+
+@require_http_methods(["POST"])
+def grievance_resolve(request, grievance_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        idempotency_key = request.headers.get("Idempotency-Key")
+        if not idempotency_key:
+            raise tracker.ComplianceInvalid(
+                {"Idempotency-Key": "This header is required."}
+            )
+        return success_response(
+            GrievanceWorkflow.resolve(
+                actor=actor,
+                grievance_id=grievance_id,
+                payload=parse_json_body(request),
+                idempotency_key=idempotency_key,
+                request=request,
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(
+            request,
+            exc,
+            audit_denial=True,
+            denial_action="compliance.grievance.access_denied",
+            denial_entity_type="grievance_endpoint",
+        )
+
+
+@require_http_methods(["GET"])
+def grievance_document_download(request, grievance_id, document_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            GrievanceWorkflow.download_document(
+                actor=actor,
+                grievance_id=grievance_id,
+                document_id=document_id,
+                request=request,
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(
+            request,
+            exc,
+            audit_denial=True,
+            denial_action="compliance.grievance.access_denied",
+            denial_entity_type="grievance_endpoint",
+        )
 
 
 @require_http_methods(["GET"])

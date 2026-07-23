@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_resolution_requires_summary_is_retry_safe_and_queues_honest_notice (sfpcl_credit.tests.test_grievance_workflow.GrievanceWorkflowApiTests.test_resolution_requires_summary_is_retry_safe_and_queues_honest_notice)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_164006_normal_run/sfpcl_credit/tests/test_grievance_workflow.py", line 413, in test_resolution_requires_summary_is_retry_safe_and_queues_honest_notice
+    self.assertTrue(informed.json()["data"]["borrower_informed"])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.053s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

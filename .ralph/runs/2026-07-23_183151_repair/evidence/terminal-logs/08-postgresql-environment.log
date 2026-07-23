@@ -1,0 +1,3 @@
+database_vendor=postgresql
+server_version=14.20 (Homebrew)
+database_name=postgres

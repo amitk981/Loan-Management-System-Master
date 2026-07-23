@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 from unittest import skipUnless
 
 from django.db import close_old_connections, connection
@@ -240,3 +240,218 @@ class StatutoryTrackerPostgreSQLAcceptanceTests(TransactionTestCase):
         task.current_evidence = evidence
         task.save(update_fields=["current_evidence"])
         return task, evidence
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class GrievanceWorkflowPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+    password = "GrievancePgPass123!"
+
+    def setUp(self):
+        from sfpcl_credit.communications.models import ContentTemplate
+        from sfpcl_credit.members.models import MemberScopeAssignment
+
+        self.field_role = Role.objects.create(
+            role_code="field_officer", role_name="Field Officer"
+        )
+        self.cs_role = Role.objects.create(
+            role_code="company_secretary", role_name="Company Secretary"
+        )
+        self.field = self._user(
+            self.field_role, "pg-grievance-field@example.test"
+        )
+        self.cs = self._user(self.cs_role, "pg-grievance-cs@example.test")
+        for role, codes in (
+            (self.field_role, ("compliance.grievance.create",)),
+            (
+                self.cs_role,
+                (
+                    "compliance.grievance.read",
+                    "compliance.grievance.resolve",
+                ),
+            ),
+        ):
+            for code in codes:
+                permission = Permission.objects.create(
+                    permission_code=code,
+                    permission_name=code,
+                    module_name="compliance",
+                    risk_level=Permission.RISK_HIGH,
+                )
+                RolePermission.objects.create(role=role, permission=permission)
+        self.member = Member.objects.create(
+            member_type="individual_farmer",
+            legal_name="PostgreSQL Grievance Member",
+            display_name="PostgreSQL Grievance Member",
+            folio_number="PG-GRV-1",
+            membership_status="active",
+            pan_encrypted="encrypted-pg-grievance",
+            pan_hash="pg-grievance-pan-hash",
+            kyc_status="verified",
+            default_status="no_default",
+            email="pg-grievance-member@example.test",
+        )
+        for user, permission in (
+            (self.field, "compliance.grievance.create"),
+            (self.cs, "compliance.grievance.read"),
+            (self.cs, "compliance.grievance.resolve"),
+        ):
+            MemberScopeAssignment.objects.create(
+                user=user,
+                permission_code=permission,
+                scope_type="assigned",
+                member=self.member,
+            )
+        ContentTemplate.objects.create(
+            template_code="grievance_resolution_email",
+            template_name="Grievance resolution",
+            template_type="email",
+            language_code="en",
+            audience="borrower",
+            subject_template="Grievance {{grievance_reference}} resolved",
+            body_template=(
+                "Dear {{member_name}}, grievance {{grievance_reference}} "
+                "was resolved: {{resolution_summary}}"
+            ),
+            variables_json=[
+                "grievance_reference",
+                "member_name",
+                "resolution_summary",
+            ],
+            approval_status=ContentTemplate.STATUS_APPROVED,
+            template_version="1.0",
+            effective_from=date.today(),
+        )
+
+    def test_concurrent_exact_create_replay_retains_one_reference_and_history(self):
+        from sfpcl_credit.compliance.models import Grievance
+        from sfpcl_credit.compliance.modules.grievance_workflow import (
+            GrievanceWorkflow,
+        )
+        from sfpcl_credit.identity.models import AuditLog
+
+        today = date.today()
+        payload = {
+            "member_id": str(self.member.pk),
+            "grievance_category": "other",
+            "description": "Concurrent PostgreSQL grievance.",
+            "received_date": today.isoformat(),
+            "received_channel": "phone",
+            "assigned_to_user_id": str(self.cs.pk),
+            "resolution_due_date": (today + timedelta(days=7)).isoformat(),
+            "supporting_document_ids": [],
+        }
+
+        def create(_value):
+            close_old_connections()
+            try:
+                return GrievanceWorkflow.create(
+                    actor=User.objects.get(pk=self.field.pk),
+                    payload=payload,
+                    idempotency_key="pg-grievance-create-001",
+                )
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(create, range(2)))
+
+        self.assertEqual(results[0]["grievance_id"], results[1]["grievance_id"])
+        self.assertEqual(
+            results[0]["grievance_reference"], results[1]["grievance_reference"]
+        )
+        self.assertEqual(Grievance.objects.count(), 1)
+        grievance = Grievance.objects.get()
+        self.assertEqual(grievance.history.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="compliance.grievance.created", entity_id=grievance.pk
+            ).count(),
+            1,
+        )
+
+    def test_concurrent_resolve_and_escalate_retain_one_terminal_chain(self):
+        from sfpcl_credit.communications.models import (
+            Communication,
+            CommunicationDeliveryJob,
+        )
+        from sfpcl_credit.compliance.models import Grievance, GrievanceHistory
+        from sfpcl_credit.compliance.modules.grievance_workflow import (
+            GrievanceWorkflow,
+        )
+
+        today = date.today()
+        grievance = Grievance.objects.create(
+            grievance_reference="GRV-PG-RACE-RESOLVE",
+            idempotency_key="pg-resolution-fixture",
+            request_digest="9" * 64,
+            member=self.member,
+            grievance_category="other",
+            description="PostgreSQL resolution race.",
+            received_date=today - timedelta(days=2),
+            received_channel="phone",
+            assigned_to_user=self.cs,
+            resolution_due_date=today - timedelta(days=1),
+            status=Grievance.STATUS_OPEN,
+            created_by_user=self.field,
+            created_by_role_code=self.field_role.role_code,
+        )
+        GrievanceHistory.objects.create(
+            grievance=grievance,
+            sequence=1,
+            event_type="created",
+            new_status=Grievance.STATUS_OPEN,
+            actor_user=self.field,
+            actor_role_code=self.field_role.role_code,
+        )
+
+        def resolve():
+            close_old_connections()
+            try:
+                return GrievanceWorkflow.resolve(
+                    actor=User.objects.get(pk=self.cs.pk),
+                    grievance_id=grievance.pk,
+                    payload={"resolution_summary": "Concurrent resolution retained."},
+                    idempotency_key="pg-grievance-resolution-001",
+                )
+            finally:
+                close_old_connections()
+
+        def escalate():
+            close_old_connections()
+            try:
+                return GrievanceWorkflow.process_escalations(as_of_date=today)
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [executor.submit(resolve), executor.submit(escalate)]
+            [future.result() for future in futures]
+
+        grievance.refresh_from_db()
+        events = list(grievance.history.order_by("sequence"))
+        self.assertEqual(grievance.status, Grievance.STATUS_RESOLVED)
+        self.assertEqual(sum(event.event_type == "resolved" for event in events), 1)
+        self.assertLessEqual(
+            sum(event.event_type == "escalated" for event in events), 1
+        )
+        self.assertEqual(events[-1].event_type, "resolved")
+        self.assertEqual(
+            Communication.objects.filter(
+                related_entity_type="grievance",
+                related_entity_id=grievance.pk,
+            ).count(),
+            1,
+        )
+        self.assertEqual(CommunicationDeliveryJob.objects.count(), 1)
+
+    def _user(self, role, email):
+        user = User.objects.create(
+            full_name=role.role_name,
+            email=email,
+            primary_role=role,
+            password_hash="",
+        )
+        user.set_password(self.password)
+        user.save(update_fields=["password_hash"])
+        return user

@@ -892,8 +892,8 @@ class CommunicationDispatcher:
                 "sent_by_user_id": str(row.sent_by_user_id),
                 "delivery_status": row.delivery_status,
             },
-            ip_address=request_ip(request),
-            user_agent=request_user_agent(request),
+            ip_address=request_ip(request) if request else "",
+            user_agent=request_user_agent(request) if request else "",
         )
 
     @classmethod

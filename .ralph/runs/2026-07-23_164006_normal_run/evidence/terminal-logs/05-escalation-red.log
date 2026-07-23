@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_scheduler_escalates_overdue_and_recovery_cases_once_without_resolving (sfpcl_credit.tests.test_grievance_workflow.GrievanceWorkflowApiTests.test_scheduler_escalates_overdue_and_recovery_cases_once_without_resolving)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_164006_normal_run/sfpcl_credit/tests/test_grievance_workflow.py", line 490, in test_scheduler_escalates_overdue_and_recovery_cases_once_without_resolving
+    first = GrievanceWorkflow.process_escalations(as_of_date=today)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'GrievanceWorkflow' has no attribute 'process_escalations'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.679s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

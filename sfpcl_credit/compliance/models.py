@@ -561,6 +561,283 @@ class NbfcPrincipalBusinessTest(models.Model):
         return super().save(*args, **kwargs)
 
 
+class Grievance(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_INVESTIGATING = "investigating"
+    STATUS_ESCALATED = "escalated"
+    STATUS_RESOLVED = "resolved"
+    STATUSES = {
+        STATUS_OPEN,
+        STATUS_INVESTIGATING,
+        STATUS_ESCALATED,
+        STATUS_RESOLVED,
+    }
+    CATEGORIES = {
+        "application_issue",
+        "document_issue",
+        "approval_delay",
+        "disbursement_delay",
+        "interest_charge_dispute",
+        "repayment_adjustment_issue",
+        "recovery_conduct_issue",
+        "noc_closure_delay",
+        "kyc_data_correction_issue",
+        "other",
+    }
+    CHANNELS = {"portal", "form", "phone"}
+
+    grievance_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    grievance_reference = models.CharField(max_length=40, unique=True)
+    idempotency_key = models.CharField(max_length=255, unique=True)
+    request_digest = models.CharField(max_length=64)
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="grievances"
+    )
+    loan_account = models.ForeignKey(
+        "loans.LoanAccount",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="grievances",
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="grievances",
+    )
+    default_case = models.ForeignKey(
+        "defaults.DefaultCase",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="grievances",
+    )
+    recovery_action = models.ForeignKey(
+        "recovery.RecoveryAction",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="grievances",
+    )
+    grievance_category = models.CharField(max_length=100, db_index=True)
+    description = models.TextField()
+    received_date = models.DateField(db_index=True)
+    received_channel = models.CharField(max_length=60)
+    assigned_to_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="assigned_grievances",
+    )
+    resolution_due_date = models.DateField(db_index=True)
+    status = models.CharField(max_length=60, default=STATUS_OPEN, db_index=True)
+    internal_notes = models.TextField(blank=True)
+    resolution_summary = models.TextField(blank=True)
+    resolution_idempotency_key = models.CharField(
+        max_length=255, blank=True, null=True, unique=True
+    )
+    resolution_request_digest = models.CharField(max_length=64, blank=True)
+    resolution_document = models.ForeignKey(
+        "documents.DocumentFile",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="resolved_grievances",
+    )
+    closed_at = models.DateTimeField(blank=True, null=True)
+    resolved_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="resolved_grievances",
+    )
+    borrower_informed_at = models.DateTimeField(blank=True, null=True)
+    borrower_acknowledged_at = models.DateTimeField(blank=True, null=True)
+    borrower_acknowledgement = models.TextField(blank=True)
+    notice_communication = models.OneToOneField(
+        "communications.Communication",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="grievance_notice",
+    )
+    escalation_count = models.PositiveIntegerField(default=0)
+    last_escalated_at = models.DateTimeField(blank=True, null=True)
+    created_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="created_grievances",
+    )
+    created_by_role_code = models.CharField(max_length=100)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    supporting_documents = models.ManyToManyField(
+        "documents.DocumentFile",
+        through="GrievanceDocument",
+        related_name="supporting_grievances",
+    )
+
+    class Meta:
+        db_table = "grievances"
+        ordering = ["-received_date", "-created_at", "-grievance_id"]
+        indexes = [
+            models.Index(
+                fields=["member", "status"], name="idx_grievance_member_status"
+            ),
+            models.Index(
+                fields=["assigned_to_user", "status"],
+                name="idx_grievance_owner_status",
+            ),
+            models.Index(
+                fields=["status", "resolution_due_date"],
+                name="idx_grievance_status_due",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=("open", "investigating", "escalated", "resolved")),
+                name="grievance_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    grievance_category__in=(
+                        "application_issue",
+                        "document_issue",
+                        "approval_delay",
+                        "disbursement_delay",
+                        "interest_charge_dispute",
+                        "repayment_adjustment_issue",
+                        "recovery_conduct_issue",
+                        "noc_closure_delay",
+                        "kyc_data_correction_issue",
+                        "other",
+                    )
+                ),
+                name="grievance_category_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(received_channel__in=("portal", "form", "phone")),
+                name="grievance_channel_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(resolution_due_date__gte=models.F("received_date")),
+                name="grievance_due_after_received",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(description=""),
+                name="grievance_description_required",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        status="resolved",
+                        closed_at__isnull=False,
+                        resolved_by_user__isnull=False,
+                    )
+                    & ~models.Q(resolution_summary="")
+                )
+                | (
+                    ~models.Q(status="resolved")
+                    & models.Q(
+                        closed_at__isnull=True,
+                        resolved_by_user__isnull=True,
+                        resolution_summary="",
+                    )
+                ),
+                name="grievance_resolution_complete",
+            ),
+        ]
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Grievance records cannot be deleted.")
+
+
+class GrievanceDocument(models.Model):
+    PURPOSE_SUPPORTING = "supporting"
+    PURPOSE_RESOLUTION = "resolution"
+
+    grievance_document_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    grievance = models.ForeignKey(
+        Grievance, on_delete=models.PROTECT, related_name="document_links"
+    )
+    document = models.ForeignKey(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="grievance_links",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="grievance_document_links",
+    )
+    purpose = models.CharField(max_length=40)
+    linked_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="linked_grievance_documents",
+    )
+    linked_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "grievance_documents"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["grievance", "document", "purpose"],
+                name="uniq_grievance_document_purpose",
+            ),
+            models.CheckConstraint(
+                check=models.Q(purpose__in=("supporting", "resolution")),
+                name="grievance_document_purpose_bounded",
+            ),
+        ]
+
+
+class GrievanceHistory(models.Model):
+    grievance_history_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    grievance = models.ForeignKey(
+        Grievance, on_delete=models.PROTECT, related_name="history"
+    )
+    sequence = models.PositiveIntegerField()
+    event_type = models.CharField(max_length=80)
+    previous_status = models.CharField(max_length=60, blank=True)
+    new_status = models.CharField(max_length=60)
+    note = models.TextField(blank=True)
+    actor_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="grievance_history_events",
+    )
+    actor_role_code = models.CharField(max_length=100)
+    evidence_json = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "grievance_history"
+        ordering = ["sequence", "grievance_history_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["grievance", "sequence"],
+                name="uniq_grievance_history_sequence",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    new_status__in=("open", "investigating", "escalated", "resolved")
+                ),
+                name="grievance_history_status_bounded",
+            ),
+        ]
+
+
 def _reject_frozen_statutory_changes(instance, frozen_fields):
     if not instance.pk:
         return

@@ -242,6 +242,12 @@ PERMISSIONS = [
     ("compliance.nbfc_test.create", "Create NBFC principal test", "critical"),
     ("compliance.nbfc_test.read", "View NBFC principal test", "high"),
     ("compliance.kyc_review.manage", "Manage KYC reviews", "high"),
+    ("compliance.grievance.create", "Create grievances", "high"),
+    ("compliance.grievance.read", "View grievances", "high"),
+    ("compliance.grievance.assign", "Assign grievances", "high"),
+    ("compliance.grievance.update", "Investigate grievances", "high"),
+    ("compliance.grievance.resolve", "Resolve grievances", "high"),
+    ("compliance.grievance.escalate", "Escalate grievances", "high"),
     (
         "compliance.money_lending_review.manage",
         "Manage money-lending law review",
@@ -344,6 +350,7 @@ ROLE_PERMISSIONS = {
         "applications.loan_application.update",
         "applications.document.upload",
         "kyc.document.upload",
+        "compliance.grievance.create",
     ],
     "deputy_manager_finance": [
         "applications.loan_application.read",
@@ -400,6 +407,9 @@ ROLE_PERMISSIONS = {
         "defaults.non_payment_note.submit",
         "closure.readiness.read",
         "closure.loan.close",
+        "compliance.grievance.read",
+        "compliance.grievance.update",
+        "compliance.grievance.resolve",
         "management_readonly",
     ],
     "compliance_team_member": [
@@ -427,6 +437,9 @@ ROLE_PERMISSIONS = {
         "security.package.read",
         "security.poa.manage",
         "compliance.evidence.submit",
+        "compliance.grievance.read",
+        "compliance.grievance.update",
+        "compliance.grievance.resolve",
         "management_readonly",
     ],
     "company_secretary": [
@@ -467,6 +480,12 @@ ROLE_PERMISSIONS = {
         "compliance.evidence.submit",
         "compliance.money_lending_review.manage",
         "compliance.stamp_duty_review.manage",
+        "compliance.grievance.create",
+        "compliance.grievance.read",
+        "compliance.grievance.assign",
+        "compliance.grievance.update",
+        "compliance.grievance.resolve",
+        "compliance.grievance.escalate",
         "management_readonly",
     ],
     "senior_manager_finance": [
@@ -586,6 +605,7 @@ ROLE_PERMISSIONS = {
         "compliance.evidence.review",
         "compliance.section186.read",
         "compliance.nbfc_test.read",
+        "compliance.grievance.read",
         # A-023 maps internal_auditor to the "compliance" dashboard context; the
         # dashboard endpoint gates on management_readonly, so the auditor needs it
         # to reach the shell the mapping promises (003G2 regression).

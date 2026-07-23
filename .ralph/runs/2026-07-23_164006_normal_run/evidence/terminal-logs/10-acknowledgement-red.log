@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_resolution_requires_summary_is_retry_safe_and_queues_honest_notice (sfpcl_credit.tests.test_grievance_workflow.GrievanceWorkflowApiTests.test_resolution_requires_summary_is_retry_safe_and_queues_honest_notice)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_164006_normal_run/sfpcl_credit/tests/test_grievance_workflow.py", line 406, in test_resolution_requires_summary_is_retry_safe_and_queues_honest_notice
+    self.assertEqual(resolved.status_code, 200, resolved.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Compliance request failed validation.", "details": {}, "field_errors": {"borrower_acknowledgement": "Unsupported resolution field."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T11:46:25.416582Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.031s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

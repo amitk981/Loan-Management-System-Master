@@ -5480,3 +5480,36 @@ Both write history, reset KYC to pending reverification, and link an open 011M K
 exists. Rejection requires a borrower-visible reason and writes no member history. Submit, review,
 approve/apply, reject, and cross-scope denial are audited; every lifecycle transition writes the
 canonical workflow event.
+
+## Grievance workflow (011N)
+
+- `GET|POST /api/v1/grievances/`
+- `GET|PATCH /api/v1/grievances/{grievance_id}/`
+- `POST /api/v1/grievances/{grievance_id}/resolve/`
+- `GET /api/v1/grievances/{grievance_id}/documents/{document_id}/download/`
+
+Create and resolve require `Idempotency-Key`. Create accepts the source §38 fields plus optional
+matching `default_case_id`, `recovery_action_id`, and unique `supporting_document_ids`; caller-named
+loan/application/default/recovery records must all belong to the named member and one coherent
+source chain. The caller supplies the explicit configured owner and due date because no universal
+TAT is source-defined. The server generates one `GRV-{year}-{identity}` reference and derives
+`tat_days`, `days_overdue`, and `is_overdue` from retained server dates.
+
+List filters are `status`, `member_id`, `grievance_category`, `assigned_to_user_id`, `overdue`,
+`page`, and `page_size`. Staff reads require `compliance.grievance.read` plus canonical member
+scope; Internal Auditor is global read-only. `PATCH` lets Company Secretary reassign to an active,
+member-scoped grievance reader and lets only the assigned owner advance `open` to `investigating`
+with internal notes. Escalation and resolution use their dedicated module interfaces.
+
+Resolve accepts a required nonblank `resolution_summary`, optional governed
+`resolution_document_id`, and optional borrower acknowledgement. It is terminal, retry-safe, and
+queues the approved effective `grievance_resolution_email` or `grievance_resolution_sms` template
+through the communications dispatcher. `borrower_informed` becomes true only from retained sent
+communication evidence; queued delivery never claims success. The 011K job calls the same grievance
+owner to escalate overdue and recovery-conduct cases exactly once without resolving them.
+
+The borrower primitive derives member scope from an active portal account, rejects caller-supplied
+member identity, and exposes only safe status/resolution/notice truth. Internal notes, recovery
+notes, assignee facts, document identities, and staff history remain excluded. Creation, assignment,
+investigation, escalation, resolution, notice queue, governed download, and every denied
+cross-object attempt are audited.

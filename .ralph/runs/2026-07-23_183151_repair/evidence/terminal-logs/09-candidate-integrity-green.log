@@ -1,0 +1,21 @@
+git_diff_check:
+review_packet_result:
+Ready for independent validation
+debug_instrumentation_matches:
+protected_or_forbidden_status_matches:
+candidate_diff_stat:
+ docs/working/API_CONTRACTS.md                      |  33 +++
+ docs/working/ASSUMPTIONS.md                        |   1 +
+ .../modules/communication_dispatcher.py            |   4 +-
+ sfpcl_credit/compliance/models.py                  | 277 +++++++++++++++++++++
+ .../compliance/modules/compliance_task_engine.py   |   5 +
+ sfpcl_credit/compliance/views.py                   | 127 +++++++++-
+ sfpcl_credit/config/urls.py                        |  17 ++
+ sfpcl_credit/identity/catalogue.py                 |  20 ++
+ .../tests/test_compliance_postgresql_acceptance.py | 217 +++++++++++++++-
+ 9 files changed, 695 insertions(+), 6 deletions(-)
+untracked_product_line_counts:
+     158 sfpcl_credit/compliance/migrations/0004_grievance_grievancedocument_and_more.py
+     536 sfpcl_credit/compliance/modules/grievance_workflow.py
+     347 sfpcl_credit/tests/test_grievance_workflow.py
+    1041 total
