@@ -1,0 +1,6 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+?? .ralph/runs/2026-07-24_002010_normal_run/
+?? sfpcl_credit/reports/
+?? sfpcl_credit/tests/test_report_api.py

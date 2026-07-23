@@ -29,6 +29,7 @@ from sfpcl_credit.legal_documents import views as legal_document_views
 from sfpcl_credit.loans import views as loan_views
 from sfpcl_credit.monitoring import views as monitoring_views
 from sfpcl_credit.recovery import views as recovery_views
+from sfpcl_credit.reports import views as report_views
 from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
@@ -38,6 +39,11 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/reports/<slug:report_code>/",
+        report_views.report,
+        name="report",
+    ),
     path(
         "api/v1/auditor/epic-011/",
         compliance_views.auditor_epic_011,

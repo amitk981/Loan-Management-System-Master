@@ -1,0 +1,37 @@
+CANDIDATE_STATUS
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+?? .ralph/runs/2026-07-24_002010_normal_run/
+?? sfpcl_credit/reports/
+?? sfpcl_credit/tests/test_report_api.py
+DIFF_CHECK
+CHANGED_PYTHON_AST
+AST syntax check passed for 15 changed Python files.
+IMPLEMENTATION_LINE_COUNTS
+       1 sfpcl_credit/reports/__init__.py
+       8 sfpcl_credit/reports/errors.py
+      45 sfpcl_credit/reports/pagination.py
+      63 sfpcl_credit/reports/query.py
+      60 sfpcl_credit/reports/registry.py
+      35 sfpcl_credit/reports/views.py
+       1 sfpcl_credit/reports/selectors/__init__.py
+     105 sfpcl_credit/reports/selectors/application_pipeline.py
+      87 sfpcl_credit/reports/selectors/compliance_dashboard.py
+      73 sfpcl_credit/reports/selectors/disbursement_pending.py
+      72 sfpcl_credit/reports/selectors/documentation_readiness.py
+      97 sfpcl_credit/reports/selectors/dpd.py
+      76 sfpcl_credit/reports/selectors/loan_portfolio.py
+     821 sfpcl_credit/tests/test_report_api.py
+    1544 total
+TRACKED_DIFF_STAT
+ docs/working/API_CONTRACTS.md | 33 +++++++++++++++++++++++++++++++++
+ docs/working/ASSUMPTIONS.md   |  1 +
+ sfpcl_credit/config/urls.py   |  6 ++++++
+ 3 files changed, 40 insertions(+)
+REVIEW_RESULT
+## Result
+Ready for independent validation
+GENERATED_STORAGE_FILES
+BYTECODE_FILES
+Protected path check passed.

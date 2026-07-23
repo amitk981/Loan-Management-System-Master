@@ -5574,3 +5574,36 @@ The Section 186 and NBFC collection routes now expose GET list projections in ad
 existing POST calculation contracts. GET accepts optional `search`, returns the standard bounded
 list envelope, and uses the same tracker serializers; an auditor receives action-free output because
 it has no create/review authority.
+
+## Read-only report APIs (012A)
+
+All six section-40 report routes are `GET` only and return the standard top-level list envelope with
+`page` (default 1), `page_size` (default 20, maximum 100), stable ordering, and no write/audit side
+effect:
+
+- `/api/v1/reports/application-pipeline/` accepts inclusive `from_date`/`to_date`, `status`, and
+  `stage`. Rows are the canonical Loan Request Register entries and retain their application,
+  member, reference, amount, stage, and lifecycle-status identifiers.
+- `/api/v1/reports/documentation-readiness/` accepts checklist `status`; contracted `pending`
+  includes every not-yet-ready checklist, while canonical checklist status values remain accepted.
+  Rows are canonical post-sanction checklists with required/completed/pending counts and pending
+  item codes.
+- `/api/v1/reports/disbursement-pending/` has no report-specific filters. Rows are persisted
+  disbursements whose authorisation is pending/approved and whose bank transfer is
+  pending/processing.
+- `/api/v1/reports/loan-portfolio/` accepts `as_of_date` (default server-local current date) and
+  loan-account `status`. The cutoff includes accounts created on or before that date; row amounts
+  and statuses are the persisted loan-account projection and are not recalculated by the report.
+- `/api/v1/reports/dpd/` accepts `as_of_date` (default server-local current date) and
+  `sop_bucket`. It returns the latest persisted DPD snapshot on or before the cutoff for each
+  scoped account.
+- `/api/v1/reports/compliance-dashboard/` accepts `financial_year=FYyyyy-yy` and returns the
+  persisted Section 186 and NBFC principal-business tracker rows for that year.
+
+Malformed dates, reversed ranges, unsupported controlled values, unknown parameters, invalid page
+values, and `page_size > 100` return `400 VALIDATION_ERROR`. Unauthenticated access returns 401.
+Missing report/owner permission or persisted object scope returns 403 without `data` or
+`pagination`, so denied totals are never disclosed. Documentation readiness uses
+`documents.checklist.read`; disbursement pending uses `finance.disbursement.readiness`; the other
+four routes use their existing `reports.*.read` code plus the canonical owning-domain read scope.
+No caller-supplied role or team changes result scope.
