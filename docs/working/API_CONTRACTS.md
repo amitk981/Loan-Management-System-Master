@@ -5632,3 +5632,35 @@ query before pagination and are formatted as two-decimal strings. Empty authoris
 `data: []`, zero monetary totals where applicable, and the standard empty pagination projection.
 Missing permission or object scope returns `403` without row or total disclosure. Export generation
 and unmasked sensitive values are not part of these reads.
+
+## Default, compliance, and audit report catalogue (012A3)
+
+The final catalogue routes use the same bounded list envelope, stable ordering, fail-closed
+unknown-filter handling, and source-owner scope as the 012A/012A2 routes:
+
+| Code / route | Filters | Source fields and totals | Permission and owner reconciliation |
+|---|---|---|---|
+| `default` | `default_case_status`, `member_id`, `loan_account_id` | Exact canonical Default Case list projection and pagination; recovery evidence remains owner-permission projected | `defaults.case.read` plus the Default workflow's role, approval-attribution, and audit-read scope |
+| `recovery` | `decision`, `action_status` | Decision/case/account/member identity, action status/type and recovered amount; `pagination.totals.amount_recovered`; approval evidence, security evidence, document ids, reasons, and interaction logs are omitted | `defaults.case.read` plus the Default workflow's canonical case scope |
+| `closure-noc` | inclusive `from_date`/`to_date`, `closure_stage=financially_closed` | Closure/account/member identity, NOC issue/delivery status, security-return status, archive identity and retention date; document and archive locations are omitted | `closure.readiness.read` plus the Closure owner's Credit Manager, Company Secretary, or active audit-read scope |
+| `section-186` | `financial_year`, `quarter`, `review_status` | Canonical statutory tracker projection without action or Board-document authority; complete filtered applicable-limit and exposure totals | `compliance.section186.read` plus active auditor scope where applicable |
+| `nbfc-test` | `financial_year`, `quarter`, `review_status` | Canonical principal-business-test ratios, trigger/warning truth, and review state without action or Board-document authority | `compliance.nbfc_test.read` plus active auditor scope where applicable |
+| `kyc-rekyc` | owner filters `status`, `due_within_days=30`, `member_type`, `member_status`, `assigned_to_me` | Canonical scoped KYC review summary with status-only PAN/Aadhaar/consent facts; no identifiers, encrypted values, documents, or actions | `compliance.kyc_review.manage` with member scope, or the KYC owner's governed `compliance.task.read` role/scope |
+| `stamp-duty` | inclusive `from_date`/`to_date`, `status`, `stamp_type` | Legal-owner stamp identity/type/amount/status/dates and notarisation status; evidence files and remarks are omitted | `documents.checklist.read` plus the canonical sanctioned-documentation application scope |
+| `money-lending-review` | `financial_year`, `state`, `applicability` | Annual review identity, period/state/applicability, task/evidence metadata and reviewer/time; legal-opinion/Board document ids and remarks are omitted | `compliance.money_lending_review.manage` or scoped `compliance.task.read`, including active auditor scope |
+| `grievance` | owner filters `status`, `member_id`, `grievance_category`, `assigned_to_user_id`, `overdue` | Canonical scoped grievance identity, linkage, dates, category, state, TAT/overdue and resolution status; descriptions, internal notes, documents, history, and actions are omitted | `compliance.grievance.read` plus the Grievance owner's member scope |
+
+All routes also accept `page` and `page_size` (default 1/20, maximum 100). Invalid controlled
+values, malformed dates/UUIDs/financial years, reversed ranges, unknown parameters, and
+unauthorised object scope fail closed. Empty authorised results return the standard empty page;
+denied results disclose neither rows nor totals. Default-masked report rows never grant reveal or
+document-download authority.
+
+`audit-log-export` is registered only as the restricted handoff
+`012C-sensitive-export-policy+012D-audit-selector`. Its registry definition has no selector, and
+`GET /api/v1/reports/audit-log-export/` always returns `403` even when the caller holds
+`audit.audit_log.read`, `audit.export`, `reports.export`, and `reports.export_sensitive`. It cannot
+query audit rows or create/download a file through the generic report route. The later export flow
+must require the canonical restricted audit read, `audit.export`, general/sensitive export policy
+as applicable, a reason, sanitised 012D values, expiring download authority, and audited request
+and download events; it must not copy report rows or sensitive filters into audit payloads.

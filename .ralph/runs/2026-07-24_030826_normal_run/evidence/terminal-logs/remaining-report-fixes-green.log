@@ -1,0 +1,57 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+.EF
+======================================================================
+ERROR: test_closure_report_reconciles_owner_close_without_document_authority (sfpcl_credit.tests.test_report_catalogue_api.ClosureReportCatalogueApiTests.test_closure_report_reconciles_owner_close_without_document_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 463, in test_closure_report_reconciles_owner_close_without_document_authority
+    response = fixture.client.get(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/reports/views.py", line 15, in report
+    rows, pagination = run_report(
+                       ^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/reports/registry.py", line 170, in run_report
+    return definition.selector(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/reports/selectors/closure_noc.py", line 47, in select
+    if stage not in LoanClosure.STAGES:
+                    ^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'LoanClosure' has no attribute 'STAGES'
+
+======================================================================
+FAIL: test_stamp_duty_report_reuses_scoped_legal_record_without_evidence_file (sfpcl_credit.tests.test_report_catalogue_api.SecurityCustodyReportCatalogueApiTests.test_stamp_duty_report_reuses_scoped_legal_record_without_evidence_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 985, in test_stamp_duty_report_reuses_scoped_legal_record_without_evidence_file
+    self.assertEqual(response.json()["pagination"]["total_count"], 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.166s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...

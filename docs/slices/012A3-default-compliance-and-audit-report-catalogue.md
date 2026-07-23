@@ -1,7 +1,7 @@
 # Slice 012A3: Default, Compliance, and Audit Report Catalogue
 
 ## Status
-Not Started
+Complete
 
 ## Runtime Capabilities
 - `none`

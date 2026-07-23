@@ -1,0 +1,35 @@
+Creating test database for alias 'default'...
+Found 19 test(s).
+System check identified no issues (0 silenced).
+..E.....F........E.
+======================================================================
+ERROR: test_closure_report_reconciles_owner_close_without_document_authority (sfpcl_credit.tests.test_report_catalogue_api.ClosureReportCatalogueApiTests.test_closure_report_reconciles_owner_close_without_document_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 459, in test_closure_report_reconciles_owner_close_without_document_authority
+    closed = fixture._close("closure-report-001")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: LoanClosureApiTests._close() takes 1 positional argument but 2 were given
+
+======================================================================
+ERROR: test_stamp_duty_report_reuses_scoped_legal_record_without_evidence_file (sfpcl_credit.tests.test_report_catalogue_api.SecurityCustodyReportCatalogueApiTests.test_stamp_duty_report_reuses_scoped_legal_record_without_evidence_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 963, in test_stamp_duty_report_reuses_scoped_legal_record_without_evidence_file
+    self.fixture.fixture._grant(reader, "documents.checklist.read")
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PowerOfAttorneyApiTests' object has no attribute '_grant'
+
+======================================================================
+FAIL: test_kyc_report_reuses_scoped_masked_owner_summary (sfpcl_credit.tests.test_report_catalogue_api.KycReportCatalogueApiTests.test_kyc_report_reuses_scoped_masked_owner_summary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_030826_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 417, in test_kyc_report_reuses_scoped_masked_owner_summary
+    self.assertNotIn("aadhaar", str(response.json()["data"][0]).lower())
+AssertionError: 'aadhaar' unexpectedly found in "{'kyc_review_id': '9de6a469-f7be-4ddc-a763-62b3c6ce1735', 'member_id': '0c0f6cdb-84ca-4d60-b3a6-67d6974bc3fb', 'member_name': 'test member', 'member_type': 'individual_farmer', 'member_status': 'active', 'kyc_status': 'rekyc_due', 'risk_rating': 'low', 'due_date': '2026-02-28', 'days_overdue': 145, 'status': 'warning', 'pan_status': 'missing', 'aadhaar_status': 'missing', 'ckyc_consent': false}"
+
+----------------------------------------------------------------------
+Ran 19 tests in 4.046s
+
+FAILED (failures=1, errors=2)
+Destroying test database for alias 'default'...

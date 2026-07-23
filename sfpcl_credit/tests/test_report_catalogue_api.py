@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from uuid import uuid4
 
@@ -58,6 +59,16 @@ class ReportCatalogueApiTests(TestCase):
             "interest-invoice",
             "interest-accrual",
             "cfo-quarterly-mis",
+            "default",
+            "recovery",
+            "closure-noc",
+            "section-186",
+            "nbfc-test",
+            "kyc-rekyc",
+            "stamp-duty",
+            "money-lending-review",
+            "grievance",
+            "audit-log-export",
         ):
             with self.subTest(report_code=report_code):
                 response = self.client.get(
@@ -69,6 +80,45 @@ class ReportCatalogueApiTests(TestCase):
                 self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
                 self.assertNotIn("data", response.json())
                 self.assertNotIn("pagination", response.json())
+
+    def test_complete_catalogue_has_23_product_reports_and_two_fixed_section_40_apis(self):
+        from sfpcl_credit.reports.registry import REPORTS
+
+        self.assertEqual(len(REPORTS), 25)
+        self.assertEqual(
+            REPORTS["audit-log-export"].restricted_handoff,
+            "012C-sensitive-export-policy+012D-audit-selector",
+        )
+        self.assertIsNone(REPORTS["audit-log-export"].selector)
+
+    def test_audit_export_handoff_cannot_query_even_with_read_and_export_permissions(self):
+        from sfpcl_credit.identity.models import Permission, RolePermission
+
+        for code in (
+            "audit.audit_log.read",
+            "audit.export",
+            "reports.export",
+            "reports.export_sensitive",
+        ):
+            permission = Permission.objects.create(
+                permission_code=code,
+                permission_name=code,
+                module_name="audit",
+                risk_level="critical",
+            )
+            RolePermission.objects.create(
+                role=self.actor.primary_role,
+                permission=permission,
+            )
+
+        response = self.client.get(
+            "/api/v1/reports/audit-log-export/",
+            **self._auth(),
+        )
+
+        self.assertEqual(response.status_code, 403, response.content)
+        self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+        self.assertNotIn("data", response.json())
 
     def _auth(self):
         response = self.client.post(
@@ -82,6 +132,409 @@ class ReportCatalogueApiTests(TestCase):
                 f"Bearer {response.json()['data']['access_token']}"
             )
         }
+
+
+class DefaultReportCatalogueApiTests(TestCase):
+    def setUp(self):
+        from sfpcl_credit.tests.test_default_case_opening_api import (
+            DefaultCaseOpeningApiTests,
+        )
+
+        fixture = DefaultCaseOpeningApiTests(
+            "test_scoped_detail_and_filtered_list_return_the_same_case_contract"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        self.client = Client()
+
+    def test_default_report_reconciles_scoped_owner_projection_and_filters(self):
+        from sfpcl_credit.loans.models import RepaymentSchedule
+
+        due_date = date(2026, 6, 22)
+        RepaymentSchedule.objects.create(
+            loan_account=self.fixture.account,
+            installment_number=1,
+            due_date=due_date,
+            principal_due="1000.00",
+            interest_due="0.00",
+            charges_due="0.00",
+            total_due="1000.00",
+            schedule_status="pending",
+        )
+        opened = self.client.post(
+            (
+                f"/api/v1/loan-accounts/{self.fixture.account.pk}/"
+                "default-cases/open/"
+            ),
+            data=json.dumps(
+                {
+                    "trigger_event": "missed_principal_repayment",
+                    "scheduled_due_date": due_date.isoformat(),
+                    "reason": "Missed principal.",
+                }
+            ),
+            content_type="application/json",
+            **self.fixture.auth,
+        )
+        self.assertEqual(opened.status_code, 200, opened.content)
+
+        owner = self.client.get(
+            (
+                "/api/v1/default-cases/?"
+                "default_case_status=grace_period_active"
+                f"&loan_account_id={self.fixture.account.pk}"
+            ),
+            **self.fixture.auth,
+        )
+        report = get_with_query_bound(
+            self,
+            self.client,
+            (
+                "/api/v1/reports/default/?"
+                "default_case_status=grace_period_active"
+                f"&loan_account_id={self.fixture.account.pk}"
+            ),
+            self.fixture.auth,
+        )
+
+        self.assertEqual(owner.status_code, 200, owner.content)
+        self.assertEqual(report.status_code, 200, report.content)
+        self.assertEqual(report.json()["data"], owner.json()["data"])
+        self.assertEqual(
+            report.json()["pagination"]["total_count"],
+            owner.json()["pagination"]["total_count"],
+        )
+        self.assertEqual(
+            report.json()["data"][0]["default_case_id"],
+            opened.json()["data"]["default_case_id"],
+        )
+        self.assertNotIn("evidence_document_ids", str(report.json()))
+        assert_validation_error(
+            self,
+            self.client.get(
+                "/api/v1/reports/default/?default_case_status=unknown",
+                **self.fixture.auth,
+            ),
+            "default_case_status",
+        )
+
+
+class RecoveryReportCatalogueApiTests(TestCase):
+    def setUp(self):
+        from sfpcl_credit.tests.test_recovery_action_api import RecoveryActionApiTests
+
+        fixture = RecoveryActionApiTests(
+            "test_company_secretary_initiates_exact_approved_sh4_with_governed_evidence"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        self.client = fixture.client
+
+    def test_recovery_report_reconciles_approved_decision_without_restricted_evidence(self):
+        decision, _case = self.fixture._approved_decision()
+        _actor, auth = self.fixture._executor()
+
+        report = get_with_query_bound(
+            self,
+            self.client,
+            "/api/v1/reports/recovery/?decision=invoke_sh4",
+            auth,
+        )
+
+        self.assertEqual(report.status_code, 200, report.content)
+        self.assertEqual(report.json()["pagination"]["total_count"], 1)
+        row = report.json()["data"][0]
+        self.assertEqual(
+            row["recovery_decision_id"],
+            decision["recovery_decision_id"],
+        )
+        self.assertEqual(row["decision"], "invoke_sh4")
+        self.assertNotIn("approval_evidence", str(report.json()))
+        self.assertNotIn("document_ids", str(report.json()))
+        self.assertNotIn("interaction_log", str(report.json()))
+        assert_validation_error(
+            self,
+            self.client.get(
+                "/api/v1/reports/recovery/?decision=unknown",
+                **auth,
+            ),
+            "decision",
+        )
+
+
+class StatutoryReportCatalogueApiTests(TestCase):
+    def setUp(self):
+        from sfpcl_credit.tests.test_statutory_trackers import (
+            StatutoryTrackerModuleTests,
+        )
+
+        fixture = StatutoryTrackerModuleTests(
+            "test_section_186_calculate_uses_higher_limit_and_flags_excess"
+        )
+        fixture.setUp()
+        self.fixture = fixture
+        self.client = Client()
+        fixture.client = self.client
+
+    def test_section_186_and_nbfc_reports_reconcile_owner_calculations(self):
+        from sfpcl_credit.compliance.modules.nbfc_principal_business_test import (
+            NbfcPrincipalBusinessTestModule,
+        )
+        from sfpcl_credit.compliance.modules.section186_tracker import (
+            Section186TrackerModule,
+        )
+
+        for permission in (
+            "compliance.section186.read",
+            "compliance.nbfc_test.create",
+            "compliance.nbfc_test.read",
+        ):
+            self.fixture._grant(self.fixture.cfo_role, permission)
+        section_task, section_evidence = self.fixture._accepted_evidence(
+            "SECTION_186_LIMIT"
+        )
+        section = Section186TrackerModule.calculate(
+            actor=self.fixture.cfo,
+            period_id=section_task.pk,
+            payload={
+                "financial_year": "FY2026-27",
+                "quarter": "Q1",
+                "paid_up_capital_amount": "100.00",
+                "free_reserves_amount": "100.00",
+                "securities_premium_amount": "0.00",
+                "total_loans_exposure_amount": "100.00",
+                "compliance_evidence_id": str(section_evidence.pk),
+            },
+        )
+        nbfc_task, nbfc_evidence = self.fixture._accepted_evidence(
+            "NBFC_PRINCIPAL_TEST"
+        )
+        nbfc = NbfcPrincipalBusinessTestModule.calculate(
+            actor=self.fixture.cfo,
+            period_id=nbfc_task.pk,
+            payload={
+                "financial_year": "FY2026-27",
+                "quarter": "Q1",
+                "financial_assets_amount": "51.00",
+                "total_assets_amount": "100.00",
+                "financial_income_amount": "51.00",
+                "gross_income_amount": "100.00",
+                "early_warning_threshold_ratio": "40.0000",
+                "compliance_evidence_id": str(nbfc_evidence.pk),
+            },
+        )
+        auth = self.fixture._auth(self.fixture.cfo)
+
+        section_report = self.client.get(
+            "/api/v1/reports/section-186/?financial_year=FY2026-27&quarter=Q1",
+            **auth,
+        )
+        nbfc_report = self.client.get(
+            "/api/v1/reports/nbfc-test/?financial_year=FY2026-27&quarter=Q1",
+            **auth,
+        )
+
+        self.assertEqual(section_report.status_code, 200, section_report.content)
+        self.assertEqual(nbfc_report.status_code, 200, nbfc_report.content)
+        self.assertEqual(
+            section_report.json()["data"][0]["section_186_tracker_id"],
+            str(section.pk),
+        )
+        self.assertEqual(
+            nbfc_report.json()["data"][0]["nbfc_principal_test_id"],
+            str(nbfc.pk),
+        )
+        self.assertEqual(
+            section_report.json()["pagination"]["totals"],
+            {
+                "applicable_limit_amount": "120.00",
+                "total_loans_exposure_amount": "100.00",
+            },
+        )
+        self.assertTrue(
+            nbfc_report.json()["data"][0]["registration_triggered_flag"]
+        )
+        assert_validation_error(
+            self,
+            self.client.get(
+                "/api/v1/reports/section-186/?quarter=Q5",
+                **auth,
+            ),
+            "quarter",
+        )
+
+
+class KycReportCatalogueApiTests(TestCase):
+    def test_kyc_report_reuses_scoped_masked_owner_summary(self):
+        from sfpcl_credit.compliance.models import KYCReview
+        from sfpcl_credit.identity.models import Permission, RolePermission
+        from sfpcl_credit.members.models import MemberScopeAssignment
+        from sfpcl_credit.tests.test_kyc_review_tracker import KycReviewTrackerTests
+
+        fixture = KycReviewTrackerTests(
+            "test_last_completed_individual_kyc_generates_one_two_year_warning_review_and_task"
+        )
+        fixture.setUp()
+        fixture.test_last_completed_individual_kyc_generates_one_two_year_warning_review_and_task()
+        fixture.owner.set_password("KycReportPass123!")
+        fixture.owner.save(update_fields=["password_hash"])
+        permission = Permission.objects.create(
+            permission_code="compliance.kyc_review.manage",
+            permission_name="Manage KYC reviews",
+            module_name="compliance",
+            risk_level="high",
+        )
+        RolePermission.objects.create(role=fixture.owner_role, permission=permission)
+        review = KYCReview.objects.get()
+        MemberScopeAssignment.objects.create(
+            user=fixture.owner,
+            permission_code=permission.permission_code,
+            scope_type="assigned",
+            member=review.member,
+        )
+        login = self.client.post(
+            "/api/v1/auth/login/",
+            {"email": fixture.owner.email, "password": "KycReportPass123!"},
+            content_type="application/json",
+        )
+        auth = {
+            "HTTP_AUTHORIZATION": (
+                f"Bearer {login.json()['data']['access_token']}"
+            )
+        }
+
+        response = self.client.get(
+            "/api/v1/reports/kyc-rekyc/?status=warning",
+            **auth,
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(
+            response.json()["data"][0]["kyc_review_id"],
+            str(review.pk),
+        )
+        self.assertNotIn("pan_encrypted", str(response.json()))
+        self.assertNotIn("encrypted-pan", str(response.json()))
+        self.assertNotIn("document_id", str(response.json()))
+
+
+class GrievanceReportCatalogueApiTests(TestCase):
+    def test_grievance_report_reuses_scoped_owner_rows_without_internal_narrative(self):
+        from sfpcl_credit.tests.test_grievance_workflow import (
+            GrievanceWorkflowApiTests,
+        )
+
+        fixture = GrievanceWorkflowApiTests(
+            "test_staff_reads_are_member_scoped_and_borrower_projection_is_safe"
+        )
+        fixture.setUp()
+        own = fixture._grievance(
+            "GRV-2026-REPORT000001",
+            loan_application=fixture.application,
+            grievance_category="application_issue",
+            description="Scoped report complaint.",
+            received_channel="form",
+            internal_notes="Restricted investigation narrative.",
+        )
+
+        response = fixture.client.get(
+            "/api/v1/reports/grievance/?status=open",
+            **fixture._auth(fixture.company_secretary),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        self.assertEqual(response.json()["data"][0]["grievance_id"], str(own.pk))
+        self.assertNotIn("internal_notes", str(response.json()))
+        self.assertNotIn("history", str(response.json()))
+
+
+class ClosureReportCatalogueApiTests(TestCase):
+    def test_closure_report_reconciles_owner_close_without_document_authority(self):
+        from sfpcl_credit.tests.test_closure_api import LoanClosureApiTests
+
+        fixture = LoanClosureApiTests(
+            "test_full_repayment_close_freezes_fresh_facts_and_creates_controlled_requirements"
+        )
+        fixture.setUp()
+        closed = fixture._close(idempotency_key="closure-report-001")
+        self.assertEqual(closed.status_code, 200, closed.content)
+
+        response = fixture.client.get(
+            "/api/v1/reports/closure-noc/?closure_stage=financially_closed",
+            **fixture.auth,
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        self.assertEqual(
+            response.json()["data"][0]["loan_closure_id"],
+            closed.json()["data"]["loan_closure_id"],
+        )
+        self.assertNotIn("document_id", str(response.json()))
+        self.assertNotIn("file_location", str(response.json()))
+
+
+class MoneyLendingReportCatalogueApiTests(TestCase):
+    def test_money_lending_report_reconciles_review_without_restricted_documents(self):
+        from sfpcl_credit.compliance.models import MoneyLendingLawReview
+        from sfpcl_credit.documents.models import DocumentFile
+        from sfpcl_credit.tests.test_global_search_compliance import (
+            GlobalSearchComplianceTests,
+        )
+
+        fixture = GlobalSearchComplianceTests(
+            "test_governed_evidence_and_money_lending_review_are_minimised"
+        )
+        fixture.setUp()
+        fixture._grant("compliance.money_lending_review.manage")
+        task, evidence = fixture._accepted_evidence(
+            "MONEY_LENDING_ANNUAL",
+            "Annual money-lending compliance",
+            period="FY2026-27",
+        )
+        board_note = DocumentFile.objects.create(
+            file_name="restricted-board-note.pdf",
+            storage_provider="test",
+            storage_key="tests/restricted-board-note.pdf",
+            sensitivity_level=DocumentFile.SENSITIVITY_RESTRICTED,
+            uploaded_by_user=fixture.owner,
+        )
+        review = MoneyLendingLawReview.objects.create(
+            financial_year="FY2026-27",
+            state="Maharashtra",
+            applicability="exempt",
+            exemption_applicable_flag=True,
+            legal_opinion_document=evidence.document,
+            board_note_document=board_note,
+            task=task,
+            evidence=evidence,
+            reviewed_by_user=fixture.owner,
+            remarks="Restricted opinion narrative.",
+        )
+        login = fixture.client.post(
+            "/api/v1/auth/login/",
+            {"email": fixture.owner.email, "password": fixture.PASSWORD},
+            content_type="application/json",
+        )
+        auth = {
+            "HTTP_AUTHORIZATION": (
+                f"Bearer {login.json()['data']['access_token']}"
+            )
+        }
+
+        response = fixture.client.get(
+            "/api/v1/reports/money-lending-review/?financial_year=FY2026-27",
+            **auth,
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(
+            response.json()["data"][0]["money_lending_law_review_id"],
+            str(review.pk),
+        )
+        self.assertNotIn("document_id", str(response.json()))
+        self.assertNotIn("narrative", str(response.json()))
 
 
 class DisbursementReportCatalogueApiTests(TestCase):
@@ -500,6 +953,36 @@ class SecurityCustodyReportCatalogueApiTests(TestCase):
             ),
             "instrument_type",
         )
+
+class StampDutyReportCatalogueApiTests(TestCase):
+    def test_stamp_duty_report_reuses_scoped_legal_record_without_evidence_file(self):
+        from sfpcl_credit.legal_documents.models import StampDutyRecord
+        from sfpcl_credit.tests.test_stamp_notary_api import (
+            StampDutyAndNotarisationApiTests,
+        )
+
+        fixture = StampDutyAndNotarisationApiTests(
+            "test_compliance_records_pending_stamp_with_atomic_status_and_evidence"
+        )
+        fixture.setUp()
+        fixture.test_compliance_records_pending_stamp_with_atomic_status_and_evidence()
+        stamp = StampDutyRecord.objects.get(
+            loan_document=fixture.loan_document
+        )
+
+        response = fixture.client.get(
+            "/api/v1/reports/stamp-duty/?status=pending",
+            **fixture._auth(fixture.actor),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        self.assertEqual(
+            response.json()["data"][0]["stamp_duty_record_id"],
+            str(stamp.pk),
+        )
+        self.assertNotIn("evidence_document", str(response.json()))
+        self.assertNotIn("remarks", str(response.json()))
 
 
 class ApprovalReportCatalogueApiTests(TestCase):
