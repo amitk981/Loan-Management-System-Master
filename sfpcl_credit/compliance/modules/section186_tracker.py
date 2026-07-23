@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, models, transaction
 
 from sfpcl_credit.compliance.models import (
     ComplianceEvidence,
@@ -24,6 +24,17 @@ class Section186TrackerModule:
     READ_PERMISSION = "compliance.section186.read"
     REVIEW_PERMISSION = "compliance.evidence.review"
     MONEY_QUANTUM = Decimal("0.01")
+
+    @classmethod
+    def search(cls, *, actor, search):
+        if cls.READ_PERMISSION not in permission_codes(actor):
+            return Section186Tracker.objects.none()
+        return Section186Tracker.objects.select_related(
+            "prepared_by_user", "reviewer_user"
+        ).filter(
+            models.Q(financial_year__icontains=search)
+            | models.Q(quarter__iexact=search)
+        ).order_by("financial_year", "quarter", "section_186_tracker_id")
 
     @classmethod
     def calculate(cls, *, actor, period_id, payload):

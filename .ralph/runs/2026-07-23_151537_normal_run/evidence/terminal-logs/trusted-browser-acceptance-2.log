@@ -1,0 +1,56 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/.ralph/runs/2026-07-23_151537_normal_run/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/global-search.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/global-search.e2e.spec.ts
+
+[2m[WebServer] [22m[23/Jul/2026 10:34:06] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "OPTIONS /api/v1/global-search/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:11] "POST /api/v1/global-search/ HTTP/1.1" 200 1631
+[2m[WebServer] [22m[23/Jul/2026 10:34:12] "POST /api/v1/global-search/ HTTP/1.1" 200 685
+  ✓  1 [chromium] › global-search.e2e.spec.ts:18:5 › 010N searches real permission-scoped groups and renders the empty state (3.3s)
+[2m[WebServer] [22m[23/Jul/2026 10:34:14] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "OPTIONS /api/v1/global-search/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 10:34:15] "POST /api/v1/global-search/ HTTP/1.1" 200 1656
+  ✓  2 [chromium] › global-search.e2e.spec.ts:51:5 › 011M3 renders the real permission-scoped compliance group (3.5s)
+
+  2 passed (57.1s)
+
+Duration milliseconds: 57857
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/.ralph/runs/2026-07-23_151537_normal_run/evidence/trusted-browser-screenshots-2.sha256

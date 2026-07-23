@@ -25,6 +25,16 @@ APPLICATION_READ = "applications.loan_application.read"
 ACCOUNT_READ = "finance.loan_account.read"
 DOCUMENT_READ = "documents.loan_document.read"
 AUDIT_READ = "audit.audit_log.read"
+COMPLIANCE_SEARCH_PERMISSIONS = {
+    "compliance.control.read",
+    "compliance.task.read",
+    "compliance.evidence.submit",
+    "compliance.evidence.review",
+    "compliance.section186.read",
+    "compliance.nbfc_test.read",
+    "compliance.kyc_review.manage",
+    "compliance.money_lending_review.manage",
+}
 GROUPS = (
     "members",
     "loan_applications",
@@ -180,13 +190,24 @@ def search(*, actor, payload):
         groups["documents"] = paginate_group(
             document_cards[:MAX_GROUP_RESULTS], pages["documents"], page_size
         )
-    if any(code.startswith("compliance.") and code.endswith(".read") for code in permissions):
-        compliance_rows = list(
-            _compliance_provider(actor=actor, search=query, member_ids=frozenset(member_ids))
-        )[:MAX_GROUP_RESULTS]
-        groups["compliance_records"] = paginate_group(
-            compliance_rows, pages["compliance_records"], page_size
-        )
+    if permissions.intersection(COMPLIANCE_SEARCH_PERMISSIONS):
+        try:
+            compliance_rows = list(
+                _compliance_provider(
+                    actor=actor,
+                    search=query,
+                    member_ids=frozenset(member_ids),
+                )
+            )[:MAX_GROUP_RESULTS]
+            _validate_compliance_rows(compliance_rows)
+        except Exception:
+            # A provider outage or unresolved projection/permission mapping must
+            # omit the group without echoing query, error, match, or count details.
+            pass
+        else:
+            groups["compliance_records"] = paginate_group(
+                compliance_rows, pages["compliance_records"], page_size
+            )
     if AUDIT_READ in permissions:
         entity_ids = member_ids | application_ids | account_ids | document_ids
         audit_rows = audit_search.matching_audit_logs(
@@ -324,6 +345,51 @@ def build_result_card(*, row_id, result_type, title, identifier, status, risk_st
         "last_updated_by": updated_by,
         "quick_actions": quick_actions,
     }
+
+
+def _validate_compliance_rows(rows):
+    required = {
+        "id",
+        "result_type",
+        "title",
+        "identifier",
+        "status",
+        "risk_status",
+        "amount",
+        "owner",
+        "last_updated_at",
+        "last_updated_by",
+        "quick_actions",
+    }
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != required:
+            raise ValueError("Invalid compliance search card contract.")
+        if row["result_type"] != "compliance_record":
+            raise ValueError("Invalid compliance search result type.")
+        uuid.UUID(str(row["id"]))
+        for field in ("title", "status", "last_updated_at"):
+            if not isinstance(row[field], str) or not row[field]:
+                raise ValueError("Invalid compliance search card field.")
+        for field in (
+            "identifier",
+            "risk_status",
+            "amount",
+            "owner",
+            "last_updated_by",
+        ):
+            if row[field] is not None and not isinstance(row[field], str):
+                raise ValueError("Invalid compliance search optional field.")
+        if not isinstance(row["quick_actions"], list):
+            raise ValueError("Invalid compliance search actions.")
+        for action in row["quick_actions"]:
+            if (
+                not isinstance(action, dict)
+                or set(action) != {"label", "page", "entity_id"}
+                or action["label"] != "Open"
+                or action["page"] != "compliance"
+                or str(action["entity_id"]) != str(row["id"])
+            ):
+                raise ValueError("Invalid compliance search action mapping.")
 
 
 def _action(label, page, entity_id):

@@ -115,6 +115,43 @@ class KYCReviewTracker:
         return [cls._serialize_summary(row, actor) for row in rows], pagination
 
     @classmethod
+    def search_reviews(cls, *, actor, search, member_ids):
+        """Canonical object-scoped KYC selector for safe search projections."""
+        from sfpcl_credit.identity.modules import auth_service
+        from sfpcl_credit.members.modules.member_authority import member_scope_predicate
+
+        permissions = set(auth_service.effective_permission_codes(actor))
+        queryset = KYCReview.objects.select_related(
+            "member", "task__assigned_to_user", "reviewed_by_user"
+        )
+        if cls.MANAGE_PERMISSION in permissions:
+            queryset = queryset.filter(
+                member__in=Member.objects.filter(
+                    member_scope_predicate(
+                        actor_user=actor, permission=cls.MANAGE_PERMISSION
+                    )
+                )
+            )
+        elif (
+            "compliance.task.read" in permissions
+            and actor.primary_role.role_code
+            in {"compliance_team_member", "cfo", "internal_auditor"}
+        ):
+            if actor.primary_role.role_code != "internal_auditor":
+                queryset = queryset.filter(
+                    models.Q(task__assigned_to_user=actor)
+                    | models.Q(task__reviewer_user=actor)
+                )
+        else:
+            return queryset.none()
+        return queryset.filter(
+            models.Q(member__display_name__icontains=search)
+            | models.Q(member__legal_name__icontains=search)
+            | models.Q(member__member_number__icontains=search)
+            | models.Q(member_id__in=member_ids)
+        ).order_by("due_date", "kyc_review_id")
+
+    @classmethod
     def _serialize_summary(cls, review, actor):
         from sfpcl_credit.identity.modules import auth_service
 

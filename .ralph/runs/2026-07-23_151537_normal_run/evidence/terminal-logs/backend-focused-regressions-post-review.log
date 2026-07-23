@@ -1,0 +1,10 @@
+Creating test database for alias 'default'...
+Found 39 test(s).
+System check identified no issues (0 silenced).
+.......................................
+----------------------------------------------------------------------
+Ran 39 tests in 1.467s
+
+OK
+Destroying test database for alias 'default'...
+GLOBAL_SEARCH_INDEX_PLANS {'pan': '3 0 0 SEARCH members USING INDEX idx_members_pan_hash (pan_hash=?)', 'aadhaar': '3 0 0 SEARCH members USING INDEX idx_members_aadhaar_hash (aadhaar_hash=?)', 'aadhaar_last4': '3 0 0 SEARCH members USING INDEX members_aadhaar_last4_6253ff18 (aadhaar_last4=?)', 'share_count': '3 0 0 SEARCH members USING INDEX members_number_of_shares_4d7470ba (number_of_shares=?)', 'bank_last4': '3 0 0 SEARCH bank_accounts USING INDEX bank_accounts_account_number_last4_3bd9ef02 (account_number_last4=?)'}

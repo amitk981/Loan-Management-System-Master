@@ -47,3 +47,34 @@ test('010N searches real permission-scoped groups and renders the empty state', 
   });
   await capture(page, 'global-search-empty.png');
 });
+
+test('011M3 renders the real permission-scoped compliance group', async ({ page }) => {
+  const requests: Array<{ method: string; body: unknown }> = [];
+  page.on('request', request => {
+    if (new URL(request.url()).pathname === '/api/v1/global-search/') {
+      requests.push({ method: request.method(), body: request.postDataJSON() });
+    }
+  });
+  await staffLogin(page, 'e2e.credit.finance@sfpcl.example', E2E_PASSWORD);
+
+  const headerSearch = page.getByPlaceholder(/Search: borrower name/);
+  await headerSearch.fill('Epic 011 Compliance Browser');
+  await headerSearch.press('Enter');
+
+  await expect(page.getByRole('heading', { name: 'Global Search Results' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Compliance Records' })).toBeVisible();
+  await expect(page.getByText('Epic 011 Compliance Browser Review', { exact: true })).toBeVisible();
+  await expect(page.getByText('E2E_COMPLIANCE_SEARCH', { exact: true })).toBeVisible();
+  await expect(page.getByText('E2E_COMPLIANCE_SEARCH · 2026-Q3', { exact: true })).toBeVisible();
+  await expect(page.getByText('Synthetic restricted E2E basis')).toHaveCount(0);
+  await expect(page.getByText('Synthetic restricted E2E evidence')).toHaveCount(0);
+  await expect(page.getByText('Synthetic restricted E2E note')).toHaveCount(0);
+  expect(requests.at(-1)).toEqual({
+    method: 'POST', body: { search: 'Epic 011 Compliance Browser', pages: {} },
+  });
+  expect(page.url()).not.toContain('Epic%20011');
+  await capture(page, 'global-search-compliance-results.png');
+
+  await page.getByRole('button', { name: 'Open' }).first().click();
+  await expect(page.getByRole('heading', { name: 'Compliance Dashboard' })).toBeVisible();
+});

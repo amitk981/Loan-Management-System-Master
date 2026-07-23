@@ -2,6 +2,7 @@ import re
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from django.db import IntegrityError, transaction
+from django.db import models
 
 from sfpcl_credit.compliance.models import (
     ComplianceEvidence,
@@ -26,6 +27,17 @@ class NbfcPrincipalBusinessTestModule:
     MONEY_QUANTUM = Decimal("0.01")
     RATIO_QUANTUM = Decimal("0.0001")
     STATUTORY_THRESHOLD = Decimal("50.0000")
+
+    @classmethod
+    def search(cls, *, actor, search):
+        if cls.READ_PERMISSION not in permission_codes(actor):
+            return NbfcPrincipalBusinessTest.objects.none()
+        return NbfcPrincipalBusinessTest.objects.select_related(
+            "prepared_by_user", "reviewer_user"
+        ).filter(
+            models.Q(financial_year__icontains=search)
+            | models.Q(quarter__iexact=search)
+        ).order_by("financial_year", "quarter", "nbfc_principal_test_id")
 
     @classmethod
     def calculate(cls, *, actor, period_id, payload):

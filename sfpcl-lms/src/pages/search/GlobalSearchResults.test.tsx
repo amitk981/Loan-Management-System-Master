@@ -40,6 +40,17 @@ const response: GlobalSearchResponse = {
       }],
       pagination: { ...pagination, total_count: 11, total_pages: 2, has_next: true },
     },
+    compliance_records: {
+      items: [{
+        id: 'compliance-1', result_type: 'compliance_record',
+        title: 'Section 186 quarterly limit', identifier: 'Section 186 · FY2026-27 Q2',
+        status: 'accepted', risk_status: 'within_limit', amount: '105000.00',
+        owner: 'Compliance Reviewer', last_updated_at: '2026-07-21T12:00:00Z',
+        last_updated_by: 'Compliance Reviewer',
+        quick_actions: [{ label: 'Open', page: 'compliance', entity_id: 'compliance-1' }],
+      }],
+      pagination,
+    },
   },
 };
 
@@ -57,10 +68,16 @@ describe('010N Global Search Results', () => {
     expect(screen.getAllByText('Field Officer')).toHaveLength(2);
     expect(screen.getByText('₹4,00,000.00')).toBeTruthy();
     expect(screen.getByText('Accounts User')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Compliance Records' })).toBeTruthy();
+    expect(screen.getByText('Section 186 · FY2026-27 Q2')).toBeTruthy();
+    expect(screen.getByText('Within Limit')).toBeTruthy();
     expect(fetchGlobalSearch).toHaveBeenCalledWith({ search: 'API Farmer', pages: {} });
 
     await userEvent.click(screen.getByRole('button', { name: 'View loan account' }));
     expect(onNavigate).toHaveBeenCalledWith('loan-accounts/detail', 'loan-1');
+    const openActions = screen.getAllByRole('button', { name: 'Open' });
+    await userEvent.click(openActions[openActions.length - 1]);
+    expect(onNavigate).toHaveBeenCalledWith('compliance', 'compliance-1');
   });
 
   it('requests each result group page independently', async () => {

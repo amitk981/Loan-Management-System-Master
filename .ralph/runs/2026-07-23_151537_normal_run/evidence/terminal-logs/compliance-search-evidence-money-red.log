@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_governed_evidence_and_money_lending_review_are_minimised (sfpcl_credit.tests.test_global_search_compliance.GlobalSearchComplianceTests.test_governed_evidence_and_money_lending_review_are_minimised)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 230, in test_governed_evidence_and_money_lending_review_are_minimised
+    evidence_card = by_id[str(evidence.pk)]
+                    ~~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'ea6bc203-91ce-4b8d-849f-3a802d7d32c9'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,56 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_cross_scope_guesses_and_provider_failures_leak_no_match_existence (sfpcl_credit.tests.test_global_search_compliance.GlobalSearchComplianceTests.test_cross_scope_guesses_and_provider_failures_leak_no_match_existence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 229, in test_cross_scope_guesses_and_provider_failures_leak_no_match_existence
+    unavailable = self._search("Synthetic browser compliance")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 154, in _search
+    return self._search_as(self.owner, self.PASSWORD, query)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 163, in _search_as
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/search_views.py", line 34, in global_search_results
+    data = global_search.search(actor=actor, payload=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/processes/global_search.py", line 185, in search
+    _compliance_provider(actor=actor, search=query, member_ids=frozenset(member_ids))
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 227, in <lambda>
+    lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("owner unavailable"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 227, in <genexpr>
+    lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("owner unavailable"))
+RuntimeError: owner unavailable
+
+----------------------------------------------------------------------
+Ran 1 test in 0.038s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

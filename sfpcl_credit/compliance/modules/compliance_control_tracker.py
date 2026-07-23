@@ -74,6 +74,22 @@ def list_controls(*, actor, query):
     return [serialize_control(row, actor) for row in rows], pagination
 
 
+def search_controls(*, actor, search):
+    """Canonical object-scoped control selector for safe projections."""
+    require(actor, "compliance.control.read")
+    queryset = ComplianceControl.objects.select_related("owner_user", "reviewer_user")
+    if (
+        "compliance.control.manage" not in permission_codes(actor)
+        and actor.primary_role.role_code != "internal_auditor"
+    ):
+        queryset = queryset.filter(models.Q(owner_user=actor) | models.Q(reviewer_user=actor))
+    return queryset.filter(
+        models.Q(control_code__icontains=search)
+        | models.Q(control_name__icontains=search)
+        | models.Q(control_area__icontains=search)
+    ).order_by("control_code", "compliance_control_id")
+
+
 def update_control(*, actor, control_id, payload):
     require(actor, "compliance.control.manage")
     try:
@@ -179,6 +195,81 @@ def list_tasks(*, actor, query):
         queryset = queryset.filter(control_id=_parse_uuid(query["compliance_control_id"], "compliance_control_id"))
     rows, pagination = _paginate(queryset.order_by("due_date", "compliance_task_id"), query)
     return [serialize_task(row, actor) for row in rows], pagination
+
+
+def search_tasks(*, actor, search, control_ids):
+    """Canonical object-scoped task selector for safe projections."""
+    require(actor, "compliance.task.read")
+    queryset = ComplianceTask.objects.select_related(
+        "control", "assigned_to_user", "reviewer_user"
+    )
+    if actor.primary_role.role_code != "internal_auditor":
+        queryset = queryset.filter(
+            models.Q(assigned_to_user=actor) | models.Q(reviewer_user=actor)
+        )
+    return queryset.filter(
+        models.Q(control_id__in=control_ids)
+        | models.Q(control__control_code__icontains=search)
+        | models.Q(control__control_name__icontains=search)
+        | models.Q(task_period__icontains=search)
+    ).order_by("control__control_code", "task_period", "compliance_task_id")
+
+
+def search_evidence(*, actor, search):
+    """Canonical evidence selector; restricted payload fields are never searched."""
+    permissions = permission_codes(actor)
+    queryset = ComplianceEvidence.objects.select_related(
+        "task__control", "submitted_by_user", "reviewed_by_user"
+    )
+    if (
+        actor.primary_role.role_code == "internal_auditor"
+        and "compliance.task.read" in permissions
+    ):
+        scoped = queryset
+    else:
+        scope = models.Q(pk__in=[])
+        if "compliance.evidence.submit" in permissions:
+            scope |= models.Q(task__assigned_to_user=actor, submitted_by_user=actor)
+        if "compliance.evidence.review" in permissions:
+            scope |= models.Q(task__reviewer_user=actor)
+        scoped = queryset.filter(scope)
+    return scoped.filter(
+        models.Q(task__control__control_code__icontains=search)
+        | models.Q(task__control__control_name__icontains=search)
+        | models.Q(task__task_period__icontains=search)
+    ).order_by(
+        "task__control__control_code",
+        "task__task_period",
+        "submitted_at",
+        "compliance_evidence_id",
+    )
+
+
+def search_money_lending_reviews(*, actor, search):
+    """Canonical object-scoped annual-review selector for safe projections."""
+    permissions = permission_codes(actor)
+    queryset = MoneyLendingLawReview.objects.select_related(
+        "task", "reviewed_by_user"
+    )
+    if (
+        actor.primary_role.role_code == "internal_auditor"
+        and "compliance.task.read" in permissions
+    ):
+        scoped = queryset
+    else:
+        scope = models.Q(pk__in=[])
+        if "compliance.money_lending_review.manage" in permissions:
+            scope |= models.Q(reviewed_by_user=actor)
+        if "compliance.task.read" in permissions:
+            scope |= models.Q(task__assigned_to_user=actor) | models.Q(
+                task__reviewer_user=actor
+            )
+        scoped = queryset.filter(scope)
+    return scoped.filter(
+        models.Q(financial_year__icontains=search)
+        | models.Q(state__icontains=search)
+        | models.Q(applicability__iexact=search)
+    ).order_by("financial_year", "state", "money_lending_law_review_id")
 
 
 def update_task(*, actor, task_id, payload):

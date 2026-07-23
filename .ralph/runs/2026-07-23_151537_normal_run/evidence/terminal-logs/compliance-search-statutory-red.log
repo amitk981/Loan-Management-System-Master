@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_statutory_trackers_project_source_amount_and_risk (sfpcl_credit.tests.test_global_search_compliance.GlobalSearchComplianceTests.test_statutory_trackers_project_source_amount_and_risk)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 250, in test_statutory_trackers_project_source_amount_and_risk
+    self.assertEqual(by_id[str(section.pk)]["amount"], "105000.00")
+                     ~~~~~^^^^^^^^^^^^^^^^^
+KeyError: '0f822ad8-3725-44e1-8979-2db50cf5de08'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.071s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

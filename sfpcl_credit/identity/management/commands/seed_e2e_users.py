@@ -8,9 +8,16 @@ from django.utils import timezone
 
 from sfpcl_credit.applications.models import ApplicationDocument, LoanApplication
 from sfpcl_credit.configurations.models import LoanPolicyConfig
+from sfpcl_credit.compliance.models import ComplianceControl, ComplianceTask
 from sfpcl_credit.credit.models import EligibilityAssessment
 from sfpcl_credit.documents.models import DocumentFile
-from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
+from sfpcl_credit.identity.models import (
+    AuditLog,
+    Permission,
+    Role,
+    RolePermission,
+    User,
+)
 from sfpcl_credit.members.models import CropPlan, IndividualMemberProfile, LandHolding, Member, Nominee, ProduceSupplyRecord, Shareholding
 
 # Non-secret credentials for the local Playwright suite only. The suite logs in
@@ -36,6 +43,7 @@ EPIC_006_IDS = {
         "application": 601, "member": 602, "nominee": 603, "shareholding": 604,
         "land": 605, "crop": 606, "eligibility": 607, "policy": 608,
         "witness_member": 611, "witness_shareholding": 612,
+        "compliance_control": 631, "compliance_task": 632,
         "supply_2022": 621, "supply_2023": 622, "supply_2024": 623, "supply_2025": 624,
     }.items()
 }
@@ -128,6 +136,7 @@ class Command(BaseCommand):
             role=manager_role,
         )
         self._seed_epic_006_fixture(finance_user)
+        self._seed_compliance_search_fixture(finance_user, manager_user)
 
         self.stdout.write(
             "E2E users seeded: "
@@ -398,3 +407,55 @@ class Command(BaseCommand):
                 "assessed_by_user": finance_user, "assessed_at": instant,
             },
         )
+
+    @classmethod
+    def _seed_compliance_search_fixture(cls, owner, reviewer):
+        cls._ensure_credit_role(
+            owner.primary_role.role_code,
+            owner.primary_role.role_name,
+            ("compliance.control.read", "compliance.task.read"),
+        )
+        control, _created = ComplianceControl.objects.update_or_create(
+            compliance_control_id=EPIC_006_IDS["compliance_control"],
+            defaults={
+                "control_code": "E2E_COMPLIANCE_SEARCH",
+                "control_name": "Epic 011 Compliance Browser Review",
+                "control_area": "data_protection",
+                "legal_basis": "Synthetic restricted E2E basis",
+                "control_type": ComplianceControl.TYPE_DETECTIVE,
+                "frequency": ComplianceControl.FREQUENCY_QUARTERLY,
+                "owner_role_code": owner.primary_role.role_code,
+                "owner_user": owner,
+                "reviewer_user": reviewer,
+                "first_due_date": datetime(2026, 9, 30).date(),
+                "evidence_required": "Synthetic restricted E2E evidence",
+                "risk_if_missed": "Synthetic restricted E2E risk",
+                "status": ComplianceControl.STATUS_ACTIVE,
+            },
+        )
+        task, _created = ComplianceTask.objects.update_or_create(
+            compliance_task_id=EPIC_006_IDS["compliance_task"],
+            defaults={
+                "control": control,
+                "task_period": "2026-Q3",
+                "due_date": datetime(2026, 9, 30).date(),
+                "assigned_to_user": owner,
+                "reviewer_user": reviewer,
+                "task_status": ComplianceTask.STATUS_DUE,
+                "remarks": "Synthetic restricted E2E note",
+            },
+        )
+        for entity_type, entity_id in (
+            ("compliance_control", control.pk),
+            ("compliance_task", task.pk),
+        ):
+            AuditLog.objects.update_or_create(
+                action=f"{entity_type.replace('_', '.')}.created",
+                entity_type=entity_type,
+                entity_id=entity_id,
+                defaults={
+                    "actor_user": owner,
+                    "actor_type": "user",
+                    "new_value_json": {"fixture": "global_search_compliance"},
+                },
+            )

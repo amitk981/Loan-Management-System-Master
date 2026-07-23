@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_rekyc_review_uses_member_scope_without_exposing_kyc_values (sfpcl_credit.tests.test_global_search_compliance.GlobalSearchComplianceTests.test_rekyc_review_uses_member_scope_without_exposing_kyc_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_151537_normal_run/sfpcl_credit/tests/test_global_search_compliance.py", line 319, in test_rekyc_review_uses_member_scope_without_exposing_kyc_values
+    card = next(row for row in rows if row["id"] == str(review.pk))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

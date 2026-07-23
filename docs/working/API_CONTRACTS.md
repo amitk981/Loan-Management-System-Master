@@ -5264,6 +5264,17 @@ sensitive authority; SAP input requires `finance.sap_code.read`; blank-cheque in
 `security.blank_cheque.manage`; and security summary inputs require security-package or instrument
 authority. The registered compliance provider is intentionally empty until 011M3.
 
+As of 011M3, `compliance_records` projects canonical compliance controls, tasks, governed evidence,
+money-lending reviews, Section 186 trackers, NBFC principal-business tests, and KYC/re-KYC reviews.
+It searches only safe owner fields (control code/name/area, task period, statutory period/state, and
+member name/number under KYC object scope); evidence summaries/files, legal opinions, KYC values,
+internal notes, snapshot JSON, and restricted identifiers are neither searched nor projected.
+Control/task/evidence/KYC object scope reuses their owner/reviewer/member-scope rules; statutory
+trackers require their exact read permissions, while Internal Auditor access remains read-only.
+Evidence cards expose no file action. Other cards expose `Open` only to the existing compliance
+route. A provider exception or malformed card/action mapping omits the whole compliance group,
+including its count and error detail, rather than broadening access or fabricating empty success.
+
 ## Default case opening and reads (011A)
 
 - `POST /api/v1/loan-accounts/{loan_account_id}/default-cases/open/`
