@@ -1,0 +1,8 @@
+ M docs/slices/011P-default-closure-compliance-frontend-wiring.md
+ M docs/slices/012G-critical-e2e-uat-smoke-scenarios.md
+?? .ralph/runs/2026-07-24_000933_architecture_review/
+?? docs/slices/011PA-default-case-notes-frontend-wiring.md
+?? docs/slices/011PB-recovery-decision-frontend-wiring.md
+?? docs/slices/011PC-closure-frontend-wiring.md
+?? docs/slices/011PD-compliance-frontend-wiring.md
+?? docs/slices/011PE-grievance-audit-archive-frontend-wiring.md

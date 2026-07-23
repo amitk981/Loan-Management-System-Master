@@ -1,7 +1,17 @@
 # Slice 011P: Default, Closure, Compliance, and Grievance Staff Frontend Wiring
 
 ## Status
-Not Started
+Superseded
+
+## Superseded By
+- 011PA-default-case-notes-frontend-wiring
+- 011PB-recovery-decision-frontend-wiring
+- 011PC-closure-frontend-wiring
+- 011PD-compliance-frontend-wiring
+- 011PE-grievance-audit-archive-frontend-wiring
+
+The failed 011P candidate measured 4,468 changed lines against the configured 2,000-line limit.
+The successor chain preserves this slice's complete contract at independently green screen seams.
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
