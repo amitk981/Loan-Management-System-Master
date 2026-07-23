@@ -330,14 +330,15 @@
     "011I-security-return-and-cdsl-unpledge-tracking",
     "011J-archive-record-and-retention",
     "011K-compliance-control-tracker-foundation",
-    "011L-section-186-and-nbfc-test-trackers"
+    "011L-section-186-and-nbfc-test-trackers",
+    "011M-kyc-re-kyc-compliance-tracker"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-23_044808_normal_run",
+  "last_run_id": "2026-07-23_060937_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 13,
+  "slices_completed_since_architecture_review": 14,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

@@ -232,6 +232,110 @@ class ComplianceControlVersion(models.Model):
         ]
 
 
+class KYCReview(models.Model):
+    TYPE_ONBOARDING = "onboarding"
+    TYPE_REKYC = "rekyc"
+    REVIEW_TYPES = {TYPE_ONBOARDING, TYPE_REKYC}
+
+    STATUS_PENDING = "pending"
+    STATUS_WARNING = "warning"
+    STATUS_DUE = "due"
+    STATUS_OVERDUE = "overdue"
+    STATUS_COMPLETED = "completed"
+    STATUSES = {
+        STATUS_PENDING,
+        STATUS_WARNING,
+        STATUS_DUE,
+        STATUS_OVERDUE,
+        STATUS_COMPLETED,
+    }
+
+    kyc_review_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="kyc_reviews"
+    )
+    kyc_profile = models.ForeignKey(
+        "members.KycProfile", on_delete=models.PROTECT, related_name="compliance_reviews"
+    )
+    review_type = models.CharField(max_length=80, default=TYPE_REKYC, db_index=True)
+    cycle_key = models.CharField(max_length=80)
+    source_verified_at = models.DateTimeField()
+    due_date = models.DateField(db_index=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    completion_verified_at = models.DateTimeField(blank=True, null=True)
+    kyc_status_before = models.CharField(max_length=60)
+    kyc_status_after = models.CharField(max_length=60, blank=True, null=True)
+    reviewed_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="completed_kyc_reviews",
+    )
+    status = models.CharField(max_length=60, db_index=True)
+    completeness_snapshot_json = models.JSONField(default=dict)
+    completion_evidence_json = models.JSONField(default=list)
+    task = models.OneToOneField(
+        ComplianceTask, on_delete=models.PROTECT, related_name="kyc_review"
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "kyc_reviews"
+        ordering = ["due_date", "kyc_review_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["member", "cycle_key"], name="uniq_kyc_review_member_cycle"
+            ),
+            models.CheckConstraint(
+                check=models.Q(review_type__in=("onboarding", "rekyc")),
+                name="kyc_review_type_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    status__in=("pending", "warning", "due", "overdue", "completed")
+                ),
+                name="kyc_review_status_bounded",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["status", "due_date"], name="idx_kyc_review_status_due"),
+            models.Index(fields=["member", "due_date"], name="idx_kyc_review_member_due"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            protected_fields = (
+                "member_id",
+                "kyc_profile_id",
+                "review_type",
+                "cycle_key",
+                "source_verified_at",
+                "due_date",
+                "completed_at",
+                "completion_verified_at",
+                "kyc_status_before",
+                "kyc_status_after",
+                "reviewed_by_user_id",
+                "status",
+                "completeness_snapshot_json",
+                "completion_evidence_json",
+                "task_id",
+            )
+            previous = type(self).objects.filter(pk=self.pk).values(*protected_fields).first()
+            if previous and any(
+                previous[field] != getattr(self, field) for field in protected_fields
+            ):
+                raise ValueError("Retained KYC review facts are immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Retained KYC reviews cannot be deleted.")
+
+
 class MoneyLendingLawReview(models.Model):
     money_lending_law_review_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False

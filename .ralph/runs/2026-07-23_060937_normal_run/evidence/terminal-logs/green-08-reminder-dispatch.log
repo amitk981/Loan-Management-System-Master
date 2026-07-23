@@ -1,0 +1,130 @@
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_due_request_queues_one_honest_communication_on_exact_replay (sfpcl_credit.tests.test_kyc_review_api.KycReviewApiTests.test_due_request_queues_one_honest_communication_on_exact_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_api.py", line 167, in test_due_request_queues_one_honest_communication_on_exact_replay
+    first = self.client.post(
+            ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/views.py", line 193, in kyc_review_remind
+    return _error(request, exc, audit_denial=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/views.py", line 49, in _error
+    raise exc
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/views.py", line 185, in kyc_review_remind
+    KYCReviewTracker.send_reminder(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/modules/kyc_review_tracker.py", line 368, in send_reminder
+    queued = CommunicationDispatcher.queue_from_template(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 331, in queue_from_template
+    communication = cls.create_from_template(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 297, in create_from_template
+    return cls._create_from_template(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 527, in _create_from_template
+    cls._record_generic_audit(actor, request, row)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 895, in _record_generic_audit
+    ip_address=request_ip(request),
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/api.py", line 80, in request_ip
+    return request.META.get("REMOTE_ADDR", "")
+           ^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'META'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+FAILED (errors=1)
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_due_request_queues_one_honest_communication_on_exact_replay (sfpcl_credit.tests.test_kyc_review_api.KycReviewApiTests.test_due_request_queues_one_honest_communication_on_exact_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_api.py", line 167, in test_due_request_queues_one_honest_communication_on_exact_replay
+    first = self.client.post(
+            ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/views.py", line 193, in kyc_review_remind
+    return _error(request, exc, audit_denial=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/views.py", line 49, in _error
+    raise exc
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/views.py", line 185, in kyc_review_remind
+    KYCReviewTracker.send_reminder(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/modules/kyc_review_tracker.py", line 368, in send_reminder
+    queued = CommunicationDispatcher.queue_from_template(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 331, in queue_from_template
+    communication = cls.create_from_template(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 297, in create_from_template
+    return cls._create_from_template(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 527, in _create_from_template
+    cls._record_generic_audit(actor, request, row)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/communications/modules/communication_dispatcher.py", line 895, in _record_generic_audit
+    ip_address=request_ip(request),
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/api.py", line 80, in request_ip
+    return request.META.get("REMOTE_ADDR", "")
+           ^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'META'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.076s
+
+FAILED (errors=1)
+System check identified no issues (0 silenced).
+----------------------------------------------------------------------
+Ran 1 test in 0.030s
+
+OK
+System check identified no issues (0 silenced).
+----------------------------------------------------------------------
+Ran 1 test in 0.030s
+
+OK

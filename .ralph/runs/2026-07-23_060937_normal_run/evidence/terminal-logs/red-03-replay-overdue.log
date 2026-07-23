@@ -1,0 +1,32 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_scheduler_replay_advances_one_cycle_to_one_overdue_reminder (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_scheduler_replay_advances_one_cycle_to_one_overdue_reminder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 178, in test_scheduler_replay_advances_one_cycle_to_one_overdue_reminder
+    self.assertEqual(task.task_status, ComplianceTask.STATUS_OVERDUE)
+AssertionError: 'due' != 'overdue'
+- due
++ overdue
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_scheduler_replay_advances_one_cycle_to_one_overdue_reminder (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_scheduler_replay_advances_one_cycle_to_one_overdue_reminder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 178, in test_scheduler_replay_advances_one_cycle_to_one_overdue_reminder
+    self.assertEqual(task.task_status, ComplianceTask.STATUS_OVERDUE)
+AssertionError: 'due' != 'overdue'
+- due
++ overdue
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)

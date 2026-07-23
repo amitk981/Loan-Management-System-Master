@@ -1,0 +1,34 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_retained_review_rejects_direct_cycle_mutation (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_retained_review_rejects_direct_cycle_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 301, in test_retained_review_rejects_direct_cycle_mutation
+    with self.assertRaisesMessage(ValueError, "Retained KYC review facts are immutable"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_retained_review_rejects_direct_cycle_mutation (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_retained_review_rejects_direct_cycle_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 301, in test_retained_review_rejects_direct_cycle_mutation
+    with self.assertRaisesMessage(ValueError, "Retained KYC review facts are immutable"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=1)

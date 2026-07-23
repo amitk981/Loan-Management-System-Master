@@ -1,0 +1,28 @@
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_fpc_missing_pan_ckyc_and_beneficial_ownership_projects_incomplete (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_fpc_missing_pan_ckyc_and_beneficial_ownership_projects_incomplete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 131, in test_fpc_missing_pan_ckyc_and_beneficial_ownership_projects_incomplete
+    self.assertEqual(summary["pan_status"], "missing")
+                     ~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'pan_status'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (errors=1)
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_fpc_missing_pan_ckyc_and_beneficial_ownership_projects_incomplete (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_fpc_missing_pan_ckyc_and_beneficial_ownership_projects_incomplete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 131, in test_fpc_missing_pan_ckyc_and_beneficial_ownership_projects_incomplete
+    self.assertEqual(summary["pan_status"], "missing")
+                     ~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'pan_status'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (errors=1)

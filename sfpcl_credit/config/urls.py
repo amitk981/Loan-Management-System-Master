@@ -38,6 +38,10 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path("api/v1/kyc-reviews/", compliance_views.kyc_reviews, name="kyc-reviews"),
+    path("api/v1/kyc-reviews/<uuid:kyc_review_id>/", compliance_views.kyc_review_detail, name="kyc-review-detail"),
+    path("api/v1/kyc-reviews/<uuid:kyc_review_id>/remind/", compliance_views.kyc_review_remind, name="kyc-review-remind"),
+    path("api/v1/kyc-reviews/<uuid:kyc_review_id>/complete/", compliance_views.kyc_review_complete, name="kyc-review-complete"),
     path("api/v1/compliance/nbfc-principal-tests/", compliance_views.nbfc_principal_tests, name="nbfc-principal-tests"),
     path("api/v1/compliance/nbfc-principal-tests/<uuid:nbfc_principal_test_id>/", compliance_views.nbfc_principal_test_detail, name="nbfc-principal-test-detail"),
     path("api/v1/compliance/nbfc-principal-tests/<uuid:nbfc_principal_test_id>/review/", compliance_views.nbfc_principal_test_review, name="nbfc-principal-test-review"),

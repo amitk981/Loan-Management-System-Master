@@ -10,11 +10,13 @@ from sfpcl_credit.compliance.models import (
     ComplianceControl,
     ComplianceEvidence,
     ComplianceTask,
+    KYCReview,
     NbfcPrincipalBusinessTest,
     Section186Tracker,
 )
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
+from sfpcl_credit.members.models import KycProfile, Member
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
@@ -47,6 +49,80 @@ class ComplianceControlSchedulerPostgreSQLAcceptanceTests(TransactionTestCase):
 
         self.assertEqual(ComplianceTask.objects.count(), 1)
         self.assertEqual(Notification.objects.filter(notification_type="compliance_overdue").count(), 1)
+
+
+@skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")
+class RekycSchedulerPostgreSQLAcceptanceTests(TransactionTestCase):
+    reset_sequences = True
+
+    def test_concurrent_scheduler_runs_create_one_review_task_and_reminder_identity(self):
+        owner_role = Role.objects.create(role_code="credit_manager", role_name="Credit Manager")
+        reviewer_role = Role.objects.create(
+            role_code="compliance_team_member", role_name="Compliance Team Member"
+        )
+        owner = User.objects.create(
+            full_name="KYC Owner", email="pg-kyc-owner@example.test", primary_role=owner_role
+        )
+        reviewer = User.objects.create(
+            full_name="KYC Reviewer",
+            email="pg-kyc-reviewer@example.test",
+            primary_role=reviewer_role,
+        )
+        ComplianceControl.objects.create(
+            control_code="KYC_AML",
+            control_name="KYC and AML review",
+            control_area="kyc",
+            legal_basis="Two-year governed KYC review.",
+            control_type="detective",
+            frequency="ongoing",
+            owner_role_code=owner_role.role_code,
+            owner_user=owner,
+            reviewer_user=reviewer,
+            first_due_date=date(2026, 1, 1),
+            evidence_required="Governed KYC verification.",
+            risk_if_missed="KYC becomes stale.",
+        )
+        member = Member.objects.create(
+            member_type="individual_farmer",
+            legal_name="PostgreSQL KYC Member",
+            display_name="PostgreSQL KYC Member",
+            folio_number="PG-KYC-1",
+            membership_status="active",
+            pan_encrypted="encrypted-pan",
+            pan_hash="pg-kyc-pan-hash",
+            kyc_status="verified",
+            default_status="no_default",
+        )
+        from datetime import datetime, timezone as dt_timezone
+
+        KycProfile.objects.create(
+            party_type="member",
+            party_id=member.pk,
+            kyc_status="verified",
+            ckyc_consent_flag=True,
+            risk_rating="low",
+            last_verified_at=datetime(2024, 2, 29, 9, 0, tzinfo=dt_timezone.utc),
+            last_verified_by_user=owner,
+            rekyc_due_date=date(2026, 2, 28),
+        )
+
+        def run():
+            close_old_connections()
+            from sfpcl_credit.compliance.modules.kyc_review_tracker import KYCReviewTracker
+
+            try:
+                return KYCReviewTracker.generate_due_reviews(as_of_date=date(2026, 2, 28))
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            list(executor.map(lambda _value: run(), range(2)))
+
+        self.assertEqual(KYCReview.objects.count(), 1)
+        self.assertEqual(ComplianceTask.objects.filter(kyc_review__isnull=False).count(), 1)
+        self.assertEqual(
+            Notification.objects.filter(notification_type="kyc_review_due").count(), 1
+        )
 
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL concurrency acceptance")

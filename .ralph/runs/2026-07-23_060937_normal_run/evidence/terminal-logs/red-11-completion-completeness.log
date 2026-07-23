@@ -1,0 +1,26 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_completion_rejects_caller_state_and_requires_new_governed_verification (sfpcl_credit.tests.test_kyc_review_api.KycReviewApiTests.test_completion_rejects_caller_state_and_requires_new_governed_verification)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_api.py", line 254, in test_completion_rejects_caller_state_and_requires_new_governed_verification
+    self.assertEqual(incomplete.status_code, 409, incomplete.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"kyc_review_id": "2c72794a-4236-4d52-8f86-d1cf39499be9", "member_id": "6b2aee4f-4ac5-4b2a-8eba-1398f7e63e8a", "kyc_profile_id": "45caa581-38af-41e3-802c-9c436c6fa331", "review_type": "rekyc", "due_date": "2026-07-23", "status": "completed", "kyc_status_before": "verified", "kyc_status_after": "verified", "completed_at": "2026-07-23T01:26:52.340800+00:00", "completion_verified_at": "2026-07-23T01:26:53.335406+00:00", "reviewed_by_user_id": "e94933e6-ca26-4719-8fcb-b52b5b3de2a9", "completeness": {"complete": false, "missing_requirements": ["aadhaar", "pan", "photo"], "member_type": "individual_farmer", "member_status": "active", "pan_status": "missing", "ckyc_consent_status": "available", "beneficial_ownership_status": "not_applicable", "nominee_kyc_status": "complete", "risk_rating": "low", "verified_document_types": []}, "completion_evidence": [{"kyc_document_id": "e6660194-90fa-4911-857a-3375681d02ea", "document_id": "cdd65adc-26bc-4b7a-b63a-7ce2281c0cb5"}], "compliance_task_id": "5a8bf525-c6f1-49e8-a2b8-ad7f67b74238"}, "meta": {"request_id": null, "timestamp": "2026-07-23T01:26:52.341560Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+FAILED (failures=1)
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_completion_rejects_caller_state_and_requires_new_governed_verification (sfpcl_credit.tests.test_kyc_review_api.KycReviewApiTests.test_completion_rejects_caller_state_and_requires_new_governed_verification)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_api.py", line 254, in test_completion_rejects_caller_state_and_requires_new_governed_verification
+    self.assertEqual(incomplete.status_code, 409, incomplete.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"kyc_review_id": "0be8e405-9ba1-4481-82b6-87373b21b9a6", "member_id": "0e431372-a85a-4598-bd7a-962c287b75c0", "kyc_profile_id": "b736a22e-26d0-4dd8-8702-ffb380a8fe51", "review_type": "rekyc", "due_date": "2026-07-23", "status": "completed", "kyc_status_before": "verified", "kyc_status_after": "verified", "completed_at": "2026-07-23T01:27:37.662948+00:00", "completion_verified_at": "2026-07-23T01:27:38.657485+00:00", "reviewed_by_user_id": "47beff3d-161a-445c-ba58-58972b305ab6", "completeness": {"complete": false, "missing_requirements": ["aadhaar", "pan", "photo"], "member_type": "individual_farmer", "member_status": "active", "pan_status": "missing", "ckyc_consent_status": "available", "beneficial_ownership_status": "not_applicable", "nominee_kyc_status": "complete", "risk_rating": "low", "verified_document_types": []}, "completion_evidence": [{"kyc_document_id": "ab8ead1b-3800-45b9-a4f2-c6a7ed4ec97c", "document_id": "1aa77156-7e61-4d1f-ba0b-3370dff10557"}], "compliance_task_id": "9f0a5352-297d-427c-ade4-af9c6ad94fc3"}, "meta": {"request_id": null, "timestamp": "2026-07-23T01:27:37.663735Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+FAILED (failures=1)

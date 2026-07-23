@@ -5403,3 +5403,37 @@ is final and audited. Calculation inputs/results, evidence,
 reviewer identity/role, preparation/review times, Board state, denied access, and exact replay truth
 remain server-owned and traceable. All routes use the standard envelope and project only
 server-derived `available_actions`.
+
+## KYC / re-KYC compliance tracker (011M)
+
+- `GET /api/v1/kyc-reviews/`
+- `GET|PATCH /api/v1/kyc-reviews/{kyc_review_id}/`
+- `POST /api/v1/kyc-reviews/{kyc_review_id}/remind/`
+- `POST /api/v1/kyc-reviews/{kyc_review_id}/complete/`
+
+The scheduler derives each cycle from the canonical member KYC profile's last completed verification,
+calculates the due date two calendar years later (29 February clamps to 28 February), and begins
+tracking at the governed 30-day warning boundary. One member/cycle review, one linked `KYC_AML`
+compliance task, one due reminder identity, one overdue reminder identity, and one date-keyed
+scheduled-job outcome are retained. Exact replay is zero-duplicate; changed task/review facts conflict.
+
+List filters are `status`, `due_within_days=30`, `member_type`, `member_status`,
+`assigned_to_me`, `page`, and `page_size`. A manager requires
+`compliance.kyc_review.manage` plus member object scope. Compliance/CFO readers with
+`compliance.task.read` see only assigned/reviewer rows; a governed Internal Auditor receives safe
+read-only summaries. List payloads contain no KYC document identifiers or PAN/Aadhaar values.
+
+`PATCH` accepts exactly `assigned_to_user_id`. Only the current assigned owner may select a distinct,
+active user who also has the manage permission and member scope. `remind` accepts an empty body and
+requires `Idempotency-Key`; it queues the applicable approved `kyc_rekyc_request_email` or
+`kyc_rekyc_request_sms` template through the communications dispatcher and reports only `queued`,
+`sent`, or `failed` from retained job truth.
+
+`complete` accepts an empty body. It cannot update KYC facts. Completion requires a strictly newer
+profile verification, the same governed verifier on at least one verified KYC document record, and a
+currently complete projection: encrypted/verified PAN, verified Aadhaar and photo, CKYC consent,
+verified FPC/producer-institution beneficial ownership when applicable, no unverified retained
+nominee, and a governed risk rating. It atomically records before/after state, verifier, completion
+time, restricted evidence identifiers, closes the linked task, and audits safe identifiers only.
+Caller-supplied status, stale/same-cycle evidence, incomplete KYC, foreign scope, reviewer overlap,
+invalid filters, changed replay, and direct retained-review mutation are rejected.

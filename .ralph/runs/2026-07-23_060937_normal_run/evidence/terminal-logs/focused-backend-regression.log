@@ -1,0 +1,39 @@
+Creating test database for alias 'default'...
+Found 58 test(s).
+System check identified no issues (0 silenced).
+.E............................................ssssssssssss
+======================================================================
+ERROR: test_new_governed_verification_completes_review_and_linked_task (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_new_governed_verification_completes_review_and_linked_task)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 255, in test_new_governed_verification_completes_review_and_linked_task
+    result = KYCReviewTracker.complete(actor=self.owner, review_id=review.pk)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/modules/kyc_review_tracker.py", line 261, in complete
+    raise ValueError("The newer governed KYC verification remains incomplete.")
+ValueError: The newer governed KYC verification remains incomplete.
+
+----------------------------------------------------------------------
+Ran 58 tests in 7.188s
+
+FAILED (errors=1, skipped=12)
+Destroying test database for alias 'default'...
+Found 58 test(s).
+System check identified no issues (0 silenced).
+.E............................................ssssssssssss
+======================================================================
+ERROR: test_new_governed_verification_completes_review_and_linked_task (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_new_governed_verification_completes_review_and_linked_task)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 255, in test_new_governed_verification_completes_review_and_linked_task
+    result = KYCReviewTracker.complete(actor=self.owner, review_id=review.pk)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/compliance/modules/kyc_review_tracker.py", line 261, in complete
+    raise ValueError("The newer governed KYC verification remains incomplete.")
+ValueError: The newer governed KYC verification remains incomplete.
+
+----------------------------------------------------------------------
+Ran 58 tests in 6.986s
+
+FAILED (errors=1, skipped=12)
+Destroying test database for alias 'default'...

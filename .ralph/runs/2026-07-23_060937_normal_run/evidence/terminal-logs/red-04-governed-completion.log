@@ -1,0 +1,28 @@
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_new_governed_verification_completes_review_and_linked_task (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_new_governed_verification_completes_review_and_linked_task)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 255, in test_new_governed_verification_completes_review_and_linked_task
+    result = KYCReviewTracker.complete(actor=self.owner, review_id=review.pk)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'KYCReviewTracker' has no attribute 'complete'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (errors=1)
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_new_governed_verification_completes_review_and_linked_task (sfpcl_credit.tests.test_kyc_review_tracker.KycReviewTrackerTests.test_new_governed_verification_completes_review_and_linked_task)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_060937_normal_run/sfpcl_credit/tests/test_kyc_review_tracker.py", line 255, in test_new_governed_verification_completes_review_and_linked_task
+    result = KYCReviewTracker.complete(actor=self.owner, review_id=review.pk)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'KYCReviewTracker' has no attribute 'complete'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+FAILED (errors=1)

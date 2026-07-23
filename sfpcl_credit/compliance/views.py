@@ -8,6 +8,7 @@ from sfpcl_credit.compliance.modules.section186_tracker import Section186Tracker
 from sfpcl_credit.compliance.modules.nbfc_principal_business_test import (
     NbfcPrincipalBusinessTestModule,
 )
+from sfpcl_credit.compliance.modules.kyc_review_tracker import KYCReviewTracker
 from sfpcl_credit.identity.modules import http_auth
 
 
@@ -128,6 +129,86 @@ def money_lending_review(request):
             ComplianceTaskEngine.create_money_lending_review(actor=actor, payload=parse_json_body(request)), request
         )
     except Exception as exc: return _error(request, exc)
+
+
+@require_http_methods(["GET"])
+def kyc_reviews(request):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        data, pagination = KYCReviewTracker.list_reviews(actor=actor, query=request.GET)
+        return list_response(data, pagination, request)
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["GET", "PATCH"])
+def kyc_review_detail(request, kyc_review_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "GET":
+            data = KYCReviewTracker.retrieve(actor=actor, review_id=kyc_review_id)
+        else:
+            payload = parse_json_body(request)
+            unknown = set(payload) - {"assigned_to_user_id"}
+            if unknown or not payload.get("assigned_to_user_id"):
+                raise tracker.ComplianceInvalid(
+                    {field: "Only assigned_to_user_id may be changed." for field in (unknown or {"assigned_to_user_id"})}
+                )
+            data = KYCReviewTracker.assign(
+                actor=actor,
+                review_id=kyc_review_id,
+                assigned_to_user_id=payload["assigned_to_user_id"],
+            )
+        return success_response(data, request)
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["POST"])
+def kyc_review_remind(request, kyc_review_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        if parse_json_body(request):
+            raise tracker.ComplianceInvalid({"request": "Reminder request must be empty."})
+        idempotency_key = request.headers.get("Idempotency-Key")
+        if not idempotency_key:
+            raise tracker.ComplianceInvalid(
+                {"Idempotency-Key": "This header is required."}
+            )
+        return success_response(
+            KYCReviewTracker.send_reminder(
+                actor=actor,
+                review_id=kyc_review_id,
+                idempotency_key=idempotency_key,
+                request=request,
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
+
+
+@require_http_methods(["POST"])
+def kyc_review_complete(request, kyc_review_id):
+    actor, response = _actor(request)
+    if response is not None:
+        return response
+    try:
+        if parse_json_body(request):
+            raise tracker.ComplianceInvalid(
+                {"request": "Completion is derived from governed KYC verification; the request must be empty."}
+            )
+        return success_response(
+            KYCReviewTracker.complete(actor=actor, review_id=kyc_review_id), request
+        )
+    except Exception as exc:
+        return _error(request, exc, audit_denial=True)
 
 
 @require_http_methods(["POST"])
