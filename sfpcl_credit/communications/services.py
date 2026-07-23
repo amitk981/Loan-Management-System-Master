@@ -256,6 +256,19 @@ def paginated_content_templates(query_params):
 def paginated_notifications(user, query_params):
     filters = _validate_notification_list_query(query_params)
     queryset = _notification_queryset_for_user(user)
+    return _paginated_notification_queryset(queryset, filters, query_params)
+
+
+def paginated_portal_notifications(user, query_params):
+    """Portal alerts are direct-user records, never role/team broadcasts."""
+    filters = _validate_notification_list_query(query_params)
+    queryset = Notification.objects.filter(recipient_user=user).order_by(
+        "-created_at", "-notification_id"
+    )
+    return _paginated_notification_queryset(queryset, filters, query_params)
+
+
+def _paginated_notification_queryset(queryset, filters, query_params):
     if filters["read_status"] == "read":
         queryset = queryset.filter(read_at__isnull=False)
     elif filters["read_status"] == "unread":
@@ -474,10 +487,30 @@ def create_internal_user_task(
 
 
 def mark_notification_read(user, request, notification_id, payload):
+    return _mark_notification_read(
+        user=user,
+        request=request,
+        notification_id=notification_id,
+        payload=payload,
+        queryset=_locked_notification_queryset_for_user(user),
+    )
+
+
+def mark_portal_notification_read(user, request, notification_id, payload):
+    return _mark_notification_read(
+        user=user,
+        request=request,
+        notification_id=notification_id,
+        payload=payload,
+        queryset=Notification.objects.filter(recipient_user=user).select_for_update(),
+    )
+
+
+def _mark_notification_read(*, user, request, notification_id, payload, queryset):
     expected_version = _clean_read_state_version(payload)
     with transaction.atomic():
         row = (
-            _locked_notification_queryset_for_user(user)
+            queryset
             .select_related("sender_user", "recipient_user", "communication")
             .get(notification_id=notification_id)
         )

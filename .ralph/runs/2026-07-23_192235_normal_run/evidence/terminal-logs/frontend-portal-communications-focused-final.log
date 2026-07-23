@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/PortalCommunicationsViews.test.tsx src/services/portalApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_192235_normal_run/sfpcl-lms
+
+ ✓ src/services/portalApi.test.ts (10 tests) 24ms
+ ✓ src/pages/borrower/portal/PortalCommunicationsViews.test.tsx (5 tests) 391ms
+
+ Test Files  2 passed (2)
+      Tests  15 passed (15)
+   Start at  20:11:04
+   Duration  1.21s (transform 138ms, setup 0ms, collect 324ms, tests 414ms, environment 339ms, prepare 73ms)
+

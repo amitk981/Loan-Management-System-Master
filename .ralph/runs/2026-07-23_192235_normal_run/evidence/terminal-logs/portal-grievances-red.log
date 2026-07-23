@@ -1,0 +1,20 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_borrower_creates_lists_and_reads_only_own_grievances (sfpcl_credit.tests.test_portal_communications_api.PortalCommunicationsApiTests.test_borrower_creates_lists_and_reads_only_own_grievances)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_192235_normal_run/sfpcl_credit/tests/test_portal_communications_api.py", line 75, in test_borrower_creates_lists_and_reads_only_own_grievances
+    grievance_id = created.json().get("data", {}).get("grievance_id")
+                   ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 882, in _parse_json
+    raise ValueError(
+ValueError: Content-Type header is "text/html; charset=utf-8", not "application/json"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.031s
+
+FAILED (errors=1)
+Preserving test database for alias 'default'...

@@ -127,8 +127,59 @@ class GrievanceWorkflow:
         return GrievanceWorkflow._borrower_projection(grievance)
 
     @staticmethod
+    def list_for_borrower(*, portal_account, query):
+        if not portal_account.can_authenticate() or portal_account.member.is_deleted:
+            raise ComplianceDenied()
+        allowed = {"status", "grievance_category", "page", "page_size"}
+        unknown = set(query.keys()) - allowed
+        if unknown:
+            raise ComplianceInvalid(
+                {field: "Unsupported grievance filter." for field in unknown}
+            )
+        queryset = Grievance.objects.filter(member_id=portal_account.member_id)
+        status = str(query.get("status") or "").strip()
+        if status:
+            if status not in Grievance.STATUSES:
+                raise ComplianceInvalid({"status": "Unsupported grievance status."})
+            queryset = queryset.filter(status=status)
+        category = str(query.get("grievance_category") or "").strip()
+        if category:
+            if category not in Grievance.CATEGORIES:
+                raise ComplianceInvalid(
+                    {"grievance_category": "Unsupported grievance category."}
+                )
+            queryset = queryset.filter(grievance_category=category)
+        page, page_size = GrievanceWorkflow._pagination(query)
+        total = queryset.count()
+        total_pages = max(1, ceil(total / page_size))
+        rows = queryset.order_by("-received_date", "-created_at", "-grievance_id")[
+            (page - 1) * page_size : page * page_size
+        ]
+        return (
+            [GrievanceWorkflow._borrower_projection(row) for row in rows],
+            {
+                "page": page,
+                "page_size": page_size,
+                "total_count": total,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_previous": page > 1,
+            },
+        )
+
+    @staticmethod
     def _borrower_projection(grievance):
-        return {'grievance_id': str(grievance.pk), 'grievance_reference': grievance.grievance_reference, 'grievance_category': grievance.grievance_category, 'received_date': grievance.received_date.isoformat(), 'resolution_due_date': grievance.resolution_due_date.isoformat(), 'status': grievance.status, 'is_overdue': grievance.status != Grievance.STATUS_RESOLVED and grievance.resolution_due_date < timezone.localdate(), 'resolution_summary': grievance.resolution_summary, 'closed_at': grievance.closed_at.isoformat() if grievance.closed_at else None, 'borrower_informed': GrievanceWorkflow._borrower_informed(grievance), 'borrower_acknowledged': grievance.borrower_acknowledged_at is not None}
+        subject, description = GrievanceWorkflow._borrower_text(grievance)
+        return {'grievance_id': str(grievance.pk), 'grievance_reference': grievance.grievance_reference, 'grievance_category': grievance.grievance_category, 'subject': subject, 'description': description, 'loan_account_id': str(grievance.loan_account_id) if grievance.loan_account_id else None, 'loan_application_id': str(grievance.loan_application_id) if grievance.loan_application_id else None, 'received_date': grievance.received_date.isoformat(), 'resolution_due_date': grievance.resolution_due_date.isoformat(), 'status': grievance.status, 'is_overdue': grievance.status != Grievance.STATUS_RESOLVED and grievance.resolution_due_date < timezone.localdate(), 'resolution_summary': grievance.resolution_summary, 'closed_at': grievance.closed_at.isoformat() if grievance.closed_at else None, 'borrower_informed': GrievanceWorkflow._borrower_informed(grievance), 'borrower_acknowledged': grievance.borrower_acknowledged_at is not None}
+
+    @staticmethod
+    def _borrower_text(grievance):
+        marker = "[Portal subject] "
+        if grievance.description.startswith(marker):
+            subject, separator, description = grievance.description[len(marker):].partition("\n\n")
+            if separator:
+                return subject, description
+        return grievance.grievance_category.replace("_", " ").title(), grievance.description
 
     @classmethod
     def update(cls, *, actor, grievance_id, payload):
@@ -289,7 +340,8 @@ class GrievanceWorkflow:
     @classmethod
     def serialize(cls, grievance, *, actor, borrower_safe=False):
         history = [{'sequence': event.sequence, 'event_type': event.event_type, 'previous_status': event.previous_status or None, 'new_status': event.new_status, 'note': '' if borrower_safe else event.note, 'created_at': event.created_at.isoformat()} for event in grievance.history.all()]
-        data = {'grievance_id': str(grievance.pk), 'grievance_reference': grievance.grievance_reference, 'member_id': str(grievance.member_id), 'loan_account_id': str(grievance.loan_account_id) if grievance.loan_account_id else None, 'loan_application_id': str(grievance.loan_application_id) if grievance.loan_application_id else None, 'default_case_id': str(grievance.default_case_id) if grievance.default_case_id else None, 'recovery_action_id': str(grievance.recovery_action_id) if grievance.recovery_action_id else None, 'grievance_category': grievance.grievance_category, 'description': grievance.description, 'received_date': grievance.received_date.isoformat(), 'received_channel': grievance.received_channel, 'assigned_to_user_id': str(grievance.assigned_to_user_id), 'resolution_due_date': grievance.resolution_due_date.isoformat(), 'status': grievance.status, 'tat_days': (grievance.resolution_due_date - grievance.received_date).days, 'days_overdue': max(0, (timezone.localdate() - grievance.resolution_due_date).days), 'is_overdue': grievance.status != Grievance.STATUS_RESOLVED and grievance.resolution_due_date < timezone.localdate(), 'resolution_summary': grievance.resolution_summary, 'closed_at': grievance.closed_at.isoformat() if grievance.closed_at else None, 'borrower_informed': cls._borrower_informed(grievance), 'borrower_acknowledged': grievance.borrower_acknowledged_at is not None, 'history': history, 'available_actions': cls._available_actions(grievance, actor)}
+        subject, description = cls._borrower_text(grievance)
+        data = {'grievance_id': str(grievance.pk), 'grievance_reference': grievance.grievance_reference, 'member_id': str(grievance.member_id), 'loan_account_id': str(grievance.loan_account_id) if grievance.loan_account_id else None, 'loan_application_id': str(grievance.loan_application_id) if grievance.loan_application_id else None, 'default_case_id': str(grievance.default_case_id) if grievance.default_case_id else None, 'recovery_action_id': str(grievance.recovery_action_id) if grievance.recovery_action_id else None, 'grievance_category': grievance.grievance_category, 'subject': subject, 'description': description, 'received_date': grievance.received_date.isoformat(), 'received_channel': grievance.received_channel, 'assigned_to_user_id': str(grievance.assigned_to_user_id), 'resolution_due_date': grievance.resolution_due_date.isoformat(), 'status': grievance.status, 'tat_days': (grievance.resolution_due_date - grievance.received_date).days, 'days_overdue': max(0, (timezone.localdate() - grievance.resolution_due_date).days), 'is_overdue': grievance.status != Grievance.STATUS_RESOLVED and grievance.resolution_due_date < timezone.localdate(), 'resolution_summary': grievance.resolution_summary, 'closed_at': grievance.closed_at.isoformat() if grievance.closed_at else None, 'borrower_informed': cls._borrower_informed(grievance), 'borrower_acknowledged': grievance.borrower_acknowledged_at is not None, 'history': history, 'available_actions': cls._available_actions(grievance, actor)}
         if not borrower_safe:
             data.update({'supporting_document_ids': [str(document_id) for document_id in grievance.document_links.filter(purpose=GrievanceDocument.PURPOSE_SUPPORTING).order_by('linked_at', 'grievance_document_id').values_list('document_id', flat=True)], 'resolution_document_id': str(grievance.resolution_document_id) if grievance.resolution_document_id else None, 'internal_notes': grievance.internal_notes, 'borrower_acknowledgement': grievance.borrower_acknowledgement, 'escalation_count': grievance.escalation_count, 'notice_communication_id': str(grievance.notice_communication_id) if grievance.notice_communication_id else None, 'notice_delivery_status': cls._notice_delivery_status(grievance)})
         return data

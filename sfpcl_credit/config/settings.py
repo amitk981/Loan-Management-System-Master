@@ -133,6 +133,13 @@ COMMUNICATION_SMS_ADAPTER = os.environ.get(
     "SFPCL_COMMUNICATION_SMS_ADAPTER",
     "sfpcl_credit.communications.adapters.ManualSmsDeliveryAdapter",
 )
+_PORTAL_GRIEVANCE_TAT_DAYS = os.environ.get("SFPCL_PORTAL_GRIEVANCE_TAT_DAYS")
+PORTAL_GRIEVANCE_TAT_DAYS = (
+    int(_PORTAL_GRIEVANCE_TAT_DAYS) if _PORTAL_GRIEVANCE_TAT_DAYS else None
+)
+PORTAL_GRIEVANCE_OWNER_ROLE_CODE = os.environ.get(
+    "SFPCL_PORTAL_GRIEVANCE_OWNER_ROLE_CODE"
+)
 CELERY_BEAT_SCHEDULE = {
     "communications-dispatch-due-jobs": {
         "task": "communications.dispatch_due_jobs",

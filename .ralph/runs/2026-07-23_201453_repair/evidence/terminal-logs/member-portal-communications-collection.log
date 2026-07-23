@@ -1,0 +1,7 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-communications.e2e.spec.ts --list
+
+Listing tests:
+  [chromium] › member-portal-communications.e2e.spec.ts:8:5 › member communication surfaces remain own-scoped and usable on mobile
+Total: 1 test in 1 file

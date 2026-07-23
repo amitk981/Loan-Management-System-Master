@@ -5513,3 +5513,34 @@ member identity, and exposes only safe status/resolution/notice truth. Internal 
 notes, assignee facts, document identities, and staff history remain excluded. Creation, assignment,
 investigation, escalation, resolution, notice queue, governed download, and every denied
 cross-object attempt are audited.
+
+## Member portal communications, grievances, notifications, and closure (011NA)
+
+- `GET /api/v1/portal/notices/`
+- `GET /api/v1/portal/notices/{communication_id}/download/`
+- `GET|POST /api/v1/portal/grievances/`
+- `GET /api/v1/portal/grievances/{grievance_id}/`
+- `GET /api/v1/portal/notifications/`
+- `POST /api/v1/portal/notifications/{notification_id}/mark-read/`
+- `GET /api/v1/portal/closures/`
+
+Every route derives the member from an active portal account and rejects caller-supplied member
+identity. Notice and notification lists include only direct member/user recipients; role and team
+notifications are intentionally excluded from the member portal. Notice downloads are available
+only when the member-owned communication is backed by an issued NOC or interest-invoice document,
+and return the existing short-lived audited document descriptor rather than raw storage paths.
+
+Portal grievance creation accepts `grievance_category`, required `subject`, required `description`,
+and optional matching `loan_account_id`/`loan_application_id`, plus `Idempotency-Key`. The portal
+never accepts an owner, due date, or member id. The backend uses the explicitly configured
+`SFPCL_PORTAL_GRIEVANCE_OWNER_ROLE_CODE` and positive integer
+`SFPCL_PORTAL_GRIEVANCE_TAT_DAYS`; missing configuration or a missing active member-scoped owner
+returns `409 CONFIGURATION_REQUIRED`. Borrower projections expose the reference, category,
+subject/description, source loan/application ids, received/due dates, status, overdue truth,
+resolution summary, closure time, informed state, and acknowledgement state only.
+
+Notification mark-read requires the current `read_state_version`; stale writes return
+`409 STALE_WRITE`, and foreign identifiers are nondisclosing. Closure rows project only the
+authenticated member's loan number, repayment/closure/NOC state, security-return items, and CDSL
+unpledge state. An absent CDSL return record remains `pending`; `not_applicable` is shown only when
+retained security-return evidence says so.

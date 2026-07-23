@@ -606,6 +606,41 @@ urlpatterns = [
     path("api/v1/portal/dashboard/", portal_views.portal_dashboard, name="portal-dashboard"),
     path("api/v1/portal/profile/", portal_views.portal_profile, name="portal-profile"),
     path(
+        "api/v1/portal/grievances/",
+        portal_views.portal_grievances,
+        name="portal-grievances",
+    ),
+    path(
+        "api/v1/portal/grievances/<uuid:grievance_id>/",
+        portal_views.portal_grievance_detail,
+        name="portal-grievance-detail",
+    ),
+    path(
+        "api/v1/portal/notifications/",
+        portal_views.portal_notifications,
+        name="portal-notifications",
+    ),
+    path(
+        "api/v1/portal/notifications/<uuid:notification_id>/mark-read/",
+        portal_views.portal_notification_mark_read,
+        name="portal-notification-mark-read",
+    ),
+    path(
+        "api/v1/portal/notices/",
+        portal_views.portal_notices,
+        name="portal-notices",
+    ),
+    path(
+        "api/v1/portal/notices/<uuid:communication_id>/download/",
+        portal_views.portal_notice_download,
+        name="portal-notice-download",
+    ),
+    path(
+        "api/v1/portal/closures/",
+        portal_views.portal_closures,
+        name="portal-closures",
+    ),
+    path(
         "api/v1/portal/kyc-corrections/",
         portal_views.portal_kyc_corrections,
         name="portal-kyc-corrections",

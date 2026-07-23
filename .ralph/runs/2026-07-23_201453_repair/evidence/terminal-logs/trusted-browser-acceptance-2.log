@@ -1,0 +1,30 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_192235_normal_run/.ralph/runs/2026-07-23_201453_repair/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-portal-communications.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-portal-communications.e2e.spec.ts
+
+[2m[WebServer] [22m[23/Jul/2026 14:57:09] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[23/Jul/2026 14:57:13] "OPTIONS /api/v1/portal/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 14:57:14] "POST /api/v1/portal/auth/login/ HTTP/1.1" 200 2208
+[2m[WebServer] [22m[23/Jul/2026 14:57:14] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 14:57:14] "GET /api/v1/auth/me/ HTTP/1.1" 200 1092
+[2m[WebServer] [22m[23/Jul/2026 14:57:14] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 14:57:14] "OPTIONS /api/v1/portal/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[23/Jul/2026 14:57:14] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+[2m[WebServer] [22m[23/Jul/2026 14:57:14] "GET /api/v1/portal/dashboard/ HTTP/1.1" 200 933
+  ✓  1 [chromium] › member-portal-communications.e2e.spec.ts:8:5 › member communication surfaces remain own-scoped and usable on mobile (3.1s)
+
+  1 passed (54.2s)
+
+Duration milliseconds: 54866
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_192235_normal_run/.ralph/runs/2026-07-23_201453_repair/evidence/trusted-browser-screenshots-2.sha256

@@ -1,7 +1,7 @@
 # Slice 011NA: Member Portal Notices, Grievances, Notifications, and Closure/NOC View
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance

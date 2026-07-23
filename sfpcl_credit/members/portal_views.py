@@ -15,6 +15,7 @@ from sfpcl_credit.processes import portal_documentation_actions as portal_docume
 from sfpcl_credit.processes import portal_deficiency_response as portal_deficiency_process
 from sfpcl_credit.processes import portal_disbursement_status
 from sfpcl_credit.processes import portal_loan_servicing
+from sfpcl_credit.processes import portal_communications
 from sfpcl_credit.workflows.guard import InvalidStateTransition
 
 
@@ -74,6 +75,178 @@ def portal_profile(request):
     if response is not None:
         return response
     return success_response(portal_services.profile(member, user), request)
+
+
+@require_http_methods(["GET", "POST"])
+def portal_grievances(request):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "POST":
+            key = request.headers.get("Idempotency-Key")
+            if not key:
+                from sfpcl_credit.compliance.modules.compliance_control_tracker import ComplianceInvalid
+
+                raise ComplianceInvalid({"Idempotency-Key": "This header is required."})
+            return success_response(
+                portal_communications.create_grievance(
+                    actor=user,
+                    payload=parse_json_body(request),
+                    idempotency_key=key,
+                ),
+                request,
+            )
+        rows, pagination = portal_communications.list_grievances(
+            actor=user, query=request.GET
+        )
+        return list_response(rows, pagination, request)
+    except Exception as exc:
+        return _portal_communications_error(request, exc)
+
+
+@require_GET
+def portal_grievance_detail(request, grievance_id):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            portal_communications.grievance_detail(
+                actor=user, grievance_id=grievance_id
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _portal_communications_error(request, exc, detail=True)
+
+
+@require_GET
+def portal_notifications(request):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        rows, pagination = portal_communications.list_notifications(
+            actor=user, query=request.GET
+        )
+        return list_response(rows, pagination, request)
+    except Exception as exc:
+        return _portal_communications_error(request, exc)
+
+
+@require_http_methods(["POST"])
+def portal_notification_mark_read(request, notification_id):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            portal_communications.mark_notification_read(
+                actor=user,
+                notification_id=notification_id,
+                payload=parse_json_body(request),
+                request=request,
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _portal_communications_error(request, exc, detail=True)
+
+
+@require_GET
+def portal_notices(request):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        rows, pagination = portal_communications.list_notices(
+            actor=user, query=request.GET
+        )
+        return list_response(rows, pagination, request)
+    except Exception as exc:
+        return _portal_communications_error(request, exc)
+
+
+@require_GET
+def portal_notice_download(request, communication_id):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        return success_response(
+            portal_communications.download_notice(
+                actor=user,
+                communication_id=communication_id,
+                request=request,
+            ),
+            request,
+        )
+    except Exception as exc:
+        return _portal_communications_error(request, exc, detail=True)
+
+
+@require_GET
+def portal_closures(request):
+    _member, user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        rows, pagination = portal_communications.list_closures(
+            actor=user, query=request.GET
+        )
+        return list_response(rows, pagination, request)
+    except Exception as exc:
+        return _portal_communications_error(request, exc)
+
+
+def _portal_communications_error(request, exc, *, detail=False):
+    from django.core.exceptions import ObjectDoesNotExist
+    from sfpcl_credit.compliance.modules.compliance_control_tracker import (
+        ComplianceConflict,
+        ComplianceDenied,
+        ComplianceInvalid,
+    )
+    from sfpcl_credit.communications.services import StaleWriteError
+
+    if isinstance(exc, StaleWriteError):
+        return error_response(
+            request,
+            409,
+            "STALE_WRITE",
+            "Notification read state changed. Refresh and try again.",
+        )
+    if isinstance(exc, ObjectDoesNotExist):
+        return error_response(request, 404, "NOT_FOUND", "The notification was not found.")
+    if isinstance(exc, ValidationError):
+        field_errors = getattr(exc, "message_dict", {"request": exc.messages})
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Portal notification failed validation.",
+            {field: messages[0] for field, messages in field_errors.items()},
+        )
+
+    if isinstance(exc, ComplianceInvalid):
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Portal grievance failed validation.",
+            exc.field_errors,
+        )
+    if isinstance(exc, ComplianceConflict):
+        return error_response(request, 409, "CONFIGURATION_REQUIRED", str(exc))
+    if isinstance(exc, (ComplianceDenied, PermissionError)):
+        if detail:
+            return error_response(
+                request, 404, "NOT_FOUND", "The grievance was not found."
+            )
+        return error_response(
+            request, 403, "FORBIDDEN", portal_services.PORTAL_PERMISSION_ERROR
+        )
+    raise exc
 
 
 @require_http_methods(["GET", "POST"])

@@ -354,6 +354,70 @@ export interface PortalDirectRepaymentInstructions {
   disclaimer: string;
 }
 
+export interface PortalNotice {
+  notice_id: string;
+  notice_type: string;
+  title: string;
+  message: string;
+  status: string;
+  issued_at: string | null;
+  related_entity_type: string;
+  related_entity_id: string;
+  related_loan_account_id: string | null;
+  related_reference: string | null;
+  download_url: string | null;
+}
+
+export interface PortalGrievance {
+  grievance_id: string;
+  grievance_reference: string;
+  grievance_category: string;
+  subject: string;
+  description: string;
+  loan_account_id: string | null;
+  loan_application_id: string | null;
+  received_date: string;
+  resolution_due_date: string;
+  status: string;
+  is_overdue: boolean;
+  resolution_summary: string | null;
+  closed_at: string | null;
+  borrower_informed: boolean;
+  borrower_acknowledged: boolean;
+}
+
+export interface PortalNotification {
+  notification_id: string;
+  notification_type: string;
+  category: string;
+  severity: 'info' | 'warning' | 'urgent';
+  title: string;
+  message: string;
+  action_label: string | null;
+  action_url: string | null;
+  read: boolean;
+  read_at: string | null;
+  read_state_version: number;
+  created_at: string;
+}
+
+export interface PortalClosure {
+  loan_account_id: string;
+  loan_account_number: string;
+  full_repayment_status: 'pending' | 'confirmed';
+  closure_review_status: 'not_started' | 'complete';
+  closed_at: string | null;
+  noc_status: 'pending' | 'issued';
+  noc_download_url: string | null;
+  security_return_status: string;
+  cdsl_unpledge_status: string;
+  security_items: {
+    item_type: string;
+    status: string;
+    acknowledgement_available: boolean;
+  }[];
+}
+
 export interface PortalApplicationDraftPayload {
   nominee_id?: string | null;
   required_loan_amount?: string;
@@ -449,6 +513,26 @@ export const fetchPortalLoanSchedule = (loanAccountId: string) => requestAllPage
 export const fetchPortalRepaymentHistory = (loanAccountId: string) => requestAllPages<PortalRepaymentHistoryItem>(`/api/v1/portal/loan-accounts/${loanAccountId}/repayments/?page=1&page_size=100`);
 export const fetchPortalInterestInvoices = (loanAccountId: string) => requestAllPages<PortalInterestInvoiceSummary>(`/api/v1/portal/loan-accounts/${loanAccountId}/invoices/?page=1&page_size=100`);
 export const fetchPortalDirectRepaymentInstructions = (loanAccountId: string) => request<PortalDirectRepaymentInstructions>(`/api/v1/portal/loan-accounts/${loanAccountId}/direct-instructions/`);
+export const fetchPortalNotices = () => requestAllPages<PortalNotice>('/api/v1/portal/notices/?page=1&page_size=100');
+export const fetchPortalGrievances = () => requestAllPages<PortalGrievance>('/api/v1/portal/grievances/?page=1&page_size=100');
+export const fetchPortalGrievance = (grievanceId: string) => request<PortalGrievance>(`/api/v1/portal/grievances/${grievanceId}/`);
+export const submitPortalGrievance = (payload: {
+  grievance_category: string;
+  subject: string;
+  description: string;
+  loan_account_id?: string;
+  loan_application_id?: string;
+}) => request<PortalGrievance>('/api/v1/portal/grievances/', {
+  method: 'POST',
+  body: payload,
+  idempotencyKey: crypto.randomUUID(),
+});
+export const fetchPortalNotifications = () => requestAllPages<PortalNotification>('/api/v1/portal/notifications/?page=1&page_size=100');
+export const markPortalNotificationRead = (notification: PortalNotification) => request<PortalNotification>(
+  `/api/v1/portal/notifications/${notification.notification_id}/mark-read/`,
+  { method: 'POST', body: { read_state_version: notification.read_state_version } },
+);
+export const fetchPortalClosures = () => requestAllPages<PortalClosure>('/api/v1/portal/closures/?page=1&page_size=100');
 export const downloadPortalDisbursementAdvice = async (applicationId: string) => {
   const descriptor = await request<PortalDownloadDescriptor>(
     `/api/v1/portal/applications/${applicationId}/disbursement-advice/download-capability/`,
@@ -473,6 +557,15 @@ export const downloadPortalDocumentationAction = (actionUrl: string) => {
   return request<PortalDownloadDescriptor>(actionUrl);
 };
 
+export const downloadPortalNotice = async (actionUrl: string) => {
+  if (!/^\/api\/v1\/portal\/notices\/[^/]+\/download\/$/.test(actionUrl)) {
+    throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Notice download action is invalid.', 400);
+  }
+  const descriptor = await request<PortalDownloadDescriptor>(actionUrl);
+  const content = await fetchSignedPortalDocumentContent(descriptor.download_url);
+  openPortalDocumentBlob(content);
+};
+
 export const fetchPortalDocumentContent = async (downloadUrl: string) => {
   if (!downloadUrl.startsWith('/api/v1/portal/applications/')) {
     throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Document download URL is invalid.', 400);
@@ -492,7 +585,27 @@ export const openPortalDocumentBlob = (content: Blob) => {
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 };
 
-async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; formData?: FormData } = {}): Promise<T> {
+const fetchSignedPortalDocumentContent = async (downloadUrl: string) => {
+  if (!downloadUrl.startsWith('/api/v1/document-files/') || !downloadUrl.includes('token=')) {
+    throw new AuthSessionError('INVALID_DOWNLOAD_ACTION', 'Signed document download URL is invalid.', 400);
+  }
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
+  const response = await fetch(`${API_BASE_URL}${downloadUrl}`, {
+    headers: { Authorization: `Bearer ${session.accessToken}` },
+  });
+  if (!response.ok) throw new AuthSessionError('DOWNLOAD_FAILED', 'Document download failed.', response.status);
+  return response.blob();
+};
+
+interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PATCH';
+  body?: unknown;
+  formData?: FormData;
+  idempotencyKey?: string;
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const envelope = await requestEnvelope<T>(path, options);
   return envelope.data as T;
 }
@@ -510,7 +623,7 @@ async function requestAllPages<T>(path: string): Promise<T[]> {
   return rows;
 }
 
-async function requestEnvelope<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; formData?: FormData } = {}): Promise<ApiEnvelope<T>> {
+async function requestEnvelope<T>(path: string, options: RequestOptions = {}): Promise<ApiEnvelope<T>> {
   const session = loadStoredAuthSession();
   if (!session) {
     throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
@@ -521,6 +634,7 @@ async function requestEnvelope<T>(path: string, options: { method?: 'GET' | 'POS
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${session.accessToken}`,
+      ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
       ...(method === 'GET' || options.formData ? {} : { 'Content-Type': 'application/json' }),
     },
     ...(method === 'GET' ? {} : {

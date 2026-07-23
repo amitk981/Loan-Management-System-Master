@@ -1,0 +1,13 @@
+ docs/working/API_CONTRACTS.md                      |  31 ++
+ docs/working/ASSUMPTIONS.md                        |   1 +
+ .../borrower/portal/loans/MP20_ClosureNOC.tsx      | 143 ++++++----
+ .../portal/notices/MP19_NoticesLetters.tsx         | 113 ++++++--
+ .../portal/notifications/MP23_Notifications.tsx    | 102 +++++--
+ .../portal/support/MP24_SupportGrievance.tsx       | 315 +++++++++------------
+ sfpcl-lms/src/services/portalApi.ts                | 118 +++++++-
+ sfpcl_credit/communications/services.py            |  35 ++-
+ .../compliance/modules/grievance_workflow.py       |  56 +++-
+ sfpcl_credit/config/settings.py                    |   7 +
+ sfpcl_credit/config/urls.py                        |  35 +++
+ sfpcl_credit/members/portal_views.py               | 173 +++++++++++
+ 12 files changed, 835 insertions(+), 294 deletions(-)
