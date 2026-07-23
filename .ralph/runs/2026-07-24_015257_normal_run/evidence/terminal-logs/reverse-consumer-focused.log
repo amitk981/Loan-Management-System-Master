@@ -1,0 +1,32 @@
+Creating test database for alias 'default'...
+Found 19 test(s).
+System check identified no issues (0 silenced).
+....Catalogue seeded: 195 permissions, 20 roles, 8 teams, 272 role-permission links.
+.Catalogue seeded: 195 permissions, 20 roles, 8 teams, 272 role-permission links.
+.Catalogue seeded: 195 permissions, 20 roles, 8 teams, 272 role-permission links.
+.........F...
+======================================================================
+FAIL: test_register_filters_counts_and_page_bounds_inside_director_object_scope (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_register_filters_counts_and_page_bounds_inside_director_object_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_015257_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3355, in test_register_filters_counts_and_page_bounds_inside_director_object_scope
+    self.assertEqual(
+AssertionError: {'pag[78 chars]'has_previous': False, 'totals': {'sanctioned_amount': '0.00'}} != {'pag[78 chars]'has_previous': False}
+  {'has_next': False,
+   'has_previous': False,
+   'page': 1,
+   'page_size': 1,
+   'total_count': 0,
+-  'total_pages': 1,
+?                  ^
+
++  'total_pages': 1}
+?                  ^
+
+-  'totals': {'sanctioned_amount': '0.00'}}
+
+----------------------------------------------------------------------
+Ran 19 tests in 2.135s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

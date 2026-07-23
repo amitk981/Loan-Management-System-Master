@@ -1,7 +1,7 @@
 # Slice 012A2: Finance and Servicing Report Catalogue
 
 ## Status
-Not Started
+Complete
 
 ## Runtime Capabilities
 - `none`

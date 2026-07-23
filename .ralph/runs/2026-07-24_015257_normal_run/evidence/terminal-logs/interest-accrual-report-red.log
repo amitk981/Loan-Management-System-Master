@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_interest_accrual_report_reuses_owner_projection_filters_and_total (sfpcl_credit.tests.test_report_catalogue_api.InterestAccrualReportCatalogueApiTests.test_interest_accrual_report_reuses_owner_projection_filters_and_total)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_015257_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 241, in test_interest_accrual_report_reuses_owner_projection_filters_and_total
+    self.assertEqual(body["pagination"]["total_count"], 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.612s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

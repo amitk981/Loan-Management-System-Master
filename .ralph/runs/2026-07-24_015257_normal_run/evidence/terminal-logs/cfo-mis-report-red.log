@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_cfo_quarterly_mis_report_reuses_frozen_owner_projection (sfpcl_credit.tests.test_report_catalogue_api.CfoQuarterlyMisReportCatalogueApiTests.test_cfo_quarterly_mis_report_reuses_frozen_owner_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_015257_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 299, in test_cfo_quarterly_mis_report_reuses_frozen_owner_projection
+    self.assertEqual(body["pagination"]["total_count"], 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.751s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

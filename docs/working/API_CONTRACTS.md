@@ -5577,7 +5577,7 @@ it has no create/review authority.
 
 ## Read-only report APIs (012A)
 
-All six section-40 report routes are `GET` only and return the standard top-level list envelope with
+The six foundation section-40 report routes are `GET` only and return the standard top-level list envelope with
 `page` (default 1), `page_size` (default 20, maximum 100), stable ordering, and no write/audit side
 effect:
 
@@ -5607,3 +5607,28 @@ Missing report/owner permission or persisted object scope returns 403 without `d
 `documents.checklist.read`; disbursement pending uses `finance.disbursement.readiness`; the other
 four routes use their existing `reports.*.read` code plus the canonical owning-domain read scope.
 No caller-supplied role or team changes result scope.
+
+## Finance and servicing report catalogue (012A2)
+
+The report registry additionally exposes these stable `GET` routes. Every route returns the
+standard bounded list envelope, rejects unknown parameters, uses deterministic owner ordering, and
+never mutates or recalculates owning-domain truth:
+
+| Code / route | Filters | Source fields and totals | Permission and owner scope |
+|---|---|---|---|
+| `credit-sanction` | `financial_year`, `decision` | Canonical Credit Sanction Register projection; `pagination.totals.sanctioned_amount` across the complete filtered scope | `approvals.sanction_register.read` plus canonical approval-case read scope |
+| `exception` | `status`, `exception_type` | Canonical Exception Register projection | `approvals.exception_register.read` plus canonical approval-case read scope |
+| `security-custody` | `instrument_type=sh4\|blank_dated_cheque` | Governed public custody identity, package/application/account/member ids, status, location, and retained update time; custody evidence and actor ids are omitted | `security.package.read` plus the security evidence coordinator's Stage-4/object scope |
+| `sap-pending` | `request_status=draft\|sent` | Exact assigned Finance workspace projection; SAP/customer and identity values remain masked/minimised | `finance.sap_code.read`; the canonical assigned-workspace selector additionally requires the exact active Senior Manager Finance completion scope |
+| `disbursement` | inclusive `from_date`/`to_date`, `authorisation_status`, `bank_transfer_status` | Full persisted amount, payment method, authorisation/transfer status, UTR/reference, initiation/authorisation/disbursement dates; `pagination.totals.disbursement_amount` | `finance.disbursement.readiness` plus canonical loan-account scope |
+| `repayment` | inclusive `from_date`/`to_date`, `repayment_source`, `allocation_status`, `sap_posting_status` | Persisted receipt amount/date/method/reference and allocation/SAP status; `pagination.totals.amount_received` | `finance.loan_account.read` plus canonical loan-account scope |
+| `interest-invoice` | `financial_year`, `invoice_status` | Canonical Interest Invoice owner projection | `finance.loan_account.read` plus canonical loan-account scope |
+| `interest-accrual` | `accrual_month=YYYY-MM`, `sap_posting_status` | Canonical accrual snapshot projection; `pagination.totals.interest_accrued_amount` | `finance.loan_account.read` plus canonical loan-account scope |
+| `cfo-quarterly-mis` | required `financial_year`, `quarter=Q1\|Q2\|Q3\|Q4` | Canonical frozen Quarterly MIS projection including its source-owned totals and availability map | `finance.loan_account.read` plus the MIS owner's complete frozen portfolio scope |
+
+All routes also accept `page` and `page_size` (default 1/20, maximum 100). Controlled status values
+come from the owning persisted model vocabulary. Monetary totals use the same filtered, object-scoped
+query before pagination and are formatted as two-decimal strings. Empty authorised results return
+`data: []`, zero monetary totals where applicable, and the standard empty pagination projection.
+Missing permission or object scope returns `403` without row or total disclosure. Export generation
+and unmasked sensitive values are not part of these reads.

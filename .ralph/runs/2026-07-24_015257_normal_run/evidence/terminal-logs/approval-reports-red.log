@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_credit_and_exception_reports_reuse_owner_registers_and_filters (sfpcl_credit.tests.test_report_catalogue_api.ApprovalReportCatalogueApiTests.test_credit_and_exception_reports_reuse_owner_registers_and_filters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_015257_normal_run/sfpcl_credit/tests/test_report_catalogue_api.py", line 510, in test_credit_and_exception_reports_reuse_owner_registers_and_filters
+    sanction.json()["pagination"]["totals"],
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'totals'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

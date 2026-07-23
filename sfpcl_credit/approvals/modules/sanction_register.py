@@ -5,6 +5,7 @@ from math import ceil
 import re
 
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 from django.utils import timezone
 
 from sfpcl_credit.approvals.models import (
@@ -194,7 +195,7 @@ def serialize_sanction_decision(decision):
     }
 
 
-def list_entries(*, actor, query_params, actor_permissions):
+def list_entries(*, actor, query_params, actor_permissions, include_totals=False):
     unknown = set(query_params.keys()) - _LIST_PARAMS
     if unknown:
         raise ValidationError(
@@ -224,7 +225,7 @@ def list_entries(*, actor, query_params, actor_permissions):
     page = min(page, total_pages)
     offset = (page - 1) * page_size
     rows = [serialize_entry(row) for row in queryset[offset : offset + page_size]]
-    return rows, {
+    pagination = {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
@@ -232,6 +233,12 @@ def list_entries(*, actor, query_params, actor_permissions):
         "has_next": page < total_pages,
         "has_previous": page > 1,
     }
+    if include_totals:
+        sanctioned_total = queryset.aggregate(value=Sum("sanctioned_amount"))["value"]
+        pagination["totals"] = {
+            "sanctioned_amount": f"{(sanctioned_total or 0):.2f}",
+        }
+    return rows, pagination
 
 
 def serialize_entry(entry):
