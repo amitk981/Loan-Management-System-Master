@@ -1,0 +1,1 @@
+EXPECTED FAIL: prior packet contains an unmergeable do-not-commit/do-not-merge declaration

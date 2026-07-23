@@ -18,8 +18,8 @@ class WitnessEvidenceMigrationTests(TransactionTestCase):
             node
             for node in executor.loader.graph.leaf_nodes()
             # Configuration, legal, finance, loan, interest, monitoring, default, recovery,
-            # closure, compliance, SAP, and communications owners explicitly anchor later
-            # application state.
+            # closure, compliance, member-correction, SAP, and communications owners explicitly
+            # anchor later application state.
             # Exclude those descendants when projecting the pre-0012 application model or the
             # historical state would outrun the reversed schema.
             if node[0]
@@ -27,6 +27,7 @@ class WitnessEvidenceMigrationTests(TransactionTestCase):
                 "applications",
                 "finance",
                 "legal_documents",
+                "members",
                 "loans",
                 "sap_workflow",
                 "disbursements",

@@ -5437,3 +5437,35 @@ nominee, and a governed risk rating. It atomically records before/after state, v
 time, restricted evidence identifiers, closes the linked task, and audits safe identifiers only.
 Caller-supplied status, stale/same-cycle evidence, incomplete KYC, foreign scope, reviewer overlap,
 invalid filters, changed replay, and direct retained-review mutation are rejected.
+
+## Member portal KYC correction requests (011M2)
+
+- `GET|POST /api/v1/portal/kyc-corrections/`
+- `POST /api/v1/portal/kyc-corrections/evidence/`
+- `GET /api/v1/kyc-correction-requests/`
+- `POST /api/v1/kyc-correction-requests/{kyc_correction_request_id}/review/`
+- `POST /api/v1/kyc-correction-requests/{kyc_correction_request_id}/approve/`
+- `POST /api/v1/kyc-correction-requests/{kyc_correction_request_id}/reject/`
+
+Portal scope comes only from the authenticated active `PortalAccount`. Evidence upload accepts one
+PDF/JPG/PNG KYC file, requires self-attestation for PAN/Aadhaar, stores it as restricted, and retains
+portal-account/member provenance. Submission accepts `changes` containing PAN, Aadhaar, mobile
+number, email, and/or registered address, a nonblank reason, and at least one document uploaded by
+that same portal user for that member.
+Caller-supplied `member_id` is never authority; a foreign claim is denied and audited.
+
+Submission creates a pending governed identity-change request but does not mutate member or KYC
+state. Portal responses contain masked requested values, borrower-safe status
+(`submitted`, `under_review`, `approved`, `rejected`), evidence metadata, dates, and the rejection
+reason. They never contain the reviewer identity, internal notes, storage keys, or full identity
+values.
+
+The staff queue requires `members.member.update` and canonical member object scope. Review assigns
+the acting reviewer, retains internal notes, and registers the restricted evidence in the 004H KYC
+document workflow. Approval requires every linked KYC document to be governed-verified; protected
+identity fields additionally require `members.member.identity_change.approve` and use the existing
+identity-governance path. Approved contact/address changes use the governed member update path.
+Both write history, reset KYC to pending reverification, and link an open 011M KYC review when one
+exists. Rejection requires a borrower-visible reason and writes no member history. Submit, review,
+approve/apply, reject, and cross-scope denial are audited; every lifecycle transition writes the
+canonical workflow event.

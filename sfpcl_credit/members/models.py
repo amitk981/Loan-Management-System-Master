@@ -191,6 +191,80 @@ class MemberIdentityChangeRequest(models.Model):
         db_table = "member_identity_change_requests"
 
 
+class KycCorrectionRequest(models.Model):
+    STATUS_SUBMITTED = "submitted"
+    STATUS_UNDER_REVIEW = "under_review"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUSES = {
+        STATUS_SUBMITTED,
+        STATUS_UNDER_REVIEW,
+        STATUS_APPROVED,
+        STATUS_REJECTED,
+    }
+
+    kyc_correction_request_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.ForeignKey(
+        Member, on_delete=models.PROTECT, related_name="kyc_correction_requests"
+    )
+    portal_account = models.ForeignKey(
+        "identity.PortalAccount",
+        on_delete=models.PROTECT,
+        related_name="kyc_correction_requests",
+    )
+    requested_fields_json = models.JSONField(default=list)
+    proposed_values_json = models.JSONField(default=dict)
+    reason = models.TextField()
+    status = models.CharField(max_length=40, default=STATUS_SUBMITTED, db_index=True)
+    identity_change_request = models.OneToOneField(
+        MemberIdentityChangeRequest,
+        on_delete=models.PROTECT,
+        related_name="portal_kyc_correction",
+    )
+    evidence_documents = models.ManyToManyField(
+        "documents.DocumentFile", related_name="kyc_correction_requests"
+    )
+    kyc_review = models.ForeignKey(
+        "compliance.KYCReview",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="correction_requests",
+    )
+    reviewed_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="reviewed_kyc_correction_requests",
+    )
+    rejection_reason = models.TextField(blank=True)
+    internal_notes = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(default=timezone.now)
+    review_started_at = models.DateTimeField(blank=True, null=True)
+    decided_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "kyc_correction_requests"
+        ordering = ["-submitted_at", "-kyc_correction_request_id"]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    status__in=("submitted", "under_review", "approved", "rejected")
+                ),
+                name="kyc_correction_status_bounded",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["member", "status"], name="idx_kyc_corr_member_status"
+            ),
+        ]
+
+
 class IndividualMemberProfile(models.Model):
     individual_member_profile_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False

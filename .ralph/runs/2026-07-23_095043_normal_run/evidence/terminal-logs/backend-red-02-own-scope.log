@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_cross_member_submit_is_blocked_and_audited_without_writes (sfpcl_credit.tests.test_portal_kyc_correction_api.PortalKycCorrectionApiTests.test_cross_member_submit_is_blocked_and_audited_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_095043_normal_run/sfpcl_credit/tests/test_portal_kyc_correction_api.py", line 152, in test_cross_member_submit_is_blocked_and_audited_without_writes
+    self.assertEqual(response.status_code, 403, response.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "KYC correction request failed validation.", "details": {}, "field_errors": {"evidence_document_ids": "Evidence was not found or is inaccessible."}}, "meta": {"request_id": null, "timestamp": "2026-07-23T04:32:26.908008Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

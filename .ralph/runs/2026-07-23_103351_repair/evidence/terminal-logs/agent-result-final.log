@@ -1,0 +1,2 @@
+PASS: .ralph/runs/2026-07-23_095043_normal_run/review-packet.md declares the exact ready result and remains mergeable
+PASS: .ralph/runs/2026-07-23_103351_repair/review-packet.md declares the exact ready result and remains mergeable

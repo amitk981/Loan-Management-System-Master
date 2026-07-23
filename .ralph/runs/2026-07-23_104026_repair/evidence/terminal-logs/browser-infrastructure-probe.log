@@ -1,0 +1,17 @@
+# Browser Infrastructure Probe
+
+Project: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_095043_normal_run/sfpcl-lms
+Probe: npm run e2e:probe
+
+
+> sfpcl-lms@1.0.0 e2e:probe
+> playwright test --config playwright.probe.config.ts
+
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium-probe] › browser-launch.probe.ts:3:5 › the centrally selected browser can create a page (1.6s)
+
+  1 passed (3.0s)
+
+PASS: the centrally selected browser launched successfully.

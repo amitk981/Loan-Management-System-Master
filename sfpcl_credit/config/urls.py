@@ -589,6 +589,36 @@ urlpatterns = [
     path("api/v1/portal/dashboard/", portal_views.portal_dashboard, name="portal-dashboard"),
     path("api/v1/portal/profile/", portal_views.portal_profile, name="portal-profile"),
     path(
+        "api/v1/portal/kyc-corrections/",
+        portal_views.portal_kyc_corrections,
+        name="portal-kyc-corrections",
+    ),
+    path(
+        "api/v1/portal/kyc-corrections/evidence/",
+        portal_views.portal_kyc_correction_evidence,
+        name="portal-kyc-correction-evidence",
+    ),
+    path(
+        "api/v1/kyc-correction-requests/<uuid:correction_id>/review/",
+        portal_views.staff_kyc_correction_review,
+        name="kyc-correction-review",
+    ),
+    path(
+        "api/v1/kyc-correction-requests/",
+        portal_views.staff_kyc_correction_queue,
+        name="kyc-correction-queue",
+    ),
+    path(
+        "api/v1/kyc-correction-requests/<uuid:correction_id>/approve/",
+        portal_views.staff_kyc_correction_approve,
+        name="kyc-correction-approve",
+    ),
+    path(
+        "api/v1/kyc-correction-requests/<uuid:correction_id>/reject/",
+        portal_views.staff_kyc_correction_reject,
+        name="kyc-correction-reject",
+    ),
+    path(
         "api/v1/portal/loan-accounts/",
         portal_views.portal_loan_accounts,
         name="portal-loan-account-list",

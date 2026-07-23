@@ -5,7 +5,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { MP03DashboardView } from './MP03_Dashboard';
-import { MP04ProfileView } from './MP04_MyProfile';
+import { KycCorrectionPanel, MP04ProfileView } from './MP04_MyProfile';
 import { MP09ApplicationsView } from './applications/MP09_MyApplications';
 import { MP22ProduceSupplyView } from './supply/MP22_ProduceSupply';
 import type { PortalApplication, PortalDashboard, PortalProduceSupply, PortalProfile } from '../../../services/portalApi';
@@ -29,6 +29,41 @@ describe('member portal backend-backed views', () => {
     expect(html).toContain('********9012');
     expect(html).toContain('Suman Thorat');
     expect(html).not.toContain('123456789012');
+  });
+
+  it('renders KYC correction empty, validation, and rejected decision states', async () => {
+    const onSubmit = vi.fn();
+    const { rerender } = render(
+      <KycCorrectionPanel corrections={[]} loading={false} error={null} onSubmit={onSubmit} />
+    );
+    expect(screen.getByText('No KYC correction requests yet.')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Submit correction request' }));
+    expect(screen.getByText('Choose the KYC field, enter its corrected value and reason, and attach evidence.')).toBeTruthy();
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    rerender(
+      <KycCorrectionPanel
+        corrections={[{
+          kyc_correction_request_id: 'correction-1',
+          status: 'rejected',
+          changes: { pan: '******234F' },
+          reason: 'PAN record is stale.',
+          rejection_reason: 'Please upload a clearer self-attested PAN copy.',
+          submitted_at: '2026-07-23T08:00:00Z',
+          review_started_at: '2026-07-23T09:00:00Z',
+          decided_at: '2026-07-23T10:00:00Z',
+          evidence: [{ document_id: 'document-1', file_name: 'pan.pdf', mime_type: 'application/pdf', uploaded_at: '2026-07-23T08:00:00Z' }],
+        }]}
+        loading={false}
+        error={null}
+        onSubmit={onSubmit}
+      />
+    );
+    expect(screen.getByText('Please upload a clearer self-attested PAN copy.')).toBeTruthy();
+    expect(screen.getByText('Rejected')).toBeTruthy();
+    expect(screen.getByText('PAN ******234F')).toBeTruthy();
+    cleanup();
   });
 
   it('renders MP22 persisted produce supply empty state', () => {

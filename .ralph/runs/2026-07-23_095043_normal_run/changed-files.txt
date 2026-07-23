@@ -1,0 +1,16 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M sfpcl-lms/src/pages/borrower/portal/MP04_MyProfile.tsx
+ M sfpcl-lms/src/pages/borrower/portal/PortalMemberViews.test.tsx
+ M sfpcl-lms/src/services/portalApi.test.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/members/models.py
+ M sfpcl_credit/members/portal_views.py
+?? .ralph/runs/2026-07-23_095043_normal_run/
+?? sfpcl-lms/e2e/portal-kyc-correction.e2e.spec.ts
+?? sfpcl_credit/members/migrations/0016_kyc_correction_request.py
+?? sfpcl_credit/members/modules/kyc_correction_requests.py
+?? sfpcl_credit/tests/test_portal_kyc_correction_api.py

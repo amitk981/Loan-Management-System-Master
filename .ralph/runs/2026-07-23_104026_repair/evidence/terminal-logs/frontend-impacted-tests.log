@@ -1,0 +1,18 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/borrower/portal/PortalMemberViews.test.tsx src/services/portalApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_095043_normal_run/sfpcl-lms
+
+(node:32981) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/services/portalApi.test.ts (10 tests) 27ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (7 tests) 159ms
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  10:49:53
+   Duration  1.17s (transform 214ms, setup 0ms, collect 379ms, tests 187ms, environment 319ms, prepare 81ms)
+

@@ -1,7 +1,7 @@
 # Slice 011M2: Member Portal KYC Correction Request
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, and Compliance (KYC compliance continuation)

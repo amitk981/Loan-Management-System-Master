@@ -1,0 +1,41 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/PortalMemberViews.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_095043_normal_run/sfpcl-lms
+
+ ❯ src/pages/borrower/portal/PortalMemberViews.test.tsx (7 tests | 1 failed) 126ms
+   ✓ member portal backend-backed views > renders MP03 dashboard counts and pending actions from the portal API 9ms
+   ✓ member portal backend-backed views > renders MP04 profile tabs with masked sensitive values from the portal API 3ms
+   × member portal backend-backed views > renders KYC correction empty, validation, and rejected decision states 8ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+   ✓ member portal backend-backed views > renders MP22 persisted produce supply empty state 2ms
+   ✓ member portal backend-backed views > renders MP09 loading, empty, error, and returned-incomplete application states 33ms
+   ✓ member portal backend-backed views > keeps the selected application identity when the list order changes 53ms
+   ✓ member portal backend-backed views > keeps the selected application identity when the list order changes 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/borrower/portal/PortalMemberViews.test.tsx > member portal backend-backed views > renders KYC correction empty, validation, and rejected decision states
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ createFiberFromTypeAndProps node_modules/react-dom/cjs/react-dom-client.development.js:5021:28
+ ❯ createFiberFromElement node_modules/react-dom/cjs/react-dom-client.development.js:5035:14
+ ❯ reconcileChildFibersImpl node_modules/react-dom/cjs/react-dom-client.development.js:6920:31
+ ❯ node_modules/react-dom/cjs/react-dom-client.development.js:7098:33
+ ❯ reconcileChildren node_modules/react-dom/cjs/react-dom-client.development.js:9702:13
+ ❯ beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11899:15
+ ❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:874:13
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:22
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:41
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  10:11:57
+   Duration  1.04s (transform 141ms, setup 0ms, collect 310ms, tests 126ms, environment 324ms, prepare 36ms)
+

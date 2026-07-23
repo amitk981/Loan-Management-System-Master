@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_staff_rejection_requires_borrower_reason_and_hides_internal_notes (sfpcl_credit.tests.test_portal_kyc_correction_api.PortalKycCorrectionApiTests.test_staff_rejection_requires_borrower_reason_and_hides_internal_notes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_095043_normal_run/sfpcl_credit/tests/test_portal_kyc_correction_api.py", line 237, in test_staff_rejection_requires_borrower_reason_and_hides_internal_notes
+    self.assertEqual(missing_reason.status_code, 400, missing_reason.content)
+AssertionError: 404 != 400 : b'\n<!doctype html>\n<html lang="en">\n<head>\n  <title>Not Found</title>\n</head>\n<body>\n  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>\n</body>\n</html>\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.038s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,22 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, Landmark, MapPin, Phone, Shield } from 'lucide-react';
+import AlertBanner from '../../../components/ui/AlertBanner';
 import StatusBadge from '../../../components/ui/StatusBadge';
 import Tabs from '../../../components/ui/Tabs';
 import { AuthSessionError } from '../../../services/authSession';
-import { fetchPortalProfile, type PortalProfile } from '../../../services/portalApi';
+import {
+  fetchPortalKycCorrections,
+  fetchPortalProfile,
+  submitPortalKycCorrection,
+  type PortalKycCorrection,
+  type PortalProfile,
+} from '../../../services/portalApi';
 
 const MP04_MyProfile: React.FC = () => {
   const [profile, setProfile] = useState<PortalProfile | null>(null);
+  const [corrections, setCorrections] = useState<PortalKycCorrection[]>([]);
+  const [correctionsLoading, setCorrectionsLoading] = useState(true);
+  const [correctionsError, setCorrectionsError] = useState<string | null>(null);
   const [message, setMessage] = useState('Loading your member profile...');
 
   useEffect(() => {
     let mounted = true;
-    fetchPortalProfile()
-      .then(data => {
-        if (mounted) setProfile(data);
+    Promise.all([fetchPortalProfile(), fetchPortalKycCorrections()])
+      .then(([profileData, correctionData]) => {
+        if (mounted) {
+          setProfile(profileData);
+          setCorrections(correctionData.items);
+          setCorrectionsLoading(false);
+        }
       })
       .catch((error: AuthSessionError) => {
-        if (mounted) setMessage(error.message || 'Member profile could not be loaded.');
+        if (mounted) {
+          setMessage(error.message || 'Member profile could not be loaded.');
+          setCorrectionsError(error.message || 'KYC correction requests could not be loaded.');
+          setCorrectionsLoading(false);
+        }
       });
     return () => {
       mounted = false;
@@ -26,7 +44,20 @@ const MP04_MyProfile: React.FC = () => {
   if (!profile) {
     return <ProfilePanel title="Member profile unavailable" message={message} />;
   }
-  return <MP04ProfileView profile={profile} />;
+  return (
+    <>
+      <MP04ProfileView profile={profile} />
+      <KycCorrectionPanel
+        corrections={corrections}
+        loading={correctionsLoading}
+        error={correctionsError}
+        onSubmit={async (field, value, reason, file) => {
+          const correction = await submitPortalKycCorrection(field, value, reason, file);
+          setCorrections(current => [correction, ...current]);
+        }}
+      />
+    </>
+  );
 };
 
 export const MP04ProfileView: React.FC<{ profile: PortalProfile }> = ({ profile }) => {
@@ -160,6 +191,168 @@ export const MP04ProfileView: React.FC<{ profile: PortalProfile }> = ({ profile 
   );
 };
 
+export const KycCorrectionPanel: React.FC<{
+  corrections: PortalKycCorrection[];
+  loading: boolean;
+  error: string | null;
+  onSubmit: (
+    field: 'pan' | 'aadhaar' | 'mobile_number' | 'email' | 'registered_address',
+    value: string,
+    reason: string,
+    file: File,
+  ) => Promise<void> | void;
+}> = ({ corrections, loading, error, onSubmit }) => {
+  const [field, setField] = useState<'pan' | 'aadhaar' | 'mobile_number' | 'email' | 'registered_address'>('pan');
+  const [value, setValue] = useState('');
+  const [reason, setReason] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [validation, setValidation] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!value.trim() || !reason.trim() || !file) {
+      setValidation('Choose the KYC field, enter its corrected value and reason, and attach evidence.');
+      return;
+    }
+    setSubmitting(true);
+    setValidation(null);
+    try {
+      await onSubmit(field, value, reason, file);
+      setValue('');
+      setReason('');
+      setFile(null);
+    } catch (submitError) {
+      setValidation(
+        submitError instanceof Error
+          ? submitError.message
+          : 'The correction request could not be submitted.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 bg-white rounded-xl border border-slate-200 p-6 space-y-6">
+      <div>
+        <h3 className="font-semibold text-slate-900 text-lg">Request a KYC correction</h3>
+        <p className="text-sm text-slate-500 mt-1">
+          Verified details are changed only after SFPCL reviews your self-attested evidence.
+        </p>
+      </div>
+      {loading && <AlertBanner type="info" title="Loading KYC correction requests…" />}
+      {!loading && error && <AlertBanner type="error" title={error} />}
+      {validation && <AlertBanner type="error" title={validation} />}
+      {!loading && !error && (
+        <>
+          <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={submit}>
+            <label className="text-sm text-slate-600">
+              KYC field
+              <select
+                aria-label="KYC field"
+                value={field}
+                onChange={event => setField(event.target.value as typeof field)}
+                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"
+              >
+                <option value="pan">PAN</option>
+                <option value="aadhaar">Aadhaar</option>
+                <option value="mobile_number">Mobile number</option>
+                <option value="email">Email</option>
+                <option value="registered_address">Registered address</option>
+              </select>
+            </label>
+            <label className="text-sm text-slate-600">
+              Correct value
+              <input
+                aria-label="Correct value"
+                value={value}
+                onChange={event => setValue(event.target.value)}
+                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"
+              />
+            </label>
+            <label className="text-sm text-slate-600 md:col-span-2">
+              Reason for correction
+              <textarea
+                aria-label="Reason for correction"
+                value={reason}
+                onChange={event => setReason(event.target.value)}
+                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"
+                rows={3}
+              />
+            </label>
+            <label className="text-sm text-slate-600 md:col-span-2">
+              Self-attested evidence (PDF, JPG or PNG)
+              <input
+                aria-label="Self-attested evidence"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={event => setFile(event.target.files?.[0] ?? null)}
+                className="mt-1.5 block w-full text-sm text-slate-500"
+              />
+            </label>
+            <div className="md:col-span-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+              >
+                {submitting ? 'Submitting…' : 'Submit correction request'}
+              </button>
+            </div>
+          </form>
+          <div className="border-t border-slate-100 pt-5">
+            <h4 className="font-medium text-slate-900 mb-3">Request status</h4>
+            {corrections.length === 0 ? (
+              <p className="text-sm text-slate-500">No KYC correction requests yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {corrections.map(correction => (
+                  <div
+                    key={correction.kyc_correction_request_id}
+                    className="bg-slate-50 border border-slate-200 rounded-xl p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">
+                          {Object.entries(correction.changes)
+                            .map(([name, masked]) => `${formatCorrectionFieldLabel(name)} ${masked}`)
+                            .join(', ')}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Submitted {new Date(correction.submitted_at).toLocaleDateString('en-IN')}
+                        </p>
+                        {correction.review_started_at && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Review started {new Date(correction.review_started_at).toLocaleDateString('en-IN')}
+                          </p>
+                        )}
+                        {correction.decided_at && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Decision recorded {new Date(correction.decided_at).toLocaleDateString('en-IN')}
+                          </p>
+                        )}
+                      </div>
+                      <StatusBadge label={formatLabel(correction.status)} size="sm" />
+                    </div>
+                    <p className="text-sm text-slate-600 mt-3">{correction.reason}</p>
+                    {correction.rejection_reason && (
+                      <p className="text-sm text-red-700 mt-2">{correction.rejection_reason}</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-2">
+                      Evidence: {correction.evidence.map(item => item.file_name).join(', ')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="p-6">
     <div className="max-w-4xl">
@@ -219,6 +412,12 @@ const Table: React.FC<{ headers: string[]; rows: string[][]; emptyText: string }
 );
 
 const Empty: React.FC<{ text: string }> = ({ text }) => <p className="text-sm text-slate-500">{text}</p>;
+
+const formatCorrectionFieldLabel = (value: string) => {
+  if (value === 'pan') return 'PAN';
+  if (value === 'aadhaar') return 'Aadhaar';
+  return formatLabel(value);
+};
 
 const ProfilePanel: React.FC<{ title: string; message: string }> = ({ title, message }) => (
   <div className="bg-white rounded-xl border border-slate-100 p-6">

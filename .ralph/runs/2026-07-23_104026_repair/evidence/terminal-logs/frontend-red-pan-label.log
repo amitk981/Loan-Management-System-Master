@@ -1,0 +1,498 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/PortalMemberViews.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_095043_normal_run/sfpcl-lms
+
+ ❯ src/pages/borrower/portal/PortalMemberViews.test.tsx (7 tests | 1 failed) 170ms
+   ✓ member portal backend-backed views > renders MP03 dashboard counts and pending actions from the portal API 9ms
+   ✓ member portal backend-backed views > renders MP04 profile tabs with masked sensitive values from the portal API 3ms
+   × member portal backend-backed views > renders KYC correction empty, validation, and rejected decision states 113ms
+     → Unable to find an element with the text: PAN ******234F. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mt-4 bg-white rounded-xl border border-slate-200 p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"font-semibold text-slate-900 text-lg"[39m
+        [36m>[39m
+          [0mRequest a KYC correction[0m
+        [36m</h3>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mVerified details are changed only after SFPCL reviews your self-attested evidence.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 9v4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 17h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+            [36m>[39m
+              [0mChoose the KYC field, enter its corrected value and reason, and attach evidence.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4"[39m
+      [36m>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600"[39m
+        [36m>[39m
+          [0mKYC field[0m
+          [36m<select[39m
+            [33maria-label[39m=[32m"KYC field"[39m
+            [33mclass[39m=[32m"mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"[39m
+          [36m>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"pan"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"aadhaar"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"mobile_number"[39m
+            [36m>[39m
+              [0mMobile number[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"email"[39m
+            [36m>[39m
+              [0mEmail[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"registered_address"[39m
+            [36m>[39m
+              [0mRegistered address[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600"[39m
+        [36m>[39m
+          [0mCorrect value[0m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Correct value"[39m
+            [33mclass[39m=[32m"mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600 md:col-span-2"[39m
+        [36m>[39m
+          [0mReason for correction[0m
+          [36m<textarea[39m
+            [33maria-label[39m=[32m"Reason for correction"[39m
+            [33mclass[39m=[32m"mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"[39m
+            [33mrows[39m=[32m"3"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600 md:col-span-2"[39m
+        [36m>[39m
+          [0mSelf-attested evidence (PDF, JPG or PNG)[0m
+          [36m<input[39m
+            [33maccept[39m=[32m".pdf,.jpg,.jpeg,.png"[39m
+            [33maria-label[39m=[32m"Self-attested evidence"[39m
+            [33mclass[39m=[32m"mt-1.5 block w-full text-sm text-slate-500"[39m
+            [33mtype[39m=[32m"file"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"md:col-span-2"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"[39m
+            [33mtype[39m=[32m"submit"[39m
+          [36m>[39m
+            [0mSubmit correction request[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</form>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-t border-slate-100 pt-5"[39m
+      [36m>[39m
+        [36m<h4[39m
+          [33mclass[39m=[32m"font-medium text-slate-900 mb-3"[39m
+        [36m>[39m
+          [0mRequest status[0m
+        [36m</h4>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 border border-slate-200 rounded-xl p-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-3"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-medium text-slate-900"[39m
+                [36m>[39m
+                  [0mPan ******234F[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mSubmitted [0m
+                  [0m23/7/2026[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mReview started [0m
+                  [0m23/7/2026[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mDecision recorded [0m
+                  [0m23/7/2026[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-circle"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"10"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"10"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"12"[39m
+                    [33mr[39m=[32m"10"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mRejected[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-slate-600 mt-3"[39m
+            [36m>[39m
+              [0mPAN record is stale.[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-red-700 mt-2"[39m
+            [36m>[39m
+              [0mPlease upload a clearer self-attested PAN copy.[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mEvidence: [0m
+              [0mpan.pdf[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ member portal backend-backed views > renders MP22 persisted produce supply empty state 2ms
+   ✓ member portal backend-backed views > renders MP09 loading, empty, error, and returned-incomplete application states 7ms
+   ✓ member portal backend-backed views > keeps the selected application identity when the list order changes 21ms
+   ✓ member portal backend-backed views > keeps the selected application identity when the list order changes 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/borrower/portal/PortalMemberViews.test.tsx > member portal backend-backed views > renders KYC correction empty, validation, and rejected decision states
+TestingLibraryElementError: Unable to find an element with the text: PAN ******234F. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mt-4 bg-white rounded-xl border border-slate-200 p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"font-semibold text-slate-900 text-lg"[39m
+        [36m>[39m
+          [0mRequest a KYC correction[0m
+        [36m</h3>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mVerified details are changed only after SFPCL reviews your self-attested evidence.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 9v4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 17h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+            [36m>[39m
+              [0mChoose the KYC field, enter its corrected value and reason, and attach evidence.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4"[39m
+      [36m>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600"[39m
+        [36m>[39m
+          [0mKYC field[0m
+          [36m<select[39m
+            [33maria-label[39m=[32m"KYC field"[39m
+            [33mclass[39m=[32m"mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"[39m
+          [36m>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"pan"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"aadhaar"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"mobile_number"[39m
+            [36m>[39m
+              [0mMobile number[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"email"[39m
+            [36m>[39m
+              [0mEmail[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"registered_address"[39m
+            [36m>[39m
+              [0mRegistered address[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600"[39m
+        [36m>[39m
+          [0mCorrect value[0m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Correct value"[39m
+            [33mclass[39m=[32m"mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600 md:col-span-2"[39m
+        [36m>[39m
+          [0mReason for correction[0m
+          [36m<textarea[39m
+            [33maria-label[39m=[32m"Reason for correction"[39m
+            [33mclass[39m=[32m"mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"[39m
+            [33mrows[39m=[32m"3"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"text-sm text-slate-600 md:col-span-2"[39m
+        [36m>[39m
+          [0mSelf-attested evidence (PDF, JPG or PNG)[0m
+          [36m<input[39m
+            [33maccept[39m=[32m".pdf,.jpg,.jpeg,.png"[39m
+            [33maria-label[39m=[32m"Self-attested evidence"[39m
+            [33mclass[39m=[32m"mt-1.5 block w-full text-sm text-slate-500"[39m
+            [33mtype[39m=[32m"file"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"md:col-span-2"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"[39m
+            [33mtype[39m=[32m"submit"[39m
+          [36m>[39m
+            [0mSubmit correction request[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</form>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-t border-slate-100 pt-5"[39m
+      [36m>[39m
+        [36m<h4[39m
+          [33mclass[39m=[32m"font-medium text-slate-900 mb-3"[39m
+        [36m>[39m
+          [0mRequest status[0m
+        [36m</h4>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 border border-slate-200 rounded-xl p-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-3"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm font-medium text-slate-900"[39m
+                [36m>[39m
+                  [0mPan ******234F[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mSubmitted [0m
+                  [0m23/7/2026[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mReview started [0m
+                  [0m23/7/2026[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mDecision recorded [0m
+                  [0m23/7/2026[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-circle"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"10"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"10"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"12"[39m
+                    [33mr[39m=[32m"10"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mRejected[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-slate-600 mt-3"[39m
+            [36m>[39m
+              [0mPAN record is stale.[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-red-700 mt-2"[39m
+            [36m>[39m
+              [0mPlease upload a clearer self-attested PAN copy.[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mEvidence: [0m
+              [0mpan.pdf[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/borrower/portal/PortalMemberViews.test.tsx:65:19
+     63|     expect(screen.getByText('Please upload a clearer self-attested PAN…
+     64|     expect(screen.getByText('Rejected')).toBeTruthy();
+     65|     expect(screen.getByText('PAN ******234F')).toBeTruthy();
+       |                   ^
+     66|     cleanup();
+     67|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  10:46:20
+   Duration  1.22s (transform 154ms, setup 0ms, collect 332ms, tests 170ms, environment 307ms, prepare 41ms)
+

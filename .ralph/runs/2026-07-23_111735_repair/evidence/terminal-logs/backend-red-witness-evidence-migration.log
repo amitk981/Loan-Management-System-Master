@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_backfill_is_idempotent_and_reverse_preserves_legacy_rows (sfpcl_credit.tests.test_witness_evidence_migration.WitnessEvidenceMigrationTests.test_backfill_is_idempotent_and_reverse_preserves_legacy_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-23_095043_normal_run/sfpcl_credit/tests/test_witness_evidence_migration.py", line 44, in setUp
+    self.assertNotIn(
+AssertionError: 'verification_folio_number' unexpectedly found in {'verified_by_user', 'pan_encrypted', 'member', 'witness_id', 'verification_folio_number', 'pan_hash', 'loan_application', 'mobile', 'address', 'verification_status', 'verification_shareholding', 'witness_name', 'updated_by_user', 'version', 'aadhaar_hash', 'updated_at', 'aadhaar_encrypted', 'verified_at', 'shareholder_verified_flag', 'created_at'}
+
+----------------------------------------------------------------------
+Ran 1 test in 73.677s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

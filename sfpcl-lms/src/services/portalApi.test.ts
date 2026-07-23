@@ -13,6 +13,7 @@ import {
   fetchPortalDashboard,
   fetchPortalProduceSupply,
   fetchPortalProfile,
+  fetchPortalKycCorrections,
   fetchPortalLoanAccounts,
   fetchPortalLoanAccount,
   fetchPortalLoanSchedule,
@@ -20,6 +21,7 @@ import {
   fetchPortalInterestInvoices,
   fetchPortalDirectRepaymentInstructions,
   submitPortalApplication,
+  submitPortalKycCorrection,
   resubmitPortalApplicationDeficiencies,
   uploadPortalDeficiencyResponse,
   uploadPortalDocumentationAction,
@@ -101,6 +103,38 @@ describe('portal member API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/portal/dashboard/', request());
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/portal/profile/', request());
     expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/portal/produce-supply/', request());
+  });
+
+  it('uploads portal-scoped KYC evidence before submitting the correction request', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok({ document_id: 'evidence-1' }))
+      .mockResolvedValueOnce(ok({
+        kyc_correction_request_id: 'correction-1',
+        status: 'submitted',
+        changes: { pan: '******234F' },
+        evidence: [],
+      }))
+      .mockResolvedValueOnce(ok({ items: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const file = Object.assign(
+      new Blob(['synthetic'], { type: 'application/pdf' }),
+      { name: 'pan.pdf' },
+    ) as File;
+
+    await submitPortalKycCorrection('pan', 'abcde1234f', 'PAN is stale.', file);
+    await fetchPortalKycCorrections();
+
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://127.0.0.1:8000/api/v1/portal/kyc-corrections/evidence/',
+      'http://127.0.0.1:8000/api/v1/portal/kyc-corrections/',
+      'http://127.0.0.1:8000/api/v1/portal/kyc-corrections/',
+    ]);
+    expect(fetchMock.mock.calls[0][1].body).toBeInstanceOf(FormData);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      changes: { pan: 'ABCDE1234F' },
+      reason: 'PAN is stale.',
+      evidence_document_ids: ['evidence-1'],
+    });
   });
 
   it('surfaces portal permission errors without substituting mock member data', async () => {

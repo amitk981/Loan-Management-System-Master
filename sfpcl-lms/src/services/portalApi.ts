@@ -59,6 +59,27 @@ export interface PortalProfile {
   kyc_profile: { kyc_status: string; rekyc_due_date: string | null; risk_rating: string | null } | null;
 }
 
+export interface PortalKycCorrection {
+  kyc_correction_request_id: string;
+  status: 'submitted' | 'under_review' | 'approved' | 'rejected';
+  changes: Partial<Record<'pan' | 'aadhaar' | 'mobile_number' | 'email' | 'registered_address', string>>;
+  reason: string;
+  rejection_reason: string | null;
+  submitted_at: string;
+  review_started_at: string | null;
+  decided_at: string | null;
+  evidence: {
+    document_id: string;
+    file_name: string;
+    mime_type: string | null;
+    uploaded_at: string;
+  }[];
+}
+
+export interface PortalKycCorrectionList {
+  items: PortalKycCorrection[];
+}
+
 export interface PortalNominee {
   nominee_id?: string;
   nominee_name: string;
@@ -346,6 +367,36 @@ export interface PortalApplicationDraftPayload {
 
 export const fetchPortalDashboard = () => request<PortalDashboard>('/api/v1/portal/dashboard/');
 export const fetchPortalProfile = () => request<PortalProfile>('/api/v1/portal/profile/');
+export const fetchPortalKycCorrections = () => request<PortalKycCorrectionList>('/api/v1/portal/kyc-corrections/');
+export const submitPortalKycCorrection = async (
+  field: 'pan' | 'aadhaar' | 'mobile_number' | 'email' | 'registered_address',
+  value: string,
+  reason: string,
+  file: File,
+) => {
+  const formData = new FormData();
+  formData.append('file', file, file.name);
+  formData.append('document_type', field === 'pan' || field === 'aadhaar' ? field : 'photo');
+  formData.append('self_attested_flag', field === 'pan' || field === 'aadhaar' ? 'true' : 'false');
+  const evidence = await request<{ document_id: string }>(
+    '/api/v1/portal/kyc-corrections/evidence/',
+    { method: 'POST', formData },
+  );
+  return request<PortalKycCorrection>('/api/v1/portal/kyc-corrections/', {
+    method: 'POST',
+    body: {
+      changes: {
+        [field]: field === 'registered_address'
+          ? { line1: value.trim() }
+          : field === 'pan'
+            ? value.trim().toUpperCase()
+            : value.trim(),
+      },
+      reason: reason.trim(),
+      evidence_document_ids: [evidence.document_id],
+    },
+  });
+};
 export const fetchPortalProduceSupply = () => request<PortalProduceSupply>('/api/v1/portal/produce-supply/');
 export const fetchPortalApplicationLimitProjection = (requestedAmount?: string) => request<PortalApplicationLimitProjection>(
   `/api/v1/portal/application-limit-projection/${requestedAmount ? `?requested_amount=${encodeURIComponent(requestedAmount)}` : ''}`,

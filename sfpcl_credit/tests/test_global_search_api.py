@@ -179,6 +179,26 @@ class GlobalSearchApiTests(TestCase):
             headers=self._headers(),
         )
 
+    @classmethod
+    def _without_volatile_echo_fields(cls, value):
+        if isinstance(value, dict):
+            return {
+                key: cls._without_volatile_echo_fields(item)
+                for key, item in value.items()
+                if key
+                not in {
+                    "id",
+                    "entity_id",
+                    "last_updated_at",
+                    "timestamp",
+                    "request_id",
+                    "continuation",
+                }
+            }
+        if isinstance(value, list):
+            return [cls._without_volatile_echo_fields(item) for item in value]
+        return value
+
     def test_returns_authorised_group_contract_and_default_empty_compliance_provider(self):
         response = self._search("Searchable Farmer")
 
@@ -230,11 +250,18 @@ class GlobalSearchApiTests(TestCase):
             )
 
     def test_pan_and_aadhaar_lookup_are_exact_or_suffix_only_and_never_echo_raw_input(self):
+        # A volatile timestamp may legitimately contain the four-digit Aadhaar suffix. Keep that
+        # collision deterministic so the no-echo assertion cannot regress to scanning raw JSON.
+        Member.objects.filter(pk=self.member.pk).update(
+            updated_at=timezone.now().replace(microsecond=901200)
+        )
         for query in (self.pan, self.aadhaar, "9012"):
             with self.subTest(query=query):
                 response = self._search(query)
                 self.assertEqual(response.status_code, 200, response.content)
-                serialized = json.dumps(response.json())
+                serialized = json.dumps(
+                    self._without_volatile_echo_fields(response.json())
+                )
                 self.assertNotIn(query, serialized)
                 self.assertEqual(
                     response.json()["data"]["groups"]["members"]["items"][0]["title"],
