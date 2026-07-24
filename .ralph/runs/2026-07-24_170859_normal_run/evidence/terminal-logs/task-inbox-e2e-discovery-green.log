@@ -1,0 +1,19 @@
+
+Error: RALPH_EVIDENCE_DIR is required for trusted browser acceptance
+
+   at task-inbox.e2e.spec.ts:8
+
+   6 | const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
+   7 | if (!evidenceDir) {
+>  8 |   throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+     |         ^
+   9 | }
+  10 | fs.mkdirSync(evidenceDir, { recursive: true });
+  11 |
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_170859_normal_run/sfpcl-lms/e2e/task-inbox.e2e.spec.ts:8:9)
+
+Error: No tests found.
+Make sure that arguments are regular expressions matching test files.
+You may need to escape symbols like "$" or "*" and quote the arguments.
+Listing tests:
+Total: 0 tests in 0 files

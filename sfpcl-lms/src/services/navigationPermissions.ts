@@ -28,7 +28,6 @@ const required = (requiredPermission: Permission, alternativePermissions?: Permi
 });
 
 export const PAGE_NAVIGATION_MANIFEST: Partial<Record<Page, PermissionGatedNavItem>> = {
-  tasks: required('view_applications'),
   applications: required('view_applications'),
   'applications/new': required('create_application'),
   'applications/detail': required('view_applications'),

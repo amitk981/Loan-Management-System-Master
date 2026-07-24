@@ -1,0 +1,118 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/services/navigationPermissions.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_170859_normal_run/sfpcl-lms
+
+ ❯ src/services/navigationPermissions.test.ts (9 tests | 4 failed) 11ms
+   ✓ role-aware staff navigation contract > uses one manifest for sidebar visibility and direct route guards 1ms
+   × role-aware staff navigation contract > keeps Dashboard and the source-defined all-internal-user Task Inbox ungated 3ms
+     → expected 'view_applications' to be undefined
+   ✓ role-aware staff navigation contract > hides every protected sidebar item when the user lacks its required permission 2ms
+   × role-aware staff navigation contract > uses the Sidebar visibility path to show Dashboard and Task Inbox for backend staff with no resource permissions 2ms
+     → expected [ 'dashboard' ] to deeply equal [ 'dashboard', 'tasks' ]
+   × role-aware staff navigation contract > uses the Sidebar visibility path to keep tracer-only backend sessions isolated to Dashboard and Tracer 1ms
+     → expected [ 'dashboard', 'tracer' ] to deeply equal [ 'dashboard', 'tasks', 'tracer' ]
+   × role-aware staff navigation contract > uses resource-scoped approval permissions only for their owning hubs 0ms
+     → expected [ Array(3) ] to deeply equal [ 'dashboard', 'tasks', …(2) ]
+   ✓ role-aware staff navigation contract > shows and guards Admin Users only through mapped manage_users permission 0ms
+   ✓ role-aware staff navigation contract > blocks guarded page navigation and returns the dashboard blocked-banner target 0ms
+   ✓ role-aware staff navigation contract > allows guarded page navigation only when the mapped prototype permission is present 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > keeps Dashboard and the source-defined all-internal-user Task Inbox ungated
+AssertionError: expected 'view_applications' to be undefined
+
+- Expected: 
+undefined
+
++ Received: 
+"view_applications"
+
+ ❯ src/services/navigationPermissions.test.ts:35:41
+     33|     allNavItems.forEach(item => {
+     34|       if (item.id === 'dashboard' || item.id === 'tasks') {
+     35|         expect(item.requiredPermission).toBeUndefined();
+       |                                         ^
+     36|         expect(PAGE_PERMISSIONS[item.id]).toBeUndefined();
+     37|         return;
+ ❯ src/services/navigationPermissions.test.ts:33:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > uses the Sidebar visibility path to show Dashboard and Task Inbox for backend staff with no resource permissions
+AssertionError: expected [ 'dashboard' ] to deeply equal [ 'dashboard', 'tasks' ]
+
+- Expected
++ Received
+
+  [
+    "dashboard",
+-   "tasks",
+  ]
+
+ ❯ src/services/navigationPermissions.test.ts:96:127
+     94|       const prototypePermissions = mapCanonicalPermissions(user.permis…
+     95| 
+     96|       expect(visibleStaffNavItems(allNavItems, permission => prototype…
+       |                                                                                                                               ^
+     97|       expect(resolveNavigationAttempt('tasks', permission => prototype…
+     98|         page: 'tasks',
+ ❯ src/services/navigationPermissions.test.ts:93:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > uses the Sidebar visibility path to keep tracer-only backend sessions isolated to Dashboard and Tracer
+AssertionError: expected [ 'dashboard', 'tracer' ] to deeply equal [ 'dashboard', 'tasks', 'tracer' ]
+
+- Expected
++ Received
+
+  [
+    "dashboard",
+-   "tasks",
+    "tracer",
+  ]
+
+ ❯ src/services/navigationPermissions.test.ts:124:24
+    122|     const visibleIds = visibleStaffNavItems(allNavItems, permission =>…
+    123| 
+    124|     expect(visibleIds).toEqual(['dashboard', 'tasks', 'tracer']);
+       |                        ^
+    125|     expect(visibleIds).not.toContain('applications');
+    126|     expect(visibleIds).not.toContain('members');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > uses resource-scoped approval permissions only for their owning hubs
+AssertionError: expected [ Array(3) ] to deeply equal [ 'dashboard', 'tasks', …(2) ]
+
+- Expected
++ Received
+
+  [
+    "dashboard",
+-   "tasks",
+    "registers",
+    "settings",
+  ]
+
+ ❯ src/services/navigationPermissions.test.ts:151:24
+    149|     const visibleIds = visibleStaffNavItems(allNavItems, permission =>…
+    150| 
+    151|     expect(visibleIds).toEqual(['dashboard', 'tasks', 'registers', 'se…
+       |                        ^
+    152|     expect(prototypePermissions).not.toContain('view_registers');
+    153|     expect(prototypePermissions).not.toContain('view_settings');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 5 passed (9)
+   Start at  17:25:33
+   Duration  393ms (transform 109ms, setup 0ms, collect 167ms, tests 11ms, environment 0ms, prepare 33ms)
+

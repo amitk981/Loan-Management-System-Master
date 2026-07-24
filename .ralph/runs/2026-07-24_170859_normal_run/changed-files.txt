@@ -1,0 +1,12 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M sfpcl-lms/src/components/layout/Sidebar.tsx
+ M sfpcl-lms/src/pages/Dashboard.test.tsx
+ M sfpcl-lms/src/pages/tasks/TaskInbox.tsx
+ M sfpcl-lms/src/services/navigationPermissions.test.ts
+ M sfpcl-lms/src/services/navigationPermissions.ts
+?? .ralph/runs/2026-07-24_170859_normal_run/
+?? sfpcl-lms/e2e/task-inbox.e2e.spec.ts
+?? sfpcl-lms/src/pages/tasks/TaskInbox.test.tsx
+?? sfpcl-lms/src/services/taskInboxApi.ts

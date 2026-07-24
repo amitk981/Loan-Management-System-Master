@@ -1,0 +1,50 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/services/navigationPermissions.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_170859_normal_run/sfpcl-lms
+
+ ❯ src/services/navigationPermissions.test.ts (9 tests | 1 failed) 11ms
+   ✓ role-aware staff navigation contract > uses one manifest for sidebar visibility and direct route guards 1ms
+   ✓ role-aware staff navigation contract > keeps Dashboard and the source-defined all-internal-user Task Inbox ungated 1ms
+   ✓ role-aware staff navigation contract > hides every protected sidebar item when the user lacks its required permission 2ms
+   ✓ role-aware staff navigation contract > uses the Sidebar visibility path to show Dashboard and Task Inbox for backend staff with no resource permissions 1ms
+   ✓ role-aware staff navigation contract > uses the Sidebar visibility path to keep tracer-only backend sessions isolated to Dashboard and Tracer 1ms
+   ✓ role-aware staff navigation contract > uses resource-scoped approval permissions only for their owning hubs 0ms
+   × role-aware staff navigation contract > shows and guards Admin Users only through mapped manage_users permission 4ms
+     → expected [ 'dashboard', 'tasks', 'admin-users' ] to deeply equal [ 'dashboard', 'admin-users' ]
+   ✓ role-aware staff navigation contract > blocks guarded page navigation and returns the dashboard blocked-banner target 1ms
+   ✓ role-aware staff navigation contract > allows guarded page navigation only when the mapped prototype permission is present 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > shows and guards Admin Users only through mapped manage_users permission
+AssertionError: expected [ 'dashboard', 'tasks', 'admin-users' ] to deeply equal [ 'dashboard', 'admin-users' ]
+
+- Expected
++ Received
+
+  [
+    "dashboard",
++   "tasks",
+    "admin-users",
+  ]
+
+ ❯ src/services/navigationPermissions.test.ts:162:24
+    160|     const visibleIds = visibleStaffNavItems(allNavItems, permission =>…
+    161| 
+    162|     expect(visibleIds).toEqual(['dashboard', 'admin-users']);
+       |                        ^
+    163|     expect(PAGE_PERMISSIONS['admin-users']).toBe('manage_users');
+    164|     expect(resolveNavigationAttempt('admin-users', permission => proto…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  17:25:53
+   Duration  502ms (transform 96ms, setup 0ms, collect 154ms, tests 11ms, environment 0ms, prepare 34ms)
+

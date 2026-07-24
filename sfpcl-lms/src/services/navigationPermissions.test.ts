@@ -27,11 +27,11 @@ describe('role-aware staff navigation contract', () => {
     expect(navigationSource.match(/view_approval_matrix/g)).toHaveLength(1);
   });
 
-  it('gates every staff sidebar item except Dashboard with its matching page permission', () => {
+  it('keeps Dashboard and the source-defined all-internal-user Task Inbox ungated', () => {
     expect(allNavItems.length).toBe(24);
 
     allNavItems.forEach(item => {
-      if (item.id === 'dashboard') {
+      if (item.id === 'dashboard' || item.id === 'tasks') {
         expect(item.requiredPermission).toBeUndefined();
         expect(PAGE_PERMISSIONS[item.id]).toBeUndefined();
         return;
@@ -44,7 +44,7 @@ describe('role-aware staff navigation contract', () => {
 
   it('hides every protected sidebar item when the user lacks its required permission', () => {
     allNavItems
-      .filter(item => item.id !== 'dashboard')
+      .filter(item => item.id !== 'dashboard' && item.id !== 'tasks')
       .forEach(item => {
         const permissionsWithoutThisItem =
           allNavItems
@@ -56,7 +56,7 @@ describe('role-aware staff navigation contract', () => {
       });
   });
 
-  it('uses the Sidebar visibility path to show only Dashboard for backend sessions with no prototype permissions', () => {
+  it('uses the Sidebar visibility path to show Dashboard and Task Inbox for backend staff with no resource permissions', () => {
     const zeroPermissionUsers = [
       mapBackendUserToFrontendUser({
         user_id: 'it-head',
@@ -93,7 +93,12 @@ describe('role-aware staff navigation contract', () => {
     zeroPermissionUsers.forEach(user => {
       const prototypePermissions = mapCanonicalPermissions(user.permissions);
 
-      expect(visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id)).toEqual(['dashboard']);
+      expect(visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id)).toEqual(['dashboard', 'tasks']);
+      expect(resolveNavigationAttempt('tasks', permission => prototypePermissions.includes(permission))).toEqual({
+        page: 'tasks',
+        blockedPage: null,
+        allowed: true,
+      });
       expect(resolveNavigationAttempt('applications', permission => prototypePermissions.includes(permission))).toEqual({
         page: 'dashboard',
         blockedPage: 'applications',
@@ -116,7 +121,7 @@ describe('role-aware staff navigation contract', () => {
     const prototypePermissions = mapCanonicalPermissions(['tracer.lifecycle.run']);
     const visibleIds = visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id);
 
-    expect(visibleIds).toEqual(['dashboard', 'tracer']);
+    expect(visibleIds).toEqual(['dashboard', 'tasks', 'tracer']);
     expect(visibleIds).not.toContain('applications');
     expect(visibleIds).not.toContain('members');
     expect(visibleIds).not.toContain('loan-accounts');
@@ -143,7 +148,7 @@ describe('role-aware staff navigation contract', () => {
     ]);
     const visibleIds = visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id);
 
-    expect(visibleIds).toEqual(['dashboard', 'registers', 'settings']);
+    expect(visibleIds).toEqual(['dashboard', 'tasks', 'registers', 'settings']);
     expect(prototypePermissions).not.toContain('view_registers');
     expect(prototypePermissions).not.toContain('view_settings');
     expect(resolveNavigationAttempt('registers', permission => prototypePermissions.includes(permission)).allowed).toBe(true);
@@ -154,7 +159,7 @@ describe('role-aware staff navigation contract', () => {
     const prototypePermissions = mapCanonicalPermissions(['users.user.update']);
     const visibleIds = visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id);
 
-    expect(visibleIds).toEqual(['dashboard', 'admin-users']);
+    expect(visibleIds).toEqual(['dashboard', 'tasks', 'admin-users']);
     expect(PAGE_PERMISSIONS['admin-users']).toBe('manage_users');
     expect(resolveNavigationAttempt('admin-users', permission => prototypePermissions.includes(permission))).toEqual({
       page: 'admin-users',

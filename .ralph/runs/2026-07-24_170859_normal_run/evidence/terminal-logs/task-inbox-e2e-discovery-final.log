@@ -1,0 +1,6 @@
+Listing tests:
+  [chromium] › task-inbox.e2e.spec.ts:16:5 › 012EB renders the populated S03 Task Inbox
+  [chromium] › task-inbox.e2e.spec.ts:26:5 › 012EB sends the due-today filter to the task API
+  [chromium] › task-inbox.e2e.spec.ts:41:5 › 012EB completes a permitted task comment
+  [chromium] › task-inbox.e2e.spec.ts:55:5 › 012EB renders a task-scope denial without prototype fallback
+Total: 4 tests in 1 file

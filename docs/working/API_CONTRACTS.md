@@ -5844,6 +5844,11 @@ special-case/exception flags, and the stable open action. No task list authority
 the linked resource; opening it re-enters that resource's existing permission and object-scope
 checks.
 
+The public `linked_entity_type` is canonicalized to `loan_application` or `loan_account`; S03 uses
+that discriminator with `application_or_loan_id` to enter the corresponding existing detail route.
+The row's `/tasks/{task_id}` action identity is stable task metadata, not a replacement authority
+for the linked resource.
+
 The source-backed task mappings are:
 
 | Task type | Actionable source state | Assigned role/team | Closure |
@@ -5883,6 +5888,17 @@ write `workflow_task.*` central audit rows without exposing comment/reason text 
 payload. There is deliberately no manual close/complete endpoint: only workflow projection closes
 a task.
 
+For 012EB, any task returned by the caller-scoped list may show comment and block because those
+endpoints enforce the same open-task role/team/user scope again. Reassign is shown only when the
+current-user contract includes `users.team.manage`; its endpoint still rechecks both that permission
+and target membership. If a future task row returns §44 `available_actions`, that narrower
+server-owned projection controls visibility.
+
 `GET /api/v1/dashboard/` now fills `tasks[]` from the same caller-scoped open-task selector,
 limited to ten rows, in source §43.1 shape: `task_type`, `entity_id`, `title`, and nullable
 `due_at`.
+
+012EB does not render task export. The 012EA contract exposes no task-export route and the 012B/012C
+export-job catalogue does not define a workflow-task report code. The Task Inbox therefore hides
+the prototype CSV control instead of exporting only the current client page or inventing an
+unmasked, unaudited download path.

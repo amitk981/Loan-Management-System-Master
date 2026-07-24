@@ -1,0 +1,18 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/tasks/TaskInbox.test.tsx src/pages/Dashboard.test.tsx src/services/navigationPermissions.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_170859_normal_run/sfpcl-lms
+
+ ✓ src/services/navigationPermissions.test.ts (9 tests) 8ms
+ ✓ src/pages/Dashboard.test.tsx (24 tests) 276ms
+ ✓ src/pages/tasks/TaskInbox.test.tsx (19 tests) 864ms
+   ✓ Task Inbox screen > renders the S03 API columns and replaces the page through backend pagination  316ms
+
+ Test Files  3 passed (3)
+      Tests  52 passed (52)
+   Start at  17:41:49
+   Duration  1.85s (transform 289ms, setup 0ms, collect 791ms, tests 1.15s, environment 775ms, prepare 141ms)
+

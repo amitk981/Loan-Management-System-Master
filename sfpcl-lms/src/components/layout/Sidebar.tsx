@@ -31,7 +31,7 @@ const staffNavItem = (item: Omit<StaffNavItem, 'requiredPermission' | 'alternati
 
 export const allNavItems: StaffNavItem[] = [
   staffNavItem({ id: 'dashboard',     label: 'Dashboard',             icon: <LayoutDashboard size={18} /> }),
-  staffNavItem({ id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} />,           badge: 5 }),
+  staffNavItem({ id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} /> }),
   staffNavItem({ id: 'applications',  label: 'Applications',          icon: <FileText size={18} />,        badge: 3 }),
   staffNavItem({ id: 'completeness',  label: 'Completeness',          icon: <ClipboardList size={18} />,   badge: 3 }),
   staffNavItem({ id: 'members',       label: 'Members & Borrowers',   icon: <Users size={18} /> }),

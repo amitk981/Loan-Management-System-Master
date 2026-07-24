@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/tasks/TaskInbox.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_170859_normal_run/sfpcl-lms
+
+ ✓ src/pages/tasks/TaskInbox.test.tsx (1 test) 4ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  17:18:15
+   Duration  611ms (transform 75ms, setup 0ms, collect 74ms, tests 4ms, environment 297ms, prepare 37ms)
+

@@ -1,0 +1,8 @@
+sfpcl-lms/src/pages/reports/ReportsMIS.tsx:7:import { dashboardStats } from '../../data/mockData';
+sfpcl-lms/src/pages/Dashboard.test.tsx:93:    expect(dashboardSource).not.toContain("from '../data/mockData'");
+sfpcl-lms/src/pages/registers/RegistersHub.tsx:7:import { loanApplications, loanAccounts, securities, members, complianceRecords, auditEvents } from '../../data/mockData';
+sfpcl-lms/src/pages/search/GlobalSearchResults.test.tsx:132:    expect(pageSource).not.toContain("from '../../data/mockData'");
+sfpcl-lms/src/pages/compliance/AuditArchiveHub.tsx:5:import { auditEvents } from '../../data/mockData';
+sfpcl-lms/src/pages/compliance/GrievancesHub.tsx:5:import { grievances } from '../../data/mockData';
+sfpcl-lms/src/pages/compliance/ComplianceDashboard.tsx:5:import { complianceRecords, dashboardStats, loanAccounts, members } from '../../data/mockData';
+sfpcl-lms/src/pages/loan-accounts/LoanAccount360.test.tsx:119:    expect(pageSource).not.toContain("from '../../data/mockData'");

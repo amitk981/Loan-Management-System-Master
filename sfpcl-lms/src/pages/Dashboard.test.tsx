@@ -33,7 +33,16 @@ afterEach(() => {
 
 describe('dashboard API client', () => {
   it('loads the 012E dashboard summary with the stored bearer token', async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(ok(creditManagerSummary));
+    const seededTask = {
+      task_type: 'appraisal',
+      entity_id: '33333333-3333-4333-8333-333333333333',
+      title: 'Prepare appraisal for Seeded Borrower',
+      due_at: '2026-07-25T10:00:00Z',
+    };
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok({
+      ...creditManagerSummary,
+      tasks: [seededTask],
+    }));
     vi.stubGlobal('fetch', fetchMock);
 
     const summary = await fetchDashboardSummary();
@@ -54,7 +63,7 @@ describe('dashboard API client', () => {
       count: 7,
       link: '/applications?status=submitted&current_stage=initial_loan_request',
     });
-    expect(summary.tasks).toEqual([]);
+    expect(summary.tasks).toEqual([seededTask]);
   });
 
   it.each([
@@ -122,6 +131,32 @@ describe('DashboardSummaryView', () => {
     expect(html).toContain('Review application APP-0001');
     expect(html).toContain('completeness_review');
     expect(html).toContain('8 Jul 2026');
+  });
+
+  it('keeps the seeded dashboard task linked to the real Task Inbox', async () => {
+    const onNavigate = vi.fn();
+    render(
+      <DashboardSummaryView
+        status="success"
+        summary={{
+          ...creditManagerSummary,
+          tasks: [{
+            task_type: 'appraisal',
+            entity_id: '33333333-3333-4333-8333-333333333333',
+            title: 'Prepare appraisal for Seeded Borrower',
+            due_at: '2026-07-25T10:00:00Z',
+          }],
+        }}
+        onNavigate={onNavigate}
+      />,
+    );
+
+    await userEvent.click(screen.getByText('Prepare appraisal for Seeded Borrower'));
+
+    expect(onNavigate).toHaveBeenCalledWith(
+      'tasks',
+      '33333333-3333-4333-8333-333333333333',
+    );
   });
 
   it.each([

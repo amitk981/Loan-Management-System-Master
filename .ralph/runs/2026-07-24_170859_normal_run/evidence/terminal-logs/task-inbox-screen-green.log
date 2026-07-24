@@ -1,0 +1,763 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/tasks/TaskInbox.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_170859_normal_run/sfpcl-lms
+
+ ❯ src/pages/tasks/TaskInbox.test.tsx (2 tests | 1 failed) 1044ms
+   ✓ Task Inbox API > loads a strict page and sends S03 filters to the backend 4ms
+   × Task Inbox screen > renders the S03 API columns and replaces the page through backend pagination 1039ms
+     → Unable to find an element with the text: Seeded Borrower. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mTask Inbox[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mReal pending work assigned to you, your active roles, or your teams.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center gap-3 mb-5 flex-wrap"[39m
+      [36m>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Task type"[39m
+          [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll task types[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"completeness_check"[39m
+          [36m>[39m
+            [0mCompleteness Check[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"appraisal"[39m
+          [36m>[39m
+            [0mPrepare Appraisal[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sanction"[39m
+          [36m>[39m
+            [0mSanction Decision[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"document_verification"[39m
+          [36m>[39m
+            [0mDocument Verification[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sap_setup"[39m
+          [36m>[39m
+            [0mSAP Setup[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"disbursement"[39m
+          [36m>[39m
+            [0mDisbursement[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"repayment_posting"[39m
+          [36m>[39m
+            [0mRepayment Posting[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"default_review"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</option>[39m
+        [36m</select>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 text-sm px-3 py-2 border rounded-lg transition-colors bg-white border-slate-200 text-slate-600 hover:bg-slate-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-funnel"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Advanced Filters[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"16"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"16"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 9v4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 17h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 min-w-0"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+              [36m>[39m
+                [0mTask Inbox could not be loaded[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+              [36m>[39m
+                [0mThe server returned an invalid paginated response.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-secondary mt-3 flex items-center gap-2"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Retry[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mTask Inbox[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mReal pending work assigned to you, your active roles, or your teams.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center gap-3 mb-5 flex-wrap"[39m
+      [36m>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Task type"[39m
+          [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll task types[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"completeness_check"[39m
+          [36m>[39m
+            [0mCompleteness Check[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"appraisal"[39m
+          [36m>[39m
+            [0mPrepare Appraisal[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sanction"[39m
+          [36m>[39m
+            [0mSanction Decision[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"document_verification"[39m
+          [36m>[39m
+            [0mDocument Verification[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sap_setup"[39m
+          [36m>[39m
+            [0mSAP Setup[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"disbursement"[39m
+          [36m>[39m
+            [0mDisbursement[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"repayment_posting"[39m
+          [36m>[39m
+            [0mRepayment Posting[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"default_review"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</option>[39m
+        [36m</select>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 text-sm px-3 py-2 border rounded-lg transition-colors bg-white border-slate-200 text-slate-600 hover:bg-slate-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-funnel"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Advanced Filters[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"16"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"16"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 9v4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 17h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 min-w-0"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+              [36m>[39m
+                [0mTask Inbox could not be loaded[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+              [36m>[39m
+                [0mThe server returned an invalid paginated response.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-secondary mt-3 flex items-center gap-2"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Retry[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/tasks/TaskInbox.test.tsx > Task Inbox screen > renders the S03 API columns and replaces the page through backend pagination
+TestingLibraryElementError: Unable to find an element with the text: Seeded Borrower. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mTask Inbox[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mReal pending work assigned to you, your active roles, or your teams.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center gap-3 mb-5 flex-wrap"[39m
+      [36m>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Task type"[39m
+          [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll task types[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"completeness_check"[39m
+          [36m>[39m
+            [0mCompleteness Check[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"appraisal"[39m
+          [36m>[39m
+            [0mPrepare Appraisal[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sanction"[39m
+          [36m>[39m
+            [0mSanction Decision[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"document_verification"[39m
+          [36m>[39m
+            [0mDocument Verification[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sap_setup"[39m
+          [36m>[39m
+            [0mSAP Setup[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"disbursement"[39m
+          [36m>[39m
+            [0mDisbursement[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"repayment_posting"[39m
+          [36m>[39m
+            [0mRepayment Posting[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"default_review"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</option>[39m
+        [36m</select>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 text-sm px-3 py-2 border rounded-lg transition-colors bg-white border-slate-200 text-slate-600 hover:bg-slate-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-funnel"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Advanced Filters[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"16"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"16"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 9v4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 17h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 min-w-0"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+              [36m>[39m
+                [0mTask Inbox could not be loaded[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+              [36m>[39m
+                [0mThe server returned an invalid paginated response.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-secondary mt-3 flex items-center gap-2"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Retry[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mTask Inbox[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mReal pending work assigned to you, your active roles, or your teams.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center gap-3 mb-5 flex-wrap"[39m
+      [36m>[39m
+        [36m<select[39m
+          [33maria-label[39m=[32m"Task type"[39m
+          [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+        [36m>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"all"[39m
+          [36m>[39m
+            [0mAll task types[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"completeness_check"[39m
+          [36m>[39m
+            [0mCompleteness Check[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"appraisal"[39m
+          [36m>[39m
+            [0mPrepare Appraisal[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sanction"[39m
+          [36m>[39m
+            [0mSanction Decision[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"document_verification"[39m
+          [36m>[39m
+            [0mDocument Verification[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"sap_setup"[39m
+          [36m>[39m
+            [0mSAP Setup[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"disbursement"[39m
+          [36m>[39m
+            [0mDisbursement[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"repayment_posting"[39m
+          [36m>[39m
+            [0mRepayment Posting[0m
+          [36m</option>[39m
+          [36m<option[39m
+            [33mvalue[39m=[32m"default_review"[39m
+          [36m>[39m
+            [0mDefault Review[0m
+          [36m</option>[39m
+        [36m</select>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 text-sm px-3 py-2 border rounded-lg transition-colors bg-white border-slate-200 text-slate-600 hover:bg-slate-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-funnel"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Advanced Filters[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"16"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"16"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 9v4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 17h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 min-w-0"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+              [36m>[39m
+                [0mTask Inbox could not be loaded[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+              [36m>[39m
+                [0mThe server returned an invalid paginated response.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-secondary mt-3 flex items-center gap-2"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Retry[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/tasks/TaskInbox.test.tsx:73:25
+     71|     renderTaskInbox();
+     72| 
+     73|     expect(await screen.findByText('Seeded Borrower')).toBeInTheDocume…
+       |                         ^
+     74|     [
+     75|       'Task ID', 'Task type', 'Application / Loan ID', 'Borrower', 'Am…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  17:21:24
+   Duration  2.12s (transform 123ms, setup 0ms, collect 291ms, tests 1.04s, environment 313ms, prepare 36ms)
+

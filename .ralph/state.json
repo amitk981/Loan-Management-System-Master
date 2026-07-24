@@ -347,14 +347,15 @@
     "012E-operational-dashboard-hardening",
     "012E2-tracer-and-demo-route-production-isolation",
     "012E3-field-encryption-key-separation",
-    "012EA-workflow-task-engine-and-task-inbox-apis"
+    "012EA-workflow-task-engine-and-task-inbox-apis",
+    "012EB-task-inbox-frontend-wiring"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-24_161303_repair",
+  "last_run_id": "2026-07-24_170859_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 30,
+  "slices_completed_since_architecture_review": 31,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

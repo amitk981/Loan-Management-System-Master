@@ -1,0 +1,54 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/tasks/TaskInbox.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_170859_normal_run/sfpcl-lms
+
+ ❯ src/pages/tasks/TaskInbox.test.tsx (3 tests | 1 failed) 219ms
+   ✓ Task Inbox API > loads a strict page and sends S03 filters to the backend 4ms
+   × Task Inbox API > rejects malformed task rows instead of displaying invented defaults 6ms
+     → promise resolved "{ items: [ {} ], pagination: { …(6) } }" instead of rejecting
+   ✓ Task Inbox screen > renders the S03 API columns and replaces the page through backend pagination 209ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/tasks/TaskInbox.test.tsx > Task Inbox API > rejects malformed task rows instead of displaying invented defaults
+AssertionError: promise resolved "{ items: [ {} ], pagination: { …(6) } }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "items": [
++     {},
++   ],
++   "pagination": {
++     "has_next": false,
++     "has_previous": false,
++     "page": 1,
++     "page_size": 20,
++     "total_count": 1,
++     "total_pages": 1,
++   },
+  }
+
+ ❯ src/pages/tasks/TaskInbox.test.tsx:73:34
+     71|     })));
+     72| 
+     73|     await expect(fetchTaskInbox()).rejects.toMatchObject({ code: 'MALF…
+       |                                  ^
+     74|   });
+     75| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  17:22:10
+   Duration  1.22s (transform 136ms, setup 0ms, collect 289ms, tests 219ms, environment 296ms, prepare 42ms)
+

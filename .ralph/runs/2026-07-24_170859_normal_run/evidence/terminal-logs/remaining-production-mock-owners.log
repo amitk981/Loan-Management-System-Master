@@ -1,0 +1,5 @@
+sfpcl-lms/src/pages/reports/ReportsMIS.tsx:7:import { dashboardStats } from '../../data/mockData';
+sfpcl-lms/src/pages/compliance/ComplianceDashboard.tsx:5:import { complianceRecords, dashboardStats, loanAccounts, members } from '../../data/mockData';
+sfpcl-lms/src/pages/compliance/AuditArchiveHub.tsx:5:import { auditEvents } from '../../data/mockData';
+sfpcl-lms/src/pages/compliance/GrievancesHub.tsx:5:import { grievances } from '../../data/mockData';
+sfpcl-lms/src/pages/registers/RegistersHub.tsx:7:import { loanApplications, loanAccounts, securities, members, complianceRecords, auditEvents } from '../../data/mockData';
