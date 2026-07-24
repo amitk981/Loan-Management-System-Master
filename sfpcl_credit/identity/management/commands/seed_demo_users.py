@@ -1,5 +1,6 @@
 import os
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -123,6 +124,10 @@ class Command(BaseCommand):
 
     @classmethod
     def _enforce_demo_guard(cls):
+        if not settings.ENABLE_DEMO_SURFACES:
+            raise CommandError(
+                "seed_demo_users is disabled by deployment settings."
+            )
         if not cls._env_true("SFPCL_DEBUG") or not cls._env_true(
             "SFPCL_ALLOW_DEMO_SEED"
         ):

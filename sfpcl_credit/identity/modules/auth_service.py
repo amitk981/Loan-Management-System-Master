@@ -51,11 +51,18 @@ class CredentialError(Exception):
         super().__init__(outcome)
 
 
+def demo_identity_is_disabled(user):
+    if settings.ENABLE_DEMO_SURFACES:
+        return False
+    domain = user.email.rpartition("@")[2].lower()
+    return domain in settings.DEMO_IDENTITY_EMAIL_DOMAINS
+
+
 def authenticate_user(email, password):
     user = User.objects.select_related("primary_role").filter(email__iexact=email).first()
     if not user or not user.check_password(password):
         raise CredentialError("invalid_credentials", user=None)
-    if not user.can_authenticate():
+    if not user.can_authenticate() or demo_identity_is_disabled(user):
         raise CredentialError("inactive_user", user=user)
     return user
 
@@ -87,6 +94,8 @@ def _store_refresh_token(session, token):
 
 def issue_login_tokens_and_session(user, request):
     """Create an active session for `user` and return `(session, auth_payload)`."""
+    if demo_identity_is_disabled(user):
+        raise CredentialError("inactive_user", user=user)
     session = UserSession.objects.create(
         user=user,
         refresh_token_hash="",
@@ -125,7 +134,7 @@ def validate_refresh_session(refresh_token):
         raise TokenError("INVALID_TOKEN", "Refresh session is not active.")
     if not secrets.compare_digest(session.refresh_token_hash, hash_token(refresh_token)):
         raise TokenError("INVALID_TOKEN", "Refresh token has been rotated or revoked.")
-    if not session.user.can_authenticate():
+    if not session.user.can_authenticate() or demo_identity_is_disabled(session.user):
         session.revoke("user_status_changed")
         raise TokenError("INVALID_TOKEN", "User is not active.")
     validate_portal_session_authority(session)
@@ -167,7 +176,7 @@ def validate_access_session(access_token):
         raise TokenError("INVALID_TOKEN", "Access token user does not match session.")
     if not session.is_active():
         raise TokenError("INVALID_TOKEN", "Access session is not active.")
-    if not session.user.can_authenticate():
+    if not session.user.can_authenticate() or demo_identity_is_disabled(session.user):
         session.revoke("user_status_changed")
         raise TokenError("INVALID_TOKEN", "User is not active.")
     validate_portal_session_authority(session)

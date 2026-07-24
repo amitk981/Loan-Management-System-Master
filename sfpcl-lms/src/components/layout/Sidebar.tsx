@@ -9,6 +9,7 @@ import {
 import { useRole } from '../../contexts/RoleContext';
 import { Permission } from '../../contexts/RoleContext';
 import { navigationPermissionsFor, visibleStaffNavItems, type Page } from '../../services/navigationPermissions';
+import { DEMO_SURFACES_ENABLED } from '../../services/runtimeEnvironment';
 
 export interface NavItem {
   id: string;
@@ -52,7 +53,9 @@ export const allNavItems: StaffNavItem[] = [
   staffNavItem({ id: 'audit',         label: 'Audit & Archive',       icon: <History size={18} /> }),
   staffNavItem({ id: 'settings',      label: 'Settings',              icon: <Settings size={18} /> }),
   staffNavItem({ id: 'admin-users',   label: 'Admin Users',           icon: <Users size={18} /> }),
-  staffNavItem({ id: 'tracer',        label: 'Tracer',                icon: <ClipboardCheck size={18} /> }),
+  ...(DEMO_SURFACES_ENABLED
+    ? [staffNavItem({ id: 'tracer', label: 'Tracer', icon: <ClipboardCheck size={18} /> })]
+    : []),
 ];
 
 // Borrower portal nav

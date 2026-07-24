@@ -321,7 +321,12 @@ def authenticate_portal_user(identifier, password):
         .filter(Q(user__email__iexact=identifier) | Q(member__email__iexact=identifier) | Q(member__mobile_number__iexact=identifier))
         .first()
     )
-    if not account or not account.user.check_password(password) or not account.can_authenticate():
+    if (
+        not account
+        or not account.user.check_password(password)
+        or not account.can_authenticate()
+        or auth_service.demo_identity_is_disabled(account.user)
+    ):
         raise auth_service.CredentialError("invalid_credentials", user=account.user if account else None)
     return account.user
 

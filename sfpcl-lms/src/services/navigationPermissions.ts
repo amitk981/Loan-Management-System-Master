@@ -1,4 +1,5 @@
 import type { Permission } from '../contexts/RoleContext';
+import { DEMO_SURFACES_ENABLED } from './runtimeEnvironment';
 
 export type Page =
   | 'dashboard' | 'tasks'
@@ -89,6 +90,14 @@ export const resolveNavigationAttempt = (
   target: Page,
   canUsePermission: (permission: Permission) => boolean,
 ): NavigationAttempt => {
+  if (target === 'tracer' && !DEMO_SURFACES_ENABLED) {
+    return {
+      page: 'dashboard',
+      blockedPage: target,
+      allowed: false,
+    };
+  }
+
   const { requiredPermission, alternativePermissions: alternatives = [] } = navigationPermissionsFor(target);
   if (requiredPermission && !canUsePermission(requiredPermission) && !alternatives.some(canUsePermission)) {
     return {

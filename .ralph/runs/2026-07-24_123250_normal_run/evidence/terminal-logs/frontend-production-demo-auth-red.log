@@ -1,0 +1,42 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/demoAuthFlag.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_123250_normal_run/sfpcl-lms
+
+ ❯ src/services/demoAuthFlag.test.tsx (4 tests | 1 failed) 1324ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  1133ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is explicit false 63ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > exposes only approved staff demo controls when the flag is true 63ms
+   × VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > cannot enable demo authentication in a production build 64ms
+     → expected true to be false // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/demoAuthFlag.test.tsx > VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > cannot enable demo authentication in a production build
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/services/demoAuthFlag.test.tsx:82:25
+     80|     });
+     81| 
+     82|     expect(demoEnabled).toBe(false);
+       |                         ^
+     83|     expectNoAuthorityOrProtectedContent(html);
+     84|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  12:38:04
+   Duration  1.82s (transform 937ms, setup 0ms, collect 37ms, tests 1.32s, environment 0ms, prepare 45ms)
+

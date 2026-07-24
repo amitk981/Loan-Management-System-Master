@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_existing_demo_staff_user_cannot_authenticate_in_production (sfpcl_credit.tests.test_production_demo_isolation.ProductionDemoIdentityTests.test_existing_demo_staff_user_cannot_authenticate_in_production)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/utils.py", line 443, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_123250_normal_run/sfpcl_credit/tests/test_production_demo_isolation.py", line 99, in test_existing_demo_staff_user_cannot_authenticate_in_production
+    self.assertEqual(response.status_code, 401, response.content)
+AssertionError: 200 != 401 : b'{"success": true, "data": {"token_type": "Bearer", "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwidXNlcl9pZCI6IjNmYTc3N2IyLWU3OTYtNDM1NC05MzFlLTI0MWVhOGIwMDkxNyIsInNlc3Npb25faWQiOiJjYWJmYTU3ZS02NWNlLTQwMDUtYjdiOC0zNjRiYmZmOGFlYTAiLCJlbWFpbCI6ImRlbW8udHJhY2VyQHNmcGNsLmV4YW1wbGUiLCJyb2xlX2NvZGVzIjpbImxvY2FsX2RlbW9fdHJhY2VyX3VzZXIiXSwidGVhbV9jb2RlcyI6W10sInBlcm1pc3Npb25zX3ZlcnNpb24iOiIyMDI2LTA3LTI0VDA3OjI0OjA4LjMyMTU2OVoiLCJpYXQiOjE3ODQ4Nzc4NDgsImV4cCI6MTc4NDg3ODc0OH0.kfZ43vCL8AIklpP9nhSND4XXLdR7INKpEsKAntHLtLY", "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsInVzZXJfaWQiOiIzZmE3NzdiMi1lNzk2LTQzNTQtOTMxZS0yNDFlYThiMDA5MTciLCJzZXNzaW9uX2lkIjoiY2FiZmE1N2UtNjVjZS00MDA1LWI3YjgtMzY0YmJmZjhhZWEwIiwianRpIjoiOTE0NzNlMDYtODM2Ny00MzNkLThjMmUtYTRhMjRhMjBhZTVkIiwiaWF0IjoxNzg0ODc3ODQ4LCJleHAiOjE3ODQ5NjQyNDh9.OPDoV-WEz43rdI_yI8QHo3oFYrYn2TBJoDM73CRbyU8", "expires_in": 900, "user": {"user_id": "3fa777b2-e796-4354-931e-241ea8b00917", "full_name": "Demo Tracer User", "email": "demo.tracer@sfpcl.example", "status": "active", "role_codes": ["local_demo_tracer_user"], "team_codes": [], "approval_authority_type": null}}, "meta": {"request_id": null, "timestamp": "2026-07-24T07:24:08.327495Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

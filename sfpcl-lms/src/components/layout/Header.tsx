@@ -1,28 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Search, Bell, HelpCircle, ChevronDown, User, ChevronRight, LogOut, RefreshCw } from 'lucide-react';
+import { Search, Bell, HelpCircle, ChevronDown, User, ChevronRight, LogOut } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
-import { Role } from '../../types';
 import { AuthSessionError, DEMO_AUTH_ENABLED } from '../../services/authSession';
 import { fetchNotifications, markNotificationRead, type NotificationListItem } from '../../services/notificationsApi';
 
-// Internal roles only — Borrower logs in separately via Login screen
-const ALL_ROLES: { role: Role; label: string; group?: string }[] = [
-  { role: 'field_officer',          label: 'Field Officer',               group: 'Intake' },
-  { role: 'credit_manager',         label: 'Credit Manager',              group: 'Credit Assessment' },
-  { role: 'deputy_manager_finance', label: 'Deputy Manager – Finance',    group: 'Credit Assessment' },
-  { role: 'compliance_team',        label: 'Compliance Team',             group: 'Compliance' },
-  { role: 'company_secretary',      label: 'Company Secretary',           group: 'Compliance' },
-  { role: 'sanction_committee',     label: 'Sanction Committee',          group: 'Sanction' },
-  { role: 'cfo',                    label: 'CFO',                         group: 'Sanction' },
-  { role: 'director',               label: 'Director',                    group: 'Sanction' },
-  { role: 'senior_manager_finance', label: 'Senior Manager – Finance',    group: 'Finance' },
-  { role: 'cfc',                    label: 'Chief Financial Controller',  group: 'Finance' },
-  { role: 'accounts',               label: 'Accounts',                    group: 'Finance' },
-  { role: 'sales_team_user',        label: 'Sales Team User',             group: 'Sales' },
-  { role: 'auditor',                label: 'Auditor',                     group: 'Audit' },
-  { role: 'admin',                  label: 'Administrator',               group: 'IT' },
-  // Note: 'borrower' role is NOT listed here — borrowers use the login screen
-];
+const DemoRoleSwitcher = DEMO_AUTH_ENABLED
+  ? React.lazy(() => import('../../demo/DemoRoleSwitcher'))
+  : null;
 
 interface HeaderProps {
   activePage?: string;
@@ -32,10 +16,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLogout }) => {
-  const { currentUser, setRole, can } = useRole();
+  const { currentUser, setDemoUser, can } = useRole();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showRolePicker, setShowRolePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState<NotificationListItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -75,7 +58,6 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
   const closeAll = () => {
     setShowNotifications(false);
     setShowProfile(false);
-    setShowRolePicker(false);
   };
 
   return (
@@ -111,59 +93,23 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
         {/* Divider */}
         <div className="w-px h-6 bg-slate-200 mx-1" />
 
-        {DEMO_AUTH_ENABLED && (
-          <div className="relative">
-            <button
-              onClick={() => { setShowRolePicker(!showRolePicker); setShowNotifications(false); setShowProfile(false); }}
-              className="h-10 flex items-center gap-1.5 text-xs font-semibold px-3 border border-slate-200 rounded-lg text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors"
-              title="Switch demo role"
-            >
-              <RefreshCw size={12} />
-              <span className="hidden sm:inline">Switch Role</span>
-            </button>
-            {showRolePicker && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <span className="text-sm font-semibold text-slate-900">Switch Demo Role</span>
-                  <p className="text-xs text-slate-400 mt-0.5">Currently: <span className="text-green-700 font-medium">{currentUser.roleName}</span></p>
-                  <p className="text-xs text-amber-600 mt-1">Internal roles only. Borrower uses separate login.</p>
-                </div>
-                <div className="max-h-80 overflow-y-auto py-1">
-                  {(() => {
-                    let lastGroup = '';
-                    return ALL_ROLES.map(({ role, label, group }) => {
-                      const showGroup = group !== lastGroup;
-                      lastGroup = group || '';
-                      return (
-                        <React.Fragment key={role}>
-                          {showGroup && group && (
-                            <div className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide bg-slate-50 border-t border-slate-100 first:border-0">
-                              {group}
-                            </div>
-                          )}
-                          <button
-                            onClick={() => { setRole(role); closeAll(); }}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 ${
-                              currentUser.role === role ? 'text-green-700 bg-green-50 font-medium' : 'text-slate-700'
-                            }`}
-                          >
-                            <span>{label}</span>
-                            {currentUser.role === role && <ChevronRight size={14} className="text-green-500" />}
-                          </button>
-                        </React.Fragment>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-            )}
-          </div>
+        {DemoRoleSwitcher && (
+          <React.Suspense fallback={null}>
+            <DemoRoleSwitcher
+              currentUser={currentUser}
+              onSwitch={setDemoUser}
+              onOpen={() => {
+                setShowNotifications(false);
+                setShowProfile(false);
+              }}
+            />
+          </React.Suspense>
         )}
 
         {/* Notifications */}
         <div className="relative">
           <button
-            onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); setShowRolePicker(false); }}
+            onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); }}
             aria-label={`Notifications, ${unreadCount} unread`}
             className="h-10 w-10 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors relative"
           >
@@ -232,7 +178,7 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
         {/* Profile */}
         <div className="relative">
           <button
-            onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); setShowRolePicker(false); }}
+            onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); }}
             className="h-10 flex items-center gap-2 pl-2.5 pr-2 rounded-lg border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">

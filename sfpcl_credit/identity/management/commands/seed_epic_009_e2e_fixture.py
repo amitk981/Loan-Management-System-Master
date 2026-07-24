@@ -91,6 +91,10 @@ class Command(BaseCommand):
 
     @classmethod
     def _enforce_e2e_guard(cls):
+        if not settings.ENABLE_DEMO_SURFACES:
+            raise CommandError(
+                "seed_epic_009_e2e_fixture is disabled by deployment settings."
+            )
         if not cls._env_true("SFPCL_DEBUG") or not cls._env_true(
             "SFPCL_ALLOW_E2E_SEED"
         ):

@@ -7,8 +7,17 @@ afterEach(() => {
   vi.resetModules();
 });
 
-const renderRealAppBoundary = async (flag: string | undefined) => {
+const renderRealAppBoundary = async (
+  flag: string | undefined,
+  options: { production?: boolean; demoSurfaces?: string } = {},
+) => {
   vi.unstubAllEnvs();
+  if (options.production) {
+    vi.stubEnv('PROD', true);
+  }
+  if (options.demoSurfaces !== undefined) {
+    vi.stubEnv('VITE_ENABLE_DEMO_SURFACES', options.demoSurfaces);
+  }
   if (flag === undefined) {
     vi.stubEnv('VITE_ENABLE_DEMO_AUTH', undefined);
   } else {
@@ -20,9 +29,16 @@ const renderRealAppBoundary = async (flag: string | undefined) => {
     import('../App'),
     import('./authSession'),
   ]);
+  const demoHtml = DEMO_AUTH_ENABLED
+    ? renderToStaticMarkup(React.createElement(
+      (await import('../demo/DemoLoginControls')).default,
+      { onLogin: () => undefined, onDemoLogin: () => undefined },
+    ))
+    : '';
 
   return {
     demoEnabled: DEMO_AUTH_ENABLED,
+    demoHtml,
     html: renderToStaticMarkup(<App />),
   };
 };
@@ -52,11 +68,11 @@ describe('VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4)', () => 
   });
 
   it('exposes only approved staff demo controls when the flag is true', async () => {
-    const { demoEnabled, html } = await renderRealAppBoundary('true');
+    const { demoEnabled, demoHtml, html } = await renderRealAppBoundary('true');
 
     expect(demoEnabled).toBe(true);
-    expect(html).toContain('Demo role (select to preview as a staff user)');
-    expect(html).toContain('Continue with demo role');
+    expect(demoHtml).toContain('Demo role (select to preview as a staff user)');
+    expect(demoHtml).toContain('Continue with demo role');
     expect(html).toContain('Open Member Portal Login');
     expect(html).not.toContain('Rendered Portal Member');
     expect(html).not.toContain('portal.loan_application.read_own');
@@ -64,5 +80,15 @@ describe('VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4)', () => 
     expect(html).not.toContain('Borrower / Member');
     expect(html).not.toContain('Dashboard');
     expect(html).not.toContain('Sign out');
+  });
+
+  it('cannot enable demo authentication in a production build', async () => {
+    const { demoEnabled, html } = await renderRealAppBoundary('true', {
+      production: true,
+      demoSurfaces: 'true',
+    });
+
+    expect(demoEnabled).toBe(false);
+    expectNoAuthorityOrProtectedContent(html);
   });
 });

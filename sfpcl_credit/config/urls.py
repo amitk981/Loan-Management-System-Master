@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import path
 
 from sfpcl_credit.applications import views as application_views
@@ -34,8 +35,10 @@ from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.search_views import global_search_results
-from sfpcl_credit.tracer import views as tracer_views
 from sfpcl_credit.workflows import event_views
+
+if settings.ENABLE_DEMO_SURFACES:
+    from sfpcl_credit.tracer import views as tracer_views
 
 
 urlpatterns = [
@@ -1231,38 +1234,48 @@ urlpatterns = [
         document_views.document_template_detail,
         name="document-template-successor-create",
     ),
-    path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
-    path(
-        "api/v1/tracer/members/<uuid:member_id>/loan-applications/",
-        tracer_views.create_application,
-        name="tracer-application-create",
-    ),
-    path(
-        "api/v1/tracer/loan-applications/<uuid:application_id>/sanction/",
-        tracer_views.sanction_application,
-        name="tracer-application-sanction",
-    ),
-    path(
-        "api/v1/tracer/loan-applications/<uuid:application_id>/loan-account/",
-        tracer_views.create_loan_account,
-        name="tracer-loan-account-create",
-    ),
-    path(
-        "api/v1/tracer/loan-accounts/<uuid:account_id>/disburse/",
-        tracer_views.mark_disbursed,
-        name="tracer-loan-account-disburse",
-    ),
-    path(
-        "api/v1/tracer/loan-accounts/<uuid:account_id>/repayments/",
-        tracer_views.post_repayment,
-        name="tracer-repayment-post",
-    ),
-    path(
-        "api/v1/tracer/loan-accounts/<uuid:account_id>/close/",
-        tracer_views.close_loan,
-        name="tracer-loan-account-close",
-    ),
     path("api/v1/health/live/", live_health, name="health-live"),
     path("api/v1/health/ready/", ready_health, name="health-ready"),
     path("api/v1/health/deep/", deep_health, name="health-deep"),
 ]
+
+if settings.ENABLE_DEMO_SURFACES:
+    urlpatterns.extend(
+        [
+            path(
+                "api/v1/tracer/members/",
+                tracer_views.create_member,
+                name="tracer-member-create",
+            ),
+            path(
+                "api/v1/tracer/members/<uuid:member_id>/loan-applications/",
+                tracer_views.create_application,
+                name="tracer-application-create",
+            ),
+            path(
+                "api/v1/tracer/loan-applications/<uuid:application_id>/sanction/",
+                tracer_views.sanction_application,
+                name="tracer-application-sanction",
+            ),
+            path(
+                "api/v1/tracer/loan-applications/<uuid:application_id>/loan-account/",
+                tracer_views.create_loan_account,
+                name="tracer-loan-account-create",
+            ),
+            path(
+                "api/v1/tracer/loan-accounts/<uuid:account_id>/disburse/",
+                tracer_views.mark_disbursed,
+                name="tracer-loan-account-disburse",
+            ),
+            path(
+                "api/v1/tracer/loan-accounts/<uuid:account_id>/repayments/",
+                tracer_views.post_repayment,
+                name="tracer-repayment-post",
+            ),
+            path(
+                "api/v1/tracer/loan-accounts/<uuid:account_id>/close/",
+                tracer_views.close_loan,
+                name="tracer-loan-account-close",
+            ),
+        ]
+    )

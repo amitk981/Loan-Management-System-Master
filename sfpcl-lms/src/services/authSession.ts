@@ -1,10 +1,14 @@
 import { Role } from '../types';
 import type { Permission } from '../contexts/RoleContext';
+import { DEMO_SURFACES_ENABLED } from './runtimeEnvironment';
 
 const AUTH_STORAGE_KEY = 'sfpcl_staff_auth_session';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
-export const DEMO_AUTH_ENABLED = import.meta.env.VITE_ENABLE_DEMO_AUTH === 'true';
+export const DEMO_AUTH_ENABLED = (
+  DEMO_SURFACES_ENABLED
+  && import.meta.env.VITE_ENABLE_DEMO_AUTH === 'true'
+);
 
 export interface AuthSession {
   accessToken: string;

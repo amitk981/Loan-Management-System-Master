@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Agentation } from 'agentation';
-import { RoleProvider, useRole } from './contexts/RoleContext';
-import { Role } from './types';
+import { RoleProvider, useRole, type User } from './contexts/RoleContext';
 import {
   AuthSessionError,
   DEMO_AUTH_ENABLED,
@@ -11,6 +10,7 @@ import {
   restoreCurrentUserFromStoredSession,
 } from './services/authSession';
 import { Page, resolveNavigationAttempt } from './services/navigationPermissions';
+import { DEMO_SURFACES_ENABLED } from './services/runtimeEnvironment';
 import AppShell from './components/layout/AppShell';
 import LoginScreen from './pages/auth/LoginScreen';
 import BorrowerPortal from './pages/borrower/BorrowerPortal';
@@ -48,16 +48,22 @@ import ReportsMIS from './pages/reports/ReportsMIS';
 import GlobalSearchResults from './pages/search/GlobalSearchResults';
 import NotificationsCenter from './pages/notifications/NotificationsCenter';
 import MyProfile from './pages/profile/MyProfile';
-import TracerBullet from './pages/tracer/TracerBullet';
 import AdminUsers from './pages/admin/AdminUsers';
 
 export type { Page } from './services/navigationPermissions';
+
+const DemoLoginScreen = DEMO_AUTH_ENABLED
+  ? React.lazy(() => import('./demo/DemoLoginControls'))
+  : null;
+const TracerBullet = DEMO_SURFACES_ENABLED
+  ? React.lazy(() => import('./pages/tracer/TracerBullet'))
+  : null;
 
 type AuthView = 'staff' | 'memberLogin' | 'memberActivation' | 'memberForgot';
 
 // Inner component so it can use useRole hook (inside RoleProvider)
 const AppInner: React.FC = () => {
-  const { currentUser, setRole, setBackendUser, clearUser, can } = useRole();
+  const { currentUser, setDemoUser, setBackendUser, clearUser, can } = useRole();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
@@ -130,12 +136,13 @@ const AppInner: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = (role: Role) => {
-    setRole(role);
+  const handleDemoLogin = (user: User) => {
+    if (!DEMO_AUTH_ENABLED) return;
+    setDemoUser(user);
     setIsLoggedIn(true);
     setLoginError('');
     // Route borrowers directly to their portal
-    if (role === 'borrower') setPage('borrower');
+    if (user.role === 'borrower') setPage('borrower');
     else setPage('dashboard');
   };
 
@@ -183,17 +190,18 @@ const AppInner: React.FC = () => {
         />
       );
     }
-    return (
-      <LoginScreen
-        onLogin={handleStaffLogin}
-        onDemoLogin={DEMO_AUTH_ENABLED ? handleDemoLogin : undefined}
-        onOpenMemberPortal={() => setAuthView('memberLogin')}
-        error={loginError}
-        isSubmitting={isSubmittingLogin}
-        isLoadingSession={isSessionLoading}
-        showDemoRoleSelector={DEMO_AUTH_ENABLED}
-      />
-    );
+    const loginProps = {
+      onLogin: handleStaffLogin,
+      onOpenMemberPortal: () => setAuthView('memberLogin'),
+      error: loginError,
+      isSubmitting: isSubmittingLogin,
+      isLoadingSession: isSessionLoading,
+    };
+    return DemoLoginScreen ? (
+      <React.Suspense fallback={<LoginScreen {...loginProps} />}>
+        <DemoLoginScreen {...loginProps} onDemoLogin={handleDemoLogin} />
+      </React.Suspense>
+    ) : <LoginScreen {...loginProps} />;
   }
 
   // Borrower gets their own portal layout (no sidebar/header chrome)
@@ -331,7 +339,11 @@ const AppInner: React.FC = () => {
       case 'profile':
         return <MyProfile />;
       case 'tracer':
-        return <TracerBullet onSessionExpired={handleLogout} />;
+        return TracerBullet ? (
+          <React.Suspense fallback={null}>
+            <TracerBullet onSessionExpired={handleLogout} />
+          </React.Suspense>
+        ) : <Dashboard onNavigate={navigate} />;
       default:
         return <Dashboard onNavigate={navigate} />;
     }

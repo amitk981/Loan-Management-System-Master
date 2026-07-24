@@ -1,39 +1,29 @@
 import React, { useState } from 'react';
 import { Sprout, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
-import { Role } from '../../types';
-import { ROLE_LABELS, ROLE_USERS } from '../../contexts/RoleContext';
 
 interface LoginScreenProps {
   onLogin: (credentials: { email: string; password: string }) => void | Promise<void>;
-  onDemoLogin?: (role: Role) => void;
   onOpenMemberPortal?: () => void;
   error?: string;
   isSubmitting?: boolean;
   isLoadingSession?: boolean;
-  showDemoRoleSelector?: boolean;
+  demoRoleSelector?: React.ReactNode;
+  demoLoginAction?: React.ReactNode;
 }
-
-const STAFF_DEMO_ROLES: Role[] = [
-  'field_officer', 'credit_manager', 'deputy_manager_finance', 'compliance_team',
-  'company_secretary', 'sanction_committee', 'cfo', 'director',
-  'senior_manager_finance', 'cfc', 'accounts', 'sales_team_user', 'auditor', 'admin',
-];
 
 const LoginScreen: React.FC<LoginScreenProps> = ({
   onLogin,
-  onDemoLogin,
   onOpenMemberPortal,
   error: externalError = '',
   isSubmitting = false,
   isLoadingSession = false,
-  showDemoRoleSelector = false,
+  demoRoleSelector,
+  demoLoginAction,
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
-  const [demoRole, setDemoRole] = useState<Role>('credit_manager');
-
   const activeError = externalError || error;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,10 +34,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
     }
     setError('');
     await onLogin({ email, password });
-  };
-
-  const handleDemoLogin = (role: Role) => {
-    onDemoLogin?.(role);
   };
 
   return (
@@ -150,25 +136,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
             </div>
 
-            {showDemoRoleSelector && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Demo role (select to preview as a staff user)
-                </label>
-                <select
-                  value={demoRole}
-                  onChange={e => setDemoRole(e.target.value as Role)}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                >
-                  {STAFF_DEMO_ROLES.map(r => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-slate-400 mt-1">
-                  Signing in as: <span className="font-medium text-slate-600">{ROLE_USERS[demoRole].name}</span> · {ROLE_USERS[demoRole].email}
-                </p>
-              </div>
-            )}
+            {demoRoleSelector}
 
             {activeError && (
               <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-100 rounded-lg px-4 py-3">
@@ -187,18 +155,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
             </button>
           </form>
 
-          {showDemoRoleSelector && onDemoLogin && (
-            <button
-              type="button"
-              onClick={() => handleDemoLogin(demoRole)}
-              className="w-full mt-3 flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold py-2.5 rounded-lg transition-colors"
-            >
-              <LogIn size={18} />
-              Continue with demo role
-            </button>
-          )}
-
-
+          {demoLoginAction}
 
           <p className="mt-8 text-center text-xs text-slate-400">
             Forgot password? Contact your system administrator.

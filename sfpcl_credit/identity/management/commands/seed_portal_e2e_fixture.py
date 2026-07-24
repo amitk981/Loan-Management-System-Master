@@ -2,6 +2,7 @@ import hashlib
 import os
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -44,6 +45,10 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        if not settings.ENABLE_DEMO_SURFACES:
+            raise CommandError(
+                "seed_portal_e2e_fixture is disabled by deployment settings."
+            )
         if not self._env_true("SFPCL_DEBUG") or not self._env_true(
             "SFPCL_ALLOW_E2E_SEED"
         ):

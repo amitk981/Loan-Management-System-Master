@@ -50,6 +50,15 @@ FIELD_ENCRYPTION_KEYS = json.loads(
 )
 FIELD_LOOKUP_KEY = os.environ.get("SFPCL_FIELD_LOOKUP_KEY", _LOCAL_LOOKUP_KEY)
 DEBUG = env_bool("SFPCL_DEBUG", True)
+DEPLOYMENT_ENVIRONMENT = os.environ.get(
+    "SFPCL_DEPLOYMENT_ENVIRONMENT", "development"
+).strip().lower()
+IS_PRODUCTION = DEPLOYMENT_ENVIRONMENT == "production"
+ENABLE_DEMO_SURFACES = (
+    not IS_PRODUCTION
+    and env_bool("SFPCL_ENABLE_DEMO_SURFACES", DEBUG)
+)
+DEMO_IDENTITY_EMAIL_DOMAINS = ("sfpcl.example",)
 ALLOWED_HOSTS = env_csv("SFPCL_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "testserver"])
 CORS_ALLOWED_ORIGINS = env_csv("SFPCL_CORS_ORIGINS", ["http://localhost:5173"])
 CORS_ALLOW_HEADERS = (*default_headers, "x-request-id", "idempotency-key")
@@ -83,9 +92,11 @@ INSTALLED_APPS = [
     "sfpcl_credit.recovery.apps.RecoveryConfig",
     "sfpcl_credit.reports.apps.ReportsConfig",
     "sfpcl_credit.scheduler",
-    "sfpcl_credit.tracer",
     "sfpcl_credit.workflows",
 ]
+
+if ENABLE_DEMO_SURFACES:
+    INSTALLED_APPS.append("sfpcl_credit.tracer")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
