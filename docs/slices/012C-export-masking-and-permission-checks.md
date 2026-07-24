@@ -1,7 +1,7 @@
 # Slice 012C: Export Masking and Permission Checks
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness

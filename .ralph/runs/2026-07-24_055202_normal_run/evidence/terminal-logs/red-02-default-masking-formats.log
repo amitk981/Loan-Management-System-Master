@@ -1,0 +1,37 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_requested_columns_mask_all_sensitive_families_in_every_format (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_requested_columns_mask_all_sensitive_families_in_every_format) (export_format='csv')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 219, in test_requested_columns_mask_all_sensitive_families_in_every_format
+    self.assertEqual(response.status_code, 202, response.content)
+AssertionError: 400 != 202 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Report export request failed validation.", "details": {}, "field_errors": {"columns": "Unknown field."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T00:31:21.561372Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_requested_columns_mask_all_sensitive_families_in_every_format (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_requested_columns_mask_all_sensitive_families_in_every_format) (export_format='json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 219, in test_requested_columns_mask_all_sensitive_families_in_every_format
+    self.assertEqual(response.status_code, 202, response.content)
+AssertionError: 400 != 202 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Report export request failed validation.", "details": {}, "field_errors": {"columns": "Unknown field."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T00:31:21.562842Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_requested_columns_mask_all_sensitive_families_in_every_format (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_requested_columns_mask_all_sensitive_families_in_every_format) (export_format='xlsx')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 219, in test_requested_columns_mask_all_sensitive_families_in_every_format
+    self.assertEqual(response.status_code, 202, response.content)
+AssertionError: 400 != 202 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Report export request failed validation.", "details": {}, "field_errors": {"columns": "Unknown field."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T00:31:21.564032Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_requested_columns_mask_all_sensitive_families_in_every_format (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_requested_columns_mask_all_sensitive_families_in_every_format) (export_format='pdf')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 219, in test_requested_columns_mask_all_sensitive_families_in_every_format
+    self.assertEqual(response.status_code, 202, response.content)
+AssertionError: 400 != 202 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Report export request failed validation.", "details": {}, "field_errors": {"columns": "Unknown field."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T00:31:21.565188Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=4)

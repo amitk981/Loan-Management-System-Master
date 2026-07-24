@@ -1,0 +1,13 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_excessive_export_attempts_are_actor_rate_limited_and_audited (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_excessive_export_attempts_are_actor_rate_limited_and_audited)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 602, in test_excessive_export_attempts_are_actor_rate_limited_and_audited
+    self.assertEqual(limited.status_code, 429, limited.content)
+AssertionError: 202 != 429 : b'{"success": true, "data": {"export_job_id": "229179bb-125d-4e7c-9029-efbff1354911", "report_code": "application-pipeline", "format": "json", "filters": {}, "status": "queued", "failure_code": null, "idempotency_replayed": false, "requested_at": "2026-07-24T00:41:57.959257Z", "started_at": null, "completed_at": null}, "meta": {"request_id": null, "timestamp": "2026-07-24T00:41:57.959620Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.107s
+
+FAILED (failures=1)

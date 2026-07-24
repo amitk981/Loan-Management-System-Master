@@ -1,0 +1,21 @@
+Review result:
+Ready for independent validation
+Candidate paths:
+ M ../docs/working/API_CONTRACTS.md
+ M ../docs/working/ASSUMPTIONS.md
+ M identity/catalogue.py
+ M reports/models.py
+ M reports/modules/report_export.py
+ M reports/views.py
+ M tests/test_report_exports_api.py
+?? ../.ralph/runs/2026-07-24_055202_normal_run/
+?? reports/migrations/0002_export_policy_snapshot.py
+?? reports/modules/export_policy.py
+Product/docs file count (excluding .ralph):
+9
+Product/docs changed lines (excluding .ralph):
+985
+Protected-path candidate check:
+PASS: no protected path present.
+PASS: generated local document storage was removed; the file was a reproducible test artifact and is not recoverable.
+PASS: diff whitespace check.

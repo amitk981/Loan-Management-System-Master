@@ -5669,10 +5669,30 @@ and download events; it must not copy report rows or sensitive filters into audi
 
 `POST /api/v1/reports/exports/` requires bearer authentication, the caller's underlying report
 read authority, `reports.export`, and an `Idempotency-Key` header. The JSON body contains
-`report_code`, `format`, and an object of string `filters`. Pagination fields are not export
-filters. Actor + registered report + canonical filters + format + key identifies one persisted
-job; the response is `202` with `queued`, lifecycle timestamps, and
-`idempotency_replayed`.
+`report_code`, `format`, and an object of string `filters`. It may also contain `columns`, a
+non-empty list of at most 100 server column codes. The worker intersects requested columns with
+the owning selector's actual projection; client claims can neither create a column nor expose an
+omitted field. Pagination fields are not export filters. Actor + registered report + canonical
+filters + format + key identifies one persisted job; the response remains `202` with `queued`,
+lifecycle timestamps, and `idempotency_replayed`.
+
+Exports are masked by default. Supplying `sensitive_reason` explicitly requests unmasked values
+for otherwise permitted columns and requires both `reports.export_sensitive` and a printable,
+nonblank, audit-safe reason of at most 500 characters. A missing `sensitive_reason` means the
+ordinary masked export; a present blank/unsafe reason is a `400`, and missing sensitive authority
+is a `403`. No standard role receives `reports.export_sensitive`. Unmasked `kyc-rekyc` bulk export
+remains denied because the source-defined highest authority is unresolved. `audit-log-export`
+remains unavailable until 012D supplies its restricted selector and still requires the separate
+ungranted `audit.export` policy.
+
+The central classification snapshot uses the source table directly where named and a conservative
+catalogue mapping for the remaining current reports:
+
+| Classification | Report codes |
+|---|---|
+| Confidential | `application-pipeline`, `documentation-readiness`, `loan-portfolio`, `dpd`, `disbursement-pending`, `section-186`, `nbfc-test`, `credit-sanction`, `sap-pending`, `disbursement`, `repayment`, `closure-noc`, `stamp-duty`, `money-lending-review`, `interest-invoice`, `interest-accrual`, `cfo-quarterly-mis` |
+| Restricted | `compliance-dashboard`, `default`, `exception`, `security-custody`, `kyc-rekyc`, `grievance`, `audit-log-export` |
+| Critical Restricted | `recovery` |
 
 `GET /api/v1/reports/exports/{export_job_id}/` is owner-bound and rechecks current read/export
 authority. It exposes only `queued`, `running`, `completed`, or `failed`; failures use stable
@@ -5681,6 +5701,12 @@ reason codes without exception text. A completed unexpired job receives a short-
 Expired jobs remain observable but have `download_expired: true` and no grant. Actual byte
 delivery rechecks actor, permissions, capability, retention, size, and checksum and is audited
 without exported row values.
+
+Request, validation/permission denial, sensitive grant, generation success/failure, download,
+expired/revoked/cross-actor access, and excessive attempt rate are audited without filter values,
+rows, raw sensitive fields, idempotency keys, or storage locations. Export attempts are
+actor-rate-limited to 30 per 60 seconds through the existing cache throttle pattern; the `429`
+response uses `RATE_LIMITED`.
 
 | Report set | CSV | XLSX | PDF | JSON |
 |---|---:|---:|---:|---:|

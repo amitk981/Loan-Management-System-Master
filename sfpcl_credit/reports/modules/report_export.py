@@ -20,6 +20,7 @@ from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.reports.errors import ReportPermissionDenied, ReportValidation
 from sfpcl_credit.reports.models import ReportExportJob
+from sfpcl_credit.reports.modules import export_policy
 from sfpcl_credit.reports.registry import REPORTS, run_report
 from sfpcl_credit.reports.storage import LocalReportExportStorage
 
@@ -61,8 +62,36 @@ def request_export(*, actor, payload, idempotency_key, request=None):
             entity_id=None,
             new_value_json={
                 "report_code": report_code,
+                "classification": export_policy.REPORT_CLASSIFICATIONS.get(
+                    report_code, "unknown"
+                ),
                 "outcome": "denied",
                 "reason_code": FORBIDDEN,
+            },
+            ip_address=request_ip(request) if request is not None else "",
+            user_agent=request_user_agent(request) if request is not None else "",
+        )
+        raise
+    except ReportValidation:
+        report_code = (
+            payload.get("report_code")
+            if isinstance(payload, dict)
+            and isinstance(payload.get("report_code"), str)
+            else "unknown"
+        )
+        AuditLog.objects.create(
+            actor_user=actor,
+            actor_type="user",
+            action="report.export.denied",
+            entity_type="report_export_job",
+            entity_id=None,
+            new_value_json={
+                "report_code": report_code,
+                "classification": export_policy.REPORT_CLASSIFICATIONS.get(
+                    report_code, "unknown"
+                ),
+                "outcome": "denied",
+                "reason_code": "VALIDATION_ERROR",
             },
             ip_address=request_ip(request) if request is not None else "",
             user_agent=request_user_agent(request) if request is not None else "",
@@ -77,15 +106,38 @@ def request_export(*, actor, payload, idempotency_key, request=None):
     }
     existing = ReportExportJob.objects.filter(**identity).first()
     if existing is not None:
+        _require_matching_replay(
+            actor=actor,
+            job=existing,
+            decision=cleaned["decision"],
+            request=request,
+        )
         return existing, True
     try:
         with transaction.atomic():
             job = ReportExportJob.objects.create(
                 **identity,
                 canonical_filters=cleaned["filters"],
+                classification=cleaned["decision"].classification,
+                requested_columns=list(cleaned["decision"].requested_columns),
+                sensitive_export=cleaned["decision"].sensitive_export,
+                sensitive_reason_digest=(
+                    hashlib.sha256(
+                        cleaned["decision"].sensitive_reason.encode("utf-8")
+                    ).hexdigest()
+                    if cleaned["decision"].sensitive_reason
+                    else ""
+                ),
+                authority_snapshot=cleaned["decision"].authority_snapshot,
             )
     except IntegrityError:
         job = ReportExportJob.objects.get(**identity)
+        _require_matching_replay(
+            actor=actor,
+            job=job,
+            decision=cleaned["decision"],
+            request=request,
+        )
         return job, True
     AuditLog.objects.create(
         actor_user=actor,
@@ -97,11 +149,34 @@ def request_export(*, actor, payload, idempotency_key, request=None):
             "export_job_id": str(job.pk),
             "report_code": job.report_code,
             "format": job.export_format,
+            "classification": job.classification,
+            "requested_columns": job.requested_columns,
+            "sensitive_export": job.sensitive_export,
+            "authority": job.authority_snapshot,
             "outcome": "queued",
         },
         ip_address=request_ip(request) if request is not None else "",
         user_agent=request_user_agent(request) if request is not None else "",
     )
+    if cleaned["decision"].sensitive_export:
+        AuditLog.objects.create(
+            actor_user=actor,
+            actor_type="user",
+            action="report.export.sensitive_granted",
+            entity_type="report_export_job",
+            entity_id=job.pk,
+            new_value_json={
+                "export_job_id": str(job.pk),
+                "report_code": job.report_code,
+                "classification": job.classification,
+                "reason": cleaned["decision"].sensitive_reason,
+                "reason_digest": job.sensitive_reason_digest,
+                "authority": job.authority_snapshot,
+                "outcome": "granted",
+            },
+            ip_address=request_ip(request) if request is not None else "",
+            user_agent=request_user_agent(request) if request is not None else "",
+        )
     transaction.on_commit(lambda: _publish_export_job(job.pk), robust=True)
     return job, False
 
@@ -110,7 +185,10 @@ def _validate_request(*, actor, payload, idempotency_key):
     errors = {}
     if not isinstance(payload, dict):
         raise ReportValidation({"body": "Must be a JSON object."})
-    unknown = sorted(set(payload) - {"report_code", "format", "filters"})
+    unknown = sorted(
+        set(payload)
+        - {"report_code", "format", "filters", "columns", "sensitive_reason"}
+    )
     errors.update({key: "Unknown field." for key in unknown})
     report_code = payload.get("report_code")
     if report_code not in FORMAT_MATRIX:
@@ -143,6 +221,13 @@ def _validate_request(*, actor, payload, idempotency_key):
         raise ReportPermissionDenied
     if errors:
         raise ReportValidation(errors)
+    decision = export_policy.evaluate_request(
+        actor=actor,
+        report_code=report_code,
+        columns=payload.get("columns"),
+        sensitive_reason_supplied="sensitive_reason" in payload,
+        sensitive_reason=payload.get("sensitive_reason"),
+    )
     try:
         run_report(
             report_code=report_code,
@@ -168,6 +253,7 @@ def _validate_request(*, actor, payload, idempotency_key):
         "filters": canonical_filters,
         "filters_digest": hashlib.sha256(canonical_json.encode()).hexdigest(),
         "idempotency_key": key,
+        "decision": decision,
     }
 
 
@@ -200,6 +286,44 @@ def serialize_job(job, *, replayed=False):
             }
         )
     return data
+
+
+def _require_matching_replay(*, actor, job, decision, request=None):
+    reason_digest = (
+        hashlib.sha256(decision.sensitive_reason.encode("utf-8")).hexdigest()
+        if decision.sensitive_reason
+        else ""
+    )
+    matches = (
+        job.classification == decision.classification
+        and job.requested_columns == list(decision.requested_columns)
+        and job.sensitive_export == decision.sensitive_export
+        and job.sensitive_reason_digest == reason_digest
+    )
+    if matches:
+        return
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action="report.export.denied",
+        entity_type="report_export_job",
+        entity_id=job.pk,
+        new_value_json={
+            "export_job_id": str(job.pk),
+            "report_code": job.report_code,
+            "outcome": "denied",
+            "reason_code": "IDEMPOTENCY_POLICY_MISMATCH",
+        },
+        ip_address=request_ip(request) if request is not None else "",
+        user_agent=request_user_agent(request) if request is not None else "",
+    )
+    raise ReportValidation(
+        {
+            "idempotency_key": (
+                "Idempotency-Key is already bound to a different export policy."
+            )
+        }
+    )
 
 
 def execute_export_job(export_job_id, *, storage=None):
@@ -248,7 +372,11 @@ def execute_export_job(export_job_id, *, storage=None):
             )
 
         generated_at = job.started_at
+        export_policy.require_current_access(actor=job.actor, job=job)
         rows = _collect_rows(job)
+        rows, permitted_columns = export_policy.project_rows(job=job, rows=rows)
+        job.permitted_columns = permitted_columns
+        job.save(update_fields=["permitted_columns", "updated_at"])
         content = _render_export(
             job=job,
             rows=rows,
@@ -295,6 +423,24 @@ def execute_export_job(export_job_id, *, storage=None):
                     "updated_at",
                 ]
             )
+            AuditLog.objects.create(
+                actor_user=job.actor,
+                actor_type="user",
+                action="report.export.generated",
+                entity_type="report_export_job",
+                entity_id=job.pk,
+                new_value_json={
+                    "export_job_id": str(job.pk),
+                    "report_code": job.report_code,
+                    "format": job.export_format,
+                    "classification": job.classification,
+                    "permitted_columns": job.permitted_columns,
+                    "sensitive_export": job.sensitive_export,
+                    "authority": job.authority_snapshot,
+                    "outcome": "completed",
+                    "checksum_sha256": job.checksum_sha256,
+                },
+            )
             return serialize_job(job)
     except ReportExportJob.DoesNotExist:
         raise
@@ -336,6 +482,10 @@ def execute_export_job(export_job_id, *, storage=None):
                     new_value_json={
                         "export_job_id": str(job.pk),
                         "report_code": job.report_code,
+                        "classification": job.classification,
+                        "permitted_columns": job.permitted_columns,
+                        "sensitive_export": job.sensitive_export,
+                        "authority": job.authority_snapshot,
                         "outcome": "failed",
                         "failure_code": failure_code,
                     },
@@ -347,8 +497,23 @@ def status_for_actor(*, actor, export_job_id, request=None):
     try:
         job = ReportExportJob.objects.get(pk=export_job_id, actor=actor)
     except ReportExportJob.DoesNotExist:
+        _audit_access_denial(
+            actor=actor,
+            export_job_id=export_job_id,
+            denial_reason="not_owner_or_unknown",
+            request=request,
+        )
         raise
-    _require_current_access(actor=actor, job=job)
+    try:
+        _require_current_access(actor=actor, job=job)
+    except ReportPermissionDenied:
+        _audit_access_denial(
+            actor=actor,
+            export_job_id=job.pk,
+            denial_reason="permission_or_scope_revoked",
+            request=request,
+        )
+        raise
     data = serialize_job(job)
     if job.state == ReportExportJob.STATE_COMPLETED:
         if (
@@ -370,14 +535,38 @@ def status_for_actor(*, actor, export_job_id, request=None):
 
 def read_download(*, actor, export_job_id, token, request=None, storage=None):
     storage = storage or LocalReportExportStorage()
-    job = ReportExportJob.objects.get(pk=export_job_id, actor=actor)
-    _require_current_access(actor=actor, job=job)
+    try:
+        job = ReportExportJob.objects.get(pk=export_job_id, actor=actor)
+    except ReportExportJob.DoesNotExist:
+        _audit_access_denial(
+            actor=actor,
+            export_job_id=export_job_id,
+            denial_reason="not_owner_or_unknown",
+            request=request,
+        )
+        raise
+    try:
+        _require_current_access(actor=actor, job=job)
+    except ReportPermissionDenied:
+        _audit_access_denial(
+            actor=actor,
+            export_job_id=job.pk,
+            denial_reason="permission_or_scope_revoked",
+            request=request,
+        )
+        raise
     if (
         job.state != ReportExportJob.STATE_COMPLETED
         or job.file_deleted_at is not None
         or job.download_expires_at is None
         or job.download_expires_at <= timezone.now()
     ):
+        _audit_access_denial(
+            actor=actor,
+            export_job_id=job.pk,
+            denial_reason="expired",
+            request=request,
+        )
         raise ReportValidation({"download": "Export download has expired."})
     ttl_seconds = getattr(settings, "REPORT_EXPORT_DOWNLOAD_TTL_MINUTES", 15) * 60
     try:
@@ -387,8 +576,20 @@ def read_download(*, actor, export_job_id, token, request=None, storage=None):
             max_age=ttl_seconds,
         )
     except (signing.BadSignature, signing.SignatureExpired) as exc:
+        _audit_access_denial(
+            actor=actor,
+            export_job_id=job.pk,
+            denial_reason="invalid_or_expired_grant",
+            request=request,
+        )
         raise ReportValidation({"download": "Download grant is invalid or expired."}) from exc
     if payload != {"export_job_id": str(job.pk), "actor_id": str(actor.pk)}:
+        _audit_access_denial(
+            actor=actor,
+            export_job_id=job.pk,
+            denial_reason="invalid_or_expired_grant",
+            request=request,
+        )
         raise ReportValidation({"download": "Download grant is invalid or expired."})
     content = storage.read(
         storage_key=job.storage_key,
@@ -405,6 +606,10 @@ def read_download(*, actor, export_job_id, token, request=None, storage=None):
             "export_job_id": str(job.pk),
             "report_code": job.report_code,
             "format": job.export_format,
+            "classification": job.classification,
+            "sensitive_export": job.sensitive_export,
+            "sensitive_reason_digest": job.sensitive_reason_digest,
+            "authority": job.authority_snapshot,
             "outcome": "downloaded",
             "checksum_sha256": job.checksum_sha256,
         },
@@ -661,10 +866,25 @@ def _issue_download_grant(*, actor, job, request=None):
     }
 
 
+def _audit_access_denial(*, actor, export_job_id, denial_reason, request=None):
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action="report.export.access_denied",
+        entity_type="report_export_job",
+        entity_id=export_job_id,
+        new_value_json={
+            "export_job_id": str(export_job_id),
+            "outcome": "denied",
+            "denial_reason": denial_reason,
+        },
+        ip_address=request_ip(request) if request is not None else "",
+        user_agent=request_user_agent(request) if request is not None else "",
+    )
+
+
 def _require_current_access(*, actor, job):
-    permissions = set(auth_service.effective_permission_codes(actor))
-    if not actor.can_authenticate() or "reports.export" not in permissions:
-        raise ReportPermissionDenied
+    export_policy.require_current_access(actor=actor, job=job)
     run_report(
         report_code=job.report_code,
         actor=actor,

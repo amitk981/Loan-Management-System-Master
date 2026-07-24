@@ -1,0 +1,19 @@
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_worker_completes_csv_and_status_issues_an_expiring_download (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_worker_completes_csv_and_status_issues_an_expiring_download)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 145, in test_worker_completes_csv_and_status_issues_an_expiring_download
+    generated = AuditLog.objects.get(
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.identity.models.AuditLog.DoesNotExist: AuditLog matching query does not exist.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.032s
+
+FAILED (errors=1)

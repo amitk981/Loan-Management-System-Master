@@ -1,0 +1,13 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_idempotency_replay_cannot_cross_masking_or_column_policy (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_idempotency_replay_cannot_cross_masking_or_column_policy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 144, in test_idempotency_replay_cannot_cross_masking_or_column_policy
+    self.assertEqual(masked_reuse.status_code, 400, masked_reuse.content)
+AssertionError: 202 != 400 : b'{"success": true, "data": {"export_job_id": "5536ad39-f2d1-4c1f-a053-521238d4daba", "report_code": "application-pipeline", "format": "json", "filters": {}, "status": "queued", "failure_code": null, "idempotency_replayed": true, "requested_at": "2026-07-24T00:54:55.500269Z", "started_at": null, "completed_at": null}, "meta": {"request_id": null, "timestamp": "2026-07-24T00:54:55.504082Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.019s
+
+FAILED (failures=1)

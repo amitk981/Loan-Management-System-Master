@@ -1,0 +1,13 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_sensitive_export_denials_are_fail_closed_and_sanitised (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_sensitive_export_denials_are_fail_closed_and_sanitised)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_055202_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 393, in test_sensitive_export_denials_are_fail_closed_and_sanitised
+    self.assertEqual(len(denials), 4)
+AssertionError: 2 != 4
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)

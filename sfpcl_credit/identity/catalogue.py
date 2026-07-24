@@ -260,6 +260,12 @@ PERMISSIONS = [
     ("reports.dpd.read", "View DPD report", "high"),
     ("reports.compliance.read", "View compliance dashboard", "high"),
     ("reports.export", "Export reports", "high"),
+    (
+        "reports.export_sensitive",
+        "Export permitted sensitive report fields without masking",
+        "critical",
+    ),
+    ("audit.export", "Export restricted audit logs", "critical"),
     # A-023: source §19.1 names management_readonly as the dashboard/summary
     # access scope; §12 does not define a narrower dashboard.read code.
     ("management_readonly", "View dashboard summaries", "medium"),
