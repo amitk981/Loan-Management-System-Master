@@ -1,0 +1,29 @@
+[2m[WebServer] [22m[24/Jul/2026 17:42:51] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › default-closure-compliance-staff.e2e.spec.ts:38:5 › S56 records the server-fixed recovery decision and canonical S57 availability (3ms)
+
+
+  1) [chromium] › default-closure-compliance-staff.e2e.spec.ts:38:5 › S56 records the server-fixed recovery decision and canonical S57 availability 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    <launching> /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate,HttpsUpgrades,PaintHolding,ThirdPartyStoragePartitioning,LensOverlay,PlzDedicatedWorker --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-use-zoom-for-dsf=false --no-sandbox --user-data-dir=/var/folders/zq/3s8051dx39q0tk8whcqx44y00000gn/T/playwright_chromiumdev_profile-nHodYV --remote-debugging-pipe --no-startup-window
+    <launched> pid=69222
+    [pid=69222][err] [0724/231253.501270:ERROR:third_party/crashpad/crashpad/util/mach/bootstrap.cc:65] bootstrap_check_in org.chromium.crashpad.child_port_handshake.69224.13344157.KEXCLKMLXNOOKEOR: Permission denied (1100)
+    [pid=69222][err] [0724/231253.503872:ERROR:third_party/crashpad/crashpad/util/file/file_io.cc:103] ReadExactly: expected 4, observed 0
+    [pid=69222][err] [0724/231253.518047:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:208] open /Users/amitkallapa/Library/Application Support/Google/Chrome/Crashpad/settings.dat: Operation not permitted (1)
+    [pid=69222][err] [0724/231253.518513:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:208] open /Users/amitkallapa/Library/Application Support/Google/Chrome/Crashpad/settings.dat: Operation not permitted (1)
+    Call log:
+    [2m  - <launching> /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate,HttpsUpgrades,PaintHolding,ThirdPartyStoragePartitioning,LensOverlay,PlzDedicatedWorker --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-use-zoom-for-dsf=false --no-sandbox --user-data-dir=/var/folders/zq/3s8051dx39q0tk8whcqx44y00000gn/T/playwright_chromiumdev_profile-nHodYV --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=69222[22m
+    [2m  - [pid=69222][err] [0724/231253.501270:ERROR:third_party/crashpad/crashpad/util/mach/bootstrap.cc:65] bootstrap_check_in org.chromium.crashpad.child_port_handshake.69224.13344157.KEXCLKMLXNOOKEOR: Permission denied (1100)[22m
+    [2m  - [pid=69222][err] [0724/231253.503872:ERROR:third_party/crashpad/crashpad/util/file/file_io.cc:103] ReadExactly: expected 4, observed 0[22m
+    [2m  - [pid=69222][err] [0724/231253.518047:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:208] open /Users/amitkallapa/Library/Application Support/Google/Chrome/Crashpad/settings.dat: Operation not permitted (1)[22m
+    [2m  - [pid=69222][err] [0724/231253.518513:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:208] open /Users/amitkallapa/Library/Application Support/Google/Chrome/Crashpad/settings.dat: Operation not permitted (1)[22m
+
+
+  1 failed
+    [chromium] › default-closure-compliance-staff.e2e.spec.ts:38:5 › S56 records the server-fixed recovery decision and canonical S57 availability 

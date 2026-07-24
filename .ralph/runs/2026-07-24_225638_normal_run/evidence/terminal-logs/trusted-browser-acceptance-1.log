@@ -1,0 +1,48 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_225638_normal_run/.ralph/runs/2026-07-24_225638_normal_run/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/default-closure-compliance-staff.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/default-closure-compliance-staff.e2e.spec.ts
+
+[2m[WebServer] [22m[24/Jul/2026 18:03:19] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[24/Jul/2026 18:03:25] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22m[24/Jul/2026 18:03:25] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✘  1 [chromium] › default-closure-compliance-staff.e2e.spec.ts:38:5 › S56 records the server-fixed recovery decision and canonical S57 availability (3.2s)
+
+
+  1) [chromium] › default-closure-compliance-staff.e2e.spec.ts:38:5 › S56 records the server-fixed recovery decision and canonical S57 availability 
+
+    Error: expect.toBeVisible: Error: strict mode violation: getByText('Browser Committee Approver') resolved to 2 elements:
+        1) <div class="text-sm font-medium text-slate-800">Browser Committee Approver</div> aka getByText('Browser Committee Approver').first()
+        2) <div class="text-sm font-medium text-slate-800">Browser Committee Approver</div> aka locator('div').filter({ hasText: /^Browser Committee ApproverApproved$/ }).locator('div')
+
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Browser Committee Approver')[22m
+
+
+      66 |   await expect(page.getByRole('button', { name: 'Security Invocation' })).toBeDisabled();
+      67 |   await page.getByRole('button', { name: 'Recovery Approval' }).click();
+    > 68 |   await expect(page.getByText('Browser Committee Approver')).toBeVisible();
+         |                                                              ^
+      69 |   await expect(page.getByText('Browser CFO Approver')).toBeVisible();
+      70 |   await expect(page.getByText('Invoke Sh4').first()).toBeVisible();
+      71 |   await page.getByLabel('Decision reason').fill('Browser approval reason retained by the backend.');
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_225638_normal_run/sfpcl-lms/e2e/default-closure-compliance-staff.e2e.spec.ts:68:62
+
+  1 failed
+    [chromium] › default-closure-compliance-staff.e2e.spec.ts:38:5 › S56 records the server-fixed recovery decision and canonical S57 availability 
+
+Duration milliseconds: 61636
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_225638_normal_run/.ralph/runs/2026-07-24_225638_normal_run/evidence/trusted-browser-screenshots-1.sha256

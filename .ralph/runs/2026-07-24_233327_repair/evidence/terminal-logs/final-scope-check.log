@@ -1,0 +1,29 @@
+Review result:
+Ready for independent validation
+Placeholder scan:
+PASS: no template placeholders remain.
+Diff whitespace:
+Protected-path status:
+PASS: no protected or forbidden path is modified.
+Repair assertion:
+68:  await expect(page.getByText('Browser Committee Approver')).toHaveCount(2);
+69:  await expect(page.getByText('Browser CFO Approver')).toHaveCount(2);
+Run artifacts:
+.ralph/runs/2026-07-24_233327_repair/codex-settings.md
+.ralph/runs/2026-07-24_233327_repair/evidence/browser-acceptance-repair-summary.md
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/browser-contract-static.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/browser-infrastructure-probe.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/browser-spec-list.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/final-scope-check.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/frontend-focused.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/frontend-static-gates.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/orchestrator-backend-deps.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/orchestrator-frontend-deps.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/trusted-browser-green-attempt-1.log
+.ralph/runs/2026-07-24_233327_repair/evidence/terminal-logs/trusted-browser-red.log
+.ralph/runs/2026-07-24_233327_repair/execution-plan.md
+.ralph/runs/2026-07-24_233327_repair/final-summary.md
+.ralph/runs/2026-07-24_233327_repair/preflight-results.md
+.ralph/runs/2026-07-24_233327_repair/prompt.md
+.ralph/runs/2026-07-24_233327_repair/review-packet.md
+.ralph/runs/2026-07-24_233327_repair/risk-assessment.md

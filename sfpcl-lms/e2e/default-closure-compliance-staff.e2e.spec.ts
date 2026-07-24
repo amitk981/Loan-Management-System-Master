@@ -4,11 +4,12 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) {
-  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PA staff acceptance contract');
+  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PB staff acceptance contract');
 }
 fs.mkdirSync(evidenceDir, { recursive: true });
 
 test.beforeEach(async ({ page }) => {
+  let decided = false;
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(() => localStorage.setItem(
     'sfpcl_staff_auth_session',
@@ -25,11 +26,16 @@ test.beforeEach(async ({ page }) => {
     if (url.pathname === '/api/v1/default-cases/') {
       return listOk(route, [defaultCase]);
     }
-    return ok(route, defaultCase);
+    if (url.pathname.endsWith('/recovery-decision/')) {
+      decided = true;
+      return ok(route, approvedDecision);
+    }
+    return ok(route, decided ? decidedDefaultCase : defaultCase);
   });
+  await page.route('**/api/v1/approval-cases/approval-browser-011pb/', route => ok(route, approvalCase));
 });
 
-test('S53-S55 render server evidence while S56-S57 remain unavailable', async ({ page }) => {
+test('S56 records the server-fixed recovery decision and canonical S57 availability', async ({ page }) => {
   const mutations: string[] = [];
   page.on('request', request => {
     const url = new URL(request.url());
@@ -56,14 +62,22 @@ test('S53-S55 render server evidence while S56-S57 remain unavailable', async ({
   await expect(nonPaymentNote).toBeVisible();
   await expect(nonPaymentNote.getByRole('textbox')).toHaveCount(0);
   await expect(nonPaymentNote.getByRole('button')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Recovery Approval' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Recovery Approval' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Security Invocation' })).toBeDisabled();
-  expect(mutations).toEqual([]);
-
-  await page.getByRole('button', { name: /All Cases/ }).click();
-  await expect(page.getByText('Missed repayment seeded for the S53 browser contract.')).toBeVisible();
+  await page.getByRole('button', { name: 'Recovery Approval' }).click();
+  await expect(page.getByText('Browser Committee Approver')).toHaveCount(2);
+  await expect(page.getByText('Browser CFO Approver')).toHaveCount(2);
+  await expect(page.getByText('Invoke Sh4').first()).toBeVisible();
+  await page.getByLabel('Decision reason').fill('Browser approval reason retained by the backend.');
+  await page.getByRole('button', { name: 'Record Recovery Decision' }).click();
+  await expect(page.getByText('Recovery decision recorded from canonical backend state.')).toBeVisible();
+  await expect(page.getByText('Browser approval reason retained by the backend.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Security Invocation' })).toBeEnabled();
+  expect(mutations).toEqual([
+    'POST /api/v1/default-cases/default-browser-011pa/recovery-decision/',
+  ]);
   await page.screenshot({
-    path: path.join(evidenceDir, 'default-case-workbench.png'),
+    path: path.join(evidenceDir, 'recovery-approval-decision.png'),
     fullPage: true,
     animations: 'disabled',
   });
@@ -115,6 +129,7 @@ const creditManager = {
     'defaults.case.read',
     'defaults.assessment.create',
     'defaults.extension.grant',
+    'recovery.decision.create',
   ],
   available_actions: [],
 };
@@ -168,7 +183,7 @@ const defaultCase = {
     intentionality_assessment: 'non_intentional',
     outstanding_principal_amount: '300000.00',
     outstanding_interest_amount: '45000.00',
-    recommended_recovery_action: 'present_to_sanction_committee',
+    recommended_recovery_action: 'invoke_sh4',
     evidence_document_ids: ['note-browser-evidence'],
     frozen_case_facts: {
       borrower_name: 'Seeded Browser Default Member',
@@ -179,17 +194,75 @@ const defaultCase = {
     },
     document_id: 'note-browser-document',
     prepared_by_user_id: 'assessor-browser-011pa',
-    status: 'draft',
-    approval_case_id: null,
-    submitted_to_sanction_committee_at: null,
+    status: 'submitted',
+    approval_case_id: 'approval-browser-011pb',
+    submitted_to_sanction_committee_at: '2026-07-19T10:00:00Z',
     available_actions: [],
   },
-  recovery_decision: {
-    recovery_decision_id: 'decision-browser-011pa',
+  recovery_decision: null,
+  recovery_decision_control: {
+    action_code: 'record_recovery_decision',
+    enabled: true,
+    disabled_reason: null,
+    approval_case_id: 'approval-browser-011pb',
     decision: 'invoke_sh4',
-    status: 'approved',
-    available_actions: [{ action_code: 'execute_recovery' }],
   },
   recovery_action: null,
   available_actions: [],
+};
+
+const approvalCase = {
+  approval_case_id: 'approval-browser-011pb',
+  approval_type: 'recovery',
+  related_entity_type: 'non_payment_note',
+  related_entity_id: 'note-browser-011pa',
+  current_status: 'approved',
+  decision_date: '2026-07-20',
+  reason_for_approval: 'invoke_sh4',
+  conflict_block_reason: null,
+  required_approvers: [
+    { role_code: 'sanction_committee_member', user_id: 'approver-browser-1', full_name: 'Browser Committee Approver', decision: 'approved', acted_at: '2026-07-20T10:00:00Z' },
+    { role_code: 'cfo', user_id: 'approver-browser-2', full_name: 'Browser CFO Approver', decision: 'approved', acted_at: '2026-07-20T10:05:00Z' },
+  ],
+  approval_actions: [
+    { approval_action_id: 'approval-action-browser-1', role_code: 'sanction_committee_member', user_id: 'approver-browser-1', full_name: 'Browser Committee Approver', decision: 'approved', comments: 'Approved.', acted_at: '2026-07-20T10:00:00Z' },
+    { approval_action_id: 'approval-action-browser-2', role_code: 'cfo', user_id: 'approver-browser-2', full_name: 'Browser CFO Approver', decision: 'approved', comments: 'Approved.', acted_at: '2026-07-20T10:05:00Z' },
+  ],
+  excluded_approvers: [],
+  available_actions: [],
+};
+
+const approvedDecision = {
+  recovery_decision_id: 'decision-browser-011pb',
+  default_case_id: 'default-browser-011pa',
+  non_payment_note_id: 'note-browser-011pa',
+  approval_case_id: 'approval-browser-011pb',
+  decision: 'invoke_sh4',
+  decision_reason: 'Browser approval reason retained by the backend.',
+  status: 'approved',
+  approval_evidence: {
+    approval_case_status: 'approved',
+    approved_action: 'invoke_sh4',
+    required_approvers: approvalCase.required_approvers,
+    approval_actions: approvalCase.approval_actions.map(action => ({
+      approval_action_id: action.approval_action_id,
+      approver_user_id: action.user_id,
+      approver_role_code: action.role_code,
+      approver_display_name: action.full_name,
+      decision: action.decision,
+      acted_at: action.acted_at,
+    })),
+    closed_at: '2026-07-20T10:05:00Z',
+  },
+  decided_by_user_id: 'credit-manager-browser',
+  decided_by_role_code: 'cfo',
+  decided_at: '2026-07-20T10:10:00Z',
+  available_actions: [{ action_code: 'execute_recovery', action_type: 'invoke_sh4', required_permission: 'recovery.action.initiate' }],
+};
+
+const decidedDefaultCase = {
+  ...defaultCase,
+  default_case_status: 'recovery_approved',
+  recovery_decision: approvedDecision,
+  recovery_decision_control: null,
 };

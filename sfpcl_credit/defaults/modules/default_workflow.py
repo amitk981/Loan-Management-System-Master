@@ -516,6 +516,7 @@ def list_default_cases(*, actor, query_params):
 
 def serialize_default_case(row, *, actor):
     from sfpcl_credit.recovery.modules.recovery_decision import (
+        project_recovery_decision_control,
         serialize_recovery_decision,
     )
     from sfpcl_credit.recovery.modules.recovery_workflow import (
@@ -565,6 +566,11 @@ def serialize_default_case(row, *, actor):
         ),
         "recovery_decision": (
             serialize_recovery_decision(decision, actor=actor) if decision else None
+        ),
+        "recovery_decision_control": (
+            None
+            if decision
+            else project_recovery_decision_control(actor=actor, default_case=row)
         ),
         "recovery_action": (
             serialize_recovery_action(action, actor=actor) if action else None

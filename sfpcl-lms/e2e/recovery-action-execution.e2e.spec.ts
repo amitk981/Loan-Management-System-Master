@@ -9,7 +9,7 @@ fs.mkdirSync(evidenceDir, { recursive: true });
 
 const email = 'e2e.credit.manager@sfpcl.example';
 
-test('S57 stays unavailable until 011PB wires its server-owned action contract', async ({ page }) => {
+test('S57 is available only from its server-owned executable decision action', async ({ page }) => {
   const mutationRequests: string[] = [];
   await page.route('**/api/v1/default-cases/**', route => {
     const pathname = new URL(route.request().url()).pathname;
@@ -27,11 +27,13 @@ test('S57 stays unavailable until 011PB wires its server-owned action contract',
   });
   await openRecovery(page);
   await expect(page.getByText('Browser Recovery Borrower').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Recovery Approval' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Security Invocation' })).toBeDisabled();
-  await expect(page.getByText(/remain unavailable until the server-owned S56\/S57 action contract/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Recovery Approval' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Security Invocation' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Security Invocation' }).click();
+  await expect(page.getByText('Approved recovery execution available')).toBeVisible();
+  await expect(page.getByText('Invoke Sh4')).toBeVisible();
   expect(mutationRequests).toEqual([]);
-  await capture(page, 'recovery-action-blocked.png');
+  await capture(page, 'recovery-action-approved.png');
 });
 
 async function openRecovery(page: Page) {
@@ -89,10 +91,13 @@ const row = {
   non_payment_note: null,
   recovery_decision: {
     recovery_decision_id: 'decision-1',
+    approval_case_id: 'approval-1',
     decision: 'invoke_sh4',
+    decision_reason: 'Approved by the canonical recovery authority.',
     status: 'approved',
-    available_actions: [{ action_code: 'execute_recovery' }],
+    available_actions: [{ action_code: 'execute_recovery', action_type: 'invoke_sh4' }],
   },
+  recovery_decision_control: null,
   recovery_action: null,
   available_actions: [],
 };

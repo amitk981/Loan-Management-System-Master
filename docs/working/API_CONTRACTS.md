@@ -154,6 +154,24 @@ version evidence.
 
 ## Recovery Decision approval (011E)
 
+While no recovery decision exists, default-case detail includes the server-owned decision control:
+
+```json
+{
+  "action_code": "record_recovery_decision",
+  "enabled": true,
+  "disabled_reason": null,
+  "approval_case_id": "uuid",
+  "decision": "invoke_sh4"
+}
+```
+
+The control is enabled only when the current actor and the note-linked approval evidence pass the
+same permission, terminal-state, matrix-version, action-timing, role, conflict, and distinct-authority
+validation used by decision creation. When unavailable, `enabled` is `false` and
+`disabled_reason` is the canonical blocker; identifiers remain nullable when the prerequisite note,
+approval case, or recommendation is absent. After a decision exists the control is `null`.
+
 `POST /api/v1/default-cases/{default_case_id}/recovery-decision/` accepts exactly:
 
 ```json

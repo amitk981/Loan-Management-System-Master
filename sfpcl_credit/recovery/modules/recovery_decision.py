@@ -166,6 +166,40 @@ def api_create_recovery_decision(*, actor, default_case_id, payload, request=Non
     )
 
 
+def project_recovery_decision_control(*, actor, default_case):
+    note = getattr(default_case, "non_payment_note", None)
+    case = note.approval_case if note is not None else None
+    decision = note.recommended_recovery_action if note is not None else None
+    control = {
+        "action_code": "record_recovery_decision",
+        "enabled": False,
+        "disabled_reason": "A submitted recovery recommendation is required.",
+        "approval_case_id": str(case.pk) if case is not None else None,
+        "decision": decision,
+    }
+    if note is None or case is None or not decision:
+        return control
+    try:
+        _require_permission(actor)
+        _validated_approval_evidence(
+            actor=actor,
+            default_case=default_case,
+            note=note,
+            case=case,
+            decision=decision,
+        )
+    except RecoveryDecisionPermissionDenied:
+        control["disabled_reason"] = (
+            "Configured recovery decision authority is required."
+        )
+    except RecoveryDecisionConflict as exc:
+        control["disabled_reason"] = str(exc)
+    else:
+        control["enabled"] = True
+        control["disabled_reason"] = None
+    return control
+
+
 def _require_permission(actor):
     if (
         not actor.can_authenticate()

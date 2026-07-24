@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from './authSession';
-import { fetchDefaultCase, fetchDefaultCases } from './recoveryApi';
+import {
+  createRecoveryDecision,
+  fetchDefaultCase,
+  fetchDefaultCases,
+  fetchRecoveryApprovalCase,
+} from './recoveryApi';
 
 const storage = new Map<string, string>();
 
@@ -57,6 +62,55 @@ describe('011PA default case read contracts', () => {
     expect(detail.non_payment_note?.frozen_case_facts).toEqual(
       list.items[0].non_payment_note?.frozen_case_facts,
     );
+  });
+});
+
+describe('011PB recovery decision contracts', () => {
+  it('reads the note-linked approval and posts only its identifier, action, and mandatory reason', async () => {
+    const approval = {
+      approval_case_id: 'approval-1',
+      approval_type: 'recovery',
+      related_entity_type: 'non_payment_note',
+      related_entity_id: 'note-1',
+      current_status: 'approved',
+      reason_for_approval: 'invoke_sh4',
+    };
+    const decision = {
+      recovery_decision_id: 'decision-1',
+      approval_case_id: 'approval-1',
+      decision: 'invoke_sh4',
+      decision_reason: 'Approved after reviewing frozen evidence.',
+      status: 'approved',
+      available_actions: [],
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(approval))
+      .mockResolvedValueOnce(ok(decision));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRecoveryApprovalCase('approval-1')).resolves.toMatchObject(approval);
+    await expect(createRecoveryDecision('case-1', {
+      approval_case_id: 'approval-1',
+      decision: 'invoke_sh4',
+      decision_reason: 'Approved after reviewing frozen evidence.',
+    })).resolves.toMatchObject(decision);
+
+    expect(fetchMock.mock.calls.map(([url, options]) => [
+      url,
+      (options as RequestInit | undefined)?.method ?? 'GET',
+      (options as RequestInit | undefined)?.body,
+    ])).toEqual([
+      ['http://127.0.0.1:8000/api/v1/approval-cases/approval-1/', 'GET', undefined],
+      [
+        'http://127.0.0.1:8000/api/v1/default-cases/case-1/recovery-decision/',
+        'POST',
+        JSON.stringify({
+          approval_case_id: 'approval-1',
+          decision: 'invoke_sh4',
+          decision_reason: 'Approved after reviewing frozen evidence.',
+        }),
+      ],
+    ]);
   });
 });
 

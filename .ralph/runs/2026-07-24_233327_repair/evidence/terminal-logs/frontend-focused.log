@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/defaults/DefaultRecoveryHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_225638_normal_run/sfpcl-lms
+
+ ✓ src/pages/defaults/DefaultRecoveryHub.test.tsx (11 tests) 729ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  23:39:29
+   Duration  1.79s (transform 252ms, setup 0ms, collect 423ms, tests 729ms, environment 339ms, prepare 60ms)
+

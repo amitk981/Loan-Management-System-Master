@@ -45,12 +45,82 @@ export interface NonPaymentNoteProjection {
   available_actions?: Array<{ action_code: string }>;
 }
 
+export interface RecoveryApproverProjection {
+  role_code: string;
+  user_id: string;
+  full_name: string | null;
+  decision?: string | null;
+  acted_at?: string | null;
+}
+
+export interface RecoveryApprovalProjection {
+  approval_case_id: string;
+  approval_type: string;
+  related_entity_type: string;
+  related_entity_id: string;
+  current_status: string;
+  decision_date: string;
+  reason_for_approval: string;
+  conflict_block_reason: string | null;
+  required_approvers: RecoveryApproverProjection[];
+  approval_actions: Array<RecoveryApproverProjection & {
+    approval_action_id: string;
+    decision: string;
+    comments: string;
+    acted_at: string;
+  }>;
+  excluded_approvers: Array<{ user_id: string; conflict_code: string; reason: string }>;
+  available_actions: Array<{
+    action_code: string;
+    label: string;
+    enabled: boolean;
+    disabled_reason: string | null;
+    required_permission: string;
+  }>;
+}
+
+export interface RecoveryDecisionProjection {
+  recovery_decision_id: string;
+  default_case_id?: string;
+  non_payment_note_id?: string;
+  approval_case_id: string;
+  decision: string;
+  decision_reason: string;
+  status: string;
+  approval_evidence?: {
+    approval_case_status?: string;
+    approved_action?: string;
+    required_approvers?: RecoveryApproverProjection[];
+    approval_actions?: Array<{
+      approval_action_id: string;
+      approver_user_id: string;
+      approver_role_code: string;
+      approver_display_name: string;
+      decision: string;
+      acted_at: string;
+    }>;
+    closed_at?: string;
+  };
+  decided_by_user_id?: string;
+  decided_by_role_code?: string;
+  decided_at?: string;
+  available_actions: Array<{ action_code: string; action_type?: string; required_permission?: string }>;
+}
+
 export interface RecoveryActionProjection {
   recovery_action_id: string; action_status: 'pending' | 'completed' | 'failed';
   action_type: string; source_security: { security_type: string; security_id: string; status: string };
   initiated_at: string; amount_recovered: string | null; external_sap_status: string;
   interaction_log: Array<{ interaction_at: string; interaction_mode: string; summary: string; grievance_reference: string }>;
   ledger_posting: Record<string, string>; available_actions: Array<{ action_code: string }>;
+}
+
+export interface RecoveryDecisionControlProjection {
+  action_code: 'record_recovery_decision';
+  enabled: boolean;
+  disabled_reason: string | null;
+  approval_case_id: string | null;
+  decision: string | null;
 }
 
 export interface DefaultCaseProjection {
@@ -72,7 +142,8 @@ export interface DefaultCaseProjection {
   current_assessment: DefaultAssessmentProjection | null;
   extension_note: ExtensionNoteProjection | null;
   non_payment_note: NonPaymentNoteProjection | null;
-  recovery_decision: null | { recovery_decision_id: string; decision: string; status: string; available_actions: Array<{ action_code: string }> };
+  recovery_decision: RecoveryDecisionProjection | null;
+  recovery_decision_control: RecoveryDecisionControlProjection | null;
   recovery_action: RecoveryActionProjection | null;
   reason: string;
   available_actions?: string[];
@@ -86,8 +157,18 @@ export const fetchDefaultCases = () =>
 export const fetchDefaultCase = (defaultCaseId: string) =>
   authenticatedRequest<DefaultCaseProjection>(`/api/v1/default-cases/${defaultCaseId}/`);
 
-// Retained for the 011F reverse consumer until 011PB owns the S56/S57 page wiring.
 export const fetchRecoveryCases = fetchDefaultCases;
+
+export const fetchRecoveryApprovalCase = (approvalCaseId: string) =>
+  authenticatedRequest<RecoveryApprovalProjection>(`/api/v1/approval-cases/${approvalCaseId}/`);
+
+export const createRecoveryDecision = (
+  defaultCaseId: string,
+  body: { approval_case_id: string; decision: string; decision_reason: string },
+) => authenticatedRequest<RecoveryDecisionProjection>(
+  `/api/v1/default-cases/${defaultCaseId}/recovery-decision/`,
+  { method: 'POST', body },
+);
 
 export const uploadRecoveryEvidence = async (loanAccountId: string, file: File) => (
   await authenticatedMultipartRequest<{ document_id: string }>('/api/v1/document-files/', {

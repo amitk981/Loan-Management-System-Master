@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/recoveryApi.test.ts src/pages/defaults/DefaultRecoveryHub.test.tsx
+
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_225638_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (2 tests) 5ms
+ ✓ src/pages/defaults/DefaultRecoveryHub.test.tsx (11 tests) 948ms
+   ✓ 011PA default case and frozen-note read surface > enforces a reason, posts the server-fixed action, and refetches canonical terminal state  341ms
+
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+   Start at  23:26:09
+   Duration  2.40s (transform 322ms, setup 0ms, collect 545ms, tests 953ms, environment 434ms, prepare 141ms)
+

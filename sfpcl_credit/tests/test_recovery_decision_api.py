@@ -365,3 +365,39 @@ class RecoveryDecisionApiTests(TestCase):
         )
         self.assertEqual(blocked.status_code, 409, blocked.content)
         self.assertEqual(RecoveryDecision.objects.count(), 0)
+
+    def test_default_detail_projects_the_exact_server_owned_decision_control(self):
+        created, case, approvers, _ = self._submitted_case()
+        actor = approvers[0]
+        auth = self._grant_decider(actor)
+        detail_url = f"/api/v1/default-cases/{created['default_case_id']}/"
+
+        pending = self.client.get(detail_url, **auth)
+        self.assertEqual(pending.status_code, 200, pending.content)
+        self.assertEqual(
+            pending.json()["data"]["recovery_decision_control"],
+            {
+                "action_code": "record_recovery_decision",
+                "enabled": False,
+                "disabled_reason": (
+                    "The approval case is not a matching terminal approval "
+                    "for this recovery action."
+                ),
+                "approval_case_id": str(case.pk),
+                "decision": "invoke_sh4",
+            },
+        )
+
+        self._force_terminal_approval(case, approvers)
+        approved = self.client.get(detail_url, **auth)
+        self.assertEqual(approved.status_code, 200, approved.content)
+        self.assertEqual(
+            approved.json()["data"]["recovery_decision_control"],
+            {
+                "action_code": "record_recovery_decision",
+                "enabled": True,
+                "disabled_reason": None,
+                "approval_case_id": str(case.pk),
+                "decision": "invoke_sh4",
+            },
+        )
