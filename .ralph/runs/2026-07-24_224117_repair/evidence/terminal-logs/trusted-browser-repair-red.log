@@ -1,0 +1,31 @@
+Run: 2026-07-24_224117_repair
+Slice: 011PA-default-case-notes-frontend-wiring
+Domain: trusted browser acceptance
+
+Preserved independent RED:
+- Command:
+  RALPH_EVIDENCE_DIR=.../2026-07-24_213738_repair/evidence/screenshots/run-1
+  E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python
+  npm run e2e -- e2e/default-closure-compliance-staff.e2e.spec.ts
+- Browser/page result: Chromium launched and the page rendered.
+- Exact failure:
+  Locator: getByRole('textbox')
+  Expected: 0
+  Received: 2
+  sfpcl-lms/e2e/default-closure-compliance-staff.e2e.spec.ts:55
+- Exit code: 1
+
+Current candidate diagnosis:
+- The failing locator covered the complete AppShell, so unrelated shell search controls were counted
+  while the test was trying to prove that frozen Non-Payment Note evidence was not editable.
+- The current candidate scopes both editability assertions to the named
+  `region[aria-label="Note for Non-Payment"]`.
+- The rendered note region contains display-only elements and no input, textarea, or button.
+
+Current coding-sandbox rerun:
+- The exact command was invoked with the current run-1 evidence directory.
+- The localhost backend reached its ready endpoint.
+- System Chrome then closed during browserType.launch before a page existed.
+- Exit code: 1
+- No screenshot or manifest was fabricated. Per the slice contract, independent trusted validation
+  remains authoritative for the two browser repetitions.

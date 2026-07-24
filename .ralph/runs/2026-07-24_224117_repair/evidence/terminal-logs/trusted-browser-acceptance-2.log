@@ -1,0 +1,28 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_211119_normal_run/.ralph/runs/2026-07-24_224117_repair/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/default-closure-compliance-staff.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/default-closure-compliance-staff.e2e.spec.ts
+
+[2m[WebServer] [22m[24/Jul/2026 17:23:14] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:87830) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[24/Jul/2026 17:23:19] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22m[24/Jul/2026 17:23:19] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  1 [chromium] › default-closure-compliance-staff.e2e.spec.ts:32:5 › S53-S55 render server evidence while S56-S57 remain unavailable (2.8s)
+
+  1 passed (57.0s)
+
+Duration milliseconds: 57729
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_211119_normal_run/.ralph/runs/2026-07-24_224117_repair/evidence/trusted-browser-screenshots-2.sha256

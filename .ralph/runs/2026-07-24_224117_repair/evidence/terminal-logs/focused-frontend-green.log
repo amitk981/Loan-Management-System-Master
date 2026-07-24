@@ -1,0 +1,52 @@
+Run: 2026-07-24_224117_repair
+Slice: 011PA-default-case-notes-frontend-wiring
+
+Focused tests
+Command:
+npm test -- src/pages/defaults/DefaultRecoveryHub.test.tsx src/services/recoveryApi.test.ts
+
+Result:
+- src/services/recoveryApi.test.ts: 1 passed
+- src/pages/defaults/DefaultRecoveryHub.test.tsx: 7 passed
+- Test files: 2 passed
+- Tests: 8 passed
+- Exit code: 0
+
+Typecheck
+Command: npm run typecheck
+Result: PASS, exit code 0
+
+Lint
+Command: npm run lint
+Result: PASS, exit code 0
+
+Build
+Command: npm run build
+Result: PASS, exit code 0
+Note: Vite emitted the existing advisory that a generated chunk exceeds 500 kB.
+
+Playwright discovery
+Command:
+RALPH_EVIDENCE_DIR=.../2026-07-24_224117_repair/evidence/screenshots/discovery
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python
+npm run e2e -- --list e2e/default-closure-compliance-staff.e2e.spec.ts
+
+Result:
+- Exactly one declared test discovered:
+  S53-S55 render server evidence while S56-S57 remain unavailable
+- Exit code: 0
+
+Static trusted-browser validator
+Command:
+source scripts/lib/ralph-browser-acceptance.sh &&
+ralph_validate_trusted_browser_acceptance
+  docs/slices/011PA-default-case-notes-frontend-wiring.md sfpcl-lms
+
+Result: PASS, exit code 0
+
+Candidate hygiene
+- git diff --check: PASS
+- Scoped [DEBUG-...] instrumentation search: no matches
+- Product changed-line accounting: 1,888 additions plus deletions, within the configured 2,000-line
+  limit.
+- Protected/forbidden changed-path scan: no matches

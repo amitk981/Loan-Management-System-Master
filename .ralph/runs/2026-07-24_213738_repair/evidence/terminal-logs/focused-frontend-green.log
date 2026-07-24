@@ -1,0 +1,16 @@
+Run: 2026-07-24_213738_repair
+Candidate: preserved without product edits
+
+Focused command:
+npm test -- src/pages/defaults/DefaultRecoveryHub.test.tsx src/services/recoveryApi.test.ts
+
+Result:
+- Test files: 2 passed
+- Tests: 8 passed
+- Exit code: 0
+
+Candidate gates rerun:
+- npm run typecheck — PASS (exit 0)
+- npm run lint — PASS (exit 0)
+- npm run build — PASS (exit 0)
+- Build transformed 1,895 modules and retained the repository's existing chunk-size warning.

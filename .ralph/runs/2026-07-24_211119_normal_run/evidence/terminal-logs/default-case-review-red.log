@@ -1,0 +1,1412 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/defaults/DefaultRecoveryHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_211119_normal_run/sfpcl-lms
+
+ ❯ src/pages/defaults/DefaultRecoveryHub.test.tsx (7 tests | 1 failed) 1278ms
+   ✓ 011PA default case and frozen-note read surface > renders list/detail, grace, extension, and frozen note from backend projections 152ms
+   ✓ 011PA default case and frozen-note read surface > renders the loading state until the list resolves 9ms
+   ✓ 011PA default case and frozen-note read surface > renders the empty state without requesting a detail 4ms
+   ✓ 011PA default case and frozen-note read surface > renders distinct unauthorized and general error states 7ms
+   ✓ 011PA default case and frozen-note read surface > renders absent assessment, extension, and note as blocked server states 39ms
+   ✓ 011PA default case and frozen-note read surface > keeps the latest selected case authoritative when an older detail resolves later 48ms
+   × 011PA default case and frozen-note read surface > renders a detail-level authorization failure distinctly 1019ms
+     → Unable to find an element with the text: Access Denied. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview backend-owned default cases, grace periods, extension evidence, and frozen non-payment notes.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 text-orange-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Cases[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mBackend scoped total[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 text-red-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mSelected Stage[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned workflow state[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 text-violet-700 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace State[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned grace projection[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-green-100 text-green-700"[39m
+            [36m>[39m
+              [0m1[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-blue-50 border-blue-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-info text-blue-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 16v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 8h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-blue-900"[39m
+            [36m>[39m
+              [0mS53-S55 read-only evidence[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm mt-0.5 text-blue-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mid[39m=[32m"recovery-wiring-blocker"[39m
+              [36m>[39m
+                [0mRecovery approval and security invocation remain unavailable until the server-owned S56/S57 action contract is wired in 011PB.[0m
+              [36m</span>[39m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col lg:flex-row gap-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"w-full lg:w-80 flex-shrink-0 space-y-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start justify-between mb-2 gap-2"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+                [36m>[39m
+                  [0mLN-DEFAULT-011PA[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mNon Payment Under Review[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+              [36m>[39m
+                [0mBackend Default Member[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+              [36m>[39m
+                [0m₹3,45,000.00[0m
+                [0m outstanding[0m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"16"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 9v4"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 17h.01"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+                  [36m>[39m
+                    [0mDefault Case Detail Unavailable[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+                  [36m>[39m
+                    [0mSelected case scope was revoked.[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview backend-owned default cases, grace periods, extension evidence, and frozen non-payment notes.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 text-orange-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Cases[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mBackend scoped total[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 text-red-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mSelected Stage[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned workflow state[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 text-violet-700 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace State[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned grace projection[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-green-100 text-green-700"[39m
+            [36m>[39m
+              [0m1[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-blue-50 border-blue-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-info text-blue-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 16v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 8h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-blue-900"[39m
+            [36m>[39m
+              [0mS53-S55 read-only evidence[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm mt-0.5 text-blue-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mid[39m=[32m"recovery-wiring-blocker"[39m
+              [36m>[39m
+                [0mRecovery approval and security invocation remain unavailable until the server-owned S56/S57 action contract is wired in 011PB.[0m
+              [36m</span>[39m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col lg:flex-row gap-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"w-full lg:w-80 flex-shrink-0 space-y-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start justify-between mb-2 gap-2"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+                [36m>[39m
+                  [0mLN-DEFAULT-011PA[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mNon Payment Under Review[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+              [36m>[39m
+                [0mBackend Default Member[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+              [36m>[39m
+                [0m₹3,45,000.00[0m
+                [0m outstanding[0m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"16"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 9v4"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 17h.01"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+                  [36m>[39m
+                    [0mDefault Case Detail Unavailable[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+                  [36m>[39m
+                    [0mSelected case scope was revoked.[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/defaults/DefaultRecoveryHub.test.tsx > 011PA default case and frozen-note read surface > renders a detail-level authorization failure distinctly
+TestingLibraryElementError: Unable to find an element with the text: Access Denied. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview backend-owned default cases, grace periods, extension evidence, and frozen non-payment notes.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 text-orange-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Cases[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mBackend scoped total[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 text-red-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mSelected Stage[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned workflow state[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 text-violet-700 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace State[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned grace projection[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-green-100 text-green-700"[39m
+            [36m>[39m
+              [0m1[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-blue-50 border-blue-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-info text-blue-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 16v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 8h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-blue-900"[39m
+            [36m>[39m
+              [0mS53-S55 read-only evidence[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm mt-0.5 text-blue-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mid[39m=[32m"recovery-wiring-blocker"[39m
+              [36m>[39m
+                [0mRecovery approval and security invocation remain unavailable until the server-owned S56/S57 action contract is wired in 011PB.[0m
+              [36m</span>[39m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col lg:flex-row gap-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"w-full lg:w-80 flex-shrink-0 space-y-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start justify-between mb-2 gap-2"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+                [36m>[39m
+                  [0mLN-DEFAULT-011PA[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mNon Payment Under Review[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+              [36m>[39m
+                [0mBackend Default Member[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+              [36m>[39m
+                [0m₹3,45,000.00[0m
+                [0m outstanding[0m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"16"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 9v4"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 17h.01"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+                  [36m>[39m
+                    [0mDefault Case Detail Unavailable[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+                  [36m>[39m
+                    [0mSelected case scope was revoked.[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mDefault & Recovery Management[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview backend-owned default cases, grace periods, extension evidence, and frozen non-payment notes.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-orange-50 border-orange-100 text-orange-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mDefault Cases[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mBackend scoped total[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-red-50 border-red-100 text-red-600 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mSelected Stage[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned workflow state[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-violet-50 border-violet-100 text-violet-700 border rounded-xl p-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-lg font-bold"[39m
+          [36m>[39m
+            [0m—[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-600 mt-0.5"[39m
+          [36m>[39m
+            [0mGrace State[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-medium text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mServer-owned grace projection[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mAll Cases[0m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs px-1.5 py-0.5 rounded-full font-semibold bg-green-100 text-green-700"[39m
+            [36m>[39m
+              [0m1[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mGrace Period / Extension[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNon-Payment Note[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRecovery Approval[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"recovery-wiring-blocker"[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-300 cursor-not-allowed"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-lock"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"12"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"12"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<rect[39m
+                [33mheight[39m=[32m"11"[39m
+                [33mrx[39m=[32m"2"[39m
+                [33mry[39m=[32m"2"[39m
+                [33mwidth[39m=[32m"18"[39m
+                [33mx[39m=[32m"3"[39m
+                [33my[39m=[32m"11"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 11V7a5 5 0 0 1 10 0v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mSecurity Invocation[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-blue-50 border-blue-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-info text-blue-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 16v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 8h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-blue-900"[39m
+            [36m>[39m
+              [0mS53-S55 read-only evidence[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm mt-0.5 text-blue-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mid[39m=[32m"recovery-wiring-blocker"[39m
+              [36m>[39m
+                [0mRecovery approval and security invocation remain unavailable until the server-owned S56/S57 action contract is wired in 011PB.[0m
+              [36m</span>[39m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col lg:flex-row gap-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"w-full lg:w-80 flex-shrink-0 space-y-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start justify-between mb-2 gap-2"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+                [36m>[39m
+                  [0mLN-DEFAULT-011PA[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"10"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"10"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mNon Payment Under Review[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+              [36m>[39m
+                [0mBackend Default Member[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+              [36m>[39m
+                [0m₹3,45,000.00[0m
+                [0m outstanding[0m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"16"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 9v4"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 17h.01"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+                  [36m>[39m
+                    [0mDefault Case Detail Unavailable[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+                  [36m>[39m
+                    [0mSelected case scope was revoked.[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/defaults/DefaultRecoveryHub.test.tsx:259:25
+    257| 
+    258|     render(<DefaultRecoveryHub />);
+    259|     expect(await screen.findByText('Access Denied')).toBeTruthy();
+       |                         ^
+    260|     expect(screen.getByText('Selected case scope was revoked.')).toBeT…
+    261|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  21:27:30
+   Duration  2.16s (transform 154ms, setup 0ms, collect 313ms, tests 1.28s, environment 311ms, prepare 40ms)
+

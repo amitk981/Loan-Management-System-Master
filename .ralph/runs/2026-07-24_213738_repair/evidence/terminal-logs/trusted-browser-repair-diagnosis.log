@@ -1,0 +1,44 @@
+Run: 2026-07-24_213738_repair
+Slice: 011PA-default-case-notes-frontend-wiring
+Domain: trusted browser acceptance
+
+Preserved failure:
+- The prior independent first run reached Playwright, then system Chrome closed during
+  browserType.launch before a page existed.
+- No page assertion ran, no screenshot was produced, and the validator correctly deferred run 2.
+
+Current trusted infrastructure probe:
+- Command: npm run e2e:probe
+- Result: PASS
+- Test: browser-launch.probe.ts — the centrally selected browser can create a page
+- Count: 1 passed
+- Source: evidence/terminal-logs/browser-infrastructure-probe.log
+
+Static trusted contract validation:
+- Helper: ralph_validate_trusted_browser_acceptance
+- Slice: docs/slices/011PA-default-case-notes-frontend-wiring.md
+- Project: sfpcl-lms
+- Result: PASS (exit 0)
+
+Slice spec discovery:
+- Command:
+  RALPH_EVIDENCE_DIR=../.ralph/runs/2026-07-24_213738_repair/evidence/screenshots/discovery
+  E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python
+  npm run e2e -- --list e2e/default-closure-compliance-staff.e2e.spec.ts
+- Result: PASS (exit 0)
+- Discovered:
+  [chromium] default-closure-compliance-staff.e2e.spec.ts:32:5
+  S53-S55 render server evidence while S56-S57 remain unavailable
+- Count: 1 test in 1 file
+
+Coding-sandbox diagnostic:
+- The full declared command reached Playwright and again stopped at browserType.launch before page
+  creation. This is expected from the coding-agent sandbox and is not trusted browser acceptance.
+- No screenshot or manifest was fabricated from that attempt.
+
+Diagnosis:
+- The demonstrated failure is a browser-launch/environment outcome, not a page assertion, data
+  contract, selector, screenshot-path, or product-code failure.
+- The preserved candidate requires no product edit in this bounded repair.
+- The orchestrator's two outside-sandbox executions are the authoritative validator and must each
+  produce a valid default-case-workbench.png plus manifest.

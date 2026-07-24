@@ -1,7 +1,7 @@
 # Slice 011PA: Default Case and Notes Staff Frontend Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `011P`
