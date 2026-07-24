@@ -19,7 +19,10 @@ def workflow_event_list(request):
             "You do not have permission to read workflow events.",
         )
     try:
-        data, pagination = events.paginated_workflow_events(request.GET)
+        data, pagination = events.paginated_workflow_events(
+            actor=user,
+            query_params=request.GET,
+        )
     except ValidationError as exc:
         return error_response(
             request,

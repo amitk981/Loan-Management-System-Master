@@ -1,0 +1,61 @@
+# Backend Validation Lane Results
+
+- Authoritative lane: full
+- Classifier recommendation: full
+- Selection reason: multiple backend module roots changed: configurations, workflows
+- Enforcement policy: selective
+- Slice risk: medium
+- Candidate completion ordinal: 341
+- Impacted-test workers: 6
+
+Backend changed paths:
+- `sfpcl_credit/configurations/services.py`
+- `sfpcl_credit/configurations/views.py`
+- `sfpcl_credit/identity/audit_views.py`
+- `sfpcl_credit/identity/modules/audit_log.py`
+- `sfpcl_credit/reports/registry.py`
+- `sfpcl_credit/reports/selectors/audit_log.py`
+- `sfpcl_credit/reports/views.py`
+- `sfpcl_credit/shared/masking.py`
+- `sfpcl_credit/tests/test_audit_explorer_api.py`
+- `sfpcl_credit/tests/test_audit_logs_api.py`
+- `sfpcl_credit/tests/test_configurations_api.py`
+- `sfpcl_credit/tests/test_report_catalogue_api.py`
+- `sfpcl_credit/tests/test_report_exports_api.py`
+- `sfpcl_credit/tests/test_workflow_events_api.py`
+- `sfpcl_credit/workflows/event_views.py`
+- `sfpcl_credit/workflows/events.py`
+
+Impacted test labels:
+- `sfpcl_credit.tests.test_audit_explorer_api`
+- `sfpcl_credit.tests.test_audit_logs_api`
+- `sfpcl_credit.tests.test_configurations_api`
+- `sfpcl_credit.tests.test_report_catalogue_api`
+- `sfpcl_credit.tests.test_report_exports_api`
+- `sfpcl_credit.tests.test_workflow_events_api`
+- `sfpcl_credit.tests.test_approval_matrix`
+- `sfpcl_credit.tests.test_bank_statement_matching_api`
+- `sfpcl_credit.tests.test_blank_dated_cheque_api`
+- `sfpcl_credit.tests.test_cdsl_share_pledge_api`
+- `sfpcl_credit.tests.test_credit_modules`
+- `sfpcl_credit.tests.test_disbursement_initiation_api`
+- `sfpcl_credit.tests.test_document_templates_api`
+- `sfpcl_credit.tests.test_final_documentation_approval_api`
+- `sfpcl_credit.tests.test_interest_accrual_api`
+- `sfpcl_credit.tests.test_interest_invoice_api`
+- `sfpcl_credit.tests.test_interest_rate_config_api`
+- `sfpcl_credit.tests.test_loan_applications_api`
+- `sfpcl_credit.tests.test_portal_deficiency_response_api`
+- `sfpcl_credit.tests.test_portal_loan_accounts_api`
+- `sfpcl_credit.tests.test_portal_member_api`
+- `sfpcl_credit.tests.test_power_of_attorney_api`
+- `sfpcl_credit.tests.test_repayment_adjustment_api`
+- `sfpcl_credit.tests.test_sanction_submission_api`
+- `sfpcl_credit.tests.test_seed_e2e_users`
+- `sfpcl_credit.tests.test_servicing_financial_owner_closure`
+- `sfpcl_credit.tests.test_servicing_postgresql_acceptance`
+- `sfpcl_credit.tests.test_sh4_api`
+- `sfpcl_credit.tests.test_signature_mismatch_api`
+- `sfpcl_credit.tests.test_stamp_notary_api`
+- `sfpcl_credit.tests.test_statement_evidence_owner_scope_closure`
+- `sfpcl_credit.tests.test_tri_party_agreement_api`

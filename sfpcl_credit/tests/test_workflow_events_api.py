@@ -3,6 +3,7 @@ import uuid
 from django.test import Client, TestCase
 from django.utils import timezone
 
+from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
 from sfpcl_credit.tests.api_contracts import (
     assert_error_envelope,
@@ -15,8 +16,10 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 WORKFLOW_ITEM_FIELDS = {
     "workflow_event_id",
     "workflow_name",
+    "module",
     "entity_type",
     "entity_id",
+    "linked_record",
     "from_state",
     "to_state",
     "triggered_by_user",
@@ -89,6 +92,10 @@ class WorkflowEventsApiTests(TestCase):
         )
         RolePermission.objects.create(
             role=self.auditor_role, permission=self.workflow_permission
+        )
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=self.auditor_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
         )
         self.auditor = User.objects.create(
             full_name="Ivy Auditor",

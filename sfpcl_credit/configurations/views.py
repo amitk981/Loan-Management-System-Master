@@ -131,7 +131,10 @@ def version_history_list(request):
             "You do not have permission to read version history.",
         )
     try:
-        data, pagination = services.paginated_version_histories(request.GET)
+        data, pagination = services.paginated_version_histories(
+            actor=user,
+            query_params=request.GET,
+        )
     except ValidationError as exc:
         return error_response(
             request,

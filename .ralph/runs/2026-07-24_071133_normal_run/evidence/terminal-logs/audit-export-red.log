@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_restricted_export_handoff_requires_audit_export_and_stays_sanitised (sfpcl_credit.tests.test_audit_explorer_api.AuditExplorerApiTests.test_restricted_export_handoff_requires_audit_export_and_stays_sanitised)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_071133_normal_run/sfpcl_credit/tests/test_audit_explorer_api.py", line 315, in test_restricted_export_handoff_requires_audit_export_and_stays_sanitised
+    self.assertEqual(denied.status_code, 403, denied.content)
+AssertionError: 400 != 403 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Report export request failed validation.", "details": {}, "field_errors": {"report_code": "Must name a registered exportable report."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T01:56:54.340735Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

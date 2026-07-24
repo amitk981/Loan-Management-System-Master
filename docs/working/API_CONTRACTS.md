@@ -5656,14 +5656,44 @@ unauthorised object scope fail closed. Empty authorised results return the stand
 denied results disclose neither rows nor totals. Default-masked report rows never grant reveal or
 document-download authority.
 
-`audit-log-export` is registered only as the restricted handoff
-`012C-sensitive-export-policy+012D-audit-selector`. Its registry definition has no selector, and
-`GET /api/v1/reports/audit-log-export/` always returns `403` even when the caller holds
-`audit.audit_log.read`, `audit.export`, `reports.export`, and `reports.export_sensitive`. It cannot
-query audit rows or create/download a file through the generic report route. The later export flow
-must require the canonical restricted audit read, `audit.export`, general/sensitive export policy
-as applicable, a reason, sanitised 012D values, expiring download authority, and audited request
-and download events; it must not copy report rows or sensitive filters into audit payloads.
+`audit-log-export` is the restricted handoff
+`012C-sensitive-export-policy+012D-audit-selector`. It is available only through the existing
+`POST /api/v1/reports/exports/` job flow and requires `audit.audit_log.read`, the separately
+ungranted `audit.export`, and `reports.export`. The selector applies the same object/auditor scope
+and sanitised projection as `GET /api/v1/audit-logs/`; even sensitive export authority cannot
+recover raw values removed by the audit selector. The normal expiring download authority and
+audited request/download controls remain unchanged. There is no direct audit download route.
+
+## Audit explorer reads (012D)
+
+`GET /api/v1/audit-logs/`, `GET /api/v1/workflow-events/`, and
+`GET /api/v1/version-histories/` return the standard list envelope, default page size 20, maximum
+100, and deterministic `created_at` descending order with the resource UUID descending as the
+tie-breaker. Unknown parameters, malformed UUIDs/ISO dates/booleans, and reversed date ranges
+return `400 VALIDATION_ERROR`. `POST`, `PUT`, `PATCH`, and `DELETE` return `405`; reads do not
+create recursive audit rows.
+
+All three accept `created_from`, `created_to`, their canonical entity type/UUID pair,
+`application_reference`, `loan_account_reference`, `approval`, `page`, and `page_size`.
+Application and loan references are translated through bounded canonical selectors and are never
+copied into the immutable stores.
+
+- Audit logs additionally accept `actor_user_id`, `role_code`, `action`, `module`, and `exception`.
+  Items include the section-42 actor and entity fields plus retained actor role/team snapshots,
+  module, linked record, sanitised old/new values, reason, outcome, request ID, IP address, and
+  captured device/user-agent.
+- Workflow events additionally accept `actor_user_id`, `workflow_name`, `to_state`, and
+  `exception`. Items project the lifecycle transition, actor, reason, module, and linked record.
+- Version histories additionally accept `author_user_id`, `reviewer_user_id`,
+  `approver_user_id`, and sanitised approval history fields. Items project author/reviewer/approver,
+  approval references/timestamp, effective dates, linked record, and sanitised old/new values.
+
+The three distinct read permissions remain authoritative. Internal Auditor access additionally
+requires the active persisted `audit_readonly` scope. Other permission holders receive only
+actor-attributable or canonical module/object-scoped rows; broad `management_readonly` or report
+access alone grants nothing. PAN, Aadhaar, bank/BO account, cheque, password, secret/token,
+authorization/cookie, and unrestricted request-body fields are recursively redacted before
+serialization.
 
 ## Register Export Jobs (012B)
 
@@ -5682,8 +5712,7 @@ nonblank, audit-safe reason of at most 500 characters. A missing `sensitive_reas
 ordinary masked export; a present blank/unsafe reason is a `400`, and missing sensitive authority
 is a `403`. No standard role receives `reports.export_sensitive`. Unmasked `kyc-rekyc` bulk export
 remains denied because the source-defined highest authority is unresolved. `audit-log-export`
-remains unavailable until 012D supplies its restricted selector and still requires the separate
-ungranted `audit.export` policy.
+uses the 012D sanitised selector and still requires the separate ungranted `audit.export` policy.
 
 The central classification snapshot uses the source table directly where named and a conservative
 catalogue mapping for the remaining current reports:
@@ -5711,7 +5740,7 @@ response uses `RATE_LIMITED`.
 | Report set | CSV | XLSX | PDF | JSON |
 |---|---:|---:|---:|---:|
 | Every runnable code in the 012A `REPORTS` registry | Yes | Yes | Yes | Yes |
-| `audit-log-export` (012C/012D handoff) | No | No | No | No |
+| `audit-log-export` (012C/012D handoff) | Yes | Yes | Yes | Yes |
 
 CSV/XLSX/PDF/JSON files all carry report code, generated-by user ID, generated-at time, canonical
 filters, and rows returned through the owning 012A selector. Files expire after the configured

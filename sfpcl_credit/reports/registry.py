@@ -4,6 +4,7 @@ from typing import Callable
 from sfpcl_credit.reports.selectors.application_pipeline import (
     select as select_application_pipeline,
 )
+from sfpcl_credit.reports.selectors.audit_log import select as select_audit_log
 from sfpcl_credit.reports.selectors.documentation_readiness import (
     select as select_documentation_readiness,
 )
@@ -155,7 +156,7 @@ REPORTS = {
     ),
     "audit-log-export": ReportDefinition(
         code="audit-log-export",
-        selector=None,
+        selector=select_audit_log,
         restricted_handoff="012C-sensitive-export-policy+012D-audit-selector",
     ),
 }

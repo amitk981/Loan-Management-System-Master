@@ -27,7 +27,10 @@ def audit_log_list(request):
             "You do not have permission to read audit logs.",
         )
     try:
-        data, pagination = audit_log.paginated_audit_logs(request.GET)
+        data, pagination = audit_log.paginated_audit_logs(
+            actor=user,
+            query_params=request.GET,
+        )
     except ValidationError as exc:
         return error_response(
             request,

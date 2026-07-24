@@ -1,0 +1,24 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_report_exports_api --verbosity 1
+
+Observed:
+Found 15 test(s).
+System check identified no issues (0 silenced).
+...............
+Ran 15 tests in 0.519s
+OK
+Exit code: 0
+
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_audit_explorer_api.AuditExplorerApiTests.test_restricted_export_handoff_requires_audit_export_and_stays_sanitised --verbosity 1
+
+Observed:
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.019s
+OK
+Exit code: 0
+
+The focused export validator domain and the complementary 012D restricted handoff behavior are
+GREEN. Full-suite coverage remains reserved for independent Ralph validation.

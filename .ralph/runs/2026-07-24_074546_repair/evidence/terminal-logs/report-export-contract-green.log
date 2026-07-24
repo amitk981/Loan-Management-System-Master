@@ -1,0 +1,12 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_request_status_authentication_validation_and_not_found_contracts --verbosity 1
+
+Observed:
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+Ran 1 test in 0.016s
+OK
+Exit code: 0
+
+The exact failed backend-coverage behavior is GREEN.

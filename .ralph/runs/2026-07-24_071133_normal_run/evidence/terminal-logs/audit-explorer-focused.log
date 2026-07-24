@@ -1,0 +1,36 @@
+Creating test database for alias 'default'...
+Found 37 test(s).
+System check identified no issues (0 silenced).
+....F...............................F
+======================================================================
+FAIL: test_permission_holder_cannot_read_another_actors_unscoped_record (sfpcl_credit.tests.test_audit_explorer_api.AuditExplorerApiTests.test_permission_holder_cannot_read_another_actors_unscoped_record)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_071133_normal_run/sfpcl_credit/tests/test_audit_explorer_api.py", line 384, in test_permission_holder_cannot_read_another_actors_unscoped_record
+    self.assertEqual(
+AssertionError: Lists differ: ['c0940f7e-d105-4e46-ac96-ec42640fd5ae', 'b655a8c2-fd88-4e9a-8197-f28c09c36f58'] != ['b655a8c2-fd88-4e9a-8197-f28c09c36f58']
+
+First differing element 0:
+'c0940f7e-d105-4e46-ac96-ec42640fd5ae'
+'b655a8c2-fd88-4e9a-8197-f28c09c36f58'
+
+First list contains 1 additional elements.
+First extra element 1:
+'b655a8c2-fd88-4e9a-8197-f28c09c36f58'
+
+- ['c0940f7e-d105-4e46-ac96-ec42640fd5ae', 'b655a8c2-fd88-4e9a-8197-f28c09c36f58']
++ ['b655a8c2-fd88-4e9a-8197-f28c09c36f58']
+
+======================================================================
+FAIL: test_version_history_list_filters_and_requires_permission (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_version_history_list_filters_and_requires_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_071133_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 416, in test_version_history_list_filters_and_requires_permission
+    self.assertEqual(len(payload["data"]), 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 37 tests in 0.276s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_version_page_filters_approval_history_and_redacts_changes (sfpcl_credit.tests.test_audit_explorer_api.AuditExplorerApiTests.test_version_page_filters_approval_history_and_redacts_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_071133_normal_run/sfpcl_credit/tests/test_audit_explorer_api.py", line 217, in test_version_page_filters_approval_history_and_redacts_changes
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Version history query failed validation.", "details": {}, "field_errors": {"approval": "Unknown query parameter.", "author_user_id": "Unknown query parameter.", "created_from": "Unknown query parameter.", "created_to": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T01:51:56.760344Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

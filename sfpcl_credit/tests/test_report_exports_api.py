@@ -778,7 +778,7 @@ class ReportExportApiTests(TestCase):
         unsupported = self.client.post(
             "/api/v1/reports/exports/",
             {
-                "report_code": "audit-log-export",
+                "report_code": "unsupported-report",
                 "format": "xml",
                 "filters": {},
             },

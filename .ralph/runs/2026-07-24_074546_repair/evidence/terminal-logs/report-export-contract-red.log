@@ -1,0 +1,13 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py test sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_request_status_authentication_validation_and_not_found_contracts --verbosity 2
+
+Observed:
+test_request_status_authentication_validation_and_not_found_contracts (...) ... FAIL
+
+AssertionError: 'report_code' not found in {'format': 'Must be one of csv, xlsx, pdf, json.'}
+
+Ran 1 test in 0.016s
+FAILED (failures=1)
+Exit code: 1
+
+The preserved test drives the exact backend-coverage failure and is the RED regression seam.

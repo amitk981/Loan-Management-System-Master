@@ -1,16 +1,20 @@
 import uuid
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from math import ceil
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 
+from sfpcl_credit.approvals.modules.read_scope import has_active_audit_read_scope
 from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.configurations.models import LoanPolicyConfig, VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.shared.masking import redact_sensitive_mapping
 
 
 LOAN_POLICY_READ_PERMISSION = "config.loan_policy.read"
@@ -92,8 +96,20 @@ _LOAN_POLICY_FIELDS = (
     "board_approval_reference",
     "status",
 )
-_VERSION_HISTORY_UUID_FILTERS = {"versioned_entity_id"}
-_VERSION_HISTORY_FILTER_PARAMS = {"versioned_entity_type"} | _VERSION_HISTORY_UUID_FILTERS
+_VERSION_HISTORY_UUID_FILTERS = {
+    "versioned_entity_id",
+    "author_user_id",
+    "reviewer_user_id",
+    "approver_user_id",
+}
+_VERSION_HISTORY_FILTER_PARAMS = {
+    "versioned_entity_type",
+    "created_from",
+    "created_to",
+    "approval",
+    "application_reference",
+    "loan_account_reference",
+} | _VERSION_HISTORY_UUID_FILTERS
 _PAGINATION_PARAMS = {"page", "page_size"}
 _VERSION_HISTORY_ALLOWED_PARAMS = _VERSION_HISTORY_FILTER_PARAMS | _PAGINATION_PARAMS
 
@@ -111,7 +127,11 @@ def user_can_manage_loan_policy(user):
 
 
 def user_can_read_version_histories(user):
-    return VERSION_HISTORY_READ_PERMISSION in auth_service.effective_permission_codes(user)
+    if VERSION_HISTORY_READ_PERMISSION not in auth_service.effective_permission_codes(user):
+        return False
+    if "internal_auditor" in auth_service.effective_role_codes(user):
+        return has_active_audit_read_scope(user)
+    return True
 
 
 def serialize_loan_policy_config(config):
@@ -277,19 +297,33 @@ def serialize_version_history(row):
         "reviewer": _serialize_user(row.reviewer_user),
         "approver": _serialize_user(row.approver_user),
         "board_approval_reference": row.board_approval_reference,
+        "approval_reference": row.approval_reference,
+        "approved_at": (
+            row.approved_at.isoformat().replace("+00:00", "Z")
+            if row.approved_at
+            else None
+        ),
+        "old_value": redact_sensitive_mapping(row.old_value_json),
+        "new_value": redact_sensitive_mapping(row.new_value_json),
+        "linked_record": {
+            "entity_type": row.versioned_entity_type,
+            "entity_id": str(row.versioned_entity_id),
+        },
         "effective_from": row.effective_from.isoformat(),
         "effective_to": row.effective_to.isoformat() if row.effective_to else None,
         "created_at": row.created_at.isoformat().replace("+00:00", "Z"),
     }
 
 
-def paginated_version_histories(query_params):
-    filters = _validated_version_history_filters(query_params)
+def paginated_version_histories(*, actor, query_params):
+    filters, predicates = _validated_version_history_filters(query_params)
     queryset = (
         VersionHistory.objects.select_related(
             "author_user", "reviewer_user", "approver_user"
         )
         .filter(**filters)
+        .filter(predicates)
+        .filter(_version_history_scope(actor))
         .order_by("-created_at", "-version_history_id")
     )
     page = _positive_int(query_params.get("page"), 1)
@@ -452,10 +486,84 @@ def _validated_version_history_filters(query_params):
     entity_type = query_params.get("versioned_entity_type")
     if entity_type:
         filters["versioned_entity_type"] = entity_type
-    entity_id = query_params.get("versioned_entity_id")
-    if entity_id:
-        filters["versioned_entity_id"] = _parse_uuid("versioned_entity_id", entity_id)
-    return filters
+    for field in _VERSION_HISTORY_UUID_FILTERS:
+        raw = query_params.get(field)
+        if raw:
+            filters[field] = _parse_uuid(field, raw)
+    created_from = _history_date_filter(query_params, "created_from")
+    created_to = _history_date_filter(query_params, "created_to")
+    if created_from and created_to and created_from > created_to:
+        raise ValidationError({"created_to": "Must be on or after created_from."})
+    if created_from:
+        filters["created_at__gte"] = _history_day_boundary(created_from)
+    if created_to:
+        filters["created_at__lt"] = _history_day_boundary(
+            created_to + timedelta(days=1)
+        )
+    predicates = Q()
+    predicates &= _version_reference_predicate(query_params)
+    approval = query_params.get("approval")
+    if approval not in (None, ""):
+        if str(approval).lower() not in {"true", "false"}:
+            raise ValidationError({"approval": "Must be true or false."})
+        approved = Q(approver_user__isnull=False) | Q(approved_at__isnull=False)
+        predicates &= approved if str(approval).lower() == "true" else ~approved
+    return filters, predicates
+
+
+def _version_history_scope(actor):
+    if (
+        "internal_auditor" in auth_service.effective_role_codes(actor)
+        and has_active_audit_read_scope(actor)
+    ):
+        return Q()
+    predicate = Q(author_user=actor) | Q(reviewer_user=actor) | Q(approver_user=actor)
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if LOAN_POLICY_READ_PERMISSION in permissions:
+        predicate |= Q(versioned_entity_type=LOAN_POLICY_ENTITY_TYPE)
+    return predicate
+
+
+def _history_date_filter(query_params, field):
+    raw = query_params.get(field)
+    if not raw:
+        return None
+    try:
+        value = parse_date(raw)
+    except (TypeError, ValueError):
+        value = None
+    if value is None:
+        raise ValidationError({field: "Must be a valid ISO date."})
+    return value
+
+
+def _history_day_boundary(value):
+    return timezone.make_aware(datetime.combine(value, time.min))
+
+
+def _version_reference_predicate(query_params):
+    predicate = Q()
+    application_reference = query_params.get("application_reference")
+    if application_reference:
+        from sfpcl_credit.applications.models import LoanApplication
+
+        predicate &= Q(
+            versioned_entity_type="loan_application",
+            versioned_entity_id__in=LoanApplication.objects.filter(
+                application_reference_number__iexact=application_reference
+            ).values("pk"),
+        )
+    loan_account_reference = query_params.get("loan_account_reference")
+    if loan_account_reference:
+        from sfpcl_credit.loans.models import LoanAccount
+
+        predicate &= Q(
+            versioned_entity_type="loan_account",
+            versioned_entity_id__in=LoanAccount.objects.filter(
+                loan_account_number__iexact=loan_account_reference
+            ).values("pk"),
+        )
+    return predicate
 
 
 def _parse_uuid(field, raw):

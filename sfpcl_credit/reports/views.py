@@ -17,7 +17,7 @@ from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.reports.errors import ReportPermissionDenied, ReportValidation
 from sfpcl_credit.reports.modules import report_export
-from sfpcl_credit.reports.registry import run_report
+from sfpcl_credit.reports.registry import REPORTS, run_report
 
 
 EXPORT_RATE_LIMIT = 30
@@ -29,6 +29,14 @@ def report(request, report_code):
     actor, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
+    definition = REPORTS.get(report_code)
+    if definition is not None and definition.restricted_handoff is not None:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "This restricted report is available only through the export policy.",
+        )
     try:
         rows, pagination = run_report(
             report_code=report_code,

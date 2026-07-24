@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_workflow_page_filters_timeline_and_is_strictly_read_only (sfpcl_credit.tests.test_audit_explorer_api.AuditExplorerApiTests.test_workflow_page_filters_timeline_and_is_strictly_read_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_071133_normal_run/sfpcl_credit/tests/test_audit_explorer_api.py", line 159, in test_workflow_page_filters_timeline_and_is_strictly_read_only
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Workflow event query failed validation.", "details": {}, "field_errors": {"actor_user_id": "Unknown query parameter.", "approval": "Unknown query parameter.", "created_from": "Unknown query parameter.", "created_to": "Unknown query parameter.", "exception": "Unknown query parameter.", "to_state": "Unknown query parameter.", "workflow_name": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T01:49:41.300557Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

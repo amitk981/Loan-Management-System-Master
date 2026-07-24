@@ -89,7 +89,7 @@ class ReportCatalogueApiTests(TestCase):
             REPORTS["audit-log-export"].restricted_handoff,
             "012C-sensitive-export-policy+012D-audit-selector",
         )
-        self.assertIsNone(REPORTS["audit-log-export"].selector)
+        self.assertIsNotNone(REPORTS["audit-log-export"].selector)
 
     def test_audit_export_handoff_cannot_query_even_with_read_and_export_permissions(self):
         from sfpcl_credit.identity.models import Permission, RolePermission

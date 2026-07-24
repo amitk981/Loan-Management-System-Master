@@ -3,6 +3,7 @@ import uuid
 from django.test import Client, TestCase
 from django.utils import timezone
 
+from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.identity.models import (
     AuditLog,
     Permission,
@@ -20,12 +21,20 @@ AUDIT_ITEM_FIELDS = {
     "audit_log_id",
     "actor",
     "actor_type",
+    "actor_role_codes",
+    "actor_team_codes",
     "action",
+    "module",
     "entity_type",
     "entity_id",
+    "linked_record",
     "old_value",
     "new_value",
+    "reason",
+    "outcome",
+    "request_id",
     "ip_address",
+    "device",
     "created_at",
 }
 
@@ -53,6 +62,10 @@ class AuditLogsApiTests(TestCase):
         )
         RolePermission.objects.create(
             role=self.auditor_role, permission=self.audit_permission
+        )
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=self.auditor_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
         )
         self.auditor = User.objects.create(
             full_name="Ivy Auditor",
