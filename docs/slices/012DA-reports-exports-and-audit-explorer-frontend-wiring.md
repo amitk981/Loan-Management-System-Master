@@ -1,7 +1,16 @@
 # Slice 012DA: Reports, Exports, and Audit Explorer Frontend Wiring
 
 ## Status
-Not Started
+Superseded
+
+## Superseded By
+- 012DAA-reports-mis-frontend-wiring
+- 012DAB-report-and-register-export-frontend-wiring
+- 012DAC-audit-explorer-and-observation-frontend-wiring
+
+The failed 012DA candidate measured 3,475 changed lines against the configured 2,000-line limit.
+The successor chain preserves this slice's complete contract at independently green capability
+seams with a predicted maximum of 1,350 changed lines.
 
 ## Parent Epic
 Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness

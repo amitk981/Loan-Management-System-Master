@@ -5,7 +5,8 @@ replacement for the cited source sections. `docs/source/` remains read-only.
 
 ## Delivery order and boundaries
 
-- Main reporting chain: `012A -> 012B -> 012C -> 012D`; `012DA` wires its frontend.
+- Main reporting chain: `012A -> 012B -> 012C -> 012D`; the superseding
+  `012DAA -> 012DAB -> 012DAC` chain wires its frontend.
 - Hardening chain starts at `012E`; `012E2`, `012E3`, `012EA`, and `012F` retain their
   declared dependencies. `012EB` follows `012EA`; `012G -> 012H -> 012I` closes UAT.
 - Reuse existing domain services/selectors. Reports are read models; they must not mutate
@@ -98,10 +99,15 @@ replacement for the cited source sections. `docs/source/` remains read-only.
   restricted download, and export events. Prove mutation methods are 405/403 and query/export
   access cannot reveal a record outside scope.
 
-## 012DA — Reports/exports/audit frontend
+## 012DAA / 012DAB / 012DAC — Reports/exports/audit frontend
 
-- Follow the already concrete slice: wire S69/S74 and register export actions to `012A-012D`,
-  remove owned mocks, display job and permission states, and save browser evidence.
+- `012DAA` wires the read-only S69 report results, filters, sorting, pagination, reconciliation,
+  and report states to `012A`.
+- `012DAB` wires S69 and register export actions, job states, masking, permission denial, and
+  audited download to `012B/012C`, and owns the final `ReportsMIS.tsx` and `RegistersHub.tsx`
+  mock removal.
+- `012DAC` wires the read-only S74 explorer and separate immutable auditor observations to
+  `012D/012D2`; terminal evidence repeats the complete five-screenshot, two-run browser contract.
   (`screen-spec.md` S69, S74; `information-architecture.md` 16, 18)
 
 ## 012E — Operational dashboard hardening
@@ -187,7 +193,7 @@ replacement for the cited source sections. `docs/source/` remains read-only.
 - The source requires XLSX/PDF/CSV/JSON across different descriptions but does not map every
   report to every format. `012B` must publish an explicit supported matrix and reject the rest.
 - S69 names “schedule email” and “save report view”, but API contracts 40 define neither.
-  Keep them out of `012A-012DA` unless separately approved; do not fake them client-side.
+  Keep them out of `012A-012DAC` unless separately approved; do not fake them client-side.
 - `api-contracts.md` 43 gives a concrete card shape only for the Credit Manager example; the other
   role card names are descriptive in `information-architecture.md` 9.1. `012E` must publish a
   stable bounded code/link mapping and reconcile it to existing selectors without adding scope.

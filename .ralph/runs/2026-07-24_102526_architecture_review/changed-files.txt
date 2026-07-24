@@ -1,0 +1,7 @@
+ M docs/slices/012DA-reports-exports-and-audit-explorer-frontend-wiring.md
+ M docs/slices/012G-critical-e2e-uat-smoke-scenarios.md
+ M docs/working/digests/epic-012-reports-exports-hardening-uat.md
+?? .ralph/runs/2026-07-24_102526_architecture_review/
+?? docs/slices/012DAA-reports-mis-frontend-wiring.md
+?? docs/slices/012DAB-report-and-register-export-frontend-wiring.md
+?? docs/slices/012DAC-audit-explorer-and-observation-frontend-wiring.md
