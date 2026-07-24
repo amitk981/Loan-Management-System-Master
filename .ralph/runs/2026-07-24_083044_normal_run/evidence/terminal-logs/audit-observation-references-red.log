@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_workflow_version_and_guessed_or_foreign_references_are_governed (sfpcl_credit.tests.test_audit_observations_api.AuditObservationApiTests.test_workflow_version_and_guessed_or_foreign_references_are_governed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_083044_normal_run/sfpcl_credit/tests/test_audit_observations_api.py", line 393, in test_workflow_version_and_guessed_or_foreign_references_are_governed
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Audit observation request failed validation.", "details": {}, "field_errors": {"source_references.0": "Source type is not supported."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T03:20:14.810634Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.059s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

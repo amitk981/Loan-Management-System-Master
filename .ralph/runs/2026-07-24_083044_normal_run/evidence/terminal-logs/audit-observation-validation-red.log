@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_observation_text_and_payload_are_strictly_sanitised (sfpcl_credit.tests.test_audit_observations_api.AuditObservationApiTests.test_observation_text_and_payload_are_strictly_sanitised) (payload_keys=['audit_scope', 'observation', 'source_references'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_083044_normal_run/sfpcl_credit/tests/test_audit_observations_api.py", line 151, in test_observation_text_and_payload_are_strictly_sanitised
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"audit_observation_id": "829523ab-df54-480e-ad5c-e8f06c8215d8", "creator": {"user_id": "5b5731a9-6c3e-47b3-9a8b-36e14899ab42", "full_name": "Ivy Observation Auditor", "role_code": "internal_auditor", "team_codes": []}, "audit_scope": "audit_readonly", "observation": "<script>alert(\'sample\')</script>", "source_references": [{"source_type": "audit_log", "source_id": "76c00c5f-580d-4bc5-86cd-6c4d8cb2dc2c", "entity_type": "compliance_evidence", "entity_id": "409da07a-8104-4027-a1c8-807d7f4098fe"}], "created_at": "2026-07-24T03:08:55.345868Z"}, "meta": {"request_id": null, "timestamp": "2026-07-24T03:08:55.346176Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

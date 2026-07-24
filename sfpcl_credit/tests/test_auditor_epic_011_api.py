@@ -264,6 +264,7 @@ class AuditorEpic011ApiTests(TestCase):
         forbidden_permissions = {
             permission
             for permission in ROLE_PERMISSIONS["internal_auditor"]
+            if permission != "audit.observation.create"
             if permission.rsplit(".", 1)[-1]
             in {
                 "create",
@@ -282,6 +283,10 @@ class AuditorEpic011ApiTests(TestCase):
             }
         }
         self.assertEqual(forbidden_permissions, set())
+        self.assertIn(
+            "audit.observation.create",
+            ROLE_PERMISSIONS["internal_auditor"],
+        )
         arbitrary = uuid4()
         calls = (
             ("post", f"/api/v1/loan-accounts/{arbitrary}/default-cases/open/"),

@@ -64,6 +64,22 @@ urlpatterns = [
         compliance_views.auditor_epic_011,
         name="auditor-epic-011",
     ),
+    path(
+        "api/v1/audit-observations/",
+        compliance_views.audit_observations,
+        name="audit-observation-list-create",
+    ),
+    path(
+        "api/v1/audit-observations/<uuid:audit_observation_id>/",
+        compliance_views.audit_observation_detail,
+        name="audit-observation-detail",
+    ),
+    path(
+        "api/v1/audit-observations/<uuid:audit_observation_id>/evidence/"
+        "<uuid:compliance_evidence_id>/download/",
+        compliance_views.audit_observation_evidence_download,
+        name="audit-observation-evidence-download",
+    ),
     path("api/v1/grievances/", compliance_views.grievances, name="grievances"),
     path(
         "api/v1/grievances/<uuid:grievance_id>/",

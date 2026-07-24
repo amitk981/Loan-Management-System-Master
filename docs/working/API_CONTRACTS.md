@@ -5695,6 +5695,65 @@ access alone grants nothing. PAN, Aadhaar, bank/BO account, cheque, password, se
 authorization/cookie, and unrestricted request-body fields are recursively redacted before
 serialization.
 
+## Auditor observations (012D2)
+
+`POST /api/v1/audit-observations/`, `GET /api/v1/audit-observations/`, and
+`GET /api/v1/audit-observations/{audit_observation_id}/` are the complete observation lifecycle.
+`PUT`, `PATCH`, and `DELETE` are unavailable (`405`); there is no response, assignment, severity,
+status, resolution, or closure action. Create requires `audit.observation.create`; list/detail
+require `audit.observation.read`. Both codes are restricted to an active Internal Auditor and are
+always combined with the persisted active `audit_readonly` scope. An observation permission grants
+no operational-record mutation or evidence download authority.
+
+Create accepts exactly:
+
+```json
+{
+  "audit_scope": "audit_readonly",
+  "observation": "Sampled evidence is complete and traceable.",
+  "source_references": [
+    {
+      "source_type": "audit_log",
+      "source_id": "uuid"
+    }
+  ]
+}
+```
+
+`observation` is nonblank printable audit-safe text of at most 2,000 characters; active content,
+formatted long-number/token material, PAN-like identifiers, and other unsafe audit text reject
+without echoing the input. `source_references` contains one to 20 distinct items. Supported source
+types are `audit_log`, `workflow_event`, `version_history`, and `compliance_evidence`. Each source
+requires the corresponding existing read authority and is resolved by UUID server-side before the
+observation transaction commits. Missing, guessed, deleted, wrong-family, or inaccessible
+identifiers return the same `404 NOT_FOUND` nondisclosure response. Unknown fields—including
+lifecycle or classification fields—return `400 VALIDATION_ERROR`.
+
+Create and detail return the standard success envelope. The immutable item contains
+`audit_observation_id`; a frozen creator projection (`user_id`, `full_name`, `role_code`, and
+`team_codes`); `audit_scope`; sanitised `observation`; immutable `source_references`; and
+`created_at`. Each reference projects only its source type/UUID and retained entity type/UUID.
+Compliance-evidence references additionally project evidence type and sanitised file metadata.
+They never project summary text, storage provider/key, checksum, review comments, or source
+payloads.
+
+List returns the standard list envelope, newest first with observation UUID tie-breaker. It accepts
+`audit_scope`, `created_by_user_id`, inclusive `created_from`/`created_to`, `page`, and `page_size`
+(default 20, maximum 100). Unknown parameters, malformed UUIDs/dates, reversed ranges, and invalid
+pagination return `400 VALIDATION_ERROR`.
+
+An authorised evidence projection includes `document_id`, safe file name, sensitivity level, and
+either null download fields or a signed 15-minute relative `download_url` plus UTC `expires_at`.
+The URL is issued only when current `reports.compliance.read` and `documents.file.download`
+authority both pass and is cryptographically bound to the user, audit scope, observation, evidence,
+and document.
+`GET /api/v1/audit-observations/{audit_observation_id}/evidence/{compliance_evidence_id}/download/`
+rechecks all current authority, reference membership, token, expiry, size, and checksum and returns
+`404` for revoked, expired, tampered, guessed, or cross-observation access. Successful evidence
+access, observation creation, and every denied observation/evidence access are recorded in the
+central immutable audit log without observation text, evidence summary, raw sensitive content, or
+storage location.
+
 ## Register Export Jobs (012B)
 
 `POST /api/v1/reports/exports/` requires bearer authentication, the caller's underlying report

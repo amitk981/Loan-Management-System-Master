@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_observation_and_sampled_truth_reject_all_mutation_paths (sfpcl_credit.tests.test_audit_observations_api.AuditObservationApiTests.test_observation_and_sampled_truth_reject_all_mutation_paths)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_083044_normal_run/sfpcl_credit/tests/test_audit_observations_api.py", line 338, in test_observation_and_sampled_truth_reject_all_mutation_paths
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

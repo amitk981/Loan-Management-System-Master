@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -859,3 +860,63 @@ def _reject_final_review_changes(instance):
     if previous and previous["reviewed_at"] is not None:
         if any(previous[field] != getattr(instance, field) for field in fields):
             raise ValueError("Retained statutory final review is immutable.")
+
+
+class ImmutableAuditObservationQuerySet(models.QuerySet):
+    _ERROR = {"audit_observation": "Audit observations are immutable."}
+
+    def update(self, **kwargs):
+        raise ValidationError(self._ERROR)
+
+    def delete(self):
+        raise ValidationError(self._ERROR)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError(self._ERROR)
+
+
+class AuditObservation(models.Model):
+    audit_observation_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    created_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="audit_observations",
+    )
+    created_by_full_name = models.CharField(max_length=200)
+    created_by_role_code = models.CharField(max_length=80)
+    created_by_team_codes_json = models.JSONField(default=list)
+    audit_scope = models.CharField(max_length=40, db_index=True)
+    observation_text = models.CharField(max_length=2000)
+    source_references_json = models.JSONField()
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    objects = ImmutableAuditObservationQuerySet.as_manager()
+
+    class Meta:
+        db_table = "audit_observations"
+        ordering = ["-created_at", "-audit_observation_id"]
+        indexes = [
+            models.Index(
+                fields=["created_by_user", "created_at"],
+                name="idx_audit_obs_creator_time",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(audit_scope="audit_readonly"),
+                name="audit_observation_scope_bounded",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                {"audit_observation": "Audit observations are immutable."}
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            {"audit_observation": "Audit observations are retained."}
+        )

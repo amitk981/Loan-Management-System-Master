@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_scoped_auditor_creates_and_reads_durable_observation (sfpcl_credit.tests.test_audit_observations_api.AuditObservationApiTests.test_scoped_auditor_creates_and_reads_durable_observation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_083044_normal_run/sfpcl_credit/tests/test_audit_observations_api.py", line 134, in test_scoped_auditor_creates_and_reads_durable_observation
+    self.assertEqual(listing.json()["data"], [created])
+AssertionError: Lists differ: [{'au[133 chars]e': 'Renamed After Observation', 'role_code': [371 chars]0Z'}] != [{'au[133 chars]e': 'Ivy Observation Auditor', 'role_code': 'i[369 chars]0Z'}]
+
+First differing element 0:
+{'aud[132 chars]e': 'Renamed After Observation', 'role_code': [370 chars]80Z'}
+{'aud[132 chars]e': 'Ivy Observation Auditor', 'role_code': 'i[368 chars]80Z'}
+
+Diff is 868 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

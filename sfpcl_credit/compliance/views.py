@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse, HttpResponseNotAllowed
 from django.views.decorators.http import require_http_methods
 
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
@@ -11,6 +12,7 @@ from sfpcl_credit.compliance.modules.nbfc_principal_business_test import (
 from sfpcl_credit.compliance.modules.kyc_review_tracker import KYCReviewTracker
 from sfpcl_credit.compliance.modules.grievance_workflow import GrievanceWorkflow
 from sfpcl_credit.compliance.modules.auditor_epic_011 import project_epic_011
+from sfpcl_credit.compliance.modules import audit_observation
 from sfpcl_credit.identity.modules import http_auth
 
 
@@ -73,6 +75,139 @@ def auditor_epic_011(request):
             denial_action="audit.epic_011.access_denied",
             denial_entity_type="epic_011_auditor_view",
         )
+
+
+@require_http_methods(["GET", "POST", "PUT", "PATCH", "DELETE"])
+def audit_observations(request):
+    actor, response = _actor(request)
+    if response is not None:
+        _record_audit_observation_denial(request)
+        return response
+    if request.method not in {"GET", "POST"}:
+        _record_audit_observation_denial(request)
+        return HttpResponseNotAllowed(["GET", "POST"])
+    try:
+        if request.method == "POST":
+            return success_response(
+                audit_observation.create(
+                    actor=actor,
+                    payload=parse_json_body(request),
+                    request=request,
+                ),
+                request,
+            )
+        data, pagination = audit_observation.list_observations(
+            actor=actor,
+            query=request.GET,
+        )
+        return list_response(data, pagination, request)
+    except audit_observation.ObservationDenied:
+        _record_audit_observation_denial(request)
+        return error_response(
+            request, 403, "FORBIDDEN", "Audit observation authority is required."
+        )
+    except audit_observation.ObservationMissing:
+        _record_audit_observation_denial(request)
+        return error_response(
+            request, 404, "NOT_FOUND", "Audit observation source was not found."
+        )
+    except audit_observation.ObservationInvalid as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Audit observation request failed validation.",
+            exc.field_errors,
+        )
+    except ValidationError:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Audit observation request failed validation.",
+        )
+
+
+@require_http_methods(["GET", "POST", "PUT", "PATCH", "DELETE"])
+def audit_observation_detail(request, audit_observation_id):
+    actor, response = _actor(request)
+    if response is not None:
+        _record_audit_observation_denial(request)
+        return response
+    if request.method != "GET":
+        _record_audit_observation_denial(request)
+        return HttpResponseNotAllowed(["GET"])
+    try:
+        return success_response(
+            audit_observation.retrieve(
+                actor=actor,
+                observation_id=audit_observation_id,
+            ),
+            request,
+        )
+    except audit_observation.ObservationDenied:
+        _record_audit_observation_denial(request)
+        return error_response(
+            request, 403, "FORBIDDEN", "Audit observation authority is required."
+        )
+    except audit_observation.ObservationMissing:
+        _record_audit_observation_denial(request)
+        return error_response(
+            request, 404, "NOT_FOUND", "Audit observation was not found."
+        )
+
+
+@require_http_methods(["GET", "POST", "PUT", "PATCH", "DELETE"])
+def audit_observation_evidence_download(
+    request,
+    audit_observation_id,
+    compliance_evidence_id,
+):
+    actor, response = _actor(request)
+    if response is not None:
+        _record_audit_observation_denial(request)
+        return response
+    if request.method != "GET":
+        _record_audit_observation_denial(request)
+        return HttpResponseNotAllowed(["GET"])
+    try:
+        content = audit_observation.read_evidence(
+            actor=actor,
+            observation_id=audit_observation_id,
+            evidence_id=compliance_evidence_id,
+            token=request.GET.get("token", ""),
+            request=request,
+        )
+    except (
+        audit_observation.ObservationDenied,
+        audit_observation.ObservationMissing,
+    ):
+        _record_audit_observation_denial(request)
+        return error_response(request, 404, "NOT_FOUND", "Evidence was not found.")
+    response = HttpResponse(content.body, content_type=content.mime_type)
+    response["Content-Disposition"] = f'attachment; filename="{content.file_name}"'
+    response["Cache-Control"] = "no-store"
+    response["Pragma"] = "no-cache"
+    return response
+
+
+def _record_audit_observation_denial(request):
+    from sfpcl_credit.api import request_ip, request_user_agent
+    from sfpcl_credit.identity.models import AuditLog
+
+    AuditLog.objects.create(
+        actor_user=getattr(request, "compliance_actor", None),
+        actor_type="user",
+        action="audit.observation.access_denied",
+        entity_type="audit_observation_endpoint",
+        new_value_json={
+            "method": request.method,
+            "path": request.path,
+            "outcome": "denied",
+        },
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )
 
 
 @require_http_methods(["GET", "POST"])

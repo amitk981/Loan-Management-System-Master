@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_restricted_compliance_evidence_uses_a_scoped_signed_download (sfpcl_credit.tests.test_audit_observations_api.AuditObservationApiTests.test_restricted_compliance_evidence_uses_a_scoped_signed_download)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_083044_normal_run/sfpcl_credit/tests/test_audit_observations_api.py", line 218, in test_restricted_compliance_evidence_uses_a_scoped_signed_download
+    self.assertEqual(
+AssertionError: {'doc[60 chars]e': 'ABCDE1234F-bank-statement.pdf', 'sensitiv[531 chars]80Z'} != {'doc[60 chars]e': 'restricted-evidence.pdf', 'sensitivity_le[525 chars]80Z'}
+Diff is 705 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

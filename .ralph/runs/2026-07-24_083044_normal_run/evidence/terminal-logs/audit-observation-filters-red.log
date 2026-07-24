@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_list_filters_creator_and_rejects_unknown_lifecycle_filters (sfpcl_credit.tests.test_audit_observations_api.AuditObservationApiTests.test_list_filters_creator_and_rejects_unknown_lifecycle_filters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_083044_normal_run/sfpcl_credit/tests/test_audit_observations_api.py", line 486, in test_list_filters_creator_and_rejects_unknown_lifecycle_filters
+    self.assertEqual(filtered.json()["pagination"]["total_count"], 1)
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
