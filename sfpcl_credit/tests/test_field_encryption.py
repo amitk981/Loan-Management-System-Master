@@ -1,4 +1,10 @@
 import base64
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+from types import SimpleNamespace
 
 from django.test import SimpleTestCase, override_settings
 
@@ -8,6 +14,7 @@ KEYS = {
     "k2": base64.urlsafe_b64encode(b"2" * 32).decode("ascii"),
 }
 LOOKUP_KEY = base64.urlsafe_b64encode(b"L" * 32).decode("ascii")
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _noncanonical_ciphertext_token(token: str) -> str:
@@ -28,6 +35,97 @@ def _canonical_ciphertext_tamper(token: str) -> str:
     SECRET_KEY="must-not-protect-reversible-fields",
 )
 class FieldEncryptionTests(SimpleTestCase):
+    def test_production_boot_requires_explicit_valid_dedicated_field_keys(self):
+        base_env = {
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith("SFPCL_FIELD_")
+        }
+        base_env["DJANGO_SETTINGS_MODULE"] = (
+            "sfpcl_credit.config.production_settings"
+        )
+
+        missing = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sfpcl_credit.config.production_settings",
+            ],
+            cwd=REPO_ROOT,
+            env=base_env,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertIn("SFPCL_FIELD_ENCRYPTION_KEYS", missing.stderr)
+
+        malformed = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sfpcl_credit.config.production_settings",
+            ],
+            cwd=REPO_ROOT,
+            env={
+                **base_env,
+                "SFPCL_FIELD_ENCRYPTION_CURRENT_VERSION": "prod-v1",
+                "SFPCL_FIELD_ENCRYPTION_KEY_REF": "vault:prod/field/prod-v1",
+                "SFPCL_FIELD_ENCRYPTION_KEYS": json.dumps(
+                    {
+                        "prod-v1": base64.urlsafe_b64encode(b"short").decode(
+                            "ascii"
+                        )
+                    }
+                ),
+                "SFPCL_FIELD_LOOKUP_KEY": LOOKUP_KEY,
+            },
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertNotEqual(malformed.returncode, 0)
+        self.assertIn("must decode to 32 bytes", malformed.stderr)
+
+        configured = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sfpcl_credit.config.production_settings",
+            ],
+            cwd=REPO_ROOT,
+            env={
+                **base_env,
+                "SFPCL_FIELD_ENCRYPTION_CURRENT_VERSION": "prod-v1",
+                "SFPCL_FIELD_ENCRYPTION_KEY_REF": "vault:prod/field/prod-v1",
+                "SFPCL_FIELD_ENCRYPTION_KEYS": json.dumps(
+                    {"prod-v1": KEYS["k1"]}
+                ),
+                "SFPCL_FIELD_LOOKUP_KEY": LOOKUP_KEY,
+            },
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(configured.returncode, 0, configured.stderr)
+
+    def test_identity_tokens_and_reveal_use_dedicated_versioned_field_key(self):
+        from sfpcl_credit.members.protected_identity import protected_identity_token
+        from sfpcl_credit.members.services import sensitive_field_value
+
+        token = protected_identity_token("ABCDE1234F", 10)
+
+        self.assertTrue(token.startswith("field:v2:k2:"))
+        self.assertNotIn("ABCDE1234F", token)
+        with override_settings(SECRET_KEY="rotated-application-secret"):
+            self.assertEqual(
+                sensitive_field_value(
+                    SimpleNamespace(pan_encrypted=token),
+                    "pan",
+                ),
+                "ABCDE1234F",
+            )
+
     def test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable(self):
         from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
 

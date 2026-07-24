@@ -1,0 +1,21 @@
+ M docs/working/RELEASE_PROMOTION.md
+ M sfpcl_credit/config/production_settings.py
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/identity/management/commands/seed_e2e_users.py
+ M sfpcl_credit/identity/management/commands/seed_portal_e2e_fixture.py
+ M sfpcl_credit/members/modules/member_registry.py
+ M sfpcl_credit/members/protected_identity.py
+ M sfpcl_credit/members/services.py
+ M sfpcl_credit/sap_workflow/modules/sap_customer_request.py
+ M sfpcl_credit/shared/encryption.py
+ M sfpcl_credit/tests/test_field_encryption.py
+ M sfpcl_credit/tests/test_member_bank_accounts_api.py
+ M sfpcl_credit/tests/test_member_profile_api.py
+ M sfpcl_credit/tests/test_production_demo_isolation.py
+?? .ralph/runs/2026-07-24_135028_normal_run/
+?? docs/working/FIELD_ENCRYPTION_OPERATIONS.md
+?? sfpcl_credit/shared/apps.py
+?? sfpcl_credit/shared/field_registry.py
+?? sfpcl_credit/shared/key_configuration.py
+?? sfpcl_credit/shared/management/
+?? sfpcl_credit/tests/test_field_encryption_rotation.py

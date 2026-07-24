@@ -23,7 +23,9 @@ agents (Ralph loop) ──▶ staging ──▶ [owner reviews + promotes] ─�
 3. Create the pull request and wait for the **CI checks to turn green** (frontend and
    backend gates run automatically on every pull request).
 4. Skim the description of what changed (the commit list names each slice).
-5. Click **Merge pull request**. That is the release.
+5. For a field-key rotation, verify the custody, reconciliation, rollback, and backup-retention
+   evidence in `docs/working/FIELD_ENCRYPTION_OPERATIONS.md` before merging.
+6. Click **Merge pull request**. That is the release.
 
 If checks are red, do not merge. Nothing is broken by waiting — staging simply holds the
 work until a repair slice fixes it.

@@ -18,6 +18,7 @@ from sfpcl_credit.sap_workflow.modules.annexure_i import render_annexure_i
 from sfpcl_credit.sap_workflow.modules.annexure_storage import EncryptedAnnexureStorage
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.members.protected_identity import reveal_protected_identity
 from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
 from sfpcl_credit.sap_workflow.errors import SapRequestConflict
 from sfpcl_credit.workflows.events import record_workflow_event
@@ -179,11 +180,11 @@ def _canonical_facts(application, member, decision):
     }
 def _identity_value(label, stored_value, pattern):
     value = str(stored_value or "").strip()
-    if not value.startswith("field:v2:"):
+    if not value.startswith("field:"):
         raise ValidationError({label: "Canonical source value is unavailable."})
     try:
-        value = FieldEncryption.decrypt(f"members.{label}", value)
-    except InvalidCiphertext as exc:
+        value = reveal_protected_identity(value, 10 if label == "pan" else 12)
+    except (InvalidCiphertext, ValueError) as exc:
         raise ValidationError({label: "Canonical source value is unavailable."}) from exc
     if not pattern.fullmatch(value):
         raise ValidationError({label: "Canonical source value is unavailable."})

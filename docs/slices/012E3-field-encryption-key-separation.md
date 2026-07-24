@@ -1,7 +1,7 @@
 # Slice 012E3: Field-Encryption Key Separation and Rotation
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 012: Reports, Exports, Hardening, and UAT

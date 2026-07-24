@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_rotation_resumes_strictly_after_a_saved_cursor (sfpcl_credit.tests.test_field_encryption_rotation.FieldEncryptionRotationCommandTests.test_rotation_resumes_strictly_after_a_saved_cursor)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_135028_normal_run/sfpcl_credit/tests/test_field_encryption_rotation.py", line 99, in test_rotation_resumes_strictly_after_a_saved_cursor
+    self.assertEqual(FieldEncryption.key_version(second.pan_encrypted), "k2")
+AssertionError: 'k1' != 'k2'
+- k1
++ k2
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.019s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -25,8 +25,8 @@ def env_csv(name, default):
 
 
 SECRET_KEY = os.environ.get("SFPCL_SECRET_KEY", "local-dev-only-sfpcl-credit")
-# Development-only field keys are intentionally independent from SECRET_KEY. Production secret
-# provisioning/boot enforcement and repository-wide rotation remain owned by 012E3.
+# Development-only field keys are intentionally independent from SECRET_KEY. Production settings
+# require explicit secret-store values and never accept these local defaults.
 _LOCAL_FIELD_KEY = base64.urlsafe_b64encode(
     b"local-only-field-encryption-key!"
 ).decode("ascii")
@@ -70,6 +70,7 @@ ASGI_APPLICATION = "sfpcl_credit.config.asgi.application"
 INSTALLED_APPS = [
     "corsheaders",
     "django.contrib.contenttypes",
+    "sfpcl_credit.shared",
     "sfpcl_credit.approvals",
     "sfpcl_credit.applications",
     "sfpcl_credit.communications",

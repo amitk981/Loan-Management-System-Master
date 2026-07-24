@@ -82,6 +82,10 @@ class FieldEncryption:
         return cls._parse(encrypted_value)[1]
 
     @classmethod
+    def current_version(cls) -> str:
+        return cls._current_version()
+
+    @classmethod
     def _current_version(cls) -> str:
         version = getattr(settings, "FIELD_ENCRYPTION_CURRENT_VERSION", None)
         if not isinstance(version, str) or not version or ":" in version:
@@ -114,6 +118,10 @@ class FieldEncryption:
         if len(decoded) != 32:
             raise EncryptionConfigurationError(
                 f"Field-encryption {label!r} key must decode to 32 bytes."
+            )
+        if base64.urlsafe_b64encode(decoded).decode("ascii") != value:
+            raise EncryptionConfigurationError(
+                f"Field-encryption {label!r} key is malformed."
             )
         return decoded
 

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_bank_account_can_be_created_and_listed_with_masked_number (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_bank_account_can_be_created_and_listed_with_masked_number)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_135028_normal_run/sfpcl_credit/tests/test_member_bank_accounts_api.py", line 103, in test_bank_account_can_be_created_and_listed_with_masked_number
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.083s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

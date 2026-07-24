@@ -1,0 +1,9 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_production_boot_requires_explicit_valid_dedicated_field_keys (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_production_boot_requires_explicit_valid_dedicated_field_keys) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.531s
+
+OK

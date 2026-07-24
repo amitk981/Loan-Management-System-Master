@@ -36,6 +36,7 @@ from sfpcl_credit.members.protected_identity import (
     identity_hash,
     mask_protected_identity,
     protected_identity_token,
+    reveal_protected_identity,
 )
 from sfpcl_credit.members.modules.active_member_status import (
     QUALIFYING_ENTITY_TYPES,
@@ -43,6 +44,7 @@ from sfpcl_credit.members.modules.active_member_status import (
     canonical_financial_year_start,
 )
 from sfpcl_credit.members.modules.member_authority import MemberObjectAccessDenied
+from sfpcl_credit.shared.encryption import FieldEncryption
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
@@ -495,7 +497,16 @@ def sensitive_field_value(member, field_name):
     value = getattr(member, f"{field_name}_encrypted")
     if not value:
         raise ValidationError({"field_name": f"{field_name} is not available for this member."})
-    return value
+    try:
+        return reveal_protected_identity(value, 10 if field_name == "pan" else 12)
+    except ValueError as exc:
+        raise ValidationError(
+            {
+                "field_name": (
+                    f"{field_name} requires governed source-value recovery before reveal."
+                )
+            }
+        ) from exc
 
 
 def audit_sensitive_reveal_denied(
@@ -571,11 +582,11 @@ def serialize_member_profile(member, user, identity_approval_action=None):
             else None
         ),
         "pan": {
-            "masked": _mask_last_four(member.pan_encrypted),
+            "masked": mask_protected_identity(member.pan_encrypted, 10),
             "can_view_full": user_can_reveal_sensitive_field(user, "pan"),
         },
         "aadhaar": {
-            "masked": _mask_last_four(member.aadhaar_encrypted),
+            "masked": mask_protected_identity(member.aadhaar_encrypted, 12),
             "can_view_full": user_can_reveal_sensitive_field(user, "aadhaar"),
         },
         "registered_address": {
@@ -1208,7 +1219,9 @@ def create_bank_account(member, payload, actor_user, request_ip="", request_user
         owner_party_type="member",
         owner_party_id=member.member_id,
         account_holder_name=values["account_holder_name"],
-        account_number_encrypted=_protected_account_number_token(values["account_number"]),
+        account_number_encrypted=_protected_account_number_token(
+            values["account_number"], "members.bank_account.account_number"
+        ),
         account_number_hash=identity_hash(values["account_number"]),
         account_number_last4=values["account_number"][-4:],
         ifsc=values["ifsc"],
@@ -1249,7 +1262,10 @@ def serialize_bank_account(bank_account):
         "account_number": {
             "masked": _mask_account_last4(
                 bank_account.account_number_last4,
-                _protected_account_number_length(bank_account.account_number_encrypted),
+                _protected_account_number_length(
+                    bank_account.account_number_encrypted,
+                    "members.bank_account.account_number",
+                ),
             ),
             "last4": bank_account.account_number_last4 or None,
             "can_view_full": False,
@@ -1297,7 +1313,9 @@ def create_cancelled_cheque(member, payload, actor_user, request_ip="", request_
         loan_application_id=values["loan_application_id"],
         member=member,
         document_id=values["document_id"],
-        account_number_encrypted=_protected_account_number_token(values["account_number"]),
+        account_number_encrypted=_protected_account_number_token(
+            values["account_number"], "members.cancelled_cheque.account_number"
+        ),
         account_number_hash=identity_hash(values["account_number"]),
         account_number_last4=values["account_number"][-4:],
         ifsc=values["ifsc"],
@@ -1347,7 +1365,10 @@ def serialize_cancelled_cheque(cancelled_cheque):
         "account_number": {
             "masked": _mask_account_last4(
                 cancelled_cheque.account_number_last4,
-                _protected_account_number_length(cancelled_cheque.account_number_encrypted),
+                _protected_account_number_length(
+                    cancelled_cheque.account_number_encrypted,
+                    "members.cancelled_cheque.account_number",
+                ),
             ),
             "last4": cancelled_cheque.account_number_last4 or None,
             "can_view_full": False,
@@ -1667,13 +1688,6 @@ def _mask_mobile(value):
         return None
     suffix = digits[-4:]
     return f"{'*' * max(len(digits) - 4, 0)}{suffix}"
-
-
-def _mask_last_four(value):
-    if not value:
-        return None
-    text = str(value)
-    return f"{'*' * max(len(text) - 4, 0)}{text[-4:]}"
 
 
 def _validated_nominee_payload(payload):
@@ -2137,12 +2151,13 @@ def _required_account_number(value):
     return digits
 
 
-def _protected_account_number_token(value):
-    digest = identity_hash(f"bank-account:{value}")
-    return f"enc:v1:{len(value)}:{digest}:{value[-4:]}"
+def _protected_account_number_token(value, field_name):
+    return FieldEncryption.encrypt(field_name, value)
 
 
-def _protected_account_number_length(token):
+def _protected_account_number_length(token, field_name):
+    if str(token or "").startswith("field:"):
+        return len(FieldEncryption.decrypt(field_name, token))
     parts = str(token or "").split(":")
     if len(parts) == 5 and parts[0] == "enc" and parts[1] == "v1":
         try:

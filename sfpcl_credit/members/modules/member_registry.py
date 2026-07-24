@@ -9,7 +9,12 @@ from sfpcl_credit.members.modules.member_authority import (
     MemberObjectAccessDenied,
     evaluate_member_authority,
 )
-from sfpcl_credit.members.protected_identity import identity_hash, mask_protected_identity, protected_identity_token
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    mask_protected_identity,
+    protected_identity_token,
+    reveal_protected_identity,
+)
 
 
 class MemberRegistry:
@@ -115,7 +120,7 @@ class MemberRegistry:
                 changed.append(field); old_values[field] = mask_protected_identity(getattr(member, f"{field}_encrypted"), length)
                 setattr(member, f"{field}_encrypted", token); setattr(member, f"{field}_hash", getattr(change, f"proposed_{field}_hash"))
                 if field == "aadhaar":
-                    member.aadhaar_last4 = token.rsplit(":", 1)[-1]
+                    member.aadhaar_last4 = reveal_protected_identity(token, length)[-4:]
                 new_values[field] = mask_protected_identity(token, length)
         member.kyc_status = "pending"; member.rekyc_due_date = None; member.version += 1
         member.updated_by_user = actor_user; member.updated_at = timezone.now()

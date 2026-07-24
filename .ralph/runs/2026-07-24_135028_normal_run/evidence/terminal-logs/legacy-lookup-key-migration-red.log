@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_rotation_recovers_plaintext_legacy_and_reports_one_way_tokens (sfpcl_credit.tests.test_field_encryption_rotation.FieldEncryptionRotationCommandTests.test_rotation_recovers_plaintext_legacy_and_reports_one_way_tokens)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_135028_normal_run/sfpcl_credit/tests/test_field_encryption_rotation.py", line 144, in test_rotation_recovers_plaintext_legacy_and_reports_one_way_tokens
+    self.assertEqual(member.pan_hash, identity_hash("ABCDE4321F"))
+AssertionError: 'retained-secret-derived-pan-hash' != '6c533e2f40cb0f6f3722d331a730ce42f103319906b7e299300fdb2ed7d1866c'
+- retained-secret-derived-pan-hash
++ 6c533e2f40cb0f6f3722d331a730ce42f103319906b7e299300fdb2ed7d1866c
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

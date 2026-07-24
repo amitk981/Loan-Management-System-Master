@@ -10,6 +10,10 @@ from sfpcl_credit.members.models import (
     MemberScopeAssignment,
     ProducerInstitutionProfile,
 )
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    protected_identity_token,
+)
 from sfpcl_credit.tests.api_contracts import (
     assert_available_actions_shape,
     assert_error_envelope,
@@ -77,10 +81,10 @@ class MemberProfileApiTests(TestCase):
             folio_number="FOL-456",
             membership_start_date="2021-04-01",
             membership_status="active",
-            pan_encrypted="ABCDE1234F",
-            pan_hash="hash-pan",
-            aadhaar_encrypted="123456789012",
-            aadhaar_hash="hash-aadhaar",
+            pan_encrypted=protected_identity_token("ABCDE1234F", 10),
+            pan_hash=identity_hash("ABCDE1234F"),
+            aadhaar_encrypted=protected_identity_token("123456789012", 12),
+            aadhaar_hash=identity_hash("123456789012"),
             registered_address_line1="Village Road",
             registered_address_line2="Near Market",
             registered_village_city="Nashik",

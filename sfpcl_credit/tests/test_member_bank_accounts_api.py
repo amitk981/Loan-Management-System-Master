@@ -100,6 +100,9 @@ class MemberBankAccountApiTests(TestCase):
         self.assertEqual(persisted.owner_party_type, "member")
         self.assertNotEqual(persisted.account_number_encrypted, "123456789012")
         self.assertNotIn("123456789012", persisted.account_number_encrypted)
+        self.assertTrue(
+            persisted.account_number_encrypted.startswith("field:v2:local-v1:")
+        )
         self.assertNotEqual(persisted.account_number_hash, "123456789012")
         self.assertEqual(persisted.account_number_last4, "9012")
 

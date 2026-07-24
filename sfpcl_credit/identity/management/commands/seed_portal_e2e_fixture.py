@@ -32,6 +32,10 @@ from sfpcl_credit.identity.models import Permission, PortalAccount, Role, RolePe
 from sfpcl_credit.legal_documents.models import LoanDocument, SignatureRecord
 from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.members.models import Member, Nominee, Shareholding
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    protected_identity_token,
+)
 from sfpcl_credit.processes import document_checklist_actions
 from sfpcl_credit.legal_documents.modules.checklist_actions import RequestMetadata
 
@@ -85,6 +89,11 @@ class Command(BaseCommand):
             display_name="Portal Contract Member",
             folio_number="FOL-E2E-PORTAL",
             membership_status="active",
+            pan_encrypted=protected_identity_token("ABCDE0701F", 10),
+            pan_hash=identity_hash("ABCDE0701F"),
+            aadhaar_encrypted=protected_identity_token("700000000701", 12),
+            aadhaar_hash=identity_hash("700000000701"),
+            aadhaar_last4="0701",
             kyc_status="verified",
             default_status="no_default",
             active_member_status="active",
@@ -103,10 +112,10 @@ class Command(BaseCommand):
             age_at_application=35,
             gender="other",
             relationship_to_borrower="family",
-            pan_encrypted="e2e-nominee-pan",
-            pan_hash="e2e-portal-nominee-pan-hash",
-            aadhaar_encrypted="e2e-nominee-aadhaar",
-            aadhaar_hash="e2e-portal-nominee-aadhaar-hash",
+            pan_encrypted=protected_identity_token("ABCDE0702F", 10),
+            pan_hash=identity_hash("ABCDE0702F"),
+            aadhaar_encrypted=protected_identity_token("700000000702", 12),
+            aadhaar_hash=identity_hash("700000000702"),
             kyc_status="verified",
         )
         shareholding = Shareholding.objects.create(

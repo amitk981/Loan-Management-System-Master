@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -10,6 +12,20 @@ from sfpcl_credit.members.models import Member
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_PYTHON = "/Users/amitkallapa/LMS/.ralph/venv/bin/python"
+PRODUCTION_FIELD_KEY_ENVIRONMENT = {
+    "SFPCL_FIELD_ENCRYPTION_CURRENT_VERSION": "production-test-v1",
+    "SFPCL_FIELD_ENCRYPTION_KEY_REF": "vault:test/field/production-test-v1",
+    "SFPCL_FIELD_ENCRYPTION_KEYS": json.dumps(
+        {
+            "production-test-v1": base64.urlsafe_b64encode(b"P" * 32).decode(
+                "ascii"
+            )
+        }
+    ),
+    "SFPCL_FIELD_LOOKUP_KEY": base64.urlsafe_b64encode(b"H" * 32).decode(
+        "ascii"
+    ),
+}
 
 
 class ProductionDemoIsolationTests(SimpleTestCase):
@@ -57,6 +73,7 @@ assert response.status_code == 404, response.status_code
         environment = {
             **os.environ,
             "DJANGO_SETTINGS_MODULE": "sfpcl_credit.config.production_settings",
+            **PRODUCTION_FIELD_KEY_ENVIRONMENT,
         }
 
         result = subprocess.run(
@@ -178,6 +195,7 @@ for command_name in (
             "SFPCL_DEBUG": "true",
             "SFPCL_ALLOW_DEMO_SEED": "true",
             "SFPCL_ALLOW_E2E_SEED": "true",
+            **PRODUCTION_FIELD_KEY_ENVIRONMENT,
         }
 
         result = subprocess.run(

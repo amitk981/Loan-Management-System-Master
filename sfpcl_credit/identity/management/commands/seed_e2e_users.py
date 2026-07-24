@@ -20,6 +20,10 @@ from sfpcl_credit.identity.models import (
     User,
 )
 from sfpcl_credit.members.models import CropPlan, IndividualMemberProfile, LandHolding, Member, Nominee, ProduceSupplyRecord, Shareholding
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    protected_identity_token,
+)
 
 # Non-secret credentials for the local Playwright suite only. The suite logs in
 # through the production auth path (POST /auth/login/ + GET /auth/me/), so a real
@@ -230,10 +234,11 @@ class Command(BaseCommand):
                 "member_number": "MEM-E2E-006", "member_type": "individual_farmer",
                 "legal_name": "Epic 006 Browser Member",
                 "display_name": "Epic 006 Browser Member", "folio_number": "FOL-E2E-006",
-                "membership_status": "active", "pan_encrypted": "synthetic-e2e-pan",
-                "pan_hash": "synthetic-e2e-pan-hash",
-                "aadhaar_encrypted": "synthetic-e2e-aadhaar",
-                "aadhaar_hash": "synthetic-e2e-aadhaar-hash", "kyc_status": "verified",
+                "membership_status": "active",
+                "pan_encrypted": protected_identity_token("ABCDE0602F", 10),
+                "pan_hash": identity_hash("ABCDE0602F"),
+                "aadhaar_encrypted": protected_identity_token("600000000602", 12),
+                "aadhaar_hash": identity_hash("600000000602"), "kyc_status": "verified",
                 "default_status": "no_default", "active_member_status": "active",
                 "active_member_verified_at": instant, "created_by_user": finance_user,
             },
@@ -268,10 +273,10 @@ class Command(BaseCommand):
                 "display_name": "Epic 006 Browser Witness",
                 "folio_number": "FOL-E2E-006-W",
                 "membership_status": "active",
-                "pan_encrypted": "synthetic-e2e-witness-pan",
-                "pan_hash": "synthetic-e2e-witness-pan-hash",
-                "aadhaar_encrypted": "synthetic-e2e-witness-aadhaar",
-                "aadhaar_hash": "synthetic-e2e-witness-aadhaar-hash",
+                "pan_encrypted": protected_identity_token("ABCDE0611F", 10),
+                "pan_hash": identity_hash("ABCDE0611F"),
+                "aadhaar_encrypted": protected_identity_token("600000000611", 12),
+                "aadhaar_hash": identity_hash("600000000611"),
                 "kyc_status": "verified",
                 "default_status": "no_default",
                 "active_member_status": "active",
@@ -285,10 +290,10 @@ class Command(BaseCommand):
                 "member": member, "loan_application_id": EPIC_006_IDS["application"],
                 "nominee_name": "Epic 006 Synthetic Nominee", "age_at_application": 42,
                 "gender": "female", "relationship_to_borrower": "Spouse",
-                "pan_encrypted": "synthetic-e2e-nominee-pan",
-                "pan_hash": "synthetic-e2e-nominee-pan-hash",
-                "aadhaar_encrypted": "synthetic-e2e-nominee-aadhaar",
-                "aadhaar_hash": "synthetic-e2e-nominee-aadhaar-hash",
+                "pan_encrypted": protected_identity_token("ABCDE0603F", 10),
+                "pan_hash": identity_hash("ABCDE0603F"),
+                "aadhaar_encrypted": protected_identity_token("600000000603", 12),
+                "aadhaar_hash": identity_hash("600000000603"),
                 "kyc_status": "verified", "minor_flag": False,
             },
         )

@@ -1,0 +1,17 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_identity_tokens_and_reveal_use_dedicated_versioned_field_key (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_identity_tokens_and_reveal_use_dedicated_versioned_field_key) ... FAIL
+
+======================================================================
+FAIL: test_identity_tokens_and_reveal_use_dedicated_versioned_field_key (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_identity_tokens_and_reveal_use_dedicated_versioned_field_key)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_135028_normal_run/sfpcl_credit/tests/test_field_encryption.py", line 38, in test_identity_tokens_and_reveal_use_dedicated_versioned_field_key
+    self.assertTrue(token.startswith("field:v2:k2:"))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
