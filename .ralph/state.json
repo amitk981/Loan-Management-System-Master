@@ -343,14 +343,15 @@
     "012B-register-exports",
     "012C-export-masking-and-permission-checks",
     "012D-audit-explorer",
-    "012D2-auditor-observation-workflow"
+    "012D2-auditor-observation-workflow",
+    "012E-operational-dashboard-hardening"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-24_102526_architecture_review",
+  "last_run_id": "2026-07-24_113059_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 26,
+  "slices_completed_since_architecture_review": 27,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

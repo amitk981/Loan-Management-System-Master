@@ -1,0 +1,67 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/Dashboard.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_103525_normal_run/sfpcl-lms
+
+ ❯ src/pages/Dashboard.test.tsx (17 tests | 1 failed) 138ms
+   ✓ dashboard API client > loads the 012E dashboard summary with the stored bearer token 3ms
+   ✓ dashboard API client > surfaces AUTH_REQUIRED responses without substituting mock dashboard data 1ms
+   ✓ dashboard API client > surfaces PERMISSION_DENIED responses without substituting mock dashboard data 1ms
+   ✓ dashboard API client > surfaces malformed or server failures as request failures 0ms
+   ✓ dashboard API client > surfaces network failures without falling back to mock dashboard data 1ms
+   × dashboard API client > rejects malformed card counts instead of displaying a fake zero 5ms
+     → promise resolved "{ role_context: 'credit_manager', …(2) }" instead of rejecting
+   ✓ dashboard API client > has no runtime mock dashboard fallback 0ms
+   ✓ DashboardSummaryView > renders API card labels/counts and the empty task state from the 012E response 7ms
+   ✓ DashboardSummaryView > renders API tasks when the backend starts returning them 27ms
+   ✓ DashboardSummaryView > renders credit_manager cards from the API response 2ms
+   ✓ DashboardSummaryView > renders sanction_committee cards from the API response 2ms
+   ✓ DashboardSummaryView > renders compliance cards from the API response 2ms
+   ✓ DashboardSummaryView > renders treasury cards from the API response 1ms
+   ✓ DashboardSummaryView > renders management cards from the API response 2ms
+   ✓ DashboardSummaryView > uses existing alert patterns for unauthorized and error states 1ms
+   ✓ DashboardSummaryView > retries failed dashboard loads through the provided refresh action 64ms
+   ✓ DashboardSummaryView > preserves the backend scoped card destination when navigating 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/Dashboard.test.tsx > dashboard API client > rejects malformed card counts instead of displaying a fake zero
+AssertionError: promise resolved "{ role_context: 'credit_manager', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "cards": [
++     {
++       "code": "applications_pending_completeness",
++       "count": 0,
++       "label": "Applications pending completeness",
++       "link": "/applications?status=submitted&current_stage=initial_loan_request",
++     },
++   ],
++   "role_context": "credit_manager",
++   "tasks": [],
+  }
+
+ ❯ src/pages/Dashboard.test.tsx:87:41
+     85|     })));
+     86| 
+     87|     await expect(fetchDashboardSummary()).rejects.toMatchObject({
+       |                                         ^
+     88|       code: 'INVALID_RESPONSE',
+     89|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  10:57:02
+   Duration  1.17s (transform 157ms, setup 0ms, collect 407ms, tests 138ms, environment 324ms, prepare 48ms)
+

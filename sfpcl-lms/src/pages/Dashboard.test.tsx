@@ -1,5 +1,8 @@
+// @vitest-environment jsdom
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DashboardSummaryView,
@@ -7,6 +10,7 @@ import {
 } from './Dashboard';
 import { fetchDashboardSummary } from '../services/dashboardApi';
 import { clearStoredAuthSession, storedAuthSession } from '../services/authSession';
+import dashboardSource from './Dashboard.tsx?raw';
 
 const storage = new Map<string, string>();
 
@@ -21,13 +25,14 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   clearStoredAuthSession();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('dashboard API client', () => {
-  it('loads the 003G dashboard summary with the stored bearer token', async () => {
+  it('loads the 012E dashboard summary with the stored bearer token', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(ok(creditManagerSummary));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -47,7 +52,7 @@ describe('dashboard API client', () => {
       code: 'applications_pending_completeness',
       label: 'Applications pending completeness',
       count: 7,
-      link: '/applications?status=pending_completeness',
+      link: '/applications?status=submitted&current_stage=initial_loan_request',
     });
     expect(summary.tasks).toEqual([]);
   });
@@ -72,10 +77,26 @@ describe('dashboard API client', () => {
 
     await expect(fetchDashboardSummary()).rejects.toThrow('Network unavailable');
   });
+
+  it('rejects malformed card counts instead of displaying a fake zero', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(ok({
+      ...creditManagerSummary,
+      cards: [{ ...creditManagerSummary.cards[0], count: 'not-a-count' }],
+    })));
+
+    await expect(fetchDashboardSummary()).rejects.toMatchObject({
+      code: 'INVALID_RESPONSE',
+    });
+  });
+
+  it('has no runtime mock dashboard fallback', () => {
+    expect(dashboardSource).not.toContain("from '../data/mockData'");
+    expect(dashboardSource).not.toContain('dashboardStats');
+  });
 });
 
 describe('DashboardSummaryView', () => {
-  it('renders API card labels/counts and the empty task state from the 003G response', () => {
+  it('renders API card labels/counts and the empty task state from the 012E response', () => {
     const html = renderSummary(creditManagerSummary);
 
     expect(html).toContain('Applications pending completeness');
@@ -133,6 +154,73 @@ describe('DashboardSummaryView', () => {
     expect(unauthorized).not.toContain('Applications pending completeness');
     expect(failed).toContain('Dashboard could not be loaded.');
   });
+
+  it('retries failed dashboard loads through the provided refresh action', async () => {
+    const onRefresh = vi.fn();
+    render(
+      <DashboardSummaryView
+        status="error"
+        message="Dashboard could not be loaded."
+        onNavigate={vi.fn()}
+        onRefresh={onRefresh}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh dashboard' }));
+
+    expect(onRefresh).toHaveBeenCalledOnce();
+  });
+
+  it('preserves the backend scoped card destination when navigating', async () => {
+    const onNavigate = vi.fn();
+    window.history.replaceState({}, '', '/');
+    render(
+      <DashboardSummaryView
+        status="success"
+        summary={creditManagerSummary}
+        onNavigate={onNavigate}
+        onRefresh={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByText('Applications pending completeness'));
+
+    expect(onNavigate).toHaveBeenCalledWith('applications');
+    expect(`${window.location.pathname}${window.location.search}`).toBe(
+      '/applications?status=submitted&current_stage=initial_loan_request',
+    );
+  });
+
+  it.each([
+    ['sanction_committee', 'Sanction cases', '/sanctions?current_status=pending', 'sanction'],
+    ['compliance', 'Grievances', '/compliance/grievances?status=open', 'grievances'],
+    ['treasury', 'SAP requests', '/finance/sap-requests?request_status=draft', 'disbursement'],
+    ['treasury', 'Posting queue', '/repayments?sap_posting_status=pending', 'repayments'],
+    ['compliance', 'Archive queue', '/compliance/archive?status=due', 'audit'],
+    ['sanction_committee', 'Section 186', '/reports?report=section-186&review_status=pending', 'reports'],
+  ] as const)(
+    'preserves the %s scoped destination for %s',
+    async (roleContext, label, link, expectedPage) => {
+      const onNavigate = vi.fn();
+      window.history.replaceState({}, '', '/');
+      render(
+        <DashboardSummaryView
+          status="success"
+          summary={{
+            role_context: roleContext,
+            cards: [{ code: label.toLowerCase().replace(/ /g, '_'), label, count: 1, link }],
+            tasks: [],
+          }}
+          onNavigate={onNavigate}
+        />,
+      );
+
+      await userEvent.click(screen.getByText(label));
+
+      expect(onNavigate).toHaveBeenCalledWith(expectedPage);
+      expect(`${window.location.pathname}${window.location.search}`).toBe(link);
+    },
+  );
 });
 
 const renderSummary = (summary: DashboardSummary) => renderToStaticMarkup(
@@ -146,7 +234,7 @@ const creditManagerSummary: DashboardSummary = {
       code: 'applications_pending_completeness',
       label: 'Applications pending completeness',
       count: 7,
-      link: '/applications?status=pending_completeness',
+      link: '/applications?status=submitted&current_stage=initial_loan_request',
     },
   ],
   tasks: [],

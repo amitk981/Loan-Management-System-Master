@@ -1,10 +1,23 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { ApplicationListView } from './ApplicationList';
+import {
+  ApplicationListView,
+} from './ApplicationList';
+import { applicationFiltersFromLocation } from '../../services/applicationIntakeApi';
 import type { LoanRequestRegisterRow, Pagination, StaffApplication } from '../../services/applicationIntakeApi';
 
 describe('ApplicationListView', () => {
+  it('applies the scoped dashboard destination filters to the list request', () => {
+    expect(applicationFiltersFromLocation(
+      '?status=submitted&current_stage=initial_loan_request',
+      ['all', 'submitted'],
+    )).toEqual({
+      status: 'submitted',
+      currentStage: 'initial_loan_request',
+    });
+  });
+
   it('renders API-backed application and register rows without mock-only rows', () => {
     const html = renderToStaticMarkup(
       <ApplicationListView

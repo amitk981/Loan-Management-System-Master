@@ -2211,13 +2211,19 @@ Rules:
   permission-neutral `it_head` and `sales_team_user` demo/source roles remain ungranted pending
   source confirmation.
 
-## Dashboard task summary shell (003G)
+## Operational dashboard summaries (003G, hardened by 012E)
 
 `GET /api/v1/dashboard/`
 
-Protected endpoint matching `docs/source/api-contracts.md` §43.1 for the role-based dashboard
-summary. Specialist dashboard endpoints from §43.2-§43.4 are deferred; this slice exposes only the
-single role-context shell.
+Dedicated context routes:
+
+- `GET /api/v1/dashboard/sanction-committee/`
+- `GET /api/v1/dashboard/compliance/`
+- `GET /api/v1/dashboard/treasury/`
+
+All four protected endpoints match `docs/source/api-contracts.md` §43. The general route derives
+the context from the authenticated user's active primary role. A dedicated route additionally
+requires that derived context to match the route; it never accepts a caller-selected role.
 
 Request headers:
 
@@ -2235,8 +2241,8 @@ Success data:
     {
       "code": "applications_pending_completeness",
       "label": "Applications pending completeness",
-      "count": 0,
-      "link": "/applications?status=pending_completeness"
+      "count": 7,
+      "link": "/applications?status=submitted&current_stage=initial_loan_request"
     }
   ],
   "tasks": []
@@ -2247,29 +2253,39 @@ Rules:
 - No query parameters are supported. Any query parameter returns `400 VALIDATION_ERROR` with the
   unknown parameter in `field_errors`.
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns `401`; an
-  authenticated user without the dashboard scope returns `403 FORBIDDEN`.
+  authenticated user without the dashboard scope, with an unsupported/inactive role, or requesting
+  a mismatched dedicated context returns `403 FORBIDDEN`.
 - Permission assumption A-023: dashboard read requires `management_readonly`, the source §19.1
   dashboard/summary scope. This is used instead of broad report/export permissions or an invented
   `dashboard.read` code.
-- Role contexts currently returned from primary role:
-  `credit_manager`, `sanction_committee`, `compliance`, `treasury`, or `management`.
-- Cards use source-named shell codes from the §43.1 example and functional-spec §12.2-§12.6
-  dashboard widget lists. All `count` values are `0` because application, appraisal, sanction,
-  compliance, treasury, DPD, reminder, default, and management-report tables/calculations are not
-  implemented yet.
-- `tasks` is an empty list because no source-backed task persistence table exists yet.
+- Stable operational role contexts are `credit_manager` (Credit Manager),
+  `sanction_committee` (CFO/director), `compliance` (Compliance, CS, internal auditor), and
+  `treasury` (Treasury/CFC/Accounts). Governed approval-authority memberships do not override the
+  primary operational dashboard. The retained legacy `management` context returns an empty card
+  catalogue until a canonical object-scoped management selector exists.
+- Stable card catalogues are role-specific within those contexts. Credit owns application
+  completeness/deficiency/appraisal/rejection, scoped outstanding/DPD/reminder, and default
+  assessment cards. CFO owns approval/exception/portfolio/DPD/statutory/recovery cards. Compliance
+  owns documentation/custody/task/statutory cards; CS also receives board, grievance, and archive
+  cards. Treasury owns SAP/disbursement/repayment/invoice cards. Accounts receives posting,
+  invoice, accrual, and reconciliation cards.
+- Cards are permission-filtered before counts run. A caller never receives an authoritative zero
+  for a card whose owning read permission or canonical object selector is unavailable.
+- Each `count` is a non-negative integer derived from canonical role/object-scoped records; each
+  `link` carries the corresponding stable list/report filters. The frontend preserves that exact
+  destination in browser history. Malformed counts are rejected rather than displayed as zero.
+- `tasks` remains an empty list for compatibility; task persistence/population belongs to
+  012EA/012EB.
 - The response returns only summary metadata fields: `role_context`, `cards[].code`,
   `cards[].label`, `cards[].count`, `cards[].link`, and `tasks[]`. It does not return borrower,
   member, loan-account, document, or other sensitive entity values.
 - Read-only dashboard access does not write `AuditLog` rows in this shell.
 - Response examples are saved in
   `.ralph/runs/2026-07-05_200043_normal_run/evidence/api-responses/dashboard-api-response.txt`.
-- Frontend wiring implemented in 003H (`2026-07-06_102639_normal_run`): the staff Dashboard page
-  now calls this endpoint with the stored bearer session, renders `cards[]` through the existing
-  KPI-card pattern, renders `tasks[]` through the existing task-queue pattern, and uses existing
-  alert/empty patterns for loading, empty, `401`, `403`, and server/network errors. Frontend link
-  translation follows A-024; unknown future links are left inactive instead of creating new routes
-  in this dashboard slice.
+- Frontend wiring implemented in 003H and hardened in 012E: the staff Dashboard calls the general
+  endpoint with the stored bearer session, renders cards/tasks through the existing KPI/task
+  patterns, and uses the existing loading, empty, forbidden, error, and refresh patterns. Unknown
+  future links remain inactive rather than creating routes implicitly.
 
 ## Member portal dashboard/profile/supply APIs (005FB)
 

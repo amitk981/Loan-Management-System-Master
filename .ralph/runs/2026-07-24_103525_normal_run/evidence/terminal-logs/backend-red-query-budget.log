@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_credit_dashboard_batches_card_counts_within_fixed_query_budget (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_credit_dashboard_batches_card_counts_within_fixed_query_budget)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_103525_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 361, in test_credit_dashboard_batches_card_counts_within_fixed_query_budget
+    self.assertLessEqual(
+AssertionError: 13 not less than or equal to 10 : Dashboard query count must be bounded and must not grow one query per card.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

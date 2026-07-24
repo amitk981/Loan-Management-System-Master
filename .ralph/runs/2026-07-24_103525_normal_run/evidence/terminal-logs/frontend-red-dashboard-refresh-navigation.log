@@ -1,0 +1,201 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/Dashboard.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_103525_normal_run/sfpcl-lms
+
+ ❯ src/pages/Dashboard.test.tsx (15 tests | 2 failed) 158ms
+   ✓ dashboard API client > loads the 003G dashboard summary with the stored bearer token 3ms
+   ✓ dashboard API client > surfaces AUTH_REQUIRED responses without substituting mock dashboard data 1ms
+   ✓ dashboard API client > surfaces PERMISSION_DENIED responses without substituting mock dashboard data 1ms
+   ✓ dashboard API client > surfaces malformed or server failures as request failures 0ms
+   ✓ dashboard API client > surfaces network failures without falling back to mock dashboard data 1ms
+   ✓ DashboardSummaryView > renders API card labels/counts and the empty task state from the 003G response 6ms
+   ✓ DashboardSummaryView > renders API tasks when the backend starts returning them 50ms
+   ✓ DashboardSummaryView > renders credit_manager cards from the API response 2ms
+   ✓ DashboardSummaryView > renders sanction_committee cards from the API response 2ms
+   ✓ DashboardSummaryView > renders compliance cards from the API response 2ms
+   ✓ DashboardSummaryView > renders treasury cards from the API response 2ms
+   ✓ DashboardSummaryView > renders management cards from the API response 2ms
+   ✓ DashboardSummaryView > uses existing alert patterns for unauthorized and error states 2ms
+   × DashboardSummaryView > retries failed dashboard loads through the provided refresh action 59ms
+     → Unable to find an accessible element with the role "button" and name "Refresh dashboard"
+
+Here are the accessible roles:
+
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 9v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 17h.01"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 min-w-0"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mDashboard could not be loaded[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+          [36m>[39m
+            [0mDashboard could not be loaded.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × DashboardSummaryView > preserves the backend scoped card destination when navigating 25ms
+     → expected '/' to be '/applications?status=pending_complete…' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/Dashboard.test.tsx > DashboardSummaryView > retries failed dashboard loads through the provided refresh action
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Refresh dashboard"
+
+Here are the accessible roles:
+
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-red-50 border-red-200"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-triangle-alert text-red-600 flex-shrink-0 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 9v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 17h.01"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 min-w-0"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mDashboard could not be loaded[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm mt-0.5 text-red-700"[39m
+          [36m>[39m
+            [0mDashboard could not be loaded.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/Dashboard.test.tsx:152:34
+    150|     );
+    151| 
+    152|     await userEvent.click(screen.getByRole('button', { name: 'Refresh …
+       |                                  ^
+    153| 
+    154|     expect(onRefresh).toHaveBeenCalledOnce();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/pages/Dashboard.test.tsx > DashboardSummaryView > preserves the backend scoped card destination when navigating
+AssertionError: expected '/' to be '/applications?status=pending_complete…' // Object.is equality
+
+Expected: "/applications?status=pending_completeness"
+Received: "/"
+
+ ❯ src/pages/Dashboard.test.tsx:172:68
+    170| 
+    171|     expect(onNavigate).toHaveBeenCalledWith('applications');
+    172|     expect(`${window.location.pathname}${window.location.search}`).toB…
+       |                                                                    ^
+    173|       '/applications?status=pending_completeness',
+    174|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+   Start at  10:55:54
+   Duration  1.33s (transform 151ms, setup 0ms, collect 352ms, tests 158ms, environment 489ms, prepare 50ms)
+

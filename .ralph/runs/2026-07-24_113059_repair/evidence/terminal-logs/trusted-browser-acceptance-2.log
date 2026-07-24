@@ -1,0 +1,41 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_103525_normal_run/.ralph/runs/2026-07-24_113059_repair/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/operational-dashboard.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/operational-dashboard.e2e.spec.ts
+
+[2m[WebServer] [22m[24/Jul/2026 06:13:41] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 4 tests using 1 worker
+
+[2m[WebServer] [22m[24/Jul/2026 06:13:45] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[24/Jul/2026 06:13:45] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[24/Jul/2026 06:13:45] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[24/Jul/2026 06:13:45] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✓  1 [chromium] › operational-dashboard.e2e.spec.ts:20:5 › 012E renders populated operational dashboard data (2.0s)
+[2m[WebServer] [22m[24/Jul/2026 06:13:47] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[24/Jul/2026 06:13:47] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[24/Jul/2026 06:13:47] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[24/Jul/2026 06:13:47] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✓  2 [chromium] › operational-dashboard.e2e.spec.ts:54:5 › 012E renders the empty operational dashboard state (2.3s)
+[2m[WebServer] [22m[24/Jul/2026 06:13:49] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[24/Jul/2026 06:13:49] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[24/Jul/2026 06:13:49] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[24/Jul/2026 06:13:49] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✓  3 [chromium] › operational-dashboard.e2e.spec.ts:67:5 › 012E renders the operational dashboard error state (2.3s)
+[2m[WebServer] [22m[24/Jul/2026 06:13:52] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[24/Jul/2026 06:13:52] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[24/Jul/2026 06:13:52] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[24/Jul/2026 06:13:52] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✓  4 [chromium] › operational-dashboard.e2e.spec.ts:82:5 › 012E renders the forbidden operational dashboard state (2.3s)
+
+  4 passed (1.0m)
+
+Duration milliseconds: 63036
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_103525_normal_run/.ralph/runs/2026-07-24_113059_repair/evidence/trusted-browser-screenshots-2.sha256

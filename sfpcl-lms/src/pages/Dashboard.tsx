@@ -8,6 +8,7 @@ import {
   Clock,
   FileText,
   Gavel,
+  RefreshCw,
   ShieldAlert,
   WalletCards,
 } from 'lucide-react';
@@ -37,6 +38,7 @@ interface DashboardSummaryViewProps {
   summary?: DashboardSummary;
   message?: string;
   onNavigate: (page: Page, id?: string) => void;
+  onRefresh?: () => void;
 }
 
 const ROLE_CONTEXT_LABELS: Record<DashboardRoleContext, string> = {
@@ -103,6 +105,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [summary, setSummary] = useState<DashboardSummary | undefined>();
   const [status, setStatus] = useState<DashboardStatus>('loading');
   const [message, setMessage] = useState<string | undefined>();
+  const [requestVersion, setRequestVersion] = useState(0);
   const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening';
 
   useEffect(() => {
@@ -136,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [requestVersion]);
 
   return (
     <div className="p-6 space-y-5 max-w-none">
@@ -161,6 +164,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         summary={summary}
         message={message}
         onNavigate={onNavigate}
+        onRefresh={() => setRequestVersion(version => version + 1)}
       />
     </div>
   );
@@ -171,6 +175,7 @@ export const DashboardSummaryView: React.FC<DashboardSummaryViewProps> = ({
   summary,
   message,
   onNavigate,
+  onRefresh,
 }) => {
   if (status === 'loading') {
     return (
@@ -194,11 +199,22 @@ export const DashboardSummaryView: React.FC<DashboardSummaryViewProps> = ({
 
   if (status === 'error' || !summary) {
     return (
-      <AlertBanner
-        type="error"
-        title="Dashboard could not be loaded"
-        message={message || 'Dashboard could not be loaded.'}
-      />
+      <div>
+        <AlertBanner
+          type="error"
+          title="Dashboard could not be loaded"
+          message={message || 'Dashboard could not be loaded.'}
+        />
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="btn-secondary mt-3 flex items-center gap-2"
+          >
+            <RefreshCw size={14} /> Refresh dashboard
+          </button>
+        )}
+      </div>
     );
   }
 
@@ -263,7 +279,10 @@ const DashboardKpiCard: React.FC<{ card: DashboardCard; onNavigate: (page: Page)
       subtitle={target ? 'Open workspace' : 'Workspace pending'}
       icon={Icon}
       highlight={card.count > 0 ? 'warning' : 'normal'}
-      onClick={target ? () => onNavigate(target) : undefined}
+      onClick={target ? () => {
+        window.history.pushState({}, '', card.link);
+        onNavigate(target);
+      } : undefined}
     />
   );
 };
@@ -326,12 +345,16 @@ const pageFromDashboardLink = (link: string): Page | null => {
   if (path.startsWith('/finance/disbursements')) return 'disbursement';
   if (path.startsWith('/finance/repayments')) return 'repayments';
   if (path.startsWith('/finance/interest-invoices')) return 'interest';
+  if (path === '/repayments') return 'repayments';
+  if (path === '/interest') return 'interest';
   if (path === '/cfc') return 'cfc';
   if (path === '/loan-accounts') return 'loan-accounts';
   if (path === '/monitoring') return 'monitoring';
   if (path.startsWith('/monitoring/')) return 'monitoring';
   if (path === '/defaults') return 'defaults';
   if (path.startsWith('/defaults/')) return 'defaults';
+  if (path.startsWith('/compliance/grievances')) return 'grievances';
+  if (path.startsWith('/compliance/archive')) return 'audit';
   if (path === '/compliance') return 'compliance';
   if (path.startsWith('/compliance/')) return 'compliance';
   if (path === '/registers') return 'registers';

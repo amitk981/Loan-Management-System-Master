@@ -26,7 +26,7 @@ export async function staffLogin(page: Page, email: string, password: string): P
   await page.locator('input[type="password"]').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   // The staff shell (sidebar) renders only after /auth/me/ resolves.
-  await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Dashboard', exact: true })).toBeVisible();
 }
 
 export async function captureReviewableEvidence(

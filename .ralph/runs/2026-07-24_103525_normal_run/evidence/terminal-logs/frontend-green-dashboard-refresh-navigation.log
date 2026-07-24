@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/Dashboard.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_103525_normal_run/sfpcl-lms
+
+ ✓ src/pages/Dashboard.test.tsx (15 tests) 139ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  10:56:23
+   Duration  1.41s (transform 159ms, setup 0ms, collect 320ms, tests 139ms, environment 342ms, prepare 98ms)
+

@@ -264,6 +264,23 @@ export interface StaffApplicationFilters {
   pageSize?: number;
 }
 
+export const applicationFiltersFromLocation = <T extends string>(
+  search: string,
+  allowedStatuses: readonly T[],
+): {
+  status: T;
+  currentStage?: string;
+} => {
+  const params = new URLSearchParams(search);
+  const status = params.get('status');
+  return {
+    status: status && allowedStatuses.includes(status as T)
+      ? status as T
+      : allowedStatuses[0],
+    currentStage: params.get('current_stage') || undefined,
+  };
+};
+
 export interface RegisterFilters {
   search?: string;
   registerStatus?: string;

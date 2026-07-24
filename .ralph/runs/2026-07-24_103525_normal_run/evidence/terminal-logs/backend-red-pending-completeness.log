@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_credit_manager_pending_completeness_card_reconciles_to_scoped_application_list (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_credit_manager_pending_completeness_card_reconciles_to_scoped_application_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_103525_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 159, in test_credit_manager_pending_completeness_card_reconciles_to_scoped_application_list
+    self.assertEqual(
+AssertionError: {'cod[91 chars]nt': 0, 'link': '/applications?status=pending_completeness'} != {'cod[91 chars]nt': 1, 'link': '/applications?status=submitte[65 chars]ted'}
+  {'code': 'applications_pending_completeness',
+-  'count': 0,
+?           ^
+
++  'count': 1,
+?           ^
+
+   'label': 'Applications pending completeness',
+-  'link': '/applications?status=pending_completeness'}
++  'link': '/applications?status=submitted&current_stage=initial_loan_request&completeness_status=not_started'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

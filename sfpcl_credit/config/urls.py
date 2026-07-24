@@ -993,6 +993,24 @@ urlpatterns = [
         name="application-document-verify",
     ),
     path("api/v1/dashboard/", dashboard_views.dashboard_summary, name="dashboard-summary"),
+    path(
+        "api/v1/dashboard/sanction-committee/",
+        dashboard_views.dashboard_summary,
+        {"expected_context": "sanction_committee"},
+        name="dashboard-sanction-committee",
+    ),
+    path(
+        "api/v1/dashboard/compliance/",
+        dashboard_views.dashboard_summary,
+        {"expected_context": "compliance"},
+        name="dashboard-compliance",
+    ),
+    path(
+        "api/v1/dashboard/treasury/",
+        dashboard_views.dashboard_summary,
+        {"expected_context": "treasury"},
+        name="dashboard-treasury",
+    ),
     path("api/v1/admin/users/", admin_views.user_list, name="admin-user-list"),
     path(
         "api/v1/admin/users/<uuid:user_id>/",

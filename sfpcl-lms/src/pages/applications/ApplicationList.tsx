@@ -6,6 +6,7 @@ import type { ApplicationStatus } from '../../types';
 import {
   fetchLoanRequestRegister,
   fetchStaffApplications,
+  applicationFiltersFromLocation,
   type LoanRequestRegisterRow,
   type Pagination,
   type StaffApplication,
@@ -76,8 +77,15 @@ const getTableStatusLabel = (status: string) => {
 
 const ApplicationList: React.FC<ApplicationListProps> = ({ onNew, onSelect }) => {
   const { can } = useRole();
+  const initialFilters = applicationFiltersFromLocation(
+    window.location.search,
+    STATUS_OPTIONS,
+  );
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'all'>(initialFilters.status);
+  const [currentStageFilter, setCurrentStageFilter] = useState<string | undefined>(
+    initialFilters.currentStage,
+  );
   const [applications, setApplications] = useState<StaffApplication[]>([]);
   const [registerRows, setRegisterRows] = useState<LoanRequestRegisterRow[]>([]);
   const [pagination, setPagination] = useState<Pagination>(emptyPagination);
@@ -90,6 +98,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({ onNew, onSelect }) =>
     fetchStaffApplications({
       search,
       applicationStatus: statusFilter,
+      currentStage: currentStageFilter,
       ordering: '-application_date',
       page: 1,
       pageSize: 20,
@@ -117,7 +126,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({ onNew, onSelect }) =>
     return () => {
       cancelled = true;
     };
-  }, [search, statusFilter]);
+  }, [currentStageFilter, search, statusFilter]);
 
   return (
     <ApplicationListView
@@ -130,7 +139,10 @@ const ApplicationList: React.FC<ApplicationListProps> = ({ onNew, onSelect }) =>
       statusFilter={statusFilter}
       canCreate={can('create_application')}
       onSearchChange={setSearch}
-      onStatusFilterChange={setStatusFilter}
+      onStatusFilterChange={value => {
+        setStatusFilter(value);
+        setCurrentStageFilter(undefined);
+      }}
       onNew={onNew}
       onSelect={onSelect}
     />

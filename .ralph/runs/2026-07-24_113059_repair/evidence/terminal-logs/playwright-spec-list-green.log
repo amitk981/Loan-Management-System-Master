@@ -1,0 +1,7 @@
+Listing tests:
+  [chromium] › operational-dashboard.e2e.spec.ts:20:5 › 012E renders populated operational dashboard data
+  [chromium] › operational-dashboard.e2e.spec.ts:54:5 › 012E renders the empty operational dashboard state
+  [chromium] › operational-dashboard.e2e.spec.ts:67:5 › 012E renders the operational dashboard error state
+  [chromium] › operational-dashboard.e2e.spec.ts:82:5 › 012E renders the forbidden operational dashboard state
+Total: 4 tests in 1 file
+Exit code: 0

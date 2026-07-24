@@ -701,6 +701,34 @@ def search_archives(*, actor, query_params, request=None):
     )
 
 
+def pending_archive_requirements(*, actor):
+    """Return the CS-owned archive worklist through the canonical object scope."""
+    roles = set(auth_service.effective_role_codes(actor))
+    permissions = set(auth_service.effective_permission_codes(actor))
+    if (
+        not actor.can_authenticate()
+        or ARCHIVE_READ_PERMISSION not in permissions
+        or not roles.intersection(ARCHIVE_CREATE_ROLES)
+    ):
+        raise ClosurePermissionDenied
+    access = evaluate_object_access(
+        actor_user_id=actor.pk,
+        actor_team_codes=actor.team_codes(),
+        actor_permission_codes=permissions,
+        required_permission=ARCHIVE_READ_PERMISSION,
+        object_team_code="compliance",
+    )
+    if not access.allowed:
+        raise ClosurePermissionDenied
+    return ClosureRequirement.objects.filter(
+        loan_closure__loan_account__loan_application__application_status=(
+            "approved_by_sanction"
+        ),
+        requirement_type=ClosureRequirement.TYPE_ARCHIVE,
+        requirement_status=ClosureRequirement.STATUS_PENDING,
+    )
+
+
 @transaction.atomic
 def _archive_locked(
     *, actor, archive_role, loan_closure_id, cleaned, payload_digest, request

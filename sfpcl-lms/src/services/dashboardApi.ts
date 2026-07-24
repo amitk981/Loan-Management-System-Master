@@ -68,22 +68,46 @@ export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   return normalizeDashboardSummary(envelope.data);
 };
 
-const normalizeDashboardSummary = (summary: DashboardSummary): DashboardSummary => ({
-  role_context: summary.role_context,
-  cards: Array.isArray(summary.cards)
-    ? summary.cards.map(card => ({
-        code: String(card.code ?? ''),
-        label: String(card.label ?? ''),
-        count: Number.isFinite(Number(card.count)) ? Number(card.count) : 0,
-        link: String(card.link ?? ''),
-      }))
-    : [],
-  tasks: Array.isArray(summary.tasks)
-    ? summary.tasks.map(task => ({
-        task_type: String(task.task_type ?? ''),
-        entity_id: String(task.entity_id ?? ''),
-        title: String(task.title ?? ''),
-        due_at: task.due_at ?? null,
-      }))
-    : [],
-});
+const normalizeDashboardSummary = (summary: DashboardSummary): DashboardSummary => {
+  if (!Array.isArray(summary.cards) || !Array.isArray(summary.tasks)) {
+    throw invalidResponse();
+  }
+  const cards = summary.cards.map(card => {
+    if (!card) throw invalidResponse();
+    const count = Number(card.count);
+    if (
+      typeof card.code !== 'string'
+      || !card.code
+      || typeof card.label !== 'string'
+      || !card.label
+      || !Number.isInteger(count)
+      || count < 0
+      || typeof card.link !== 'string'
+      || !card.link.startsWith('/')
+    ) {
+      throw invalidResponse();
+    }
+    return {
+      code: card.code,
+      label: card.label,
+      count,
+      link: card.link,
+    };
+  });
+  return {
+    role_context: summary.role_context,
+    cards,
+    tasks: summary.tasks.map(task => ({
+      task_type: String(task.task_type ?? ''),
+      entity_id: String(task.entity_id ?? ''),
+      title: String(task.title ?? ''),
+      due_at: task.due_at ?? null,
+    })),
+  };
+};
+
+const invalidResponse = () => new AuthSessionError(
+  'INVALID_RESPONSE',
+  'Dashboard returned an invalid response.',
+  502,
+);
