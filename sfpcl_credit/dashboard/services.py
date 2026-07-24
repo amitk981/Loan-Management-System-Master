@@ -247,13 +247,15 @@ def dashboard_summary(
     ]
     requested_codes = {card[0] for card in definitions}
     batched_counts = _batched_card_counts(user, role_context, requested_codes)
+    from sfpcl_credit.workflows.tasks import dashboard_tasks
+
     return {
         "role_context": role_context,
         "cards": [
             _card_payload(card, batched_counts)
             for card in definitions
         ],
-        "tasks": [],
+        "tasks": dashboard_tasks(user),
     }
 
 

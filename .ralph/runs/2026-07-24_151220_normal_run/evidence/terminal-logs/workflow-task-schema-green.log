@@ -1,0 +1,20 @@
+Commands:
+
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py sqlmigrate workflows 0002
+git diff --check
+/Users/amitkallapa/LMS/.ralph/venv/bin/python -m compileall -q <impacted backend paths>
+
+Results:
+
+- Django system check: GREEN, no issues.
+- Model/migration sync: GREEN, no changes detected.
+- Migration SQL: GREEN. It creates `workflow_tasks` and `workflow_task_comments`, the three
+  operational indexes, the partial unique open-task identity, and type/priority/status/closure
+  coherence checks.
+- Diff whitespace check: GREEN.
+- Impacted module byte-compilation: GREEN.
+
+The focused Django tests created the database from migrations and applied the task schema before
+running all 54 behaviors.

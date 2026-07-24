@@ -1,0 +1,10 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test tests.test_workflow_tasks.WorkflowTaskApiTests.test_role_scoped_list_supports_s03_filters_pagination_and_columns
+
+Result: RED (exit 1)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+AssertionError: 404 != 200
+
+The S03 task collection route did not exist.

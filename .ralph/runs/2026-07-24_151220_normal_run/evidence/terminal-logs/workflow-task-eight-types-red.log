@@ -1,0 +1,11 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test tests.test_workflow_tasks.WorkflowTaskProjectionTests.test_source_task_state_mapping_exposes_all_eight_owner_rules
+
+Result: RED (exit 1)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+ImportError: cannot import name 'task_state_mapping' from 'sfpcl_credit.workflows.tasks'
+
+The task engine did not yet expose its complete eight-type source state/role mapping for
+reconciliation, tests, and contract evidence.

@@ -1,0 +1,18 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/dashboard/services.py
+ M sfpcl_credit/disbursements/modules/disbursement_initiation.py
+ M sfpcl_credit/loans/modules/direct_repayment_posting.py
+ M sfpcl_credit/loans/modules/subsidiary_deduction_reconciliation.py
+ M sfpcl_credit/scheduler/services.py
+ M sfpcl_credit/tests/test_credit_model_ownership_migration.py
+ M sfpcl_credit/tests/test_dashboard_api.py
+ M sfpcl_credit/workflows/events.py
+ M sfpcl_credit/workflows/models.py
+?? .ralph/runs/2026-07-24_151220_normal_run/
+?? .ralph/runs/2026-07-24_161303_repair/
+?? sfpcl_credit/tests/test_workflow_tasks.py
+?? sfpcl_credit/workflows/migrations/0002_workflow_tasks.py
+?? sfpcl_credit/workflows/task_views.py
+?? sfpcl_credit/workflows/tasks.py

@@ -35,13 +35,34 @@ from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.search_views import global_search_results
-from sfpcl_credit.workflows import event_views
+from sfpcl_credit.workflows import event_views, task_views
 
 if settings.ENABLE_DEMO_SURFACES:
     from sfpcl_credit.tracer import views as tracer_views
 
 
 urlpatterns = [
+    path("api/v1/tasks/", task_views.task_list, name="workflow-task-list"),
+    path(
+        "api/v1/tasks/<uuid:task_id>/reassign/",
+        task_views.task_reassign,
+        name="workflow-task-reassign",
+    ),
+    path(
+        "api/v1/tasks/<uuid:task_id>/comments/",
+        task_views.task_comment,
+        name="workflow-task-comment",
+    ),
+    path(
+        "api/v1/tasks/<uuid:task_id>/block/",
+        task_views.task_block,
+        name="workflow-task-block",
+    ),
+    path(
+        "api/v1/tasks/<uuid:task_id>/unblock/",
+        task_views.task_unblock,
+        name="workflow-task-unblock",
+    ),
     path(
         "api/v1/reports/exports/",
         report_views.export_collection,

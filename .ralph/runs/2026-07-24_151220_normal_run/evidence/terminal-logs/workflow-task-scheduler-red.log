@@ -1,0 +1,10 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test tests.test_workflow_tasks.WorkflowTaskProjectionTests.test_scheduled_reconciliation_uses_003j_job_lifecycle
+
+Result: RED (exit 1)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+ImportError: cannot import name 'run_task_reconciliation_job'
+
+The task reconciliation was not registered on the 003J scheduled-job lifecycle.

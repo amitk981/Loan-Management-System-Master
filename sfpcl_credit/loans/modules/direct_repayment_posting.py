@@ -20,6 +20,7 @@ from sfpcl_credit.loans.models import (
     RepaymentSapPostingObligation,
     SubsidiaryDeductionEvidence,
 )
+from sfpcl_credit.workflows.events import record_workflow_event
 
 
 CREATE_PERMISSION = "finance.repayment.create"
@@ -184,6 +185,16 @@ def _capture(*, actor, loan_account_id, cleaned, payload_digest, request):
     obligation = RepaymentSapPostingObligation.objects.create(
         repayment=repayment, due_date=due_date, task=task
     )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="RepaymentPosting",
+        entity_type="repayment",
+        entity_id=repayment.pk,
+        from_state=None,
+        to_state="pending_posting",
+        trigger_reason="Confirmed repayment requires SAP posting.",
+        action_code="repayment.receipt_created",
+    )
     return _serialize(repayment, obligation)
 
 
@@ -257,6 +268,16 @@ def mark_sap_posted(
     )
     Repayment.objects.filter(pk=repayment_id).update(sap_posting_status="posted")
     obligation.repayment.sap_posting_status = "posted"
+    record_workflow_event(
+        actor=actor,
+        workflow_name="RepaymentPosting",
+        entity_type="repayment",
+        entity_id=obligation.repayment_id,
+        from_state="pending_posting",
+        to_state="posted",
+        trigger_reason="Repayment SAP posting recorded.",
+        action_code="repayment.sap_posted",
+    )
     return _serialize(obligation.repayment, obligation)
 
 

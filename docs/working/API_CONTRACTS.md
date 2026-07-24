@@ -5826,3 +5826,63 @@ CSV/XLSX/PDF/JSON files all carry report code, generated-by user ID, generated-a
 filters, and rows returned through the owning 012A selector. Files expire after the configured
 retention period (24 hours by default); hourly cleanup deletes expired bytes while preserving the
 terminal job, checksum, timestamps, and audit evidence.
+
+## Workflow task engine and Task Inbox (012EA)
+
+`GET /api/v1/tasks/` returns the standard list envelope, ordered by due date and stable task
+reference, with default page size 20 and maximum 100. It accepts `task_type`, `due_today`,
+`overdue`, `borrower_type`, `minimum_amount`, `special_case`, `exception_required`,
+`assigned_to_user_id`, `assigned_to_my_team`, `status`, `page`, and `page_size`. Unknown
+parameters, invalid booleans/UUIDs/amounts, and unsupported task/status values return
+`400 VALIDATION_ERROR`.
+
+The server first limits candidates to the caller's active role, active team, or direct user
+assignment. Caller-supplied filters can only narrow that set. Each row contains the S03 task
+reference/type, linked application-or-loan identity, borrower, amount, priority, SLA due/overdue
+projection, current owner state, role/team/user assignment, created/due/closed times, block state,
+special-case/exception flags, and the stable open action. No task list authority grants access to
+the linked resource; opening it re-enters that resource's existing permission and object-scope
+checks.
+
+The source-backed task mappings are:
+
+| Task type | Actionable source state | Assigned role/team | Closure |
+|---|---|---|---|
+| `completeness_check` | Loan application `submitted` | `deputy_manager_finance` | Application leaves `submitted` |
+| `appraisal` | Application `reference_generated` or appraisal `draft` | `deputy_manager_finance` | Appraisal is submitted for Credit Manager review; a review return to `draft` creates a new open task |
+| `sanction` | Appraisal/application submitted to Sanction Committee or a pending/returned/blocked sanction case | `cfo` / `sanction_committee` | Case becomes approved or rejected |
+| `document_verification` | Document checklist `in_progress` | `compliance_team_member` / `compliance` | Checklist advances from in-progress |
+| `sap_setup` | SAP profile request `draft` or `sent` | `senior_manager_finance` / `treasury` | Request becomes `completed` |
+| `disbursement` | Disbursement ready for initiation or initiated/pending CFC authorisation | stage owner (`senior_manager_finance` or `chief_financial_controller`) / `treasury` | CFC decision or successful downstream transition leaves the actionable state |
+| `repayment_posting` | Repayment SAP posting `pending` | `credit_manager` / `treasury` | SAP posting becomes `posted` |
+| `default_review` | Default grace expired or assessment in progress | `credit_manager` / `credit_assessment` | Default case leaves those review states |
+
+Only the appraisal task has a source-governed universal TAT: application receipt proxy
+(`LoanApplication.created_at`) plus two calendar days. Repayment posting consumes its retained
+next-working-day obligation; default review consumes the retained grace end. A task whose source
+owner has no governed universal TAT returns `due_date: null` and `overdue_days: 0`; 012EA does not
+invent an SLA. Priority defaults to `normal` unless a source owner supplies a retained priority.
+
+Workflow-event processing and reconciliation share the same idempotent projector. There can be
+only one open row for an exact linked entity plus task type. The scheduled
+`workflow_task_reconciliation` job backfills current applications, appraisals, sanction cases,
+checklists, SAP requests, disbursements, pending repayment postings, and default cases, then
+recomputes persisted overdue days.
+
+The object-scoped actions are:
+
+- `POST /api/v1/tasks/{task_id}/reassign/` with
+  `{"assigned_to_user_id": "uuid"}`. It additionally requires `users.team.manage`; the active
+  target must belong to the retained task role or team.
+- `POST /api/v1/tasks/{task_id}/comments/` with `{"comment": "nonblank text"}`.
+- `POST /api/v1/tasks/{task_id}/block/` with `{"reason": "nonblank text"}`.
+- `POST /api/v1/tasks/{task_id}/unblock/` with `{}`.
+
+All four actions recheck open-task role/team/user scope. Reassign, comment, block, and unblock
+write `workflow_task.*` central audit rows without exposing comment/reason text in the audit
+payload. There is deliberately no manual close/complete endpoint: only workflow projection closes
+a task.
+
+`GET /api/v1/dashboard/` now fills `tasks[]` from the same caller-scoped open-task selector,
+limited to ten rows, in source §43.1 shape: `task_type`, `entity_id`, `title`, and nullable
+`due_at`.

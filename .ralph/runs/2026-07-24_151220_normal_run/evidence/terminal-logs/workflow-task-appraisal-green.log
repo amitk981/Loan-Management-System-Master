@@ -1,0 +1,12 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test tests.test_workflow_tasks.WorkflowTaskProjectionTests.test_reference_generation_creates_one_source_due_appraisal_task_on_replay
+
+Result: GREEN (exit 0)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Ran 1 test in 0.011s
+OK
+
+The canonical workflow event interface now creates one persisted appraisal task, preserves the
+source two-day TAT, assigns Deputy Manager Finance, and remains idempotent on replay.

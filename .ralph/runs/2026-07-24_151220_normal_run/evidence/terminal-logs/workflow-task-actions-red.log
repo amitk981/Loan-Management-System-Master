@@ -1,0 +1,10 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test tests.test_workflow_tasks.WorkflowTaskApiTests.test_task_actions_enforce_reassign_permission_and_emit_audit_events
+
+Result: RED (exit 1)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+AssertionError: 404 != 403
+
+The object-scoped task action routes and permission enforcement did not exist.

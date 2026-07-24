@@ -1,0 +1,40 @@
+Focused GREEN command:
+
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  tests.test_workflow_tasks \
+  tests.test_workflow_events_api \
+  tests.test_scheduler_services \
+  tests.test_dashboard_api \
+  tests.test_direct_repayment_posting_api \
+  tests.test_subsidiary_deduction_reconciliation_api \
+  tests.test_disbursement_initiation_api.DisbursementInitiationApiTests.test_positive_lesser_amount_is_frozen_for_cfc_review \
+  tests.test_appraisal_api.AppraisalApiTests.test_returned_appraisal_can_be_revised_resubmitted_and_reviewed \
+  tests.test_appraisal_api.AppraisalApiTests.test_credit_manager_reviews_submitted_appraisal_with_metadata_only_evidence \
+  tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence
+
+Result: GREEN (exit 0)
+
+Found 54 test(s).
+System check identified no issues (0 silenced).
+Ran 54 tests in 7.612s.
+OK
+
+Coverage of the focused pack:
+
+- all eight task type/state/role mappings, open/close behavior, and event replay;
+- M04 reference-generation assignment, review closure, draft return reopening, and terminal cleanup;
+- reconciliation backfill, overdue recomputation, scheduler lifecycle, and idempotency;
+- S03 list filters/pagination/columns and role/team scope;
+- forbidden/permitted reassignment plus comment/block/unblock audit rows;
+- dashboard section-43 task projection and fixed query budgets;
+- existing workflow-event, scheduler, repayment, subsidiary reconciliation, disbursement,
+  appraisal, and application-reference regressions.
+
+Final post-refactor rerun:
+
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  tests.test_workflow_tasks tests.test_dashboard_api
+
+Found 26 test(s).
+Ran 26 tests in 0.527s.
+OK

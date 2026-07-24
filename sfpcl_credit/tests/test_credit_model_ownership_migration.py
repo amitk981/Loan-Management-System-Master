@@ -7,7 +7,11 @@ from django.test import TransactionTestCase
 
 
 class CreditAssessmentModelOwnershipMigrationTests(TransactionTestCase):
-    migrate_from = [("applications", "0010_loanapplication_nominee"), ("credit", None)]
+    migrate_from = [
+        ("applications", "0010_loanapplication_nominee"),
+        ("credit", None),
+        ("workflows", "0001_canonical_workflow_event"),
+    ]
     migrate_to = [
         ("credit", "0001_credit_assessment_model_ownership"),
         ("workflows", "0001_canonical_workflow_event"),

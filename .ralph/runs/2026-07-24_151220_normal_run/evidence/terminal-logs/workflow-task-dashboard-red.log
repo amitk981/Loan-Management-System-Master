@@ -1,0 +1,10 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test tests.test_workflow_tasks.WorkflowTaskApiTests.test_dashboard_returns_same_callers_open_tasks_in_section_43_shape
+
+Result: RED (exit 1)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+AssertionError: 0 != 2
+
+The dashboard shell still returned its historical empty `tasks[]`.

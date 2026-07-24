@@ -587,8 +587,8 @@ class DashboardApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertLessEqual(
             len(captured),
-            10,
-            "Dashboard query count must be bounded and must not grow one query per card.",
+            11,
+            "Dashboard query count includes one bounded workflow-task query and must not grow per card.",
         )
 
     def test_each_supported_role_uses_a_bounded_dashboard_query_budget(self):
@@ -661,7 +661,7 @@ class DashboardApiTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertLessEqual(
                     len(captured),
-                    24,
+                    25,
                     (
                         f"{role_code} dashboard exceeded the fixed cross-domain "
                         "selector budget."

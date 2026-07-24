@@ -1,0 +1,10 @@
+Command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test tests.test_workflow_tasks.WorkflowTaskProjectionTests.test_reference_generation_creates_one_source_due_appraisal_task_on_replay
+
+Result: RED (exit 1)
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+ImportError: cannot import name 'WorkflowTask' from 'sfpcl_credit.workflows.models'
+
+The tracer test fails because the persisted workflow-task interface does not exist yet.

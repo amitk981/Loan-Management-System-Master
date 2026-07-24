@@ -246,6 +246,9 @@ def _initiate(*, actor, loan_account_id, payload, idempotency_key, request=None)
             raise DisbursementConflict(
                 "A concurrent disbursement initiation already won."
             ) from exc
+        from sfpcl_credit.workflows.tasks import project_workflow_event
+
+        project_workflow_event(workflow)
         return serialize_disbursement(row)
 
 

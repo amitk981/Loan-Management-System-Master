@@ -51,7 +51,7 @@ def record_workflow_event(
     facts at the boundary, but §26.2 has no action/metadata columns. They are
     intentionally not embedded as business rules or schema drift.
     """
-    return WorkflowEvent.objects.create(
+    event = WorkflowEvent.objects.create(
         workflow_name=workflow_name,
         entity_type=entity_type,
         entity_id=entity_id,
@@ -60,6 +60,10 @@ def record_workflow_event(
         triggered_by_user=actor,
         trigger_reason=trigger_reason or "",
     )
+    from sfpcl_credit.workflows.tasks import project_workflow_event
+
+    project_workflow_event(event)
+    return event
 
 
 def user_can_read_workflow_events(user):

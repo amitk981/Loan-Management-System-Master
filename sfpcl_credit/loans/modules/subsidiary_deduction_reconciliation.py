@@ -22,6 +22,7 @@ from sfpcl_credit.loans.models import (
     RepaymentSapPostingObligation,
     SubsidiaryDeductionEvidence,
 )
+from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.loans.modules.direct_repayment_posting import (
     RepaymentConflict,
     RepaymentNotFound,
@@ -202,6 +203,16 @@ def _capture(*, actor, loan_account_id, cleaned, payload_digest, request):
         repayment=repayment,
         due_date=cleaned["received_date"],
         task=task,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="RepaymentPosting",
+        entity_type="repayment",
+        entity_id=repayment.pk,
+        from_state=None,
+        to_state="pending_posting",
+        trigger_reason="Subsidiary repayment requires governed SAP posting.",
+        action_code="repayment.receipt_created",
     )
     return _serialize(repayment, evidence)
 
