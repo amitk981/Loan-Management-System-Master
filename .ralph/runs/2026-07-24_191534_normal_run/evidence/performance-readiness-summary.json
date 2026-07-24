@@ -1,0 +1,1368 @@
+{
+  "approved_skips": [],
+  "commit": "8690cf46cb1809a2eb67e83b07a02d1fe0f3b240",
+  "counts": {
+    "fail": 0,
+    "pass": 11,
+    "release-evidence-required": 18
+  },
+  "environment": {
+    "commit": "8690cf46cb1809a2eb67e83b07a02d1fe0f3b240",
+    "cpu_count": 8,
+    "database_engine": "django-isolated-test-database",
+    "dataset_counts": {
+      "mapped_scenarios": 29,
+      "synthetic_fixture_only": 1
+    },
+    "environment_class": "bounded-local-public-behavior-probes",
+    "environment_id": "ralph-bounded-local",
+    "generated_at": "2026-07-24T14:31:32.876837Z",
+    "operating_system": "darwin",
+    "seed": 1202,
+    "tool_versions": {
+      "django": "5.0.6",
+      "python": "3.11.3"
+    }
+  },
+  "failing_scenarios": [],
+  "release_readiness_reason": "012F3_RELEASE_EVIDENCE_REQUIRED",
+  "release_ready": false,
+  "result": "bounded-local-pass",
+  "scenarios": [
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "users": 2
+      },
+      "dataset_size": "100 synthetic staff accounts",
+      "least_privilege_role": "active_staff",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.003113
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "users": 2
+        },
+        "maximum": 0.003152,
+        "minimum": 0.003054,
+        "p50": 0.003069,
+        "p95": 0.003152,
+        "warm_samples": [
+          0.003054,
+          0.003152,
+          0.003069
+        ]
+      },
+      "public_seam": "POST /api/v1/auth/login/",
+      "raw_result_sha256": "2480387c249ffc85760dc5a982c4911a2cf2abb1eb0126a39256cb27c956afcf",
+      "scenario": "Concurrent login",
+      "scenario_id": "PERF-001",
+      "source_load": {
+        "users": [
+          50,
+          100
+        ]
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 2
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "users": 2
+      },
+      "dataset_size": "role-scoped populated dashboard",
+      "least_privilege_role": "credit_manager",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.019819
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "users": 2
+        },
+        "maximum": 0.018746,
+        "minimum": 0.018532,
+        "p50": 0.018592,
+        "p95": 0.018746,
+        "warm_samples": [
+          0.018746,
+          0.018592,
+          0.018532
+        ]
+      },
+      "public_seam": "GET /api/v1/dashboard/",
+      "raw_result_sha256": "b947993c3d3d6f876aeff7f64eafa806b737f6b950b61fa301a133c9f6d9d226",
+      "scenario": "Dashboard load",
+      "scenario_id": "PERF-002",
+      "source_load": {
+        "users": 50
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 3
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "users": 2
+      },
+      "dataset_size": "paginated synthetic member directory",
+      "least_privilege_role": "field_officer",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.007673
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "users": 2
+        },
+        "maximum": 0.007421,
+        "minimum": 0.007225,
+        "p50": 0.00733,
+        "p95": 0.007421,
+        "warm_samples": [
+          0.00733,
+          0.007421,
+          0.007225
+        ]
+      },
+      "public_seam": "GET /api/v1/members/?search=<synthetic>",
+      "raw_result_sha256": "9782c785203dde2997d56bc1c3756ed8d15b63b3507a81fdf0cac6a1777a7b3a",
+      "scenario": "Member search",
+      "scenario_id": "PERF-003",
+      "source_load": {
+        "users": 25
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 4
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "users": 1
+      },
+      "dataset_size": "20 isolated synthetic member drafts",
+      "least_privilege_role": "field_officer",
+      "measure": "throughput_per_second",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.026411
+        ],
+        "count": 3,
+        "declared_measure": "throughput_per_second",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "users": 1
+        },
+        "maximum": 0.02496,
+        "minimum": 0.024268,
+        "p50": 0.024875,
+        "p95": 0.02496,
+        "warm_samples": [
+          0.02496,
+          0.024875,
+          0.024268
+        ]
+      },
+      "public_seam": "POST /api/v1/loan-applications/",
+      "raw_result_sha256": "8586fd469220ee16c5a100e7cae6710caf439afb89d311c0764bb13802a28a88",
+      "scenario": "Application creation",
+      "scenario_id": "PERF-004",
+      "source_load": {
+        "users": 20
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_target_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrent_uploads": 1
+      },
+      "dataset_size": "10 safe synthetic files with declared byte sizes",
+      "least_privilege_role": "field_officer",
+      "measure": "completion_seconds_and_progress_events",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.006744
+        ],
+        "count": 3,
+        "declared_measure": "completion_seconds_and_progress_events",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "concurrent_uploads": 1
+        },
+        "maximum": 0.006791,
+        "minimum": 0.006633,
+        "p50": 0.006755,
+        "p95": 0.006791,
+        "warm_samples": [
+          0.006633,
+          0.006791,
+          0.006755
+        ]
+      },
+      "public_seam": "POST /api/v1/documents/",
+      "raw_result_sha256": "6a2a07cf803d67199319cbc034930c382e95a0fa2605e411d4cc33a025783796",
+      "scenario": "Document upload",
+      "scenario_id": "PERF-005",
+      "source_load": {
+        "concurrent_uploads": 10
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_file_size_target_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "approvers": 1
+      },
+      "dataset_size": "10 independent scoped approval cases",
+      "least_privilege_role": "assigned_approver",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.014413
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "approvers": 1
+        },
+        "maximum": 0.011225,
+        "minimum": 0.010468,
+        "p50": 0.010857,
+        "p95": 0.011225,
+        "warm_samples": [
+          0.010468,
+          0.011225,
+          0.010857
+        ]
+      },
+      "public_seam": "POST /api/v1/approval-cases/{id}/actions/",
+      "raw_result_sha256": "76f18b6a1d9b5ce05869f0e855632c10d9b1aa9552f162e9d56db904c8c31fbc",
+      "scenario": "Approval actions",
+      "scenario_id": "PERF-006",
+      "source_load": {
+        "approvers": 10
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 2
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "exports": 1
+      },
+      "dataset_size": "5 heavy masked synthetic reports",
+      "least_privilege_role": "report_exporter",
+      "measure": "enqueue_latency_and_completion_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.023747
+        ],
+        "count": 3,
+        "declared_measure": "enqueue_latency_and_completion_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "exports": 1
+        },
+        "maximum": 0.019995,
+        "minimum": 0.019211,
+        "p50": 0.019354,
+        "p95": 0.019995,
+        "warm_samples": [
+          0.019995,
+          0.019354,
+          0.019211
+        ]
+      },
+      "public_seam": "POST /api/v1/reports/exports/",
+      "raw_result_sha256": "acc6ee1666026134147f875275d33337be145fb7ab2423f6952cb14deafa9302",
+      "scenario": "Report export",
+      "scenario_id": "PERF-007",
+      "source_load": {
+        "exports": 5
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "asynchronous_when_completion_exceeds_5_seconds",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "active_loans": 10
+      },
+      "dataset_size": "full active-loan test set",
+      "least_privilege_role": "credit_manager",
+      "measure": "batch_duration_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.598818
+        ],
+        "count": 3,
+        "declared_measure": "batch_duration_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "active_loans": 10
+        },
+        "maximum": 0.583488,
+        "minimum": 0.579712,
+        "p50": 0.581239,
+        "p95": 0.583488,
+        "warm_samples": [
+          0.579712,
+          0.581239,
+          0.583488
+        ]
+      },
+      "public_seam": "DPD calculation service public batch entrypoint",
+      "raw_result_sha256": "9e7c0c4dea3c893d7901a9a50b001e0a0b0bd7f8205c67b1a95159a48ab373b4",
+      "scenario": "DPD batch",
+      "scenario_id": "PERF-008",
+      "source_load": {
+        "dataset": "full_active_loan_test_set"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_batch_window_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "active_loans": 10
+      },
+      "dataset_size": "full active-loan test set",
+      "least_privilege_role": "accounts",
+      "measure": "batch_duration_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.587859
+        ],
+        "count": 3,
+        "declared_measure": "batch_duration_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "active_loans": 10
+        },
+        "maximum": 0.621043,
+        "minimum": 0.587298,
+        "p50": 0.588111,
+        "p95": 0.621043,
+        "warm_samples": [
+          0.587298,
+          0.588111,
+          0.621043
+        ]
+      },
+      "public_seam": "monthly accrual service public batch entrypoint",
+      "raw_result_sha256": "ec746c529205beb30d133e1eff09df71eb14127745dcee599d4ae249b1ec9e46",
+      "scenario": "Interest accrual",
+      "scenario_id": "PERF-009",
+      "source_load": {
+        "dataset": "full_active_loan_test_set"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_batch_window_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1-.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "audit_events": 100
+      },
+      "dataset_size": "large sanitised synthetic audit set",
+      "least_privilege_role": "auditor",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.011098
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "audit_events": 100
+        },
+        "maximum": 0.046338,
+        "minimum": 0.010836,
+        "p50": 0.01084,
+        "p95": 0.046338,
+        "warm_samples": [
+          0.010836,
+          0.046338,
+          0.01084
+        ]
+      },
+      "public_seam": "GET /api/v1/audit/logs/",
+      "raw_result_sha256": "1d5805f06bb95c693904f00469fe1de32117ed705c7fef232af25ce579089ed8",
+      "scenario": "Audit log query",
+      "scenario_id": "PERF-010",
+      "source_load": {
+        "dataset": "large"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "acceptable_query_target_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.2",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "release-evidence-required",
+      "bounded_local_load": {
+        "definition_probe": 1
+      },
+      "dataset_size": "isolated scoped workflow fixture",
+      "least_privilege_role": "operations_test_operator",
+      "measure": "errors_latency_connections_and_recovery",
+      "measured_repetitions": 1,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [],
+        "count": 1,
+        "declared_measure": "errors_latency_connections_and_recovery",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "definition_probe": 1
+        },
+        "maximum": 0.108196,
+        "minimum": 0.108196,
+        "p50": 0.108196,
+        "p95": 0.108196,
+        "warm_samples": [
+          0.108196
+        ]
+      },
+      "public_seam": "public API plus database monitoring",
+      "raw_result_sha256": "b7b304c4a92010675ca3a8fd3c06b2866442d17e342e994da17ceea02d32f825",
+      "scenario": "Database connection pressure",
+      "scenario_id": "PROBE-DATABASE-PRESSURE",
+      "source_load": {
+        "environment_run": "connection pressure"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "controlled_degradation",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.3",
+      "warm_up_repetitions": 0
+    },
+    {
+      "authority": "release-evidence-required",
+      "bounded_local_load": {
+        "definition_probe": 1
+      },
+      "dataset_size": "heavy masked export set",
+      "least_privilege_role": "operations_test_operator",
+      "measure": "api_latency_queue_depth_and_completion",
+      "measured_repetitions": 1,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [],
+        "count": 1,
+        "declared_measure": "api_latency_queue_depth_and_completion",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "definition_probe": 1
+        },
+        "maximum": 0.023747,
+        "minimum": 0.023747,
+        "p50": 0.023747,
+        "p95": 0.023747,
+        "warm_samples": [
+          0.023747
+        ]
+      },
+      "public_seam": "report export public API and reports worker",
+      "raw_result_sha256": "cb48e5f524a3b902c592208a175ba8e2a68d37d48d801f71054a0bd43d9c1e9d",
+      "scenario": "Heavy export queue",
+      "scenario_id": "PROBE-HEAVY-EXPORT-QUEUE",
+      "source_load": {
+        "environment_run": "environment capacity"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "api_remains_responsive",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.3",
+      "warm_up_repetitions": 0
+    },
+    {
+      "authority": "release-evidence-required",
+      "bounded_local_load": {
+        "definition_probe": 1
+      },
+      "dataset_size": "large sanitised audit set",
+      "least_privilege_role": "operations_test_operator",
+      "measure": "query_percentiles",
+      "measured_repetitions": 1,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [],
+        "count": 1,
+        "declared_measure": "query_percentiles",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "definition_probe": 1
+        },
+        "maximum": 0.011098,
+        "minimum": 0.011098,
+        "p50": 0.011098,
+        "p95": 0.011098,
+        "warm_samples": [
+          0.011098
+        ]
+      },
+      "public_seam": "GET /api/v1/audit/logs/",
+      "raw_result_sha256": "2bde1c536fc0952819c6c01c22aa5c5c7ccf90ed6c16317a2c2d39e4a7c17181",
+      "scenario": "Large audit table",
+      "scenario_id": "PROBE-LARGE-AUDIT-TABLE",
+      "source_load": {
+        "environment_run": "environment capacity"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "queries_acceptable",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.3",
+      "warm_up_repetitions": 0
+    },
+    {
+      "authority": "release-evidence-required",
+      "bounded_local_load": {
+        "definition_probe": 1
+      },
+      "dataset_size": "large safe synthetic document set",
+      "least_privilege_role": "operations_test_operator",
+      "measure": "storage_errors_latency_and_capacity",
+      "measured_repetitions": 1,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [],
+        "count": 1,
+        "declared_measure": "storage_errors_latency_and_capacity",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "definition_probe": 1
+        },
+        "maximum": 0.006744,
+        "minimum": 0.006744,
+        "p50": 0.006744,
+        "p95": 0.006744,
+        "warm_samples": [
+          0.006744
+        ]
+      },
+      "public_seam": "document upload/download public APIs",
+      "raw_result_sha256": "8b993f907e99b6d387548e1051e79ca0f8fb964a75b87db22a461a2ea14368a7",
+      "scenario": "Large document volume",
+      "scenario_id": "PROBE-LARGE-DOCUMENT-VOLUME",
+      "source_load": {
+        "environment_run": "environment capacity"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "storage_stable",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.3",
+      "warm_up_repetitions": 0
+    },
+    {
+      "authority": "release-evidence-required",
+      "bounded_local_load": {
+        "definition_probe": 1
+      },
+      "dataset_size": "isolated persisted system-of-record snapshot",
+      "least_privilege_role": "operations_test_operator",
+      "measure": "before_after_system_of_record_hash",
+      "measured_repetitions": 1,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [],
+        "count": 1,
+        "declared_measure": "before_after_system_of_record_hash",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "definition_probe": 1
+        },
+        "maximum": 0.009278,
+        "minimum": 0.009278,
+        "p50": 0.009278,
+        "p95": 0.009278,
+        "warm_samples": [
+          0.009278
+        ]
+      },
+      "public_seam": "public async job seam and Redis operation",
+      "raw_result_sha256": "2daaa75f61442119d4919ae633eaf24d719e398caa830771eb931fc93c51a255",
+      "scenario": "Redis restart",
+      "scenario_id": "PROBE-REDIS-RESTART",
+      "source_load": {
+        "environment_run": "restart while queued"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "no_system_of_record_data_loss",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.3",
+      "warm_up_repetitions": 0
+    },
+    {
+      "authority": "release-evidence-required",
+      "bounded_local_load": {
+        "definition_probe": 1
+      },
+      "dataset_size": "isolated environment fixture",
+      "least_privilege_role": "operations_test_operator",
+      "measure": "memory_and_latency_stability",
+      "measured_repetitions": 1,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [],
+        "count": 1,
+        "declared_measure": "memory_and_latency_stability",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "definition_probe": 1
+        },
+        "maximum": 0.303079,
+        "minimum": 0.303079,
+        "p50": 0.303079,
+        "p95": 0.303079,
+        "warm_samples": [
+          0.303079
+        ]
+      },
+      "public_seam": "deployed public workflow/API paths",
+      "raw_result_sha256": "7b53a03c2a6e420efb472a9ca95d6512b23f339ef977472fb31ec60f35140141",
+      "scenario": "4-hour sustained workflow usage",
+      "scenario_id": "PROBE-SUSTAINED-WORKFLOW",
+      "source_load": {
+        "environment_run": "4 real hours"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "stable_memory_and_latency",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.3",
+      "warm_up_repetitions": 0
+    },
+    {
+      "authority": "release-evidence-required",
+      "bounded_local_load": {
+        "definition_probe": 1
+      },
+      "dataset_size": "one idempotent isolated job",
+      "least_privilege_role": "operations_test_operator",
+      "measure": "attempts_outputs_and_duplicate_count",
+      "measured_repetitions": 1,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [],
+        "count": 1,
+        "declared_measure": "attempts_outputs_and_duplicate_count",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "definition_probe": 1
+        },
+        "maximum": 0.012455,
+        "minimum": 0.012455,
+        "p50": 0.012455,
+        "p95": 0.012455,
+        "warm_samples": [
+          0.012455
+        ]
+      },
+      "public_seam": "public async job seam and worker operation",
+      "raw_result_sha256": "627ff66bc9d049b91e7195d99096e853d8cbdf000935be3f727386e5247dc080",
+      "scenario": "Worker restart during task",
+      "scenario_id": "PROBE-WORKER-RESTART",
+      "source_load": {
+        "environment_run": "restart while running"
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "idempotent_recovery",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.3",
+      "warm_up_repetitions": 0
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "scoped application",
+      "least_privilege_role": "credit_manager",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.023987
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.02426,
+        "minimum": 0.024127,
+        "p50": 0.024236,
+        "p95": 0.02426,
+        "warm_samples": [
+          0.024127,
+          0.024236,
+          0.02426
+        ]
+      },
+      "public_seam": "GET /api/v1/loan-applications/{id}/",
+      "raw_result_sha256": "5a1cf4e169fc875cd6a7425d2a65a207bbde49a800a96dea5cb28117ff5a8b0e",
+      "scenario": "Application Detail target",
+      "scenario_id": "TARGET-APPLICATION-DETAIL",
+      "source_load": {
+        "users": 1
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 3
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "independent approval case",
+      "least_privilege_role": "assigned_approver",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.014413
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.011225,
+        "minimum": 0.010468,
+        "p50": 0.010857,
+        "p95": 0.011225,
+        "warm_samples": [
+          0.010468,
+          0.011225,
+          0.010857
+        ]
+      },
+      "public_seam": "POST /api/v1/approval-cases/{id}/actions/",
+      "raw_result_sha256": "76f18b6a1d9b5ce05869f0e855632c10d9b1aa9552f162e9d56db904c8c31fbc",
+      "scenario": "Approval action target",
+      "scenario_id": "TARGET-APPROVAL-ACTION",
+      "source_load": {
+        "users": 1
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 2
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "eligible interest invoice set",
+      "least_privilege_role": "accounts",
+      "measure": "batch_duration_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.626346
+        ],
+        "count": 3,
+        "declared_measure": "batch_duration_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.60432,
+        "minimum": 0.600773,
+        "p50": 0.601318,
+        "p95": 0.60432,
+        "warm_samples": [
+          0.601318,
+          0.600773,
+          0.60432
+        ]
+      },
+      "public_seam": "capitalisation dry-run service public entrypoint",
+      "raw_result_sha256": "ccfb9bc6d3307afa97368ad7c7d4ae9510c5d3763f532f65fac7657db705c767",
+      "scenario": "Capitalisation Dry Run target",
+      "scenario_id": "TARGET-CAPITALISATION-DRY-RUN",
+      "source_load": {
+        "users": 1
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_batch_window_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "populated role dashboard",
+      "least_privilege_role": "credit_manager",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.019819
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.018746,
+        "minimum": 0.018532,
+        "p50": 0.018592,
+        "p95": 0.018746,
+        "warm_samples": [
+          0.018746,
+          0.018592,
+          0.018532
+        ]
+      },
+      "public_seam": "GET /api/v1/dashboard/",
+      "raw_result_sha256": "b947993c3d3d6f876aeff7f64eafa806b737f6b950b61fa301a133c9f6d9d226",
+      "scenario": "Dashboard target",
+      "scenario_id": "TARGET-DASHBOARD",
+      "source_load": {
+        "users": 1
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 3
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "ready scoped account",
+      "least_privilege_role": "senior_manager_finance",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.030753
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.026787,
+        "minimum": 0.026276,
+        "p50": 0.026724,
+        "p95": 0.026787,
+        "warm_samples": [
+          0.026276,
+          0.026787,
+          0.026724
+        ]
+      },
+      "public_seam": "GET /api/v1/loan-accounts/{id}/disbursement-readiness/",
+      "raw_result_sha256": "e69015415c24727d3fa3300fa451f28fdbe544b5bc367538488df0b783a8c6f4",
+      "scenario": "Disbursement Readiness target",
+      "scenario_id": "TARGET-DISBURSEMENT-READINESS",
+      "source_load": {
+        "users": 1
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 3
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "declared safe file size",
+      "least_privilege_role": "field_officer",
+      "measure": "completion_seconds_and_progress_events",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.006744
+        ],
+        "count": 3,
+        "declared_measure": "completion_seconds_and_progress_events",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.006791,
+        "minimum": 0.006633,
+        "p50": 0.006755,
+        "p95": 0.006791,
+        "warm_samples": [
+          0.006633,
+          0.006791,
+          0.006755
+        ]
+      },
+      "public_seam": "POST /api/v1/documents/",
+      "raw_result_sha256": "6a2a07cf803d67199319cbc034930c382e95a0fa2605e411d4cc33a025783796",
+      "scenario": "Document upload target",
+      "scenario_id": "TARGET-DOCUMENT-UPLOAD",
+      "source_load": {
+        "users": 1
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_file_size_target_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "full active-loan test set",
+      "least_privilege_role": "credit_manager",
+      "measure": "batch_duration_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.598818
+        ],
+        "count": 3,
+        "declared_measure": "batch_duration_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.583488,
+        "minimum": 0.579712,
+        "p50": 0.581239,
+        "p95": 0.583488,
+        "warm_samples": [
+          0.579712,
+          0.581239,
+          0.583488
+        ]
+      },
+      "public_seam": "DPD calculation service public batch entrypoint",
+      "raw_result_sha256": "9e7c0c4dea3c893d7901a9a50b001e0a0b0bd7f8205c67b1a95159a48ab373b4",
+      "scenario": "DPD batch target",
+      "scenario_id": "TARGET-DPD-BATCH",
+      "source_load": {
+        "users": 1
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_batch_window_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "active scoped account",
+      "least_privilege_role": "credit_manager",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          1.148439
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 1.139607,
+        "minimum": 1.138206,
+        "p50": 1.139514,
+        "p95": 1.139607,
+        "warm_samples": [
+          1.138206,
+          1.139514,
+          1.139607
+        ]
+      },
+      "public_seam": "GET /api/v1/loan-accounts/{id}/",
+      "raw_result_sha256": "073f9ae29029d423346860cc29d9b8a5090c42383b444e8bd0b82d17f85ed333",
+      "scenario": "Loan Account 360 target",
+      "scenario_id": "TARGET-LOAN-ACCOUNT-360",
+      "source_load": {
+        "users": 1
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 3
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "synthetic staff",
+      "least_privilege_role": "active_staff",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.003113
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.003152,
+        "minimum": 0.003054,
+        "p50": 0.003069,
+        "p95": 0.003152,
+        "warm_samples": [
+          0.003054,
+          0.003152,
+          0.003069
+        ]
+      },
+      "public_seam": "POST /api/v1/auth/login/",
+      "raw_result_sha256": "2480387c249ffc85760dc5a982c4911a2cf2abb1eb0126a39256cb27c956afcf",
+      "scenario": "Login target",
+      "scenario_id": "TARGET-LOGIN",
+      "source_load": {
+        "users": 1
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 2
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "paginated members",
+      "least_privilege_role": "field_officer",
+      "measure": "latency_p95_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.007673
+        ],
+        "count": 3,
+        "declared_measure": "latency_p95_seconds",
+        "declared_measure_evaluated": true,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.007421,
+        "minimum": 0.007225,
+        "p50": 0.00733,
+        "p95": 0.007421,
+        "warm_samples": [
+          0.00733,
+          0.007421,
+          0.007225
+        ]
+      },
+      "public_seam": "GET /api/v1/members/?search=<synthetic>",
+      "raw_result_sha256": "9782c785203dde2997d56bc1c3756ed8d15b63b3507a81fdf0cac6a1777a7b3a",
+      "scenario": "Member search target",
+      "scenario_id": "TARGET-MEMBER-SEARCH",
+      "source_load": {
+        "users": 1
+      },
+      "status": "pass",
+      "threshold": {
+        "comparison": "less_than",
+        "kind": "maximum_seconds",
+        "value": 4
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "full active-loan test set",
+      "least_privilege_role": "accounts",
+      "measure": "batch_duration_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.587859
+        ],
+        "count": 3,
+        "declared_measure": "batch_duration_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.621043,
+        "minimum": 0.587298,
+        "p50": 0.588111,
+        "p95": 0.621043,
+        "warm_samples": [
+          0.587298,
+          0.588111,
+          0.621043
+        ]
+      },
+      "public_seam": "monthly accrual service public batch entrypoint",
+      "raw_result_sha256": "ec746c529205beb30d133e1eff09df71eb14127745dcee599d4ae249b1ec9e46",
+      "scenario": "Monthly accrual target",
+      "scenario_id": "TARGET-MONTHLY-ACCRUAL",
+      "source_load": {
+        "users": 1
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "agreed_batch_window_required",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    },
+    {
+      "authority": "bounded-local",
+      "bounded_local_load": {
+        "concurrency": 1,
+        "iterations": 3
+      },
+      "dataset_size": "heavy masked report",
+      "least_privilege_role": "report_exporter",
+      "measure": "enqueue_latency_and_completion_seconds",
+      "measured_repetitions": 3,
+      "observed": {
+        "bounded_local_measure": "public_behavior_duration_seconds",
+        "cold_samples": [
+          0.023747
+        ],
+        "count": 3,
+        "declared_measure": "enqueue_latency_and_completion_seconds",
+        "declared_measure_evaluated": false,
+        "executed_load": {
+          "concurrency": 1,
+          "iterations": 3
+        },
+        "maximum": 0.019995,
+        "minimum": 0.019211,
+        "p50": 0.019354,
+        "p95": 0.019995,
+        "warm_samples": [
+          0.019995,
+          0.019354,
+          0.019211
+        ]
+      },
+      "public_seam": "POST /api/v1/reports/exports/",
+      "raw_result_sha256": "acc6ee1666026134147f875275d33337be145fb7ab2423f6952cb14deafa9302",
+      "scenario": "Report export target",
+      "scenario_id": "TARGET-REPORT-EXPORT",
+      "source_load": {
+        "users": 1
+      },
+      "status": "release-evidence-required",
+      "threshold": {
+        "comparison": "asynchronous_when_completion_exceeds_5_seconds",
+        "kind": "environment_bound",
+        "value": null
+      },
+      "threshold_source": "docs/source/test-plan.md \u00a724.1; docs/source/deployment-ops.md \u00a732.4",
+      "warm_up_repetitions": 1
+    }
+  ],
+  "schema_version": 1,
+  "summary_sha256": "d38bfbc4a302850d54a268dd3106801ee5e6dc59947ac75ed5da6c64a276192e"
+}

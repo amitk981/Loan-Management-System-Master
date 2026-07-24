@@ -1,0 +1,6 @@
+?? .ralph/runs/2026-07-24_191534_normal_run/
+?? docs/working/PERFORMANCE_READINESS.md
+?? sfpcl-lms/e2e/performance-readiness.e2e.spec.ts
+?? sfpcl_credit/performance_readiness/
+?? sfpcl_credit/shared/management/commands/performance_readiness.py
+?? sfpcl_credit/tests/test_performance_readiness.py

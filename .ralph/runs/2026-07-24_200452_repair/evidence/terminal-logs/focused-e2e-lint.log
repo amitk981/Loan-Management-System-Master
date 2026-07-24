@@ -1,0 +1,4 @@
+
+> sfpcl-lms@1.0.0 lint
+> eslint src e2e/performance-readiness.e2e.spec.ts
+

@@ -1,0 +1,66 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/.ralph/runs/2026-07-24_191534_normal_run/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/performance-readiness.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/performance-readiness.e2e.spec.ts
+
+[2m[WebServer] [22m[24/Jul/2026 14:34:43] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22m[24/Jul/2026 14:34:48] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[24/Jul/2026 14:34:48] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[24/Jul/2026 14:34:48] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[24/Jul/2026 14:34:48] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✘  1 [chromium] › performance-readiness.e2e.spec.ts:21:7 › 012F2 populated dashboard performance smoke repetition 1 (2.6s)
+[2m[WebServer] [22m[24/Jul/2026 14:34:50] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[24/Jul/2026 14:34:50] "GET /api/v1/auth/me/ HTTP/1.1" 200 2001
+[2m[WebServer] [22m[24/Jul/2026 14:34:50] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[24/Jul/2026 14:34:50] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+  ✘  2 [chromium] › performance-readiness.e2e.spec.ts:21:7 › 012F2 populated dashboard performance smoke repetition 2 (2.2s)
+
+
+  1) [chromium] › performance-readiness.e2e.spec.ts:21:7 › 012F2 populated dashboard performance smoke repetition 1 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m1[39m
+    Received: [31m2[39m
+
+      34 |     const elapsedMilliseconds = Date.now() - startedAt;
+      35 |
+    > 36 |     expect(dashboardRequestCount).toBe(1);
+         |                                   ^
+      37 |     expect(elapsedMilliseconds).toBeLessThan(3_000);
+      38 |     await capture(
+      39 |       page,
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl-lms/e2e/performance-readiness.e2e.spec.ts:36:35
+
+  2) [chromium] › performance-readiness.e2e.spec.ts:21:7 › 012F2 populated dashboard performance smoke repetition 2 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m1[39m
+    Received: [31m2[39m
+
+      34 |     const elapsedMilliseconds = Date.now() - startedAt;
+      35 |
+    > 36 |     expect(dashboardRequestCount).toBe(1);
+         |                                   ^
+      37 |     expect(elapsedMilliseconds).toBeLessThan(3_000);
+      38 |     await capture(
+      39 |       page,
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl-lms/e2e/performance-readiness.e2e.spec.ts:36:35
+
+  2 failed
+    [chromium] › performance-readiness.e2e.spec.ts:21:7 › 012F2 populated dashboard performance smoke repetition 1 
+    [chromium] › performance-readiness.e2e.spec.ts:21:7 › 012F2 populated dashboard performance smoke repetition 2 
+
+Duration milliseconds: 59443
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/.ralph/runs/2026-07-24_191534_normal_run/evidence/trusted-browser-screenshots-1.sha256

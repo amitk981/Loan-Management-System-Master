@@ -1,0 +1,22 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+performance_readiness result=fail sha256=7378c0e2a5310957ca2cacb222b6f01080a3b15c6eebf50bad62869f41391dab
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+OK
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

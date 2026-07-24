@@ -1,0 +1,18 @@
+{
+  "commit": "8690cf46cb1809a2eb67e83b07a02d1fe0f3b240",
+  "cpu_count": 8,
+  "database_engine": "django-isolated-test-database",
+  "dataset_counts": {
+    "mapped_scenarios": 29,
+    "synthetic_fixture_only": 1
+  },
+  "environment_class": "bounded-local-public-behavior-probes",
+  "environment_id": "ralph-bounded-local",
+  "generated_at": "2026-07-24T14:31:32.876837Z",
+  "operating_system": "darwin",
+  "seed": 1202,
+  "tool_versions": {
+    "django": "5.0.6",
+    "python": "3.11.3"
+  }
+}

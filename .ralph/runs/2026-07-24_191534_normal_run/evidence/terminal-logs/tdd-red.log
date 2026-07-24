@@ -1,0 +1,239 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_performance_readiness (unittest.loader._FailedTest.test_performance_readiness)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_performance_readiness
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 3, in <module>
+    from sfpcl_credit.performance_readiness.matrix import (
+ModuleNotFoundError: No module named 'sfpcl_credit.performance_readiness'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_performance_readiness (unittest.loader._FailedTest.test_performance_readiness)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_performance_readiness
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 9, in <module>
+    from sfpcl_credit.performance_readiness.runner import (
+ModuleNotFoundError: No module named 'sfpcl_credit.performance_readiness.runner'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_summary_computes_a_controlled_latency_failure (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_summary_computes_a_controlled_latency_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 65, in test_summary_computes_a_controlled_latency_failure
+    self.assertEqual(summary["result"], "fail")
+AssertionError: 'bounded-local-pass' != 'fail'
+- bounded-local-pass
++ fail
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_summary_rejects_an_unsupported_skip (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_summary_rejects_an_unsupported_skip)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 81, in test_summary_rejects_an_unsupported_skip
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: EvidenceValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_matrix_rejects_a_malformed_threshold (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_matrix_rejects_a_malformed_threshold)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 97, in test_matrix_rejects_a_malformed_threshold
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: MatrixValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_summary_rejects_wrong_commit_evidence (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_summary_rejects_wrong_commit_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 106, in test_summary_rejects_wrong_commit_evidence
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: EvidenceValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_summary_rejects_stale_evidence (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_summary_rejects_stale_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 126, in test_summary_rejects_stale_evidence
+    build_performance_summary(
+TypeError: build_performance_summary() got an unexpected keyword argument 'now'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_command_writes_controlled_failure_and_returns_nonzero (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_command_writes_controlled_failure_and_returns_nonzero)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 110, in call_command
+    app_name = get_commands()[command_name]
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'performance_readiness'
+
+During handling of the above exception, another exception occurred:
+
+django.core.management.base.CommandError: Unknown command: 'performance_readiness'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 157, in test_command_writes_controlled_failure_and_returns_nonzero
+    with self.assertRaisesMessage(CommandError, "PERF-001"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 742, in _assert_raises_or_warns_cm
+    self.assertIn(expected_message, str(getattr(cm, cm_attr)))
+AssertionError: 'PERF-001' not found in "Unknown command: 'performance_readiness'"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_summary_rejects_credentials_and_pii_in_environment_facts (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_summary_rejects_credentials_and_pii_in_environment_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 177, in test_summary_rejects_credentials_and_pii_in_environment_facts
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: EvidenceValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_summary_rejects_a_tampered_raw_result_hash (sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_summary_rejects_a_tampered_raw_result_hash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 196, in test_summary_rejects_a_tampered_raw_result_hash
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: EvidenceValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_performance_readiness (unittest.loader._FailedTest.test_performance_readiness)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_performance_readiness
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 22, in <module>
+    from sfpcl_credit.performance_readiness.local import run_bounded_local
+ModuleNotFoundError: No module named 'sfpcl_credit.performance_readiness.local'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_performance_readiness (unittest.loader._FailedTest.test_performance_readiness)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_performance_readiness
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_191534_normal_run/sfpcl_credit/tests/test_performance_readiness.py", line 23, in <module>
+    from sfpcl_credit.performance_readiness.probes import validate_probe_outcome
+ModuleNotFoundError: No module named 'sfpcl_credit.performance_readiness.probes'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

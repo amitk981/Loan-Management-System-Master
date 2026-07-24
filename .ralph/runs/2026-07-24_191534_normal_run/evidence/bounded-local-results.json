@@ -1,0 +1,300 @@
+[
+  {
+    "raw_result_sha256": "2480387c249ffc85760dc5a982c4911a2cf2abb1eb0126a39256cb27c956afcf",
+    "samples": [
+      0.003113,
+      0.003054,
+      0.003152,
+      0.003069
+    ],
+    "scenario_id": "PERF-001",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "b947993c3d3d6f876aeff7f64eafa806b737f6b950b61fa301a133c9f6d9d226",
+    "samples": [
+      0.019819,
+      0.018746,
+      0.018592,
+      0.018532
+    ],
+    "scenario_id": "PERF-002",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "9782c785203dde2997d56bc1c3756ed8d15b63b3507a81fdf0cac6a1777a7b3a",
+    "samples": [
+      0.007673,
+      0.00733,
+      0.007421,
+      0.007225
+    ],
+    "scenario_id": "PERF-003",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "8586fd469220ee16c5a100e7cae6710caf439afb89d311c0764bb13802a28a88",
+    "samples": [
+      0.026411,
+      0.02496,
+      0.024875,
+      0.024268
+    ],
+    "scenario_id": "PERF-004",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "6a2a07cf803d67199319cbc034930c382e95a0fa2605e411d4cc33a025783796",
+    "samples": [
+      0.006744,
+      0.006633,
+      0.006791,
+      0.006755
+    ],
+    "scenario_id": "PERF-005",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "76f18b6a1d9b5ce05869f0e855632c10d9b1aa9552f162e9d56db904c8c31fbc",
+    "samples": [
+      0.014413,
+      0.010468,
+      0.011225,
+      0.010857
+    ],
+    "scenario_id": "PERF-006",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "acc6ee1666026134147f875275d33337be145fb7ab2423f6952cb14deafa9302",
+    "samples": [
+      0.023747,
+      0.019995,
+      0.019354,
+      0.019211
+    ],
+    "scenario_id": "PERF-007",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "9e7c0c4dea3c893d7901a9a50b001e0a0b0bd7f8205c67b1a95159a48ab373b4",
+    "samples": [
+      0.598818,
+      0.579712,
+      0.581239,
+      0.583488
+    ],
+    "scenario_id": "PERF-008",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "ec746c529205beb30d133e1eff09df71eb14127745dcee599d4ae249b1ec9e46",
+    "samples": [
+      0.587859,
+      0.587298,
+      0.588111,
+      0.621043
+    ],
+    "scenario_id": "PERF-009",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "1d5805f06bb95c693904f00469fe1de32117ed705c7fef232af25ce579089ed8",
+    "samples": [
+      0.011098,
+      0.010836,
+      0.046338,
+      0.01084
+    ],
+    "scenario_id": "PERF-010",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "b7b304c4a92010675ca3a8fd3c06b2866442d17e342e994da17ceea02d32f825",
+    "samples": [
+      0.108196
+    ],
+    "scenario_id": "PROBE-DATABASE-PRESSURE",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "cb48e5f524a3b902c592208a175ba8e2a68d37d48d801f71054a0bd43d9c1e9d",
+    "samples": [
+      0.023747
+    ],
+    "scenario_id": "PROBE-HEAVY-EXPORT-QUEUE",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "2bde1c536fc0952819c6c01c22aa5c5c7ccf90ed6c16317a2c2d39e4a7c17181",
+    "samples": [
+      0.011098
+    ],
+    "scenario_id": "PROBE-LARGE-AUDIT-TABLE",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "8b993f907e99b6d387548e1051e79ca0f8fb964a75b87db22a461a2ea14368a7",
+    "samples": [
+      0.006744
+    ],
+    "scenario_id": "PROBE-LARGE-DOCUMENT-VOLUME",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "2daaa75f61442119d4919ae633eaf24d719e398caa830771eb931fc93c51a255",
+    "samples": [
+      0.009278
+    ],
+    "scenario_id": "PROBE-REDIS-RESTART",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "7b53a03c2a6e420efb472a9ca95d6512b23f339ef977472fb31ec60f35140141",
+    "samples": [
+      0.303079
+    ],
+    "scenario_id": "PROBE-SUSTAINED-WORKFLOW",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "627ff66bc9d049b91e7195d99096e853d8cbdf000935be3f727386e5247dc080",
+    "samples": [
+      0.012455
+    ],
+    "scenario_id": "PROBE-WORKER-RESTART",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "5a1cf4e169fc875cd6a7425d2a65a207bbde49a800a96dea5cb28117ff5a8b0e",
+    "samples": [
+      0.023987,
+      0.024127,
+      0.024236,
+      0.02426
+    ],
+    "scenario_id": "TARGET-APPLICATION-DETAIL",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "76f18b6a1d9b5ce05869f0e855632c10d9b1aa9552f162e9d56db904c8c31fbc",
+    "samples": [
+      0.014413,
+      0.010468,
+      0.011225,
+      0.010857
+    ],
+    "scenario_id": "TARGET-APPROVAL-ACTION",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "ccfb9bc6d3307afa97368ad7c7d4ae9510c5d3763f532f65fac7657db705c767",
+    "samples": [
+      0.626346,
+      0.601318,
+      0.600773,
+      0.60432
+    ],
+    "scenario_id": "TARGET-CAPITALISATION-DRY-RUN",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "b947993c3d3d6f876aeff7f64eafa806b737f6b950b61fa301a133c9f6d9d226",
+    "samples": [
+      0.019819,
+      0.018746,
+      0.018592,
+      0.018532
+    ],
+    "scenario_id": "TARGET-DASHBOARD",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "e69015415c24727d3fa3300fa451f28fdbe544b5bc367538488df0b783a8c6f4",
+    "samples": [
+      0.030753,
+      0.026276,
+      0.026787,
+      0.026724
+    ],
+    "scenario_id": "TARGET-DISBURSEMENT-READINESS",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "6a2a07cf803d67199319cbc034930c382e95a0fa2605e411d4cc33a025783796",
+    "samples": [
+      0.006744,
+      0.006633,
+      0.006791,
+      0.006755
+    ],
+    "scenario_id": "TARGET-DOCUMENT-UPLOAD",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "9e7c0c4dea3c893d7901a9a50b001e0a0b0bd7f8205c67b1a95159a48ab373b4",
+    "samples": [
+      0.598818,
+      0.579712,
+      0.581239,
+      0.583488
+    ],
+    "scenario_id": "TARGET-DPD-BATCH",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "073f9ae29029d423346860cc29d9b8a5090c42383b444e8bd0b82d17f85ed333",
+    "samples": [
+      1.148439,
+      1.138206,
+      1.139514,
+      1.139607
+    ],
+    "scenario_id": "TARGET-LOAN-ACCOUNT-360",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "2480387c249ffc85760dc5a982c4911a2cf2abb1eb0126a39256cb27c956afcf",
+    "samples": [
+      0.003113,
+      0.003054,
+      0.003152,
+      0.003069
+    ],
+    "scenario_id": "TARGET-LOGIN",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "9782c785203dde2997d56bc1c3756ed8d15b63b3507a81fdf0cac6a1777a7b3a",
+    "samples": [
+      0.007673,
+      0.00733,
+      0.007421,
+      0.007225
+    ],
+    "scenario_id": "TARGET-MEMBER-SEARCH",
+    "status": "pass"
+  },
+  {
+    "raw_result_sha256": "ec746c529205beb30d133e1eff09df71eb14127745dcee599d4ae249b1ec9e46",
+    "samples": [
+      0.587859,
+      0.587298,
+      0.588111,
+      0.621043
+    ],
+    "scenario_id": "TARGET-MONTHLY-ACCRUAL",
+    "status": "release-evidence-required"
+  },
+  {
+    "raw_result_sha256": "acc6ee1666026134147f875275d33337be145fb7ab2423f6952cb14deafa9302",
+    "samples": [
+      0.023747,
+      0.019995,
+      0.019354,
+      0.019211
+    ],
+    "scenario_id": "TARGET-REPORT-EXPORT",
+    "status": "release-evidence-required"
+  }
+]

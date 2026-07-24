@@ -1,0 +1,8 @@
+{
+  "failing_scenarios": [
+    "PERF-001"
+  ],
+  "proof": "sfpcl_credit.tests.test_performance_readiness.PerformanceReadinessContractTests.test_command_writes_controlled_failure_and_returns_nonzero",
+  "result": "fail",
+  "schema_version": 1
+}
