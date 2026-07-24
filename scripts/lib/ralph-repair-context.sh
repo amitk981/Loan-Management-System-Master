@@ -4,6 +4,61 @@
 # repair attempt. The context is written by the trusted orchestrator in the
 # integration checkout; coding agents cannot alter it from their worktrees.
 
+ralph_authoritative_failure_excerpt() {
+  local run_dir="${1:?run directory is required}"
+  python3 - "$run_dir" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+run_dir = Path(sys.argv[1]).resolve()
+log_dir = run_dir / "evidence" / "terminal-logs"
+logs = sorted(log_dir.glob("trusted-browser-acceptance-*.log"))
+if not logs:
+    raise SystemExit(0)
+
+signal = re.compile(
+    r"(?:Error:|strict mode|Test timeout|timed out|waiting for|"
+    r"getByRole|getByText|browserType\.launch|expect\.|Call log:|"
+    r"Exit code:|Screenshot evidence exit code:|FATAL:|Traceback|FAILED \()",
+    re.IGNORECASE,
+)
+failure_signal = re.compile(
+    r"(?:Error:|strict mode|Test timeout|timed out|browserType\.launch|"
+    r"FATAL:|Traceback|FAILED \(|\b[1-9][0-9]* failed\b|"
+    r"Exit code:\s*[1-9][0-9]*|Screenshot evidence exit code:\s*[1-9][0-9]*)",
+    re.IGNORECASE,
+)
+ansi = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+remaining = 78
+emitted_source = False
+
+for log in logs:
+    if remaining <= 0:
+        break
+    lines = [ansi.sub("", line) for line in log.read_text(errors="replace").splitlines()]
+    if not any(failure_signal.search(line) for line in lines):
+        continue
+    selected = set()
+    for index, line in enumerate(lines):
+        if signal.search(line):
+            selected.update(range(max(0, index - 2), min(len(lines), index + 5)))
+    if not selected:
+        selected.update(range(max(0, len(lines) - min(30, remaining)), len(lines)))
+    ordered = sorted(selected)[:remaining]
+    if not ordered:
+        continue
+    if emitted_source:
+        print()
+    relative = log.relative_to(run_dir)
+    print(f"Authoritative source: {relative}")
+    for index in ordered:
+        print(lines[index])
+    remaining -= len(ordered)
+    emitted_source = True
+PY
+}
+
 ralph_failure_signature() {
   local failure_summary="${1:?failure summary path is required}"
   python3 - "$failure_summary" <<'PY'
@@ -28,8 +83,17 @@ patterns = (
     "getByRole", "getByText", "strict mode", "Exit code:", "FATAL:",
     "Traceback", "FAILED (",
 )
+failed_log = re.compile(
+    r"(?:Error:|strict mode|Test timeout|timed out|browserType\.launch|"
+    r"FATAL:|Traceback|FAILED \(|\b[1-9][0-9]* failed\b|"
+    r"Exit code:\s*[1-9][0-9]*|Screenshot evidence exit code:\s*[1-9][0-9]*)",
+    re.IGNORECASE,
+)
 for log in sorted(log_dir.glob("trusted-browser-acceptance-*.log")):
-    for line in log.read_text(errors="replace").splitlines():
+    lines = log.read_text(errors="replace").splitlines()
+    if not any(failed_log.search(line) for line in lines):
+        continue
+    for line in lines:
         if any(pattern in line for pattern in patterns):
             interesting.append(line)
 

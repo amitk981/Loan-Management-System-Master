@@ -15,6 +15,7 @@ source "$repo_root/scripts/lib/ralph-architecture-review.sh"
 source "$repo_root/scripts/lib/ralph-prompt-policy.sh"
 source "$repo_root/scripts/lib/ralph-backend-validation.sh"
 source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
+source "$repo_root/scripts/lib/ralph-repair-context.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -907,6 +908,18 @@ if (( failures > 0 )); then
         echo '```'
         echo
       done
+    fi
+    authoritative_diagnostics="$(ralph_authoritative_failure_excerpt "$run_dir")"
+    if [[ -n "$authoritative_diagnostics" ]]; then
+      echo "## Authoritative validator diagnostics"
+      echo
+      echo "These bounded excerpts come from orchestrator-owned trusted validation logs."
+      echo "They take precedence over agent-authored review packets or evidence narratives."
+      echo
+      echo '```'
+      printf '%s\n' "$authoritative_diagnostics"
+      echo '```'
+      echo
     fi
     echo "## Changed files (git status)"
     echo

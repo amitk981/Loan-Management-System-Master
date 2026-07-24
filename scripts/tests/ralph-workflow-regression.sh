@@ -291,6 +291,37 @@ Error: locator.click: Test timeout of 30000ms exceeded.
 at $repair_worktree/e2e/example.e2e.spec.ts:19:52
 Exit code: 1
 EOF
+cat > "$repair_run_dir/evidence/terminal-logs/trusted-browser-acceptance-2.log" <<'EOF'
+Trusted browser scenario passed.
+Exit code: 0
+EOF
+cat > "$repair_run_dir/evidence/browser-acceptance.md" <<'EOF'
+# Agent-authored Browser Acceptance
+
+Chrome failed during launch before any assertion ran.
+EOF
+type ralph_authoritative_failure_excerpt >/dev/null 2>&1 \
+  || fail "missing bounded authoritative failure excerpt helper"
+authoritative_excerpt="$(ralph_authoritative_failure_excerpt "$repair_run_dir")"
+printf '%s\n' "$authoritative_excerpt" \
+  | grep -Fq 'Authoritative source: evidence/terminal-logs/trusted-browser-acceptance-1.log' \
+  || fail "repair diagnostics do not identify the trusted validator log"
+printf '%s\n' "$authoritative_excerpt" \
+  | grep -Fq 'Error: locator.click: Test timeout of 30000ms exceeded.' \
+  || fail "repair diagnostics omit the exact trusted browser error"
+if printf '%s\n' "$authoritative_excerpt" | grep -Fq 'Chrome failed during launch'; then
+  fail "repair diagnostics trusted an agent-authored browser narrative"
+fi
+if printf '%s\n' "$authoritative_excerpt" \
+    | grep -Fq 'trusted-browser-acceptance-2.log'; then
+  fail "repair diagnostics included a passing trusted-browser log"
+fi
+[[ "$(printf '%s\n' "$authoritative_excerpt" | wc -l | tr -d ' ')" -le 90 ]] \
+  || fail "authoritative repair diagnostics are not bounded"
+rg -q 'ralph_authoritative_failure_excerpt "\$run_dir"' scripts/ralph-validate.sh \
+  || fail "failure summary does not include bounded authoritative validator diagnostics"
+rg -q "must not override validator facts" scripts/ralph-run.sh \
+  || fail "same-worktree repair prompt does not define validator evidence precedence"
 ralph_write_repair_context \
   "$repair_context" failed-run "$repair_worktree" \
   999X-browser-fixture ralph/failed-run_999X-browser-fixture \
