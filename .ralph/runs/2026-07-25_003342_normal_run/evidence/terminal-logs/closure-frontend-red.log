@@ -1,0 +1,3468 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/recoveryApi.test.ts src/pages/closure/LoanClosureHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_003342_normal_run/sfpcl-lms
+
+ ❯ src/services/recoveryApi.test.ts (4 tests | 2 failed) 12ms
+   ✓ 011PA default case read contracts > uses the list and selected-detail endpoints and preserves frozen note facts 2ms
+   ✓ 011PB recovery decision contracts > reads the note-linked approval and posts only its identifier, action, and mandatory reason 2ms
+   × 011PC closure staff contracts > reads readiness and posts financial closure with a stable idempotency identity 5ms
+     → fetchClosureReadiness is not a function
+   × 011PC closure staff contracts > issues NOC, records security return, and archives through exact owner endpoints 1ms
+     → issueNoc is not a function
+ ❯ src/pages/closure/LoanClosureHub.test.tsx (6 tests | 6 failed) 4179ms
+   × 011PC closure readiness and downstream owner wiring > renders named server blockers and keeps NOC unavailable before financial closure 1110ms
+     → Unable to find an element with the text: LN-CLOSURE-011PC. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+   × 011PC closure readiness and downstream owner wiring > renders loading, empty, unauthorized, and general error states 13ms
+     → Unable to find an element with the text: Loading closure candidates…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+   × 011PC closure readiness and downstream owner wiring > validates notes, closes from server readiness, and refetches canonical downstream reads 1016ms
+     → Unable to find an element with the text: Ready for closure. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+   × 011PC closure readiness and downstream owner wiring > issues NOC then renders the canonical refetch projection 1019ms
+     → Unable to find a label with the text of: Closure notes
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+   × 011PC closure readiness and downstream owner wiring > records server-owned security state and archives only after downstream prerequisites 1018ms
+     → Unable to find a label with the text of: Closure notes
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+   × 011PC closure readiness and downstream owner wiring > is the final mock-removal owner and contains no inline closure fixtures 2ms
+     → expected 'import React, { useState } from \'rea…' not to match /Asha Bhosale|Vijay Patil|Radha Kisan/
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/recoveryApi.test.ts > 011PC closure staff contracts > reads readiness and posts financial closure with a stable idempotency identity
+TypeError: fetchClosureReadiness is not a function
+ ❯ src/services/recoveryApi.test.ts:160:18
+    158|     vi.stubGlobal('fetch', fetchMock);
+    159| 
+    160|     await expect(fetchClosureReadiness('loan-1')).resolves.toEqual(rea…
+       |                  ^
+    161|     await expect(closeLoan('loan-1', {
+    162|       closure_notes: 'Canonical balances and blockers reviewed.',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/services/recoveryApi.test.ts > 011PC closure staff contracts > issues NOC, records security return, and archives through exact owner endpoints
+TypeError: issueNoc is not a function
+ ❯ src/services/recoveryApi.test.ts:217:11
+    215|     vi.stubGlobal('fetch', fetchMock);
+    216| 
+    217|     await issueNoc('closure-1', {
+       |           ^
+    218|       document_id: 'document-1',
+    219|       delivery_mode: 'email',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > renders named server blockers and keeps NOC unavailable before financial closure
+TestingLibraryElementError: Unable to find an element with the text: LN-CLOSURE-011PC. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:226:25
+    224|     render(<LoanClosureHub />);
+    225| 
+    226|     expect(await screen.findByText('LN-CLOSURE-011PC')).toBeTruthy();
+       |                         ^
+    227|     expect(screen.getByText('Interest Paid Or Approved Adjustment')).t…
+    228|     expect(screen.getByText('Failed')).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > renders loading, empty, unauthorized, and general error states
+TestingLibraryElementError: Unable to find an element with the text: Loading closure candidates…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:241:19
+    239|     vi.mocked(fetchAllLoanAccounts).mockReturnValue(new Promise(resolv…
+    240|     const loading = render(<LoanClosureHub />);
+    241|     expect(screen.getByText('Loading closure candidates…')).toBeTruthy…
+       |                   ^
+    242|     resolveAccounts?.({ items: [account], totalCount: 1, totalPages: 1…
+    243|     await screen.findByText('LN-CLOSURE-011PC');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > validates notes, closes from server readiness, and refetches canonical downstream reads
+TestingLibraryElementError: Unable to find an element with the text: Ready for closure. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:270:25
+    268| 
+    269|     render(<LoanClosureHub />);
+    270|     expect(await screen.findByText('Ready for closure')).toBeTruthy();
+       |                         ^
+    271|     await userEvent.click(screen.getByRole('button', { name: 'Close Lo…
+    272|     expect(screen.getByText('Closure notes are required.')).toBeTruthy…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > issues NOC then renders the canonical refetch projection
+TestingLibraryElementError: Unable to find a label with the text of: Closure notes
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:297:39
+    295| 
+    296|     render(<LoanClosureHub />);
+    297|     await userEvent.type(await screen.findByLabelText('Closure notes')…
+       |                                       ^
+    298|     await userEvent.click(screen.getByRole('button', { name: 'Close Lo…
+    299|     await screen.findByText('Financial closure recorded from canonical…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > records server-owned security state and archives only after downstream prerequisites
+TestingLibraryElementError: Unable to find a label with the text of: Closure notes
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mManage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000031[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mClosure In Progress[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mAsha Bhosale[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mFully repaid[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000028[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 9v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 17h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mBlocked[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mVijay Patil[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹12,000 outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-slate-200 bg-white hover:border-slate-300"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLO00000025[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-teal-50 text-teal-700 border-teal-100 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-badge-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[3...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:330:39
+    328| 
+    329|     render(<LoanClosureHub />);
+    330|     await userEvent.type(await screen.findByLabelText('Closure notes')…
+       |                                       ^
+    331|     await userEvent.click(screen.getByRole('button', { name: 'Close Lo…
+    332|     await screen.findByText('Financial closure recorded from canonical…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > is the final mock-removal owner and contains no inline closure fixtures
+AssertionError: expected 'import React, { useState } from \'rea…' not to match /Asha Bhosale|Vijay Patil|Radha Kisan/
+
+- Expected: 
+/Asha Bhosale|Vijay Patil|Radha Kisan/
+
++ Received: 
+"import React, { useState } from 'react';
+import {
+  CheckCircle2, FileText, Download, Archive, Shield, Lock,
+  AlertTriangle, BadgeCheck, Clock, ChevronRight, Unlock, Upload, Send, FileCheck
+} from 'lucide-react';
+import StatusBadge from '../../components/ui/StatusBadge';
+import { useRole } from '../../contexts/RoleContext';
+
+type ClosureTab = 'closure' | 'noc' | 'security_return' | 'archive';
+
+interface ClosureLoan {
+  id: string;
+  loanNo: string;
+  borrower: string;
+  sanctioned: number;
+  outstanding: number;
+  status: string;
+  repaidOn: string | null;
+  nocStatus: string;
+}
+
+const closureLoans: ClosureLoan[] = [
+  { id: 'la001', loanNo: 'LO00000031', borrower: 'Asha Bhosale',    sanctioned: 200000, outstanding: 0,     status: 'fully_repaid', repaidOn: '10 May 2025', nocStatus: 'not_ready' },
+  { id: 'la002', loanNo: 'LO00000028', borrower: 'Vijay Patil',     sanctioned: 350000, outstanding: 12000, status: 'not_eligible',  repaidOn: null,        nocStatus: 'not_ready' },
+  { id: 'la003', loanNo: 'LO00000025', borrower: 'Radha Kisan Org', sanctioned: 500000, outstanding: 0,     status: 'closed',       repaidOn: '28 Mar 2025', nocStatus: 'issued' },
+];
+
+const LoanClosureHub: React.FC = () => {
+  const { currentUser } = useRole();
+  const role = currentUser.role;
+
+  const canAccess = ['admin', 'credit_manager', 'senior_manager_finance', 'deputy_manager_finance', 'accounts_team', 'cfo', 'auditor', 'compliance_team', 'company_secretary'].includes(role);
+  const canComply = ['compliance_team', 'company_secretary'].includes(role);
+
+  const [activeTab, setActiveTab] = useState<ClosureTab>('closure');
+  const [selectedLoan, setSelectedLoan] = useState<ClosureLoan>(closureLoans[0]);
+  
+  const [nocGenerated, setNocGenerated] = useState(false);
+  const [nocSent, setNocSent] = useState(false);
+  const [nocDispatched, setNocDispatched] = useState(false);
+  const [nocAck, setNocAck] = useState(false);
+
+  const [sh4Returned, setSh4Returned] = useState(false);
+  const [chequeReturned, setChequeReturned] = useState(false);
+  const [cdslUnpledgeStart, setCdslUnpledgeStart] = useState(false);
+  const [cdslUnpledged, setCdslUnpledged] = useState(false);
+  const [poaReturned, setPoaReturned] = useState(false);
+  const [securityReturnConfirmed, setSecurityReturnConfirmed] = useState(false);
+  
+  const [archiveCompleted, setArchiveCompleted] = useState(false);
+  const [loanMarkedClosed, setLoanMarkedClosed] = useState(false);
+  const [closureNotes, setClosureNotes] = useState('');
+  const [manualChecks, setManualChecks] = useState<Record<number, boolean>>({});
+  const toggleManualCheck = (idx: number) => setManualChecks(prev => ({ ...prev, [idx]: !prev[idx] }));
+
+  if (!canAccess) {
+    return <div className=\"p-6 text-red-600\">Access Denied. You do not have permission to view this module.</div>;
+  }
+
+  const tabs: { id: ClosureTab; label: string }[] = [
+    { id: 'closure',         label: 'Closure Checklist' },
+    { id: 'noc',             label: 'NOC Generation' },
+    { id: 'security_return', label: 'Security Return / Unpledge' },
+    { id: 'archive',         label: 'Archive' },
+  ];
+
+  const nocComplete = selectedLoan.nocStatus === 'issued' || nocAck;
+  const securityComplete = selectedLoan.status === 'closed' || securityReturnConfirmed;
+  const archiveComplete = selectedLoan.status === 'closed' || archiveCompleted;
+  const closedComplete = selectedLoan.status === 'closed' || loanMarkedClosed || archiveCompleted;
+
+  const closureChecklist = [
+    { item: 'All principal repaid',                         done: selectedLoan.outstanding === 0 },
+    { item: 'All interest repaid (incl. capitalised)',      done: selectedLoan.outstanding === 0 },
+    { item: 'Penal interest (if any) cleared',              done: selectedLoan.outstanding === 0 },
+    { item: 'Closing balance confirmed in SAP',             done: selectedLoan.outstanding === 0 },
+    { item: 'Security documents accounted',                 done: selectedLoan.outstanding === 0 },
+    { item: 'Compliance checklist complete',                done: selectedLoan.outstanding === 0 },
+    { item: 'NOC issued to borrower',                       done: nocComplete },
+    { item: 'SH-4 / CDSL pledge released',                  done: securityComplete },
+    { item: 'Blank cheque returned',                        done: securityComplete },
+    { item: 'Loan record archived',                         done: archiveComplete },
+  ];
+
+  const completedCount = closureChecklist.filter((c, i) => c.done || manualChecks[i]).length;
+  const publicationImpact = [
+    { label: 'Borrower communication', status: nocSent ? 'sent' : nocComplete ? 'ready' : 'not_ready', note: nocSent ? 'Communication sent to borrower.' : 'Send after NOC is issued.' },
+    { label: 'NOC Register', status: nocComplete ? 'issued' : 'pending', note: nocComplete ? 'NOC reference and issue date are visible in the register.' : 'Waiting for NOC issue.' },
+    { label: 'Security Register', status: securityComplete ? 'returned' : (cdslUnpledgeStart || sh4Returned || chequeReturned || poaReturned) ? 'return_pending' : 'held_in_custody', note: securityComplete ? 'SH-4, cheque, PoA and CDSL release states are complete.' : 'Security return pending.' },
+    { label: 'Archive Register', status: archiveComplete ? 'archived' : 'pending', note: archiveComplete ? 'Archive ID and retention date are staged.' : 'Archive after closure checklist completion.' },
+    { label: 'Audit Trail', status: archiveComplete ? 'recorded' : 'in_progress', note: 'Closure events are recorded automatically.' },
+  ];
+
+  const isEligible = selectedLoan.outstanding === 0;
+
+  const getLoanStatus = (loan: ClosureLoan) => {
+    if (loan.outstanding > 0) return 'Blocked';
+    if (loan.status === 'closed' && archiveComplete && nocComplete && securityComplete) return 'Closed';
+    if (archiveCompleted) return 'Archived';
+    if (loanMarkedClosed) return 'Ready to Archive';
+    if (!securityComplete) return 'Security Return Pending';
+    if (!nocComplete) return 'NOC Pending';
+    if (loan.status === 'fully_repaid') return 'Closure in progress';
+    return 'Fully repaid';
+  };
+
+  const currentLoanStatus = getLoanStatus(selectedLoan);
+
+  return (
+    <div className=\"p-6\">
+      <div className=\"mb-6\">
+        <h1 className=\"text-xl font-bold text-slate-900\">Loan Closure & Archive</h1>
+        <p className=\"text-sm text-slate-500 mt-1\">Manage NOC generation, security return, CDSL unpledge and record archival for fully-repaid loans.</p>
+      </div>
+
+      {/* Loan selector */}
+      <div className=\"grid grid-cols-3 gap-3 mb-6\">
+        {closureLoans.map(loan => (
+          <button
+            key={loan.id}
+            onClick={() => {
+              if (loan.outstanding === 0) setSelectedLoan(loan);
+            }}
+            disabled={loan.outstanding > 0}
+            className={`text-left border rounded-xl p-4 transition-all ${
+              selectedLoan.id === loan.id
+                ? 'border-green-300 bg-green-50'
+                : loan.outstanding > 0
+                ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className=\"flex items-center justify-between mb-2\">
+              <span className=\"text-xs font-mono font-medium text-slate-600\">{loan.loanNo}</span>
+              <StatusBadge label={loan.outstanding > 0 ? 'Blocked' : (loan.status === 'closed' ? 'Closed' : 'Closure in progress')} size=\"sm\" type={loan.outstanding > 0 ? 'slate' : 'default'} />
+            </div>
+            <div className=\"font-medium text-slate-900 text-sm\">{loan.borrower}</div>
+            <div className=\"text-xs text-slate-500 mt-1\">
+              {loan.outstanding === 0 ? 'Fully repaid' : `₹${loan.outstanding.toLocaleString('en-IN')} outstanding`}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className=\"border-b border-slate-200 mb-6\">
+        <div className=\"flex gap-1\">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-green-600 text-green-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className=\"bg-white border border-slate-200 rounded-xl p-4 mb-6\">
+        <div className=\"flex items-center justify-between gap-3 mb-3\">
+          <div>
+            <h3 className=\"text-sm font-semibold text-slate-900\">Closure status</h3>
+            <p className=\"text-xs text-slate-500 mt-0.5\">Current readiness for NOC, security return, archive and audit.</p>
+          </div>
+          <StatusBadge label={currentLoanStatus} size=\"sm\" />
+        </div>
+        <div className=\"grid grid-cols-1 md:grid-cols-5 gap-3\">
+          {publicationImpact.map(item => (
+            <div key={item.label} className=\"rounded-lg bg-slate-50 border border-slate-100 p-3\">
+              <div className=\"flex items-center justify-between gap-2\">
+                <p className=\"text-xs font-semibold text-slate-700\">{item.label}</p>
+                <StatusBadge label={item.status} size=\"sm\" type={item.status === 'pending' || item.status === 'not_ready' ? 'slate' : 'default'} />
+              </div>
+              <p className=\"text-xs text-slate-500 mt-2\">{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Closure Checklist */}
+      {activeTab === 'closure' && (
+        <div className=\"max-w-2xl space-y-5\">
+          <div className=\"bg-white border border-slate-200 rounded-xl p-6\">
+            <div className=\"flex items-center justify-between mb-4\">
+              <div>
+                <h3 className=\"font-semibold text-slate-900\">Closure Checklist — {selectedLoan.loanNo}</h3>
+                <p className=\"text-xs text-slate-500 mt-0.5\">{selectedLoan.borrower}</p>
+              </div>
+              <div className=\"text-right\">
+                <div className=\"text-2xl font-bold text-green-600\">{completedCount}/{closureChecklist.length}</div>
+                <div className=\"text-xs text-slate-500\">items complete</div>
+              </div>
+            </div>
+
+            <div className=\"w-full bg-slate-100 rounded-full h-2 mb-5\">
+              <div
+                className=\"bg-green-500 h-2 rounded-full transition-all\"
+                style={{ width: `${(completedCount / closureChecklist.length) * 100}%` }}
+              />
+            </div>
+
+            <div className=\"space-y-2\">
+              {closureChecklist.map((item, i) => {
+                const effectiveDone = item.done || manualChecks[i];
+                const canToggle = canComply && !item.done && isEligible;
+                return (
+                  <button
+                    key={i}
+                    disabled={!canToggle}
+                    onClick={() => canToggle && toggleManualCheck(i)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${effectiveDone ? 'bg-green-50' : canToggle ? 'bg-slate-50 hover:bg-slate-100 cursor-pointer' : 'bg-slate-50 cursor-default'}`}
+                  >
+                    {effectiveDone
+                      ? <CheckCircle2 size={16} className=\"text-green-600 flex-shrink-0\" />
+                      : <Clock size={16} className=\"text-slate-300 flex-shrink-0\" />
+                    }
+                    <span className={`text-sm flex-1 ${effectiveDone ? 'text-green-800' : 'text-slate-500'}`}>{item.item}</span>
+                    {canToggle && !effectiveDone && (
+                      <span className=\"text-xs text-slate-400\">Tap to confirm</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedLoan.outstanding === 0 && (
+              <div className=\"mt-5 space-y-3\">
+                <div>
+                  <label className=\"block text-sm font-medium text-slate-700 mb-1.5\">Closure Notes</label>
+                  <textarea
+                    value={closureNotes}
+                    onChange={e => setClosureNotes(e.target.value)}
+                    rows={3}
+                    placeholder=\"Record any final observations before closure…\"
+                    className=\"w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none\"
+                  />
+                </div>
+                {canComply && (
+                  <button
+                    onClick={() => {
+                      if (completedCount === closureChecklist.length) {
+                        setLoanMarkedClosed(true);
+                      } else {
+                        setActiveTab('noc');
+                      }
+                    }}
+                    className=\"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50\"
+                  >
+                    <BadgeCheck size={16} />
+                    {completedCount === closureChecklist.length ? 'Mark Loan as Closed' : nocComplete ? 'Continue Closure' : 'Initiate NOC'}
+                  </button>
+                )}
+              </div>
+            )}
+            {selectedLoan.outstanding > 0 && (
+              <div className=\"mt-4 flex items-center gap-2 text-amber-700 bg-amber-50 rounded-xl p-4 text-sm\">
+                <AlertTriangle size={16} className=\"flex-shrink-0\" />
+                Closure blocked: ₹{selectedLoan.outstanding.toLocaleString('en-IN')} outstanding.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* NOC Generation */}
+      {activeTab === 'noc' && (
+        <div className=\"max-w-2xl space-y-5\">
+          <div className=\"bg-white border border-slate-200 rounded-xl p-6\">
+            <h3 className=\"font-semibold text-slate-900 mb-4 flex items-center gap-2\">
+              <BadgeCheck size={16} className=\"text-green-600\" />
+              No Objection Certificate (NOC) Generation
+            </h3>
+            
+            {!isEligible ? (
+              <div className=\"bg-amber-50 border border-amber-200 rounded-xl p-4 text-center\">
+                <Lock size={32} className=\"mx-auto text-amber-300 mb-3\" />
+                <div className=\"font-semibold text-amber-700\">NOC Locked</div>
+                <div className=\"text-sm text-amber-600 mt-1\">NOC locked until full repayment is validated.</div>
+              </div>
+            ) : (
+              <>
+                <div className=\"grid grid-cols-2 gap-4 text-sm bg-slate-50 rounded-lg p-4 mb-5\">
+                  <div><div className=\"text-slate-500\">Loan Account</div><div className=\"font-medium\">{selectedLoan.loanNo}</div></div>
+                  <div><div className=\"text-slate-500\">Borrower</div><div className=\"font-medium\">{selectedLoan.borrower}</div></div>
+                  <div><div className=\"text-slate-500\">Sanctioned Amount</div><div className=\"font-medium\">₹{selectedLoan.sanctioned.toLocaleString('en-IN')}</div></div>
+                  <div><div className=\"text-slate-500\">Full Repayment Date</div><div className=\"font-medium\">{selectedLoan.repaidOn || 'Pending'}</div></div>
+                </div>
+
+                <div className=\"space-y-4\">
+                  <div className=\"grid grid-cols-2 gap-4\">
+                    {[
+                      { label: 'NOC Date', type: 'date', defaultValue: new Date().toISOString().split('T')[0] },
+                      { label: 'Reference Number', type: 'text', defaultValue: 'NOC-' + new Date().getFullYear() + '-042' },
+                    ].map(f => (
+                      <div key={f.label}>
+                        <label className=\"block text-sm font-medium text-slate-700 mb-1.5\">{f.label}</label>
+                        <input
+                          type={f.type}
+                          defaultValue={f.defaultValue}
+                          className=\"w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500\"
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className=\"block text-sm font-medium text-slate-700 mb-1.5\">Authorised Signatory</label>
+                      <select className=\"w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500\">
+                        <option>Company Secretary</option>
+                        <option>Authorised closure signatory</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className=\"block text-sm font-medium text-slate-700 mb-1.5\">Delivery Mode</label>
+                      <select className=\"w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500\">
+                        <option>Email + portal</option>
+                        <option>Registered Post</option>
+                        <option>In-Person Collection</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {canComply && (
+                    <div className=\"flex gap-3 flex-wrap mt-4\">
+                      {!nocGenerated ? (
+                        <button
+                          onClick={() => setNocGenerated(true)}
+                          className=\"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors\"
+                        >
+                          <BadgeCheck size={16} />
+                          Generate NOC
+                        </button>
+                      ) : (
+                        <button disabled className=\"flex items-center gap-2 bg-slate-100 text-slate-400 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors\">
+                          <CheckCircle2 size={16} /> NOC Generated
+                        </button>
+                      )}
+                      
+                      <button className=\"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors\">
+                        <FileText size={16} />
+                        Preview
+                      </button>
+
+                      {nocGenerated && !nocSent && (
+                        <button onClick={() => setNocSent(true)} className=\"flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors\">
+                          <Send size={16} /> Send to borrower
+                        </button>
+                      )}
+                      {nocSent && !nocDispatched && (
+                        <button onClick={() => setNocDispatched(true)} className=\"flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors\">
+                          <FileCheck size={16} /> Mark hard copy dispatched
+                        </button>
+                      )}
+                      {nocDispatched && !nocAck && (
+                        <button onClick={() => setNocAck(true)} className=\"flex items-center gap-2 border border-green-600 text-green-700 hover:bg-green-50 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors\">
+                          <Upload size={16} /> Upload acknowledged copy
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {nocComplete && (
+                    <div className=\"flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-4 mt-4\">
+                      <CheckCircle2 size={20} className=\"text-green-600 flex-shrink-0\" />
+                      <div>
+                        <div className=\"font-medium text-green-800 text-sm\">NOC generated, issued, and acknowledged</div>
+                        <div className=\"text-xs text-green-600 mt-0.5\">Ref: NOC-2025-042 · Borrower communication updated</div>
+                      </div>
+                      <button className=\"ml-auto flex items-center gap-1.5 text-sm text-green-700 font-medium hover:underline flex-shrink-0\">
+                        <Download size={14} />
+                        Download
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Security Return */}
+      {activeTab === 'security_return' && (
+        <div className=\"max-w-2xl space-y-5\">
+          <div className=\"bg-white border border-slate-200 rounded-xl p-6\">
+            <h3 className=\"font-semibold text-slate-900 mb-4 flex items-center gap-2\">
+              <Unlock size={16} className=\"text-green-600\" />
+              Security Return & CDSL Unpledge
+            </h3>
+            
+            {!isEligible ? (
+              <div className=\"bg-amber-50 border border-amber-200 rounded-xl p-4 text-center\">
+                <Lock size={32} className=\"mx-auto text-amber-300 mb-3\" />
+                <div className=\"font-semibold text-amber-700\">Security Return Locked</div>
+                <div className=\"text-sm text-amber-600 mt-1\">Security return locked until full repayment is validated.</div>
+              </div>
+            ) : (
+              <>
+                <div className=\"space-y-3 mb-5\">
+                  {[
+                    { doc: 'SH-4 Transfer Form',   securityType: 'Original held; return pending',    status: securityComplete || sh4Returned ? 'Returned' : 'Held in custody', onReturn: () => setSh4Returned(true) },
+                    { doc: 'Blank Cheque',         securityType: 'Original held; return pending', status: securityComplete || chequeReturned ? 'Returned' : 'Held in custody', onReturn: () => setChequeReturned(true) },
+                    { doc: 'CDSL Pledge Release',  securityType: 'Pledge active; unpledge pending',      status: securityComplete || cdslUnpledged ? 'Unpledged' : cdslUnpledgeStart ? 'Unpledge pending' : 'Pledge active', onReturn: () => cdslUnpledgeStart ? setCdslUnpledged(true) : setCdslUnpledgeStart(true), actionText: cdslUnpledgeStart ? 'Mark Unpledge Complete' : 'Start Unpledge' },
+                    { doc: 'Power of Attorney',    securityType: 'Cancellation / return pending',      status: securityComplete || poaReturned ? 'Cancelled' : 'Held in custody', onReturn: () => setPoaReturned(true) },
+                  ].map(item => (
+                    <div key={item.doc} className=\"flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 gap-4\">
+                      <div>
+                        <div className=\"text-sm font-medium text-slate-800\">{item.doc}</div>
+                        <div className=\"text-xs text-slate-400 mt-0.5\">{item.securityType}</div>
+                        {(item.status === 'Returned' || item.status === 'Unpledged') && <div className=\"text-xs text-green-600 mt-0.5\">Updated: {new Date().toLocaleDateString('en-IN')}</div>}
+                      </div>
+                      <div className=\"flex items-center gap-3\">
+                        <StatusBadge label={item.status} size=\"sm\" type={item.status.includes('Returned') || item.status.includes('Unpledged') ? 'success' : item.status.includes('Pending') ? 'warning' : 'default'} />
+                        {canComply && !item.status.includes('Returned') && !item.status.includes('Unpledged') && (
+                          <button onClick={item.onReturn} className=\"text-xs border border-slate-200 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors\">
+                            {item.actionText || 'Mark Returned'}
+                          </button>
+                        )}
+                      </div>
+                      {/* Sub-form inline for return details (prototype mock) */}
+                      {(item.status === 'Returned' || item.status === 'Unpledged') && (
+                        <div className=\"w-full md:w-auto text-[10px] text-slate-400 mt-1 md:mt-0 text-right space-y-0.5\">
+                          <div>Custody Loc: HO-Vault-3</div>
+                          <div>Ret to: {selectedLoan.borrower}</div>
+                          <div>Ack: Uploaded · Ref: SEC-2025</div>
+                          <div>By: {currentUser.name}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {canComply && (
+                  <button
+                    onClick={() => setSecurityReturnConfirmed(true)}
+                    disabled={!sh4Returned || !chequeReturned || !cdslUnpledged || !poaReturned}
+                    className=\"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50\"
+                  >
+                    <Shield size={16} />
+                    {securityReturnConfirmed ? 'Security Return Complete' : 'Confirm Security Return Complete'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Archive */}
+      {activeTab === 'archive' && (
+        <div className=\"max-w-2xl space-y-5\">
+          {(!nocComplete || !securityComplete) ? (
+            <div className=\"bg-white border border-slate-200 rounded-xl p-8 text-center\">
+              <Lock size={32} className=\"mx-auto text-slate-300 mb-3\" />
+              <div className=\"font-semibold text-slate-700\">Archive Locked</div>
+              <div className=\"text-sm text-slate-500 mt-1\">Archive locked until NOC and security return are complete.</div>
+            </div>
+          ) : (
+            <div className=\"bg-white border border-slate-200 rounded-xl p-6\">
+              <h3 className=\"font-semibold text-slate-900 mb-4 flex items-center gap-2\">
+                <Archive size={16} className=\"text-slate-600\" />
+                Loan Record Archival
+              </h3>
+              <p className=\"text-xs text-slate-500 mb-5\">
+                Archive loan records for 8 years after closure. Keep digital backup and physical file location.
+              </p>
+
+              <div className=\"space-y-3 mb-5\">
+                {[
+                  { category: 'Application & Appraisal Documents', count: 7, status: 'ready' },
+                  { category: 'Sanction Documents',                  count: 3, status: 'ready' },
+                  { category: 'Legal & Security Documents',          count: 5, status: 'ready' },
+                  { category: 'Disbursement Records',                count: 2, status: 'ready' },
+                  { category: 'Repayment Ledger',                    count: 1, status: 'ready' },
+                  { category: 'Compliance Records',                  count: 4, status: 'ready' },
+                ].map(cat => (
+                  <div key={cat.category} className=\"flex items-center justify-between p-3 border border-slate-100 rounded-lg\">
+                    <div>
+                      <div className=\"text-sm font-medium text-slate-800\">{cat.category}</div>
+                      <div className=\"text-xs text-slate-400 mt-0.5\">{cat.count} document{cat.count !== 1 ? 's' : ''}</div>
+                    </div>
+                    <StatusBadge label={cat.status} size=\"sm\" />
+                  </div>
+                ))}
+              </div>
+
+              <div className=\"bg-slate-50 rounded-xl p-4 mb-4 text-sm\">
+                <div className=\"grid grid-cols-2 gap-3\">
+                  <div><div className=\"text-slate-500 text-xs\">Total Documents</div><div className=\"font-semibold text-slate-900\">22</div></div>
+                  <div><div className=\"text-slate-500 text-xs\">Archive Retention</div><div className=\"font-semibold text-slate-900\">8 years (until {new Date().getFullYear() + 8})</div></div>
+                  <div><div className=\"text-slate-500 text-xs\">Closure Date</div><div className=\"font-semibold text-slate-900\">{new Date().toLocaleDateString('en-IN')}</div></div>
+                  <div><div className=\"text-slate-500 text-xs\">Archive Date</div><div className=\"font-semibold text-slate-900\">{archiveCompleted ? new Date().toLocaleDateString('en-IN') : 'Pending'}</div></div>
+                  <div><div className=\"text-slate-500 text-xs\">Archive Status</div><div className=\"font-semibold text-slate-900\">{archiveCompleted ? 'Archived' : 'Ready'}</div></div>
+                  <div><div className=\"text-slate-500 text-xs\">Archive ID</div><div className=\"font-semibold text-slate-900\">{archiveCompleted ? 'ARC-2025-042' : 'Not assigned'}</div></div>
+                  <div><div className=\"text-slate-500 text-xs\">Physical File Reference</div><div className=\"font-semibold text-slate-900\">{archiveCompleted ? 'Cabinet 3, Row 2' : 'Not assigned'}</div></div>
+                  <div><div className=\"text-slate-500 text-xs\">Digital Checksum</div><div className=\"font-mono text-[10px] text-slate-500 truncate\">sha256:8f4c2...</div></div>
+                </div>
+              </div>
+
+              {canComply && (completedCount === closureChecklist.length || loanMarkedClosed) && (
+                <div className=\"flex gap-3\">
+                  <button
+                    onClick={() => setArchiveCompleted(true)}
+                    className=\"flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors\"
+                  >
+                    <Archive size={16} />
+                    {archiveCompleted ? 'Loan Record Archived' : 'Archive Loan Record'}
+                  </button>
+                  <button className=\"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors\">
+                    <Download size={16} />
+                    Download Archive Package
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LoanClosureHub;
+"
+
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:356:31
+    354|   it('is the final mock-removal owner and contains no inline closure f…
+    355|     expect(closureSource).not.toMatch(/mockData|const\s+closureLoans\s…
+    356|     expect(closureSource).not.toMatch(/Asha Bhosale|Vijay Patil|Radha …
+       |                               ^
+    357|   });
+    358| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  8 failed | 2 passed (10)
+   Start at  00:39:34
+   Duration  5.61s (transform 269ms, setup 0ms, collect 515ms, tests 4.19s, environment 457ms, prepare 125ms)
+

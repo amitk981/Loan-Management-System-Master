@@ -1,0 +1,17 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/closure/LoanClosureHub.test.tsx src/services/recoveryApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_003342_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (4 tests) 5ms
+ ✓ src/pages/closure/LoanClosureHub.test.tsx (6 tests) 996ms
+   ✓ 011PC closure readiness and downstream owner wiring > issues NOC then renders the canonical refetch projection  360ms
+
+ Test Files  2 passed (2)
+      Tests  10 passed (10)
+   Start at  00:58:47
+   Duration  1.64s (transform 181ms, setup 0ms, collect 312ms, tests 1.00s, environment 216ms, prepare 71ms)
+

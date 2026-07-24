@@ -1,0 +1,29 @@
+# Final Candidate Checks
+
+## git diff --check
+DIFF_CHECK_EXIT=0
+
+## Product mock scan
+MOCK_SCAN_EXIT=0
+
+## Changed-line budget
+tracked_additions=1268
+tracked_deletions=451
+tracked_changed_lines=1719
+untracked_product_test_lines=281
+candidate_changed_lines=2000
+DIFF_LIMIT_EXIT=0
+
+## Protected path check
+PROTECTED_PATH_EXIT=0
+DIFF_CHECK_EXIT=0
+DUPLICATE_ASSUMPTION_IDS=A-134
+A-135
+# Final Candidate Checks (scoped rerun)
+DIFF_CHECK_EXIT=0
+A257_TABLE_ROWS=1
+A257_UNIQUENESS_EXIT=0
+candidate_changed_lines=2000
+DIFF_LIMIT_EXIT=0
+REVIEW_RESULT=Ready for independent validation
+REVIEW_RESULT_EXIT=0

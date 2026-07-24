@@ -1,0 +1,30 @@
+011PC browser-domain repair diagnostics
+
+Bundled/system resolution:
+{"bundledExecutable":"/Users/amitkallapa/Library/Caches/ms-playwright/chromium-1148/chrome-mac/Chromium.app/Contents/MacOS/Chromium","bundledExists":false,"systemChromeExists":true}
+
+Agent-runnable tight probe:
+npm run e2e:probe
+
+Observed result:
+Running 1 test using 1 worker
+browser-launch.probe.ts: the centrally selected browser can create a page
+Error: browserType.launch: Target page, context or browser has been closed
+Selected executable: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+
+Exact declared contract:
+RALPH_EVIDENCE_DIR=<repair-run>/evidence/screenshots/agent-probe E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/default-closure-compliance-staff.e2e.spec.ts
+
+Observed result:
+The command did not reach Playwright test execution output or create the declared screenshot in the
+coding sandbox. No S58-S61 page assertion ran.
+
+Direct CDP diagnostic:
+Google Chrome --headless=new --remote-debugging-port=9223 followed by chromium.connectOverCDP
+
+Observed result:
+browserType.connectOverCDP: connect ECONNREFUSED 127.0.0.1:9223
+
+Interpretation:
+Agent-side browser launch is unavailable before application execution. Ralph's orchestrator probe
+for this repair run passed outside this diagnostic context; trusted validation remains authoritative.

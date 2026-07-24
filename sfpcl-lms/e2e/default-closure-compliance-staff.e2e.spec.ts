@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) {
-  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PB staff acceptance contract');
+  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PB/011PC staff acceptance contract');
 }
 fs.mkdirSync(evidenceDir, { recursive: true });
 
@@ -33,6 +33,12 @@ test.beforeEach(async ({ page }) => {
     return ok(route, decided ? decidedDefaultCase : defaultCase);
   });
   await page.route('**/api/v1/approval-cases/approval-browser-011pb/', route => ok(route, approvalCase));
+  await page.route('**/api/v1/loan-accounts/**', route => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/v1/loan-accounts/') return listOk(route, [closureAccount]);
+    if (url.pathname.endsWith('/closure-readiness/')) return ok(route, blockedClosureReadiness);
+    return route.fallback();
+  });
 });
 
 test('S56 records the server-fixed recovery decision and canonical S57 availability', async ({ page }) => {
@@ -83,6 +89,34 @@ test('S56 records the server-fixed recovery decision and canonical S57 availabil
   });
 });
 
+test('S58-S61 show named server readiness blockers and keep NOC blocked', async ({ page }) => {
+  const mutations: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname.includes('/api/v1/') && request.method() !== 'GET') {
+      mutations.push(`${request.method()} ${url.pathname}`);
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Closure & Archive' }).click();
+  await expect(page.getByRole('heading', { name: 'Loan Closure & Archive' })).toBeVisible();
+  await expect(page.getByText('LN-BROWSER-CLOSURE-001', { exact: true })).toBeVisible();
+  await expect(page.getByText('Interest Paid Or Approved Adjustment')).toBeVisible();
+  await expect(page.getByText('Ledger Reconciled')).toBeVisible();
+  await expect(page.getByText('Security Tasks Identified')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close Loan Financially' })).toBeDisabled();
+  await page.getByRole('button', { name: 'NOC Generation' }).click();
+  await expect(page.getByText('NOC remains blocked until the backend creates a financially-closed loan identity.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Issue NOC' })).toHaveCount(0);
+  expect(mutations).toEqual([]);
+  await page.screenshot({
+    path: path.join(evidenceDir, 'closure-readiness-blockers.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+});
+
 async function openDefaultWorkbench(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Default & Recovery' }).click();
@@ -126,10 +160,13 @@ const creditManager = {
   role_codes: ['credit_manager'],
   team_codes: ['credit_assessment'],
   permissions: [
+    'finance.loan_account.read',
     'defaults.case.read',
     'defaults.assessment.create',
     'defaults.extension.grant',
     'recovery.decision.create',
+    'closure.readiness.read',
+    'closure.loan.close',
   ],
   available_actions: [],
 };
@@ -265,4 +302,32 @@ const decidedDefaultCase = {
   default_case_status: 'recovery_approved',
   recovery_decision: approvedDecision,
   recovery_decision_control: null,
+};
+
+const closureAccount = {
+  loan_account_id: 'loan-browser-011pc', loan_account_number: 'LN-BROWSER-CLOSURE-001',
+  loan_application_id: 'application-browser-011pc', application_reference_number: 'APP-BROWSER-011PC',
+  member: { member_id: 'member-browser-011pc', display_name: 'Seeded Closure Browser Member' },
+  sap_customer_code: 'SAP-BROWSER-011PC', loan_type: 'term_loan', facility_type: 'term_loan',
+  interest_rate_type: 'fixed', current_interest_rate: '8.5000', sanctioned_amount: '500000.00',
+  disbursed_amount: '500000.00', principal_outstanding: '0.00', interest_outstanding: '125.00',
+  charges_outstanding: '0.00', total_outstanding: '125.00', loan_account_status: 'partially_repaid',
+  tenure_start_date: '2025-01-01', tenure_end_date: '2026-07-25', repayment_date: '2026-07-25',
+  tenure_months: 18, created_at: '2025-01-01T10:00:00Z', activated_at: '2025-01-02T10:00:00Z',
+};
+
+const blockedClosureReadiness = {
+  loan_account_id: closureAccount.loan_account_id, ready_for_closure: false,
+  checks: [
+    { code: 'principal_paid', status: 'pass' },
+    { code: 'interest_paid_or_approved_adjustment', status: 'fail' },
+    { code: 'charges_paid', status: 'pass' },
+    { code: 'ledger_reconciled', status: 'fail' },
+    { code: 'recovery_clear', status: 'pass' },
+    { code: 'security_tasks_identified', status: 'pass', security_return_required: true },
+  ],
+  principal_outstanding: '0.00', interest_outstanding: '125.00', charges_outstanding: '0.00',
+  total_outstanding: '125.00', interest_adjustment_applied: false, security_return_required: true,
+  physical_share_return_required: true, demat_unpledge_required: false,
+  blank_cheque_return_required: true, poa_release_required: false,
 };

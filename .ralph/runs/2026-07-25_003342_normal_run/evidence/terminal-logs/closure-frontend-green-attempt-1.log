@@ -1,0 +1,1943 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/recoveryApi.test.ts src/pages/closure/LoanClosureHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_003342_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (4 tests) 5ms
+ ❯ src/pages/closure/LoanClosureHub.test.tsx (6 tests | 4 failed) 1647ms
+   × 011PC closure readiness and downstream owner wiring > renders named server blockers and keeps NOC unavailable before financial closure 46ms
+     → Found multiple elements with the text: ₹125.00
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"font-semibold text-slate-900 mt-1"[39m
+[36m>[39m
+  [0m₹125.00[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"font-semibold text-slate-900 mt-1"[39m
+[36m>[39m
+  [0m₹125.00[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 9v4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 17h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mBlocked[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs ...
+   ✓ 011PC closure readiness and downstream owner wiring > renders loading, empty, unauthorized, and general error states 22ms
+   × 011PC closure readiness and downstream owner wiring > validates notes, closes from server readiness, and refetches canonical downstream reads 1014ms
+     → Unable to find an element with the text: Ready for closure. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mReady For Closure[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mReadiness[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mReady For Closure[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mReadiness[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-...
+   × 011PC closure readiness and downstream owner wiring > issues NOC then renders the canonical refetch projection 412ms
+     → Found multiple elements with the text: Queued
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<p[39m
+  [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+[36m>[39m
+  [0mQueued[0m
+[36m</p>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+[36m>[39m
+  [0mQueued[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-green-50 border-green-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-circle-check text-green-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-green-900"[39m
+            [36m>[39m
+              [0mClosure workflow updated[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm mt-0.5 text-green-700"[39m
+            [36m>[39m
+              [0mNOC issued from canonical backend state.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mFinancially Closed[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mReadiness[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mReady[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mFinancial close[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mFinancially Closed[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mNOC[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mQueued[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mSecurity return[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mPending[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mArchive[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mPending[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"max-w-3xl bg-white border border-slate-200 rounded-xl p-6"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"font-semibold text-slate-900 mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-badge-check text-green-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNo Objection Certificate[0m
+        [36m</h3>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mNOC ID[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mnoc-011pc[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mLoan account[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mBorrower[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mClosure Test Member[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mIssued at[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0m2026-07-25T10:15:00Z[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mDelivery mode[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mEmail[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mDelivery status[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mQueued[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mDocument ID[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mdocument-011pc[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mSignatory role[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mCompany Secretary[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × 011PC closure readiness and downstream owner wiring > records server-owned security state and archives only after downstream prerequisites 153ms
+     → Expected repeat modifier or release modifier or "}" but found "s" in "{"security_package_id":"package-011pc","expected_version":0,"items":[]}"
+    See https://testing-library.com/docs/user-event/keyboard
+    for more information about how userEvent parses your input.
+   ✓ 011PC closure readiness and downstream owner wiring > is the final mock-removal owner and contains no inline closure fixtures 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > renders named server blockers and keeps NOC unavailable before financial closure
+TestingLibraryElementError: Found multiple elements with the text: ₹125.00
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"font-semibold text-slate-900 mt-1"[39m
+[36m>[39m
+  [0m₹125.00[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"font-semibold text-slate-900 mt-1"[39m
+[36m>[39m
+  [0m₹125.00[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-red-50 text-red-900 border-red-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-triangle-alert"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 9v4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 17h.01"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mBlocked[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs ...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:229:19
+    227|     expect(screen.getByText('Interest Paid Or Approved Adjustment')).t…
+    228|     expect(screen.getByText('Failed')).toBeTruthy();
+    229|     expect(screen.getByText('₹125.00')).toBeTruthy();
+       |                   ^
+    230|     expect(screen.getByRole('button', { name: 'Close Loan Financially'…
+    231| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > validates notes, closes from server readiness, and refetches canonical downstream reads
+TestingLibraryElementError: Unable to find an element with the text: Ready for closure. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mReady For Closure[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mReadiness[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mReady For Closure[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mReadiness[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:270:25
+    268| 
+    269|     render(<LoanClosureHub />);
+    270|     expect(await screen.findByText('Ready for closure')).toBeTruthy();
+       |                         ^
+    271|     await userEvent.click(screen.getByRole('button', { name: 'Close Lo…
+    272|     expect(screen.getByText('Closure notes are required.')).toBeTruthy…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > issues NOC then renders the canonical refetch projection
+TestingLibraryElementError: Found multiple elements with the text: Queued
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<p[39m
+  [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+[36m>[39m
+  [0mQueued[0m
+[36m</p>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+[36m>[39m
+  [0mQueued[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mLoan Closure & Archive[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+        [36m>[39m
+          [0mReview server-owned readiness, issue NOC, return security, and retain the archive manifest.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"text-left border rounded-xl p-4 transition-all border-green-300 bg-green-50"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-xs font-mono font-medium text-slate-600"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"10"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"10"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mPartially Repaid[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"font-medium text-slate-900 text-sm"[39m
+          [36m>[39m
+            [0mClosure Test Member[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0m₹125.00[0m
+            [0m account outstanding[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mClosure Checklist[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNOC Generation[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSecurity Return / Unpledge[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mArchive[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border px-4 py-3 bg-green-50 border-green-200"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-start gap-2.5"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-circle-check text-green-600 flex-shrink-0 mt-0.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 min-w-0"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-green-900"[39m
+            [36m>[39m
+              [0mClosure workflow updated[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm mt-0.5 text-green-700"[39m
+            [36m>[39m
+              [0mNOC issued from canonical backend state.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between gap-3 mb-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900"[39m
+            [36m>[39m
+              [0mClosure status[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+            [36m>[39m
+              [0mCurrent canonical projections for the selected loan.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"10"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"10"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mFinancially Closed[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-5 gap-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mReadiness[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mReady[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mFinancial close[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mFinancially Closed[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mNOC[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mQueued[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mSecurity return[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mPending[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg bg-slate-50 border border-slate-100 p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs font-semibold text-slate-700"[39m
+            [36m>[39m
+              [0mArchive[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-2"[39m
+            [36m>[39m
+              [0mPending[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"max-w-3xl bg-white border border-slate-200 rounded-xl p-6"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"font-semibold text-slate-900 mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-badge-check text-green-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNo Objection Certificate[0m
+        [36m</h3>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mNOC ID[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mnoc-011pc[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mLoan account[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mLN-CLOSURE-011PC[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mBorrower[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mClosure Test Member[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mIssued at[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0m2026-07-25T10:15:00Z[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mDelivery mode[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mEmail[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mDelivery status[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mQueued[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mDocument ID[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mdocument-011pc[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500"[39m
+            [36m>[39m
+              [0mSignatory role[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-medium text-slate-900 mt-1 break-all"[39m
+            [36m>[39m
+              [0mCompany Secretary[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:316:19
+    314|     }));
+    315|     expect(await screen.findByText('NOC issued from canonical backend …
+    316|     expect(screen.getByText('Queued')).toBeTruthy();
+       |                   ^
+    317|     expect(screen.getByText(noc.noc_id)).toBeTruthy();
+    318|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/pages/closure/LoanClosureHub.test.tsx > 011PC closure readiness and downstream owner wiring > records server-owned security state and archives only after downstream prerequisites
+Error: Expected repeat modifier or release modifier or "}" but found "s" in "{"security_package_id":"package-011pc","expected_version":0,"items":[]}"
+    See https://testing-library.com/docs/user-event/keyboard
+    for more information about how userEvent parses your input.
+ ❯ readTag node_modules/@testing-library/user-event/dist/esm/utils/keyDef/readNextDescriptor.js:56:15
+ ❯ readNextDescriptor node_modules/@testing-library/user-event/dist/esm/utils/keyDef/readNextDescriptor.js:24:66
+ ❯ parseKeyDef node_modules/@testing-library/user-event/dist/esm/keyboard/parseKeyDef.js:16:99
+ ❯ Object.keyboard node_modules/@testing-library/user-event/dist/esm/keyboard/index.js:6:21
+ ❯ Object.type node_modules/@testing-library/user-event/dist/esm/utility/type.js:15:16
+ ❯ Object.asyncWrapper node_modules/@testing-library/react/dist/pure.js:88:22
+ ❯ src/pages/closure/LoanClosureHub.test.tsx:336:5
+    334| 
+    335|     await userEvent.click(screen.getByRole('button', { name: 'Security…
+    336|     await userEvent.type(screen.getByLabelText('Security return payloa…
+       |     ^
+    337|       security_package_id: 'package-011pc',
+    338|       expected_version: 0,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 6 passed (10)
+   Start at  00:43:41
+   Duration  2.48s (transform 197ms, setup 0ms, collect 358ms, tests 1.65s, environment 324ms, prepare 76ms)
+
+
+GREEN_ATTEMPT_1_EXIT_STATUS=1

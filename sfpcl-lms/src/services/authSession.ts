@@ -204,6 +204,7 @@ export const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
   'closure.readiness.read': 'manage_closure',
   'closure.loan.close': 'manage_closure',
   'closure.noc.issue': 'manage_closure',
+  'closure.security_return.record': 'manage_closure',
   'closure.archive.read': 'manage_closure',
   'closure.archive.create': 'manage_closure',
   'compliance.control.read': 'view_compliance',

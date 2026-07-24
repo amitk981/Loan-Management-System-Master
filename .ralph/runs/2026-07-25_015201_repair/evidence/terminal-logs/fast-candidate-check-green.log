@@ -1,0 +1,23 @@
+# Artifact Quality Check
+
+- PASS: execution-plan.md was filled in.
+- PASS: risk-assessment.md was filled in.
+# Agent-Declared Result Check
+
+- PASS: review-packet.md declares the exact ready result and remains mergeable.
+# Diff Limits Results
+
+- Files changed (excluding .ralph/): 7 (limit 30)
+- Lines changed (tracked + new files, excluding .ralph/): 2000 (limit 2000)
+- New dependencies: 0 (limit 4)
+- New database migrations: 0 (limit 1)
+- PASS: within diff limits.
+# Protected Paths Check
+
+- PASS: no protected paths were modified.
+# Candidate Fast Check Results
+
+Checks ran before all expensive validation lanes.
+
+PASS: candidate is eligible for expensive validation gates.
+FAST_CANDIDATE_CHECK_EXIT=0

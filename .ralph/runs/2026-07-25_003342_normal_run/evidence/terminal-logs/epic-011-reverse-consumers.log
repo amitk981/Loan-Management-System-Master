@@ -1,0 +1,21 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/recoveryApi.test.ts src/pages/defaults/DefaultRecoveryHub.test.tsx src/pages/closure/LoanClosureHub.test.tsx src/pages/compliance/AuditorEpic011View.test.tsx src/services/navigationPermissions.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_003342_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (4 tests) 10ms
+ ✓ src/services/navigationPermissions.test.ts (9 tests) 12ms
+ ✓ src/pages/compliance/AuditorEpic011View.test.tsx (4 tests) 149ms
+ ✓ src/pages/defaults/DefaultRecoveryHub.test.tsx (11 tests) 741ms
+ ✓ src/pages/closure/LoanClosureHub.test.tsx (6 tests) 963ms
+
+ Test Files  5 passed (5)
+      Tests  34 passed (34)
+   Start at  00:50:48
+   Duration  1.97s (transform 549ms, setup 0ms, collect 1.45s, tests 1.88s, environment 1.12s, prepare 272ms)
+
+
+REVERSE_CONSUMERS_EXIT_STATUS=0

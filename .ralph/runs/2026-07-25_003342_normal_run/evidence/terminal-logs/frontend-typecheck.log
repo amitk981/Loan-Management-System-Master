@@ -1,0 +1,6 @@
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+TYPECHECK_EXIT_STATUS=0

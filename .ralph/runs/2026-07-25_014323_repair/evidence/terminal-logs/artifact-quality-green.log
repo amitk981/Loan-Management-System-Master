@@ -1,0 +1,54 @@
+011PC artifact-quality repair feedback loop
+Run: 2026-07-25_014323_repair
+Mode: repair
+
+RED evidence
+------------
+The immediately preceding validator recorded:
+
+artifact-quality-check.md:- FAIL: execution-plan.md is still the unfilled template.
+artifact-quality-check.md:- FAIL: risk-assessment.md is still the unfilled template.
+agent-declared-result-check.md:- FAIL: review-packet.md must declare the exact result
+'Ready for independent validation' and remain mergeable (Result: In Progress).
+
+Source:
+.ralph/runs/2026-07-25_014243_repair/failure-summary.md
+
+GREEN command
+-------------
+The current artifacts were copied into an ephemeral run directory with a temporary placeholder for
+the orchestrator-owned changed-files.txt, then the authoritative Bash function was invoked:
+
+ralph_run_fast_candidate_checks \
+  "$repo_root" \
+  "$probe_dir" \
+  "$repo_root/.ralph/config.yaml" \
+  repair \
+  011PC-closure-frontend-wiring \
+  0
+
+The function was sourced from scripts/lib/ralph-fast-candidate-checks.sh under /bin/bash, matching
+the validator's shebang. The ephemeral directory was removed on command exit.
+
+GREEN output
+------------
+# Artifact Quality Check
+
+- PASS: execution-plan.md was filled in.
+- PASS: risk-assessment.md was filled in.
+
+# Agent-Declared Result Check
+
+- PASS: review-packet.md declares the exact ready result and remains mergeable.
+
+# Candidate Fast Check Results
+
+Checks ran before all expensive validation lanes.
+
+PASS: candidate is eligible for expensive validation gates.
+
+Targeted cleanup check
+----------------------
+The current execution plan, risk assessment, review packet, and final summary contain no unfilled
+template markers or `In Progress` result. Exactly one `## Result` heading is present, followed by
+`Ready for independent validation`. `git diff --check` for the current run folder passed.

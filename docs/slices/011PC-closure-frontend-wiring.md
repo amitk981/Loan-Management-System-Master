@@ -1,7 +1,7 @@
 # Slice 011PC: Closure, NOC, Security Return, and Archive Staff Frontend Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `011P`
