@@ -1,0 +1,18 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/compliance/GrievancesHub.test.tsx src/pages/compliance/AuditArchiveHub.test.tsx src/services/recoveryApi.test.ts src/services/authSession.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_032730_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (8 tests) 8ms
+ ✓ src/services/authSession.test.ts (40 tests) 29ms
+ ✓ src/pages/compliance/AuditArchiveHub.test.tsx (3 tests) 219ms
+ ✓ src/pages/compliance/GrievancesHub.test.tsx (3 tests) 416ms
+
+ Test Files  4 passed (4)
+      Tests  54 passed (54)
+   Start at  03:53:01
+   Duration  1.26s (transform 339ms, setup 0ms, collect 822ms, tests 672ms, environment 668ms, prepare 174ms)
+

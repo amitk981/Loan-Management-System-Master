@@ -1,4 +1,9 @@
-import { authenticatedMultipartRequest, authenticatedPaginatedRequest, authenticatedRequest } from './authSession';
+import {
+  authenticatedAllPagesRequest,
+  authenticatedMultipartRequest,
+  authenticatedPaginatedRequest,
+  authenticatedRequest,
+} from './authSession';
 
 export interface DefaultAssessmentProjection {
   default_assessment_id: string;
@@ -262,6 +267,49 @@ export interface ArchiveRecordProjection {
   available_actions: string[];
 }
 
+export interface GrievanceHistoryProjection {
+  sequence: number;
+  event_type: string;
+  previous_status: string | null;
+  new_status: string;
+  note: string;
+  created_at: string;
+}
+
+export interface GrievanceProjection {
+  grievance_id: string;
+  grievance_reference: string;
+  member_id: string;
+  loan_account_id: string | null;
+  loan_application_id: string | null;
+  default_case_id: string | null;
+  recovery_action_id: string | null;
+  grievance_category: string;
+  subject: string;
+  description: string;
+  received_date: string;
+  received_channel: string;
+  assigned_to_user_id: string;
+  resolution_due_date: string;
+  status: string;
+  tat_days: number;
+  days_overdue: number;
+  is_overdue: boolean;
+  resolution_summary: string;
+  closed_at: string | null;
+  borrower_informed: boolean;
+  borrower_acknowledged: boolean;
+  supporting_document_ids?: string[];
+  resolution_document_id?: string | null;
+  internal_notes?: string;
+  borrower_acknowledgement?: string;
+  escalation_count?: number;
+  notice_communication_id?: string | null;
+  notice_delivery_status?: string | null;
+  history: GrievanceHistoryProjection[];
+  available_actions?: string[];
+}
+
 export interface ComplianceControlProjection {
   compliance_control_id: string;
   control_code: string;
@@ -507,6 +555,49 @@ export const archiveLoanFile = (
       file_location_physical: input.file_location_physical,
       file_location_digital: input.file_location_digital,
     },
+    headers: { 'Idempotency-Key': input.idempotency_key },
+  },
+);
+
+export const fetchArchiveRecords = (search = '') =>
+  authenticatedAllPagesRequest<ArchiveRecordProjection>(
+    page => `/api/v1/archive-records/?page=${page}&page_size=100${
+      search.trim() ? `&search=${encodeURIComponent(search.trim())}` : ''
+    }`,
+  );
+
+export interface ArchiveManifestDownload {
+  fileName: string;
+  content: Blob;
+}
+
+export const downloadArchiveManifest = async (
+  archive: ArchiveRecordProjection,
+): Promise<ArchiveManifestDownload> => {
+  const canonical = await fetchArchiveRecord(archive.loan_closure_id);
+  return {
+    fileName: `archive-manifest-${canonical.archive_record_id}.json`,
+    content: new Blob([JSON.stringify(canonical, null, 2)], { type: 'application/json' }),
+  };
+};
+
+export const fetchGrievances = () =>
+  authenticatedAllPagesRequest<GrievanceProjection>(
+    page => `/api/v1/grievances/?page=${page}&page_size=100`,
+  );
+
+export const resolveGrievance = (
+  grievanceId: string,
+  input: {
+    status: 'resolved';
+    reason: string;
+    idempotency_key: string;
+  },
+) => authenticatedRequest<GrievanceProjection>(
+  `/api/v1/grievances/${grievanceId}/resolve/`,
+  {
+    method: 'POST',
+    body: { resolution_summary: input.reason },
     headers: { 'Idempotency-Key': input.idempotency_key },
   },
 );

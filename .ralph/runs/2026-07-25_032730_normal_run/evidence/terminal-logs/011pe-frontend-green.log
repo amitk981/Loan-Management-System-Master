@@ -1,0 +1,18 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/services/recoveryApi.test.ts src/pages/compliance/GrievancesHub.test.tsx src/pages/compliance/AuditArchiveHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_032730_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (8 tests) 8ms
+ ✓ src/pages/compliance/AuditArchiveHub.test.tsx (3 tests) 219ms
+ ✓ src/pages/compliance/GrievancesHub.test.tsx (3 tests) 400ms
+   ✓ 011PE grievance register owner wiring > requires a projected status and reason, resolves, then refetches canonical state  315ms
+
+ Test Files  3 passed (3)
+      Tests  14 passed (14)
+   Start at  03:36:54
+   Duration  1.25s (transform 259ms, setup 0ms, collect 665ms, tests 627ms, environment 710ms, prepare 123ms)
+

@@ -354,14 +354,15 @@
     "011PA-default-case-notes-frontend-wiring",
     "011PB-recovery-decision-frontend-wiring",
     "011PC-closure-frontend-wiring",
-    "011PD-compliance-frontend-wiring"
+    "011PD-compliance-frontend-wiring",
+    "011PE-grievance-audit-archive-frontend-wiring"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-25_025600_normal_run",
+  "last_run_id": "2026-07-25_035717_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 37,
+  "slices_completed_since_architecture_review": 38,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
@@ -594,5 +595,5 @@
     "attempt": 1,
     "status": "pending"
   },
-  "architecture_review_due_reason": "terminal_repair:ROOT-010-REMINDER-DELIVERY-OWNER+epic_boundary:003->010"
+  "architecture_review_due_reason": "terminal_repair:ROOT-010-REMINDER-DELIVERY-OWNER+epic_boundary:003->010+epic_boundary:011->010"
 }

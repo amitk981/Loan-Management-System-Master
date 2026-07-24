@@ -1,0 +1,1893 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/services/recoveryApi.test.ts src/pages/compliance/GrievancesHub.test.tsx src/pages/compliance/AuditArchiveHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_032730_normal_run/sfpcl-lms
+
+ ❯ src/services/recoveryApi.test.ts (8 tests | 2 failed) 11ms
+   ✓ 011PA default case read contracts > uses the list and selected-detail endpoints and preserves frozen note facts 2ms
+   ✓ 011PB recovery decision contracts > reads the note-linked approval and posts only its identifier, action, and mandatory reason 1ms
+   ✓ 011PC closure staff contracts > reads readiness and posts financial closure with a stable idempotency identity 1ms
+   ✓ 011PC closure staff contracts > issues NOC, records security return, and archives through exact owner endpoints 1ms
+   ✓ 011PD compliance staff contracts > loads every S62-S67 projection through its canonical read endpoint 1ms
+   ✓ 011PD compliance staff contracts > posts only the projected evidence and statutory review fields 0ms
+   × 011PE grievance and archive staff contracts > loads every grievance page, resolves through the projected action, and preserves idempotency 3ms
+     → fetchGrievances is not a function
+   × 011PE grievance and archive staff contracts > loads archive manifests and creates a download only after an audited canonical detail read 0ms
+     → fetchArchiveRecords is not a function
+ ❯ src/pages/compliance/AuditArchiveHub.test.tsx (3 tests | 3 failed) 23ms
+   × 011PE audit archive owner wiring > renders canonical archive records as a read-only surface without owned fixtures 17ms
+     → can is not a function
+   × 011PE audit archive owner wiring > downloads only after the governed audited detail read and supports canonical search refetch 3ms
+     → can is not a function
+   × 011PE audit archive owner wiring > renders empty, unauthorized, general error, and download failure states 3ms
+     → can is not a function
+ ❯ src/pages/compliance/GrievancesHub.test.tsx (3 tests | 3 failed) 2113ms
+   × 011PE grievance register owner wiring > renders canonical grievance facts and removes the owned mock surface 81ms
+     → Unable to find an element with the text: Loading grievances…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+   × 011PE grievance register owner wiring > requires a projected status and reason, resolves, then refetches canonical state 1016ms
+     → Unable to find role="button" and name "Resolve GRV-2026-001"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+   × 011PE grievance register owner wiring > renders empty, unauthorized, general error, and blocked action states 1014ms
+     → Unable to find an element with the text: No grievances found in this view.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/recoveryApi.test.ts > 011PE grievance and archive staff contracts > loads every grievance page, resolves through the projected action, and preserves idempotency
+TypeError: fetchGrievances is not a function
+ ❯ src/services/recoveryApi.test.ts:394:18
+    392|     vi.stubGlobal('fetch', fetchMock);
+    393| 
+    394|     await expect(fetchGrievances()).resolves.toMatchObject({
+       |                  ^
+    395|       items: [grievance],
+    396|       totalCount: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/services/recoveryApi.test.ts > 011PE grievance and archive staff contracts > loads archive manifests and creates a download only after an audited canonical detail read
+TypeError: fetchArchiveRecords is not a function
+ ❯ src/services/recoveryApi.test.ts:454:18
+    452|     vi.stubGlobal('fetch', fetchMock);
+    453| 
+    454|     await expect(fetchArchiveRecords('loan-1')).resolves.toMatchObject…
+       |                  ^
+    455|       items: [archive],
+    456|       totalCount: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/pages/compliance/AuditArchiveHub.test.tsx > 011PE audit archive owner wiring > renders canonical archive records as a read-only surface without owned fixtures
+ FAIL  src/pages/compliance/AuditArchiveHub.test.tsx > 011PE audit archive owner wiring > downloads only after the governed audited detail read and supports canonical search refetch
+ FAIL  src/pages/compliance/AuditArchiveHub.test.tsx > 011PE audit archive owner wiring > renders empty, unauthorized, general error, and download failure states
+TypeError: can is not a function
+ ❯ AuditArchiveHub src/pages/compliance/AuditArchiveHub.tsx:20:122
+     18|   const isAdmin = currentUser.role === 'admin';
+     19|   const canArchive = ['company_secretary', 'admin'].includes(currentUs…
+     20|   const canExport = ['admin', 'company_secretary', 'cfo', 'compliance_…
+       |                                                                                                                          ^
+     21| 
+     22|   return (
+ ❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:20
+ ❯ renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:22
+ ❯ updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:19
+ ❯ beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11778:18
+ ❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:874:13
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:22
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:41
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:11
+ ❯ performWorkOnRoot node_modules/react-dom/cjs/react-dom-client.development.js:16583:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/pages/compliance/GrievancesHub.test.tsx > 011PE grievance register owner wiring > renders canonical grievance facts and removes the owned mock surface
+TestingLibraryElementError: Unable to find an element with the text: Loading grievances…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/compliance/GrievancesHub.test.tsx:83:19
+     81|     render(<GrievancesHub />);
+     82| 
+     83|     expect(screen.getByText('Loading grievances…')).toBeTruthy();
+       |                   ^
+     84|     expect(await screen.findByText('GRV-2026-001')).toBeTruthy();
+     85|     expect(screen.getByText('Recovery conduct complaint')).toBeTruthy(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/pages/compliance/GrievancesHub.test.tsx > 011PE grievance register owner wiring > requires a projected status and reason, resolves, then refetches canonical state
+TestingLibraryElementError: Unable to find role="button" and name "Resolve GRV-2026-001"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/compliance/GrievancesHub.test.tsx:118:40
+    116| 
+    117|     render(<GrievancesHub />);
+    118|     await userEvent.click(await screen.findByRole('button', { name: 'R…
+       |                                        ^
+    119|     await userEvent.click(screen.getByRole('button', { name: 'Submit R…
+    120|     expect(screen.getByText('Resolution status is required.')).toBeTru…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/pages/compliance/GrievancesHub.test.tsx > 011PE grievance register owner wiring > renders empty, unauthorized, general error, and blocked action states
+TestingLibraryElementError: Unable to find an element with the text: No grievances found in this view.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square-warning text-amber-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15h.01"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mGrievances[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mTrack borrower complaints, TAT, assignment, resolution and closure.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary flex items-center gap-2 text-sm"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-plus"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12h14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5v14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mNew Grievance[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-4 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOpen Grievances[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mOverdue TAT[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-red-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRecovery-related[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-amber-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mResolved in 30d[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-octagon-alert text-red-600 mt-0.5"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"18"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"18"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 16h.01"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M12 8v4"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-semibold text-red-900"[39m
+          [36m>[39m
+            [0mAttention Required[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-red-700 mt-0.5"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mgrievance[0m
+            [0m overdue. [0m
+            [0mRecovery-related complaints require CS review.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/compliance/GrievancesHub.test.tsx:148:25
+    146|     });
+    147|     const empty = render(<GrievancesHub />);
+    148|     expect(await screen.findByText('No grievances found in this view.'…
+       |                         ^
+    149|     empty.unmount();
+    150| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  8 failed | 6 passed (14)
+   Start at  03:33:38
+   Duration  3.43s (transform 398ms, setup 0ms, collect 880ms, tests 2.15s, environment 873ms, prepare 143ms)
+

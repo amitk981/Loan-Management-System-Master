@@ -417,6 +417,12 @@ describe('member portal auth API flow', () => {
 
 describe('backend current-user mapping', () => {
   it('maps recovery execution permissions to the default/recovery workspace', () => { expect(mapCanonicalPermissions(['recovery.action.initiate', 'recovery.action.complete'])).toEqual(['manage_defaults']); });
+  it('maps archive read and grievance read to their reachable staff workspaces', () => {
+    expect(mapCanonicalPermissions([
+      'closure.archive.read',
+      'compliance.grievance.read',
+    ])).toEqual(['view_audit', 'view_compliance']);
+  });
   it('uses roles and teams objects for display and derives compatibility codes from those arrays', () => {
     const user = mapBackendUserToFrontendUser(currentUserEnvelope.data);
 

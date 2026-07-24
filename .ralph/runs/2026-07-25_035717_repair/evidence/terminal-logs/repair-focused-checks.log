@@ -1,0 +1,10 @@
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+Listing tests:
+  [chromium] › default-closure-compliance-staff.e2e.spec.ts:68:5 › S53-S57 render governed notes, record the decision, and open canonical recovery execution
+  [chromium] › default-closure-compliance-staff.e2e.spec.ts:124:5 › S58-S61 show named server readiness blockers and keep NOC blocked
+  [chromium] › default-closure-compliance-staff.e2e.spec.ts:156:5 › S62-S67 show canonical compliance trackers and keep auditor access read-only
+  [chromium] › default-closure-compliance-staff.e2e.spec.ts:187:5 › S68 resolves a canonical grievance and reads archive manifests without mutation controls
+Total: 4 tests in 1 file

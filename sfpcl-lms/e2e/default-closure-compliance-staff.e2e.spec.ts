@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) {
-  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PB/011PC/011PD staff acceptance contract');
+  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PE staff acceptance contract');
 }
 fs.mkdirSync(evidenceDir, { recursive: true });
 
@@ -46,9 +46,26 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/v1/kyc-reviews/**', route => listOk(route, [kycReview]));
   await page.route('**/api/v1/reports/money-lending-review/**', route => listOk(route, [moneyLendingReview]));
   await page.route('**/api/v1/reports/stamp-duty/**', route => listOk(route, [stampDutyRecord]));
+  let grievanceResolved = false;
+  await page.route('**/api/v1/grievances/**', route => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/v1/grievances/') {
+      return listOk(route, [grievanceResolved ? resolvedGrievance : grievance]);
+    }
+    if (url.pathname.endsWith('/resolve/')) {
+      grievanceResolved = true;
+      return ok(route, resolvedGrievance);
+    }
+    return ok(route, grievanceResolved ? resolvedGrievance : grievance);
+  });
+  await page.route('**/api/v1/archive-records/**', route => listOk(route, [archiveRecord]));
+  await page.route(
+    '**/api/v1/loan-closures/closure-browser-011pe/archive/',
+    route => ok(route, archiveRecord),
+  );
 });
 
-test('S56 records the server-fixed recovery decision and canonical S57 availability', async ({ page }) => {
+test('S53-S57 render governed notes, record the decision, and open canonical recovery execution', async ({ page }) => {
   const mutations: string[] = [];
   page.on('request', request => {
     const url = new URL(request.url());
@@ -77,6 +94,11 @@ test('S56 records the server-fixed recovery decision and canonical S57 availabil
   await expect(nonPaymentNote.getByRole('button')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Recovery Approval' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Security Invocation' })).toBeDisabled();
+  await page.screenshot({
+    path: path.join(evidenceDir, 'default-case-workbench.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
   await page.getByRole('button', { name: 'Recovery Approval' }).click();
   await expect(page.getByText('Browser Committee Approver')).toHaveCount(2);
   await expect(page.getByText('Browser CFO Approver')).toHaveCount(2);
@@ -86,6 +108,9 @@ test('S56 records the server-fixed recovery decision and canonical S57 availabil
   await expect(page.getByText('Recovery decision recorded from canonical backend state.')).toBeVisible();
   await expect(page.getByText('Browser approval reason retained by the backend.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Security Invocation' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Security Invocation' }).click();
+  await expect(page.getByText('Approved recovery execution available')).toBeVisible();
+  await expect(page.getByText('Ready To Initiate')).toBeVisible();
   expect(mutations).toEqual([
     'POST /api/v1/default-cases/default-browser-011pa/recovery-decision/',
   ]);
@@ -116,6 +141,10 @@ test('S58-S61 show named server readiness blockers and keep NOC blocked', async 
   await page.getByRole('button', { name: 'NOC Generation' }).click();
   await expect(page.getByText('NOC remains blocked until the backend creates a financially-closed loan identity.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Issue NOC' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Security Return / Unpledge' }).click();
+  await expect(page.getByText('Security return remains blocked until the backend creates a financially-closed loan identity.')).toBeVisible();
+  await page.getByRole('button', { name: 'Archive', exact: true }).click();
+  await expect(page.getByText('Archive remains blocked until financial closure is recorded.')).toBeVisible();
   expect(mutations).toEqual([]);
   await page.screenshot({
     path: path.join(evidenceDir, 'closure-readiness-blockers.png'),
@@ -153,6 +182,59 @@ test('S62-S67 show canonical compliance trackers and keep auditor access read-on
     fullPage: true,
     animations: 'disabled',
   });
+});
+
+test('S68 resolves a canonical grievance and reads archive manifests without mutation controls', async ({ page }) => {
+  await page.unroute('**/api/v1/auth/me/');
+  await page.route('**/api/v1/auth/me/', route => ok(route, companySecretary));
+  const mutations: string[] = [];
+  let archiveDetailReads = 0;
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/v1/loan-closures/closure-browser-011pe/archive/') {
+      archiveDetailReads += 1;
+    }
+    if (url.pathname.includes('/api/v1/') && request.method() !== 'GET') {
+      mutations.push(`${request.method()} ${url.pathname}`);
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Grievances' }).click();
+  await expect(page.getByRole('heading', { name: 'Grievances' })).toBeVisible();
+  await expect(page.getByText('GRV-BROWSER-011PE')).toBeVisible();
+  await expect(page.getByText('Recovery conduct complaint')).toBeVisible();
+  await expect(page.getByText('Recovery-related complaints require CS review.')).toBeVisible();
+  await page.getByRole('button', { name: 'Resolve GRV-BROWSER-011PE' }).click();
+  await page.getByRole('button', { name: 'Submit Resolution' }).click();
+  await expect(page.getByText('Resolution status is required.')).toBeVisible();
+  await expect(page.getByText('Resolution reason is required.')).toBeVisible();
+  await page.getByLabel('Resolution status').selectOption('resolved');
+  await page.getByLabel('Resolution reason').fill('Browser grievance resolution retained by the backend.');
+  await page.getByRole('button', { name: 'Submit Resolution' }).click();
+  await expect(page.getByText('Grievance resolved from canonical backend state.')).toBeVisible();
+  await expect(page.getByText('Browser grievance resolution retained by the backend.')).toBeVisible();
+  await page.screenshot({
+    path: path.join(evidenceDir, 'grievance-resolution.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+
+  await page.getByRole('button', { name: 'Audit & Archive' }).click();
+  await expect(page.getByRole('heading', { name: 'Audit & Archive' })).toBeVisible();
+  await expect(page.getByText('archive-browser-011pe')).toBeVisible();
+  await expect(page.getByText('Archive Room / Browser Rack / Box 11')).toBeVisible();
+  await expect(page.getByText('Read-only access — archive records cannot be edited.')).toBeVisible();
+  await expect(page.getByRole('button', { name: /archive file|record destruction|delete|edit/i })).toHaveCount(0);
+  const downloadStarted = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download manifest archive-browser-011pe' }).click();
+  const manifestDownload = await downloadStarted;
+  expect(manifestDownload.suggestedFilename()).toBe('archive-manifest-archive-browser-011pe.json');
+  await expect(page.getByText('Archive manifest downloaded through the audited read endpoint.')).toBeVisible();
+  expect(archiveDetailReads).toBe(1);
+  expect(mutations).toEqual([
+    'POST /api/v1/grievances/grievance-browser-011pe/resolve/',
+  ]);
 });
 
 async function openDefaultWorkbench(page: Page) {
@@ -225,6 +307,23 @@ const internalAuditor = {
     'compliance.section186.read',
     'compliance.nbfc_test.read',
     'reports.compliance.read',
+  ],
+  available_actions: [],
+};
+
+const companySecretary = {
+  user_id: 'company-secretary-browser-011pe',
+  full_name: 'Browser Company Secretary',
+  email: 'company-secretary-browser@sfpcl.example',
+  status: 'active',
+  roles: [{ role_code: 'company_secretary', role_name: 'Company Secretary' }],
+  teams: [{ team_code: 'compliance', team_name: 'Compliance Team' }],
+  role_codes: ['company_secretary'],
+  team_codes: ['compliance'],
+  permissions: [
+    'compliance.grievance.read',
+    'compliance.grievance.resolve',
+    'closure.archive.read',
   ],
   available_actions: [],
 };
@@ -510,4 +609,66 @@ const stampDutyRecord = {
   executed_date: '2026-06-02',
   status: 'adequate',
   notarisation_status: 'completed',
+};
+
+const grievance = {
+  grievance_id: 'grievance-browser-011pe',
+  grievance_reference: 'GRV-BROWSER-011PE',
+  member_id: 'member-browser-011pe',
+  loan_account_id: 'loan-browser-011pe',
+  loan_application_id: null,
+  default_case_id: 'default-browser-011pa',
+  recovery_action_id: 'recovery-action-browser-011pe',
+  grievance_category: 'recovery_conduct_issue',
+  subject: 'Recovery conduct complaint',
+  description: 'Borrower requested fair-practice review of a recovery interaction.',
+  received_date: '2026-07-20',
+  received_channel: 'phone',
+  assigned_to_user_id: companySecretary.user_id,
+  resolution_due_date: '2026-07-24',
+  status: 'open',
+  tat_days: 4,
+  days_overdue: 1,
+  is_overdue: true,
+  resolution_summary: '',
+  closed_at: null,
+  borrower_informed: false,
+  borrower_acknowledged: false,
+  supporting_document_ids: [],
+  resolution_document_id: null,
+  internal_notes: '',
+  borrower_acknowledgement: '',
+  escalation_count: 1,
+  notice_communication_id: null,
+  notice_delivery_status: null,
+  history: [],
+  available_actions: ['resolve'],
+};
+
+const resolvedGrievance = {
+  ...grievance,
+  status: 'resolved',
+  days_overdue: 0,
+  is_overdue: false,
+  resolution_summary: 'Browser grievance resolution retained by the backend.',
+  closed_at: '2026-07-25T11:00:00Z',
+  borrower_informed: true,
+  available_actions: [],
+};
+
+const archiveRecord = {
+  archive_record_id: 'archive-browser-011pe',
+  loan_closure_id: 'closure-browser-011pe',
+  loan_account_id: 'loan-browser-011pe',
+  file_location_physical: 'Archive Room / Browser Rack / Box 11',
+  file_location_digital: 'governed://archive/browser-011pe',
+  retention_start_date: '2026-07-25',
+  retention_until_date: '2034-07-25',
+  archived_by_user_id: companySecretary.user_id,
+  archived_by_role_code: 'company_secretary',
+  archived_at: '2026-07-25T10:00:00Z',
+  destruction_eligible: false,
+  destruction_certificate_id: null,
+  idempotency_replayed: false,
+  available_actions: [],
 };

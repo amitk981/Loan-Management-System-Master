@@ -4,15 +4,19 @@ import {
   archiveLoanFile,
   closeLoan,
   createRecoveryDecision,
+  downloadArchiveManifest,
   fetchArchiveRecord,
+  fetchArchiveRecords,
   fetchComplianceDashboard,
   fetchClosureReadiness,
   fetchDefaultCase,
   fetchDefaultCases,
+  fetchGrievances,
   fetchNoc,
   fetchRecoveryApprovalCase,
   issueNoc,
   recordSecurityReturn,
+  resolveGrievance,
   reviewComplianceEvidence,
   reviewNbfcPrincipalTest,
   reviewSection186Tracker,
@@ -357,6 +361,107 @@ describe('011PD compliance staff contracts', () => {
           board_document_id: null,
         }),
       ],
+    ]);
+  });
+});
+
+describe('011PE grievance and archive staff contracts', () => {
+  it('loads every grievance page, resolves through the projected action, and preserves idempotency', async () => {
+    const grievance = {
+      grievance_id: 'grievance-1',
+      grievance_reference: 'GRV-2026-001',
+      status: 'open',
+      available_actions: ['resolve'],
+    };
+    const resolved = {
+      ...grievance,
+      status: 'resolved',
+      resolution_summary: 'Canonical resolution retained.',
+      available_actions: [],
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok([grievance], {
+        page: 1,
+        page_size: 100,
+        total_count: 1,
+        total_pages: 1,
+        has_next: false,
+        has_previous: false,
+      }))
+      .mockResolvedValueOnce(ok(resolved));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchGrievances()).resolves.toMatchObject({
+      items: [grievance],
+      totalCount: 1,
+    });
+    await expect(resolveGrievance('grievance-1', {
+      status: 'resolved',
+      reason: 'Canonical resolution retained.',
+      idempotency_key: 'grievance-resolution-1',
+    })).resolves.toEqual(resolved);
+
+    expect(fetchMock.mock.calls.map(([url, options]) => [
+      url,
+      (options as RequestInit | undefined)?.method ?? 'GET',
+      (options as RequestInit | undefined)?.body,
+      ((options as RequestInit | undefined)?.headers as Record<string, string> | undefined)?.['Idempotency-Key'],
+    ])).toEqual([
+      [
+        'http://127.0.0.1:8000/api/v1/grievances/?page=1&page_size=100',
+        'GET',
+        undefined,
+        undefined,
+      ],
+      [
+        'http://127.0.0.1:8000/api/v1/grievances/grievance-1/resolve/',
+        'POST',
+        JSON.stringify({ resolution_summary: 'Canonical resolution retained.' }),
+        'grievance-resolution-1',
+      ],
+    ]);
+  });
+
+  it('loads archive manifests and creates a download only after an audited canonical detail read', async () => {
+    const archive = {
+      archive_record_id: 'archive-1',
+      loan_closure_id: 'closure-1',
+      loan_account_id: 'loan-1',
+      file_location_physical: 'Archive Room / Rack A / Box 12',
+      file_location_digital: 'governed://loan-archive/manifest-25',
+      retention_start_date: '2026-07-25',
+      retention_until_date: '2034-07-25',
+      archived_by_user_id: 'archivist-1',
+      archived_by_role_code: 'company_secretary',
+      archived_at: '2026-07-25T10:00:00Z',
+      destruction_eligible: false,
+      destruction_certificate_id: null,
+      idempotency_replayed: false,
+      available_actions: [],
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok([archive], {
+        page: 1,
+        page_size: 100,
+        total_count: 1,
+        total_pages: 1,
+        has_next: false,
+        has_previous: false,
+      }))
+      .mockResolvedValueOnce(ok(archive));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchArchiveRecords('loan-1')).resolves.toMatchObject({
+      items: [archive],
+      totalCount: 1,
+    });
+    const manifest = await downloadArchiveManifest(archive);
+
+    expect(manifest.fileName).toBe('archive-manifest-archive-1.json');
+    expect(JSON.parse(await manifest.content.text())).toEqual(archive);
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://127.0.0.1:8000/api/v1/archive-records/?page=1&page_size=100&search=loan-1',
+      'http://127.0.0.1:8000/api/v1/loan-closures/closure-1/archive/',
     ]);
   });
 });
