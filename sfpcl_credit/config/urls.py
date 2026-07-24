@@ -40,6 +40,21 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/reports/exports/",
+        report_views.export_collection,
+        name="report-export-collection",
+    ),
+    path(
+        "api/v1/reports/exports/<uuid:export_job_id>/",
+        report_views.export_detail,
+        name="report-export-detail",
+    ),
+    path(
+        "api/v1/reports/exports/<uuid:export_job_id>/download/",
+        report_views.export_download,
+        name="report-export-download",
+    ),
+    path(
         "api/v1/reports/<slug:report_code>/",
         report_views.report,
         name="report",

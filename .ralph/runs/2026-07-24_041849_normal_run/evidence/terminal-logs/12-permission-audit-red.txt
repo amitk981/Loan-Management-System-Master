@@ -1,0 +1,19 @@
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_export_permission_denial_is_audited_without_filter_values (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_export_permission_denial_is_audited_without_filter_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_041849_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 257, in test_export_permission_denial_is_audited_without_filter_values
+    audit = AuditLog.objects.get(action="report.export.denied")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.identity.models.AuditLog.DoesNotExist: AuditLog matching query does not exist.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (errors=1)

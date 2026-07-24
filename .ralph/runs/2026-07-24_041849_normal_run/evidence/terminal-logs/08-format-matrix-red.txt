@@ -1,0 +1,25 @@
+System check identified no issues (0 silenced).
+======================================================================
+ERROR: test_supported_format_matrix_produces_parseable_reconciled_files (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_supported_format_matrix_produces_parseable_reconciled_files)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_041849_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 174, in test_supported_format_matrix_produces_parseable_reconciled_files
+    parsed_text[export_format] = self._parse_export(
+                                 ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_041849_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 190, in _parse_export
+    return json.dumps(json.loads(content), sort_keys=True)
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.089s
+
+FAILED (errors=1)

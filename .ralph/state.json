@@ -339,14 +339,15 @@
     "011O-auditor-read-only-views",
     "012A-report-api-foundation",
     "012A2-finance-and-servicing-report-catalogue",
-    "012A3-default-compliance-and-audit-report-catalogue"
+    "012A3-default-compliance-and-audit-report-catalogue",
+    "012B-register-exports"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-24_030826_normal_run",
+  "last_run_id": "2026-07-24_050721_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 22,
+  "slices_completed_since_architecture_review": 23,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

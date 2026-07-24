@@ -5664,3 +5664,30 @@ query audit rows or create/download a file through the generic report route. The
 must require the canonical restricted audit read, `audit.export`, general/sensitive export policy
 as applicable, a reason, sanitised 012D values, expiring download authority, and audited request
 and download events; it must not copy report rows or sensitive filters into audit payloads.
+
+## Register Export Jobs (012B)
+
+`POST /api/v1/reports/exports/` requires bearer authentication, the caller's underlying report
+read authority, `reports.export`, and an `Idempotency-Key` header. The JSON body contains
+`report_code`, `format`, and an object of string `filters`. Pagination fields are not export
+filters. Actor + registered report + canonical filters + format + key identifies one persisted
+job; the response is `202` with `queued`, lifecycle timestamps, and
+`idempotency_replayed`.
+
+`GET /api/v1/reports/exports/{export_job_id}/` is owner-bound and rechecks current read/export
+authority. It exposes only `queued`, `running`, `completed`, or `failed`; failures use stable
+reason codes without exception text. A completed unexpired job receives a short-lived
+`/api/v1/reports/exports/{id}/download/?token=...` capability, never a permanent storage URL.
+Expired jobs remain observable but have `download_expired: true` and no grant. Actual byte
+delivery rechecks actor, permissions, capability, retention, size, and checksum and is audited
+without exported row values.
+
+| Report set | CSV | XLSX | PDF | JSON |
+|---|---:|---:|---:|---:|
+| Every runnable code in the 012A `REPORTS` registry | Yes | Yes | Yes | Yes |
+| `audit-log-export` (012C/012D handoff) | No | No | No | No |
+
+CSV/XLSX/PDF/JSON files all carry report code, generated-by user ID, generated-at time, canonical
+filters, and rows returned through the owning 012A selector. Files expire after the configured
+retention period (24 hours by default); hourly cleanup deletes expired bytes while preserving the
+terminal job, checksum, timestamps, and audit evidence.

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_worker_completes_csv_and_status_issues_an_expiring_download (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_worker_completes_csv_and_status_issues_an_expiring_download)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_041849_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 125, in test_worker_completes_csv_and_status_issues_an_expiring_download
+    content = b"".join(download.streaming_content).decode("utf-8")
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'HttpResponse' object has no attribute 'streaming_content'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

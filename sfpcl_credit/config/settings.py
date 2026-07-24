@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.members",
     "sfpcl_credit.monitoring",
     "sfpcl_credit.recovery.apps.RecoveryConfig",
+    "sfpcl_credit.reports.apps.ReportsConfig",
     "sfpcl_credit.scheduler",
     "sfpcl_credit.tracer",
     "sfpcl_credit.workflows",
@@ -146,7 +147,13 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": float(
             os.environ.get("SFPCL_COMMUNICATION_DISPATCH_INTERVAL_SECONDS", "60")
         ),
-    }
+    },
+    "reports-cleanup-expired-exports": {
+        "task": "reports.cleanup_expired_exports",
+        "schedule": float(
+            os.environ.get("SFPCL_REPORT_EXPORT_CLEANUP_INTERVAL_SECONDS", "3600")
+        ),
+    },
 }
 
 AUTH_ACCESS_TOKEN_MINUTES = 15
@@ -161,4 +168,19 @@ if "test" in sys.argv:
 
 DOCUMENT_STORAGE_ROOT = os.environ.get("SFPCL_DOCUMENT_STORAGE_ROOT") or (
     BASE_DIR / "local-document-storage"
+)
+REPORT_EXPORT_STORAGE_ROOT = os.environ.get("SFPCL_REPORT_EXPORT_STORAGE_ROOT") or (
+    BASE_DIR / "local-report-export-storage"
+)
+REPORT_EXPORT_WORKER_LEASE_SECONDS = int(
+    os.environ.get("SFPCL_REPORT_EXPORT_WORKER_LEASE_SECONDS", "300")
+)
+REPORT_EXPORT_DOWNLOAD_TTL_MINUTES = int(
+    os.environ.get("SFPCL_REPORT_EXPORT_DOWNLOAD_TTL_MINUTES", "15")
+)
+REPORT_EXPORT_RETENTION_HOURS = int(
+    os.environ.get("SFPCL_REPORT_EXPORT_RETENTION_HOURS", "24")
+)
+REPORT_EXPORT_CLEANUP_BATCH_SIZE = int(
+    os.environ.get("SFPCL_REPORT_EXPORT_CLEANUP_BATCH_SIZE", "100")
 )

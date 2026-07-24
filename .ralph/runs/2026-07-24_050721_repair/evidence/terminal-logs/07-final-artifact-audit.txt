@@ -1,0 +1,43 @@
+Final repair artifact audit
+
+Review result:
+# Review Packet: 2026-07-24_050721_repair
+
+## Result
+Ready for independent validation
+
+## Slice
+012B-register-exports
+
+## Repair Outcome
+
+The independent backend lane's only failure is repaired. The report export module no longer embeds
+the retired `PERMISSION_DENIED` production value; denied-request audit metadata and permission
+
+Repair artifacts:
+.ralph/runs/2026-07-24_050721_repair/codex-settings.md
+.ralph/runs/2026-07-24_050721_repair/evidence/permission-contract-repair.md
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/01-api-contract-harness-red.txt
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/02-api-contract-harness-green.txt
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/03-report-exports-focused.txt
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/04-django-check.txt
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/05-migrations-check.txt
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/06-scope-and-cleanup-check.txt
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/07-final-artifact-audit.txt
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/orchestrator-backend-deps.log
+.ralph/runs/2026-07-24_050721_repair/evidence/terminal-logs/orchestrator-frontend-deps.log
+.ralph/runs/2026-07-24_050721_repair/execution-plan.md
+.ralph/runs/2026-07-24_050721_repair/final-summary.md
+.ralph/runs/2026-07-24_050721_repair/preflight-results.md
+.ralph/runs/2026-07-24_050721_repair/prompt.md
+.ralph/runs/2026-07-24_050721_repair/review-packet.md
+.ralph/runs/2026-07-24_050721_repair/risk-assessment.md
+
+Placeholder scan:
+PASS: no repair placeholders remain
+
+Protected-path candidate scan:
+PASS: no protected path changed
+
+Final whitespace check:
+PASS: tracked diff whitespace is clean

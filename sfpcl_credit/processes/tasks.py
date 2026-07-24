@@ -13,6 +13,10 @@ from sfpcl_credit.defaults.modules.default_workflow import DefaultWorkflow
 from sfpcl_credit.processes.communication_delivery import (
     execute_communication_job,
 )
+from sfpcl_credit.reports.modules.report_export import (
+    cleanup_expired_exports,
+    execute_export_job,
+)
 
 
 @shared_task(name="communications.execute_job")
@@ -47,9 +51,21 @@ def dispatch_default_grace_expiries():
     )
 
 
+@shared_task(name="reports.execute_export_job")
+def execute_report_export_job(export_job_id):
+    return execute_export_job(export_job_id)
+
+
+@shared_task(name="reports.cleanup_expired_exports")
+def cleanup_expired_report_exports():
+    return cleanup_expired_exports()
+
+
 __all__ = [
+    "cleanup_expired_report_exports",
     "dispatch_due_communication_jobs",
     "dispatch_due_current_rate_projections",
     "dispatch_default_grace_expiries",
     "execute_communication_delivery_job",
+    "execute_report_export_job",
 ]

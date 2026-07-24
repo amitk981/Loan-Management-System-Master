@@ -1,0 +1,13 @@
+System check identified no issues (0 silenced).
+======================================================================
+FAIL: test_generation_failure_is_terminal_observable_and_retry_safe (sfpcl_credit.tests.test_report_exports_api.ReportExportApiTests.test_generation_failure_is_terminal_observable_and_retry_safe)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-24_041849_normal_run/sfpcl_credit/tests/test_report_exports_api.py", line 301, in test_generation_failure_is_terminal_observable_and_retry_safe
+    self.assertIsNotNone(data["started_at"])
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+FAILED (failures=1)
