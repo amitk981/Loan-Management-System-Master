@@ -1,302 +1,631 @@
-import React, { useState } from 'react';
-import { Shield, CheckCircle2, AlertTriangle, XCircle, Clock, X as XIcon, Scale } from 'lucide-react';
-import StatusBadge from '../../components/ui/StatusBadge';
+import React, { useCallback, useEffect, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Clock, Scale, Shield, XCircle } from 'lucide-react';
 import AlertBanner from '../../components/ui/AlertBanner';
-import { complianceRecords, dashboardStats, loanAccounts, members } from '../../data/mockData';
+import StatusBadge from '../../components/ui/StatusBadge';
+import { AuthSessionError } from '../../services/authSession';
+import {
+  fetchComplianceDashboard,
+  reviewComplianceEvidence,
+  reviewNbfcPrincipalTest,
+  reviewSection186Tracker,
+  type ComplianceDashboardProjection,
+  type ComplianceTaskProjection,
+} from '../../services/recoveryApi';
 
-const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
+const money = new Intl.NumberFormat('en-IN', {
+  style: 'currency',
+  currency: 'INR',
+  minimumFractionDigits: 2,
+});
+const date = new Intl.DateTimeFormat('en-IN', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+});
 
-const STATUS_ICONS: Record<string, React.ReactNode> = {
-  compliant: <CheckCircle2 size={16} className="text-green-600" />,
-  warning:   <AlertTriangle size={16} className="text-amber-500" />,
-  breach:    <XCircle size={16} className="text-red-600" />,
-  pending:   <Clock size={16} className="text-slate-400" />,
-  overdue:   <AlertTriangle size={16} className="text-red-500" />,
-  review_required: <AlertTriangle size={16} className="text-amber-500" />,
+const statusIcon = (status: string) => {
+  if (['active', 'accepted', 'adequate', 'completed'].includes(status)) {
+    return <CheckCircle2 size={16} className="text-green-600" />;
+  }
+  if (['overdue', 'rejected', 'insufficient'].includes(status)) {
+    return <XCircle size={16} className="text-red-600" />;
+  }
+  if (['warning', 'evidence_submitted'].includes(status)) {
+    return <AlertTriangle size={16} className="text-amber-500" />;
+  }
+  return <Clock size={16} className="text-slate-400" />;
 };
 
-const STATUS_BG: Record<string, string> = {
-  compliant: 'bg-green-50 border-green-200',
-  warning:   'bg-amber-50 border-amber-200',
-  breach:    'bg-red-50 border-red-200',
-  pending:   'bg-slate-50 border-slate-200',
-  overdue:   'bg-red-50 border-red-200',
-  review_required: 'bg-amber-50 border-amber-200',
+const statusBackground = (status: string) => {
+  if (['active', 'accepted', 'adequate', 'completed'].includes(status)) {
+    return 'bg-green-50 border-green-200';
+  }
+  if (['overdue', 'rejected', 'insufficient'].includes(status)) {
+    return 'bg-red-50 border-red-200';
+  }
+  if (['warning', 'evidence_submitted'].includes(status)) {
+    return 'bg-amber-50 border-amber-200';
+  }
+  return 'bg-slate-50 border-slate-200';
+};
+
+const tasksForControl = (
+  tasks: ComplianceTaskProjection[],
+  controlId: string,
+) => tasks.filter(task => task.compliance_control_id === controlId);
+
+type ReviewTarget = {
+  kind: 'evidence' | 'section186' | 'nbfc';
+  id: string;
+  label: string;
 };
 
 const ComplianceDashboard: React.FC = () => {
-  const currentDate = new Date();
-  const [kycDrillFilter, setKycDrillFilter] = useState<'rekyc_due' | 'expired' | null>(null);
-  const [mlLegalOpinion, setMlLegalOpinion] = useState('Legal opinion obtained — Maharashtra Money-Lending Act compliance confirmed by legal counsel (Adv. R. Kulkarni). SFPCL operates within cooperative society exemption scope.');
-  const [mlNextReview, setMlNextReview] = useState('2027-03-31');
+  const [projection, setProjection] = useState<ComplianceDashboardProjection | null>(null);
+  const [loadError, setLoadError] = useState<Error | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
+  const [reviewDecision, setReviewDecision] = useState<'accepted' | 'rejected'>('accepted');
+  const [reviewComments, setReviewComments] = useState('');
+  const [presentedToBoard, setPresentedToBoard] = useState(false);
+  const [boardDocumentId, setBoardDocumentId] = useState('');
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const complianceData = complianceRecords.map(rec => {
-    let status: 'compliant' | 'warning' | 'breach' | 'pending' | 'overdue' = rec.status;
-    if (new Date(rec.nextDueDate) < currentDate) {
-      status = 'overdue';
+  const loadDashboard = useCallback(async () => {
+    try {
+      setProjection(await fetchComplianceDashboard());
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error : new Error('Compliance trackers could not be loaded.'));
     }
-    return { ...rec, status };
-  });
+  }, []);
 
-  const warnings = complianceData.filter(r => r.status === 'warning').length;
-  const overdueCount = complianceData.filter(r => r.status === 'overdue').length;
-  const totalAttention = warnings + overdueCount;
-  const breaches = complianceRecords.filter(r => r.status === 'breach').length;
-  const pendingKyc = members.filter(m => m.kycStatus === 'rekyc_due' || m.kycStatus === 'expired').length;
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
-  const totalPortfolio = loanAccounts.reduce((s, l) => s + l.outstandingPrincipal, 0);
-  const configuredLimit = 2541667;
-  const sectionLimit = dashboardStats.sectionUtilisation === 72 && totalPortfolio === 8550000 ? 11875000 : configuredLimit;
+  const openReview = (target: ReviewTarget) => {
+    setReviewTarget(target);
+    setReviewDecision('accepted');
+    setReviewComments('');
+    setPresentedToBoard(false);
+    setBoardDocumentId('');
+    setReviewError('');
+    setSuccessMessage('');
+  };
 
-  const kycDrillMembers = kycDrillFilter
-    ? members.filter(m => m.kycStatus === kycDrillFilter)
-    : [];
+  const submitReview = async () => {
+    if (!reviewTarget) return;
+    const comments = reviewComments.trim();
+    if (!comments) {
+      setReviewError('Review comments are required.');
+      return;
+    }
+    if (presentedToBoard && !boardDocumentId.trim()) {
+      setReviewError('Governed Board document ID is required when Board presentation is selected.');
+      return;
+    }
+    setReviewBusy(true);
+    setReviewError('');
+    setSuccessMessage('');
+    try {
+      if (reviewTarget.kind === 'evidence') {
+        await reviewComplianceEvidence(reviewTarget.id, {
+          review_status: reviewDecision,
+          review_comments: comments,
+        });
+      } else {
+        const input = {
+          decision: reviewDecision,
+          comments,
+          presented_to_board_flag: presentedToBoard,
+          board_document_id: boardDocumentId.trim() || null,
+        };
+        if (reviewTarget.kind === 'section186') {
+          await reviewSection186Tracker(reviewTarget.id, input);
+        } else {
+          await reviewNbfcPrincipalTest(reviewTarget.id, input);
+        }
+      }
+      await loadDashboard();
+      setReviewTarget(null);
+      setSuccessMessage('Compliance review saved from canonical backend state.');
+    } catch (error) {
+      const fieldMessage = error instanceof AuthSessionError
+        ? Object.values(error.fieldErrors ?? {})[0]
+        : undefined;
+      setReviewError(
+        fieldMessage
+        || (error instanceof Error ? error.message : 'Compliance review could not be saved.'),
+      );
+    } finally {
+      setReviewBusy(false);
+    }
+  };
+
+  if (loadError) {
+    const denied = loadError instanceof AuthSessionError
+      && [401, 403].includes(loadError.status ?? 0);
+    return (
+      <div className="card p-8 text-center">
+        <h2 className="font-semibold text-slate-900">
+          {denied ? 'Access Denied' : 'Compliance Dashboard Unavailable'}
+        </h2>
+        <p className="text-sm text-slate-500 mt-1">{loadError.message}</p>
+      </div>
+    );
+  }
+
+  if (!projection) {
+    return <div className="card p-8 text-center text-slate-500">Loading compliance trackers…</div>;
+  }
+
+  const overdueCount = projection.tasks.filter(task => task.task_status === 'overdue').length
+    + projection.kycReviews.filter(review => review.status === 'overdue').length;
+  const breachCount = projection.section186.filter(row => !row.within_limit_flag).length
+    + projection.nbfcTests.filter(row => row.registration_triggered_flag).length;
+  const kycCounts = {
+    completed: projection.kycReviews.filter(row => row.status === 'completed').length,
+    due: projection.kycReviews.filter(row => row.status === 'due').length,
+    warning: projection.kycReviews.filter(row => row.status === 'warning').length,
+    overdue: projection.kycReviews.filter(row => row.status === 'overdue').length,
+  };
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-xl font-bold text-slate-900">Compliance Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Regulatory compliance, Section 186, NBFC test, and KYC tracker</p>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Regulatory compliance, Section 186, NBFC test, and KYC tracker
+        </p>
       </div>
 
-      {/* Breach alerts */}
-      {breaches > 0 && (
+      {breachCount > 0 && (
         <AlertBanner
           type="error"
-          title={`${breaches} compliance breach${breaches > 1 ? 'es' : ''} require immediate attention`}
-          message="Contact CFO and Company Secretary immediately."
+          title={`${breachCount} compliance breach${breachCount > 1 ? 'es' : ''} require immediate attention`}
+          message="Review the backend-owned statutory tracker evidence."
         />
       )}
-      {totalAttention > 0 && !breaches && (
+      {breachCount === 0 && overdueCount > 0 && (
         <AlertBanner
           type="warning"
-          title={`${totalAttention} compliance review${totalAttention > 1 ? 's' : ''} need attention`}
+          title={`${overdueCount} compliance review${overdueCount > 1 ? 's' : ''} need attention`}
           message="Review due items before their deadlines."
         />
       )}
+      {successMessage && (
+        <AlertBanner type="success" title={successMessage} />
+      )}
+      {reviewTarget && (
+        <div className="card">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <h2 className="section-title">{reviewTarget.label}</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Record the projected maker-checker review; canonical state is reloaded after save.
+              </p>
+            </div>
+            <button type="button" className="btn-secondary" onClick={() => setReviewTarget(null)}>
+              Cancel
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="compliance-review-decision" className="field-label">Decision</label>
+              <select
+                id="compliance-review-decision"
+                className="field-input"
+                value={reviewDecision}
+                onChange={event => setReviewDecision(event.target.value as 'accepted' | 'rejected')}
+              >
+                <option value="accepted">Accepted</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="compliance-review-comments" className="field-label">
+                Review comments
+              </label>
+              <textarea
+                id="compliance-review-comments"
+                className="field-input resize-none"
+                value={reviewComments}
+                onChange={event => setReviewComments(event.target.value)}
+              />
+            </div>
+            {reviewTarget.kind !== 'evidence' && (
+              <>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={presentedToBoard}
+                    onChange={event => setPresentedToBoard(event.target.checked)}
+                  />
+                  Presented to Board
+                </label>
+                <div>
+                  <label htmlFor="compliance-board-document" className="field-label">
+                    Board document ID
+                  </label>
+                  <input
+                    id="compliance-board-document"
+                    className="field-input"
+                    value={boardDocumentId}
+                    onChange={event => setBoardDocumentId(event.target.value)}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          {reviewError && <p className="text-xs text-red-600 font-medium mt-3">{reviewError}</p>}
+          <button
+            type="button"
+            className="btn-primary mt-4"
+            disabled={reviewBusy}
+            onClick={() => void submitReview()}
+          >
+            {reviewBusy ? 'Saving…' : 'Submit Review'}
+          </button>
+        </div>
+      )}
 
-      {/* Section 186 */}
       <div className="card">
         <h2 className="section-title mb-4 flex items-center gap-2">
           <Shield size={16} className="text-green-600" />
           Section 186 — Aggregate Lending Limit
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Outstanding portfolio</p>
-            <p className="text-2xl font-bold text-slate-900 num mt-1">{fmt(totalPortfolio)}</p>
+        {projection.section186.length > 0 ? (
+          <div className="space-y-4">
+            {projection.section186.map(row => (
+              <div key={row.section_186_tracker_id} className="border-t border-slate-100 pt-4 first:border-0 first:pt-0">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                  {row.financial_year} · {row.quarter}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Capital base</p>
+                    <p className="text-lg font-bold text-slate-900 num mt-1">
+                      {money.format(Number(row.paid_up_capital_amount))}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Reserves {money.format(Number(row.free_reserves_amount))}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Premium {money.format(Number(row.securities_premium_amount))}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Section 186 limit</p>
+                    <p className="text-lg font-bold text-slate-900 num mt-1">
+                      {money.format(Number(row.applicable_limit_amount))}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      60% basis {money.format(Number(row.limit_60_percent_basis_amount))}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      100% basis {money.format(Number(row.limit_100_percent_basis_amount))}
+                    </p>
+                  </div>
+                  <div className={`rounded-lg border p-4 ${
+                    row.within_limit_flag
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-red-50 border-red-200'
+                  }`}>
+                    <p className="text-xs text-slate-600 font-medium uppercase tracking-wide">Exposure</p>
+                    <p className="text-lg font-bold text-slate-900 num mt-1">
+                      {money.format(Number(row.total_loans_exposure_amount))}
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Headroom {money.format(Number(row.headroom_amount))}
+                    </p>
+                    <div className="mt-2">
+                      <StatusBadge
+                        label={row.within_limit_flag ? row.review_status : 'resolution required'}
+                        size="sm"
+                        type={row.within_limit_flag ? undefined : 'error'}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {row.available_actions.includes('review') && (
+                  <button
+                    type="button"
+                    className="btn-secondary mt-3"
+                    onClick={() => openReview({
+                      kind: 'section186',
+                      id: row.section_186_tracker_id,
+                      label: `Section 186 Review · ${row.financial_year} ${row.quarter}`,
+                    })}
+                  >
+                    Review Section 186
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Section 186 limit</p>
-            <p className="text-2xl font-bold text-slate-900 num mt-1">{fmt(sectionLimit)}</p>
-            <p className="text-xs text-slate-400 mt-1">Based on active policy configuration</p>
-          </div>
-          <div className={`rounded-lg border p-4 ${dashboardStats.sectionUtilisation > 80 ? 'bg-red-50 border-red-200' : dashboardStats.sectionUtilisation > 60 ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'}`}>
-            <p className={`text-xs font-medium uppercase tracking-wide ${dashboardStats.sectionUtilisation > 80 ? 'text-red-700' : dashboardStats.sectionUtilisation > 60 ? 'text-amber-700' : 'text-green-700'}`}>
-              Utilisation
-            </p>
-            <p className={`text-2xl font-bold num mt-1 ${dashboardStats.sectionUtilisation > 80 ? 'text-red-900' : dashboardStats.sectionUtilisation > 60 ? 'text-amber-900' : 'text-green-900'}`}>
-              {dashboardStats.sectionUtilisation}%
-            </p>
-          </div>
-        </div>
-        <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
-          <div
-            className={`h-3 rounded-full ${dashboardStats.sectionUtilisation > 80 ? 'bg-red-500' : dashboardStats.sectionUtilisation > 60 ? 'bg-amber-500' : 'bg-green-500'}`}
-            style={{ width: `${dashboardStats.sectionUtilisation}%` }}
-          />
-        </div>
+        ) : (
+          <p className="text-sm text-slate-500">No Section 186 tracker is available.</p>
+        )}
       </div>
 
-      {/* NBFC Principal Business Test */}
       <div className="card">
         <h2 className="section-title mb-4">NBFC Principal Business Test</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <CheckCircle2 size={16} className="text-green-600 mb-2" />
-            <p className="text-sm font-semibold text-green-900">Financial assets threshold</p>
-            <p className="text-xs text-green-700 mt-1">Within threshold</p>
+        {projection.nbfcTests.length > 0 ? (
+          <div className="space-y-4">
+            {projection.nbfcTests.map(row => (
+              <div key={row.nbfc_principal_test_id} className="border-t border-slate-100 pt-4 first:border-0 first:pt-0">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                  {row.financial_year} · {row.quarter}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    {
+                      label: 'Financial assets threshold',
+                      amount: row.financial_assets_amount,
+                      total: row.total_assets_amount,
+                      ratio: row.financial_asset_ratio,
+                    },
+                    {
+                      label: 'Financial income threshold',
+                      amount: row.financial_income_amount,
+                      total: row.gross_income_amount,
+                      ratio: row.financial_income_ratio,
+                    },
+                  ].map(metric => (
+                    <div
+                      key={metric.label}
+                      className={`border rounded-lg p-4 ${
+                        row.registration_triggered_flag
+                          ? 'bg-red-50 border-red-200'
+                          : row.early_warning_flag
+                            ? 'bg-amber-50 border-amber-200'
+                            : 'bg-green-50 border-green-200'
+                      }`}
+                    >
+                      {statusIcon(row.registration_triggered_flag ? 'overdue' : row.early_warning_flag ? 'warning' : 'accepted')}
+                      <p className="text-sm font-semibold text-slate-900 mt-2">{metric.label}</p>
+                      <p className="text-xl font-bold num text-slate-900 mt-1">{metric.ratio}%</p>
+                      <p className="text-xs text-slate-600 mt-1">
+                        {money.format(Number(metric.amount))} of {money.format(Number(metric.total))}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Early warning {row.early_warning_threshold_ratio}%
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-3">
+                  Board: {row.presented_to_board_flag ? 'Presented' : 'Pending'} · Review: {row.review_status}
+                  {row.review_comments ? ` · ${row.review_comments}` : ''}
+                </p>
+                {row.available_actions.includes('review') && (
+                  <button
+                    type="button"
+                    className="btn-secondary mt-3"
+                    onClick={() => openReview({
+                      kind: 'nbfc',
+                      id: row.nbfc_principal_test_id,
+                      label: `NBFC Test Review · ${row.financial_year} ${row.quarter}`,
+                    })}
+                  >
+                    Review NBFC Test
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <CheckCircle2 size={16} className="text-green-600 mb-2" />
-            <p className="text-sm font-semibold text-green-900">Financial income threshold</p>
-            <p className="text-xs text-green-700 mt-1">Within threshold</p>
-          </div>
-        </div>
-        <p className="text-xs text-slate-400 mt-3">
-          Quarterly NBFC test. If both thresholds breach, CFO/legal review is required.
-        </p>
+        ) : (
+          <p className="text-sm text-slate-500">No NBFC test is available.</p>
+        )}
       </div>
 
-      {/* KYC tracker */}
       <div className="card">
         <h2 className="section-title mb-4">KYC & Re-KYC Tracker</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           {[
-            { label: 'Verified', count: members.filter(m => m.kycStatus === 'verified').length, color: 'green', filter: null as null },
-            { label: 'Re-KYC Due', count: members.filter(m => m.kycStatus === 'rekyc_due').length, color: 'amber', filter: 'rekyc_due' as const },
-            { label: 'Expired', count: members.filter(m => m.kycStatus === 'expired').length, color: 'red', filter: 'expired' as const },
-            { label: 'Pending', count: members.filter(m => m.kycStatus === 'pending').length, color: 'slate', filter: null as null },
-          ].map(({ label, count, color, filter }) => (
-            <button
-              key={label}
-              onClick={() => filter ? setKycDrillFilter(kycDrillFilter === filter ? null : filter) : undefined}
-              className={`rounded-lg border p-3 text-center transition-shadow ${filter ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} ${
-                kycDrillFilter === filter && filter ? 'ring-2 ring-offset-1 ring-green-500' : ''
-              } ${
-                color === 'green' ? 'bg-green-50 border-green-200' :
-                color === 'amber' ? 'bg-amber-50 border-amber-200' :
-                color === 'red' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'
-              }`}
-            >
-              <div className={`text-xl font-bold num ${
-                color === 'green' ? 'text-green-900' :
-                color === 'amber' ? 'text-amber-900' :
-                color === 'red' ? 'text-red-900' : 'text-slate-900'
-              }`}>{count}</div>
-              <div className={`text-xs font-medium mt-0.5 ${
-                color === 'green' ? 'text-green-700' :
-                color === 'amber' ? 'text-amber-700' :
-                color === 'red' ? 'text-red-700' : 'text-slate-600'
-              }`}>{label}</div>
-              {filter && count > 0 && (
-                <div className="text-[10px] mt-1 text-slate-400">Click to view</div>
-              )}
-            </button>
+            ['Completed', kycCounts.completed, 'bg-green-50 border-green-200 text-green-900'],
+            ['Due', kycCounts.due, 'bg-slate-50 border-slate-200 text-slate-900'],
+            ['30-day warning', kycCounts.warning, 'bg-amber-50 border-amber-200 text-amber-900'],
+            ['Overdue', kycCounts.overdue, 'bg-red-50 border-red-200 text-red-900'],
+          ].map(([label, count, classes]) => (
+            <div key={String(label)} className={`rounded-lg border p-3 text-center ${classes}`}>
+              <div className="text-xl font-bold num">{count}</div>
+              <div className="text-xs font-medium mt-0.5">{label}</div>
+            </div>
           ))}
         </div>
-
-        {/* KYC drill-down list */}
-        {kycDrillFilter && kycDrillMembers.length > 0 && (
-          <div className="border border-amber-200 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2 bg-amber-50 border-b border-amber-200">
-              <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
-                {kycDrillFilter === 'rekyc_due' ? 'Re-KYC Due' : 'KYC Expired'} — {kycDrillMembers.length} member{kycDrillMembers.length !== 1 ? 's' : ''}
-              </p>
-              <button onClick={() => setKycDrillFilter(null)} className="text-slate-400 hover:text-slate-600">
-                <XIcon size={14} />
-              </button>
-            </div>
+        {projection.kycReviews.length > 0 ? (
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="table-header text-left">Member Name</th>
-                  <th className="table-header text-left">Folio / ID</th>
-                  <th className="table-header text-left">KYC Status</th>
-                  <th className="table-header text-left">Active Loans</th>
+                  <th className="table-header text-left">Member</th>
+                  <th className="table-header text-left">KYC status</th>
+                  <th className="table-header text-left">PAN</th>
+                  <th className="table-header text-left">CKYC consent</th>
+                  <th className="table-header text-left">Re-KYC due</th>
+                  <th className="table-header text-left">Days overdue</th>
+                  <th className="table-header text-left">Risk</th>
+                  <th className="table-header text-left">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {kycDrillMembers.map(m => {
-                  const activeLoansCount = loanAccounts.filter(l => l.memberId === m.id && l.status !== 'closed').length;
-                  return (
-                    <tr key={m.id} className="hover:bg-slate-50">
-                      <td className="table-cell font-medium text-slate-900">{m.name}</td>
-                      <td className="table-cell text-slate-500 num">{m.folioNumber || m.id}</td>
-                      <td className="table-cell">
-                        <StatusBadge
-                          label={m.kycStatus === 'rekyc_due' ? 'Re-KYC Due' : 'KYC Expired'}
-                          size="sm"
-                          type={m.kycStatus === 'expired' ? 'error' : 'warning'}
-                        />
-                      </td>
-                      <td className="table-cell text-slate-600">{activeLoansCount > 0 ? `${activeLoansCount} active` : '—'}</td>
-                    </tr>
-                  );
-                })}
+                {projection.kycReviews.map(review => (
+                  <tr key={review.kyc_review_id}>
+                    <td className="table-cell">
+                      <p className="font-medium text-slate-900">{review.member_name}</p>
+                      <p className="text-xs text-slate-500">{review.member_type}</p>
+                    </td>
+                    <td className="table-cell text-slate-600">{review.kyc_status}</td>
+                    <td className="table-cell text-slate-600">
+                      {String(review.completeness.pan_status || '—')}
+                    </td>
+                    <td className="table-cell text-slate-600">
+                      {String(review.completeness.ckyc_consent_status || '—')}
+                    </td>
+                    <td className="table-cell text-slate-600">{date.format(new Date(review.due_date))}</td>
+                    <td className="table-cell text-slate-600 num">{review.days_overdue}</td>
+                    <td className="table-cell text-slate-600">{review.risk_rating || '—'}</td>
+                    <td className="table-cell"><StatusBadge label={review.status} size="sm" /></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
-            <div className="px-4 py-2 bg-amber-50 border-t border-amber-100">
-              <p className="text-xs text-amber-700 font-medium">New loan applications for these members are blocked until KYC is updated.</p>
-            </div>
           </div>
-        )}
-
-        {pendingKyc > 0 && !kycDrillFilter && (
-          <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2 font-medium">
-            {pendingKyc} member{pendingKyc > 1 ? 's' : ''} require re-KYC. New loan applications for affected members are blocked until KYC is complete.
-          </p>
+        ) : (
+          <p className="text-sm text-slate-500">No KYC or re-KYC reviews are available.</p>
         )}
       </div>
 
-      {/* Money-Lending Annual Review */}
       <div className="card">
         <h2 className="section-title mb-4 flex items-center gap-2">
           <Scale size={16} className="text-indigo-600" />
           Money-Lending Act — Annual Review
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-2">Legal Opinion on Record</p>
-            <textarea
-              className="w-full text-sm text-slate-700 bg-white border border-slate-200 rounded p-2 resize-none focus:outline-none focus:ring-1 focus:ring-green-500"
-              rows={3}
-              value={mlLegalOpinion}
-              onChange={e => setMlLegalOpinion(e.target.value)}
-              placeholder="Enter legal opinion details..."
-            />
-            <p className="text-xs text-slate-400 mt-1">Last updated: 15 Mar 2026 · Legal Counsel: Adv. R. Kulkarni</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-2">Next Annual Review Due</p>
-            <input
-              type="date"
-              className="field-input mb-2"
-              value={mlNextReview}
-              onChange={e => setMlNextReview(e.target.value)}
-            />
-            {mlNextReview && (
-              <p className={`text-xs font-medium mt-1 ${new Date(mlNextReview) < new Date() ? 'text-red-600' : new Date(mlNextReview) < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-green-700'}`}>
-                {new Date(mlNextReview) < new Date()
-                  ? 'OVERDUE — review required immediately'
-                  : new Date(mlNextReview) < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-                  ? `Due in ${Math.ceil((new Date(mlNextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days`
-                  : `Due ${new Date(mlNextReview).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
-              </p>
-            )}
-            <p className="text-xs text-slate-400 mt-2">Maharashtra Money-Lending (Regulation) Act, 2014. Cooperative societies lending to members require annual compliance review.</p>
-          </div>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <div className="flex items-start gap-2">
-            <CheckCircle2 size={14} className="text-green-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-semibold text-green-800">SFPCL Cooperative Society Exemption</p>
-              <p className="text-xs text-green-700 mt-0.5">As a registered cooperative society lending exclusively to its members, SFPCL falls under Section 4(1)(b) exemption. Annual review and legal opinion on file are mandatory.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Compliance checklist */}
-      <div>
-        <h2 className="section-title mb-3">Compliance Register</h2>
-        <div className="space-y-2">
-          {complianceData.map(rec => (
-            <div key={rec.id} className={`rounded-lg border p-4 ${STATUS_BG[rec.status]}`}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="mt-0.5 flex-shrink-0">{STATUS_ICONS[rec.status]}</div>
+        {projection.moneyLendingReviews.length > 0 ? (
+          <div className="space-y-2">
+            {projection.moneyLendingReviews.map(review => (
+              <div
+                key={review.money_lending_law_review_id}
+                className="bg-green-50 border border-green-200 rounded-lg p-4"
+              >
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 size={16} className="text-green-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{rec.area}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Owner: {rec.owner} · Frequency: {rec.frequency} · Evidence: {rec.evidenceCount} record{rec.evidenceCount !== 1 ? 's' : ''}
+                    <p className="text-sm font-semibold text-green-900">
+                      {review.financial_year} · {review.state}
                     </p>
-                    {rec.lastReviewDate && (
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Last reviewed: {new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(rec.lastReviewDate))}
-                      </p>
-                    )}
+                    <p className="text-xs text-green-700 mt-1">
+                      Applicability: {review.applicability} · reviewed{' '}
+                      {date.format(new Date(review.reviewed_at))}
+                    </p>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <StatusBadge label={rec.status} size="sm" />
-                  <p className="text-xs text-slate-500">Due: {new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(rec.nextDueDate))}</p>
-                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">No annual money-lending review is available.</p>
+        )}
+      </div>
+
+      <div className="card">
+        <h2 className="section-title mb-4">Stamp Duty Register</h2>
+        {projection.stampDuty.length > 0 ? (
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="table-header text-left">Application</th>
+                  <th className="table-header text-left">Borrower</th>
+                  <th className="table-header text-left">Document</th>
+                  <th className="table-header text-left">Stamp value</th>
+                  <th className="table-header text-left">Stamp number</th>
+                  <th className="table-header text-left">Purchase date</th>
+                  <th className="table-header text-left">Stamp</th>
+                  <th className="table-header text-left">Notarisation</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {projection.stampDuty.map(record => (
+                  <tr key={record.stamp_duty_record_id}>
+                    <td className="table-cell font-medium text-slate-900">
+                      {record.application_reference_number}
+                    </td>
+                    <td className="table-cell text-slate-600">{record.borrower_name}</td>
+                    <td className="table-cell text-slate-600">
+                      {record.document_type.replace(/_/g, ' ')}
+                    </td>
+                    <td className="table-cell text-slate-600 num">
+                      {money.format(Number(record.stamp_paper_amount))}
+                    </td>
+                    <td className="table-cell text-slate-600">{record.stamp_number || '—'}</td>
+                    <td className="table-cell text-slate-600">
+                      {record.stamp_purchase_date
+                        ? date.format(new Date(record.stamp_purchase_date))
+                        : '—'}
+                    </td>
+                    <td className="table-cell">
+                      <StatusBadge label={record.status} size="sm" />
+                    </td>
+                    <td className="table-cell text-slate-600">
+                      {record.notarisation_status || 'Not required'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">No stamp-duty records are available.</p>
+        )}
+      </div>
+
+      <div>
+        <h2 className="section-title mb-3">Compliance Register</h2>
+        {projection.controls.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No compliance controls are available in your scope.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {projection.controls.map(control => {
+              const tasks = tasksForControl(projection.tasks, control.compliance_control_id);
+              return (
+                <div
+                  key={control.compliance_control_id}
+                  className={`rounded-lg border p-4 ${statusBackground(control.status)}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex-shrink-0">{statusIcon(control.status)}</div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-900">{control.control_name}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Owner: {control.owner_role_code.replace(/_/g, ' ')} · Frequency:{' '}
+                        {control.frequency} · Evidence: {control.evidence_required}
+                      </p>
+                      {tasks.map(task => (
+                        <div
+                          key={task.compliance_task_id}
+                          className="mt-3 border-t border-slate-200 pt-3 flex items-start justify-between gap-4"
+                        >
+                          <div>
+                            <p className="text-xs font-medium text-slate-700">
+                              {task.task_period} · Due {date.format(new Date(task.due_date))}
+                            </p>
+                            {task.remarks && (
+                              <p className="text-xs text-slate-500 mt-1">{task.remarks}</p>
+                            )}
+                            {task.compliance_evidence_id
+                              && task.available_actions.includes('review_evidence') && (
+                                <button
+                                  type="button"
+                                  className="btn-secondary mt-3"
+                                  onClick={() => openReview({
+                                    kind: 'evidence',
+                                    id: task.compliance_evidence_id!,
+                                    label: `${control.control_name} Evidence Review · ${task.task_period}`,
+                                  })}
+                                >
+                                  Review Evidence
+                                </button>
+                              )}
+                          </div>
+                          <StatusBadge label={task.task_status} size="sm" />
+                        </div>
+                      ))}
+                      {tasks.length === 0 && (
+                        <p className="text-xs text-slate-500 mt-2">No generated tasks.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

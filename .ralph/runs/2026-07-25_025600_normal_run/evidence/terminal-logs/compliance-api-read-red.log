@@ -1,0 +1,36 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/recoveryApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_025600_normal_run/sfpcl-lms
+
+ ❯ src/services/recoveryApi.test.ts (5 tests | 1 failed) 9ms
+   ✓ 011PA default case read contracts > uses the list and selected-detail endpoints and preserves frozen note facts 2ms
+   ✓ 011PB recovery decision contracts > reads the note-linked approval and posts only its identifier, action, and mandatory reason 2ms
+   ✓ 011PC closure staff contracts > reads readiness and posts financial closure with a stable idempotency identity 1ms
+   ✓ 011PC closure staff contracts > issues NOC, records security return, and archives through exact owner endpoints 1ms
+   × 011PD compliance staff contracts > loads every S62-S67 projection through its canonical read endpoint 3ms
+     → fetchComplianceDashboard is not a function
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/recoveryApi.test.ts > 011PD compliance staff contracts > loads every S62-S67 projection through its canonical read endpoint
+TypeError: fetchComplianceDashboard is not a function
+ ❯ src/services/recoveryApi.test.ts:284:30
+    282|     vi.stubGlobal('fetch', fetchMock);
+    283| 
+    284|     const projection = await fetchComplianceDashboard();
+       |                              ^
+    285| 
+    286|     expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  03:01:06
+   Duration  595ms (transform 105ms, setup 0ms, collect 107ms, tests 9ms, environment 0ms, prepare 43ms)
+

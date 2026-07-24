@@ -1,0 +1,869 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/compliance/ComplianceDashboard.test.tsx -t renders empty, unauthorized
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_025600_normal_run/sfpcl-lms
+
+ ❯ src/pages/compliance/ComplianceDashboard.test.tsx (4 tests | 1 failed | 3 skipped) 1024ms
+   ↓ 011PD compliance dashboard owner wiring > renders every S62-S67 tracker from the canonical backend projection
+   ↓ 011PD compliance dashboard owner wiring > is the final mock-removal owner and retains no inline compliance fixtures
+   × 011PD compliance dashboard owner wiring > renders empty, unauthorized, and general error states 1023ms
+     → Unable to find an element with the text: No compliance controls are available in your scope.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mCompliance Dashboard[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+        [36m>[39m
+          [0mRegulatory compliance, Section 186, NBFC test, and KYC tracker[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield text-green-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mSection 186 — Aggregate Lending Limit[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo Section 186 tracker is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mNBFC Principal Business Test[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo NBFC test is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mKYC & Re-KYC Tracker[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-green-50 border-green-200 text-green-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mCompleted[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-slate-50 border-slate-200 text-slate-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mDue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-amber-50 border-amber-200 text-amber-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0m30-day warning[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-red-50 border-red-200 text-red-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mOverdue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo KYC or re-KYC reviews are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-scale text-indigo-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m19 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m5 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M7 21h10"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mMoney-Lending Act — Annual Review[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo annual money-lending review is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mStamp Duty Register[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo stamp-duty records are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-3"[39m
+        [36m>[39m
+          [0mCompliance Register[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2"[39m
+        [36m/>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mCompliance Dashboard[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+        [36m>[39m
+          [0mRegulatory compliance, Section 186, NBFC test, and KYC tracker[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield text-green-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mSection 186 — Aggregate Lending Limit[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo Section 186 tracker is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mNBFC Principal Business Test[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo NBFC test is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mKYC & Re-KYC Tracker[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-green-50 border-green-200 text-green-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mCompleted[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-slate-50 border-slate-200 text-slate-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mDue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-amber-50 border-amber-200 text-amber-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0m30-day warning[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-red-50 border-red-200 text-red-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mOverdue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo KYC or re-KYC reviews are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-scale text-indigo-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m19 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m5 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M7 21h10"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mMoney-Lending Act — Annual Review[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo annual money-lending review is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mStamp Duty Register[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo stamp-duty records are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-3"[39m
+        [36m>[39m
+          [0mCompliance Register[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2"[39m
+        [36m/>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ↓ 011PD compliance dashboard owner wiring > reviews projected actions and refetches canonical state while auditors stay read-only
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/compliance/ComplianceDashboard.test.tsx > 011PD compliance dashboard owner wiring > renders empty, unauthorized, and general error states
+TestingLibraryElementError: Unable to find an element with the text: No compliance controls are available in your scope.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mCompliance Dashboard[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+        [36m>[39m
+          [0mRegulatory compliance, Section 186, NBFC test, and KYC tracker[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield text-green-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mSection 186 — Aggregate Lending Limit[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo Section 186 tracker is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mNBFC Principal Business Test[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo NBFC test is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mKYC & Re-KYC Tracker[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-green-50 border-green-200 text-green-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mCompleted[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-slate-50 border-slate-200 text-slate-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mDue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-amber-50 border-amber-200 text-amber-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0m30-day warning[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-red-50 border-red-200 text-red-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mOverdue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo KYC or re-KYC reviews are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-scale text-indigo-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m19 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m5 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M7 21h10"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mMoney-Lending Act — Annual Review[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo annual money-lending review is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mStamp Duty Register[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo stamp-duty records are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-3"[39m
+        [36m>[39m
+          [0mCompliance Register[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2"[39m
+        [36m/>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+        [36m>[39m
+          [0mCompliance Dashboard[0m
+        [36m</h1>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+        [36m>[39m
+          [0mRegulatory compliance, Section 186, NBFC test, and KYC tracker[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield text-green-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mSection 186 — Aggregate Lending Limit[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo Section 186 tracker is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mNBFC Principal Business Test[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo NBFC test is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mKYC & Re-KYC Tracker[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-green-50 border-green-200 text-green-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mCompleted[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-slate-50 border-slate-200 text-slate-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mDue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-amber-50 border-amber-200 text-amber-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0m30-day warning[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-lg border p-3 text-center bg-red-50 border-red-200 text-red-900"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold num"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs font-medium mt-0.5"[39m
+            [36m>[39m
+              [0mOverdue[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo KYC or re-KYC reviews are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-scale text-indigo-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3v18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m19 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m5 8 3 8a5 5 0 0 1-6 0zV7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M7 21h10"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mMoney-Lending Act — Annual Review[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo annual money-lending review is available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-4"[39m
+        [36m>[39m
+          [0mStamp Duty Register[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-slate-500"[39m
+        [36m>[39m
+          [0mNo stamp-duty records are available.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"section-title mb-3"[39m
+        [36m>[39m
+          [0mCompliance Register[0m
+        [36m</h2>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2"[39m
+        [36m/>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/compliance/ComplianceDashboard.test.tsx:207:25
+    205|     });
+    206|     const empty = render(<ComplianceDashboard />);
+    207|     expect(await screen.findByText('No compliance controls are availab…
+       |                         ^
+    208|     expect(screen.getByText('No Section 186 tracker is available.')).t…
+    209|     expect(screen.getByText('No stamp-duty records are available.')).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 skipped (4)
+   Start at  03:05:33
+   Duration  1.93s (transform 139ms, setup 0ms, collect 323ms, tests 1.02s, environment 309ms, prepare 39ms)
+

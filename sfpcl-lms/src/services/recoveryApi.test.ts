@@ -5,6 +5,7 @@ import {
   closeLoan,
   createRecoveryDecision,
   fetchArchiveRecord,
+  fetchComplianceDashboard,
   fetchClosureReadiness,
   fetchDefaultCase,
   fetchDefaultCases,
@@ -12,6 +13,9 @@ import {
   fetchRecoveryApprovalCase,
   issueNoc,
   recordSecurityReturn,
+  reviewComplianceEvidence,
+  reviewNbfcPrincipalTest,
+  reviewSection186Tracker,
 } from './recoveryApi';
 
 const storage = new Map<string, string>();
@@ -252,6 +256,107 @@ describe('011PC closure staff contracts', () => {
         file_location_digital: '',
       }), 'archive-attempt-1'],
       ['/api/v1/loan-closures/closure-1/archive/', 'GET', undefined, undefined],
+    ]);
+  });
+});
+
+describe('011PD compliance staff contracts', () => {
+  it('loads every S62-S67 projection through its canonical read endpoint', async () => {
+    const pages = [
+      [{ compliance_control_id: 'control-1' }],
+      [{ compliance_task_id: 'task-1' }],
+      [{ section_186_tracker_id: 'section-1' }],
+      [{ nbfc_principal_test_id: 'nbfc-1' }],
+      [{ kyc_review_id: 'kyc-1' }],
+      [{ money_lending_law_review_id: 'money-1' }],
+      [{ stamp_duty_record_id: 'stamp-1' }],
+    ];
+    const fetchMock = vi.fn()
+      .mockImplementation((_url: string, _options?: RequestInit) => (
+        Promise.resolve(ok(pages.shift(), {
+          page: 1,
+          page_size: 100,
+          total_count: 1,
+          total_pages: 1,
+          has_next: false,
+          has_previous: false,
+        }))
+      ));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const projection = await fetchComplianceDashboard();
+
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://127.0.0.1:8000/api/v1/compliance-controls/?page_size=100',
+      'http://127.0.0.1:8000/api/v1/compliance-tasks/?page_size=100',
+      'http://127.0.0.1:8000/api/v1/compliance/section-186-trackers/',
+      'http://127.0.0.1:8000/api/v1/compliance/nbfc-principal-tests/',
+      'http://127.0.0.1:8000/api/v1/kyc-reviews/?page_size=100',
+      'http://127.0.0.1:8000/api/v1/reports/money-lending-review/?page_size=100',
+      'http://127.0.0.1:8000/api/v1/reports/stamp-duty/?page_size=100',
+    ]);
+    expect(projection.controls[0]).toMatchObject({ compliance_control_id: 'control-1' });
+    expect(projection.section186[0]).toMatchObject({ section_186_tracker_id: 'section-1' });
+    expect(projection.stampDuty[0]).toMatchObject({ stamp_duty_record_id: 'stamp-1' });
+  });
+
+  it('posts only the projected evidence and statutory review fields', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValue(ok({ compliance_task_id: 'task-1' }))
+      .mockResolvedValue(ok({ section_186_tracker_id: 'section-1' }))
+      .mockResolvedValue(ok({ nbfc_principal_test_id: 'nbfc-1' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await reviewComplianceEvidence('evidence-1', {
+      review_status: 'accepted',
+      review_comments: 'Evidence reconciles to the governed source.',
+    });
+    await reviewSection186Tracker('section-1', {
+      decision: 'accepted',
+      comments: 'Quarterly threshold evidence reviewed.',
+      presented_to_board_flag: false,
+      board_document_id: null,
+    });
+    await reviewNbfcPrincipalTest('nbfc-1', {
+      decision: 'rejected',
+      comments: 'Ratio evidence needs correction.',
+      presented_to_board_flag: false,
+      board_document_id: null,
+    });
+
+    expect(fetchMock.mock.calls.map(([url, options]) => [
+      url,
+      (options as RequestInit).method,
+      (options as RequestInit).body,
+    ])).toEqual([
+      [
+        'http://127.0.0.1:8000/api/v1/compliance-evidence/evidence-1/review/',
+        'POST',
+        JSON.stringify({
+          review_status: 'accepted',
+          review_comments: 'Evidence reconciles to the governed source.',
+        }),
+      ],
+      [
+        'http://127.0.0.1:8000/api/v1/compliance/section-186-trackers/section-1/review/',
+        'POST',
+        JSON.stringify({
+          decision: 'accepted',
+          comments: 'Quarterly threshold evidence reviewed.',
+          presented_to_board_flag: false,
+          board_document_id: null,
+        }),
+      ],
+      [
+        'http://127.0.0.1:8000/api/v1/compliance/nbfc-principal-tests/nbfc-1/review/',
+        'POST',
+        JSON.stringify({
+          decision: 'rejected',
+          comments: 'Ratio evidence needs correction.',
+          presented_to_board_flag: false,
+          board_document_id: null,
+        }),
+      ],
     ]);
   });
 });

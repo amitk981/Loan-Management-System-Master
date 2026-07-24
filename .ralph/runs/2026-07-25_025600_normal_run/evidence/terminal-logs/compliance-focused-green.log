@@ -1,0 +1,17 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/recoveryApi.test.ts src/pages/compliance/ComplianceDashboard.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_025600_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (6 tests) 6ms
+ ✓ src/pages/compliance/ComplianceDashboard.test.tsx (5 tests) 596ms
+   ✓ 011PD compliance dashboard owner wiring > validates projected reviews, refetches canonical state, and keeps auditors read-only  335ms
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  03:08:11
+   Duration  1.60s (transform 208ms, setup 0ms, collect 396ms, tests 602ms, environment 312ms, prepare 77ms)
+

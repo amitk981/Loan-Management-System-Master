@@ -353,14 +353,15 @@
     "012F2-performance-readiness-evidence",
     "011PA-default-case-notes-frontend-wiring",
     "011PB-recovery-decision-frontend-wiring",
-    "011PC-closure-frontend-wiring"
+    "011PC-closure-frontend-wiring",
+    "011PD-compliance-frontend-wiring"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-25_015201_repair",
+  "last_run_id": "2026-07-25_025600_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 36,
+  "slices_completed_since_architecture_review": 37,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

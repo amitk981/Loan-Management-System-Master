@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) {
-  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PB/011PC staff acceptance contract');
+  throw new Error('RALPH_EVIDENCE_DIR is required for the 011PB/011PC/011PD staff acceptance contract');
 }
 fs.mkdirSync(evidenceDir, { recursive: true });
 
@@ -39,6 +39,13 @@ test.beforeEach(async ({ page }) => {
     if (url.pathname.endsWith('/closure-readiness/')) return ok(route, blockedClosureReadiness);
     return route.fallback();
   });
+  await page.route('**/api/v1/compliance-controls/**', route => listOk(route, [complianceControl]));
+  await page.route('**/api/v1/compliance-tasks/**', route => listOk(route, [complianceTask]));
+  await page.route('**/api/v1/compliance/section-186-trackers/**', route => listOk(route, [section186]));
+  await page.route('**/api/v1/compliance/nbfc-principal-tests/**', route => listOk(route, [nbfcTest]));
+  await page.route('**/api/v1/kyc-reviews/**', route => listOk(route, [kycReview]));
+  await page.route('**/api/v1/reports/money-lending-review/**', route => listOk(route, [moneyLendingReview]));
+  await page.route('**/api/v1/reports/stamp-duty/**', route => listOk(route, [stampDutyRecord]));
 });
 
 test('S56 records the server-fixed recovery decision and canonical S57 availability', async ({ page }) => {
@@ -117,6 +124,37 @@ test('S58-S61 show named server readiness blockers and keep NOC blocked', async 
   });
 });
 
+test('S62-S67 show canonical compliance trackers and keep auditor access read-only', async ({ page }) => {
+  await page.unroute('**/api/v1/auth/me/');
+  await page.route('**/api/v1/auth/me/', route => ok(route, internalAuditor));
+  const mutations: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname.includes('/api/v1/') && request.method() !== 'GET') {
+      mutations.push(`${request.method()} ${url.pathname}`);
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Compliance' }).click();
+  await expect(page.getByRole('heading', { name: 'Compliance Dashboard' })).toBeVisible();
+  await expect(page.getByText('₹1,02,00,000.00').first()).toBeVisible();
+  await expect(page.getByText('₹22,00,000.00')).toBeVisible();
+  await expect(page.getByText('33.3333%')).toBeVisible();
+  await expect(page.getByText('12.5000%')).toBeVisible();
+  await expect(page.getByText('Seeded Browser Re-KYC Member')).toBeVisible();
+  await expect(page.getByText('FY2026-27 · Maharashtra')).toBeVisible();
+  await expect(page.getByText('APP-BROWSER-STAMP-011PD')).toBeVisible();
+  await expect(page.getByText('Member-only lending control')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Review Section 186|Review NBFC Test|Review Evidence/ })).toHaveCount(0);
+  expect(mutations).toEqual([]);
+  await page.screenshot({
+    path: path.join(evidenceDir, 'compliance-trackers.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+});
+
 async function openDefaultWorkbench(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Default & Recovery' }).click();
@@ -167,6 +205,26 @@ const creditManager = {
     'recovery.decision.create',
     'closure.readiness.read',
     'closure.loan.close',
+  ],
+  available_actions: [],
+};
+
+const internalAuditor = {
+  user_id: 'auditor-browser-011pd',
+  full_name: 'Browser Internal Auditor',
+  email: 'auditor-browser@sfpcl.example',
+  status: 'active',
+  roles: [{ role_code: 'internal_auditor', role_name: 'Internal Auditor' }],
+  teams: [{ team_code: 'audit', team_name: 'Internal Audit' }],
+  role_codes: ['internal_auditor'],
+  team_codes: ['audit'],
+  permissions: [
+    'compliance.control.read',
+    'compliance.task.read',
+    'compliance.evidence.review',
+    'compliance.section186.read',
+    'compliance.nbfc_test.read',
+    'reports.compliance.read',
   ],
   available_actions: [],
 };
@@ -330,4 +388,126 @@ const blockedClosureReadiness = {
   total_outstanding: '125.00', interest_adjustment_applied: false, security_return_required: true,
   physical_share_return_required: true, demat_unpledge_required: false,
   blank_cheque_return_required: true, poa_release_required: false,
+};
+
+const complianceControl = {
+  compliance_control_id: 'control-browser-011pd',
+  control_code: 'MEMBER_ONLY_LENDING',
+  control_name: 'Member-only lending control',
+  control_area: 'producer_company',
+  legal_basis: 'Producer Company member lending requirement.',
+  control_type: 'preventive',
+  frequency: 'ongoing',
+  owner_role_code: 'company_secretary',
+  owner_user_id: 'owner-browser-011pd',
+  reviewer_user_id: 'auditor-browser-011pd',
+  first_due_date: '2026-04-01',
+  evidence_required: 'Loan and membership register.',
+  risk_if_missed: 'Non-member lending.',
+  status: 'active',
+  available_actions: [],
+};
+
+const complianceTask = {
+  compliance_task_id: 'task-browser-011pd',
+  compliance_control_id: complianceControl.compliance_control_id,
+  control_code: complianceControl.control_code,
+  task_period: 'ongoing',
+  due_date: '2026-07-31',
+  assigned_to_user_id: 'owner-browser-011pd',
+  reviewer_user_id: 'auditor-browser-011pd',
+  task_status: 'evidence_submitted',
+  remarks: 'Register reconciled.',
+  closed_at: null,
+  compliance_evidence_id: 'evidence-browser-011pd',
+  available_actions: [],
+};
+
+const section186 = {
+  section_186_tracker_id: 'section-browser-011pd',
+  financial_year: 'FY2026-27',
+  quarter: 'Q1',
+  paid_up_capital_amount: '10000000.00',
+  free_reserves_amount: '5000000.00',
+  securities_premium_amount: '2000000.00',
+  limit_60_percent_basis_amount: '10200000.00',
+  limit_100_percent_basis_amount: '7000000.00',
+  applicable_limit_amount: '10200000.00',
+  total_loans_exposure_amount: '8000000.00',
+  headroom_amount: '2200000.00',
+  within_limit_flag: true,
+  special_resolution_required_flag: false,
+  compliance_task_id: 'task-section-browser-011pd',
+  compliance_evidence_id: 'evidence-section-browser-011pd',
+  review_status: 'pending',
+  review_comments: '',
+  presented_to_board_flag: false,
+  available_actions: [],
+};
+
+const nbfcTest = {
+  nbfc_principal_test_id: 'nbfc-browser-011pd',
+  financial_year: 'FY2026-27',
+  quarter: 'Q1',
+  financial_assets_amount: '20000000.00',
+  total_assets_amount: '60000000.00',
+  financial_asset_ratio: '33.3333',
+  financial_income_amount: '1000000.00',
+  gross_income_amount: '8000000.00',
+  financial_income_ratio: '12.5000',
+  early_warning_threshold_ratio: '40.0000',
+  registration_triggered_flag: false,
+  one_ratio_above_statutory_flag: false,
+  early_warning_flag: false,
+  presented_to_board_flag: false,
+  compliance_task_id: 'task-nbfc-browser-011pd',
+  compliance_evidence_id: 'evidence-nbfc-browser-011pd',
+  review_status: 'pending',
+  review_comments: '',
+  available_actions: [],
+};
+
+const kycReview = {
+  kyc_review_id: 'kyc-browser-011pd',
+  member_id: 'member-browser-011pd',
+  member_name: 'Seeded Browser Re-KYC Member',
+  member_type: 'individual',
+  member_status: 'active',
+  kyc_status: 'verified',
+  risk_rating: 'medium',
+  due_date: '2026-07-20',
+  days_overdue: 5,
+  status: 'overdue',
+  assigned_to_user_id: 'owner-browser-011pd',
+  completeness: { complete: true, pan_status: 'verified', ckyc_consent_status: 'available' },
+  available_actions: [],
+};
+
+const moneyLendingReview = {
+  money_lending_law_review_id: 'money-browser-011pd',
+  financial_year: 'FY2026-27',
+  state: 'Maharashtra',
+  applicability: 'exempt',
+  exemption_applicable_flag: true,
+  compliance_task_id: 'task-money-browser-011pd',
+  compliance_evidence_id: 'evidence-money-browser-011pd',
+  reviewed_by_user_id: 'secretary-browser-011pd',
+  reviewed_at: '2026-03-15T10:00:00Z',
+};
+
+const stampDutyRecord = {
+  stamp_duty_record_id: 'stamp-browser-011pd',
+  loan_document_id: 'document-browser-011pd',
+  document_type: 'loan_agreement',
+  loan_application_id: 'application-browser-011pd',
+  application_reference_number: 'APP-BROWSER-STAMP-011PD',
+  member_id: 'member-browser-011pd',
+  borrower_name: 'Seeded Browser Stamp Member',
+  stamp_paper_amount: '500.00',
+  stamp_type: 'physical',
+  stamp_number: 'STAMP-BROWSER-011PD',
+  stamp_purchase_date: '2026-06-01',
+  executed_date: '2026-06-02',
+  status: 'adequate',
+  notarisation_status: 'completed',
 };

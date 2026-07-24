@@ -1,0 +1,29 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/recoveryApi.test.ts src/pages/compliance/ComplianceDashboard.test.tsx src/pages/defaults/DefaultRecoveryHub.test.tsx src/pages/closure/LoanClosureHub.test.tsx src/pages/compliance/AuditorEpic011View.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_025600_normal_run/sfpcl-lms
+
+ ✓ src/services/recoveryApi.test.ts (6 tests) 7ms
+ ✓ src/pages/compliance/AuditorEpic011View.test.tsx (4 tests) 464ms
+   ✓ 011O auditor read-only view > filters and opens populated Epic 011 records without mutation controls  413ms
+ ✓ src/pages/compliance/ComplianceDashboard.test.tsx (5 tests) 2025ms
+   ✓ 011PD compliance dashboard owner wiring > validates projected reviews, refetches canonical state, and keeps auditors read-only  1188ms
+   ✓ 011PD compliance dashboard owner wiring > blocks accepted statutory reviews until required Board evidence is named  547ms
+ ✓ src/pages/defaults/DefaultRecoveryHub.test.tsx (11 tests) 2192ms
+   ✓ 011PA default case and frozen-note read surface > renders list/detail, grace, extension, and frozen note from backend projections  385ms
+   ✓ 011PA default case and frozen-note read surface > shows exact pending, rejected, conflicted, and foreign approval blockers without decision controls  489ms
+   ✓ 011PA default case and frozen-note read surface > enforces a reason, posts the server-fixed action, and refetches canonical terminal state  729ms
+ ✓ src/pages/closure/LoanClosureHub.test.tsx (6 tests) 2769ms
+   ✓ 011PC closure readiness and downstream owner wiring > renders named server blockers and keeps NOC unavailable before financial closure  350ms
+   ✓ 011PC closure readiness and downstream owner wiring > validates notes, closes from server readiness, and refetches canonical downstream reads  694ms
+   ✓ 011PC closure readiness and downstream owner wiring > issues NOC then renders the canonical refetch projection  968ms
+   ✓ 011PC closure readiness and downstream owner wiring > records server-owned security state and archives only after downstream prerequisites  660ms
+
+ Test Files  5 passed (5)
+      Tests  32 passed (32)
+   Start at  03:22:20
+   Duration  5.26s (transform 1.19s, setup 0ms, collect 3.73s, tests 7.46s, environment 3.13s, prepare 944ms)
+

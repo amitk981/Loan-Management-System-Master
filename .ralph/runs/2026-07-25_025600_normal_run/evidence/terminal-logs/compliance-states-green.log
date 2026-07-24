@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/compliance/ComplianceDashboard.test.tsx -t renders empty, unauthorized
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_025600_normal_run/sfpcl-lms
+
+ ✓ src/pages/compliance/ComplianceDashboard.test.tsx (4 tests | 3 skipped) 35ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 3 skipped (4)
+   Start at  03:06:01
+   Duration  927ms (transform 144ms, setup 0ms, collect 347ms, tests 35ms, environment 306ms, prepare 40ms)
+

@@ -262,6 +262,143 @@ export interface ArchiveRecordProjection {
   available_actions: string[];
 }
 
+export interface ComplianceControlProjection {
+  compliance_control_id: string;
+  control_code: string;
+  control_name: string;
+  control_area: string;
+  legal_basis: string;
+  control_type: string;
+  frequency: string;
+  owner_role_code: string;
+  owner_user_id: string;
+  reviewer_user_id: string;
+  first_due_date: string;
+  evidence_required: string;
+  risk_if_missed: string;
+  status: string;
+  available_actions: string[];
+}
+
+export interface ComplianceTaskProjection {
+  compliance_task_id: string;
+  compliance_control_id: string;
+  control_code: string;
+  task_period: string;
+  due_date: string;
+  assigned_to_user_id: string;
+  reviewer_user_id: string;
+  task_status: string;
+  remarks: string;
+  closed_at: string | null;
+  compliance_evidence_id: string | null;
+  available_actions: string[];
+}
+
+export interface Section186TrackerProjection {
+  section_186_tracker_id: string;
+  financial_year: string;
+  quarter: string;
+  paid_up_capital_amount: string;
+  free_reserves_amount: string;
+  securities_premium_amount: string;
+  limit_60_percent_basis_amount: string;
+  limit_100_percent_basis_amount: string;
+  applicable_limit_amount: string;
+  total_loans_exposure_amount: string;
+  headroom_amount: string;
+  within_limit_flag: boolean;
+  special_resolution_required_flag: boolean;
+  compliance_task_id: string;
+  compliance_evidence_id: string;
+  review_status: string;
+  review_comments: string;
+  presented_to_board_flag: boolean;
+  available_actions: string[];
+}
+
+export interface NbfcPrincipalTestProjection {
+  nbfc_principal_test_id: string;
+  financial_year: string;
+  quarter: string;
+  financial_assets_amount: string;
+  total_assets_amount: string;
+  financial_asset_ratio: string;
+  financial_income_amount: string;
+  gross_income_amount: string;
+  financial_income_ratio: string;
+  early_warning_threshold_ratio: string;
+  registration_triggered_flag: boolean;
+  one_ratio_above_statutory_flag: boolean;
+  early_warning_flag: boolean;
+  presented_to_board_flag: boolean;
+  compliance_task_id: string;
+  compliance_evidence_id: string;
+  review_status: string;
+  review_comments: string;
+  available_actions: string[];
+}
+
+export interface KycReviewProjection {
+  kyc_review_id: string;
+  member_id: string;
+  member_name: string;
+  member_type: string;
+  member_status: string;
+  kyc_status: string;
+  risk_rating: string | null;
+  due_date: string;
+  days_overdue: number;
+  status: string;
+  assigned_to_user_id: string;
+  completeness: {
+    complete?: boolean;
+    pan_status?: string;
+    ckyc_consent_status?: string;
+    [key: string]: unknown;
+  };
+  available_actions: string[];
+}
+
+export interface MoneyLendingReviewProjection {
+  money_lending_law_review_id: string;
+  financial_year: string;
+  state: string;
+  applicability: string;
+  exemption_applicable_flag: boolean;
+  compliance_task_id: string;
+  compliance_evidence_id: string;
+  reviewed_by_user_id: string;
+  reviewed_at: string;
+}
+
+export interface StampDutyProjection {
+  stamp_duty_record_id: string;
+  loan_document_id: string;
+  document_type: string;
+  loan_application_id: string;
+  application_reference_number: string;
+  member_id: string;
+  borrower_name: string;
+  stamp_paper_amount: string;
+  stamp_type: string;
+  stamp_number: string | null;
+  stamp_purchase_date: string | null;
+  executed_date: string | null;
+  status: string;
+  notarisation_status: string | null;
+}
+
+export interface ComplianceDashboardProjection {
+  controls: ComplianceControlProjection[];
+  tasks: ComplianceTaskProjection[];
+  section186: Section186TrackerProjection[];
+  nbfcTests: NbfcPrincipalTestProjection[];
+  kycReviews: KycReviewProjection[];
+  moneyLendingReviews: MoneyLendingReviewProjection[];
+  stampDuty: StampDutyProjection[];
+}
+
 export const fetchDefaultCases = () =>
   authenticatedPaginatedRequest<DefaultCaseProjection>('/api/v1/default-cases/?page_size=100');
 
@@ -372,4 +509,71 @@ export const archiveLoanFile = (
     },
     headers: { 'Idempotency-Key': input.idempotency_key },
   },
+);
+
+export const fetchComplianceDashboard = async (): Promise<ComplianceDashboardProjection> => {
+  const [controls, tasks, section186, nbfcTests, kycReviews, moneyLendingReviews, stampDuty] =
+    await Promise.all([
+      authenticatedPaginatedRequest<ComplianceControlProjection>(
+        '/api/v1/compliance-controls/?page_size=100',
+      ),
+      authenticatedPaginatedRequest<ComplianceTaskProjection>(
+        '/api/v1/compliance-tasks/?page_size=100',
+      ),
+      authenticatedPaginatedRequest<Section186TrackerProjection>(
+        '/api/v1/compliance/section-186-trackers/',
+      ),
+      authenticatedPaginatedRequest<NbfcPrincipalTestProjection>(
+        '/api/v1/compliance/nbfc-principal-tests/',
+      ),
+      authenticatedPaginatedRequest<KycReviewProjection>(
+        '/api/v1/kyc-reviews/?page_size=100',
+      ),
+      authenticatedPaginatedRequest<MoneyLendingReviewProjection>(
+        '/api/v1/reports/money-lending-review/?page_size=100',
+      ),
+      authenticatedPaginatedRequest<StampDutyProjection>(
+        '/api/v1/reports/stamp-duty/?page_size=100',
+      ),
+    ]);
+  return {
+    controls: controls.items,
+    tasks: tasks.items,
+    section186: section186.items,
+    nbfcTests: nbfcTests.items,
+    kycReviews: kycReviews.items,
+    moneyLendingReviews: moneyLendingReviews.items,
+    stampDuty: stampDuty.items,
+  };
+};
+
+export const reviewComplianceEvidence = (
+  evidenceId: string,
+  input: { review_status: 'accepted' | 'rejected'; review_comments: string },
+) => authenticatedRequest<ComplianceTaskProjection>(
+  `/api/v1/compliance-evidence/${evidenceId}/review/`,
+  { method: 'POST', body: input },
+);
+
+export interface StatutoryReviewInput {
+  decision: 'accepted' | 'rejected';
+  comments: string;
+  presented_to_board_flag: boolean;
+  board_document_id: string | null;
+}
+
+export const reviewSection186Tracker = (
+  trackerId: string,
+  input: StatutoryReviewInput,
+) => authenticatedRequest<Section186TrackerProjection>(
+  `/api/v1/compliance/section-186-trackers/${trackerId}/review/`,
+  { method: 'POST', body: input },
+);
+
+export const reviewNbfcPrincipalTest = (
+  testId: string,
+  input: StatutoryReviewInput,
+) => authenticatedRequest<NbfcPrincipalTestProjection>(
+  `/api/v1/compliance/nbfc-principal-tests/${testId}/review/`,
+  { method: 'POST', body: input },
 );
