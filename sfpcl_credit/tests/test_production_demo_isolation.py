@@ -12,6 +12,13 @@ from sfpcl_credit.members.models import Member
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_PYTHON = "/Users/amitkallapa/LMS/.ralph/venv/bin/python"
+PRODUCTION_RUNTIME_ENVIRONMENT = {
+    "SFPCL_SECRET_KEY": "synthetic-production-django-key-32",
+    "SFPCL_JWT_SIGNING_KEY": "synthetic-production-jwt-key-value",
+    "SFPCL_ALLOWED_HOSTS": "credit.example.test",
+    "SFPCL_CORS_ORIGINS": "https://lms.example.test",
+    "SFPCL_CSRF_TRUSTED_ORIGINS": "https://lms.example.test",
+}
 PRODUCTION_FIELD_KEY_ENVIRONMENT = {
     "SFPCL_FIELD_ENCRYPTION_CURRENT_VERSION": "production-test-v1",
     "SFPCL_FIELD_ENCRYPTION_KEY_REF": "vault:test/field/production-test-v1",
@@ -67,12 +74,15 @@ response = Client().post(
     "/api/v1/tracer/members/",
     data={"member_number": "PRODUCTION-PROBE"},
     content_type="application/json",
+    secure=True,
+    HTTP_HOST="credit.example.test",
 )
 assert response.status_code == 404, response.status_code
 """
         environment = {
             **os.environ,
             "DJANGO_SETTINGS_MODULE": "sfpcl_credit.config.production_settings",
+            **PRODUCTION_RUNTIME_ENVIRONMENT,
             **PRODUCTION_FIELD_KEY_ENVIRONMENT,
         }
 
@@ -195,6 +205,7 @@ for command_name in (
             "SFPCL_DEBUG": "true",
             "SFPCL_ALLOW_DEMO_SEED": "true",
             "SFPCL_ALLOW_E2E_SEED": "true",
+            **PRODUCTION_RUNTIME_ENVIRONMENT,
             **PRODUCTION_FIELD_KEY_ENVIRONMENT,
         }
 

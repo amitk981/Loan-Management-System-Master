@@ -1,0 +1,15 @@
+Found 7 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_controlled_failure_is_nonzero_and_names_exact_control (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_controlled_failure_is_nonzero_and_names_exact_control) ... ok
+test_green_summary_has_deterministic_counts_versions_skips_and_hash (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_green_summary_has_deterministic_counts_versions_skips_and_hash) ... ok
+test_control_matrix_contains_every_source_control_exactly_once (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_control_matrix_contains_every_source_control_exactly_once) ... ok
+test_required_scanner_unavailability_and_findings_fail_without_raw_output (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_required_scanner_unavailability_and_findings_fail_without_raw_output) ... ok
+test_every_matrix_test_label_resolves_to_a_real_behavior_test (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_every_matrix_test_label_resolves_to_a_real_behavior_test) ... ok
+test_production_boot_rejects_missing_or_insecure_security_configuration (sfpcl_credit.tests.test_security_regression.ProductionSettingsSecurityTests.test_production_boot_rejects_missing_or_insecure_security_configuration) ... ok
+test_tokens_use_the_dedicated_signing_key_when_configured (sfpcl_credit.tests.test_security_regression.ProductionSettingsSecurityTests.test_tokens_use_the_dedicated_signing_key_when_configured) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.163s
+
+OK

@@ -1,6 +1,7 @@
 """JWT token encoding, decoding, and claim construction for auth sessions.
 
-PyJWT HS256 signed with `settings.SECRET_KEY`. Lifetimes and claims are the
+PyJWT HS256 uses the dedicated production signing key and retains the historical
+development SECRET_KEY fallback. Lifetimes and claims are the
 002B/002B2 contract and must not change here — this module only isolates the
 token mechanics behind an explicit interface so views and the auth service
 depend on named functions rather than inline crypto.
@@ -24,14 +25,14 @@ class TokenError(Exception):
 
 
 def encode_token(claims):
-    return jwt.encode(claims, settings.SECRET_KEY, algorithm="HS256")
+    return jwt.encode(claims, _signing_key(), algorithm="HS256")
 
 
 def decode_token(token, expected_type):
     try:
         claims = jwt.decode(
             token,
-            settings.SECRET_KEY,
+            _signing_key(),
             algorithms=["HS256"],
             options={"require": ["exp"]},
         )
@@ -52,6 +53,10 @@ def decode_token(token, expected_type):
 
 def hash_token(token):
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _signing_key():
+    return settings.JWT_SIGNING_KEY or settings.SECRET_KEY
 
 
 def access_claims(user, session):

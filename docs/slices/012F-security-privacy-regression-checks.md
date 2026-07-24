@@ -1,7 +1,7 @@
 # Slice 012F: Security Privacy Regression Checks
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness

@@ -1,0 +1,176 @@
+
+===== tdd-01-controlled-failure-red.log =====
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_controlled_failure_is_nonzero_and_names_exact_control (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_controlled_failure_is_nonzero_and_names_exact_control) ... FAIL
+
+======================================================================
+FAIL: test_controlled_failure_is_nonzero_and_names_exact_control (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_controlled_failure_is_nonzero_and_names_exact_control)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 110, in call_command
+    app_name = get_commands()[command_name]
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'security_regression'
+
+During handling of the above exception, another exception occurred:
+
+django.core.management.base.CommandError: Unknown command: 'security_regression'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_security_regression.py", line 15, in test_controlled_failure_is_nonzero_and_names_exact_control
+    with self.assertRaisesMessage(CommandError, "SEC-AUTH-001"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 742, in _assert_raises_or_warns_cm
+    self.assertIn(expected_message, str(getattr(cm, cm_attr)))
+AssertionError: 'SEC-AUTH-001' not found in "Unknown command: 'security_regression'"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)
+
+===== tdd-02-summary-red.log =====
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_security_regression (unittest.loader._FailedTest.test_security_regression) ... ERROR
+
+======================================================================
+ERROR: test_security_regression (unittest.loader._FailedTest.test_security_regression)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_security_regression
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<WORKTREE>/sfpcl_credit/tests/test_security_regression.py", line 10, in <module>
+    from sfpcl_credit.security_regression.runner import build_summary
+ImportError: cannot import name 'build_summary' from 'sfpcl_credit.security_regression.runner' (<WORKTREE>/sfpcl_credit/security_regression/runner.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+===== tdd-03-matrix-red.log =====
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_security_regression (unittest.loader._FailedTest.test_security_regression) ... ERROR
+
+======================================================================
+ERROR: test_security_regression (unittest.loader._FailedTest.test_security_regression)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_security_regression
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<WORKTREE>/sfpcl_credit/tests/test_security_regression.py", line 10, in <module>
+    from sfpcl_credit.security_regression.matrix import (
+ModuleNotFoundError: No module named 'sfpcl_credit.security_regression.matrix'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+===== tdd-04-production-settings-red.log =====
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_production_boot_rejects_missing_or_insecure_security_configuration (sfpcl_credit.tests.test_security_regression.ProductionSettingsSecurityTests.test_production_boot_rejects_missing_or_insecure_security_configuration) ... FAIL
+
+======================================================================
+FAIL: test_production_boot_rejects_missing_or_insecure_security_configuration (sfpcl_credit.tests.test_security_regression.ProductionSettingsSecurityTests.test_production_boot_rejects_missing_or_insecure_security_configuration)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_security_regression.py", line 162, in test_production_boot_rejects_missing_or_insecure_security_configuration
+    self.assertEqual(valid.returncode, 0, valid.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+AttributeError: module 'sfpcl_credit.config.production_settings' has no attribute 'SECURE_SSL_REDIRECT'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.396s
+
+FAILED (failures=1)
+
+===== tdd-05-scanners-red.log =====
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_security_regression (unittest.loader._FailedTest.test_security_regression) ... ERROR
+
+======================================================================
+ERROR: test_security_regression (unittest.loader._FailedTest.test_security_regression)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_security_regression
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<WORKTREE>/sfpcl_credit/tests/test_security_regression.py", line 21, in <module>
+    from sfpcl_credit.security_regression.scanners import ScannerSpec, execute_scanner
+ModuleNotFoundError: No module named 'sfpcl_credit.security_regression.scanners'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+===== tdd-06-label-resolution-red.log =====
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_every_matrix_test_label_resolves_to_a_real_behavior_test (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_every_matrix_test_label_resolves_to_a_real_behavior_test) ... FAIL
+
+======================================================================
+FAIL: test_every_matrix_test_label_resolves_to_a_real_behavior_test (sfpcl_credit.tests.test_security_regression.SecurityRegressionCommandTests.test_every_matrix_test_label_resolves_to_a_real_behavior_test)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_security_regression.py", line 141, in test_every_matrix_test_label_resolves_to_a_real_behavior_test
+    self.assertEqual(validate_test_labels(CONTROL_MATRIX), ())
+AssertionError: Tuples differ: ('sfpcl_credit.tests.test_final_documentat[1362 chars]tml') != ()
+
+First tuple contains 10 additional elements.
+First extra element 0:
+'sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_final_approval_creates_immutable_completion_and_audit_evidence'
+
+Diff is 1444 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.285s
+
+FAILED (failures=1)
+
+===== tdd-07-jwt-key-separation-red.log =====
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_production_boot_rejects_missing_or_insecure_security_configuration (sfpcl_credit.tests.test_security_regression.ProductionSettingsSecurityTests.test_production_boot_rejects_missing_or_insecure_security_configuration) ... FAIL
+
+======================================================================
+FAIL: test_production_boot_rejects_missing_or_insecure_security_configuration (sfpcl_credit.tests.test_security_regression.ProductionSettingsSecurityTests.test_production_boot_rejects_missing_or_insecure_security_configuration)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_security_regression.py", line 289, in test_production_boot_rejects_missing_or_insecure_security_configuration
+    self.assertEqual(valid.returncode, 0, valid.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+AttributeError: module 'sfpcl_credit.config.production_settings' has no attribute 'JWT_SIGNING_KEY'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.163s
+
+FAILED (failures=1)

@@ -25,6 +25,9 @@ def env_csv(name, default):
 
 
 SECRET_KEY = os.environ.get("SFPCL_SECRET_KEY", "local-dev-only-sfpcl-credit")
+# Development keeps the historical SECRET_KEY fallback so existing local tokens remain usable.
+# Production settings require an explicit, independent signing key.
+JWT_SIGNING_KEY = os.environ.get("SFPCL_JWT_SIGNING_KEY")
 # Development-only field keys are intentionally independent from SECRET_KEY. Production settings
 # require explicit secret-store values and never accept these local defaults.
 _LOCAL_FIELD_KEY = base64.urlsafe_b64encode(

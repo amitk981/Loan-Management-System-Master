@@ -1,0 +1,68 @@
+
+===== backend-check.log =====
+System check identified no issues (0 silenced).
+
+===== controlled-failure-demo.log =====
+CommandError: Security regression failed: SEC-AUTH-001
+exit_code=1
+
+===== focused-final-backend-tests.log =====
+Found 59 test(s).
+System check identified no issues (0 silenced).
+
+===== migrations-check.log =====
+No changes detected
+
+===== no-secret-evidence-scan.log =====
+matches=0
+result=pass
+
+===== npm-audit.stderr.log =====
+npm warn audit request to https://registry.npmjs.org/-/npm/v1/security/audits/quick failed, reason: getaddrinfo ENOTFOUND registry.npmjs.org
+npm error audit endpoint returned an error
+npm error Log files were not written due to an error writing to the directory: /Users/amitkallapa/.npm/_logs
+npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+exit_code=1
+
+===== security-command-and-production-tests.log =====
+Found 8 test(s).
+System check identified no issues (0 silenced).
+
+===== security-regression-command.log =====
+CommandError: Security regression failed: SEC-AUTH-010, SEC-WEB-004, SEC-WEB-005, detect-secrets, npm-audit, pip-audit
+security_regression result=fail sha256=f0ce10a588419195dd40aa189139b300d93e524065e0ce5cef7a975d15a66455
+exit_code=1
+
+===== final-evidence-secret-scan =====
+matches=0
+result=pass
+
+===== final-security-regression-command =====
+CommandError: Security regression failed: SEC-AUTH-010, SEC-WEB-004, SEC-WEB-005, detect-secrets, npm-audit, pip-audit
+security_regression result=fail sha256=f0ce10a588419195dd40aa189139b300d93e524065e0ce5cef7a975d15a66455
+exit_code=1
+
+===== final-controlled-failure-command =====
+CommandError: Security regression failed: SEC-AUTH-001
+exit_code=1
+
+===== post-compaction-secret-scan =====
+matches=0
+result=pass
+
+===== post-dependency-policy-focused-tests =====
+Found 8 test(s).
+System check identified no issues (0 silenced).
+........
+----------------------------------------------------------------------
+Ran 8 tests in 1.381s
+
+OK
+
+===== post-dependency-policy-django-checks =====
+System check identified no issues (0 silenced).
+No changes detected
+
+===== final-post-policy-secret-scan =====
+matches=0
+result=pass

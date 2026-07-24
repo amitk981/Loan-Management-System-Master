@@ -15,6 +15,13 @@ KEYS = {
 }
 LOOKUP_KEY = base64.urlsafe_b64encode(b"L" * 32).decode("ascii")
 REPO_ROOT = Path(__file__).resolve().parents[2]
+PRODUCTION_RUNTIME_ENVIRONMENT = {
+    "SFPCL_SECRET_KEY": "synthetic-production-django-key-32",
+    "SFPCL_JWT_SIGNING_KEY": "synthetic-production-jwt-key-value",
+    "SFPCL_ALLOWED_HOSTS": "credit.example.test",
+    "SFPCL_CORS_ORIGINS": "https://lms.example.test",
+    "SFPCL_CSRF_TRUSTED_ORIGINS": "https://lms.example.test",
+}
 
 
 def _noncanonical_ciphertext_token(token: str) -> str:
@@ -44,6 +51,7 @@ class FieldEncryptionTests(SimpleTestCase):
         base_env["DJANGO_SETTINGS_MODULE"] = (
             "sfpcl_credit.config.production_settings"
         )
+        base_env.update(PRODUCTION_RUNTIME_ENVIRONMENT)
 
         missing = subprocess.run(
             [
