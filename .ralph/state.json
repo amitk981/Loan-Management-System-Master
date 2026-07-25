@@ -356,14 +356,15 @@
     "011PC-closure-frontend-wiring",
     "011PD-compliance-frontend-wiring",
     "011PE-grievance-audit-archive-frontend-wiring",
-    "012DAA-reports-mis-frontend-wiring"
+    "012DAA-reports-mis-frontend-wiring",
+    "012DAB-report-and-register-export-frontend-wiring"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-25_044459_normal_run",
+  "last_run_id": "2026-07-25_054823_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 39,
+  "slices_completed_since_architecture_review": 40,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

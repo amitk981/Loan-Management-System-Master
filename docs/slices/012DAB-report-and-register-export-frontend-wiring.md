@@ -1,7 +1,7 @@
 # Slice 012DAB: Report and Register Export Frontend Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `012DA`

@@ -1,40 +1,65 @@
-import React, { useState } from 'react';
-import { useRole } from '../../contexts/RoleContext';
-import { BookOpen, FileText, Scale, AlertOctagon, RotateCcw, Archive, Stamp, Search, Download, History, Filter } from 'lucide-react';
-import Tabs from '../../components/ui/Tabs';
-import StatusBadge from '../../components/ui/StatusBadge';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Archive, BookOpen, Download, RefreshCw } from 'lucide-react';
 import AlertBanner from '../../components/ui/AlertBanner';
-import { loanApplications, loanAccounts, securities, members, complianceRecords, auditEvents } from '../../data/mockData';
-import { getApplicationReference, getApplicationStatusLabel } from '../../utils/applicationDisplay';
-import { CreditSanctionRegisterPanel, ExceptionRegisterPanel } from './ApprovalRegisterPanels';
+import StatusBadge from '../../components/ui/StatusBadge';
+import Tabs from '../../components/ui/Tabs';
+import { useRole } from '../../contexts/RoleContext';
+import { AuthSessionError, type Pagination } from '../../services/authSession';
+import {
+  downloadReportExport,
+  fetchReport,
+  fetchReportExport,
+  requestReportExport,
+  type ExportReportCode,
+  type ReportExportJob,
+} from '../../services/reportApi';
+import {
+  CreditSanctionRegisterPanel,
+  ExceptionRegisterPanel,
+} from './ApprovalRegisterPanels';
+import { formatMoney } from '../../utils/formatMoney';
 
-const fmt = (n?: number) => n !== undefined && n !== null ? '₹' + n.toLocaleString('en-IN') : '—';
+type RegisterDefinition = {
+  id: string;
+  label: string;
+  description: string;
+  reportCode: ExportReportCode;
+  requiredPermissions: string[];
+  permissionMode?: 'all' | 'any';
+  approvalPanel?: 'sanction' | 'exception';
+};
 
-const REGISTER_TABS = [
-  { id: 'loan_register',           label: 'Loan account register' },
-  { id: 'loan_request_register',   label: 'Loan request register' },
-  { id: 'sanction_register',       label: 'Credit sanction register' },
-  { id: 'security_register',       label: 'Security register' },
-  { id: 'exception_register',      label: 'Exception register' },
-  { id: 'member_register',         label: 'Member register' },
-  { id: 'compliance_register',     label: 'Compliance register' },
-  { id: 'stamp_duty',              label: 'Stamp duty register' },
-  { id: 'audit_log',               label: 'Audit log' },
-  { id: 'grievance_register',      label: 'Grievance register' },
-  { id: 'recovery_log',            label: 'Recovery log' },
-  { id: 'blank_cheque_register',   label: 'Blank-dated cheque register' },
-  { id: 'sh4_register',            label: 'SH-4 register' },
-  { id: 'cdsl_register',           label: 'CDSL pledge register' },
-  { id: 'sap_register',            label: 'SAP customer code register' },
-  { id: 'disbursement_register',   label: 'Disbursement register' },
-  { id: 'repayment_register',      label: 'Repayment register' },
-  { id: 'interest_invoice_register', label: 'Interest invoice register' },
-  { id: 'accrual_register',        label: 'Accrual register' },
-  { id: 'dpd_register',            label: 'DPD / monitoring register' },
-  { id: 'noc_register',            label: 'NOC / closure register' },
-  { id: 'archive_register',        label: 'Archive register' },
-  { id: 'sop_change_register',     label: 'SOP change register' },
+// Display metadata only. Rows, totals, masking, status, and permissions remain backend-owned.
+const REGISTER_DEFINITIONS: RegisterDefinition[] = [
+  { id: 'loan_register', label: 'Loan account register', description: 'Scoped loan accounts and current balances', reportCode: 'loan-portfolio', requiredPermissions: ['reports.portfolio.read', 'finance.loan_account.read'] },
+  { id: 'loan_request_register', label: 'Loan request register', description: 'Scoped applications and current workflow stage', reportCode: 'application-pipeline', requiredPermissions: ['reports.application_pipeline.read'] },
+  { id: 'sanction_register', label: 'Credit sanction register', description: 'Frozen sanction decisions and approval evidence', reportCode: 'credit-sanction', requiredPermissions: ['approvals.sanction_register.read'], approvalPanel: 'sanction' },
+  { id: 'security_register', label: 'Security register', description: 'Security instrument custody records', reportCode: 'security-custody', requiredPermissions: ['security.package.read'] },
+  { id: 'exception_register', label: 'Exception register', description: 'Approved and pending governed exceptions', reportCode: 'exception', requiredPermissions: ['approvals.exception_register.read'], approvalPanel: 'exception' },
+  { id: 'compliance_register', label: 'Compliance register', description: 'Section 186 compliance tracker', reportCode: 'section-186', requiredPermissions: ['compliance.section186.read'] },
+  { id: 'stamp_duty', label: 'Stamp duty register', description: 'Stamping and notarisation evidence', reportCode: 'stamp-duty', requiredPermissions: ['documents.checklist.read'] },
+  { id: 'grievance_register', label: 'Grievance register', description: 'Borrower grievance receipt and resolution status', reportCode: 'grievance', requiredPermissions: ['compliance.grievance.read'] },
+  { id: 'recovery_log', label: 'Recovery log', description: 'Approved recovery actions and completion evidence', reportCode: 'recovery', requiredPermissions: ['defaults.case.read'] },
+  { id: 'security_custody', label: 'Security custody register', description: 'Held SH-4 and blank-cheque custody records', reportCode: 'security-custody', requiredPermissions: ['security.package.read'] },
+  { id: 'sap_register', label: 'SAP customer code register', description: 'Pending SAP customer setup records', reportCode: 'sap-pending', requiredPermissions: ['finance.sap_code.read'] },
+  { id: 'disbursement_register', label: 'Disbursement register', description: 'Payment initiation and transfer evidence', reportCode: 'disbursement', requiredPermissions: ['finance.disbursement.readiness'] },
+  { id: 'repayment_register', label: 'Repayment register', description: 'Receipts and backend allocation status', reportCode: 'repayment', requiredPermissions: ['finance.loan_account.read'] },
+  { id: 'interest_invoice_register', label: 'Interest invoice register', description: 'Issued interest invoices and status', reportCode: 'interest-invoice', requiredPermissions: ['finance.loan_account.read'] },
+  { id: 'accrual_register', label: 'Accrual register', description: 'Posted interest accrual evidence', reportCode: 'interest-accrual', requiredPermissions: ['finance.loan_account.read'] },
+  { id: 'dpd_register', label: 'DPD / monitoring register', description: 'Backend DPD and portfolio-at-risk snapshots', reportCode: 'dpd', requiredPermissions: ['reports.dpd.read', 'monitoring.dpd.read', 'finance.loan_account.read'] },
+  { id: 'noc_register', label: 'NOC / closure register', description: 'Closure readiness and NOC evidence', reportCode: 'closure-noc', requiredPermissions: ['closure.readiness.read'] },
+  { id: 'kyc_register', label: 'KYC / re-KYC register', description: 'Masked KYC review status and due dates', reportCode: 'kyc-rekyc', requiredPermissions: ['compliance.kyc_review.manage', 'compliance.task.read'], permissionMode: 'any' },
+  { id: 'money_lending_review', label: 'Money-lending annual review', description: 'Annual licence review evidence', reportCode: 'money-lending-review', requiredPermissions: ['compliance.money_lending_review.manage', 'compliance.task.read'], permissionMode: 'any' },
 ];
+
+const emptyPagination: Pagination = {
+  page: 1,
+  page_size: 20,
+  total_count: 0,
+  total_pages: 1,
+  has_next: false,
+  has_previous: false,
+};
 
 interface RegistersHubProps {
   onOpenLoan?: (id: string) => void;
@@ -43,198 +68,95 @@ interface RegistersHubProps {
 
 const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplication }) => {
   const { can, currentUser } = useRole();
-  const [activeTab, setActiveTab] = useState(0);
-  const [ownedActiveTab, setOwnedActiveTab] = useState(0);
-  const [auditSearch, setAuditSearch] = useState('');
-  const [auditRoleFilter, setAuditRoleFilter] = useState('all');
-  const [auditEntityFilter, setAuditEntityFilter] = useState('all');
-  const [auditDateFrom, setAuditDateFrom] = useState('');
-  const [auditDateTo, setAuditDateTo] = useState('');
-  const [exportNotice, setExportNotice] = useState(false);
-
-
+  const definitions = useMemo(() => REGISTER_DEFINITIONS.filter(definition => (
+    definition.permissionMode === 'any'
+      ? definition.requiredPermissions.some(permission => currentUser.permissions.includes(permission))
+      : definition.requiredPermissions.every(permission => currentUser.permissions.includes(permission))
+  )), [currentUser.permissions]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeDefinition = definitions[activeIndex] ?? definitions[0] ?? null;
+  const [exportJob, setExportJob] = useState<ReportExportJob | null>(null);
+  const [exportError, setExportError] = useState<Error | null>(null);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
+  const exportAttemptKey = useRef(crypto.randomUUID());
   const canExport = can('export_registers');
-  const ownedTabs = [
-    ...(currentUser.permissions.includes('approvals.sanction_register.read') ? [{ id: 'sanction_register', label: 'Credit sanction register' }] : []),
-    ...(currentUser.permissions.includes('approvals.exception_register.read') ? [{ id: 'exception_register', label: 'Exception register' }] : []),
-  ];
-  const ownedPanels = [
-    ...(currentUser.permissions.includes('approvals.sanction_register.read') ? [<CreditSanctionRegisterPanel key="sanction" />] : []),
-    ...(currentUser.permissions.includes('approvals.exception_register.read') ? [<ExceptionRegisterPanel key="exception" />] : []),
-  ];
 
-  if (currentUser.isBackendSession && !can('view_registers')) {
-    if (!can('view_approval_registers')) {
-      return <div className="p-6"><AlertBanner type="error" title="Registers unavailable" message="You do not have register read permission." /></div>;
-    }
+  useEffect(() => {
+    if (activeIndex < definitions.length) return;
+    setActiveIndex(0);
+  }, [activeIndex, definitions.length]);
+
+  useEffect(() => {
+    setExportJob(null);
+    setExportError(null);
+    setDownloaded(false);
+    exportAttemptKey.current = crypto.randomUUID();
+  }, [activeDefinition?.id]);
+
+  if (!activeDefinition) {
     return (
-      <div className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2"><BookOpen size={20} className="text-green-600" />Registers</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Permission-scoped approval registers</p>
-          </div>
-          {canExport && <button onClick={() => setExportNotice(true)} className="btn-secondary flex items-center gap-2 text-sm"><Archive size={14} />Export Register</button>}
-        </div>
-        {exportNotice && <AlertBanner type="info" title="Export action available" message="Register export is scheduled for the reporting export slice." onDismiss={() => setExportNotice(false)} />}
-        {ownedTabs.length ? <Tabs tabs={ownedTabs} activeIndex={ownedActiveTab} onChange={setOwnedActiveTab}>{ownedPanels}</Tabs>
-          : <AlertBanner type="error" title="Registers unavailable" message="You do not have approval register read permission." />}
+      <div className="p-6">
+        <AlertBanner
+          type="error"
+          title="Registers unavailable"
+          message="You do not have register read permission."
+        />
       </div>
     );
   }
 
-  const processedLoans = loanAccounts.map(l => {
-    const due = new Date(l.repaymentDueDate);
-    const diffDays = Math.floor((new Date().getTime() - due.getTime()) / (1000 * 3600 * 24));
-    const calcDpd = l.status === 'closed' ? null : Math.max(0, diffDays);
-    let displayStatus = l.status;
-    const outstanding = l.status === 'closed' ? 0 : l.outstandingPrincipal;
-    
-    if (l.status === 'closed') {
-      displayStatus = 'closed';
-    } else if (calcDpd !== null && calcDpd > 90 && l.status === 'grace_period') {
-      displayStatus = 'default_review';
-    } else if (l.status === 'recovery_in_progress' || l.status === 'recovery_review') {
-      const hasRecovery = auditEvents.some(a => a.entityId === l.id && a.eventType === 'Default Recovery Action Initiated');
-      if (!hasRecovery) displayStatus = 'recovery_review';
-    } else if (calcDpd !== null && calcDpd > 0 && (l.status === 'active' || l.status === 'active_repayment')) {
-      displayStatus = 'overdue';
+  const startExport = async () => {
+    if (exportBusy) return;
+    setExportBusy(true);
+    setExportError(null);
+    setDownloaded(false);
+    try {
+      setExportJob(await requestReportExport({
+        reportCode: activeDefinition.reportCode,
+        format: 'xlsx',
+        filters: {},
+      }, exportAttemptKey.current));
+    } catch (reason) {
+      setExportJob(null);
+      setExportError(reason instanceof Error ? reason : new Error('The export request failed.'));
+    } finally {
+      setExportBusy(false);
     }
-    
-    return { ...l, calcDpd, displayStatus, outstanding };
-  });
+  };
 
-  // Stamp duty data
-  const stampDutyRecords = [
-    { doc: 'Power of Attorney (PoA)', appNo: 'LO00000042', borrower: 'Ganesh Thorat', stampDutyAmt: 500, paidOn: '2024-09-18', status: 'paid', notarised: true, custodian: 'Company Secretary', challanNo: 'MSFM2024082100012' },
-    { doc: 'SH-4 transfer form', appNo: 'LO00000042', borrower: 'Ganesh Thorat', stampDutyAmt: 'Not required', paidOn: '2024-09-15', status: 'paid', notarised: 'not_required', custodian: 'Company Secretary', challanNo: 'MSFM2024082100013' },
-    { doc: 'Power of Attorney (PoA)', appNo: 'LO00000035', borrower: 'Kisan FPC Ltd', stampDutyAmt: 500, paidOn: '2026-04-22', status: 'paid', notarised: true, custodian: 'Company Secretary', challanNo: 'MSFM2026042200001' },
-    { doc: 'Loan Agreement', appNo: 'LO00000047', borrower: 'Vijay Deshmukh', stampDutyAmt: 500, paidOn: 'pending', status: 'pending', notarised: 'pending', custodian: 'not_assigned', challanNo: 'pending' },
-  ];
+  const refreshExport = async () => {
+    if (!exportJob || exportBusy) return;
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      setExportJob(await fetchReportExport(exportJob.export_job_id));
+    } catch (reason) {
+      setExportError(reason instanceof Error ? reason : new Error('Export status could not be loaded.'));
+    } finally {
+      setExportBusy(false);
+    }
+  };
 
-  // Filtered audit events
-  const filteredAudit = auditEvents.filter(ev => {
-    const matchSearch = !auditSearch ||
-      ev.actorName.toLowerCase().includes(auditSearch.toLowerCase()) ||
-      ev.entityId.toLowerCase().includes(auditSearch.toLowerCase()) ||
-      ev.eventType.toLowerCase().includes(auditSearch.toLowerCase());
-    const matchRole = auditRoleFilter === 'all' || ev.actorRole === auditRoleFilter;
-    const matchEntity = auditEntityFilter === 'all' || ev.entityType === auditEntityFilter;
-    const matchFrom = !auditDateFrom || ev.timestamp >= auditDateFrom;
-    const matchTo = !auditDateTo || ev.timestamp <= auditDateTo + 'T23:59:59Z';
-    return matchSearch && matchRole && matchEntity && matchFrom && matchTo;
-  });
-
-  const supplementalRegisters = [
-    {
-      title: 'Blank-Dated Cheque Register',
-      subtitle: 'Cheque custody, return and invocation records',
-      headers: ['Cheque ID', 'Application', 'Borrower', 'Bank', 'Custody', 'Status', 'Return / Invocation'],
-      rows: [
-        ['CHQ-2024-042', 'LO00000042', 'Ganesh Thorat', 'HDFC Bank', 'Company Secretary', 'held', 'Pending closure'],
-        ['CHQ-2025-035', 'LO00000035', 'Kisan FPC Ltd', 'Bank of Maharashtra', 'Company Secretary', 'invocation_pending', 'Recovery approved'],
-      ],
-    },
-    {
-      title: 'SH-4 Register',
-      subtitle: 'Physical share transfer forms held for security',
-      headers: ['SH-4 ID', 'Application', 'Borrower', 'Shares', 'Execution Date', 'Custodian', 'Status'],
-      rows: [
-        ['SH4-2024-042', 'LO00000042', 'Ganesh Thorat', '5', '2024-09-15', 'Company Secretary', 'held'],
-        ['SH4-2023-021', 'LO00000021', 'Ganesh Thorat', '3', '2022-09-14', 'Company Secretary', 'returned'],
-      ],
-    },
-    {
-      title: 'CDSL Pledge Register',
-      subtitle: 'Demat pledge creation, invocation and unpledge tracking',
-      headers: ['Pledge ID', 'Application', 'Borrower', 'PSN', 'BO ID', 'Status', 'Unpledge Date'],
-      rows: [
-        ['CDSL-2026-00234', 'LO00000035', 'Kisan FPC Ltd', 'PSN-00234', '12081600XXXX2234', 'pledged', '—'],
-        ['CDSL-2025-00112', 'LO00000028', 'Vijay Patil', 'PSN-00112', '12081600XXXX1188', 'unpledged', '2025-05-14'],
-      ],
-    },
-    {
-      title: 'SAP Customer Code Register',
-      subtitle: 'SAP customer profile request and confirmation records',
-      headers: ['Request ID', 'Application', 'Borrower', 'Requested On', 'SAP Code', 'Status', 'Confirmed By'],
-      rows: [
-        ['SAPR-2024-042', 'LO00000042', 'Ganesh Thorat', '2024-09-20', 'SAP-240042', 'created', 'Senior Manager Finance'],
-        ['SAPR-2026-047', 'LO00000047', 'Vijay Deshmukh', '2026-06-18', '—', 'pending', '—'],
-      ],
-    },
-    {
-      title: 'Disbursement Register',
-      subtitle: 'Payment initiation, bank authorisation and UTR evidence',
-      headers: ['Advice ID', 'Loan', 'Borrower', 'Amount', 'Initiated', 'UTR', 'Status'],
-      rows: [
-        ['DA-2024-042', 'LO00000042', 'Ganesh Thorat', fmt(500000), '2024-09-22', 'UTR2409220042', 'completed'],
-        ['DA-2026-047', 'LO00000047', 'Vijay Deshmukh', fmt(450000), '—', '—', 'readiness_pending'],
-      ],
-    },
-    {
-      title: 'Repayment Register',
-      subtitle: 'Repayment receipts, channels and allocation status',
-      headers: ['Receipt ID', 'Loan', 'Borrower', 'Amount', 'Channel', 'UTR', 'Allocation'],
-      rows: [
-        ['RCP-2025-042-03', 'LO00000042', 'Ganesh Thorat', fmt(105000), 'Direct NEFT', 'UTR2506290042', 'principal_first'],
-        ['RCP-2025-044-02', 'LO00000044', 'Sunita Kamble', fmt(52000), 'Subsidiary Deduction', 'SUB-APR-044', 'principal_first'],
-      ],
-    },
-    {
-      title: 'Interest Invoice Register',
-      subtitle: 'Annual borrower interest invoices and payment status',
-      headers: ['Invoice', 'Loan', 'Borrower', 'Period', 'Amount', 'Due By', 'Status'],
-      rows: [
-        ['INV-2025-001', 'LO00000042', 'Ganesh Thorat', 'FY 2024-25', fmt(36000), '2025-04-30', 'sent'],
-        ['INV-2025-003', 'LO00000038', 'Malti Shinde', 'FY 2024-25', fmt(25200), '2025-04-30', 'overdue'],
-      ],
-    },
-    {
-      title: 'Accrual Register',
-      subtitle: 'Monthly and quarterly interest accrual postings',
-      headers: ['Accrual ID', 'Loan', 'Borrower', 'Period', 'Principal', 'Accrued', 'SAP Status'],
-      rows: [
-        ['ACR-2025-Q2-042', 'LO00000042', 'Ganesh Thorat', 'Q2 FY 2025-26', fmt(350000), fmt(10543), 'pending'],
-        ['ACR-2025-Q2-038', 'LO00000038', 'Malti Shinde', 'Q2 FY 2025-26', fmt(180000), fmt(6273), 'pending'],
-      ],
-    },
-    {
-      title: 'DPD / Monitoring Register',
-      subtitle: 'Delinquency bucket and reminder tracking',
-      headers: ['Loan', 'Borrower', 'DPD', 'Bucket', 'Last Reminder', 'Next Action', 'Owner'],
-      rows: [
-        ['LO00000042', 'Ganesh Thorat', '45', '31-60', '2025-06-10', 'Grace review', 'Credit Manager'],
-        ['LO00000038', 'Malti Shinde', '95', '91-365', '2025-06-15', 'Non-payment note', 'Credit Manager'],
-      ],
-    },
-    {
-      title: 'NOC / Closure Register',
-      subtitle: 'Closure readiness, NOC issue and security return tracking',
-      headers: ['NOC ID', 'Loan', 'Borrower', 'Balance', 'NOC Status', 'Security Return', 'Archive'],
-      rows: [
-        ['NOC-2025-042', 'LO00000031', 'Asha Bhosale', fmt(0), 'ready', 'pending', 'pending'],
-        ['NOC-2025-025', 'LO00000025', 'Radha Kisan Org', fmt(0), 'issued', 'complete', 'archived'],
-      ],
-    },
-    {
-      title: 'Archive Register',
-      subtitle: 'Closed loan file archive and retention records',
-      headers: ['Archive ID', 'Loan', 'Borrower', 'Closed On', 'Location', 'Retention Until', 'Status'],
-      rows: [
-        ['ARC-2025-025', 'LO00000025', 'Radha Kisan Org', '2025-03-28', 'Cabinet 3, Row 2', '2033-03-28', 'archived'],
-        ['ARC-2023-021', 'LO00000021', 'Ganesh Thorat', '2023-03-20', 'Cabinet 1, Row 4', '2031-03-20', 'archived'],
-      ],
-    },
-    {
-      title: 'SOP Change Register',
-      subtitle: 'Policy/SOP revisions and Board approval tracking',
-      headers: ['Change ID', 'Area', 'Requested By', 'Requested On', 'Approval', 'Effective Date', 'Status'],
-      rows: [
-        ['SOP-CHG-001', 'Loan threshold matrix', 'CFO', '2026-05-12', 'Board pending', '—', 'under_review'],
-        ['SOP-CHG-002', 'KYC refresh cycle', 'Company Secretary', '2026-04-08', 'Approved', '2026-06-01', 'active'],
-      ],
-    },
-  ];
+  const downloadExport = async () => {
+    if (!exportJob || exportBusy) return;
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      const content = await downloadReportExport(exportJob);
+      const url = URL.createObjectURL(content);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${exportJob.report_code}.${exportJob.format}`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setDownloaded(true);
+    } catch (reason) {
+      setExportError(reason instanceof Error ? reason : new Error('The export could not be downloaded.'));
+    } finally {
+      setExportBusy(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -244,828 +166,220 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
             <BookOpen size={20} className="text-green-600" />
             Registers
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Statutory and internal registers · 8-year retention</p>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Permission-scoped statutory and internal registers
+          </p>
         </div>
         {canExport && (
-          <button onClick={() => setExportNotice(true)} className="btn-secondary flex items-center gap-2 text-sm">
+          <button
+            type="button"
+            disabled={exportBusy || Boolean(exportJob)}
+            onClick={() => void startExport()}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
             <Archive size={14} />
             Export Register
           </button>
         )}
       </div>
 
-      {exportNotice && (
+      {exportError && (
         <AlertBanner
-          type="info"
-          title="Export action available"
-          message="Register export is scheduled for the reporting export slice."
-          onDismiss={() => setExportNotice(false)}
+          type="error"
+          title={exportError instanceof AuthSessionError && exportError.code === 'VALIDATION_ERROR'
+            ? 'Export validation failed'
+            : exportError instanceof AuthSessionError && [401, 403].includes(exportError.status ?? 0)
+            ? 'Export permission denied'
+            : 'Export unavailable'}
+          message={exportError instanceof AuthSessionError && [401, 403].includes(exportError.status ?? 0)
+            ? 'The backend did not authorize this export request.'
+            : exportError.message}
         />
       )}
 
-      <Tabs tabs={REGISTER_TABS} activeIndex={activeTab} onChange={setActiveTab}>
-        {/* Tab 0: Loan Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <FileText size={14} className="text-green-600" /> Loan account register
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">Showing {loanAccounts.length} of 23 loan accounts</p>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Account No.</th>
-                  <th className="table-header text-left">Member</th>
-                  <th className="table-header text-right">Disbursed</th>
-                  <th className="table-header text-right">Outstanding</th>
-                  <th className="table-header text-right">Current rate</th>
-                  <th className="table-header text-left">Status</th>
-                  <th className="table-header text-left">SAP code</th>
-                  <th className="table-header text-right">DPD</th>
-                  <th className="table-header text-left">Repayment due date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {processedLoans.map(l => (
-                  <tr key={l.id} className="hover:bg-slate-50">
-                    <td className="table-cell num font-semibold text-green-700">
-                      {onOpenLoan ? (
-                        <button onClick={() => onOpenLoan(l.id)} className="hover:underline text-left">{l.accountNumber}</button>
-                      ) : l.accountNumber}
-                    </td>
-                    <td className="table-cell font-medium">{l.memberName}</td>
-                    <td className="table-cell text-right num">{fmt(l.disbursedAmount)}</td>
-                    <td className="table-cell text-right num font-semibold">{fmt(l.outstanding)}</td>
-                    <td className="table-cell text-right">{l.interestRate}%</td>
-                    <td className="table-cell"><StatusBadge label={l.displayStatus} size="sm" /></td>
-                    <td className="table-cell num text-slate-600">{l.sapCustomerCode}</td>
-                    <td className="table-cell text-right">
-                      {l.calcDpd !== null ? (
-                        <span className={`font-bold num ${l.calcDpd > 90 ? 'text-red-600' : l.calcDpd > 0 ? 'text-amber-600' : 'text-green-600'}`}>{l.calcDpd}</span>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="table-cell">{new Date(l.repaymentDueDate).toLocaleDateString('en-IN')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {exportJob && (
+        <AlertBanner
+          type={exportJob.status === 'failed' ? 'error' : exportJob.status === 'completed' ? 'success' : 'info'}
+          title={`Export ${exportJob.download_expired
+            ? 'expired'
+            : exportJob.status === 'completed'
+              ? exportJob.download_url ? 'ready' : 'finalizing'
+              : exportJob.status}`}
+          message={(
+            <span>
+              Job {exportJob.export_job_id}. Standard exports keep PAN, Aadhaar, bank, cheque,
+              and BO-account values masked by default.
+              {downloaded && ' Audited download started.'}
+            </span>
+          )}
+          actions={(
+            <>
+              {(['queued', 'running'].includes(exportJob.status)
+                || (exportJob.status === 'completed' && !exportJob.download_url && !exportJob.download_expired)) && (
+                <button
+                  type="button"
+                  disabled={exportBusy}
+                  onClick={() => void refreshExport()}
+                  className="btn-secondary flex items-center gap-2 text-xs"
+                >
+                  <RefreshCw size={13} />
+                  Refresh export status
+                </button>
+              )}
+              {exportJob.status === 'completed' && exportJob.download_url && !exportJob.download_expired && (
+                <button
+                  type="button"
+                  disabled={exportBusy}
+                  onClick={() => void downloadExport()}
+                  className="btn-secondary flex items-center gap-2 text-xs"
+                >
+                  <Download size={13} />
+                  Download export
+                </button>
+              )}
+            </>
+          )}
+        />
+      )}
 
-        {/* Tab 1: Loan Request Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <FileText size={14} className="text-green-600" /> Loan request register
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">All loan requests and application references — {loanApplications.length} records</p>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Application No.</th>
-                  <th className="table-header text-left">Member</th>
-                  <th className="table-header text-left">Type</th>
-                  <th className="table-header text-right">Requested amount</th>
-                  <th className="table-header text-right">Eligible limit</th>
-                  <th className="table-header text-left">Purpose</th>
-                  <th className="table-header text-left">Status</th>
-                  <th className="table-header text-left">Owner</th>
-                  <th className="table-header text-left">Exception</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loanApplications.map(app => {
-                  const typeMap: Record<string, string> = { individual: 'Individual', fpc: 'FPC', producer_institution: 'Producer Institution' };
-                  const purposeMap: Record<string, string> = { crop_production: 'Crop production', agriculture_activity: 'Agriculture activity', allied_activity: 'Allied activity' };
-                  
-                  const displayType = typeMap[app.memberType] || app.memberType;
-                  const displayPurpose = purposeMap[app.purpose] || app.purpose;
-                  
-                  let displayStatus = getApplicationStatusLabel(app);
-                  if (['sanctioned', 'documentation_in_progress', 'documentation_deficiency_raised'].includes(app.status) && app.currentOwnerRole === 'compliance_team') {
-                    displayStatus = 'documentation_pending';
-                  }
-                  
-                  let displayOwner = app.currentOwner;
-                  if ((app.status === 'pending_credit_manager_review' || app.status === 'credit_review') && app.currentOwner === 'Deputy Manager – Finance') {
-                    displayOwner = 'Credit Manager';
-                  }
-
-                  let displayEligible: string = fmt(app.eligibleAmount);
-                  let exceptionDisplay = 'None';
-                  let isExceptionActive = false;
-                  
-                  if (app.status === 'incomplete' || app.status === 'returned_for_rectification' || app.status === 'deficiency_raised') {
-                    displayEligible = 'Not calculated';
-                    exceptionDisplay = 'Pending review';
-                  } else if (app.isException) {
-                    isExceptionActive = true;
-                    if (app.sanctionDecision === 'approved') {
-                      exceptionDisplay = 'Approved';
-                    } else {
-                      exceptionDisplay = 'Open';
-                    }
-                  }
-
-                  return (
-                    <tr key={app.id} className={`hover:bg-slate-50 ${isExceptionActive ? 'bg-violet-50/30' : ''}`}>
-                      <td className="table-cell num font-semibold text-green-700">
-                        {onOpenApplication ? (
-                          <button onClick={() => onOpenApplication(app.id)} className="hover:underline text-left">{getApplicationReference(app)}</button>
-                        ) : getApplicationReference(app)}
-                      </td>
-                      <td className="table-cell font-medium">{app.memberName}</td>
-                      <td className="table-cell">{displayType}</td>
-                      <td className="table-cell text-right num">{fmt(app.requestedAmount)}</td>
-                      <td className="table-cell text-right num font-medium text-slate-600">{displayEligible}</td>
-                      <td className="table-cell">{displayPurpose}</td>
-                      <td className="table-cell"><StatusBadge label={displayStatus} size="sm" /></td>
-                      <td className="table-cell text-slate-600">{displayOwner}</td>
-                      <td className="table-cell">
-                        {isExceptionActive ? (
-                          <span className="flex items-center gap-1 text-xs font-semibold text-violet-700">
-                            <AlertOctagon size={12} /> {exceptionDisplay}
-                          </span>
-                        ) : exceptionDisplay === 'Pending review' ? (
-                          <span className="text-xs text-slate-500 font-medium">{exceptionDisplay}</span>
-                        ) : (
-                          <span className="text-xs text-green-600 font-medium">None</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* OWNED S23 START: API-backed by 007J. */}
-        <CreditSanctionRegisterPanel />
-        {/* OWNED S23 END */}
-
-        {/* Tab 2: Security Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Scale size={14} className="text-green-600" /> Security register
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">All security instruments — {securities.length} records</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Instrument</th>
-                  <th className="table-header text-left">Application</th>
-                  <th className="table-header text-left">Status</th>
-                  <th className="table-header text-left">Execution Date</th>
-                  <th className="table-header text-left">Custodian</th>
-                  <th className="table-header text-left">Stamp Duty</th>
-                  <th className="table-header text-left">Notarised</th>
-                  <th className="table-header text-left">PSN</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {securities.map(sec => {
-                  const typeMap: Record<string, string> = { sh4: 'SH-4', poa: 'PoA', cdsl_pledge: 'CDSL pledge', blank_cheque: 'Blank cheque', loan_agreement: 'Loan agreement' };
-                  const displayType = typeMap[sec.securityType] || sec.securityType.replace('_', ' ');
-
-                  const appObj = loanApplications.find(a => a.id === sec.applicationId);
-                  const displayApp = appObj ? appObj.applicationNumber : sec.applicationId;
-
-                  let stampDisplay = sec.stampDutyStatus === 'complete' ? 'Complete' : sec.stampDutyStatus === 'pending' ? 'Pending' : '—';
-                  let notarisedDisplay = sec.notarisationStatus === 'complete' ? 'Complete' : sec.notarisationStatus === 'pending' ? 'Pending' : '—';
-                  
-                  let psnDisplay = sec.psnNumber || '—';
-
-                  if (sec.securityType === 'blank_cheque') {
-                    stampDisplay = 'Not required';
-                    notarisedDisplay = 'Not required';
-                    psnDisplay = 'Not required';
-                  } else if (sec.securityType === 'cdsl_pledge') {
-                    stampDisplay = 'Not required';
-                    notarisedDisplay = 'Not required';
-                    psnDisplay = sec.status === 'pledged' ? (sec.psnNumber || 'CDSL-PENDING') : sec.status === 'pending' ? 'Pending' : 'Not required';
-                  } else if (sec.securityType === 'sh4') {
-                    psnDisplay = 'Not required';
-                  }
-
-                  let displayStatus: string = sec.status;
-                  const statusMap: Record<string, string> = {
-                    held: 'Held in custody',
-                    executed: 'Executed',
-                    pledged: 'Pledged',
-                    pending: 'Pending',
-                    invoked: 'Invoked',
-                    returned: 'Returned',
-                    not_required: 'Not required'
-                  };
-                  
-                  if (sec.securityType === 'poa' && sec.status === 'executed' && (sec.stampDutyStatus === 'pending' || sec.notarisationStatus === 'pending')) {
-                    displayStatus = 'Execution pending';
-                  } else {
-                    displayStatus = statusMap[sec.status] || sec.status;
-                  }
-
-                  let formattedDate = '—';
-                  if (sec.executionDate) {
-                    formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(sec.executionDate));
-                  }
-                  
-                  const statusColor = displayStatus === 'Held in custody' || displayStatus === 'Executed' || displayStatus === 'Pledged' ? 'bg-green-100 text-green-700' : 
-                                      displayStatus === 'Execution pending' || displayStatus === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                                      displayStatus === 'Invoked' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700';
-
-                  return (
-                    <tr key={sec.id} className="hover:bg-slate-50">
-                      <td className="table-cell font-semibold">{displayType}</td>
-                      <td className="table-cell num font-medium text-slate-800">{displayApp}</td>
-                      <td className="table-cell">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
-                          {displayStatus}
-                        </span>
-                      </td>
-                      <td className="table-cell text-slate-600">{formattedDate}</td>
-                      <td className="table-cell text-slate-600">{sec.custodian || '—'}</td>
-                      <td className="table-cell">
-                        <span className={`text-xs font-medium ${stampDisplay === 'Complete' ? 'text-green-600' : stampDisplay === 'Pending' ? 'text-amber-600' : 'text-slate-500'}`}>
-                          {stampDisplay}
-                        </span>
-                      </td>
-                      <td className="table-cell">
-                        <span className={`text-xs font-medium ${notarisedDisplay === 'Complete' ? 'text-green-600' : notarisedDisplay === 'Pending' ? 'text-amber-600' : 'text-slate-500'}`}>
-                          {notarisedDisplay}
-                        </span>
-                      </td>
-                      <td className="table-cell num text-xs text-slate-500">{psnDisplay}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* OWNED S25 START: API-backed by 007J. */}
-        <ExceptionRegisterPanel />
-        {/* OWNED S25 END */}
-
-        {/* Tab 4: Member Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <BookOpen size={14} className="text-green-600" /> Member register
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">All SFPCL members — {members.length} records</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Name</th>
-                  <th className="table-header text-left">Folio</th>
-                  <th className="table-header text-left">Member type</th>
-                  <th className="table-header text-right">Shares</th>
-                  <th className="table-header text-left">KYC</th>
-                  <th className="table-header text-left">Member status</th>
-                  <th className="table-header text-right">Exposure</th>
-                  <th className="table-header text-left">Member since</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {members.map(m => {
-                  let displayName = m.name;
-                  if (displayName === 'Green Valley F P C') displayName = 'Green Valley FPC';
-
-                  const typeMap: Record<string, string> = { individual: 'Individual', fpc: 'FPC', producer_institution: 'Producer Institution' };
-                  const displayType = typeMap[m.memberType] || m.memberType;
-
-                  const kycMap: Record<string, string> = {
-                    verified: 'Verified',
-                    re_kyc_due: 'Re-KYC due',
-                    kyc_expired: 'KYC expired',
-                    pending: 'Pending'
-                  };
-                  const displayKyc = kycMap[m.kycStatus] || m.kycStatus;
-
-                  const statusMap: Record<string, string> = {
-                    active: 'Active',
-                    inactive: 'Inactive',
-                    under_review: 'Under review'
-                  };
-                  const displayStatus = statusMap[m.activeStatus] || m.activeStatus;
-                  
-                  const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(m.registeredOn));
-
-                  return (
-                    <tr key={m.id} className="hover:bg-slate-50">
-                      <td className="table-cell font-semibold text-slate-900">{displayName}</td>
-                      <td className="table-cell num text-slate-600">{m.folioNumber}</td>
-                      <td className="table-cell text-xs font-medium text-slate-700">{displayType}</td>
-                      <td className="table-cell text-right num">{m.sharesHeld.toLocaleString('en-IN')}</td>
-                      <td className="table-cell">
-                        <StatusBadge label={displayKyc} size="sm" />
-                      </td>
-                      <td className="table-cell">
-                        <StatusBadge label={displayStatus} size="sm" />
-                      </td>
-                      <td className="table-cell text-right num font-medium">{fmt(m.currentExposure)}</td>
-                      <td className="table-cell text-slate-600">{formattedDate}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Tab 6: Compliance Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <BookOpen size={14} className="text-green-600" /> Compliance register
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">Compliance controls and evidence records</p>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {complianceRecords.map(rec => {
-              const areaMap: Record<string, string> = {
-                'Producer Company lending': 'Producer Company lending — members only',
-                'Section 186 limit check': 'Section 186 loan limits',
-                'NBFC principal business test': 'NBFC principal business test',
-                'KYC & AML verification': 'KYC / AML verification',
-                'Re-KYC cycle': 'Re-KYC cycle',
-                'Stamp duty & notarisation': 'Stamp duty & notarisation',
-                'Money-lending exemption': 'Money-lending law exemption review'
-              };
-              const displayArea = areaMap[rec.area] || rec.area;
-
-              const ownerMap: Record<string, string> = {
-                'Producer Company lending — members only': 'Company Secretary',
-                'Section 186 loan limits': 'CFO',
-                'NBFC principal business test': 'CFO',
-                'KYC / AML verification': 'Compliance Team',
-                'Re-KYC cycle': 'Compliance Team',
-                'Stamp duty & notarisation': 'Company Secretary',
-                'Money-lending law exemption review': 'Company Secretary'
-              };
-              const displayOwner = ownerMap[displayArea] || rec.owner;
-              
-              const isOverdue = new Date(rec.nextDueDate) < new Date();
-              let displayStatus: string = rec.status;
-              
-              if (rec.status === 'compliant') displayStatus = 'Compliant';
-              else if (rec.status === 'warning') displayStatus = 'Warning';
-              else if (rec.status === 'pending') {
-                if (isOverdue) displayStatus = 'Overdue';
-                else displayStatus = 'Pending';
-              } else {
-                 displayStatus = rec.status;
-              }
-              
-              const statusColor = displayStatus === 'Compliant' ? 'bg-green-100 text-green-700' :
-                                displayStatus === 'Warning' ? 'bg-amber-100 text-amber-700' :
-                                displayStatus === 'Overdue' ? 'bg-red-100 text-red-700' :
-                                'bg-slate-100 text-slate-700';
-                                
-              const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(rec.nextDueDate));
-              
-              const evidenceText = rec.evidenceCount === 1 ? '1 evidence record' : `${rec.evidenceCount} evidence records`;
-              
-              return (
-              <div key={rec.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">{displayArea}</p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {displayOwner} · {rec.frequency} · {evidenceText}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
-                    {displayStatus}
-                  </span>
-                  <p className="text-xs text-slate-500 font-medium mt-1.5">Due: {formattedDate}</p>
-                </div>
-              </div>
-            )})}
-          </div>
-        </div>
-
-        {/* Tab 7: Stamp Duty Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <FileText size={14} className="text-green-600" /> Stamp duty register
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">Stamp duty and notarisation records for security documents</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Document Type</th>
-                  <th className="table-header text-left">Application No.</th>
-                  <th className="table-header text-left">Borrower</th>
-                  <th className="table-header text-left">Stamp Duty Amount</th>
-                  <th className="table-header text-left">Paid On</th>
-                  <th className="table-header text-left">Challan No.</th>
-                  <th className="table-header text-left">Notarised</th>
-                  <th className="table-header text-left">Custodian</th>
-                  <th className="table-header text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {stampDutyRecords.map((row, i) => {
-                  
-                  const amtDisplay = typeof row.stampDutyAmt === 'number' ? fmt(row.stampDutyAmt) : row.stampDutyAmt;
-                  
-                  let dateDisplay = '—';
-                  if (row.paidOn === 'pending') {
-                    dateDisplay = 'Pending';
-                  } else if (row.paidOn) {
-                    dateDisplay = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(row.paidOn));
-                  }
-                  
-                  const challanDisplay = row.challanNo === 'pending' ? 'Pending' : (row.challanNo || '—');
-                  const custodianDisplay = row.custodian === 'not_assigned' ? 'Not assigned' : (row.custodian || '—');
-                  
-                  let notDisplay = null;
-                  if (row.notarised === 'not_required') {
-                    notDisplay = <span className="text-xs text-slate-500 font-medium">Not required</span>;
-                  } else if (row.notarised === 'pending') {
-                    notDisplay = <span className="text-xs text-amber-600 font-medium">Pending notarisation</span>;
-                  } else if (row.notarised === true) {
-                    notDisplay = <span className="text-xs text-green-700 font-semibold">Yes ✓</span>;
-                  } else {
-                    notDisplay = <span className="text-xs text-amber-600 font-medium">Pending notarisation</span>;
-                  }
-
-                  const statusDisplay = row.status === 'paid' && row.notarised === false ? 'pending_notarisation' : row.status;
-
-                  return (
-                    <tr key={i} className={`hover:bg-slate-50 ${row.status === 'pending' ? 'bg-amber-50/30' : ''}`}>
-                      <td className="table-cell font-medium text-slate-800">{row.doc}</td>
-                      <td className="table-cell num text-slate-600">{row.appNo}</td>
-                      <td className="table-cell text-slate-700">{row.borrower}</td>
-                      <td className="table-cell num text-slate-900 font-semibold">{amtDisplay}</td>
-                      <td className="table-cell text-slate-600">{dateDisplay}</td>
-                      <td className="table-cell font-mono text-xs text-slate-500">{challanDisplay}</td>
-                      <td className="table-cell">{notDisplay}</td>
-                      <td className="table-cell text-slate-600">{custodianDisplay}</td>
-                      <td className="table-cell"><StatusBadge label={statusDisplay} size="sm" /></td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Tab 6: Audit Log Explorer (S74) */}
-        <div className="space-y-3">
-          {/* Filters */}
-          <div className="card">
-            <div className="flex items-center gap-2 mb-3">
-              <Filter size={14} className="text-slate-500" />
-              <p className="text-sm font-semibold text-slate-700">Audit log explorer</p>
-              <span className="text-xs text-slate-400 ml-auto">{filteredAudit.length} events</span>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <div className="relative flex-1 min-w-48">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search actor, entity ID, event type…"
-                  value={auditSearch}
-                  onChange={e => setAuditSearch(e.target.value)}
-                  className="field-input pl-8 text-sm py-2 w-full"
-                />
-              </div>
-              <select value={auditRoleFilter} onChange={e => setAuditRoleFilter(e.target.value)} className="field-select text-sm py-2">
-                <option value="all">All roles</option>
-                <option value="deputy_manager_finance">Deputy Manager – Finance</option>
-                <option value="credit_manager">Credit Manager</option>
-                <option value="cfo">CFO</option>
-                <option value="company_secretary">Company Secretary</option>
-                <option value="director">Director</option>
-                <option value="accounts">Accounts</option>
-              </select>
-              <select value={auditEntityFilter} onChange={e => setAuditEntityFilter(e.target.value)} className="field-select text-sm py-2">
-                <option value="all">All entity types</option>
-                <option value="application">Application</option>
-                <option value="loan_account">Loan Account</option>
-                <option value="member">Member</option>
-                <option value="security">Security</option>
-              </select>
-              <input
-                type="date"
-                value={auditDateFrom}
-                onChange={e => setAuditDateFrom(e.target.value)}
-                className="field-input text-sm py-2"
-                placeholder="From date"
-              />
-              <input
-                type="date"
-                value={auditDateTo}
-                onChange={e => setAuditDateTo(e.target.value)}
-                className="field-input text-sm py-2"
-                placeholder="To date"
-              />
-              <button disabled={!canExport} className="flex items-center gap-1 text-xs text-green-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline">
-                <Download size={12} /> Export
-              </button>
-            </div>
-          </div>
-
-          <div className="card p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    {['Timestamp', 'Actor', 'Role', 'Entity Type', 'Entity ID', 'Event', 'Before State', 'After State', 'Comment'].map(h => (
-                      <th key={h} className="table-header text-left whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredAudit.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="table-cell text-center text-slate-400 py-8">No events match the current filters.</td>
-                    </tr>
-                  ) : filteredAudit.map(ev => {
-                    const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(ev.timestamp));
-                    
-                    let displayActor = ev.actorName;
-                    if (displayActor === 'Credit Assessment Team') displayActor = 'System';
-                    if (displayActor === 'System Admin' && (ev.eventType.includes('Sanction') || ev.eventType.includes('Document'))) {
-                        displayActor = 'System';
-                    }
-
-                    const roleMap: Record<string, string> = {
-                      deputy_manager_finance: 'Deputy Manager – Finance',
-                      credit_manager: 'Credit Manager',
-                      cfo: 'CFO',
-                      company_secretary: 'Company Secretary',
-                      director: 'Director',
-                      system: 'System'
-                    };
-                    const displayRole = roleMap[ev.actorRole] || ev.actorRole.replace(/_/g, ' ');
-
-                    let displayEntityId = ev.entityId;
-                    const matchedApp = loanApplications.find(a => a.id === ev.entityId);
-                    if (matchedApp) displayEntityId = getApplicationReference(matchedApp);
-                    const matchedLoan = loanAccounts.find(l => l.id === ev.entityId);
-                    if (matchedLoan) displayEntityId = matchedLoan.accountNumber;
-
-                    const eventMap: Record<string, string> = {
-                      'Application Submitted': 'Application submitted',
-                      'Reference Number Generated': 'Reference number generated',
-                      'Appraisal Note Prepared': 'Appraisal note prepared',
-                      'Submitted to Sanction Committee': 'Submitted to Sanction Committee',
-                      'Sanction Approved': 'Sanction approved',
-                      'Document Pack Generated': 'Document pack generated',
-                      'Default Recovery Action Initiated': 'Default recovery action initiated',
-                      'Repayment Posted': 'Repayment posted'
-                    };
-                    let displayEvent = eventMap[ev.eventType] || ev.eventType;
-                    if (displayEvent.toLowerCase() === displayEvent) {
-                       displayEvent = displayEvent.charAt(0).toUpperCase() + displayEvent.slice(1);
-                    }
-
-                    const stateMap: Record<string, string> = {
-                      submitted: 'Submitted',
-                      reference_generated: 'Application complete / appraisal in progress',
-                      appraisal_in_progress: 'Application complete / appraisal in progress',
-                      appraisal_pending: 'Appraisal pending',
-                      returned_for_rectification: 'Returned for rectification',
-                      credit_review: 'Pending credit manager review',
-                      pending_credit_manager_review: 'Pending credit manager review',
-                      pending_sanction: 'Pending sanction committee approval',
-                      pending_sanction_committee_approval: 'Pending sanction committee approval',
-                      under_sanction_review: 'Under sanction review',
-                      clarification_requested: 'Clarification requested',
-                      sanctioned: 'Sanctioned',
-                      documentation_in_progress: 'Documentation in progress',
-                      pending_final_checklist_approvals: 'Pending final checklist approvals',
-                      sap_customer_code_pending: 'SAP customer code pending',
-                      sap_customer_code_confirmed: 'SAP customer code confirmed',
-                      payment_initiated: 'Payment initiated',
-                      payment_authorized: 'Payment authorized',
-                      transfer_executed: 'Transfer executed',
-                      active: 'Active repayment',
-                      active_repayment: 'Active repayment',
-                      default_review: 'Recovery review',
-                      recovery_review: 'Recovery review',
-                      recovery_in_progress: 'Recovery in progress',
-                      recovery_action_approved: 'Recovery action approved',
-                      closure_review: 'Closure review'
-                    };
-                    const displayPrev = ev.previousState ? (stateMap[ev.previousState] || ev.previousState) : null;
-                    const displayNew = ev.newState ? (stateMap[ev.newState] || ev.newState) : null;
-
-                    return (
-                      <tr key={ev.id} className="hover:bg-slate-50">
-                        <td className="table-cell text-xs text-slate-500 whitespace-nowrap">{formattedDate}</td>
-                        <td className="table-cell font-medium text-slate-900">{displayActor}</td>
-                        <td className="table-cell text-xs text-slate-500 capitalize">{displayRole}</td>
-                        <td className="table-cell text-xs text-slate-500 capitalize">{ev.entityType.replace(/_/g, ' ')}</td>
-                        <td className="table-cell font-mono text-xs text-slate-600">{displayEntityId}</td>
-                        <td className="table-cell font-medium text-slate-800">{displayEvent}</td>
-                        <td className="table-cell">
-                          {displayPrev
-                            ? <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{displayPrev}</span>
-                            : <span className="text-slate-300">—</span>}
-                        </td>
-                        <td className="table-cell">
-                          {displayNew
-                            ? <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{displayNew}</span>
-                            : <span className="text-slate-300">—</span>}
-                        </td>
-                        <td className="table-cell text-xs text-slate-500 max-w-xs truncate" title={ev.comment}>{ev.comment || '—'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab 7: Grievance Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <AlertOctagon size={14} className="text-amber-500" /> Grievance register
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">Borrower grievances and resolution status — 7-day TAT</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Grievance Ref</th>
-                  <th className="table-header text-left">Borrower</th>
-                  <th className="table-header text-left">Subject</th>
-                  <th className="table-header text-left">Raised On</th>
-                  <th className="table-header text-left">SLA Due</th>
-                  <th className="table-header text-left">Status</th>
-                  <th className="table-header text-left">Resolution Note</th>
-                  <th className="table-header text-left">Resolved On</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {[
-                  { ref: 'GR-2025-001', borrower: 'Ganesh Thorat',   subject: 'Interest calculation query',        date: '2025-01-10', status: 'resolved', response: 'Interest calculated at 12% p.a. on outstanding principal as per agreement.', resolved: '2025-01-17', owner: 'Company Secretary' },
-                  { ref: 'GR-2025-002', borrower: 'Sunita Kamble',   subject: 'Repayment receipt not received',    date: '2025-03-05', status: 'resolved', response: 'Receipt sent by registered email; physical copy couriered.', resolved: '2025-03-10', owner: 'Company Secretary' },
-                  { ref: 'GR-2025-003', borrower: 'Kiran Pawar',     subject: 'Delay in NOC after repayment',      date: '2025-05-20', status: 'in_progress', response: 'NOC generation in progress under Company Secretary review.', resolved: null, owner: 'Company Secretary' },
-                ].map(g => {
-                  const raisedDate = new Date(g.date);
-                  const slaDate = new Date(raisedDate);
-                  slaDate.setDate(raisedDate.getDate() + 7);
-                  
-                  let displayStatus = g.status;
-                  if (g.status !== 'resolved' && new Date() > slaDate) {
-                    displayStatus = 'overdue';
-                  }
-
-                  const statusMap: Record<string, string> = {
-                    in_progress: 'In progress',
-                    resolved: 'Resolved',
-                    overdue: 'Overdue',
-                    open: 'Open',
-                    escalated: 'Escalated'
-                  };
-
-                  const statusText = statusMap[displayStatus] || displayStatus;
-
-                  const dtFormat = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                  const raisedFmt = dtFormat.format(raisedDate);
-                  const slaFmt = dtFormat.format(slaDate);
-                  const resolvedFmt = g.resolved ? dtFormat.format(new Date(g.resolved)) : '—';
-                  
-                  const statusColor = statusText === 'Resolved' ? 'bg-green-100 text-green-700' :
-                                      statusText === 'Overdue' || statusText === 'Escalated' ? 'bg-red-100 text-red-700' :
-                                      statusText === 'In progress' ? 'bg-amber-100 text-amber-700' :
-                                      'bg-slate-100 text-slate-700';
-
-                  return (
-                  <tr key={g.ref} className={`hover:bg-slate-50 ${statusText === 'Overdue' ? 'bg-red-50/20' : ''}`}>
-                    <td className="table-cell font-mono text-slate-600">{g.ref}</td>
-                    <td className="table-cell font-medium text-slate-900">{g.borrower}</td>
-                    <td className="table-cell text-slate-700">{g.subject}</td>
-                    <td className="table-cell text-slate-600">{raisedFmt}</td>
-                    <td className="table-cell text-slate-500 font-medium">{slaFmt}</td>
-                    <td className="table-cell">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
-                        {statusText}
-                      </span>
-                    </td>
-                    <td className="table-cell text-xs text-slate-500 max-w-xs truncate" title={g.response}>{g.response}</td>
-                    <td className="table-cell text-slate-500">{resolvedFmt}</td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Tab 7: Recovery Log */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Scale size={14} className="text-red-600" /> Recovery Log
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">All default management and recovery action records</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Loan No.</th>
-                  <th className="table-header text-left">Borrower</th>
-                  <th className="table-header text-right">Outstanding</th>
-                  <th className="table-header text-right">DPD</th>
-                  <th className="table-header text-left">Stage</th>
-                  <th className="table-header text-left">Action Taken</th>
-                  <th className="table-header text-left">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {[
-                  { loan: 'LO00000042', borrower: 'Ganesh Thorat',   outstanding: 350000, dpd: 45,  stage: 'grace_period',    action: 'Reminder calls + SMS issued',      date: '2025-06-10' },
-                  { loan: 'LO00000038', borrower: 'Malti Shinde',    outstanding: 180000, dpd: 95,  stage: 'recovery_review',  action: 'Non-payment note submitted to SC', date: '2025-06-15' },
-                  { loan: 'LO00000035', borrower: 'Kisan FPC Ltd',   outstanding: 890000, dpd: 187, stage: 'recovery_action_approved', action: 'CFO approved security invocation', date: '2025-04-28' },
-                ].map(r => (
-                  <tr key={r.loan} className={`hover:bg-slate-50 ${r.dpd > 90 ? 'bg-red-50/20' : ''}`}>
-                    <td className="table-cell font-mono text-slate-700">{r.loan}</td>
-                    <td className="table-cell font-medium text-slate-900">{r.borrower}</td>
-                    <td className="table-cell text-right num">{fmt(r.outstanding)}</td>
-                    <td className="table-cell text-right font-semibold text-red-600">{r.dpd}</td>
-                    <td className="table-cell"><StatusBadge label={r.stage} size="sm" /></td>
-                    <td className="table-cell text-slate-600">{r.action}</td>
-                    <td className="table-cell text-slate-500">{r.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {supplementalRegisters.map(register => (
-          <div key={register.title} className="card p-0 overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                  <BookOpen size={14} className="text-green-600" /> {register.title}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">{register.subtitle}</p>
-              </div>
-              <button disabled={!canExport} className="flex items-center gap-1 text-xs text-green-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline">
-                <Download size={12} /> Export
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    {register.headers.map(header => (
-                      <th key={header} className="table-header text-left whitespace-nowrap">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {register.rows.map((row, rowIndex) => (
-                    <tr key={`${register.title}-${rowIndex}`} className="hover:bg-slate-50">
-                      {row.map((cell, cellIndex) => (
-                        <td
-                          key={`${register.title}-${rowIndex}-${cellIndex}`}
-                          className={`table-cell ${cellIndex === 0 ? 'font-mono text-slate-700' : 'text-slate-600'}`}
-                        >
-                          {cellIndex === row.length - 1 ? <StatusBadge label={cell} size="sm" /> : cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <Tabs
+        tabs={definitions.map(definition => ({ id: definition.id, label: definition.label }))}
+        activeIndex={activeIndex}
+        onChange={setActiveIndex}
+      >
+        {definitions.map(definition => (
+          definition.approvalPanel === 'sanction'
+            ? <CreditSanctionRegisterPanel key={definition.id} />
+            : definition.approvalPanel === 'exception'
+              ? <ExceptionRegisterPanel key={definition.id} />
+              : <BackendRegisterPanel key={definition.id} definition={definition} onOpenLoan={onOpenLoan} onOpenApplication={onOpenApplication} />
         ))}
       </Tabs>
     </div>
   );
 };
+
+const BackendRegisterPanel: React.FC<{
+  definition: RegisterDefinition;
+  onOpenLoan?: (id: string) => void;
+  onOpenApplication?: (id: string) => void;
+}> = ({ definition, onOpenLoan, onOpenApplication }) => {
+  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
+  const [pagination, setPagination] = useState<Pagination>(emptyPagination);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    void fetchReport(definition.reportCode, { page: 1, pageSize: 20 })
+      .then(result => {
+        if (cancelled) return;
+        setRows(result.items as unknown as Record<string, unknown>[]);
+        setPagination(result.pagination);
+      })
+      .catch(reason => {
+        if (cancelled) return;
+        setRows([]);
+        setPagination(emptyPagination);
+        setError(reason instanceof Error ? reason : new Error('Register rows could not be loaded.'));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [definition.reportCode]);
+
+  const columns = rows.length ? Object.keys(rows[0]) : [];
+  const denied = error instanceof AuthSessionError && [401, 403].includes(error.status ?? 0);
+
+  return (
+    <div className="card p-0 overflow-hidden">
+      <div className="p-4 bg-slate-50 border-b border-slate-200">
+        <p className="text-sm font-semibold text-slate-900">{definition.label}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{definition.description}</p>
+      </div>
+      {loading && <div className="p-10 text-center text-sm text-slate-500">Loading register…</div>}
+      {!loading && error && (
+        <div className="p-10 text-center">
+          <p className="font-semibold text-slate-800">
+            {denied ? 'Register access denied' : 'Register unavailable'}
+          </p>
+          <p className="text-sm text-slate-500 mt-1">
+            {denied ? 'The backend did not authorize this register request.' : error.message}
+          </p>
+        </div>
+      )}
+      {!loading && !error && rows.length === 0 && (
+        <div className="p-10 text-center">
+          <p className="font-semibold text-slate-800">No register records</p>
+          <p className="text-sm text-slate-500 mt-1">No scoped system-of-record rows are available.</p>
+        </div>
+      )}
+      {!loading && !error && rows.length > 0 && (
+        <>
+          <div className="px-4 py-3 border-b border-slate-100 text-sm text-slate-600">
+            {pagination.total_count} {pagination.total_count === 1 ? 'record' : 'records'}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  {columns.map(column => (
+                    <th key={column} className={`table-header ${numericColumn(column) ? 'text-right' : 'text-left'}`}>
+                      {column.replace(/_/g, ' ')}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rows.map((row, index) => (
+                  <tr key={rowKey(row, index)} className="hover:bg-slate-50">
+                    {columns.map(column => (
+                      <td key={column} className={`table-cell ${numericColumn(column) ? 'text-right num' : ''}`}>
+                        {column.includes('status') && typeof row[column] === 'string'
+                          ? <StatusBadge label={String(row[column])} size="sm" />
+                          : column === 'loan_account_number' && row.loan_account_id && onOpenLoan
+                            ? <button type="button" onClick={() => onOpenLoan(String(row.loan_account_id))} className="font-semibold text-green-700 hover:underline">{displayValue(row[column])}</button>
+                            : column === 'application_reference_number' && row.loan_application_id && onOpenApplication
+                              ? <button type="button" onClick={() => onOpenApplication(String(row.loan_application_id))} className="font-semibold text-green-700 hover:underline">{displayValue(row[column])}</button>
+                              : displayValue(row[column], column)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const rowKey = (row: Record<string, unknown>, index: number) => {
+  const identity = Object.entries(row).find(([key]) => key.endsWith('_id'));
+  return identity ? String(identity[1]) : String(index);
+};
+
+const displayValue = (value: unknown, column = ''): string => {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) return value.length ? value.map(item => displayValue(item)).join(', ') : '—';
+  if (typeof value === 'object') return Object.values(value as Record<string, unknown>).map(item => displayValue(item)).join(' · ');
+  if (/(amount|outstanding|exposure|headroom|recovered)$/.test(column)) return formatMoney(String(value));
+  if (/(_at|_date|_on)$/.test(column)) {
+    const parsed = new Date(String(value));
+    if (!Number.isNaN(parsed.valueOf())) return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(parsed);
+  }
+  return String(value).replace(/_/g, ' ');
+};
+
+const numericColumn = (column: string) => (
+  /(amount|outstanding|exposure|headroom|recovered|count|days|rate|ratio)$/.test(column)
+);
 
 export default RegistersHub;

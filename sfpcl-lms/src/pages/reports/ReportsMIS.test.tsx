@@ -4,7 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ReportsMIS from './ReportsMIS';
 import { AuthSessionError } from '../../services/authSession';
-import { fetchReport } from '../../services/reportApi';
+import {
+  downloadReportExport,
+  fetchReport,
+  fetchReportExport,
+  requestReportExport,
+} from '../../services/reportApi';
 
 const currentUser = {
   permissions: ['reports.portfolio.read', 'finance.loan_account.read', 'reports.export'],
@@ -25,6 +30,9 @@ vi.mock('../../contexts/RoleContext', () => ({
 vi.mock('../../services/reportApi', async importOriginal => ({
   ...await importOriginal<typeof import('../../services/reportApi')>(),
   fetchReport: vi.fn(),
+  requestReportExport: vi.fn(),
+  fetchReportExport: vi.fn(),
+  downloadReportExport: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -53,6 +61,9 @@ beforeEach(() => {
       has_previous: false,
     },
   });
+  vi.mocked(requestReportExport).mockReset();
+  vi.mocked(fetchReportExport).mockReset();
+  vi.mocked(downloadReportExport).mockReset();
 });
 
 afterEach(() => {
@@ -169,11 +180,87 @@ describe('ReportsMIS report wiring', () => {
     expect(screen.queryByText('Seeded Report Member')).toBeNull();
   });
 
-  it('keeps export at the deferred permission seam without claiming success', async () => {
+  it('preserves backend job identity through queued, running, and ready states before audited download', async () => {
+    vi.mocked(requestReportExport).mockResolvedValue(exportJob('queued'));
+    vi.mocked(fetchReportExport)
+      .mockResolvedValueOnce(exportJob('running'))
+      .mockResolvedValueOnce(exportJob('completed'))
+      .mockResolvedValueOnce({
+        ...exportJob('completed'),
+        download_url: '/api/v1/reports/exports/export-job-1/download/?token=signed',
+        expires_at: '2026-07-25T06:00:00Z',
+      });
+    vi.mocked(downloadReportExport).mockResolvedValue(new Blob(['masked-export']));
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:masked-export'),
+      revokeObjectURL: vi.fn(),
+    });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+
     render(<ReportsMIS />);
     expect(await screen.findByText('LN-REPORT-001')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Export' }));
-    expect(screen.getByText('Report export is scheduled for the reporting export slice.')).toBeTruthy();
-    expect(screen.queryByText(/export (complete|successful)/i)).toBeNull();
+    expect(await screen.findByText('Export queued')).toBeTruthy();
+    expect(screen.getByText(/export-job-1/)).toBeTruthy();
+    expect(requestReportExport).toHaveBeenCalledWith({
+      reportCode: 'loan-portfolio',
+      format: 'xlsx',
+      filters: { ordering: '-created_at' },
+    }, expect.any(String));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh export status' }));
+    expect(await screen.findByText('Export running')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Download export' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh export status' }));
+    expect(await screen.findByText('Export finalizing')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Download export' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh export status' }));
+    expect(await screen.findByText('Export ready')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Download export' }));
+    await waitFor(() => expect(downloadReportExport).toHaveBeenCalled());
+    expect(click).toHaveBeenCalled();
+    expect(screen.getByText(/masked by default/i)).toBeTruthy();
   });
+
+  it('surfaces backend export denial without leaking a job or stale success', async () => {
+    vi.mocked(requestReportExport).mockRejectedValue(
+      new AuthSessionError('FORBIDDEN', 'Restricted backend detail.', 403),
+    );
+    render(<ReportsMIS />);
+    expect(await screen.findByText('LN-REPORT-001')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(await screen.findByText('Export permission denied')).toBeTruthy();
+    expect(screen.getByText('The backend did not authorize this export request.')).toBeTruthy();
+    expect(screen.queryByText('Restricted backend detail.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Download export' })).toBeNull();
+
+    vi.mocked(requestReportExport).mockRejectedValue(
+      new AuthSessionError('VALIDATION_ERROR', 'Report export request failed validation.', 400),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(await screen.findByText('Export validation failed')).toBeTruthy();
+
+    vi.mocked(requestReportExport).mockResolvedValue(exportJob('failed'));
+    await userEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(await screen.findByText('Export failed')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Download export' })).toBeNull();
+    const keys = vi.mocked(requestReportExport).mock.calls.map(call => call[1]);
+    expect(new Set(keys).size).toBe(1);
+  });
+});
+
+const exportJob = (status: 'queued' | 'running' | 'completed' | 'failed') => ({
+  export_job_id: 'export-job-1',
+  report_code: 'loan-portfolio' as const,
+  format: 'xlsx' as const,
+  filters: {},
+  status,
+  failure_code: status === 'failed' ? 'RENDER_FAILED' : null,
+  idempotency_replayed: false,
+  requested_at: '2026-07-25T05:30:00Z',
+  started_at: status === 'queued' ? null : '2026-07-25T05:30:01Z',
+  completed_at: status === 'completed' || status === 'failed' ? '2026-07-25T05:30:02Z' : null,
 });

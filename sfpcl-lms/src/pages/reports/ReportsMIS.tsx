@@ -1,9 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BarChart2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Download, Filter } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { AuthSessionError, type Pagination } from '../../services/authSession';
 import {
+  downloadReportExport,
   fetchReport,
+  fetchReportExport,
+  reportQueryToExportFilters,
+  requestReportExport,
+  type ReportExportJob,
   type ReportCode,
   type ReportQuery,
   type ReportRow,
@@ -193,7 +198,11 @@ const ReportsMIS: React.FC = () => {
   const [pagination, setPagination] = useState<Pagination>(emptyPagination);
   const [loading, setLoading] = useState(Boolean(activeReport));
   const [error, setError] = useState<Error | null>(null);
-  const [exportMessage, setExportMessage] = useState('');
+  const [exportJob, setExportJob] = useState<ReportExportJob | null>(null);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState<Error | null>(null);
+  const [downloaded, setDownloaded] = useState(false);
+  const exportAttemptKey = useRef(crypto.randomUUID());
 
   useEffect(() => {
     if (activeReport) return;
@@ -239,7 +248,10 @@ const ReportsMIS: React.FC = () => {
     setRows([]);
     setPagination(emptyPagination);
     setError(null);
-    setExportMessage('');
+    setExportJob(null);
+    setExportError(null);
+    setDownloaded(false);
+    exportAttemptKey.current = crypto.randomUUID();
   };
 
   const applyFilters = () => {
@@ -260,6 +272,59 @@ const ReportsMIS: React.FC = () => {
 
   const changePage = (page: number) => {
     setQuery(previous => ({ ...previous, page }));
+  };
+
+  const startExport = async () => {
+    if (!activeReport || exportBusy) return;
+    setExportBusy(true);
+    setExportError(null);
+    setDownloaded(false);
+    try {
+      const job = await requestReportExport({
+        reportCode: activeReport.code,
+        format: 'xlsx',
+        filters: reportQueryToExportFilters(query),
+      }, exportAttemptKey.current);
+      setExportJob(job);
+    } catch (reason) {
+      setExportJob(null);
+      setExportError(reason instanceof Error ? reason : new Error('The export request failed.'));
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
+  const refreshExport = async () => {
+    if (!exportJob || exportBusy) return;
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      setExportJob(await fetchReportExport(exportJob.export_job_id));
+    } catch (reason) {
+      setExportError(reason instanceof Error ? reason : new Error('Export status could not be loaded.'));
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
+  const downloadExport = async () => {
+    if (!exportJob || exportBusy) return;
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      const content = await downloadReportExport(exportJob);
+      const url = URL.createObjectURL(content);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${exportJob.report_code}.${exportJob.format}`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setDownloaded(true);
+    } catch (reason) {
+      setExportError(reason instanceof Error ? reason : new Error('The export could not be downloaded.'));
+    } finally {
+      setExportBusy(false);
+    }
   };
 
   if (!activeReport) {
@@ -291,7 +356,8 @@ const ReportsMIS: React.FC = () => {
         {canExport && (
           <button
             type="button"
-            onClick={() => setExportMessage('Report export is scheduled for the reporting export slice.')}
+            disabled={exportBusy || Boolean(exportJob)}
+            onClick={() => void startExport()}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             <Download size={15} />
@@ -300,9 +366,65 @@ const ReportsMIS: React.FC = () => {
         )}
       </div>
 
-      {exportMessage && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700">
-          {exportMessage}
+      {exportError && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+          <p className="font-semibold">
+            {exportError instanceof AuthSessionError && exportError.code === 'VALIDATION_ERROR'
+              ? 'Export validation failed'
+              : exportError instanceof AuthSessionError && [401, 403].includes(exportError.status ?? 0)
+              ? 'Export permission denied'
+              : 'Export unavailable'}
+          </p>
+          <p className="mt-0.5">
+            {exportError instanceof AuthSessionError && [401, 403].includes(exportError.status ?? 0)
+              ? 'The backend did not authorize this export request.'
+              : exportError.message}
+          </p>
+        </div>
+      )}
+
+      {exportJob && (
+        <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+          exportJob.status === 'failed'
+            ? 'bg-red-50 border-red-200 text-red-700'
+            : exportJob.status === 'completed'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-blue-50 border-blue-200 text-blue-700'
+        }`}>
+          <p className="font-semibold">
+            Export {exportJob.download_expired
+              ? 'expired'
+              : exportJob.status === 'completed'
+                ? exportJob.download_url ? 'ready' : 'finalizing'
+                : exportJob.status}
+          </p>
+          <p className="mt-0.5">
+            Job {exportJob.export_job_id}. Standard exports keep sensitive values masked by default.
+          </p>
+          {downloaded && <p className="mt-1 font-medium">Audited download started.</p>}
+          <div className="mt-2 flex gap-2">
+            {(['queued', 'running'].includes(exportJob.status)
+              || (exportJob.status === 'completed' && !exportJob.download_url && !exportJob.download_expired)) && (
+              <button
+                type="button"
+                disabled={exportBusy}
+                onClick={() => void refreshExport()}
+                className="border border-current rounded-lg px-3 py-1.5 text-xs font-medium"
+              >
+                Refresh export status
+              </button>
+            )}
+            {exportJob.status === 'completed' && exportJob.download_url && !exportJob.download_expired && (
+              <button
+                type="button"
+                disabled={exportBusy}
+                onClick={() => void downloadExport()}
+                className="border border-current rounded-lg px-3 py-1.5 text-xs font-medium"
+              >
+                Download export
+              </button>
+            )}
+          </div>
         </div>
       )}
 

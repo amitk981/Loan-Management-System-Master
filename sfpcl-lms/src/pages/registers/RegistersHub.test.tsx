@@ -7,6 +7,12 @@ import {
   fetchCreditSanctionRegister,
   fetchExceptionRegister,
 } from '../../services/approvalRegistersApi';
+import {
+  downloadReportExport,
+  fetchReport,
+  fetchReportExport,
+  requestReportExport,
+} from '../../services/reportApi';
 import hubSource from './RegistersHub.tsx?raw';
 
 let permissions = ['approvals.sanction_register.read', 'approvals.exception_register.read'];
@@ -24,10 +30,25 @@ vi.mock('../../services/approvalRegistersApi', async importOriginal => {
   return { ...actual, fetchCreditSanctionRegister: vi.fn(), fetchExceptionRegister: vi.fn() };
 });
 
+vi.mock('../../services/reportApi', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../services/reportApi')>();
+  return {
+    ...actual,
+    fetchReport: vi.fn(),
+    requestReportExport: vi.fn(),
+    fetchReportExport: vi.fn(),
+    downloadReportExport: vi.fn(),
+  };
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
-  permissions = ['approvals.sanction_register.read', 'approvals.exception_register.read'];
+    permissions = ['approvals.sanction_register.read', 'approvals.exception_register.read'];
+    vi.mocked(fetchReport).mockReset();
+    vi.mocked(requestReportExport).mockReset();
+    vi.mocked(fetchReportExport).mockReset();
+    vi.mocked(downloadReportExport).mockReset();
 });
 
 describe('RegistersHub owned approval register panels', () => {
@@ -161,15 +182,29 @@ describe('RegistersHub owned approval register panels', () => {
     expect(evidence).toMatch(/Communication:\s*—/i);
   });
 
-  it('hides export without canonical permission and reports its deferred state when permitted', async () => {
+  it('hides export without canonical permission and preserves the backend job when permitted', async () => {
     vi.mocked(fetchCreditSanctionRegister).mockResolvedValue({ items: [], pagination: { ...pagination, total_count: 0 } });
+    vi.mocked(requestReportExport).mockResolvedValue(exportJob);
     const view = render(<RegistersHub />);
     expect(screen.queryByRole('button', { name: 'Export Register' })).toBeNull();
 
     permissions = [...permissions, 'reports.export'];
     view.rerender(<RegistersHub />);
     await userEvent.click(screen.getByRole('button', { name: 'Export Register' }));
-    expect(screen.getByText('Register export is scheduled for the reporting export slice.')).toBeTruthy();
+    expect(await screen.findByText('Export queued')).toBeTruthy();
+    expect(screen.getByText(/register-export-job-1/)).toBeTruthy();
+    expect(requestReportExport).toHaveBeenCalledWith({
+      reportCode: 'credit-sanction',
+      format: 'xlsx',
+      filters: {},
+    }, expect.any(String));
+
+    vi.mocked(fetchReportExport).mockResolvedValue({
+      ...exportJob, status: 'completed', download_expired: true, download_url: null,
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh export status' }));
+    expect(await screen.findByText('Export expired')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Download export' })).toBeNull();
   });
 
   it('shows a nondisclosing denied state with no fallback register facts', async () => {
@@ -193,11 +228,11 @@ describe('RegistersHub owned approval register panels', () => {
     expect(screen.queryByText('Ganesh Thorat')).toBeNull();
   });
 
-  it('keeps mock-backed variables outside the owned S23/S25 panel source', () => {
-    const sanctionPanel = hubSource.slice(hubSource.indexOf('OWNED S23 START'), hubSource.indexOf('OWNED S23 END'));
-    const exceptionPanel = hubSource.slice(hubSource.indexOf('OWNED S25 START'), hubSource.indexOf('OWNED S25 END'));
-    expect(sanctionPanel).not.toMatch(/loanApplications|sanctionDecisions|mockData/);
-    expect(exceptionPanel).not.toMatch(/loanApplications|const exceptions|mockData/);
+  it('contains no owned mock import, inline business fixtures, or client business calculations', () => {
+    expect(hubSource).not.toMatch(/data\/mockData|loanApplications|loanAccounts|auditEvents/);
+    expect(hubSource).not.toMatch(/new Date\\(\\).*repayment|calcDpd|outstandingPrincipal/);
+    expect(hubSource).toContain('fetchReport');
+    expect(hubSource).toContain('requestReportExport');
   });
 });
 
@@ -226,4 +261,17 @@ const exceptionRow = {
   route_approvers: [], required_approvers: [], approval_actions: [{ approval_action_id: 'action-1', role_code: 'cfo', user_id: 'cfo-1', full_name: 'CFO One', decision: 'approved', comments: 'CFO approved with monitoring.', acted_at: '2026-07-13T11:30:00Z' }],
   supporting_documents: [{ document_id: 'document-1', file_name: 'cash-flow-evidence.pdf', mime_type: 'application/pdf', file_size_bytes: 2048, sensitivity_level: 'restricted', uploaded_at: '2026-07-13T09:00:00Z' }],
   created_at: '2026-07-13T10:00:00Z', closed_at: null,
+};
+
+const exportJob = {
+  export_job_id: 'register-export-job-1',
+  report_code: 'credit-sanction' as const,
+  format: 'xlsx' as const,
+  filters: {},
+  status: 'queued' as const,
+  failure_code: null,
+  idempotency_replayed: false,
+  requested_at: '2026-07-25T05:30:00Z',
+  started_at: null,
+  completed_at: null,
 };

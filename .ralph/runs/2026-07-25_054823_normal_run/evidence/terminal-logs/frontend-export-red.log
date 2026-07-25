@@ -1,0 +1,3082 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/reportApi.test.ts src/pages/reports/ReportsMIS.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_054823_normal_run/sfpcl-lms
+
+ ❯ src/services/reportApi.test.ts (5 tests | 3 failed) 9ms
+   ✓ reportApi > round-trips source filters, backend ordering, and pagination 4ms
+   ✓ reportApi > propagates backend denial without returning fallback rows or totals 1ms
+   × reportApi > preserves the backend export job identity and idempotency contract 2ms
+     → requestReportExport is not a function
+   × reportApi > refreshes only the preserved job and downloads only its audited completed capability 1ms
+     → fetchReportExport is not a function
+   × reportApi > surfaces export permission denial without exposing backend details 0ms
+     → requestReportExport is not a function
+ ❯ src/pages/reports/ReportsMIS.test.tsx (5 tests | 2 failed) 2394ms
+   ✓ ReportsMIS report wiring > renders reconciled portfolio rows and totals from the backend page 63ms
+   ✓ ReportsMIS report wiring > preserves active filters while backend sorting and pagination change 189ms
+   ✓ ReportsMIS report wiring > renders empty and backend-denied states without stale report facts 43ms
+   × ReportsMIS report wiring > preserves backend job identity through queued, running, and ready states before audited download 1048ms
+     → Unable to find an element with the text: Export queued. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × ReportsMIS report wiring > surfaces backend export denial without leaking a job or stale success 1050ms
+     → Unable to find an element with the text: Export permission denied. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/reportApi.test.ts > reportApi > preserves the backend export job identity and idempotency contract
+TypeError: requestReportExport is not a function
+ ❯ src/services/reportApi.test.ts:85:18
+     83|     vi.stubGlobal('fetch', fetchMock);
+     84| 
+     85|     await expect(requestReportExport({
+       |                  ^
+     86|       reportCode: 'loan-portfolio',
+     87|       format: 'xlsx',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/services/reportApi.test.ts > reportApi > refreshes only the preserved job and downloads only its audited completed capability
+TypeError: fetchReportExport is not a function
+ ❯ src/services/reportApi.test.ts:137:18
+    135|     vi.stubGlobal('fetch', fetchMock);
+    136| 
+    137|     await expect(fetchReportExport('export-job-012dab')).resolves.toEq…
+       |                  ^
+    138|     await expect(downloadReportExport(completed)).resolves.toBeInstanc…
+    139|     expect(fetchMock).toHaveBeenNthCalledWith(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/services/reportApi.test.ts > reportApi > surfaces export permission denial without exposing backend details
+TypeError: requestReportExport is not a function
+ ❯ src/services/reportApi.test.ts:168:18
+    166|     } as Response));
+    167| 
+    168|     await expect(requestReportExport({
+       |                  ^
+    169|       reportCode: 'loan-portfolio',
+    170|       format: 'xlsx',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/pages/reports/ReportsMIS.test.tsx > ReportsMIS report wiring > preserves backend job identity through queued, running, and ready states before audited download
+TestingLibraryElementError: Unable to find an element with the text: Export queued. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/reports/ReportsMIS.test.tsx:203:25
+    201|     expect(await screen.findByText('LN-REPORT-001')).toBeTruthy();
+    202|     await userEvent.click(screen.getByRole('button', { name: 'Export' …
+    203|     expect(await screen.findByText('Export queued')).toBeTruthy();
+       |                         ^
+    204|     expect(screen.getByText(/export-job-1/)).toBeTruthy();
+    205|     expect(requestReportExport).toHaveBeenCalledWith({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/pages/reports/ReportsMIS.test.tsx > ReportsMIS report wiring > surfaces backend export denial without leaking a job or stale success
+TestingLibraryElementError: Unable to find an element with the text: Export permission denied. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between gap-4 mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mScoped operational, financial, risk, and compliance reports from the system of record.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-download"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"15"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"15"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 15V3"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m7 10 5 5 5-5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mExport[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700"[39m
+      [36m>[39m
+        [0mReport export is scheduled for the reporting export slice.[0m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl mb-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 border-b border-slate-100"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+          [36m>[39m
+            [0mLoan Portfolio[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mLoan account balances reconciled to the scoped loan register.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-4 flex flex-wrap items-end gap-3"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-asOfDate"[39m
+            [36m>[39m
+              [0mAs of date[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-asOfDate"[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block text-xs font-medium text-slate-600 mb-1"[39m
+              [33mfor[39m=[32m"report-filter-status"[39m
+            [36m>[39m
+              [0mAccount status[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+              [33mid[39m=[32m"report-filter-status"[39m
+              [33mplaceholder[39m=[32m"e.g. active"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-funnel"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mApply filters[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl overflow-hidden"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-b border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m [0m
+            [0mrecord[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-xs text-slate-500"[39m
+          [36m>[39m
+            [0mPage [0m
+            [0m1[0m
+            [0m of [0m
+            [0m1[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-x-auto"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"w-full text-sm"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"bg-slate-50"[39m
+            [36m>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Loan account"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mLoan account[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Borrower"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mBorrower[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Status"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mStatus[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Sanctioned"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSanctioned[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Principal outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mPrincipal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Interest outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mInterest outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Total outstanding"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 justify-end"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mTotal outstanding[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Sort by Repayment date"[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-1 "[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mRepayment date[0m
+                  [36m</button>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"divide-y divide-slate-50"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"hover:bg-slate-50"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mLN-REPORT-001[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mSeeded Report Member[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0mactive[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,50,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,25,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹5,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-right px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m₹1,30,000.00[0m
+                [36m</td>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"text-left px-4 py-3 text-slate-700 whitespace-nowrap"[39m
+                [36m>[39m
+                  [0m30 Sept 2026[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"px-6 py-3 border-t border-slate-100 flex items-center justify-between"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-left"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m15 18-6-6 6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mPrevious[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-sm text-slate-600"[39m
+            [33mdisabled[39m=[32m""[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mNext[0m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-chevron-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 18 6-6-6-6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/reports/ReportsMIS.test.tsx:231:25
+    229| 
+    230|     await userEvent.click(screen.getByRole('button', { name: 'Export' …
+    231|     expect(await screen.findByText('Export permission denied')).toBeTr…
+       |                         ^
+    232|     expect(screen.getByText('The backend did not authorize this export…
+    233|     expect(screen.queryByText('Restricted backend detail.')).toBeNull(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  5 failed | 5 passed (10)
+   Start at  05:52:28
+   Duration  3.54s (transform 185ms, setup 0ms, collect 409ms, tests 2.40s, environment 719ms, prepare 75ms)
+

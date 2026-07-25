@@ -4,7 +4,7 @@ import { expect, test, type Route } from '@playwright/test';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) {
-  throw new Error('RALPH_EVIDENCE_DIR is required for the 012DAA report acceptance contract');
+  throw new Error('RALPH_EVIDENCE_DIR is required for the 012DAB export acceptance contract');
 }
 fs.mkdirSync(evidenceDir, { recursive: true });
 
@@ -83,6 +83,99 @@ test('S69 report results retain backend filters, ordering, pagination, and recon
   });
 });
 
+test('report export preserves job identity and enables only the audited ready download', async ({ page }) => {
+  let statusReads = 0;
+  const exportRequests: { body: unknown; idempotencyKey: string | undefined }[] = [];
+  await page.route('**/api/v1/reports/exports/', route => {
+    exportRequests.push({
+      body: route.request().postDataJSON(),
+      idempotencyKey: route.request().headers()['idempotency-key'],
+    });
+    return ok(route, exportJob('queued'));
+  });
+  await page.route('**/api/v1/reports/exports/export-browser-012dab/', route => {
+    statusReads += 1;
+    return ok(route, statusReads === 1
+      ? exportJob('running')
+      : {
+          ...exportJob('completed'),
+          checksum_sha256: 'browser-export-checksum',
+          file_size_bytes: 128,
+          download_url: '/api/v1/reports/exports/export-browser-012dab/download/?token=signed-browser-grant',
+          expires_at: '2026-07-25T06:15:00Z',
+        });
+  });
+  await page.route('**/api/v1/reports/exports/export-browser-012dab/download/?token=*', route => (
+    route.fulfill({
+      status: 200,
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      body: 'masked audited browser export',
+    })
+  ));
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Reports & MIS' }).click();
+  await expect(page.getByText('LN-BROWSER-REPORT-001')).toBeVisible();
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await expect(page.getByText('Export queued')).toBeVisible();
+  await expect(page.getByText(/export-browser-012dab/)).toBeVisible();
+  expect(exportRequests).toHaveLength(1);
+  expect(exportRequests[0].body).toEqual({
+    report_code: 'loan-portfolio',
+    format: 'xlsx',
+    filters: { ordering: '-created_at' },
+  });
+  expect(exportRequests[0].idempotencyKey).toBeTruthy();
+
+  await page.getByRole('button', { name: 'Refresh export status' }).click();
+  await expect(page.getByText('Export running')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download export' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Refresh export status' }).click();
+  await expect(page.getByText('Export ready')).toBeVisible();
+
+  const auditedDownload = page.waitForRequest(request => (
+    new URL(request.url()).pathname
+      === '/api/v1/reports/exports/export-browser-012dab/download/'
+  ));
+  await page.getByRole('button', { name: 'Download export' }).click();
+  await auditedDownload;
+  await expect(page.getByText('Audited download started.')).toBeVisible();
+
+  await page.screenshot({
+    path: path.join(evidenceDir, 'export-job-status.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+});
+
+test('register export keeps backend masking visible and failed or stale jobs non-downloadable', async ({ page }) => {
+  await page.route('**/api/v1/reports/exports/', route => ok(route, {
+    ...exportJob('completed'),
+    export_job_id: 'masked-register-export-012dab',
+    report_code: 'loan-portfolio',
+    checksum_sha256: 'masked-register-checksum',
+    file_size_bytes: 256,
+    download_url: null,
+    download_expired: true,
+    expires_at: '2026-07-25T05:45:00Z',
+  }));
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Registers' }).click();
+  await expect(page.getByRole('heading', { name: 'Registers' })).toBeVisible();
+  await expect(page.getByText('Scoped Report Member 1').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Export Register' }).click();
+  await expect(page.getByText('Export expired')).toBeVisible();
+  await expect(page.getByText(/PAN, Aadhaar, bank, cheque/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download export' })).toHaveCount(0);
+
+  await page.screenshot({
+    path: path.join(evidenceDir, 'masked-export.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+});
+
 const reportReader = {
   user_id: 'report-reader-browser-012daa',
   full_name: 'Browser CFO Report Reader',
@@ -98,6 +191,7 @@ const reportReader = {
     'reports.dpd.read',
     'reports.compliance.read',
     'reports.export',
+    'approvals.sanction_register.read',
     'documents.checklist.read',
     'finance.disbursement.readiness',
     'finance.loan_account.read',
@@ -127,6 +221,19 @@ const portfolioRow = (index: number) => ({
   repayment_date: '2026-09-30',
   current_interest_rate: '10.0000',
   created_at: `2026-04-${String(Math.min(index, 28)).padStart(2, '0')}T10:00:00Z`,
+});
+
+const exportJob = (status: 'queued' | 'running' | 'completed' | 'failed') => ({
+  export_job_id: 'export-browser-012dab',
+  report_code: 'loan-portfolio',
+  format: 'xlsx',
+  filters: { ordering: '-created_at' },
+  status,
+  failure_code: status === 'failed' ? 'RENDER_FAILED' : null,
+  idempotency_replayed: false,
+  requested_at: '2026-07-25T05:30:00Z',
+  started_at: status === 'queued' ? null : '2026-07-25T05:30:01Z',
+  completed_at: status === 'completed' || status === 'failed' ? '2026-07-25T05:30:02Z' : null,
 });
 
 const ok = (route: Route, data: unknown) => route.fulfill({
