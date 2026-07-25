@@ -1,0 +1,17 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/compliance/AuditArchiveHub.test.tsx src/services/auditExplorerApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms
+
+ ✓ src/services/auditExplorerApi.test.ts (2 tests) 6ms
+ ✓ src/pages/compliance/AuditArchiveHub.test.tsx (11 tests) 1456ms
+   ✓ 012DAC audit explorer, observation, and retained archive wiring > filters and paginates the S74 explorer through backend query parameters  513ms
+
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+   Start at  07:20:00
+   Duration  2.40s (transform 270ms, setup 0ms, collect 504ms, tests 1.46s, environment 704ms, prepare 90ms)
+

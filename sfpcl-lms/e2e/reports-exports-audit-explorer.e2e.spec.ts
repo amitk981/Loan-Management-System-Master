@@ -4,7 +4,7 @@ import { expect, test, type Route } from '@playwright/test';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) {
-  throw new Error('RALPH_EVIDENCE_DIR is required for the 012DAB export acceptance contract');
+  throw new Error('RALPH_EVIDENCE_DIR is required for the 012DAC reports, exports, and audit acceptance contract');
 }
 fs.mkdirSync(evidenceDir, { recursive: true });
 
@@ -176,6 +176,142 @@ test('register export keeps backend masking visible and failed or stale jobs non
   });
 });
 
+test('S74 audit explorer preserves backend scope, filters, pagination, and restricted-field protection', async ({ page }) => {
+  const auditRequests: URL[] = [];
+  const auditMutations: string[] = [];
+  await page.route('**/api/v1/auth/me/', route => ok(route, auditReader));
+  await page.route('**/api/v1/dashboard/', route => ok(route, {
+    role_context: 'internal_auditor',
+    cards: [],
+    tasks: [],
+  }));
+  await page.route('**/api/v1/archive-records/**', route => listOk(route, [], emptyPagination));
+  await page.route('**/api/v1/audit-observations/**', route => listOk(route, [], emptyPagination));
+  await page.route('**/api/v1/audit-logs/**', route => {
+    const url = new URL(route.request().url());
+    const requestedPage = Number(url.searchParams.get('page') ?? '1');
+    const rows = requestedPage === 2 ? [auditRow(21)] : Array.from(
+      { length: 20 },
+      (_value, index) => auditRow(index + 1),
+    );
+    return listOk(route, rows, {
+      page: requestedPage,
+      page_size: 20,
+      total_count: 21,
+      total_pages: 2,
+      has_next: requestedPage === 1,
+      has_previous: requestedPage === 2,
+    });
+  });
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/v1/audit-logs/') auditRequests.push(url);
+    if (
+      (url.pathname === '/api/v1/audit-logs/' || url.pathname.startsWith('/api/v1/audit-observations/'))
+      && request.method() !== 'GET'
+    ) {
+      auditMutations.push(`${request.method()} ${url.pathname}`);
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Audit & Archive' }).click();
+  await expect(page.getByRole('heading', { name: 'Audit & Archive' })).toBeVisible();
+  await expect(page.getByText('compliance.evidence_submitted').first()).toBeVisible();
+  await expect(page.getByText('ABCDE1234F')).toHaveCount(0);
+  await expect(page.getByText('123456789012')).toHaveCount(0);
+  await expect(page.getByText('private/audit/evidence.pdf')).toHaveCount(0);
+
+  await page.getByLabel('Entity type').fill('compliance_evidence');
+  await page.getByLabel('Action', { exact: true }).fill('compliance.evidence_submitted');
+  await page.getByLabel('Actor user ID').fill('actor-browser-012dac');
+  await page.getByLabel('From date').fill('2026-07-01');
+  await page.getByLabel('To date').fill('2026-07-25');
+  await page.getByRole('button', { name: 'Apply audit filters' }).click();
+  await expect.poll(() => auditRequests.at(-1)?.search).toContain(
+    'entity_type=compliance_evidence&action=compliance.evidence_submitted&actor_user_id=actor-browser-012dac&created_from=2026-07-01&created_to=2026-07-25',
+  );
+
+  await page.getByRole('button', { name: 'Next audit page' }).click();
+  await expect(page.getByText('evidence-browser-021')).toBeVisible();
+  await expect(page.getByText(/Page 2 of 2/)).toBeVisible();
+  expect(auditRequests.at(-1)?.searchParams.get('page')).toBe('2');
+  expect(auditMutations).toEqual([]);
+  await expect(page.getByRole('button', { name: /edit|delete|update audit/i })).toHaveCount(0);
+
+  await page.screenshot({
+    path: path.join(evidenceDir, 'audit-explorer.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+});
+
+test('scoped Internal Auditor records and revisits a separate immutable observation', async ({ page }) => {
+  const observationPosts: unknown[] = [];
+  let observationCreated = false;
+  const recordedObservation = auditObservation();
+  await page.route('**/api/v1/auth/me/', route => ok(route, auditReader));
+  await page.route('**/api/v1/dashboard/', route => ok(route, {
+    role_context: 'internal_auditor',
+    cards: [],
+    tasks: [],
+  }));
+  await page.route('**/api/v1/archive-records/**', route => listOk(route, [], emptyPagination));
+  await page.route('**/api/v1/audit-logs/**', route => listOk(route, [auditRow(1)], {
+    ...emptyPagination,
+    total_count: 1,
+  }));
+  await page.route('**/api/v1/audit-observations/**', route => {
+    if (route.request().method() === 'POST') {
+      observationPosts.push(route.request().postDataJSON());
+      observationCreated = true;
+      return ok(route, recordedObservation);
+    }
+    return listOk(route, observationCreated ? [recordedObservation] : [], {
+      ...emptyPagination,
+      total_count: observationCreated ? 1 : 0,
+    });
+  });
+  await page.route('**/api/v1/audit-observations/observation-browser-012dac/', route => (
+    ok(route, recordedObservation)
+  ));
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Audit & Archive' }).click();
+  await page.getByRole('button', { name: 'View audit event audit-log-browser-001' }).click();
+  await page.getByRole('button', { name: 'Sample this event' }).click();
+  await page.getByLabel('Auditor observation').fill(
+    'M14-FR-012 sample is complete and traceable.',
+  );
+  await page.getByRole('button', { name: 'Record observation' }).click();
+
+  await expect(page.getByText('Observation recorded as immutable.')).toBeVisible();
+  expect(observationPosts).toEqual([{
+    audit_scope: 'audit_readonly',
+    observation: 'M14-FR-012 sample is complete and traceable.',
+    source_references: [{
+      source_type: 'audit_log',
+      source_id: 'audit-log-browser-001',
+    }],
+  }]);
+  await expect(page.getByText('This audit event is immutable and read-only.')).toBeVisible();
+
+  await page.screenshot({
+    path: path.join(evidenceDir, 'audit-observation-recorded.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+
+  await page.getByRole('button', { name: 'Close audit event detail' }).click();
+  await page.getByRole('button', { name: 'Auditor Observations' }).click();
+  await page.getByRole('button', { name: 'View observation observation-browser-012dac' }).click();
+  await expect(page.getByRole('heading', { name: 'Observation Detail' })).toBeVisible();
+  await expect(page.getByText(
+    'Creator, scope, source references, text and time cannot be edited.',
+  )).toBeVisible();
+  await expect(page.getByRole('button', { name: /edit|save|delete|update/i })).toHaveCount(0);
+});
+
 const reportReader = {
   user_id: 'report-reader-browser-012daa',
   full_name: 'Browser CFO Report Reader',
@@ -198,6 +334,24 @@ const reportReader = {
     'monitoring.dpd.read',
     'compliance.section186.read',
     'compliance.nbfc_test.read',
+  ],
+  available_actions: [],
+};
+
+const auditReader = {
+  user_id: 'auditor-browser-012dac',
+  full_name: 'Browser Internal Auditor',
+  email: 'auditor-browser@sfpcl.example',
+  status: 'active',
+  roles: [{ role_code: 'internal_auditor', role_name: 'Internal Auditor' }],
+  teams: [{ team_code: 'audit', team_name: 'Audit' }],
+  role_codes: ['internal_auditor'],
+  team_codes: ['audit'],
+  permissions: [
+    'audit.audit_log.read',
+    'audit.observation.read',
+    'audit.observation.create',
+    'closure.archive.read',
   ],
   available_actions: [],
 };
@@ -235,6 +389,68 @@ const exportJob = (status: 'queued' | 'running' | 'completed' | 'failed') => ({
   started_at: status === 'queued' ? null : '2026-07-25T05:30:01Z',
   completed_at: status === 'completed' || status === 'failed' ? '2026-07-25T05:30:02Z' : null,
 });
+
+const auditRow = (index: number) => ({
+  audit_log_id: `audit-log-browser-${String(index).padStart(3, '0')}`,
+  actor: {
+    user_id: 'actor-browser-012dac',
+    full_name: 'Browser Internal Auditor',
+  },
+  actor_type: 'user',
+  actor_role_codes: ['internal_auditor'],
+  actor_team_codes: ['audit'],
+  action: 'compliance.evidence_submitted',
+  module: 'compliance',
+  entity_type: 'compliance_evidence',
+  entity_id: `evidence-browser-${String(index).padStart(3, '0')}`,
+  linked_record: {
+    entity_type: 'compliance_evidence',
+    entity_id: `evidence-browser-${String(index).padStart(3, '0')}`,
+  },
+  old_value: {
+    status: 'missing',
+    pan_number: 'ABCDE1234F',
+  },
+  new_value: {
+    status: 'accepted',
+    bank_account_number: '123456789012',
+    storage_key: 'private/audit/evidence.pdf',
+  },
+  reason: index === 1 ? 'M14-FR-012 quarterly sample' : 'Governed audit sample',
+  outcome: 'success',
+  request_id: `request-browser-${index}`,
+  ip_address: '10.0.0.8',
+  device: 'AuditBrowser/1.0',
+  created_at: `2026-07-25T06:${String(Math.min(index, 59)).padStart(2, '0')}:00Z`,
+});
+
+const auditObservation = () => ({
+  audit_observation_id: 'observation-browser-012dac',
+  creator: {
+    user_id: 'auditor-browser-012dac',
+    full_name: 'Browser Internal Auditor',
+    role_code: 'internal_auditor',
+    team_codes: ['audit'],
+  },
+  audit_scope: 'audit_readonly',
+  observation: 'M14-FR-012 sample is complete and traceable.',
+  source_references: [{
+    source_type: 'audit_log',
+    source_id: 'audit-log-browser-001',
+    entity_type: 'compliance_evidence',
+    entity_id: 'evidence-browser-001',
+  }],
+  created_at: '2026-07-25T06:10:00Z',
+});
+
+const emptyPagination = {
+  page: 1,
+  page_size: 20,
+  total_count: 0,
+  total_pages: 1,
+  has_next: false,
+  has_previous: false,
+};
 
 const ok = (route: Route, data: unknown) => route.fulfill({
   status: 200,

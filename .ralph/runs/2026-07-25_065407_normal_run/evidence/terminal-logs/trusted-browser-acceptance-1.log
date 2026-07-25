@@ -1,0 +1,68 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/.ralph/runs/2026-07-25_065407_normal_run/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/reports-exports-audit-explorer.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/reports-exports-audit-explorer.e2e.spec.ts
+
+[2m[WebServer] [22m[25/Jul/2026 01:55:59] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 5 tests using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:05] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22m[25/Jul/2026 01:56:05] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  1 [chromium] › reports-exports-audit-explorer.e2e.spec.ts:41:5 › S69 report results retain backend filters, ordering, pagination, and reconciliation (3.8s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:09] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:09] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  2 [chromium] › reports-exports-audit-explorer.e2e.spec.ts:86:5 › report export preserves job identity and enables only the audited ready download (2.8s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:11] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:11] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  3 [chromium] › reports-exports-audit-explorer.e2e.spec.ts:151:5 › register export keeps backend masking visible and failed or stale jobs non-downloadable (2.9s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:14] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:14] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✘  4 [chromium] › reports-exports-audit-explorer.e2e.spec.ts:179:5 › S74 audit explorer preserves backend scope, filters, pagination, and restricted-field protection (2.6s)
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 01:56:18] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22m[25/Jul/2026 01:56:18] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  5 [chromium] › reports-exports-audit-explorer.e2e.spec.ts:249:5 › scoped Internal Auditor records and revisits a separate immutable observation (3.2s)
+
+
+  1) [chromium] › reports-exports-audit-explorer.e2e.spec.ts:179:5 › S74 audit explorer preserves backend scope, filters, pagination, and restricted-field protection 
+
+    Error: locator.fill: Error: strict mode violation: getByLabel('Action') resolved to 2 elements:
+        1) <input value="" aria-label="Action" class="field-input text-sm"/> aka getByLabel('Action', { exact: true })
+        2) <input checked id="_r_1_" type="checkbox" class="styles-module__checkboxInput___ECzzO"/> aka getByLabel('Block page interactions')
+
+    Call log:
+    [2m  - waiting for getByLabel('Action')[22m
+
+
+      224 |
+      225 |   await page.getByLabel('Entity type').fill('compliance_evidence');
+    > 226 |   await page.getByLabel('Action').fill('compliance.evidence_submitted');
+          |                                   ^
+      227 |   await page.getByLabel('Actor user ID').fill('actor-browser-012dac');
+      228 |   await page.getByLabel('From date').fill('2026-07-01');
+      229 |   await page.getByLabel('To date').fill('2026-07-25');
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms/e2e/reports-exports-audit-explorer.e2e.spec.ts:226:35
+
+  1 failed
+    [chromium] › reports-exports-audit-explorer.e2e.spec.ts:179:5 › S74 audit explorer preserves backend scope, filters, pagination, and restricted-field protection 
+  4 passed (1.2m)
+
+Duration milliseconds: 73211
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/.ralph/runs/2026-07-25_065407_normal_run/evidence/trusted-browser-screenshots-1.sha256

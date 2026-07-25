@@ -1,0 +1,383 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/compliance/AuditArchiveHub.test.tsx -t records and revisits
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms
+
+ ❯ src/pages/compliance/AuditArchiveHub.test.tsx (6 tests | 1 failed | 5 skipped) 126ms
+   ↓ 011PE audit archive owner wiring > filters and paginates the S74 explorer through backend query parameters
+   ↓ 011PE audit archive owner wiring > renders only a read-only audit whitelist and never exposes restricted change fields
+   × 011PE audit archive owner wiring > records and revisits a separate immutable M14-FR-012 auditor observation 125ms
+     → Unable to find a label with the text of: Auditor observation
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-history text-indigo-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 3v5h5"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v5l4 2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mAudit & Archive[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mReview system events, evidence packs, closed files and retention status.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-slate-100 px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-200"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield-check text-indigo-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0mRead-only access — archive records cannot be edited.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-5 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mAudit events[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m21[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mArchived records[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mPhysical locations[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-indigo-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mDigital locations[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-indigo-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRetention due[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m0[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-2 p-2 overflow-x-auto"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors bg-indigo-50 text-indigo-700"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mAudit Log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mWorkflow Timeline[0m
+            [36m</button>[39m
+            [36m<bu...
+   ↓ 011PE audit archive owner wiring > renders canonical archive records as a read-only surface without owned fixtures
+   ↓ 011PE audit archive owner wiring > downloads only after the governed audited detail read and supports canonical search refetch
+   ↓ 011PE audit archive owner wiring > renders empty, unauthorized, general error, and download failure states
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/compliance/AuditArchiveHub.test.tsx > 011PE audit archive owner wiring > records and revisits a separate immutable M14-FR-012 auditor observation
+TestingLibraryElementError: Unable to find a label with the text of: Auditor observation
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-history text-indigo-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 3v5h5"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v5l4 2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mAudit & Archive[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mReview system events, evidence packs, closed files and retention status.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-slate-100 px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-200"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield-check text-indigo-600"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-700"[39m
+          [36m>[39m
+            [0mRead-only access — archive records cannot be edited.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-2 md:grid-cols-5 gap-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mAudit events[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m21[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mArchived records[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mPhysical locations[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-indigo-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mDigital locations[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-indigo-600"[39m
+          [36m>[39m
+            [0m1[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-white p-4 rounded-xl border border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm font-medium text-slate-500 mb-1"[39m
+          [36m>[39m
+            [0mRetention due[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-2xl font-bold text-green-600"[39m
+          [36m>[39m
+            [0m0[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-2 p-2 overflow-x-auto"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors bg-indigo-50 text-indigo-700"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mAudit Log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mWorkflow Timeline[0m
+            [36m</button>[39m
+            [36m<bu...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/compliance/AuditArchiveHub.test.tsx:258:14
+    256|     }));
+    257|     await userEvent.type(
+    258|       screen.getByLabelText('Auditor observation'),
+       |              ^
+    259|       'M14-FR-012 sample is complete and traceable.',
+    260|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+   Start at  07:03:19
+   Duration  1.05s (transform 182ms, setup 0ms, collect 354ms, tests 126ms, environment 312ms, prepare 38ms)
+

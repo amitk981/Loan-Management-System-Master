@@ -1,0 +1,61 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/compliance/AuditArchiveHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms
+
+ ❯ src/pages/compliance/AuditArchiveHub.test.tsx (4 tests | 1 failed) 241ms
+   × 011PE audit archive owner wiring > filters and paginates the S74 explorer through backend query parameters 19ms
+     → Unable to find an element with the text: Loading audit events…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card p-8 text-center text-slate-500"[39m
+    [36m>[39m
+      [0mLoading archive records…[0m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ 011PE audit archive owner wiring > renders canonical archive records as a read-only surface without owned fixtures 85ms
+   ✓ 011PE audit archive owner wiring > downloads only after the governed audited detail read and supports canonical search refetch 95ms
+   ✓ 011PE audit archive owner wiring > renders empty, unauthorized, general error, and download failure states 41ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/compliance/AuditArchiveHub.test.tsx > 011PE audit archive owner wiring > filters and paginates the S74 explorer through backend query parameters
+TestingLibraryElementError: Unable to find an element with the text: Loading audit events…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card p-8 text-center text-slate-500"[39m
+    [36m>[39m
+      [0mLoading archive records…[0m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/compliance/AuditArchiveHub.test.tsx:143:19
+    141|     render(<AuditArchiveHub />);
+    142| 
+    143|     expect(screen.getByText('Loading audit events…')).toBeTruthy();
+       |                   ^
+    144|     expect(await screen.findByText('compliance.evidence_submitted')).t…
+    145| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  06:59:48
+   Duration  1.11s (transform 148ms, setup 0ms, collect 325ms, tests 241ms, environment 310ms, prepare 36ms)
+

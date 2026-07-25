@@ -1,0 +1,2 @@
+PASS: repaired locator is exact.
+226:  await page.getByLabel('Action', { exact: true }).fill('compliance.evidence_submitted');

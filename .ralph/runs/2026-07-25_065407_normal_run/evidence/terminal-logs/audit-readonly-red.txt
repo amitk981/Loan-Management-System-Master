@@ -1,0 +1,39 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/compliance/AuditArchiveHub.test.tsx -t read-only audit whitelist
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/compliance/AuditArchiveHub.test.tsx [ src/pages/compliance/AuditArchiveHub.test.tsx ]
+Error: Transform failed with 1 error:
+/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms/src/pages/compliance/AuditArchiveHub.test.tsx:201:65: ERROR: Syntax error "a"
+  Plugin: vite:esbuild
+  File: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms/src/pages/compliance/AuditArchiveHub.test.tsx:201:65
+  
+  Syntax error "a"
+  199|      expect(screen.getByText('M14-FR-012 quarterly sample')).toBeTruthy();
+  200|      expect(screen.getByText('This audit event is immutable and read-only.')).toBeTruthy();
+  201|      expect(screen.queryByText(/ABCDE1234F|123456789012|private\\/audit/i)).toBeNull();
+     |                                                                   ^
+  202|      expect(screen.queryByText(/pan_number|bank_account_number|storage_key/i)).toBeNull();
+  203|      expect(screen.queryByRole('button', { name: /edit|save|delete|update/i })).toBeNull();
+  
+ ❯ failureErrorWithLog node_modules/esbuild/lib/main.js:1472:15
+ ❯ node_modules/esbuild/lib/main.js:755:50
+ ❯ responseCallbacks.<computed> node_modules/esbuild/lib/main.js:622:9
+ ❯ handleIncomingPacket node_modules/esbuild/lib/main.js:677:12
+ ❯ Socket.readFromStdout node_modules/esbuild/lib/main.js:600:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  07:01:50
+   Duration  565ms (transform 12ms, setup 0ms, collect 0ms, tests 0ms, environment 317ms, prepare 41ms)
+

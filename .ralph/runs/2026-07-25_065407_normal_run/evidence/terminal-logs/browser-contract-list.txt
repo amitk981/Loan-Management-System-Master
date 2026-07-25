@@ -1,0 +1,11 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/reports-exports-audit-explorer.e2e.spec.ts --list
+
+Listing tests:
+  [chromium] › reports-exports-audit-explorer.e2e.spec.ts:41:5 › S69 report results retain backend filters, ordering, pagination, and reconciliation
+  [chromium] › reports-exports-audit-explorer.e2e.spec.ts:86:5 › report export preserves job identity and enables only the audited ready download
+  [chromium] › reports-exports-audit-explorer.e2e.spec.ts:151:5 › register export keeps backend masking visible and failed or stale jobs non-downloadable
+  [chromium] › reports-exports-audit-explorer.e2e.spec.ts:179:5 › S74 audit explorer preserves backend scope, filters, pagination, and restricted-field protection
+  [chromium] › reports-exports-audit-explorer.e2e.spec.ts:249:5 › scoped Internal Auditor records and revisits a separate immutable observation
+Total: 5 tests in 1 file

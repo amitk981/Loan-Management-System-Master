@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/pages/compliance/AuditArchiveHub.test.tsx -t records and revisits
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_065407_normal_run/sfpcl-lms
+
+ ✓ src/pages/compliance/AuditArchiveHub.test.tsx (6 tests | 5 skipped) 495ms
+   ✓ 011PE audit archive owner wiring > records and revisits a separate immutable M14-FR-012 auditor observation  494ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 5 skipped (6)
+   Start at  07:04:52
+   Duration  1.52s (transform 215ms, setup 0ms, collect 391ms, tests 495ms, environment 382ms, prepare 43ms)
+
